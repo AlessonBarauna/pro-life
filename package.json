@@ -1,0 +1,20 @@
+{
+  "name": "pro-life-football-career",
+  "version": "0.1.1",
+  "private": true,
+  "description": "Offline football career simulation; no runtime dependencies",
+  "scripts": {
+    "test": "node --test tests/engine.test.cjs tests/tooling.test.cjs",
+    "test:ui": "node tests/ui.test.cjs",
+    "check": "node --check src/domain/engine.js && node --check src/application/game.js && node --check src/infrastructure/save.js && node --check src/ui/app.js && node --check src/ui/update.js && node --check tools/dev-server.cjs && node --check tools/build.cjs",
+    "dev": "node tools/dev-server.cjs",
+    "build": "node tools/build.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "30.1.1",
+    "prettier": "3.6.2"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}
