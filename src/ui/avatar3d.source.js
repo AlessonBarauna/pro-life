@@ -1,6 +1,7 @@
 import * as T from "three";
 // Procedural upper-body character. All geometry and textures are local and original.
-const safe = (value, fallback) => (/^#[a-f0-9]{6}$/i.test(value || "") ? value : fallback);
+const safe = (value, fallback) =>
+  /^#[a-f0-9]{6}$/i.test(value || "") ? value : fallback;
 function material(color, roughness = 0.82) {
   return new T.MeshStandardMaterial({ color, roughness, metalness: 0 });
 }
@@ -54,7 +55,11 @@ function surfaceHair(parent, mat, kind) {
         parent,
         mat,
         [x, y, z],
-        [kind === "afro" ? 0.031 : 0.023, kind === "twists" ? 0.054 : 0.028, 0.026],
+        [
+          kind === "afro" ? 0.031 : 0.023,
+          kind === "twists" ? 0.054 : 0.028,
+          0.026,
+        ],
         12,
       );
       if (kind === "twists") mesh.rotation.z = phi * 0.15;
@@ -90,7 +95,8 @@ function surfaceHair(parent, mat, kind) {
       0.035,
     );
   }
-  if (kind === "mullet") oval(parent, mat, [0, 1.55, -0.13], [0.123, 0.09, 0.034]);
+  if (kind === "mullet")
+    oval(parent, mat, [0, 1.55, -0.13], [0.123, 0.09, 0.034]);
 }
 function addTattoo(group, mat, side) {
   // Ink follows the forward surface of the exposed forearm; visible from default camera.
@@ -152,7 +158,12 @@ function model(person, kit) {
 
   for (const side of [-1, 1]) {
     oval(group, skin, [side * 0.143, 1.63, -0.012], [0.027, 0.046, 0.019]);
-    oval(group, material("#a96d51"), [side * 0.157, 1.63, 0.0], [0.006, 0.023, 0.01]);
+    oval(
+      group,
+      material("#a96d51"),
+      [side * 0.157, 1.63, 0.0],
+      [0.006, 0.023, 0.01],
+    );
     // Natural small eyes, lid ridges and irises.
     oval(group, white, [side * 0.056, 1.68, 0.113], [0.031, 0.014, 0.012]);
     oval(group, iris, [side * 0.056, 1.68, 0.125], [0.009, 0.01, 0.003]);
@@ -180,7 +191,8 @@ function model(person, kit) {
   }
   oval(group, skin, [0, 1.644, 0.127], [0.018, 0.05, 0.016]);
   oval(group, skin, [0, 1.615, 0.149], [0.024, 0.017, 0.025]);
-  for (const side of [-1, 1]) oval(group, skin, [side * 0.02, 1.609, 0.135], [0.01, 0.01, 0.013]);
+  for (const side of [-1, 1])
+    oval(group, skin, [side * 0.02, 1.609, 0.135], [0.01, 0.01, 0.013]);
   line(
     group,
     lip,
@@ -294,7 +306,14 @@ function model(person, kit) {
       wrist = [side * 0.33 * body, 0.57, 0.035];
     rod(group, skin, shoulder, elbow, 0.054 * body, 0.045 * body);
     rod(group, skin, elbow, wrist, 0.045 * body, 0.029 * body);
-    rod(group, jersey, shoulder, [side * 0.271 * body, 1.065, 0], 0.079 * body, 0.064 * body);
+    rod(
+      group,
+      jersey,
+      shoulder,
+      [side * 0.271 * body, 1.065, 0],
+      0.079 * body,
+      0.064 * body,
+    );
     rod(
       group,
       trim,
@@ -303,7 +322,12 @@ function model(person, kit) {
       0.065 * body,
       0.064 * body,
     );
-    oval(group, skin, [side * 0.333 * body, 0.521, 0.036], [0.034, 0.057, 0.022]);
+    oval(
+      group,
+      skin,
+      [side * 0.333 * body, 0.521, 0.036],
+      [0.034, 0.057, 0.022],
+    );
     for (let finger = 0; finger < 4; finger++)
       rod(
         group,
@@ -342,7 +366,11 @@ function model(person, kit) {
   ctx.fillStyle = kit.primary === "#d8dee1" ? "#263544" : "#fff";
   ctx.font = "bold 180px Arial";
   ctx.textAlign = "center";
-  ctx.fillText("10", 256, 315);
+  ctx.fillText(
+    String(Math.max(1, Math.min(99, Number(person.number) || 10))),
+    256,
+    315,
+  );
   ctx.font = "bold 24px Arial";
   ctx.fillText("PRO LIFE", 256, 385);
   const texture = new T.CanvasTexture(canvas);
@@ -429,7 +457,11 @@ function mount(container, person, kit) {
   if (!container) return null;
   let renderer;
   try {
-    renderer = new T.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "low-power" });
+    renderer = new T.WebGLRenderer({
+      alpha: true,
+      antialias: true,
+      powerPreference: "low-power",
+    });
   } catch {
     container.dataset.mode = "fallback";
     return null;
@@ -478,7 +510,9 @@ function mount(container, person, kit) {
   function disposeModel(obj) {
     obj.traverse((mesh) => {
       mesh.geometry?.dispose();
-      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      const mats = Array.isArray(mesh.material)
+        ? mesh.material
+        : [mesh.material];
       for (const mat of mats) {
         mat?.map?.dispose();
         mat?.dispose();
@@ -501,7 +535,8 @@ function mount(container, person, kit) {
   renderer.domElement.addEventListener("pointermove", move);
   renderer.domElement.addEventListener("pointerup", up);
   renderer.domElement.addEventListener("pointercancel", up);
-  const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
+  const observer =
+    typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
   observer?.observe(container);
   resize();
   const lost = (e) => {

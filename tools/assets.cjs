@@ -2,6 +2,8 @@
 const files = [
   "index.html",
   "src/domain/character.js",
+  "src/domain/world2026.js",
+  "src/domain/career.js",
   "src/ui/avatar3d.js",
   "src/ui/charts.js",
   "src/domain/engine.js",

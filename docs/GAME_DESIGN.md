@@ -1,3 +1,5 @@
+> Documento original da v0.1. Para as regras vigentes, consulte [Atualização 0.3](ATUALIZACAO_0.3.md).
+
 # Design da versão 0.1
 
 ## Experiência entregável

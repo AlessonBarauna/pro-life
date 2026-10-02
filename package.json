@@ -1,12 +1,12 @@
 {
   "name": "pro-life-football-career",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Offline football career simulation; no runtime dependencies",
   "scripts": {
-    "test": "node --test tests/engine.test.cjs tests/character.test.cjs tests/tooling.test.cjs",
+    "test": "node --test tests/engine.test.cjs tests/character.test.cjs tests/tooling.test.cjs tests/career.test.cjs",
     "test:ui": "node tests/ui.test.cjs",
-    "check": "node --check src/domain/engine.js && node --check src/application/game.js && node --check src/infrastructure/save.js && node --check src/ui/app.js && node --check src/ui/update.js && node --check tools/dev-server.cjs && node --check tools/build.cjs && node --check src/domain/character.js && node --check src/ui/charts.js",
+    "check": "node --check src/domain/engine.js && node --check src/application/game.js && node --check src/infrastructure/save.js && node --check src/ui/app.js && node --check src/ui/update.js && node --check tools/dev-server.cjs && node --check tools/build.cjs && node --check src/domain/character.js && node --check src/ui/charts.js && node --check src/domain/career.js && node --check src/domain/world2026.js",
     "dev": "node tools/dev-server.cjs",
     "build": "npm run avatar && node tools/build.cjs",
     "avatar": "node tools/bundle-avatar.cjs"

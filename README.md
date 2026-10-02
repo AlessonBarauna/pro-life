@@ -1,13 +1,22 @@
 # PRO LIFE — Football Career
 
 Simulador local de carreira no futebol, em português, com jogador e treinador,
-universo fictício e partidas probabilísticas. Código e ferramentas v0.2. Saves versão 1 permanecem compatíveis.
+base brasileira de clubes e atletas de 2026 e partidas probabilísticas. Código e ferramentas v0.3. Saves versão 1 permanecem compatíveis.
+
+## Atualização 0.3
+
+Tema escuro, visão geral detalhada, evolução por período, Séries A/B, janelas,
+entrevistas com consequências, bens pessoais e feed de acontecimentos simulados.
+Leia [regras, fontes, migração e testes](docs/ATUALIZACAO_0.3.md).
+Carreiras antigas preservam a liga; a migração para o Brasil é opcional na virada.
 
 ## Jogar
+
 Abra `index.html` ou `ABRIR_PRO_LIFE.bat`. Não precisa instalar nada para jogar
 a versão offline. Exporte seu save antes de mudar de endereço/navegador.
 
 ## Editar com atualização automática
+
 Instale Node.js LTS pelo site oficial https://nodejs.org/en/download.
 Na pasta deste projeto:
 
@@ -16,10 +25,11 @@ npm run dev
 ```
 
 Abra http://127.0.0.1:5173 e mantenha o terminal aberto. Salvar um arquivo do jogo
-recarrega a prévia. Não precisa executar `npm install` para a prévia nem o build.
+recarrega a prévia. Não precisa executar `npm install` para a prévia. Para recompilar o avatar e gerar build, execute `npm ci --ignore-scripts` primeiro.
 No Windows, também pode usar `DESENVOLVER_PRO_LIFE.bat`.
 
 ## GitHub e publicação
+
 Siga `COMECE_AQUI_GITHUB.md`. O workflow em `.github/workflows/pages.yml` testa
 mudanças, cria `dist` e publica no GitHub Pages a cada push na branch `main`.
 Configure no repositório Settings > Pages > Source: GitHub Actions.
@@ -56,6 +66,7 @@ O `.gitignore` exclui saves exportados, dependências, builds, ZIPs e `.env`.
 Não coloque dados pessoais em arquivos de código versionados.
 
 ## Saves
+
 Offline, prévia local e GitHub Pages são endereços diferentes: cada um tem seu
 próprio armazenamento no navegador. Exporte/importe JSON para levar a carreira.
 O save não é enviado ao GitHub nem sincronizado entre computadores. Mantenha o
@@ -64,6 +75,7 @@ endereço local fixo e o schema versão 1 até implementar migrações.
 Código sob MIT. Retratos SVG originais; clubes e atletas fictícios.
 
 ## Atualização 0.2
+
 Personagem 3D procedural, aparência editável, uniforme por clube, 16 comemorações,
 radar de atributos e histórico semanal de evolução. Interface reformulada.
 Leia docs/ATUALIZACAO_0.2.md para limites do 3D, migração de saves e testes.

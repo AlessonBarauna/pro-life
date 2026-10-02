@@ -2,7 +2,14 @@
 (function (root) {
   "use strict";
   const Character =
-    root.ProLifeCharacter || (typeof require === "function" ? require("./character.js") : null);
+    root.ProLifeCharacter ||
+    (typeof require === "function" ? require("./character.js") : null);
+  const Career =
+    root.ProLifeCareer ||
+    (typeof require === "function" ? require("./career.js") : null);
+  const World =
+    root.ProLifeWorld ||
+    (typeof require === "function" ? require("./world2026.js") : null);
   const VERSION = 1,
     clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   class Random {
@@ -113,20 +120,32 @@
   function create(config, seed = Date.now()) {
     const rng = new Random(seed),
       mode = config.mode === "coach" ? "coach" : "player";
-    const clubs = teams.map((t, i) => {
-      let roster = Array.from({ length: 22 }, (_, j) =>
-        player(
-          rng,
-          "p" + i + "_" + j,
-          t[3],
-          j < 2 ? "GOL" : j < 9 ? "DEF" : j < 16 ? "MEI" : "ATA",
-        ),
-      );
+    const real = config.world !== "legacy";
+    const definitions = real ? World.clubs : teams;
+    const clubs = definitions.map((t, i) => {
+      let roster = real
+        ? t.players.map((r) => ({
+            ...player(rng, r.id, t.level, r.pos),
+            name: r.name,
+            age: r.age,
+            number: r.number,
+            nationality: r.nationality,
+            real: true,
+          }))
+        : Array.from({ length: 22 }, (_, j) =>
+            player(
+              rng,
+              "p" + i + "_" + j,
+              t[3],
+              j < 2 ? "GOL" : j < 9 ? "DEF" : j < 16 ? "MEI" : "ATA",
+            ),
+          );
       return {
         id: "c" + i,
-        name: t[0],
-        city: t[1],
-        color: t[2],
+        name: real ? t.name : t[0],
+        city: real ? t.city : t[1],
+        color: real ? t.color : t[2],
+        leagueId: real ? t.leagueId : "horizonte",
         roster,
         lineup: roster
           .filter((p) => p.pos === "GOL")
@@ -138,15 +157,17 @@
           )
           .map((p) => p.id),
         tactic: "balanced",
-        budget: 900000 + i * 200000,
-        structure: 45 + i * 5,
+        budget: real ? t.level * 200000 : 900000 + i * 200000,
+        structure: real ? t.level : 45 + i * 5,
         stats: { points: 0, played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 },
       };
     });
     const profile = config.profile || "realistic",
       base = profile === "prodigy" ? 54 : profile === "promise" ? 46 : 40;
     const a = {};
-    attrs.forEach((k) => (a[k] = base + clamp(Number(config.points?.[k]) || 0, 0, 20)));
+    attrs.forEach(
+      (k) => (a[k] = base + clamp(Number(config.points?.[k]) || 0, 0, 20)),
+    );
     const points = attrs.reduce((n, k) => n + a[k] - base, 0);
     if (points > 30) throw Error("Distribua no máximo 30 pontos.");
     const person = {
@@ -161,7 +182,9 @@
         mode === "coach" ? 25 : 14,
         mode === "coach" ? 65 : 35,
       ),
-      pos: ["GOL", "DEF", "MEI", "ATA"].includes(config.pos) ? config.pos : "MEI",
+      pos: ["GOL", "DEF", "MEI", "ATA"].includes(config.pos)
+        ? config.pos
+        : "MEI",
       attrs: a,
       condition: 100,
       morale: 70,
@@ -185,7 +208,27 @@
       day: 0,
       round: 0,
       clubs,
-      fixtures: schedule(clubs.map((c) => c.id)),
+      world: real ? "brazil2026" : "legacy",
+      leagues: real
+        ? [
+            { id: "serieA", name: "Brasileirão Série A" },
+            { id: "serieB", name: "Brasileirão Série B" },
+          ]
+        : [{ id: "horizonte", name: "Liga Horizonte" }],
+      calendarDays: real
+        ? World.roundDays.slice()
+        : Array.from({ length: 14 }, (_, i) => 7 + i * 21),
+      fixtures: real
+        ? World.serieAFixtures.map((r, i) =>
+            r
+              .map((p) => p.slice())
+              .concat(
+                schedule(
+                  clubs.filter((c) => c.leagueId === "serieB").map((c) => c.id),
+                )[i],
+              ),
+          )
+        : schedule(clubs.map((c) => c.id)),
       person,
       clubId: null,
       training: "balanced",
@@ -204,10 +247,18 @@
       offers: [],
       history: [],
       decision: null,
-      development: [{ day: 0, season: 2026, overall: overall(person), attrs: { ...person.attrs } }],
+      development: [
+        {
+          day: 0,
+          season: 2026,
+          overall: overall(person),
+          attrs: { ...person.attrs },
+        },
+      ],
       trainingProgress: 0,
       seasonGoals: 0,
     };
+    Career.init(s);
     let candidates = clubs.filter((c) => mode === "coach" || c.structure < 70);
     s.offers = candidates.slice(0, 3).map((c, i) => ({
       clubId: c.id,
@@ -227,6 +278,14 @@
       "Sua história começa",
       "Analise estrutura, concorrência e salário antes de escolher seu clube.",
     );
+    Career.post(
+      s,
+      "Carreira",
+      "Sua carreira",
+      "Sua história começa",
+      s.person.name +
+        " entra no futebol. Clubes e atletas usam a base 2026; todos os acontecimentos desta carreira são simulados.",
+    );
     return s;
   }
   function club(s, id = s.clubId) {
@@ -234,9 +293,15 @@
   }
   function log(s, title, body) {
     s.news.unshift({ day: s.day, season: s.season, title, body });
-    s.news = s.news.slice(0, 100);
+    s.news = s.news.slice(0, 160);
+    Career.post(s, "Carreira", "Diário da carreira", title, body);
   }
   function join(s, id, salary) {
+    if (!Career.windowStatus(s).open)
+      throw Error(
+        "Janela de transferências fechada. Aguarde a próxima abertura.",
+      );
+    const previous = club(s);
     const next = club(s, id);
     if (!next) throw Error("Clube inválido.");
     if (s.mode === "player") {
@@ -251,6 +316,7 @@
     s.contract = 365;
     s.offers = [];
     s.board = 65;
+    Career.transfer(s, s.person, previous, next, 0);
     log(
       s,
       "Contrato assinado",
@@ -264,7 +330,9 @@
   }
   function selected(c) {
     const active = c.roster.filter((p) => !p.injury && p.condition > 35);
-    let chosen = c.lineup.map((id) => active.find((p) => p.id === id)).filter(Boolean);
+    let chosen = c.lineup
+      .map((id) => active.find((p) => p.id === id))
+      .filter(Boolean);
     if (!chosen.some((p) => p.pos === "GOL")) {
       chosen.unshift(active.find((p) => p.pos === "GOL"));
     }
@@ -279,7 +347,10 @@
     return (
       ps.reduce(
         (n, p) =>
-          n + p.attrs[key] * (0.55 + (0.45 * p.condition) / 100) * (0.85 + (0.15 * p.morale) / 100),
+          n +
+          p.attrs[key] *
+            (0.55 + (0.45 * p.condition) / 100) *
+            (0.85 + (0.15 * p.morale) / 100),
         0,
       ) / ps.length
     );
@@ -313,7 +384,10 @@
           (clubs[i].tactic === "possession" ? 5 : 0) -
           fatigue[i],
       );
-      const i = rng.next() < clamp(0.5 + (control[0] - control[1]) / 280, 0.34, 0.66) ? 0 : 1,
+      const i =
+          rng.next() < clamp(0.5 + (control[0] - control[1]) / 280, 0.34, 0.66)
+            ? 0
+            : 1,
         j = 1 - i,
         ps = squads[i],
         opp = squads[j];
@@ -322,29 +396,49 @@
       const attack =
         quality(ps, "pace") * 0.4 +
         quality(ps, "pass") * 0.6 +
-        (clubs[i].tactic === "attack" ? 7 : clubs[i].tactic === "counter" ? 2 : 0);
+        (clubs[i].tactic === "attack"
+          ? 7
+          : clubs[i].tactic === "counter"
+            ? 2
+            : 0);
       const defense =
         quality(opp, "defense") * 0.65 +
         quality(opp, "strength") * 0.35 +
-        (clubs[j].tactic === "counter" ? 8 : clubs[j].tactic === "attack" ? -6 : 0);
+        (clubs[j].tactic === "counter"
+          ? 8
+          : clubs[j].tactic === "attack"
+            ? -6
+            : 0);
       if (rng.next() < clamp(0.2 + (attack - defense) / 650, 0.12, 0.29)) {
         m.shots[i]++;
         const shooter = rng.pick(
-          ps.filter((p) => p.pos !== "GOL").length ? ps.filter((p) => p.pos !== "GOL") : ps,
+          ps.filter((p) => p.pos !== "GOL").length
+            ? ps.filter((p) => p.pos !== "GOL")
+            : ps,
         );
         if (!shooter) continue;
-        const shotXg = clamp(0.045 + rng.next() * 0.18 + (attack - defense) / 1600, 0.025, 0.32);
+        const shotXg = clamp(
+          0.045 + rng.next() * 0.18 + (attack - defense) / 1600,
+          0.025,
+          0.32,
+        );
         m.xg[i] += shotXg;
-        const finish = shooter.attrs.finish * (0.7 + (0.3 * shooter.condition) / 100),
+        const finish =
+            shooter.attrs.finish * (0.7 + (0.3 * shooter.condition) / 100),
           keeper = opp.find((p) => p.pos === "GOL");
         const onTarget = rng.next() < clamp(0.28 + finish / 220, 0.3, 0.72);
         if (onTarget) m.target[i]++;
         const conversion = clamp(
-          shotXg * (0.9 + finish / 500) * (1 - ((keeper?.attrs.defense || 50) - 50) / 500),
+          shotXg *
+            (0.9 + finish / 500) *
+            (1 - ((keeper?.attrs.defense || 50) - 50) / 500),
           0.015,
           0.6,
         );
-        if (onTarget && rng.next() < clamp(conversion / (0.28 + finish / 220), 0.025, 0.85)) {
+        if (
+          onTarget &&
+          rng.next() < clamp(conversion / (0.28 + finish / 220), 0.025, 0.85)
+        ) {
           if (i === 0) m.hg++;
           else m.ag++;
           shooter.goals++;
@@ -390,7 +484,9 @@
           side: i,
           text: p.name + " sofreu uma lesão (" + p.injury + " dias).",
         });
-        const sub = clubs[i].roster.find((x) => !ps.includes(x) && !x.injury && x.pos === p.pos);
+        const sub = clubs[i].roster.find(
+          (x) => !ps.includes(x) && !x.injury && x.pos === p.pos,
+        );
         if (sub) {
           ps[ps.indexOf(p)] = sub;
           m.participants[i].push(sub.id);
@@ -405,7 +501,9 @@
           6 +
             (i === 0 ? m.hg - m.ag : m.ag - m.hg) * 0.2 +
             rng.next() * 0.8 +
-            m.events.filter((e) => e.playerId === p.id && e.type === "goal").length * 0.8,
+            m.events.filter((e) => e.playerId === p.id && e.type === "goal")
+              .length *
+              0.8,
           3,
           10,
         ).toFixed(1);
@@ -430,8 +528,9 @@
       " defesas importantes registradas.";
     return m;
   }
-  function table(s) {
+  function table(s, leagueId = club(s)?.leagueId || s.leagues?.[0]?.id) {
     return s.clubs
+      .filter((c) => !leagueId || c.leagueId === leagueId)
       .slice()
       .sort(
         (a, b) =>
@@ -451,7 +550,9 @@
         c.lineup = c.roster
           .filter((p) => !p.injury)
           .slice()
-          .sort((a, b) => overall(b) + b.morale / 20 - overall(a) - a.morale / 20)
+          .sort(
+            (a, b) => overall(b) + b.morale / 20 - overall(a) - a.morale / 20,
+          )
           .slice(0, 10)
           .map((p) => p.id);
         let g = c.roster.find((p) => p.pos === "GOL" && !p.injury);
@@ -461,7 +562,8 @@
           !hero.injury &&
           hero.condition > 65 &&
           !c.lineup.includes("hero") &&
-          rng.next() < clamp(0.18 + (overall(hero) - c.structure) / 140, 0.08, 0.45)
+          rng.next() <
+            clamp(0.18 + (overall(hero) - c.structure) / 140, 0.08, 0.45)
         ) {
           const replace = c.lineup.findIndex(
             (id) => c.roster.find((p) => p.id === id)?.pos === hero.pos,
@@ -473,6 +575,7 @@
       m.date = s.day;
       m.round = s.round + 1;
       m.season = s.season;
+      m.leagueId = hc.leagueId;
       s.matches.unshift(m);
       [hc, ac].forEach((c, i) => {
         let gf = i ? m.ag : m.hg,
@@ -489,14 +592,28 @@
           t.points++;
         } else t.l++;
         c.roster.forEach(
-          (p) => (p.morale = clamp(p.morale + (gf > ga ? 4 : gf < ga ? -4 : 0), 15, 100)),
+          (p) =>
+            (p.morale = clamp(
+              p.morale + (gf > ga ? 4 : gf < ga ? -4 : 0),
+              15,
+              100,
+            )),
         );
       });
       if (h === s.clubId || a === s.clubId) {
+        Career.match(s, m);
         const own = h === s.clubId ? m.hg : m.ag,
           other = h === s.clubId ? m.ag : m.hg;
-        s.board = clamp(s.board + (own > other ? 5 : own < other ? -5 : 0), 0, 100);
-        s.reputation = clamp(s.reputation + (own > other ? 1 : own < other ? -0.4 : 0.2), 0, 100);
+        s.board = clamp(
+          s.board + (own > other ? 5 : own < other ? -5 : 0),
+          0,
+          100,
+        );
+        s.reputation = clamp(
+          s.reputation + (own > other ? 1 : own < other ? -0.4 : 0.2),
+          0,
+          100,
+        );
         s.fans += own > other ? 60 : 10;
         log(s, hc.name + " " + m.hg + " × " + m.ag + " " + ac.name, m.summary);
         if (s.mode === "player") {
@@ -511,21 +628,45 @@
       }
     }
     s.round++;
-    s.matches = s.matches.slice(0, 140);
+    s.matches = s.matches.slice(0, 800);
   }
   function nextFixtureDay(s) {
-    return (s.season - 2026) * 365 + 7 + s.round * 21;
+    return (
+      (s.season - 2026) * 365 + (s.calendarDays?.[s.round] ?? 7 + s.round * 21)
+    );
   }
   function newSeason(s, rng) {
-    let order = table(s);
-    s.history.unshift({
-      season: s.season,
-      champion: order[0].name,
-      position: s.clubId ? order.findIndex((c) => c.id === s.clubId) + 1 : null,
-      mode: s.mode,
-      goals: s.person.goals,
-    });
-    log(s, "Fim da temporada", order[0].name + " é campeão da Liga Horizonte.");
+    for (const league of s.leagues || [
+      { id: undefined, name: "Liga Horizonte" },
+    ]) {
+      const order = table(s, league.id);
+      s.history.unshift({
+        season: s.season,
+        leagueId: league.id,
+        league: league.name,
+        champion: order[0].name,
+        position:
+          s.clubId && club(s)?.leagueId === league.id
+            ? order.findIndex((c) => c.id === s.clubId) + 1
+            : null,
+        mode: s.mode,
+        goals: s.person.goals,
+        minutes: s.person.minutes,
+      });
+      log(
+        s,
+        "Fim da temporada",
+        order[0].name +
+          " é campeão de " +
+          league.name +
+          ". " +
+          order[0].stats.points +
+          " pontos e " +
+          order[0].stats.w +
+          " vitórias.",
+      );
+    }
+    s.history = s.history.slice(0, 300);
     s.season++;
     s.round = 0;
     s.person.age++;
@@ -539,12 +680,16 @@
         if (p.age > 36 && p.id !== "hero") {
           const n = player(rng, p.id, clamp(overall(p) - 8, 35, 75), p.pos);
           n.age = 17;
+          n.real = false;
+          n.number = p.number || 0;
+          n.nationality = "Brasil";
           Object.assign(p, n);
         }
         attrs.forEach(
           (k) =>
             (p.attrs[k] = clamp(
-              p.attrs[k] + (p.age < 23 ? rng.int(0, 2) : p.age > 31 ? -rng.int(0, 2) : 0),
+              p.attrs[k] +
+                (p.age < 23 ? rng.int(0, 2) : p.age > 31 ? -rng.int(0, 2) : 0),
               20,
               95,
             )),
@@ -552,7 +697,15 @@
       }
     }
     s.person.goals = 0;
-    s.fixtures = schedule(s.clubs.map((c) => c.id));
+    if (s.world === "brazil2026") {
+      const b = schedule(
+        s.clubs.filter((c) => c.leagueId === "serieB").map((c) => c.id),
+      );
+      s.fixtures = World.serieAFixtures.map((r, i) =>
+        r.map((p) => p.slice()).concat(b[i]),
+      );
+    } else s.fixtures = schedule(s.clubs.map((c) => c.id));
+    if (s.upgradeClub) migrateWorld(s, s.upgradeClub, rng);
     if (s.person.age >= 35 && s.mode === "player")
       log(
         s,
@@ -567,15 +720,25 @@
       season: s.season,
       overall: overall(s.person),
       attrs: { ...s.person.attrs },
+      condition: s.person.condition,
+      morale: s.person.morale,
+      reputation: s.reputation,
+      minutes: s.person.minutes,
+      goals: s.person.goals,
+      training: s.training,
+      intensity: s.intensity,
     };
-    if (s.development.at(-1)?.day === s.day) s.development[s.development.length - 1] = entry;
+    if (s.development.at(-1)?.day === s.day)
+      s.development[s.development.length - 1] = entry;
     else s.development.push(entry);
     s.development = s.development.slice(-260);
   }
   function advance(s, days = 1) {
+    Career.init(s);
     const rng = new Random(s.rng);
     for (let d = 0; d < clamp(days, 1, 30); d++) {
       s.day++;
+      Career.daily(s);
       s.contract = Math.max(0, s.contract - 1);
       s.offers = s.offers.filter((o) => o.expires >= s.day);
       for (const c of s.clubs)
@@ -592,9 +755,11 @@
         s.person.condition = clamp(s.person.condition + 5, 0, 100);
       }
       if (!s.person.injury && s.mode === "player") {
-        s.trainingProgress += s.intensity === "hard" ? 1.7 : s.intensity === "rest" ? 0.15 : 1;
+        s.trainingProgress +=
+          s.intensity === "hard" ? 1.7 : s.intensity === "rest" ? 0.15 : 1;
         s.person.condition = clamp(
-          s.person.condition - (s.intensity === "hard" ? 5 : s.intensity === "rest" ? 0 : 2),
+          s.person.condition -
+            (s.intensity === "hard" ? 5 : s.intensity === "rest" ? 0 : 2),
           0,
           100,
         );
@@ -608,7 +773,12 @@
             rng.next() < 0.3 + s.person.discipline / 200
           ) {
             s.person.attrs[k] = clamp(s.person.attrs[k] + 1, 20, 95);
-            log(s, "Evolução no treino", labels[k] + " melhorou com a rotina de trabalho.");
+            recordDevelopment(s);
+            log(
+              s,
+              "Evolução no treino",
+              labels[k] + " melhorou com a rotina de trabalho.",
+            );
           }
         }
         if (s.intensity === "hard" && rng.next() < 0.015) {
@@ -616,18 +786,30 @@
           log(
             s,
             "Carga elevada",
-            "Você sofreu uma lesão no treino. Recuperação estimada: " + s.person.injury + " dias.",
+            "Você sofreu uma lesão no treino. Recuperação estimada: " +
+              s.person.injury +
+              " dias.",
           );
         }
       }
-      if (s.day === nextFixtureDay(s) && s.round < s.fixtures.length) playRound(s, rng);
+      if (s.day === nextFixtureDay(s) && s.round < s.fixtures.length)
+        playRound(s, rng);
       if (s.day % 30 === 0) {
-        s.wallet += s.clubId ? s.salary : 0;
-        s.wallet -= s.mode === "coach" ? 2000 : 650;
+        if (s.clubId) Career.transaction(s, s.salary, "Salário mensal");
+        Career.transaction(
+          s,
+          -(s.mode === "coach" ? 2000 : 650),
+          "Despesas pessoais",
+        );
+        Career.monthly(s);
         const c = club(s);
         if (c) {
           c.budget -= s.salary + 22000;
-          log(s, "Fechamento financeiro", "Salário e despesas do mês foram contabilizados.");
+          log(
+            s,
+            "Fechamento financeiro",
+            "Salário e despesas do mês foram contabilizados.",
+          );
         }
         if (s.mode === "coach" && s.board <= 15) {
           s.clubId = null;
@@ -671,7 +853,7 @@
         ]);
         log(s, "Decisão pendente", s.decision.title);
       }
-      if (s.day % 28 === 0) {
+      if (s.day % 28 === 0 && Career.windowStatus(s).open) {
         let candidates = s.clubs
           .filter((c) => c.id !== s.clubId)
           .sort(
@@ -681,19 +863,30 @@
           );
         s.offers = candidates.slice(0, 3).map((c, i) => ({
           clubId: c.id,
-          salary: Math.round((s.mode === "coach" ? 7000 : 1000) + s.reputation * 60 + i * 250),
-          role: s.mode === "coach" ? "Projeto de reconstrução" : "Contrato com disputa por posição",
+          salary: Math.round(
+            (s.mode === "coach" ? 7000 : 1000) + s.reputation * 60 + i * 250,
+          ),
+          role:
+            s.mode === "coach"
+              ? "Projeto de reconstrução"
+              : "Contrato com disputa por posição",
           expires: s.day + 21,
         }));
+        Career.world(s, rng, API);
         log(
           s,
           "Mercado de trabalho",
           "Três clubes demonstram interesse. As propostas expiram em 21 dias.",
         );
       }
+      if (s.day % 14 === 0) Career.rumor(s, rng);
       if (s.day % 365 === 0) newSeason(s, rng);
       if (s.day % 7 === 0 || s.day % 365 === 0) recordDevelopment(s);
-      s.stress = clamp(s.stress + (s.intensity === "hard" ? 0.3 : -0.1), 0, 100);
+      s.stress = clamp(
+        s.stress + (s.intensity === "hard" ? 0.3 : -0.1),
+        0,
+        100,
+      );
     }
     s.rng = rng.state;
     return s;
@@ -721,10 +914,15 @@
     }
     if (choice === "hire") {
       if (s.wallet < 900) throw Error("Saldo insuficiente.");
-      s.wallet -= 900;
+      Career.transaction(s, -900, "Assessoria de carreira");
       s.reputation = clamp(s.reputation + 4, 0, 100);
     }
-    log(s, "Escolha registrada", s.decision.choices.find((c) => c[0] === choice)[1]);
+    if (s.decision.id === "media") Career.interview(s, choice);
+    log(
+      s,
+      "Escolha registrada",
+      s.decision.choices.find((c) => c[0] === choice)[1],
+    );
     s.decision = null;
   }
   function retire(s) {
@@ -755,7 +953,30 @@
       "Seu patrimônio, reputação e história permanecem. Escolha seu primeiro projeto como treinador.",
     );
   }
+  function migrateWorld(s, id, rng) {
+    const fresh = create({ world: "brazil2026", mode: s.mode }, rng.state),
+      next = fresh.clubs.find((c) => c.id === id);
+    if (!next) throw Error("Clube de destino inválido.");
+    s.clubs = fresh.clubs;
+    s.leagues = fresh.leagues;
+    s.world = fresh.world;
+    s.calendarDays = fresh.calendarDays;
+    s.fixtures = fresh.fixtures;
+    s.matches = [];
+    s.clubId = null;
+    s.upgradeClub = null;
+    join(s, id, s.salary);
+    log(
+      s,
+      "Novo universo brasileiro",
+      "Sua carreira e patrimônio foram preservados. A temporada agora usa as Séries A e B da base 2026. Os relatórios da antiga liga ficam resumidos no diário e no histórico.",
+    );
+  }
   const API = {
+    Career,
+    World,
+    schedule,
+    migrateWorld,
     VERSION,
     Random,
     create,

@@ -4,7 +4,7 @@ const D = require("../src/domain/engine.js"),
   A = require("../src/application/game.js"),
   S = require("../src/infrastructure/save.js");
 test("calendar: 14 rounds, every ordered pair exactly once", () => {
-  const s = D.create({}, 9),
+  const s = D.create({ world: "legacy" }, 9),
     seen = new Set();
   assert.equal(s.fixtures.length, 14);
   s.fixtures.forEach((r) => {
@@ -18,12 +18,17 @@ test("calendar: 14 rounds, every ordered pair exactly once", () => {
   assert.equal(seen.size, 56);
 });
 test("initial points are capped and modes are valid", () => {
-  assert.throws(() => D.create({ points: { pace: 20, finish: 20 } }));
-  assert.equal(D.create({ mode: "coach", age: 16 }, 2).person.age, 25);
+  assert.throws(() =>
+    D.create({ world: "legacy", points: { pace: 20, finish: 20 } }),
+  );
+  assert.equal(
+    D.create({ world: "legacy", mode: "coach", age: 16 }, 2).person.age,
+    25,
+  );
 });
 test("same seed/actions yield identical seasons; save restores hero reference", () => {
-  let a = D.create({ clubId: "c0" }, 44),
-    b = D.create({ clubId: "c0" }, 44);
+  let a = D.create({ world: "legacy", clubId: "c0" }, 44),
+    b = D.create({ world: "legacy", clubId: "c0" }, 44);
   for (let i = 0; i < 365; i++) {
     D.advance(a, 1);
     D.advance(b, 1);
@@ -39,21 +44,28 @@ test("same seed/actions yield identical seasons; save restores hero reference", 
   S.validate(restored);
 });
 test("coach survives multiple seasons and world remains coherent", () => {
-  const s = D.create({ mode: "coach", clubId: "c3" }, 71);
+  const s = D.create({ world: "legacy", mode: "coach", clubId: "c3" }, 71);
   for (let i = 0; i < 2190; i++) {
     D.advance(s, 1);
     S.parse(JSON.stringify(s));
-    for (const c of s.clubs) assert.equal(c.stats.played, c.stats.w + c.stats.d + c.stats.l);
+    for (const c of s.clubs)
+      assert.equal(c.stats.played, c.stats.w + c.stats.d + c.stats.l);
   }
   assert.equal(s.history.length, 6);
   assert.equal(s.person.age, 41);
 });
 test("scores come from goal events, shots/target/xG are consistent", () => {
   for (let i = 1; i <= 100; i++) {
-    const s = D.create({}, i),
+    const s = D.create({ world: "legacy" }, i),
       m = D.simulate(s.clubs[0], s.clubs[3], new D.Random(i + 300));
-    assert.equal(m.hg, m.events.filter((e) => e.type === "goal" && e.side === 0).length);
-    assert.equal(m.ag, m.events.filter((e) => e.type === "goal" && e.side === 1).length);
+    assert.equal(
+      m.hg,
+      m.events.filter((e) => e.type === "goal" && e.side === 0).length,
+    );
+    assert.equal(
+      m.ag,
+      m.events.filter((e) => e.type === "goal" && e.side === 1).length,
+    );
     for (let j = 0; j < 2; j++) {
       assert.ok(m.target[j] <= m.shots[j]);
       assert.ok((j ? m.ag : m.hg) <= m.target[j]);
@@ -68,7 +80,7 @@ test("stronger team is favored but upsets occur in 1000 matches", () => {
     draws = 0,
     goals = 0;
   for (let i = 1; i <= 1000; i++) {
-    const s = D.create({}, i),
+    const s = D.create({ world: "legacy" }, i),
       m = D.simulate(s.clubs[3], s.clubs[0], new D.Random(i * 977));
     goals += m.hg + m.ag;
     if (m.hg > m.ag) wins++;
@@ -90,7 +102,7 @@ test("stronger team is favored but upsets occur in 1000 matches", () => {
   assert.ok(goals / 1000 > 1.5 && goals / 1000 < 4.5);
 });
 test("recruitment moves one player and money is conserved", () => {
-  const s = D.create({ mode: "coach", clubId: "c3" }, 2),
+  const s = D.create({ world: "legacy", mode: "coach", clubId: "c3" }, 2),
     own = D.club(s),
     source = s.clubs[0],
     p = source.roster[5];
@@ -102,7 +114,7 @@ test("recruitment moves one player and money is conserved", () => {
   S.validate(s);
 });
 test("rejects invalid saves and unavailable lineup/actions", () => {
-  const s = D.create({ mode: "coach", clubId: "c0" }, 1);
+  const s = D.create({ world: "legacy", mode: "coach", clubId: "c0" }, 1);
   assert.throws(() => A.execute(s, "lineup", { ids: [] }));
   assert.throws(() => S.parse('{"version":1}'));
   const bad = JSON.parse(JSON.stringify(s));
@@ -114,7 +126,7 @@ test("rejects invalid saves and unavailable lineup/actions", () => {
   assert.throws(() => A.execute(s, "join", { id: "missing" }));
 });
 test("decisions cost money and retirement preserves wealth/history", () => {
-  const s = D.create({ age: 30, clubId: "c0" }, 4);
+  const s = D.create({ world: "legacy", age: 30, clubId: "c0" }, 4);
   D.advance(s, 21);
   assert.ok(s.decision);
   const choice = s.decision.choices[0][0];

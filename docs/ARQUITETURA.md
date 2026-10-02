@@ -76,3 +76,15 @@ pessoais. Esta consulta é exceção à execução puramente offline descrita na
 O índice offline original não carrega esse verificador. Nenhuma lógica da partida
 foi modificada. GitHub Actions executa testes e só publica na main; PRs não têm
 permissão de deploy. Dados do usuário permanecem no navegador, por origem.
+
+## Atualização 0.3
+`world2026.js` é um snapshot factual offline, isolado das regras. `career.js`
+contém janelas, bens, extrato, imprensa, promessas e feed. `engine.js` executa
+as regras nas datas do calendário. `game.js` valida comandos antes de mutações.
+O novo universo tem 40 clubes, 1.280 NPCs e até um protagonista, com 20 partidas
+por rodada. Retenção: 800 relatórios, 160 notícias/posts, 120 movimentos e 260
+snapshots. Saves antigos são validados e adaptados sem substituir o universo
+atual; a migração opcional ocorre na virada. Importação continua limitada a 3 MB.
+Dados numéricos, bens permitidos, ligas, datas e vínculos são validados.
+A UI não consulta dados esportivos externos nem determina efeitos de compras.
+Consulte ATUALIZACAO_0.3.md para as regras e limitações vigentes.

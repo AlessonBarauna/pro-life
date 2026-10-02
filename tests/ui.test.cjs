@@ -3,6 +3,8 @@ const { JSDOM } = require("jsdom"),
   assert = require("node:assert/strict");
 const base = require("node:path").resolve(__dirname, "..") + "/";
 const files = [
+  "src/domain/world2026.js",
+  "src/domain/career.js",
   "src/domain/character.js",
   "src/ui/charts.js",
   "src/domain/engine.js",
@@ -17,6 +19,7 @@ function make(mode) {
     }),
     w = dom.window;
   w.confirm = () => true;
+  w.scrollTo = () => {};
   w.URL.createObjectURL = () => "blob:test";
   w.URL.revokeObjectURL = () => {};
   files.forEach((f) => w.eval(fs.readFileSync(base + f, "utf8")));
@@ -24,7 +27,9 @@ function make(mode) {
   form.elements.mode.value = mode;
   form.elements.age.value = mode === "coach" ? "35" : "16";
   form.elements.seed.value = "44";
-  form.dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+  form.dispatchEvent(
+    new w.Event("submit", { bubbles: true, cancelable: true }),
+  );
   return dom;
 }
 function click(w, sel) {
@@ -72,13 +77,32 @@ for (const mode of ["player", "coach"]) {
     assert.equal(get(w).license, "B");
   }
   click(w, '[data-advance="7"]');
-  assert.equal(get(w).matches.length, 4);
+  assert.equal(get(w).matches.length, 0);
+  click(w, '[data-advance="30"]');
+  assert.ok(get(w).matches.length >= 20);
   click(w, '[data-page="matches"]');
   assert.ok(w.document.querySelector(".score"));
   for (let i = 0; i < 2; i++) click(w, '[data-advance="7"]');
   click(w, '[data-page="life"]');
   click(w, "[data-choice]");
   assert.equal(get(w).decision, null);
+  click(w, '[data-page="profile"]');
+  w.document.querySelector("#shirt-number").value = "27";
+  click(w, '[data-action="number"]');
+  assert.equal(get(w).extras.number, 27);
+  click(w, '[data-page="home"]');
+  const chart = w.document.querySelector("#chart-key");
+  chart.value = "all";
+  chart.dispatchEvent(new w.Event("change", { bubbles: true }));
+  assert.equal(w.document.querySelectorAll(".chart-legend span").length, 6);
+  click(w, '[data-page="league"]');
+  const league = w.document.querySelector("#league-key");
+  league.value = "serieB";
+  league.dispatchEvent(new w.Event("change", { bubbles: true }));
+  assert.equal(w.document.querySelectorAll("tbody tr").length, 20);
+  click(w, '[data-page="history"]');
+  click(w, "[data-like]");
+  assert.equal(get(w).extras.feed.filter((p) => p.liked).length, 1);
   click(w, '[data-page="save"]');
   let save = get(w);
   const snapshot = JSON.stringify(save);
@@ -100,7 +124,9 @@ w.localStorage.setItem(w.ProLifeSave.KEY, JSON.stringify(s));
 w.eval(fs.readFileSync(base + "src/ui/app.js", "utf8"));
 assert.equal(w.document.querySelectorAll("img").length, 0);
 assert.equal(w.hacked, undefined);
-s.history = [{ season: 2026, champion: "x", position: "<img>", goals: 1, mode: "player" }];
+s.history = [
+  { season: 2026, champion: "x", position: "<img>", goals: 1, mode: "player" },
+];
 assert.throws(() => w.ProLifeSave.parse(JSON.stringify(s)));
 dom.window.close();
 console.log("save injection and invalid history: passed");
@@ -122,10 +148,16 @@ console.log("save injection and invalid history: passed");
         url: "https://example.invalid/pro-life/",
         beforeParse(window) {
           window.fetch = async (url) => {
-            assert.ok(String(url).startsWith("https://example.invalid/pro-life/version.json"));
+            assert.ok(
+              String(url).startsWith(
+                "https://example.invalid/pro-life/version.json",
+              ),
+            );
             return {
               ok: true,
-              json: async () => ({ version: newer ? "b".repeat(64) : installed }),
+              json: async () => ({
+                version: newer ? "b".repeat(64) : installed,
+              }),
             };
           };
           window.setTimeout = (fn) => {
@@ -139,10 +171,16 @@ console.log("save injection and invalid history: passed");
     await new Promise((resolve) => setImmediate(resolve));
     const banner = updateDom.window.document.querySelector("#update-banner");
     assert.equal(Boolean(banner), newer);
-    if (newer) assert.equal(banner.querySelector("button").textContent, "Atualizar jogo");
+    if (newer)
+      assert.equal(
+        banner.querySelector("button").textContent,
+        "Atualizar jogo",
+      );
     updateDom.window.close();
   }
-  console.log("published update checker: same version silent, new version prompts update");
+  console.log(
+    "published update checker: same version silent, new version prompts update",
+  );
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;

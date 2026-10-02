@@ -10,10 +10,21 @@
     esc = (v) =>
       String(v ?? "").replace(
         /[&<>"']/g,
-        (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        (c) =>
+          ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+          })[c],
       ),
     money = (v) =>
-      v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+      v.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+        maximumFractionDigits: 0,
+      });
   const color = (v, f) => (/^#[a-fA-F0-9]{6}$/.test(v || "") ? v : f);
   function toast(t) {
     $("#toast").textContent = t;
@@ -23,13 +34,25 @@
   }
   const C = ProLifeCharacter,
     Charts = ProLifeCharts;
-  let chartKey = "overall";
+  const Career = D.Career;
+  let chartKey = "overall",
+    chartRange = "90",
+    leagueKey = "",
+    feedKey = "Todos";
+  const dayDate = (day) =>
+    new Date(
+      Date.UTC(2026, 0, state?.world === "legacy" ? 5 : 1) + day * 86400000,
+    ).toLocaleDateString("pt-BR", { timeZone: "UTC" });
+  const signed = (n) => (n > 0 ? "+" : "") + n;
+  const leagueName = (id) =>
+    state.leagues.find((l) => l.id === id)?.name || "Liga Horizonte";
   function avatar(p, team = !setup && state ? D.club(state) : null) {
+    p = { ...p, number: state && !setup ? Career.init(state).number : 10 };
     const a = C.normalize(p.appearance),
       kit = C.kit(team),
       skin = color(a.skin, "#bc8660"),
       hair = color(a.hairColor, "#241e1a");
-    return `<div class="avatar-stage" data-mode="fallback"><svg class="avatar-fallback" viewBox="0 0 260 350" role="img" aria-label="Retrato de corpo superior com braços e uniforme"><rect width="260" height="350" fill="#171b20"/><path d="M53 160Q43 174 32 284L48 292L76 185M207 160Q217 174 228 284L212 292L184 185" fill="${skin}"/><path d="M75 155Q130 136 185 155L205 195L189 205L174 178L179 312H81L86 178L71 205L55 195Z" fill="${kit.primary}"/><path d="M112 147v19q18 20 36 0v-19" fill="${skin}"/><ellipse cx="130" cy="99" rx="41" ry="59" fill="${skin}"/><path d="M102 100h15m26 0h15" stroke="${hair}" stroke-width="4"/><circle cx="112" cy="112" r="3" fill="${a.eyeColor}"/><circle cx="148" cy="112" r="3" fill="${a.eyeColor}"/><path d="M125 117v14h10M115 141q15 6 30 0" fill="none" stroke="#7d5040" stroke-width="2"/>${a.hair === "bald" ? "" : `<path d="M89 100V70Q92 34 130 35T171 70V98L159 65Q121 59 100 74V100" fill="${hair}"/>`}${a.beard === "none" ? "" : `<path d="M100 131Q100 163 130 166Q160 163 160 131L149 145Q130 157 111 145Z" fill="${hair}"/>`}${a.tattoo === "none" ? "" : `<g stroke="#222d35" fill="none" stroke-width="2.5">${["left", "both"].includes(a.tattoo) ? '<path d="M218 234l-9 9 8 10-10 10 8 8M217 244l-13 3M214 265l-10 5"/>' : ""}${["right", "both"].includes(a.tattoo) ? '<path d="M42 234l9 9-8 10 10 10-8 8M43 244l13 3M46 265l10 5"/>' : ""}</g>`}<path d="M112 168l18 13 18-13" stroke="${kit.secondary}" stroke-width="6" fill="none"/><text x="130" y="248" text-anchor="middle" fill="#fff" font-family="Arial" font-size="38" font-weight="bold">10</text></svg><span class="avatar-render-label">3D · ARRASTE PARA GIRAR</span><span class="avatar-fallback-label">Retrato 2D · 3D indisponível neste navegador</span></div>`;
+    return `<div class="avatar-stage" data-mode="fallback"><svg class="avatar-fallback" viewBox="0 0 260 350" role="img" aria-label="Retrato de corpo superior com braços e uniforme"><rect width="260" height="350" fill="#171b20"/><path d="M53 160Q43 174 32 284L48 292L76 185M207 160Q217 174 228 284L212 292L184 185" fill="${skin}"/><path d="M75 155Q130 136 185 155L205 195L189 205L174 178L179 312H81L86 178L71 205L55 195Z" fill="${kit.primary}"/><path d="M112 147v19q18 20 36 0v-19" fill="${skin}"/><ellipse cx="130" cy="99" rx="41" ry="59" fill="${skin}"/><path d="M102 100h15m26 0h15" stroke="${hair}" stroke-width="4"/><circle cx="112" cy="112" r="3" fill="${a.eyeColor}"/><circle cx="148" cy="112" r="3" fill="${a.eyeColor}"/><path d="M125 117v14h10M115 141q15 6 30 0" fill="none" stroke="#7d5040" stroke-width="2"/>${a.hair === "bald" ? "" : `<path d="M89 100V70Q92 34 130 35T171 70V98L159 65Q121 59 100 74V100" fill="${hair}"/>`}${a.beard === "none" ? "" : `<path d="M100 131Q100 163 130 166Q160 163 160 131L149 145Q130 157 111 145Z" fill="${hair}"/>`}${a.tattoo === "none" ? "" : `<g stroke="#222d35" fill="none" stroke-width="2.5">${["left", "both"].includes(a.tattoo) ? '<path d="M218 234l-9 9 8 10-10 10 8 8M217 244l-13 3M214 265l-10 5"/>' : ""}${["right", "both"].includes(a.tattoo) ? '<path d="M42 234l9 9-8 10 10 10-8 8M43 244l13 3M46 265l10 5"/>' : ""}</g>`}<path d="M112 168l18 13 18-13" stroke="${kit.secondary}" stroke-width="6" fill="none"/><text x="130" y="248" text-anchor="middle" fill="#fff" font-family="Arial" font-size="38" font-weight="bold">${p.number}</text></svg><span class="avatar-render-label">3D · ARRASTE PARA GIRAR</span><span class="avatar-fallback-label">Retrato 2D · 3D indisponível neste navegador</span></div>`;
   }
   function configFromForm() {
     const form = $("#creator");
@@ -37,12 +60,26 @@
     const f = new FormData(form),
       config = Object.fromEntries(f.entries());
     config.appearance = {};
-    ["skin", "hairColor", "eyeColor", "hair", "beard", "body", "accessory", "tattoo"].forEach(
-      (k) => (config.appearance[k] = f.get(k)),
-    );
+    [
+      "skin",
+      "hairColor",
+      "eyeColor",
+      "hair",
+      "beard",
+      "body",
+      "accessory",
+      "tattoo",
+    ].forEach((k) => (config.appearance[k] = f.get(k)));
     config.points = {};
-    D.attrs.forEach((k) => (config.points[k] = Number(f.get("point_" + k)) || 0));
-    const base = config.profile === "prodigy" ? 54 : config.profile === "promise" ? 46 : 40;
+    D.attrs.forEach(
+      (k) => (config.points[k] = Number(f.get("point_" + k)) || 0),
+    );
+    const base =
+      config.profile === "prodigy"
+        ? 54
+        : config.profile === "promise"
+          ? 46
+          : 40;
     config.attrs = {};
     D.attrs.forEach((k) => (config.attrs[k] = base + config.points[k]));
     return config;
@@ -57,14 +94,49 @@
           ? D.create({}).clubs.find((c) => c.id === config.clubId)
           : null
         : D.club(state);
-    if (person) window.ProLifeAvatar3D?.show(container, person, C.kit(team));
+    if (person)
+      window.ProLifeAvatar3D?.show(
+        container,
+        { ...person, number: state && !setup ? Career.init(state).number : 10 },
+        C.kit(team),
+      );
   }
   function appearanceFields(a) {
     a = C.normalize(a);
     return `<div class="formgrid avatar-options"><label>Tom de pele<input name="skin" type="color" value="${a.skin}"></label><label>Cor do cabelo<input name="hairColor" type="color" value="${a.hairColor}"></label><label>Cor dos olhos<input name="eyeColor" type="color" value="${a.eyeColor}"></label><label>Corte de cabelo<select name="hair">${opt(C.hair, a.hair)}</select></label><label>Barba e bigode<select name="beard">${opt(C.beard, a.beard)}</select></label><label>Porte físico<select name="body">${opt(C.body, a.body)}</select></label><label>Acessório<select name="accessory">${opt(C.accessory, a.accessory)}</select></label><label>Tatuagens<select name="tattoo">${opt(C.tattoo, a.tattoo)}</select></label></div>`;
   }
   function evolutionPanel() {
-    return `<section class="card section development-panel"><div class="split"><div><div class="tag">RELATÓRIO DE DESENVOLVIMENTO</div><h2>Evolução do jogador</h2></div><label class="chart-select">Indicador<select id="chart-key">${opt([["overall", "Nível geral"], ...D.attrs.map((k) => [k, D.labels[k]])], chartKey)}</select></label></div>${Charts.evolution(state.development, chartKey)}</section>`;
+    const entries = state.development,
+      cut =
+        chartRange === "all" ? 0 : Math.max(0, state.day - Number(chartRange));
+    let list = entries.filter((e) => e.day >= cut);
+    const before = entries.filter((e) => e.day < cut).at(-1);
+    if (before) list.unshift(before);
+    if (!list.length) list = entries.slice(-1);
+    const first = list[0],
+      last = list.at(-1),
+      rows = list.slice(-6).reverse();
+    return `<section class="card section development-panel"><div class="split"><div><div class="tag">RELATÓRIO DE DESENVOLVIMENTO</div><h2>Evolução detalhada</h2></div><div class="actions"><label class="chart-select">Indicador<select id="chart-key">${opt([["overall", "Nível geral"], ["all", "Todos os atributos"], ...D.attrs.map((k) => [k, D.labels[k]])], chartKey)}</select></label><label class="chart-select">Período<select id="chart-range">${opt(
+      [
+        ["30", "30 dias"],
+        ["90", "90 dias"],
+        ["180", "180 dias"],
+        ["all", "Histórico completo"],
+      ],
+      chartRange,
+    )}</select></label></div></div>${Charts.evolution(list, chartKey)}<div class="attribute-summary">${[
+      ["overall", "GER"],
+      ...D.attrs.map((k) => [k, D.labels[k]]),
+    ]
+      .map(([k, l]) => {
+        const now =
+            k === "overall" ? D.overall(state.person) : state.person.attrs[k],
+          old = k === "overall" ? first.overall : first.attrs[k];
+        return `<div><small>${l}</small><b>${now}</b><span class="${now >= old ? "good" : "bad"}">${signed(now - old)} no período</span></div>`;
+      })
+      .join(
+        "",
+      )}</div><p class="chart-note">Foco: ${esc(D.labels[state.training] || "Equilibrado")} · Carga: ${esc({ normal: "Normal", hard: "Intensa", rest: "Recuperação" }[state.intensity])} · Progresso de treino: ${state.trainingProgress.toFixed(1)} / 14. Registros semanais e a cada melhoria. Histórico disponível desde ${dayDate(entries[0].day)}.</p><details><summary>Ver registros e variações</summary><div class="tablewrap"><table><thead><tr><th>Data</th><th>GER</th>${D.attrs.map((k) => `<th>${esc(D.labels[k])}</th>`).join("")}<th>Físico</th><th>Moral</th></tr></thead><tbody>${rows.map((e) => `<tr><td>${dayDate(e.day)}</td><td>${e.overall}</td>${D.attrs.map((k) => `<td>${e.attrs[k]}</td>`).join("")}<td>${e.condition === undefined ? "—" : Math.round(e.condition) + "%"}</td><td>${e.morale === undefined ? "—" : Math.round(e.morale)}</td></tr>`).join("")}</tbody></table></div></details></section>`;
   }
   function opt(values, current) {
     return values
@@ -81,9 +153,7 @@
     return `<div class="empty">${esc(t)}</div>`;
   }
   function date() {
-    return new Date(Date.UTC(2026, 0, 5) + state.day * 86400000).toLocaleDateString("pt-BR", {
-      timeZone: "UTC",
-    });
+    return dayDate(state.day);
   }
   function render() {
     window.ProLifeAvatar3D?.dispose();
@@ -91,6 +161,7 @@
       landing();
       return;
     }
+    Career.init(state);
     const c = D.club(state),
       nav = [
         ["home", "Visão geral"],
@@ -106,7 +177,7 @@
         ["save", "Saves e ajuda"],
       ];
     $("#app").innerHTML =
-      `<div class="layout"><aside class="sidebar"><div class="brand">PRO<span>LIFE</span></div><nav>${nav.map(([id, label]) => `<button data-page="${id}" class="${page === id ? "active" : ""}">${label}</button>`).join("")}</nav><small>FOOTBALL CAREER<br><br>CARREIRA 2026<br>Universo fictício<br>Modo ${state.mode === "player" ? "Jogador" : "Treinador"}</small></aside><main class="main"><div class="topbar"><div><div class="tag">${esc(c?.name || "Livre no mercado")} · Temporada ${state.season}</div><h1>${esc(nav.find((n) => n[0] === page)?.[1] || "Visão geral")}</h1><small>${date()} · Rodada ${state.round}/14</small></div><div class="actions"><button data-action="export">Exportar save</button><button data-advance="1">+1 dia</button><button class="primary" data-advance="7">Avançar 7 dias →</button><button data-advance="30">+30 dias</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.2 · Carreira salva automaticamente · Exportar save cria sua cópia de segurança.</div></main></div>`;
+      `<div class="layout"><aside class="sidebar"><div class="brand">PRO<span>LIFE</span></div><nav>${nav.map(([id, label]) => `<button data-page="${id}" class="${page === id ? "active" : ""}">${label}</button>`).join("")}</nav><small>FOOTBALL CAREER<br><br>CARREIRA ${state.season}<br>${state.world === "legacy" ? "Liga Horizonte" : "Base brasileira 2026"}<br>Carreira simulada<br>Modo ${state.mode === "player" ? "Jogador" : "Treinador"}</small></aside><main class="main"><div class="topbar"><div><div class="tag">${esc(c?.name || "Livre no mercado")} · Temporada ${state.season}</div><h1>${esc(nav.find((n) => n[0] === page)?.[1] || "Visão geral")}</h1><small>${date()} · Rodada ${state.round}/${state.fixtures.length}</small></div><div class="actions"><button data-action="export">Exportar save</button><button data-advance="1">+1 dia</button><button class="primary" data-advance="7">Avançar 7 dias →</button><button data-advance="30">+30 dias</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.3 · Carreira salva automaticamente · Exportar save cria sua cópia de segurança.</div></main></div>`;
     mountAvatar();
   }
   function landing() {
@@ -145,7 +216,7 @@
         .clubs.map((c) => `<option value="${c.id}">${c.name}</option>`)
         .join(
           "",
-        )}</select></label><label>Estilo de jogo<select name="style">${opt(["Técnico", "Velocista", "Organizador", "Combativo"], "Técnico")}</select></label><label>Comemoração (perfil)<select name="celebration">${opt(C.celebrations, "Braços abertos")}</select></label></div><p class="muted">Começos diferentes alteram seus atributos iniciais. Potencial e sucesso não são garantidos. Treinador usa reputação e licenças; os atributos abaixo são futebolísticos.</p><h3>Distribua até 30 pontos adicionais</h3><div id="points">${D.attrs.map((k) => `<label class="attribute">${D.labels[k]}<input name="point_${k}" type="number" min="0" max="20" value="5" required></label>`).join("")}</div><small id="points-total">30 / 30 pontos</small><div id="initial-radar">${Charts.radar(Object.fromEntries(D.attrs.map((k) => [k, 45])))}</div></section><section class="card"><h2>PERSONALIZAR PERSONAGEM</h2><div id="preview">${avatar({ appearance: {} })}</div><div class="kit-caption"><b id="kit-name">UNIFORME DE TREINO</b><small>O uniforme acompanha o clube escolhido.</small></div>${appearanceFields({})}<div class="notice">Liga Horizonte: oito clubes, 14 rodadas por temporada. As semanas entre partidas também importam.</div><label>Seed do mundo (opcional)<input name="seed" type="number" placeholder="Um número para reproduzir o mesmo universo"></label><button class="primary" type="submit">Iniciar minha carreira →</button><div class="section"><button type="button" data-action="import">Importar carreira salva</button></div></section></div></form><p class="footer">Sem conexão, contas ou compras. Clubes e jogadores fictícios. Leia LEIA_PRIMEIRO.txt para começar.</p></div>`;
+        )}</select></label><label>Estilo de jogo<select name="style">${opt(["Técnico", "Velocista", "Organizador", "Combativo"], "Técnico")}</select></label><label>Comemoração (perfil)<select name="celebration">${opt(C.celebrations, "Braços abertos")}</select></label></div><p class="muted">Começos diferentes alteram seus atributos iniciais. Potencial e sucesso não são garantidos. Treinador usa reputação e licenças; os atributos abaixo são futebolísticos.</p><h3>Distribua até 30 pontos adicionais</h3><div id="points">${D.attrs.map((k) => `<label class="attribute">${D.labels[k]}<input name="point_${k}" type="number" min="0" max="20" value="5" required></label>`).join("")}</div><small id="points-total">30 / 30 pontos</small><div id="initial-radar">${Charts.radar(Object.fromEntries(D.attrs.map((k) => [k, 45])))}</div></section><section class="card"><h2>PERSONALIZAR PERSONAGEM</h2><div id="preview">${avatar({ appearance: {} })}</div><div class="kit-caption"><b id="kit-name">UNIFORME DE TREINO</b><small>O uniforme acompanha o clube escolhido.</small></div>${appearanceFields({})}<div class="notice">Brasil 2026: Séries A e B, 40 clubes e 38 rodadas. Nomes reais; atributos, resultados e acontecimentos simulados.</div><label>Seed do mundo (opcional)<input name="seed" type="number" placeholder="Um número para reproduzir o mesmo universo"></label><button class="primary" type="submit">Iniciar minha carreira →</button><div class="section"><button type="button" data-action="import">Importar carreira salva</button></div></section></div></form><p class="footer">Sem contas ou pagamentos reais. Base de nomes de 2026; carreira simulada. Leia LEIA_PRIMEIRO.txt para começar.</p></div>`;
     mountAvatar();
     $("#creator").addEventListener("input", (e) => {
       const f = new FormData($("#creator"));
@@ -200,7 +271,9 @@
         const f = new FormData(e.target),
           config = Object.fromEntries(f.entries());
         config.points = {};
-        D.attrs.forEach((k) => (config.points[k] = Number(f.get("point_" + k))));
+        D.attrs.forEach(
+          (k) => (config.points[k] = Number(f.get("point_" + k))),
+        );
         config.appearance = {};
         [
           "skin",
@@ -213,10 +286,15 @@
           "accessory",
           "tattoo",
         ].forEach((k) => (config.appearance[k] = config[k]));
-        const fresh = D.create(config, config.seed ? Number(config.seed) : Date.now());
+        const fresh = D.create(
+          config,
+          config.seed ? Number(config.seed) : Date.now(),
+        );
         if (
           state &&
-          !confirm("Substituir a carreira atual? Exporte seu save primeiro para guardá-lo.")
+          !confirm(
+            "Substituir a carreira atual? Exporte seu save primeiro para guardá-lo.",
+          )
         )
           return;
         state = fresh;
@@ -224,6 +302,7 @@
         page = "home";
         persist();
         render();
+        window.scrollTo(0, 0);
       } catch (e) {
         toast(e.message);
       }
@@ -233,13 +312,34 @@
     home() {
       const c = D.club(state),
         p = state.person,
-        m = state.matches.find((m) => m.home === state.clubId || m.away === state.clubId);
-      return `<section class="card hero"><div class="profileflex">${avatar(p)}<div><div class="tag">${state.mode === "player" ? (p.age < 20 ? "Da base ao profissional" : "Carreira de jogador") : "Carreira de treinador"}</div><h1>${esc(p.name)}</h1><p>${p.age} anos · ${esc(p.city)} · ${c ? esc(c.name) : "À procura do primeiro projeto"}</p><span class="pill">${state.mode === "player" ? p.pos : "Licença " + state.license}</span><span class="pill">${esc(p.style)}</span><span class="pill">${p.injury ? "Lesionado por " + p.injury + " dias" : "Disponível"}</span></div></div></section><div class="stats"><div class="stat"><small>${state.mode === "player" ? "Nível atual" : "Confiança da diretoria"}</small><b>${state.mode === "player" ? D.overall(p) : Math.round(state.board)}</b></div><div class="stat"><small>Reputação</small><b>${Math.round(state.reputation)}</b></div><div class="stat"><small>Patrimônio pessoal</small><b style="font-size:21px">${money(state.wallet)}</b></div><div class="stat"><small>${c ? "Posição na liga" : "Propostas disponíveis"}</small><b>${c ? D.table(state).findIndex((t) => t.id === c.id) + 1 + "º" : state.offers.length}</b></div></div><div class="grid"><section class="card"><h2>Agenda da carreira</h2>${state.decision ? `<div class="notice">${esc(state.decision.title)}<p>Há uma escolha esperando por você.</p><button data-page="life">Resolver decisão</button></div>` : ""}${!c ? '<div class="notice">Escolha um projeto para disputar a liga.<p><button data-page="market">Ver propostas</button></p></div>' : `<p>${state.round < 14 ? `Próxima rodada em ${Math.max(0, D.nextFixtureDay(state) - state.day)} dia(s).` : `Temporada encerrada. O novo ciclo começa em ${365 - (state.day % 365)} dias.`} O treinador escolhe quem joga conforme nível, disponibilidade e concorrência.</p>${m ? `<div class="score">${m.hg} × ${m.ag}</div><p>${esc(m.summary)}</p><button data-page="matches">Ver relatório</button>` : "<p>A temporada ainda está começando.</p>"}`}${bar("Condição física", p.condition)}${bar("Moral", p.morale)}</section><section class="card"><h2>Caixa de entrada</h2>${news(5)}</section></div>${evolutionPanel()}`;
+        e = Career.init(state),
+        m = state.matches.find(
+          (m) => m.home === state.clubId || m.away === state.clubId,
+        ),
+        next = state.fixtures[state.round]?.find((pair) =>
+          pair.includes(state.clubId),
+        ),
+        w = Career.windowStatus(state);
+      const facts = [
+        ["Nacionalidade", p.nationality],
+        ["Posição", state.mode === "coach" ? "Treinador" : p.pos],
+        ["Pé dominante", p.foot === "left" ? "Esquerdo" : "Direito"],
+        ["Altura / peso", p.height + " cm / " + p.weight + " kg"],
+        ["Estilo", p.style],
+        ["Comemoração", p.celebration],
+        ["Salário mensal", money(state.salary)],
+        ["Contrato", state.contract + " dias"],
+        ["Seguidores", state.fans.toLocaleString("pt-BR")],
+        ["Disciplina", Math.round(p.discipline) + " / 100"],
+        ["Família", Math.round(state.family) + " / 100"],
+        ["Pressão", Math.round(state.stress) + " / 100"],
+      ];
+      return `<section class="card hero"><div class="profileflex">${avatar(p)}<div class="hero-info"><div class="tag">${esc(c ? leagueName(c.leagueId) : "Livre no mercado")} · ${state.mode === "player" ? "Jogador" : "Treinador"}</div><div class="identity-line"><span class="shirt-number">${e.number}</span><div><h1>${esc(p.name)}</h1><p>${p.age} anos · ${esc(p.city)} · ${esc(c?.name || "Sem clube")}</p></div><span class="rating-badge">${state.mode === "player" ? D.overall(p) : Math.round(state.board)}<small>${state.mode === "player" ? "GER" : "CONF"}</small></span></div><span class="pill">${p.injury ? "Lesão: " + p.injury + " dias" : "Disponível"}</span><span class="pill">${esc(p.style)}</span><div class="hero-attributes">${D.attrs.map((k) => `<div><small>${esc(D.labels[k])}</small><b>${p.attrs[k]}</b></div>`).join("")}</div></div></div></section><div class="stats"><div class="stat"><small>Gols na temporada</small><b>${p.goals}</b></div><div class="stat"><small>Minutos na temporada</small><b>${p.minutes}</b></div><div class="stat"><small>Nota média registrada</small><b>${e.played ? (e.ratingTotal / e.played).toFixed(1) : "—"}</b></div><div class="stat"><small>Posição na liga</small><b>${c ? D.table(state).findIndex((x) => x.id === c.id) + 1 + "º" : "—"}</b></div></div><div class="grid"><section class="card"><h2>Ficha completa da carreira</h2><div class="facts-grid">${facts.map(([l, v]) => `<div><small>${esc(l)}</small><b>${esc(v)}</b></div>`).join("")}</div><div class="profile-data"><span>Gols de carreira registrados<b>${e.careerGoals}</b></span><span>Minutos registrados<b>${e.careerMinutes}</b></span><span>Reputação<b>${Math.round(state.reputation)}</b></span><span>Saldo disponível<b>${money(state.wallet)}</b></span></div><p class="chart-note">Potencial de desenvolvimento existe, mas não garante evolução. A nota média começa a ser registrada nesta versão.</p><button data-page="profile">Editar meu personagem</button></section><section class="card"><h2>Próximos compromissos</h2>${next ? `<div class="fixture-preview"><small>${leagueName(c.leagueId)} · Rodada ${state.round + 1}</small><h3>${esc(D.club(state, next[0]).name)} × ${esc(D.club(state, next[1]).name)}</h3><p>${dayDate(D.nextFixtureDay(state))} · Em ${Math.max(0, D.nextFixtureDay(state) - state.day)} dias</p></div>` : empty(c ? "Calendário da temporada encerrado." : "Escolha um clube no mercado.")}${state.decision ? `<div class="notice">${esc(state.decision.title)}<p><button data-page="life">Responder convite</button></p></div>` : ""}<p class="${w.open ? "good" : "muted"}">${esc(w.name)} · ${w.open ? w.remaining + " dias restantes" : "Abre em " + w.remaining + " dias"}</p>${bar("Condição física", p.condition)}${bar("Moral", p.morale)}${m ? `<p>Último resultado: ${esc(D.club(state, m.home).name)} <b>${m.hg} × ${m.ag}</b> ${esc(D.club(state, m.away).name)}</p><button data-page="matches">Relatório da partida</button>` : ""}</section></div>${evolutionPanel()}<section class="card section"><h2>Notícias da carreira</h2>${news(5)}</section>`;
     },
     profile() {
       const p = state.person,
         c = D.club(state);
-      return `<div class="grid character-profile"><section class="card character-card"><h2>PERFIL DO PERSONAGEM</h2>${avatar(p)}<div class="kit-caption"><b>${esc(c?.name || "UNIFORME DE TREINO")}</b><small>Uniforme definido pelo clube.</small></div><h1>${esc(p.name)}</h1><p>${p.age} anos · ${esc(p.city)} · ${p.height} cm · ${p.weight} kg</p><div class="profile-data"><span>Posição <b>${p.pos}</b></span><span>Pé <b>${p.foot === "left" ? "Esquerdo" : "Direito"}</b></span><span>Estilo <b>${esc(p.style)}</b></span></div><div class="section"><h3>APARÊNCIA</h3><form id="appearance-editor">${appearanceFields(p.appearance)}<label>Comemoração<select name="celebration">${opt(C.celebrations, p.celebration)}</select></label><button class="primary" type="submit">Salvar aparência</button></form></div>${state.mode === "player" && p.age >= 30 ? '<button class="section" data-action="retire">Aposentar e virar treinador</button>' : ""}</section><section class="card"><div class="split"><h2>ATRIBUTOS</h2><span class="rating-badge">${D.overall(p)}</span></div>${Charts.radar(p.attrs)}${D.attrs.map((k) => bar(D.labels[k], p.attrs[k])).join("")}<div class="profile-data"><span>Gols <b>${p.goals}</b></span><span>Minutos <b>${p.minutes}</b></span><span>Seguidores <b>${state.fans}</b></span></div><p class="chart-note">Comemoração: ${esc(p.celebration)}. Registrada no perfil; ainda sem animação.</p></section></div>${evolutionPanel()}`;
+      return `<div class="grid character-profile"><section class="card character-card"><h2>PERFIL DO PERSONAGEM</h2>${avatar(p)}<div class="kit-caption"><b>${esc(c?.name || "UNIFORME DE TREINO")}</b><small>Uniforme definido pelo clube.</small></div><h1>${esc(p.name)}</h1><p>${p.age} anos · ${esc(p.city)} · ${p.height} cm · ${p.weight} kg</p><div class="profile-data"><span>Posição <b>${p.pos}</b></span><span>Pé <b>${p.foot === "left" ? "Esquerdo" : "Direito"}</b></span><span>Estilo <b>${esc(p.style)}</b></span></div><div class="section"><label>Número da camisa<input id="shirt-number" type="number" min="1" max="99" value="${Career.init(state).number}"></label><button data-action="number">Salvar número</button><h3 class="section">APARÊNCIA</h3><form id="appearance-editor">${appearanceFields(p.appearance)}<label>Comemoração<select name="celebration">${opt(C.celebrations, p.celebration)}</select></label><button class="primary" type="submit">Salvar aparência</button></form></div>${state.mode === "player" && p.age >= 30 ? '<button class="section" data-action="retire">Aposentar e virar treinador</button>' : ""}</section><section class="card"><div class="split"><h2>ATRIBUTOS</h2><span class="rating-badge">${D.overall(p)}</span></div>${Charts.radar(p.attrs)}${D.attrs.map((k) => bar(D.labels[k], p.attrs[k])).join("")}<div class="profile-data"><span>Gols <b>${p.goals}</b></span><span>Minutos <b>${p.minutes}</b></span><span>Seguidores <b>${state.fans}</b></span></div><p class="chart-note">Comemoração: ${esc(p.celebration)}. Registrada no perfil; ainda sem animação.</p></section></div>${evolutionPanel()}`;
     },
     squad() {
       const c = D.club(state);
@@ -279,8 +379,16 @@
       )}</select></label><button data-action="train" class="primary">Aplicar rotina</button><p class="muted">${state.mode === "player" ? "Carga intensa acelera o progresso, aumenta o desgaste e traz risco de lesão. Descanso recupera a condição. Melhorias são graduais e incertas." : "Na versão 0.1, esta rotina desenvolve apenas o personagem jogador. Para o treinador, use o plano tático e os cursos de licença."}</p></section><section class="card"><h2>Seu estado</h2>${bar("Condição", state.person.condition)}${bar("Moral", state.person.morale)}${bar("Pressão", state.stress)}<p>${state.person.injury ? "Lesão: " + state.person.injury + " dias de recuperação." : "Sem lesão atual."}</p>${state.mode === "coach" ? `<p>Licença atual: <b>${state.license}</b></p><button data-action="license">Curso de licença (${money({ C: 2500, B: 5000, A: 10000, PRO: 0 }[state.license] || 0)})</button>` : ""}</section></div>`;
     },
     league() {
-      return `<section class="card"><div class="tag">Universo regional fictício</div><h2 class="section">Liga Horizonte · ${state.season}</h2><div class="tablewrap"><table><thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th></tr></thead><tbody>${D.table(
+      const id = state.leagues.some((l) => l.id === leagueKey)
+          ? leagueKey
+          : D.club(state)?.leagueId || state.leagues[0].id,
+        league = state.leagues.find((l) => l.id === id);
+      return `<section class="card"><div class="split"><div><div class="tag">${state.world === "legacy" ? "Universo regional" : "Base de clubes 2026 · Resultados simulados"}</div><h2 class="section">${esc(league.name)} · ${state.season}</h2></div><label class="chart-select">Competição<select id="league-key">${opt(
+        state.leagues.map((l) => [l.id, l.name]),
+        id,
+      )}</select></label></div><div class="tablewrap"><table><thead><tr><th>#</th><th>Clube</th><th>PTS</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th></tr></thead><tbody>${D.table(
         state,
+        id,
       )
         .map(
           (c, i) =>
@@ -288,25 +396,49 @@
         )
         .join(
           "",
-        )}</tbody></table></div><p class="muted">Dois turnos, 14 rodadas. Vitória: 3 pontos; empate: 1. Desempate por saldo de gols e gols marcados. A primeira rodada ocorre no dia 7, com intervalo de 21 dias. O ano tem 365 dias; após a última rodada há período sem jogos.</p></section><section class="card section"><h2>Próximos confrontos</h2>${state.fixtures
-        .slice(state.round, state.round + 3)
+        )}</tbody></table></div><p class="muted">${state.fixtures.length} rodadas, turno e returno. Vitória: 3 pontos; empate: 1. ${id === "serieA" ? "Confrontos e mandos da tabela básica CBF 2026. Datas agrupadas por rodada, sem remarcações posteriores." : id === "serieB" ? "Confrontos e datas gerados para esta simulação; não representam a tabela oficial da Série B." : "Calendário original preservado."} Resultados são da sua carreira. Sem acesso, rebaixamento ou playoffs nesta versão.</p></section><section class="card section"><h2>Calendário completo</h2>${state.fixtures
         .map(
           (r, i) =>
-            `<h3 class="section">Rodada ${state.round + i + 1}</h3>${r.map(([h, a]) => `<p>${esc(D.club(state, h).name)} × ${esc(D.club(state, a).name)}</p>`).join("")}`,
+            `<details ${i === state.round ? "open" : ""}><summary>Rodada ${i + 1} · ${dayDate((state.season - 2026) * 365 + state.calendarDays[i])} ${i < state.round ? "· Disputada" : ""}</summary><div class="round-fixtures">${r
+              .filter(([h]) => D.club(state, h).leagueId === id)
+              .map(([h, a]) => {
+                const m = state.matches.find(
+                  (m) =>
+                    m.season === state.season &&
+                    m.round === i + 1 &&
+                    m.home === h &&
+                    m.away === a,
+                );
+                return `<div class="${[h, a].includes(state.clubId) ? "own-fixture" : ""}"><span>${esc(D.club(state, h).name)}</span><b>${m ? m.hg + " × " + m.ag : "×"}</b><span>${esc(D.club(state, a).name)}</span></div>`;
+              })
+              .join("")}</div></details>`,
         )
-        .join("")}</section>`;
+        .join("")}</section>${
+        state.world === "legacy"
+          ? `<section class="card section"><h2>Entrar no futebol brasileiro</h2><p>Preserve o personagem, patrimônio e histórico. A migração acontece na próxima virada de temporada; sua liga atual continua até lá.</p><label>Clube no novo universo<select id="upgrade-club">${opt(
+              D.World.clubs.map((c) => [c.id, c.name]),
+              state.upgradeClub || "c0",
+            )}</select></label><button data-action="upgrade-world">Migrar na próxima temporada</button>${state.upgradeClub ? '<p class="good">Migração programada. Você pode trocar o clube de destino antes da virada.</p>' : ""}</section>`
+          : ""
+      }`;
     },
     matches() {
-      const own = state.matches.filter((m) => m.home === state.clubId || m.away === state.clubId),
+      const own = state.matches.filter(
+          (m) => m.home === state.clubId || m.away === state.clubId,
+        ),
         list = own.length ? own : state.matches;
       const m = list[0];
-      if (!m) return empty("Avance até a primeira rodada para ver os relatórios.");
+      if (!m)
+        return empty("Avance até a primeira rodada para ver os relatórios.");
       return `<div class="grid"><section class="card"><div class="tag">Rodada ${m.round} · Temporada ${m.season}</div><h2 class="section">${esc(D.club(state, m.home).name)}<br>${esc(D.club(state, m.away).name)}</h2><div class="score">${m.hg} × ${m.ag}</div><p>${esc(m.summary)}</p><table><thead><tr><th>Indicador</th><th>Casa</th><th>Fora</th></tr></thead><tbody><tr><td>Posse</td><td>${m.possession}%</td><td>${100 - m.possession}%</td></tr>${[
         ["shots", "Finalizações"],
         ["target", "No alvo"],
         ["xg", "xG estimado"],
       ]
-        .map(([k, l]) => `<tr><td>${l}</td><td>${m[k][0]}</td><td>${m[k][1]}</td></tr>`)
+        .map(
+          ([k, l]) =>
+            `<tr><td>${l}</td><td>${m[k][0]}</td><td>${m[k][1]}</td></tr>`,
+        )
         .join(
           "",
         )}</tbody></table><p class="muted">xG é a soma da qualidade estimada das chances antes da execução. Não determina o placar. Relatório exibido: partida mais recente do seu clube, ou da liga se estiver sem clube.</p>${m.ratings?.hero ? `<p>Sua nota: <b>${m.ratings.hero}</b></p>` : ""}</section><section class="card"><h2>Acontecimentos registrados</h2>${m.events.length ? m.events.map((e) => `<div class="event"><b>${e.minute}'</b>${esc(e.text)}</div>`).join("") : empty("Sem eventos relevantes registrados.")}</section></div><section class="card section"><h2>Resultados recentes</h2>${list
@@ -318,14 +450,29 @@
         .join("")}</section>`;
     },
     market() {
-      const c = D.club(state);
-      return `<section class="card"><h2>Propostas para sua carreira</h2><p class="muted">Você pode trocar de clube durante a temporada. Na versão 0.1, a negociação é direta; não há janela ou multa rescisória. Salários são pessoais e mensais.</p><div class="grid3">${
+      const c = D.club(state),
+        w = Career.windowStatus(state);
+      return `<section class="card"><h2>Janelas de transferências</h2><div class="grid3">${[
+        ["Início do ano", "01/01 a 28/02"],
+        ["Meio do ano", "01/07 a 31/08"],
+        ["Final do ano", "15/11 a 31/12"],
+      ]
+        .map(
+          ([name, dates]) =>
+            `<div class="window-card ${w.name === name ? "open" : ""}"><small>${name}</small><h3>${dates}</h3><b>${w.name === name ? "ABERTA" : ""}</b></div>`,
+        )
+        .join(
+          "",
+        )}</div><p class="${w.open ? "good" : "bad"}">${esc(w.name)} · ${w.open ? w.remaining + " dias restantes" : "Próxima abertura em " + w.remaining + " dias"}</p><p class="chart-note">Três janelas definidas para o jogo. Aceites e contratações ficam bloqueados fora delas; essas datas não representam o regulamento oficial da CBF.</p></section><section class="card section"><h2>Propostas para sua carreira</h2><p class="muted">Salários pessoais e mensais. Confira o projeto e a concorrência no elenco.</p><div class="grid3">${
         state.offers
           .map((o) => {
             const c = D.club(state, o.clubId);
-            return `<article class="card offer"><div class="tag">${esc(c.city)}</div><h3 class="section">${esc(c.name)}</h3><p>${esc(o.role)}</p><p>Estrutura: ${c.structure}/100<br>Salário: ${money(o.salary)}<br>Expira em ${Math.max(0, o.expires - state.day)} dias</p><button class="primary" data-join="${o.clubId}">Aceitar proposta</button></article>`;
+            return `<article class="card offer"><div class="tag">${esc(c.city)}</div><h3 class="section">${esc(c.name)}</h3><p>${esc(o.role)}</p><p>Estrutura: ${c.structure}/100<br>Salário: ${money(o.salary)}<br>Expira em ${Math.max(0, o.expires - state.day)} dias</p><button class="primary" data-join="${o.clubId}" ${w.open ? "" : "disabled"}>${w.open ? "Aceitar proposta" : "Janela fechada"}</button></article>`;
           })
-          .join("") || empty("Novas propostas chegam a cada 28 dias.")
+          .join("") ||
+        empty(
+          "Novas propostas chegam durante as janelas abertas, a cada 28 dias.",
+        )
       }</div></section>${
         state.mode === "coach" && c
           ? `<section class="card section"><h2>Scouting e contratação</h2><p>Orçamento do clube: <b>${money(c.budget)}</b></p><p class="muted">Valores estimados por nível e idade. Atletas muito acima da estrutura podem recusar; clubes preservam ao menos 18 jogadores.</p><div class="tablewrap"><table><thead><tr><th>Atleta</th><th>Clube</th><th>Pos.</th><th>Idade</th><th>Nível</th><th>Preço</th><th></th></tr></thead><tbody>${state.clubs
@@ -338,7 +485,7 @@
                   .slice(0, 3)
                   .map(
                     (p) =>
-                      `<tr><td>${esc(p.name)}</td><td>${esc(x.name)}</td><td>${p.pos}</td><td>${p.age}</td><td>${D.overall(p)}</td><td>${money(A.valuation(p))}</td><td><button data-recruit="${p.id}" data-source="${x.id}">Contratar</button></td></tr>`,
+                      `<tr><td>${esc(p.name)}</td><td>${esc(x.name)}</td><td>${p.pos}</td><td>${p.age}</td><td>${D.overall(p)}</td><td>${money(A.valuation(p))}</td><td><button data-recruit="${p.id}" data-source="${x.id}" ${w.open ? "" : "disabled"}>Contratar</button></td></tr>`,
                   ),
               )
               .join("")}</tbody></table></div></section>`
@@ -346,17 +493,65 @@
       }`;
     },
     life() {
-      return `<div class="grid"><section class="card"><h2>Fora das quatro linhas</h2>${bar("Relação com a família", state.family)}${bar("Pressão e estresse", state.stress)}${bar("Reputação", state.reputation)}<p>Seguidores: ${state.fans}<br>Patrimônio: ${money(state.wallet)}</p><p class="muted">Família e pressão fazem parte da camada de vida desta versão. As escolhas alteram esses indicadores, o treino, a moral ou a reputação; não há casas, redes sociais interativas ou patrocínios ainda.</p></section><section class="card"><h2>${esc(state.decision?.title || "Um dia de cada vez")}</h2>${state.decision ? `<p>${esc(state.decision.body)}</p><div class="actions">${state.decision.choices.map(([id, label]) => `<button data-choice="${id}">${esc(label)}</button>`).join("")}</div>` : '<p class="muted">Continue sua carreira. Novas situações surgem a cada três semanas, se não houver uma escolha pendente.</p>'}</section></div>`;
+      const e = Career.init(state);
+      return `<div class="grid"><section class="card"><h2>Fora das quatro linhas</h2>${bar("Relação com a família", state.family)}${bar("Pressão e estresse", state.stress)}${bar("Reputação", state.reputation)}<p>Seguidores: ${state.fans.toLocaleString("pt-BR")}<br>Saldo: ${money(state.wallet)}</p><p class="muted">Decisões alteram os indicadores, a moral e o progresso de treino. Equipamentos e imóveis adquiridos em Finanças também influenciam sua rotina.</p>${e.promise ? `<div class="notice"><h3>Promessa da entrevista</h3><p>Vencer dois dos próximos três jogos.</p><b>${e.promise.wins} vitória(s) · ${e.promise.games} jogo(s) restante(s)</b><p>Cumprir: reputação +4, diretoria +5, moral +4. Falhar: reputação -3, diretoria -7, moral -5.</p></div>` : ""}</section><section class="card"><div class="tag">CAIXA DE ENTRADA</div><h2 class="section">${esc(state.decision?.title || "Nenhum convite pendente")}</h2>${state.decision ? `<p>${esc(state.decision.body)}</p>${state.decision.id === "media" ? '<div class="notice">Falar com equilíbrio: moral +3, reputação +1, seguidores +70. Prometer resultados: seguidores +200, pressão +15 e uma meta avaliada nas próximas três partidas.</div>' : ""}<div class="actions">${state.decision.choices.map(([id, label]) => `<button data-choice="${id}">${esc(label)}</button>`).join("")}</div>` : '<p class="muted">Continue a carreira. Convites surgem a cada três semanas após resolver a decisão anterior.</p>'}</section></div><section class="card section"><h2>Repercussão na imprensa</h2>${
+        e.feed
+          .filter((p) => p.category === "Imprensa")
+          .slice(0, 6)
+          .map(
+            (p) =>
+              `<article class="news"><time>${dayDate(p.day)}</time><h3>${esc(p.title)}</h3><p>${esc(p.body)}</p></article>`,
+          )
+          .join("") || empty("Suas entrevistas e as cobranças aparecerão aqui.")
+      }</section>`;
     },
     finance() {
-      const c = D.club(state);
-      return `<div class="grid"><section class="card"><h2>Finanças pessoais</h2><div class="score" style="font-size:29px">${money(state.wallet)}</div><p>Salário mensal: ${money(state.salary)}${state.clubId ? "" : " (sem vínculo: não recebido)"}<br>Despesas mensais: ${money(state.mode === "coach" ? 2000 : 650)}<br>Contrato: ${state.contract} dias restantes</p><p class="muted">No protótipo, contrato de zero dias permanece ativo até a troca de clube. A renovação contratual detalhada ainda não está implementada. Pagamentos a cada 30 dias.</p></section><section class="card"><h2>Finanças do clube</h2>${c ? `<div class="score" style="font-size:29px">${money(c.budget)}</div><p>Saldo disponível para contratar.<br>Custo fixo mensal: ${money(22000)} + seu salário.<br>Receita base por temporada: ${money(180000)}.</p><p class="muted">Modelo financeiro simplificado, sem balanço contábil ou patrocínios.</p>` : empty("Sem clube atual.")}</section></div>`;
+      const c = D.club(state),
+        e = Career.init(state),
+        assets = Career.assetValue(state),
+        cost = Career.upkeep(state);
+      return `<div class="stats"><div class="stat"><small>Saldo disponível</small><b class="money-value">${money(state.wallet)}</b></div><div class="stat"><small>Bens pelo preço de compra</small><b class="money-value">${money(assets)}</b></div><div class="stat"><small>Patrimônio total</small><b class="money-value">${money(state.wallet + assets)}</b></div><div class="stat"><small>Manutenção dos bens / mês</small><b class="money-value">${money(cost)}</b></div></div><div class="grid"><section class="card"><h2>Finanças pessoais</h2><p>Salário mensal: ${money(state.salary)}${state.clubId ? "" : " (sem vínculo: não recebido)"}<br>Despesas pessoais: ${money(state.mode === "coach" ? 2000 : 650)} / mês<br>Manutenção: ${money(cost)} / mês<br>Contrato: ${state.contract} dias</p><p class="muted">Pagamentos a cada 30 dias. Bens não geram renda passiva. Revenda: 70% do preço de compra.</p></section><section class="card"><h2>Finanças do clube</h2>${c ? `<p>Orçamento disponível: <b>${money(c.budget)}</b><br>Custos mensais: ${money(22000)} + seu salário.</p><p class="muted">Compras pessoais usam apenas seu saldo; contratações usam o orçamento do clube.</p>` : empty("Sem clube atual.")}</section></div><section class="card section"><h2>Compras e patrimônio</h2><p class="chart-note">Valores e benefícios fictícios para a simulação. Sem pagamentos reais. Manutenção é cobrada no fechamento mensal.</p><div class="grid3 shop-grid">${Career.shop
+        .map((item) => {
+          const owned = e.assets.includes(item.id);
+          return `<article class="card shop-item"><div class="tag">${esc(item.category)}</div><h3 class="section">${esc(item.name)}</h3><b>${money(item.price)}</b><p>${esc(item.effect)}<br>Manutenção: ${money(item.upkeep)} / mês</p>${owned ? `<span class="pill">ADQUIRIDO</span><button data-sell="${item.id}">Vender por ${money(Math.round(item.price * 0.7))}</button>` : `<button data-buy="${item.id}" ${state.wallet < item.price ? "disabled" : ""}>Comprar</button>`}</article>`;
+        })
+        .join(
+          "",
+        )}</div></section><section class="card section"><h2>Extrato pessoal</h2><div class="tablewrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${e.ledger
+        .slice(0, 20)
+        .map(
+          (t) =>
+            `<tr><td>${dayDate(t.day)}</td><td>${esc(t.label)}</td><td class="${t.amount >= 0 ? "good" : "bad"}">${money(t.amount)}</td></tr>`,
+        )
+        .join(
+          "",
+        )}</tbody></table></div>${!e.ledger.length ? empty("O extrato começa a registrar movimentos nesta versão.") : ""}</section>`;
     },
     history() {
-      return `<section class="card"><h2>O universo continua</h2>${state.history.length ? state.history.map((h) => `<div class="news"><h3>Temporada ${h.season}</h3><p>${h.event ? esc(h.event) : `Campeão: ${esc(h.champion)} · Sua posição: ${h.position || "Sem clube"} · ${h.goals} gols`}</p></div>`).join("") : empty("Finalize uma temporada para registrar sua história.")}<h3 class="section">Diário</h3>${news(30)}</section>`;
+      const e = Career.init(state),
+        posts = e.feed.filter(
+          (p) => feedKey === "Todos" || p.category === feedKey,
+        );
+      return `<div class="grid"><section class="card"><h2>Histórico da carreira</h2>${state.history.length ? state.history.map((h) => `<article class="news"><time>Temporada ${h.season} · ${esc(h.league || "Carreira")}</time><h3>${h.event ? esc(h.event) : esc(h.champion) + " campeão"}</h3><p>${h.event ? esc(h.event) : "Sua posição: " + (h.position || "Sem participação") + " · " + h.goals + " gols · " + (h.minutes || 0) + " minutos"}</p></article>`).join("") : empty("Os títulos e resumos entram ao encerrar a temporada.")}<h3 class="section">Transferências registradas</h3>${
+        e.transfers
+          .slice(0, 12)
+          .map(
+            (t) =>
+              `<article class="news"><time>${dayDate(t.day)}</time><h3>${esc(t.player)}</h3><p>${esc(t.from)} → ${esc(t.to)}${t.fee ? " · " + money(t.fee) : ""}</p></article>`,
+          )
+          .join("") || empty("Nenhuma transferência registrada.")
+      }</section><section class="card social-feed"><div class="split"><div><div class="tag">REDE DO FUTEBOL</div><h2>O que está acontecendo</h2></div><label class="chart-select">Filtrar<select id="feed-key">${opt(["Todos", "Carreira", "Transferências", "Competições", "Imprensa", "Torcida", "Rumores", "Vida pessoal"], feedKey)}</select></label></div><p class="chart-note">Todas as publicações retratam sua carreira simulada. Rumores não confirmam acordos.</p>${
+        posts
+          .slice(0, 30)
+          .map(
+            (p) =>
+              `<article class="social-post"><div class="post-author"><span class="author-mark">${esc(p.author.charAt(0))}</span><div><b>${esc(p.author)}</b><small>${dayDate(p.day)} · ${esc(p.category)}</small></div>${p.kind === "rumor" ? '<span class="pill">RUMOR</span>' : ""}</div><h3>${esc(p.title)}</h3><p>${esc(p.body)}</p><button class="like-button ${p.liked ? "liked" : ""}" data-like="${esc(p.id)}">${p.liked ? "Curtido" : "Curtir"} · ${p.likes}</button></article>`,
+          )
+          .join("") || empty("Nenhuma publicação neste filtro.")
+      }</section></div>`;
     },
     save() {
-      return `<div class="grid"><section class="card"><h2>Guarde sua história</h2><p>Autosave usa o armazenamento deste navegador. Trocar de navegador, mover o jogo ou limpar dados pode impedir recuperar esse save.</p><div class="actions"><button class="primary" data-action="export">Exportar arquivo JSON</button><button data-action="import">Importar save</button></div><p>Exporte ao encerrar e guarde o JSON numa pasta sua. A importação valida a estrutura e a versão do arquivo.</p><button data-action="new" class="danger">Criar outra carreira</button><p class="muted">Criar uma carreira substitui o autosave após confirmação. Exporte primeiro.</p></section><section class="card"><h2>Guia rápido</h2><p>1. Escolha uma proposta no Mercado.<br>2. Ajuste o treino, ou escalação e tática como treinador.<br>3. Avance sete dias para a primeira rodada.<br>4. Leia relatórios e tome decisões de vida.<br>5. Exporte seu save.</p><p>Versão 0.2 inclui uma liga fictícia de oito clubes, personagem 3D editável e histórico de evolução. Sem partidas visuais ou competições reais. Acesse a pasta docs para arquitetura, regras, testes e limitações.</p><p class="muted">Não há telemetria, chamadas externas, conta, senha ou conexão de rede no jogo.</p></section></div>`;
+      return `<div class="grid"><section class="card"><h2>Guarde sua história</h2><p>Autosave usa o armazenamento deste navegador. Trocar de navegador, mover o jogo ou limpar dados pode impedir recuperar esse save.</p><div class="actions"><button class="primary" data-action="export">Exportar arquivo JSON</button><button data-action="import">Importar save</button></div><p>Exporte ao encerrar e guarde o JSON numa pasta sua. A importação valida a estrutura e a versão do arquivo.</p><button data-action="new" class="danger">Criar outra carreira</button><p class="muted">Criar uma carreira substitui o autosave após confirmação. Exporte primeiro.</p></section><section class="card"><h2>Guia rápido</h2><p>1. Escolha uma proposta no Mercado.<br>2. Ajuste o treino, ou escalação e tática como treinador.<br>3. Confira a data da próxima rodada na Visão geral.<br>4. Leia relatórios e tome decisões de vida.<br>5. Exporte seu save.</p><p>Versão 0.3 inclui tema escuro, duas ligas brasileiras, janelas, bens pessoais e repercussão da imprensa. Carreiras antigas preservam a liga até a migração opcional na virada. Sem partidas visuais, acesso ou rebaixamento. Acesse a pasta docs para arquitetura, regras, testes e limitações.</p><p class="muted">Não há telemetria, chamadas externas, conta, senha ou conexão de rede no jogo.</p></section></div>`;
     },
   };
   function news(n) {
@@ -369,7 +564,8 @@
       .join("");
   }
   function persist() {
-    if (!S.save(state)) toast("Autosave indisponível neste navegador. Use Exportar save.");
+    if (!S.save(state))
+      toast("Autosave indisponível neste navegador. Use Exportar save.");
   }
   function command(action, data) {
     try {
@@ -382,7 +578,9 @@
     }
   }
   function exportSave() {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }),
+    const blob = new Blob([JSON.stringify(state, null, 2)], {
+        type: "application/json",
+      }),
       url = URL.createObjectURL(blob),
       a = document.createElement("a");
     a.href = url;
@@ -399,9 +597,14 @@
       try {
         const f = input.files[0];
         if (!f) return;
-        if (f.size > 3000000) throw Error("Arquivo muito grande. Limite: 3 MB.");
+        if (f.size > 3000000)
+          throw Error("Arquivo muito grande. Limite: 3 MB.");
         const parsed = S.parse(await f.text());
-        if (state && !confirm("Substituir a carreira atual pelo arquivo importado?")) return;
+        if (
+          state &&
+          !confirm("Substituir a carreira atual pelo arquivo importado?")
+        )
+          return;
         state = parsed;
         setup = false;
         page = "home";
@@ -420,6 +623,7 @@
     if (b.dataset.page) {
       page = b.dataset.page;
       render();
+      window.scrollTo(0, 0);
       return;
     }
     if (b.dataset.advance) {
@@ -434,11 +638,30 @@
       command("decide", { choice: b.dataset.choice });
       return;
     }
+    for (const [key, action] of [
+      ["buy", "buy"],
+      ["sell", "sell"],
+      ["like", "like"],
+    ]) {
+      if (b.dataset[key]) {
+        command(action, { id: b.dataset[key] });
+        return;
+      }
+    }
     if (b.dataset.recruit) {
-      command("recruit", { clubId: b.dataset.source, playerId: b.dataset.recruit });
+      command("recruit", {
+        clubId: b.dataset.source,
+        playerId: b.dataset.recruit,
+      });
       return;
     }
     switch (b.dataset.action) {
+      case "number":
+        command("number", { value: $("#shirt-number").value });
+        break;
+      case "upgrade-world":
+        command("upgradeWorld", { clubId: $("#upgrade-club").value });
+        break;
       case "export":
         if (state) exportSave();
         break;
@@ -454,18 +677,27 @@
         render();
         break;
       case "train":
-        command("train", { focus: $("#focus").value, intensity: $("#intensity").value });
+        command("train", {
+          focus: $("#focus").value,
+          intensity: $("#intensity").value,
+        });
         break;
       case "lineup":
         command("lineup", {
-          ids: [...document.querySelectorAll(".lineup:checked")].map((el) => el.value),
+          ids: [...document.querySelectorAll(".lineup:checked")].map(
+            (el) => el.value,
+          ),
         });
         break;
       case "license":
         command("license");
         break;
       case "retire":
-        if (confirm("Encerrar sua carreira de jogador e iniciar como treinador neste universo?"))
+        if (
+          confirm(
+            "Encerrar sua carreira de jogador e iniciar como treinador neste universo?",
+          )
+        )
           command("retire");
         break;
     }
@@ -475,20 +707,49 @@
     e.preventDefault();
     const f = new FormData(e.target),
       appearance = {};
-    ["skin", "hairColor", "eyeColor", "hair", "beard", "body", "accessory", "tattoo"].forEach(
-      (k) => (appearance[k] = f.get(k)),
-    );
+    [
+      "skin",
+      "hairColor",
+      "eyeColor",
+      "hair",
+      "beard",
+      "body",
+      "accessory",
+      "tattoo",
+    ].forEach((k) => (appearance[k] = f.get(k)));
     command("appearance", { appearance, celebration: f.get("celebration") });
   });
   document.addEventListener("input", (e) => {
-    if (e.target.closest("#appearance-editor") && e.target.name !== "celebration") {
+    if (
+      e.target.closest("#appearance-editor") &&
+      e.target.name !== "celebration"
+    ) {
       const f = new FormData($("#appearance-editor")),
         p = { ...state.person, appearance: Object.fromEntries(f.entries()) };
       const holder = $(".character-card .avatar-stage");
-      window.ProLifeAvatar3D?.show(holder, p, C.kit(D.club(state)));
+      window.ProLifeAvatar3D?.show(
+        holder,
+        { ...p, number: Career.init(state).number },
+        C.kit(D.club(state)),
+      );
     }
   });
   document.addEventListener("change", (e) => {
+    if (e.target.id === "chart-range") {
+      chartRange = e.target.value;
+      render();
+      return;
+    }
+    if (e.target.id === "league-key") {
+      leagueKey = e.target.value;
+      render();
+      return;
+    }
+    if (e.target.id === "feed-key") {
+      feedKey = e.target.value;
+      render();
+      return;
+    }
     if (e.target.id === "chart-key") {
       chartKey = e.target.value;
       render();

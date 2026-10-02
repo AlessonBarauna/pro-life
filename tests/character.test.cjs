@@ -22,14 +22,14 @@ test("legacy appearance maps without losing supported colors", () => {
   assert.equal(C.normalize({ hair: "<script>", skin: "bad" }).hair, "lowfade");
 });
 test("club uniform follows transfers and is independent of appearance colors", () => {
-  const s = D.create({ clubId: "c0" }, 50),
+  const s = D.create({ world: "legacy", clubId: "c0" }, 50),
     first = C.kit(D.club(s));
   D.join(s, "c3", 1200);
   assert.equal(C.kit(D.club(s)).primary, D.club(s).color);
   assert.notEqual(C.kit(D.club(s)).primary, first.primary);
 });
 test("progression starts at creation, records real weekly snapshots and survives save", () => {
-  const s = D.create({ clubId: "c0" }, 73);
+  const s = D.create({ world: "legacy", clubId: "c0" }, 73);
   assert.equal(s.development.length, 1);
   assert.deepEqual(s.development[0].attrs, s.person.attrs);
   D.advance(s, 30);
@@ -41,10 +41,15 @@ test("progression starts at creation, records real weekly snapshots and survives
   assert.deepEqual(saved.development, s.development);
 });
 test("legacy saves begin progression at import date, without fabricated past", () => {
-  const s = D.create({ clubId: "c0" }, 19);
+  const s = D.create({ world: "legacy", clubId: "c0" }, 19);
   D.advance(s, 30);
   delete s.development;
-  s.person.appearance = { hair: "short", beard: "yes", tattoo: "yes", skin: "#aa8866" };
+  s.person.appearance = {
+    hair: "short",
+    beard: "yes",
+    tattoo: "yes",
+    skin: "#aa8866",
+  };
   const old = JSON.stringify(s),
     loaded = S.parse(old);
   assert.equal(loaded.development[0].day, 30);
@@ -57,15 +62,15 @@ test("legacy saves begin progression at import date, without fabricated past", (
   S.parse(JSON.stringify(loaded));
 });
 test("rejects malicious or nonmonotonic progression data", () => {
-  const s = D.create({}, 3);
+  const s = D.create({ world: "legacy" }, 3);
   s.development[0].attrs.pace = "<script>";
   assert.throws(() => S.parse(JSON.stringify(s)));
-  const other = D.create({}, 3);
+  const other = D.create({ world: "legacy" }, 3);
   other.development.push({ ...other.development[0] });
   assert.throws(() => S.parse(JSON.stringify(other)));
 });
 test("editing appearance preserves wallet, attributes, team and offers", () => {
-  const s = D.create({ clubId: "c0" }, 8),
+  const s = D.create({ world: "legacy", clubId: "c0" }, 8),
     before = JSON.stringify({
       attrs: s.person.attrs,
       wallet: s.wallet,
@@ -73,21 +78,31 @@ test("editing appearance preserves wallet, attributes, team and offers", () => {
       offers: s.offers,
     });
   A.execute(s, "appearance", {
-    appearance: { hair: "braids", beard: "mustache", tattoo: "left", accessory: "mask" },
+    appearance: {
+      hair: "braids",
+      beard: "mustache",
+      tattoo: "left",
+      accessory: "mask",
+    },
     celebration: "Apontar para o céu",
   });
   assert.equal(s.person.appearance.hair, "braids");
   assert.equal(s.person.appearance.accessory, "mask");
   assert.equal(s.person.celebration, "Apontar para o céu");
   assert.equal(
-    JSON.stringify({ attrs: s.person.attrs, wallet: s.wallet, club: s.clubId, offers: s.offers }),
+    JSON.stringify({
+      attrs: s.person.attrs,
+      wallet: s.wallet,
+      club: s.clubId,
+      offers: s.offers,
+    }),
     before,
   );
   assert.ok(C.celebrations.length >= 16);
   S.parse(JSON.stringify(s));
 });
 test("charts support first record, constant series and escaped numeric input", () => {
-  const s = D.create({}, 3);
+  const s = D.create({ world: "legacy" }, 3);
   assert.ok(Charts.radar(s.person.attrs).includes("<polygon"));
   assert.ok(Charts.evolution(s.development).includes("Primeiro registro"));
   D.advance(s, 14);

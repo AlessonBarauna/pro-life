@@ -1,50 +1,24 @@
-PACOTE COM FERRAMENTAS GITHUB — v0.1.1
-Para editar ao vivo e publicar, leia COMECE_AQUI_GITHUB.md.
-Para apenas jogar offline, siga o guia abaixo.
+PRO LIFE — Football Career — v0.3
 
-PRO LIFE — Football Career Simulator — v0.1
+JOGAR NO WINDOWS
+Abra ABRIR_PRO_LIFE.bat ou index.html em Edge/Chrome. Não é necessário instalar
+programas para jogar offline. Para editar e publicar, leia COMECE_AQUI_GITHUB.md.
 
-COMO JOGAR NO WINDOWS
-1. Extraia o ZIP inteiro (botão direito > Extrair tudo).
-2. Abra a pasta PRO_LIFE_v0.1.
-3. Dê dois cliques em ABRIR_PRO_LIFE.bat.
-   Alternativa: abra index.html com Microsoft Edge ou Google Chrome.
-4. Crie um jogador ou treinador; edite identidade e distribua até 30 pontos.
-5. No Mercado, aceite uma das propostas, ou escolha clube na criação.
-6. Avance 7 dias. Confira a primeira partida na Central de partidas.
-7. Use Exportar save ao terminar e guarde o JSON.
+Crie uma carreira, escolha clube ou aceite proposta no Mercado. Confira a data
+da próxima partida na Visão geral e avance o calendário. As novas carreiras usam
+40 clubes brasileiros em duas ligas de 38 rodadas. Nomes reais, carreira simulada.
 
-O QUE PRECISA BAIXAR?
-Nada além deste ZIP. Use o navegador que já existe no seu Windows.
-Não precisa de instalação, internet, Node, Python, Godot ou conta.
-O jogo abre como página LOCAL, sem servidor e sem publicação na internet.
-O BAT só abre o index.html. Se preferir, abra esse arquivo diretamente.
-Não é um executável .exe nativo de Windows.
+As transferências são permitidas apenas nas três janelas do jogo. O tema é escuro.
+Edite aparência e número em Meu personagem, acompanhe a evolução e responda
+convites em Vida e decisões. Em Finanças, bens têm benefícios e manutenção mensal.
+História reúne títulos, transferências e um feed de acontecimentos simulados.
 
-TESTE A PRIMEIRA VERSÃO
-- Crie jogador de 16 anos, confira o retrato e os atributos.
-- Aceite uma proposta, escolha treino e avance sete dias.
-- Veja gols, finalizações, xG e acontecimentos. Seu jogador pode ficar no banco.
-- Após 21 dias, visite Vida e decisões e faça uma escolha.
-- Exporte o save, recarregue a página e confira a continuação.
-- Importe o JSON exportado e confirme que o dia, clube e dinheiro são iguais.
-- Crie treinador em outro save, escolha clube, tática e 11 titulares com goleiro.
-- Teste uma contratação e confirme que o orçamento foi debitado.
-- Leia docs/TESTES.md para os testes técnicos e limitações da validação.
+Saves antigos continuam funcionando. Em Liga e calendário, você pode programar
+a migração para o Brasil na próxima temporada, preservando personagem e dinheiro.
+Exporte o save antes de trocar navegador, pasta ou endereço. Autosave é local.
 
-ABRIR PELO POWERSHELL (se extrair em Downloads)
-Start-Process "$env:USERPROFILE\Downloads\PRO_LIFE_v0.1\ABRIR_PRO_LIFE.bat"
-Se o Windows criar uma pasta extra ao extrair, ajuste o caminho acima.
-
-SALVAR
-Autosave depende do navegador e do caminho da pasta. Exporte um JSON
-para guardar a carreira. Não mova a pasta sem exportar seu save antes.
-Não precisa executar como administrador. O jogo não mexe nos arquivos do GTA.
-
-ESCOPO
-Primeira versão jogável: liga fictícia de oito clubes, dois modos, criação 2D,
-rotina, partidas simuladas, contratação simples, decisões, finanças e saves.
-Não é equivalente completo ao Football Manager ou EA FC. Não há 3D,
-campeonatos reais, liga separada de base, mundo internacional, empresários
-negociando autonomamente ou sistema completo de contratos nesta versão.
-Consulte docs/GAME_DESIGN.md para o que está implementado e o que falta.
+TESTAR
+Veja docs/ATUALIZACAO_0.3.md: regras, fontes, limitações e o que testar no jogo.
+Não há partidas visuais; o personagem 3D é estilizado. Série A usa os confrontos
+da tabela básica CBF 2026; Série B tem confrontos gerados para a simulação.
+Sem acesso/rebaixamento ou copas nesta versão.
