@@ -10,6 +10,21 @@
   const World =
     root.ProLifeWorld ||
     (typeof require === "function" ? require("./world2026.js") : null);
+  const BrazilData =
+    root.ProLifeBrazilData ||
+    (typeof require === "function" ? require("./brazil-data.js") : null);
+  const Competitions =
+    root.ProLifeCompetitions ||
+    (typeof require === "function" ? require("./competitions.js") : null);
+  const Training =
+    root.ProLifeTraining ||
+    (typeof require === "function" ? require("./training.js") : null);
+  const Statistics =
+    root.ProLifeStatistics ||
+    (typeof require === "function" ? require("./statistics.js") : null);
+  const Life =
+    root.ProLifeLife ||
+    (typeof require === "function" ? require("./life.js") : null);
   const VERSION = 1,
     clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   class Random {
@@ -87,6 +102,7 @@
     const a = {};
     attrs.forEach((k) => (a[k] = clamp(level + rng.int(-13, 13), 20, 91)));
     a[pos === "ATA" ? "finish" : pos === "MEI" ? "pass" : "defense"] += 5;
+    Training?.expand(a);
     return {
       id,
       name: rng.pick(first) + " " + rng.pick(last),
@@ -121,7 +137,7 @@
     const rng = new Random(seed),
       mode = config.mode === "coach" ? "coach" : "player";
     const real = config.world !== "legacy";
-    const definitions = real ? World.clubs : teams;
+    const definitions = real ? World.clubs.concat(BrazilData?.clubs || []) : teams;
     const clubs = definitions.map((t, i) => {
       let roster = real
         ? t.players.map((r) => ({
@@ -140,6 +156,16 @@
               j < 2 ? "GOL" : j < 9 ? "DEF" : j < 16 ? "MEI" : "ATA",
             ),
           );
+      while (real && roster.length < 22) {
+        const j = roster.length;
+        roster.push({
+          ...player(rng, "sim_" + i + "_" + j, t.level, j < 2 ? "GOL" : j < 9 ? "DEF" : j < 16 ? "MEI" : "ATA"),
+          real: false,
+          partial: t.coverage === "partial",
+          number: j + 1,
+          nationality: "Brasil",
+        });
+      }
       return {
         id: "c" + i,
         name: real ? t.name : t[0],
@@ -159,6 +185,7 @@
         tactic: "balanced",
         budget: real ? t.level * 200000 : 900000 + i * 200000,
         structure: real ? t.level : 45 + i * 5,
+        coverage: t.coverage || "complete",
         stats: { points: 0, played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 },
       };
     });
@@ -168,6 +195,7 @@
     attrs.forEach(
       (k) => (a[k] = base + clamp(Number(config.points?.[k]) || 0, 0, 20)),
     );
+    Training?.expand(a);
     const points = attrs.reduce((n, k) => n + a[k] - base, 0);
     if (points > 30) throw Error("Distribua no máximo 30 pontos.");
     const person = {
@@ -213,21 +241,17 @@
         ? [
             { id: "serieA", name: "Brasileirão Série A" },
             { id: "serieB", name: "Brasileirão Série B" },
+            { id: "serieC", name: "Brasileirão Série C" },
+            { id: "serieD", name: "Brasileirão Série D" },
           ]
         : [{ id: "horizonte", name: "Liga Horizonte" }],
       calendarDays: real
         ? World.roundDays.slice()
         : Array.from({ length: 14 }, (_, i) => 7 + i * 21),
       fixtures: real
-        ? World.serieAFixtures.map((r, i) =>
-            r
-              .map((p) => p.slice())
-              .concat(
-                schedule(
-                  clubs.filter((c) => c.leagueId === "serieB").map((c) => c.id),
-                )[i],
-              ),
-          )
+        ? World.serieAFixtures.map((r, i) => r.map((p) => p.slice()).concat(
+            ...["serieB", "serieC", "serieD"].map((leagueId) => schedule(clubs.filter((c) => c.leagueId === leagueId).map((c) => c.id))[i]),
+          ))
         : schedule(clubs.map((c) => c.id)),
       person,
       clubId: null,
@@ -259,6 +283,10 @@
       seasonGoals: 0,
     };
     Career.init(s);
+    Training?.init(s);
+    Statistics?.init(s);
+    Competitions?.init(s);
+    Life?.init(s);
     let candidates = clubs.filter((c) => mode === "coach" || c.structure < 70);
     s.offers = candidates.slice(0, 3).map((c, i) => ({
       clubId: c.id,
@@ -453,6 +481,7 @@
             side: i,
             player: shooter.name,
             playerId: shooter.id,
+            assistPlayerId: rng.next() < 0.7 ? rng.pick(ps.filter((p) => p.id !== shooter.id))?.id : undefined,
             text:
               shooter.name +
               " aproveitou " +
@@ -582,6 +611,7 @@
       m.season = s.season;
       m.leagueId = hc.leagueId;
       s.matches.unshift(m);
+      Statistics?.recordMatch(s, m);
       [hc, ac].forEach((c, i) => {
         let gf = i ? m.ag : m.hg,
           ga = i ? m.hg : m.ag,
@@ -641,6 +671,8 @@
     );
   }
   function newSeason(s, rng) {
+    Statistics?.closeSeason(s);
+    Competitions?.closeSeason(s, table);
     for (const league of s.leagues || [
       { id: undefined, name: "Liga Horizonte" },
     ]) {
@@ -673,6 +705,7 @@
     }
     s.history = s.history.slice(0, 300);
     s.season++;
+    Competitions?.nextSeason(s);
     s.round = 0;
     s.person.age++;
     for (const c of s.clubs) {
@@ -703,12 +736,10 @@
     }
     s.person.goals = 0;
     if (s.world === "brazil2026") {
-      const b = schedule(
-        s.clubs.filter((c) => c.leagueId === "serieB").map((c) => c.id),
+      const lower = ["serieB", "serieC", "serieD"].map((leagueId) =>
+        schedule(s.clubs.filter((c) => c.leagueId === leagueId).map((c) => c.id)),
       );
-      s.fixtures = World.serieAFixtures.map((r, i) =>
-        r.map((p) => p.slice()).concat(b[i]),
-      );
+      s.fixtures = World.serieAFixtures.map((r, i) => r.map((p) => p.slice()).concat(...lower.map((rounds) => rounds[i])));
     } else s.fixtures = schedule(s.clubs.map((c) => c.id));
     if (s.upgradeClub) migrateWorld(s, s.upgradeClub, rng);
     if (s.person.age >= 35 && s.mode === "player")
@@ -740,6 +771,10 @@
   }
   function advance(s, days = 1) {
     Career.init(s);
+    Training?.init(s);
+    Statistics?.init(s);
+    Competitions?.init(s);
+    Life?.init(s);
     const rng = new Random(s.rng);
     for (let d = 0; d < clamp(days, 1, 30); d++) {
       s.day++;
@@ -760,31 +795,16 @@
         s.person.condition = clamp(s.person.condition + 5, 0, 100);
       }
       if (!s.person.injury && s.mode === "player") {
-        s.trainingProgress +=
-          s.intensity === "hard" ? 1.7 : s.intensity === "rest" ? 0.15 : 1;
         s.person.condition = clamp(
           s.person.condition -
             (s.intensity === "hard" ? 5 : s.intensity === "rest" ? 0 : 2),
           0,
           100,
         );
-        if (s.trainingProgress >= 14) {
-          s.trainingProgress -= 14;
-          const k = s.training === "balanced" ? rng.pick(attrs) : s.training;
-          if (
-            attrs.includes(k) &&
-            overall(s.person) < s.person.potential &&
-            s.person.age < 31 &&
-            rng.next() < 0.3 + s.person.discipline / 200
-          ) {
-            s.person.attrs[k] = clamp(s.person.attrs[k] + 1, 20, 95);
-            recordDevelopment(s);
-            log(
-              s,
-              "Evolução no treino",
-              labels[k] + " melhorou com a rotina de trabalho.",
-            );
-          }
+        const improved = Training?.daily(s, rng, { overall, clamp });
+        if (improved) {
+          recordDevelopment(s);
+          log(s, "Evolução no treino", improved.label + " melhorou com a rotina de trabalho.");
         }
         if (s.intensity === "hard" && rng.next() < 0.015) {
           s.person.injury = rng.int(3, 12);
@@ -807,6 +827,7 @@
           "Despesas pessoais",
         );
         Career.monthly(s);
+        Life?.monthly(s, Career);
         const c = club(s);
         if (c) {
           c.budget -= s.salary + 22000;
@@ -827,35 +848,7 @@
         }
       }
       if (s.day % 21 === 0 && !s.decision) {
-        s.decision = rng.pick([
-          {
-            id: "family",
-            title: "Um fim de semana em família",
-            body: "Uma pausa pode aliviar a pressão, mas reduz o foco no treino.",
-            choices: [
-              ["visit", "Visitar a família"],
-              ["work", "Priorizar o trabalho"],
-            ],
-          },
-          {
-            id: "media",
-            title: "Convite para uma entrevista",
-            body: "Sua opinião pode aproximar a torcida e aumentar a cobrança.",
-            choices: [
-              ["humble", "Falar com equilíbrio"],
-              ["bold", "Prometer grandes resultados"],
-            ],
-          },
-          {
-            id: "agent",
-            title: "Assessoria de carreira",
-            body: "Uma agência oferece divulgar seu perfil por R$ 900.",
-            choices: [
-              ["hire", "Contratar a agência"],
-              ["decline", "Seguir por conta própria"],
-            ],
-          },
-        ]);
+        s.decision = Life?.next(s, rng);
         log(s, "Decisão pendente", s.decision.title);
       }
       if (s.day % 28 === 0 && Career.windowStatus(s).open)
@@ -922,11 +915,7 @@
       s.stress = clamp(s.stress + 15, 0, 100);
       s.board = clamp(s.board - 3, 0, 100);
     }
-    if (choice === "hire") {
-      if (s.wallet < 900) throw Error("Saldo insuficiente.");
-      Career.transaction(s, -900, "Assessoria de carreira");
-      s.reputation = clamp(s.reputation + 4, 0, 100);
-    }
+    Life?.decide(s, choice, Career);
     if (s.decision.id === "media") Career.interview(s, choice);
     log(
       s,
@@ -985,6 +974,11 @@
   const API = {
     Career,
     World,
+    BrazilData,
+    Competitions,
+    Training,
+    Statistics,
+    Life,
     schedule,
     migrateWorld,
     VERSION,

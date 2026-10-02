@@ -1,4 +1,4 @@
-PRO LIFE — Football Career — v0.3
+PRO LIFE — Football Career — v0.4
 
 JOGAR NO WINDOWS
 Abra ABRIR_PRO_LIFE.bat ou index.html em Edge/Chrome. Não é necessário instalar
@@ -6,7 +6,7 @@ programas para jogar offline. Para editar e publicar, leia COMECE_AQUI_GITHUB.md
 
 Crie uma carreira, escolha clube ou aceite proposta no Mercado. Confira a data
 da próxima partida na Visão geral e avance o calendário. As novas carreiras usam
-40 clubes brasileiros em duas ligas de 38 rodadas. Nomes reais, carreira simulada.
+80 clubes em quatro ligas de 38 rodadas. Séries C/D têm cobertura parcial; carreira simulada.
 
 As transferências são permitidas apenas nas três janelas do jogo. O tema é escuro.
 Edite aparência e número em Meu personagem, acompanhe a evolução e responda
@@ -18,7 +18,7 @@ a migração para o Brasil na próxima temporada, preservando personagem e dinhe
 Exporte o save antes de trocar navegador, pasta ou endereço. Autosave é local.
 
 TESTAR
-Veja docs/ATUALIZACAO_0.3.md: regras, fontes, limitações e o que testar no jogo.
+Veja docs/ATUALIZACAO_0.4.md: regras, compatibilidade, limitações e validação.
 Não há partidas visuais; o personagem 3D é estilizado. Série A usa os confrontos
-da tabela básica CBF 2026; Série B tem confrontos gerados para a simulação.
-Sem acesso/rebaixamento ou copas nesta versão.
+da tabela básica CBF 2026; Séries B/C/D têm confrontos gerados para a simulação.
+Sem acesso/rebaixamento; Copa do Brasil e estaduais são complementos simulados.

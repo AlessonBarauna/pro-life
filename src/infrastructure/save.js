@@ -1,6 +1,9 @@
 (function (root) {
   "use strict";
   const KEY = "prolife.v1.save";
+  const ExpansionValidator =
+    root.ProLifeValidateExpansion ||
+    (typeof require === "function" ? require("./validate-expansion.js") : null);
   function validate(s) {
     const fail = () => {
       throw Error("Arquivo de save inválido ou incompatível.");
@@ -18,6 +21,7 @@
       ["pace", "finish", "pass", "defense", "strength", "stamina"].every((k) =>
         num(p.attrs[k], 0, 100),
       ) &&
+      Object.values(p.attrs).every((v) => num(v, 0, 100)) &&
       num(p.condition, 0, 100) &&
       num(p.morale, 0, 100) &&
       num(p.injury, 0, 10000) &&
@@ -53,12 +57,15 @@
         "defense",
         "strength",
         "stamina",
+        "acceleration", "sprint", "agility", "powerShot", "finesseShot", "longShot", "freeKick", "penalty",
+        "heading", "jumping", "longPass", "vision", "crossing", "technique", "dribbling", "ballControl",
+        "tackling", "interception", "balance", "positioning", "composure",
       ].includes(s.training)
     )
       fail();
     if (
       !Array.isArray(s.clubs) ||
-      ![8, 40].includes(s.clubs.length) ||
+      ![8, 40, 80].includes(s.clubs.length) ||
       new Set(s.clubs.map((c) => c.id)).size !== s.clubs.length
     )
       fail();
@@ -73,12 +80,12 @@
       s.leagues = [{ id: "horizonte", name: "Liga Horizonte" }];
     if (
       !Array.isArray(s.leagues) ||
-      s.leagues.length !== (legacy ? 1 : 2) ||
+      s.leagues.length !== (legacy ? 1 : s.clubs.length === 80 ? 4 : 2) ||
       !s.leagues.every((l) => str(l.id, 30) && str(l.name, 100)) ||
       new Set(s.leagues.map((l) => l.id)).size !== s.leagues.length
     )
       fail();
-    const expected = legacy ? ["horizonte"] : ["serieA", "serieB"];
+    const expected = legacy ? ["horizonte"] : s.clubs.length === 80 ? ["serieA", "serieB", "serieC", "serieD"] : ["serieA", "serieB"];
     if (
       !expected.every((id) => s.leagues.some((l) => l.id === id)) ||
       !expected.every(
@@ -89,7 +96,7 @@
       )
     )
       fail();
-    if (!s.clubs.every((c) => /^c([0-9]|[12][0-9]|3[0-9])$/.test(c.id))) fail();
+    if (!s.clubs.every((c) => /^c([0-9]|[1-7][0-9])$/.test(c.id))) fail();
     if (![s.day, s.season, s.round].every(Number.isInteger)) fail();
     const allIds = [];
     for (const c of s.clubs) {
@@ -293,7 +300,10 @@
           day: s.day,
           season: s.season,
           overall: Math.round(
-            Object.values(s.person.attrs).reduce((a, b) => a + b, 0) / 6,
+            ["pace", "finish", "pass", "defense", "strength", "stamina"].reduce(
+              (total, key) => total + s.person.attrs[key],
+              0,
+            ) / 6,
           ),
           attrs: { ...s.person.attrs },
         },
@@ -400,6 +410,7 @@
     )
       fail();
     if (root.ProLife?.Career) root.ProLife.Career.init(s);
+    ExpansionValidator?.validate(s, fail);
     return s;
   }
   function parse(text) {

@@ -33,7 +33,8 @@
     toast.timer = setTimeout(() => ($("#toast").style.display = "none"), 4500);
   }
   const C = ProLifeCharacter,
-    Charts = ProLifeCharts;
+    Charts = ProLifeCharts,
+    Expansion = ProLifeExpansion;
   const Career = D.Career;
   let chartKey = "overall",
     chartRange = "90",
@@ -136,7 +137,7 @@
       })
       .join(
         "",
-      )}</div><p class="chart-note">Foco: ${esc(D.labels[state.training] || "Equilibrado")} · Carga: ${esc({ normal: "Normal", hard: "Intensa", rest: "Recuperação" }[state.intensity])} · Progresso de treino: ${state.trainingProgress.toFixed(1)} / 14. Registros semanais e a cada melhoria. Histórico disponível desde ${dayDate(entries[0].day)}.</p><details><summary>Ver registros e variações</summary><div class="tablewrap"><table><thead><tr><th>Data</th><th>GER</th>${D.attrs.map((k) => `<th>${esc(D.labels[k])}</th>`).join("")}<th>Físico</th><th>Moral</th></tr></thead><tbody>${rows.map((e) => `<tr><td>${dayDate(e.day)}</td><td>${e.overall}</td>${D.attrs.map((k) => `<td>${e.attrs[k]}</td>`).join("")}<td>${e.condition === undefined ? "—" : Math.round(e.condition) + "%"}</td><td>${e.morale === undefined ? "—" : Math.round(e.morale)}</td></tr>`).join("")}</tbody></table></div></details></section>`;
+      )}</div><p class="chart-note">Foco: ${esc(D.labels[state.training] || "Equilibrado")} · Carga: ${esc({ normal: "Normal", hard: "Intensa", rest: "Recuperação" }[state.intensity])} · Progresso de treino: ${state.trainingProgress.toFixed(1)} / 10. Registros semanais e a cada melhoria. Histórico disponível desde ${dayDate(entries[0].day)}.</p><details><summary>Ver registros e variações</summary><div class="tablewrap"><table><thead><tr><th>Data</th><th>GER</th>${D.attrs.map((k) => `<th>${esc(D.labels[k])}</th>`).join("")}<th>Físico</th><th>Moral</th></tr></thead><tbody>${rows.map((e) => `<tr><td>${dayDate(e.day)}</td><td>${e.overall}</td>${D.attrs.map((k) => `<td>${e.attrs[k]}</td>`).join("")}<td>${e.condition === undefined ? "—" : Math.round(e.condition) + "%"}</td><td>${e.morale === undefined ? "—" : Math.round(e.morale)}</td></tr>`).join("")}</tbody></table></div></details></section>`;
   }
   function opt(values, current) {
     return values
@@ -169,7 +170,10 @@
         ["squad", "Elenco e tática"],
         ["training", "Treinamento"],
         ["league", "Liga e calendário"],
+        ["competitions", "Competições"],
         ["matches", "Central de partidas"],
+        ["statistics", "Estatísticas"],
+        ["awards", "Prêmios"],
         ["market", "Mercado"],
         ["life", "Vida e decisões"],
         ["finance", "Finanças"],
@@ -177,7 +181,7 @@
         ["save", "Saves e ajuda"],
       ];
     $("#app").innerHTML =
-      `<div class="layout"><aside class="sidebar"><div class="brand">PRO<span>LIFE</span></div><nav>${nav.map(([id, label]) => `<button data-page="${id}" class="${page === id ? "active" : ""}">${label}</button>`).join("")}</nav><small>FOOTBALL CAREER<br><br>CARREIRA ${state.season}<br>${state.world === "legacy" ? "Liga Horizonte" : "Base brasileira 2026"}<br>Carreira simulada<br>Modo ${state.mode === "player" ? "Jogador" : "Treinador"}</small></aside><main class="main"><div class="topbar"><div><div class="tag">${esc(c?.name || "Livre no mercado")} · Temporada ${state.season}</div><h1>${esc(nav.find((n) => n[0] === page)?.[1] || "Visão geral")}</h1><small>${date()} · Rodada ${state.round}/${state.fixtures.length}</small></div><div class="actions"><button data-action="export">Exportar save</button><button data-advance="1">+1 dia</button><button class="primary" data-advance="7">Avançar 7 dias →</button><button data-advance="30">+30 dias</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.3 · Carreira salva automaticamente · Exportar save cria sua cópia de segurança.</div></main></div>`;
+      `<div class="layout"><aside class="sidebar"><div class="brand">PRO<span>LIFE</span></div><nav>${nav.map(([id, label]) => `<button data-page="${id}" class="${page === id ? "active" : ""}">${label}</button>`).join("")}</nav><small>FOOTBALL CAREER<br><br>CARREIRA ${state.season}<br>${state.world === "legacy" ? "Liga Horizonte" : "Brasil A/B/C/D 2026"}<br>Carreira simulada<br>Modo ${state.mode === "player" ? "Jogador" : "Treinador"}</small></aside><main class="main"><div class="topbar"><div><div class="tag">${esc(c?.name || "Livre no mercado")} · Temporada ${state.season}</div><h1>${esc(nav.find((n) => n[0] === page)?.[1] || "Visão geral")}</h1><small>${date()} · Rodada ${state.round}/${state.fixtures.length}</small></div><div class="actions"><button data-action="export">Exportar save</button><button data-advance="1">+1 dia</button><button class="primary" data-advance="7">Avançar 7 dias →</button><button data-advance="30">+30 dias</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.4 · Carreira salva automaticamente · Exportar save cria sua cópia de segurança.</div></main></div>`;
     mountAvatar();
   }
   function landing() {
@@ -216,7 +220,7 @@
         .clubs.map((c) => `<option value="${c.id}">${c.name}</option>`)
         .join(
           "",
-        )}</select></label><label>Estilo de jogo<select name="style">${opt(["Técnico", "Velocista", "Organizador", "Combativo"], "Técnico")}</select></label><label>Comemoração (perfil)<select name="celebration">${opt(C.celebrations, "Braços abertos")}</select></label></div><p class="muted">Começos diferentes alteram seus atributos iniciais. Potencial e sucesso não são garantidos. Treinador usa reputação e licenças; os atributos abaixo são futebolísticos.</p><h3>Distribua até 30 pontos adicionais</h3><div id="points">${D.attrs.map((k) => `<label class="attribute">${D.labels[k]}<input name="point_${k}" type="number" min="0" max="20" value="5" required></label>`).join("")}</div><small id="points-total">30 / 30 pontos</small><div id="initial-radar">${Charts.radar(Object.fromEntries(D.attrs.map((k) => [k, 45])))}</div></section><section class="card"><h2>PERSONALIZAR PERSONAGEM</h2><div id="preview">${avatar({ appearance: {} })}</div><div class="kit-caption"><b id="kit-name">UNIFORME DE TREINO</b><small>O uniforme acompanha o clube escolhido.</small></div>${appearanceFields({})}<div class="notice">Brasil 2026: Séries A e B, 40 clubes e 38 rodadas. Nomes reais; atributos, resultados e acontecimentos simulados.</div><label>Seed do mundo (opcional)<input name="seed" type="number" placeholder="Um número para reproduzir o mesmo universo"></label><button class="primary" type="submit">Iniciar minha carreira →</button><div class="section"><button type="button" data-action="import">Importar carreira salva</button></div></section></div></form><p class="footer">Sem contas ou pagamentos reais. Base de nomes de 2026; carreira simulada. Leia LEIA_PRIMEIRO.txt para começar.</p></div>`;
+        )}</select></label><label>Estilo de jogo<select name="style">${opt(["Técnico", "Velocista", "Organizador", "Combativo"], "Técnico")}</select></label><label>Comemoração (perfil)<select name="celebration">${opt(C.celebrations, "Braços abertos")}</select></label></div><p class="muted">Começos diferentes alteram seus atributos iniciais. Potencial e sucesso não são garantidos. Treinador usa reputação e licenças; os atributos abaixo são futebolísticos.</p><h3>Distribua até 30 pontos adicionais</h3><div id="points">${D.attrs.map((k) => `<label class="attribute">${D.labels[k]}<input name="point_${k}" type="number" min="0" max="20" value="5" required></label>`).join("")}</div><small id="points-total">30 / 30 pontos</small><div id="initial-radar">${Charts.radar(Object.fromEntries(D.attrs.map((k) => [k, 45])))}</div></section><section class="card"><h2>PERSONALIZAR PERSONAGEM</h2><div id="preview">${avatar({ appearance: {} })}</div><div class="kit-caption"><b id="kit-name">UNIFORME DE TREINO</b><small>O uniforme acompanha o clube escolhido.</small></div>${appearanceFields({})}<div class="notice">Brasil 2026: Séries A, B, C e D, 80 clubes e 38 rodadas por liga. A/B têm referência completa; C/D possuem cobertura parcial. Atributos e resultados são simulados.</div><label>Seed do mundo (opcional)<input name="seed" type="number" placeholder="Um número para reproduzir o mesmo universo"></label><button class="primary" type="submit">Iniciar minha carreira →</button><div class="section"><button type="button" data-action="import">Importar carreira salva</button></div></section></div></form><p class="footer">Sem contas ou pagamentos reais. Base de nomes de 2026; carreira simulada. Leia LEIA_PRIMEIRO.txt para começar.</p></div>`;
     mountAvatar();
     $("#creator").addEventListener("input", (e) => {
       const f = new FormData($("#creator"));
@@ -369,14 +373,23 @@
         )}</tbody></table></div>${coach ? '<p><button class="primary" data-action="lineup">Salvar os 11 titulares</button></p><small>Inclua um goleiro. Ausências por lesão ou cansaço são cobertas pelo banco automaticamente.</small>' : ""}</section>`;
     },
     training() {
-      return `<div class="grid"><section class="card"><h2>Rotina de trabalho</h2><label>Foco<select id="focus">${opt([["balanced", "Desenvolvimento equilibrado"], ...D.attrs.map((k) => [k, D.labels[k]])], state.training)}</select></label><label>Carga<select id="intensity">${opt(
+      return `<div class="grid"><section class="card"><h2>Rotina de trabalho</h2><label>Especialidade<select id="focus">${opt([["balanced", "Plano pelo estilo"], ...Object.entries(D.Training.skills)], state.training)}</select></label><label>Carga<select id="intensity">${opt(
         [
           ["rest", "Recuperação"],
           ["normal", "Normal"],
           ["hard", "Intensa"],
         ],
         state.intensity,
-      )}</select></label><button data-action="train" class="primary">Aplicar rotina</button><p class="muted">${state.mode === "player" ? "Carga intensa acelera o progresso, aumenta o desgaste e traz risco de lesão. Descanso recupera a condição. Melhorias são graduais e incertas." : "Na versão 0.1, esta rotina desenvolve apenas o personagem jogador. Para o treinador, use o plano tático e os cursos de licença."}</p></section><section class="card"><h2>Seu estado</h2>${bar("Condição", state.person.condition)}${bar("Moral", state.person.morale)}${bar("Pressão", state.stress)}<p>${state.person.injury ? "Lesão: " + state.person.injury + " dias de recuperação." : "Sem lesão atual."}</p>${state.mode === "coach" ? `<p>Licença atual: <b>${state.license}</b></p><button data-action="license">Curso de licença (${money({ C: 2500, B: 5000, A: 10000, PRO: 0 }[state.license] || 0)})</button>` : ""}</section></div>`;
+        )}</select></label><button data-action="train" class="primary">Aplicar rotina</button><p class="muted">${state.mode === "player" ? "A evolução combina especialidade, estilo de jogo, disciplina, idade e carga. O progresso fecha ciclos a cada 10 pontos; carga intensa evolui mais rápido e aumenta o risco de lesão." : "O plano individual é voltado ao atleta. Como treinador, use tática, escalação e licenças."}</p></section><section class="card"><h2>Seu estado</h2>${bar("Condição", state.person.condition)}${bar("Moral", state.person.morale)}${bar("Pressão", state.stress)}<p>Estilo aplicado: <b>${esc(D.Training.init(state).style)}</b><br>Sessões registradas: ${D.Training.init(state).sessions}<br>Melhorias: ${D.Training.init(state).improvements}</p><p>${state.person.injury ? "Lesão: " + state.person.injury + " dias de recuperação." : "Sem lesão atual."}</p>${state.mode === "coach" ? `<p>Licença atual: <b>${state.license}</b></p><button data-action="license">Curso de licença (${money({ C: 2500, B: 5000, A: 10000, PRO: 0 }[state.license] || 0)})</button>` : ""}</section></div><section class="card section"><h2>27 atributos técnicos e físicos</h2><div class="skill-grid">${Object.entries(D.Training.skills).map(([k, label]) => `<div><small>${esc(label)}</small><b>${state.person.attrs[k]}</b></div>`).join("")}</div></section>`;
+    },
+    competitions() {
+      return Expansion.competitions(state);
+    },
+    statistics() {
+      return Expansion.statistics(state);
+    },
+    awards() {
+      return Expansion.awards(state);
     },
     league() {
       const id = state.leagues.some((l) => l.id === leagueKey)
@@ -499,7 +512,8 @@
     },
     life() {
       const e = Career.init(state);
-      return `<div class="grid"><section class="card"><h2>Fora das quatro linhas</h2>${bar("Relação com a família", state.family)}${bar("Pressão e estresse", state.stress)}${bar("Reputação", state.reputation)}<p>Seguidores: ${state.fans.toLocaleString("pt-BR")}<br>Saldo: ${money(state.wallet)}</p><p class="muted">Decisões alteram os indicadores, a moral e o progresso de treino. Equipamentos e imóveis adquiridos em Finanças também influenciam sua rotina.</p>${e.promise ? `<div class="notice"><h3>Promessa da entrevista</h3><p>Vencer dois dos próximos três jogos.</p><b>${e.promise.wins} vitória(s) · ${e.promise.games} jogo(s) restante(s)</b><p>Cumprir: reputação +4, diretoria +5, moral +4. Falhar: reputação -3, diretoria -7, moral -5.</p></div>` : ""}</section><section class="card"><div class="tag">CAIXA DE ENTRADA</div><h2 class="section">${esc(state.decision?.title || "Nenhum convite pendente")}</h2>${state.decision ? `<p>${esc(state.decision.body)}</p>${state.decision.id === "media" ? '<div class="notice">Falar com equilíbrio: moral +3, reputação +1, seguidores +70. Prometer resultados: seguidores +200, pressão +15 e uma meta avaliada nas próximas três partidas.</div>' : ""}<div class="actions">${state.decision.choices.map(([id, label]) => `<button data-choice="${id}">${esc(label)}</button>`).join("")}</div>` : '<p class="muted">Continue a carreira. Convites surgem a cada três semanas após resolver a decisão anterior.</p>'}</section></div><section class="card section"><h2>Repercussão na imprensa</h2>${
+      const life = D.Life.init(state);
+      return `<div class="grid"><section class="card"><h2>Fora das quatro linhas</h2>${bar("Relação com a família", state.family)}${bar("Pressão e estresse", state.stress)}${bar("Reputação", state.reputation)}<p>Seguidores: ${state.fans.toLocaleString("pt-BR")}<br>Saldo: ${money(state.wallet)}</p>${life.agency ? `<div class="notice"><h3>Assessoria ativa</h3><p>${esc(life.agency.name)} · desde ${dayDate(life.agency.hiredDay)}</p><b>${money(life.agency.monthlyCost)} por mês</b></div>` : '<p class="muted">Sem agência contratada. Uma proposta pode chegar pela caixa de entrada.</p>'}<p class="muted">Decisões alteram indicadores, moral, finanças e progresso de treino.</p>${e.promise ? `<div class="notice"><h3>Promessa da entrevista</h3><p>Vencer dois dos próximos três jogos.</p><b>${e.promise.wins} vitória(s) · ${e.promise.games} jogo(s) restante(s)</b></div>` : ""}</section><section class="card"><div class="tag">CAIXA DE ENTRADA</div><h2 class="section">${esc(state.decision?.title || "Nenhum convite pendente")}</h2>${state.decision ? `<p>${esc(state.decision.body)}</p><div class="actions">${state.decision.choices.map(([id, label]) => `<button data-choice="${id}">${esc(label)}</button>`).join("")}</div>` : '<p class="muted">Continue a carreira. Convites surgem a cada três semanas.</p>'}</section></div><section class="card section"><h2>Repercussão na imprensa</h2>${
         e.feed
           .filter((p) => p.category === "Imprensa")
           .slice(0, 6)
@@ -556,7 +570,7 @@
       }</section></div>`;
     },
     save() {
-      return `<div class="grid"><section class="card"><h2>Guarde sua história</h2><p>Autosave usa o armazenamento deste navegador. Trocar de navegador, mover o jogo ou limpar dados pode impedir recuperar esse save.</p><div class="actions"><button class="primary" data-action="export">Exportar arquivo JSON</button><button data-action="import">Importar save</button></div><p>Exporte ao encerrar e guarde o JSON numa pasta sua. A importação valida a estrutura e a versão do arquivo.</p><button data-action="new" class="danger">Criar outra carreira</button><p class="muted">Criar uma carreira substitui o autosave após confirmação. Exporte primeiro.</p></section><section class="card"><h2>Guia rápido</h2><p>1. Escolha uma proposta no Mercado.<br>2. Ajuste o treino, ou escalação e tática como treinador.<br>3. Confira a data da próxima rodada na Visão geral.<br>4. Leia relatórios e tome decisões de vida.<br>5. Exporte seu save.</p><p>Versão 0.3 inclui tema escuro, duas ligas brasileiras, janelas, bens pessoais e repercussão da imprensa. Carreiras antigas preservam a liga até a migração opcional na virada. Sem partidas visuais, acesso ou rebaixamento. Acesse a pasta docs para arquitetura, regras, testes e limitações.</p><p class="muted">Não há telemetria, chamadas externas, conta, senha ou conexão de rede no jogo.</p></section></div>`;
+      return `<div class="grid"><section class="card"><h2>Guarde sua história</h2><p>Autosave usa o armazenamento deste navegador. Trocar de navegador, mover o jogo ou limpar dados pode impedir recuperar esse save.</p><div class="actions"><button class="primary" data-action="export">Exportar arquivo JSON</button><button data-action="import">Importar save</button></div><p>Exporte ao encerrar e guarde o JSON numa pasta sua. A importação valida estrutura, versão e dados expandidos.</p><button data-action="new" class="danger">Criar outra carreira</button></section><section class="card"><h2>Guia rápido</h2><p>1. Escolha uma proposta.<br>2. Configure treino ou tática.<br>3. Navegue por competições, estatísticas e prêmios.<br>4. Tome decisões de vida.<br>5. Exporte seu save.</p><p>Versão 0.4 inclui Séries A/B/C/D, cobertura parcial C/D, competições complementares, 27 atributos, estatísticas, prêmios e agência persistente.</p><p class="muted">Não há telemetria, conta, senha ou pagamentos reais.</p></section></div>`;
     },
   };
   function news(n) {

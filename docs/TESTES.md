@@ -1,40 +1,47 @@
 # Validação da entrega
 
-## Executado nesta entrega
-Node 24.19.0, Linux. Nove testes do motor passaram:
-1. Calendário: todos os 56 confrontos ordenados, sem duplicidade.
-2. Limite de pontos e idade por modo.
-3. Seeds e ações iguais resultam em estado igual; round-trip de save recupera
-   a referência única do protagonista no elenco.
-4. Seis anos completos do treinador, com validação de saves e balanço da tabela.
-5. Em 100 partidas, placar igual à contagem de gols e estatísticas coerentes.
-6. Em 1.000 partidas, favorito tem vantagem sem eliminar zebras.
-7. Contratação transfere atleta e conserva o dinheiro entre clubes.
-8. Save inválido, calendário corrupto, escalação e proposta inexistente são recusados.
-9. Decisão e aposentadoria preservam patrimônio e universo.
+## Executado na v0.4
+
+Node 24 no Windows. A suíte automatizada terminou com 36 testes aprovados,
+sem falhas, cancelamentos, testes ignorados ou pendentes. Ela cobre motor,
+personagem, carreira, ferramentas e a expansão da v0.4, incluindo:
+
+1. Séries A/B/C/D, 80 clubes e 38 rodadas por divisão.
+2. Temporada completa, placares, eventos, transferências e decisões.
+3. Modos Jogador e Treinador, tática, escalação e licença.
+4. Treinamento com 27 atributos e evolução influenciada pelo estilo.
+5. Estatísticas, assistências, melhores em campo e prêmios.
+6. Competições nacionais/estaduais simuladas e agência de carreira.
+7. Inicialização limpa, migração e carregamento de save existente.
+8. Novo save, autosave, save manual, exportação/importação, reabertura e
+   integridade do round-trip.
+9. Rejeição de saves corrompidos e renderização segura de conteúdo importado.
 
 ### Calibração
 Capital Esporte (nível base 76, mandante) versus Mogi Atlético (base 53):
-1.000 universos/seeds, 693 vitórias do favorito, 185 empates e 122 zebras.
-Média: 2,744 gols por jogo. Isso verifica variabilidade e faixa básica do modelo,
+1.000 universos/seeds, 686 vitórias do favorito, 203 empates e 111 zebras.
+Média: 2,739 gols por jogo. Isso verifica variabilidade e faixa básica do modelo,
 não calibração acadêmica ou reprodução estatística de campeonatos reais.
 Seed determinística não fixa vencedor antes da partida: reproduz os mesmos
 sorteios e as mesmas ações quando todos os parâmetros são iguais.
 
 ### Interface
 Testes DOM com jsdom 30.1.1 passaram nos dois modos: criação, aceite de proposta,
-todas as 11 páginas, primeira rodada, relatório, decisão e retomada por autosave.
+todas as 14 páginas, primeira rodada, relatório, decisão e retomada por autosave.
 Treinador: mudar tática, salvar titulares e curso de licença. Save com nome
 contendo HTML é renderizado como texto; histórico com campo numérico malicioso
 é recusado. Isso não substitui revisão profissional de segurança.
 
-### Limites da validação
-Não foi possível executar Chromium gráfico neste ambiente. Não houve inspeção
-visual por screenshot nem teste em Windows, Edge ou Chrome reais. Não medimos
-memória, responsividade percebida ou compatibilidade de localStorage via file://
-no notebook do usuário. A exportação usa APIs padrão, mas o download e o seletor
-de importação precisam de teste no navegador real. O BAT não foi executado em
-Windows. Não apresentar estes testes como certificação de funcionamento universal.
+### Conferência visual e limites
+
+A aplicação foi aberta no navegador integrado local em Windows. As 14 telas
+foram navegadas nos dois modos; o tema escuro, a responsividade em 390 px e a
+ausência de overflow horizontal foram conferidos. Tática, escalação, licença,
+treino, calendário, Séries A/B/C/D, partidas e telas novas foram acionados sem
+erros ou warnings no console. O navegador confirmou a ação de exportar; o
+conteúdo JSON e a importação são cobertos pelos testes automatizados, pois o
+ambiente integrado não expõe o arquivo de download. Não houve matriz manual em
+Edge/Chrome externos nem medição de memória ou desempenho prolongado.
 
 ## Reproduzir como desenvolvedor
 Na pasta do jogo, com Node instalado:
@@ -81,3 +88,10 @@ que arquivos pessoais não são copiados, hash é estável e alterações o modi
 CI executa testes de motor, ferramentas e DOM antes de gerar o artefato estático.
 Deploy real no GitHub e abertura do BAT no Windows ainda dependem do repositório
 configurado e da validação no computador do usuário.
+
+## Validação v0.4
+
+A suíte automatizada inclui testes de Séries A/B/C/D, cobertura parcial C/D,
+27 atributos, evolução por estilo, estatísticas, assistências, prêmios, agência,
+competições, autosave, exportação/importação, save manual, reabertura e integridade
+após round-trip. O fluxo DOM percorre todas as telas nos modos Jogador e Treinador.

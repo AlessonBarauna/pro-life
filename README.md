@@ -1,7 +1,14 @@
 # PRO LIFE — Football Career
 
 Simulador local de carreira no futebol, em português, com jogador e treinador,
-base brasileira de clubes e atletas de 2026 e partidas probabilísticas. Código e ferramentas v0.3. Saves versão 1 permanecem compatíveis.
+base brasileira de clubes e atletas de 2026 e partidas probabilísticas. Código e ferramentas v0.4. Saves versão 1 permanecem compatíveis.
+
+## Atualização 0.4
+
+Séries A, B, C e D, com cobertura parcial de elencos nas Séries C/D; 27 atributos,
+treino por especialidade e estilo, progressão mais rápida, estatísticas, assistências,
+prêmios, novas competições/telas, decisões pessoais e agência persistente.
+Leia [mudanças, compatibilidade e limites](docs/ATUALIZACAO_0.4.md).
 
 ## Atualização 0.3
 

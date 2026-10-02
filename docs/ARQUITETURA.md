@@ -88,3 +88,11 @@ atual; a migração opcional ocorre na virada. Importação continua limitada a 
 Dados numéricos, bens permitidos, ligas, datas e vínculos são validados.
 A UI não consulta dados esportivos externos nem determina efeitos de compras.
 Consulte ATUALIZACAO_0.3.md para as regras e limitações vigentes.
+
+## Atualização 0.4
+
+A expansão foi isolada em módulos de dados (`brazil-data`), competições,
+treinamento, estatísticas e vida. `engine.js` continua sendo o orquestrador puro;
+`validate-expansion.js` valida os campos opcionais sem mudar o schema externo do
+save. `expansion.js` renderiza as telas novas mantendo a interface escura existente.
+Consulte `ATUALIZACAO_0.4.md` para cobertura e limites vigentes.

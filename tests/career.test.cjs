@@ -7,35 +7,38 @@ const D = require("../src/domain/engine.js"),
 function until(s, day) {
   while (s.day < day) D.advance(s, Math.min(30, day - s.day));
 }
-test("2026 world has two separate leagues, 40 clubs, real identities and complete official Serie A pairings", () => {
+test("2026 world has four separate leagues, 80 clubs and complete official Serie A pairings", () => {
   const s = D.create({}, 8);
-  assert.equal(s.clubs.length, 40);
+  assert.equal(s.clubs.length, 80);
   assert.equal(s.fixtures.length, 38);
-  assert.equal(s.leagues.length, 2);
+  assert.equal(s.leagues.length, 4);
   const ids = s.clubs.flatMap((c) => c.roster.map((p) => p.id));
   assert.equal(new Set(ids).size, ids.length);
-  assert.ok(s.clubs.every((c) => c.roster.every((p) => p.real)));
+  assert.ok(s.clubs.filter((c) => ["serieA", "serieB"].includes(c.leagueId)).every((c) => c.roster.every((p) => p.real)));
+  assert.ok(s.clubs.filter((c) => ["serieC", "serieD"].includes(c.leagueId)).every((c) => c.coverage === "partial"));
   const seen = new Set();
   for (const round of s.fixtures) {
-    assert.equal(new Set(round.flat()).size, 40);
+    assert.equal(new Set(round.flat()).size, 80);
     for (const pair of round) {
       assert.equal(D.club(s, pair[0]).leagueId, D.club(s, pair[1]).leagueId);
       assert.ok(!seen.has(pair.join(":")));
       seen.add(pair.join(":"));
     }
   }
-  assert.equal(seen.size, 760);
+  assert.equal(seen.size, 1520);
   assert.deepEqual(s.fixtures[0].slice(0, 10), D.World.serieAFixtures[0]);
   assert.equal(s.calendarDays[0], 27);
   assert.equal(D.table(s, "serieA").length, 20);
   assert.equal(D.table(s, "serieB").length, 20);
+  assert.equal(D.table(s, "serieC").length, 20);
+  assert.equal(D.table(s, "serieD").length, 20);
   S.parse(JSON.stringify(s));
 });
 test("a full Brazilian season plays 38 rounds in both leagues and produces saveable histories", () => {
   const s = D.create({ clubId: "c0" }, 17);
   until(s, 364);
   assert.equal(s.round, 38);
-  assert.equal(s.matches.length, 760);
+  assert.equal(s.matches.length, 800);
   assert.ok(s.clubs.every((c) => c.stats.played === 38));
   assert.equal(
     D.table(s, "serieA").reduce((n, c) => n + c.stats.gf, 0),
@@ -49,7 +52,7 @@ test("a full Brazilian season plays 38 rounds in both leagues and produces savea
   assert.ok(JSON.stringify(s).length < 3000000);
   D.advance(restored, 1);
   assert.equal(restored.season, 2027);
-  assert.equal(restored.history.length, 2);
+  assert.equal(restored.history.length, 4);
   assert.ok(restored.clubs.every((c) => c.stats.played === 0));
   S.parse(JSON.stringify(restored));
 });
@@ -187,7 +190,7 @@ test("legacy saves retain calendar and identity until explicitly scheduled year-
   assert.equal(s.clubs.length, 8);
   until(s, 365);
   assert.equal(s.world, "brazil2026");
-  assert.equal(s.clubs.length, 40);
+  assert.equal(s.clubs.length, 80);
   assert.equal(s.clubId, "c8");
   assert.equal(s.person.name, name);
   assert.ok(s.wallet > wealth);

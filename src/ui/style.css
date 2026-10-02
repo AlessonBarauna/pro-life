@@ -1097,3 +1097,34 @@ details[open] > summary {
   font-size: 10px;
   margin-top: 8px;
 }
+
+.skill-grid,
+.competition-grid,
+.award-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+.skill-grid > div,
+.competition-card,
+.award-card {
+  background: #151c24;
+  border: 1px solid #2b3948;
+  border-radius: 12px;
+  padding: 14px;
+}
+.skill-grid b,
+.competition-card b,
+.award-card b {
+  display: block;
+  margin-top: 6px;
+  color: #f4f7fa;
+  font-size: 1.15rem;
+}
+.competition-card small,
+.award-card small,
+td small {
+  display: block;
+  color: #8fa0b2;
+  margin-top: 5px;
+}

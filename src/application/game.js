@@ -53,12 +53,14 @@
       }
       case "train":
         if (
-          !["balanced", ...D.attrs].includes(data.focus) ||
+          !["balanced", ...Object.keys(D.Training.skills)].includes(data.focus) ||
           !["rest", "normal", "hard"].includes(data.intensity)
         )
           throw Error("Treino inválido.");
         s.training = data.focus;
         s.intensity = data.intensity;
+        D.Training.init(s).focus = data.focus;
+        D.Training.init(s).style = data.style || s.person.style;
         break;
       case "tactic": {
         const c = D.club(s);
