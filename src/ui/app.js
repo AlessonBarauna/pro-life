@@ -174,6 +174,7 @@
         ["matches", "Central de partidas"],
         ["statistics", "Estatísticas"],
         ["awards", "Prêmios"],
+        ["inbox", "Caixa de entrada"],
         ["market", "Mercado"],
         ["life", "Vida e decisões"],
         ["finance", "Finanças"],
@@ -460,51 +461,25 @@
         )
         .join("")}</section>`;
     },
+    inbox() {
+      const eligible = Career.canTransfer(state),
+        w = Career.windowStatus(state),
+        e = Career.init(state);
+      const offers = eligible ? state.offers : [];
+      return `<div class="grid"><section class="card"><div class="tag">CAIXA DE ENTRADA</div><h2>Mensagens da carreira</h2><p class="muted">Propostas, decisões e comunicados importantes ficam concentrados aqui.</p>${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life">Responder agora</button></article>` : ""}${offers.map((o) => {
+        const c = D.club(state, o.clubId), uf = D.Competitions.clubState(c) || "—";
+        return `<article class="news offer"><time>PROPOSTA DE CONTRATO · expira em ${Math.max(0, o.expires - state.day)} dias</time><h3>${esc(c.name)}</h3><p><b>Estado:</b> ${esc(uf)}<br><b>Competição:</b> ${esc(leagueName(c.leagueId))}<br><b>Contrato:</b> ${esc(o.role)}<br>Estrutura: ${c.structure}/100 · Salário: ${money(o.salary)}/mês</p><button class="primary" data-join="${o.clubId}" ${w.open ? "" : "disabled"}>${w.open ? "Aceitar proposta" : "Janela fechada"}</button></article>`;
+      }).join("") || empty(state.day < state.careerTransferAvailableDay ? "Você já assinou nesta janela. Novas propostas chegam na próxima janela." : "Nenhuma proposta pendente no momento.")} </section><section class="card"><h2>Comunicados recentes</h2>${state.news.slice(0, 12).map((n) => `<article class="news"><time>${dayDate(n.day)}</time><h3>${esc(n.title)}</h3><p>${esc(n.body)}</p></article>`).join("") || empty("Nenhuma mensagem recente.")}<h3 class="section">Movimentações relacionadas</h3>${e.feed.filter((p) => ["Carreira", "Imprensa", "Vida pessoal"].includes(p.category)).slice(0, 6).map((p) => `<article class="news"><time>${dayDate(p.day)} · ${esc(p.author)}</time><h3>${esc(p.title)}</h3><p>${esc(p.body)}</p></article>`).join("")}</section></div>`;
+    },
     market() {
-      const eligible = Career.canTransfer(state);
       const c = D.club(state),
-        w = Career.windowStatus(state);
+        w = Career.windowStatus(state),
+        e = Career.init(state);
       return `<section class="card"><h2>Janelas de transferências</h2><div class="grid3">${[
-        ["Início do ano", "01/01 a 28/02"],
-        ["Meio do ano", "01/07 a 31/08"],
-        ["Final do ano", "15/11 a 31/12"],
-      ]
-        .map(
-          ([name, dates]) =>
-            `<div class="window-card ${w.name === name ? "open" : ""}"><small>${name}</small><h3>${dates}</h3><b>${w.name === name ? "ABERTA" : ""}</b></div>`,
-        )
-        .join(
-          "",
-        )}</div><p class="${w.open ? "good" : "bad"}">${esc(w.name)} · ${w.open ? w.remaining + " dias restantes" : "Próxima abertura em " + w.remaining + " dias"}</p><p class="chart-note">Três janelas definidas para o jogo. Aceites e contratações ficam bloqueados fora delas; essas datas não representam o regulamento oficial da CBF.</p></section><section class="card section"><h2>Propostas para sua carreira</h2><p class="muted">Salários pessoais e mensais. Confira o projeto e a concorrência no elenco.</p><div class="grid3">${
-        (eligible ? state.offers : [])
-          .map((o) => {
-            const c = D.club(state, o.clubId);
-            return `<article class="card offer"><div class="tag">${esc(c.city)}</div><h3 class="section">${esc(c.name)}</h3><p>${esc(o.role)}</p><p>Estrutura: ${c.structure}/100<br>Salário: ${money(o.salary)}<br>Expira em ${Math.max(0, o.expires - state.day)} dias</p><button class="primary" data-join="${o.clubId}" ${w.open ? "" : "disabled"}>${w.open ? "Aceitar proposta" : "Janela fechada"}</button></article>`;
-          })
-          .join("") ||
-        empty(
-          state.day < state.careerTransferAvailableDay
-            ? "Você já escolheu seu clube. Novas propostas só estarão disponíveis na próxima janela, a partir de " +
-                dayDate(state.careerTransferAvailableDay) +
-                "."
-            : "Novas propostas chegam durante as janelas abertas.",
-        )
-      }</div></section>${
+        ["Início do ano", "01/01 a 28/02"], ["Meio do ano", "01/07 a 31/08"], ["Final do ano", "15/11 a 31/12"],
+      ].map(([name, dates]) => `<div class="window-card ${w.name === name ? "open" : ""}"><small>${name}</small><h3>${dates}</h3><b>${w.name === name ? "ABERTA" : ""}</b></div>`).join("")}</div><p class="${w.open ? "good" : "bad"}">${esc(w.name)} · ${w.open ? w.remaining + " dias restantes" : "Próxima abertura em " + w.remaining + " dias"}</p><p class="chart-note">O mercado registra negociações simuladas entre os clubes conforme orçamento, nível do atleta e carências do elenco.</p></section><section class="card section"><div class="tag">CENTRAL DO MERCADO</div><h2>Transferências confirmadas</h2><div class="tablewrap"><table><thead><tr><th>Data</th><th>Jogador</th><th>Pos.</th><th>Origem</th><th>Destino</th><th>Transferência</th><th>Salário</th></tr></thead><tbody>${e.transfers.slice(0, 30).map((t) => `<tr><td>${dayDate(t.day)}</td><td>${esc(t.player)}</td><td>${esc(t.pos || "—")}</td><td>${esc(t.from)}</td><td>${esc(t.to)}</td><td>${t.fee ? money(t.fee) : "Livre"}</td><td>${t.salary ? money(t.salary) + "/mês" : "—"}</td></tr>`).join("")}</tbody></table></div>${!e.transfers.length ? empty("Nenhuma transferência confirmada ainda. Avance os dias durante uma janela aberta.") : ""}</section>${
         state.mode === "coach" && c
-          ? `<section class="card section"><h2>Scouting e contratação</h2><p>Orçamento do clube: <b>${money(c.budget)}</b></p><p class="muted">Valores estimados por nível e idade. Atletas muito acima da estrutura podem recusar; clubes preservam ao menos 18 jogadores.</p><div class="tablewrap"><table><thead><tr><th>Atleta</th><th>Clube</th><th>Pos.</th><th>Idade</th><th>Nível</th><th>Preço</th><th></th></tr></thead><tbody>${state.clubs
-              .filter((x) => x.id !== c.id)
-              .flatMap((x) =>
-                x.roster
-                  .filter((p) => p.pos !== "GOL")
-                  .slice()
-                  .sort((a, b) => D.overall(b) - D.overall(a))
-                  .slice(0, 3)
-                  .map(
-                    (p) =>
-                      `<tr><td>${esc(p.name)}</td><td>${esc(x.name)}</td><td>${p.pos}</td><td>${p.age}</td><td>${D.overall(p)}</td><td>${money(A.valuation(p))}</td><td><button data-recruit="${p.id}" data-source="${x.id}" ${w.open ? "" : "disabled"}>Contratar</button></td></tr>`,
-                  ),
-              )
-              .join("")}</tbody></table></div></section>`
+          ? `<section class="card section"><h2>Scouting e contratação</h2><p>Orçamento do clube: <b>${money(c.budget)}</b></p><p class="muted">Valores estimados por nível e idade. Atletas muito acima da estrutura podem recusar; clubes preservam o elenco mínimo.</p><div class="tablewrap"><table><thead><tr><th>Atleta</th><th>Clube</th><th>Pos.</th><th>Idade</th><th>Nível</th><th>Preço</th><th></th></tr></thead><tbody>${state.clubs.filter((x) => x.id !== c.id).flatMap((x) => x.roster.filter((p) => p.pos !== "GOL").slice().sort((a, b) => D.overall(b) - D.overall(a)).slice(0, 3).map((p) => `<tr><td>${esc(p.name)}</td><td>${esc(x.name)}</td><td>${p.pos}</td><td>${p.age}</td><td>${D.overall(p)}</td><td>${money(A.valuation(p))}</td><td><button data-recruit="${p.id}" data-source="${x.id}" ${w.open ? "" : "disabled"}>Contratar</button></td></tr>`)).join("")}</tbody></table></div></section>`
           : ""
       }`;
     },

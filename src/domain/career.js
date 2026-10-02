@@ -300,6 +300,8 @@
       from: source?.name || "Sem clube",
       to: target.name,
       fee,
+      pos: p.pos || "—",
+      salary: Math.max(1000, Math.round((fee ? fee / 120 : 1000) / 100) * 100),
     });
     e.transfers = e.transfers.slice(0, 100);
     post(
@@ -327,40 +329,44 @@
         "Disputa pela liderança",
         leader.name +
           " lidera " +
-          (s.leagues?.find((l) => l.id === leader.leagueId)?.name ||
-            "Liga Horizonte") +
-          " com " +
-          leader.stats.points +
-          " pontos após " +
-          leader.stats.played +
-          " jogos.",
+          (s.leagues?.find((l) => l.id === leader.leagueId)?.name || "Liga Horizonte") +
+          " com " + leader.stats.points + " pontos após " + leader.stats.played + " jogos.",
       );
     if (!windowStatus(s).open) return;
-    const sources = s.clubs.filter(
-        (c) => c.id !== s.clubId && c.roster.length > 20,
-      ),
-      source = rng.pick(sources);
-    if (!source) return;
-    const p = rng.pick(
-        source.roster.filter((p) => p.id !== "hero" && p.pos !== "GOL"),
-      ),
-      targets = s.clubs.filter(
-        (c) =>
-          c.id !== source.id &&
-          c.id !== s.clubId &&
-          c.structure + 14 >= D.overall(p) &&
-          c.roster.length < 42,
+    const desired = { GOL: 2, DEF: 8, MEI: 8, ATA: 5 };
+    const attempts = rng.int(2, 5);
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const targets = s.clubs
+        .filter((c) => c.id !== s.clubId && c.roster.length < 42)
+        .map((c) => {
+          const needs = Object.keys(desired)
+            .map((pos) => ({ pos, gap: Math.max(0, desired[pos] - c.roster.filter((p) => p.pos === pos).length) }))
+            .filter((x) => x.gap > 0);
+          return { c, needs };
+        })
+        .filter((x) => x.needs.length);
+      if (!targets.length) break;
+      const targetInfo = rng.pick(targets),
+        need = rng.pick(targetInfo.needs),
+        target = targetInfo.c;
+      const sources = s.clubs.filter((c) => c.id !== target.id && c.id !== s.clubId && c.roster.length > 20);
+      const candidates = sources.flatMap((source) =>
+        source.roster
+          .filter((p) => p.id !== "hero" && p.pos === need.pos && source.roster.filter((x) => x.pos === need.pos).length > Math.max(1, desired[need.pos] - 1))
+          .filter((p) => target.structure + 16 >= D.overall(p))
+          .map((p) => ({ source, p })),
       );
-    if (!targets.length) return;
-    const target = rng.pick(targets),
-      fee = Math.round((D.overall(p) ** 2 * 35) / 1000) * 1000;
-    if (target.budget < fee) return;
-    source.roster = source.roster.filter((x) => x.id !== p.id);
-    source.lineup = source.lineup.filter((x) => x !== p.id);
-    target.roster.push(p);
-    source.budget += fee;
-    target.budget -= fee;
-    transfer(s, p, source, target, fee);
+      if (!candidates.length) continue;
+      const { source, p } = rng.pick(candidates),
+        fee = Math.round((D.overall(p) ** 2 * 35 * (p.age < 23 ? 1.25 : p.age > 30 ? 0.72 : 1)) / 1000) * 1000;
+      if (target.budget < fee) continue;
+      source.roster = source.roster.filter((x) => x.id !== p.id);
+      source.lineup = source.lineup.filter((x) => x !== p.id);
+      target.roster.push(p);
+      source.budget += fee;
+      target.budget -= fee;
+      transfer(s, p, source, target, fee);
+    }
   }
   function rumor(s, rng) {
     const clubs = s.clubs.filter((c) => c.id !== s.clubId);

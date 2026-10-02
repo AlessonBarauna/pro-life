@@ -133,6 +133,52 @@
     }
     return rounds.concat(rounds.map((ps) => ps.map(([a, b]) => [b, a])));
   }
+
+  function positionNeed(c, pos) {
+    const targets = { GOL: 2, DEF: 8, MEI: 8, ATA: 5 };
+    const count = c.roster.filter((p) => p.pos === pos && p.id !== "hero").length;
+    return Math.max(0, (targets[pos] || 5) - count);
+  }
+  function weightedCareerOffers(s, rng, count = 3) {
+    const heroLevel = overall(s.person);
+    const pool = s.clubs
+      .filter((c) => c.id !== s.clubId)
+      .map((c) => {
+        const need = s.mode === "player" ? positionNeed(c, s.person.pos) : 1;
+        const fit = Math.max(0, 24 - Math.abs(c.structure - (heroLevel + s.reputation / 3)));
+        const budgetFit = Math.max(1, Math.min(10, c.budget / 1000000));
+        const weight = s.mode === "coach"
+          ? 2 + fit / 6 + budgetFit / 3
+          : 0.5 + need * 5 + fit / 3 + budgetFit / 4;
+        return { c, need, weight };
+      })
+      .filter((x) => x.weight > 0);
+    const picked = [];
+    while (pool.length && picked.length < count) {
+      const total = pool.reduce((n, x) => n + x.weight, 0);
+      let roll = rng.next() * total, index = 0;
+      for (; index < pool.length - 1; index++) {
+        roll -= pool[index].weight;
+        if (roll <= 0) break;
+      }
+      picked.push(pool.splice(index, 1)[0]);
+    }
+    return picked.map(({ c, need }, i) => ({
+      clubId: c.id,
+      salary: Math.round(
+        (s.mode === "coach" ? 6500 : 900) +
+          s.reputation * (s.mode === "coach" ? 70 : 55) +
+          c.structure * (s.mode === "coach" ? 45 : 18) +
+          heroLevel * (s.mode === "coach" ? 10 : 22) +
+          rng.int(0, s.mode === "coach" ? 1800 : 700),
+      ),
+      role: s.mode === "coach"
+        ? (need >= 2 ? "Projeto com necessidade imediata" : "Projeto de reconstrução")
+        : (need >= 2 ? "Necessidade imediata na sua posição" : need === 1 ? "Disputa aberta por posição" : "Concorrência forte por posição"),
+      expires: s.day + 21 + rng.int(0, 7),
+    }));
+  }
+
   function create(config, seed = Date.now()) {
     const rng = new Random(seed),
       mode = config.mode === "coach" ? "coach" : "player";
@@ -287,18 +333,7 @@
     Statistics?.init(s);
     Competitions?.init(s);
     Life?.init(s);
-    let candidates = clubs.filter((c) => mode === "coach" || c.structure < 70);
-    s.offers = candidates.slice(0, 3).map((c, i) => ({
-      clubId: c.id,
-      salary: s.salary + i * 400,
-      role:
-        mode === "coach"
-          ? "Treinador principal"
-          : i === 0
-            ? "Base e integração gradual"
-            : "Disputa por espaço",
-      expires: 30,
-    }));
+    s.offers = weightedCareerOffers(s, rng, 3);
     if (config.clubId && clubs.some((c) => c.id === config.clubId))
       join(s, config.clubId, s.salary);
     log(
@@ -849,24 +884,7 @@
           Career.windows.some((w) => w.start === s.day % 365)) &&
         Career.canTransfer(s)
       ) {
-        let candidates = s.clubs
-          .filter((c) => c.id !== s.clubId)
-          .sort(
-            (a, b) =>
-              Math.abs(a.structure - (overall(s.person) + s.reputation / 3)) -
-              Math.abs(b.structure - (overall(s.person) + s.reputation / 3)),
-          );
-        s.offers = candidates.slice(0, 3).map((c, i) => ({
-          clubId: c.id,
-          salary: Math.round(
-            (s.mode === "coach" ? 7000 : 1000) + s.reputation * 60 + i * 250,
-          ),
-          role:
-            s.mode === "coach"
-              ? "Projeto de reconstrução"
-              : "Contrato com disputa por posição",
-          expires: s.day + 21,
-        }));
+        s.offers = weightedCareerOffers(s, rng, 3);
         log(
           s,
           "Mercado de trabalho",
@@ -974,6 +992,8 @@
     migrateWorld,
     VERSION,
     Random,
+    positionNeed,
+    weightedCareerOffers,
     create,
     advance,
     recordDevelopment,

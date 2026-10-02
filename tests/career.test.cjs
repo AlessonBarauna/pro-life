@@ -161,7 +161,8 @@ test("AI transfers conserve club money, change one roster and write confirmed fe
     money = s.clubs.reduce((n, c) => n + c.budget, 0),
     ids = s.clubs.flatMap((c) => c.roster.map((p) => p.id)).sort();
   C.world(s, new D.Random(8), D);
-  assert.equal(s.extras.transfers.length, 2);
+  assert.ok(s.extras.transfers.length >= 2);
+  assert.ok(s.extras.transfers.slice(1).every((t) => t.pos && t.salary > 0));
   assert.equal(
     s.clubs.reduce((n, c) => n + c.budget, 0),
     money,

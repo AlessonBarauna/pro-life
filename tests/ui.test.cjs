@@ -52,11 +52,21 @@ for (const mode of ["player", "coach"]) {
   const dom = make(mode),
     w = dom.window;
   assert.equal(get(w).mode, mode);
-  click(w, '[data-page="market"]');
+  click(w, '[data-page="inbox"]');
+  assert.ok(w.document.querySelector("main").textContent.includes("Mensagens da carreira"));
+  const offerText = w.document.querySelector(".offer")?.textContent || "";
+  assert.ok(offerText.includes("Estado:"));
+  assert.ok(offerText.includes("Competição:"));
+  assert.ok(offerText.includes("Contrato:"));
+  assert.match(offerText, /Brasileirão Série [ABCD]/);
   click(w, "[data-join]");
   assert.ok(get(w).clubId);
   assert.equal(w.document.querySelectorAll("[data-join]").length,0);
-  assert.ok(w.document.querySelector("main").textContent.includes("Você já escolheu seu clube"));
+  assert.ok(
+    w.document.querySelector("main").textContent.includes(
+      "Você já assinou nesta janela. Novas propostas chegam na próxima janela.",
+    ),
+  );
   for (const page of [
     "home",
     "profile",
@@ -67,6 +77,7 @@ for (const mode of ["player", "coach"]) {
     "matches",
     "statistics",
     "awards",
+    "inbox",
     "market",
     "life",
     "finance",
@@ -75,6 +86,10 @@ for (const mode of ["player", "coach"]) {
   ]) {
     click(w, `[data-page="${page}"]`);
     assert.ok(w.document.querySelector("main"));
+    if (page === "inbox")
+      assert.ok(w.document.querySelector("main").textContent.includes("Mensagens da carreira"));
+    if (page === "market")
+      assert.ok(w.document.querySelector("main").textContent.includes("Transferências confirmadas"));
     assert.ok(w.document.querySelector("main").textContent.length > 150);
   }
   if (mode === "coach") {

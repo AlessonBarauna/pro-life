@@ -388,7 +388,9 @@
             str(t.player, 60) &&
             str(t.from, 60) &&
             str(t.to, 60) &&
-            num(t.fee, 0, 1e10),
+            num(t.fee, 0, 1e10) &&
+            (t.pos === undefined || str(t.pos, 10)) &&
+            (t.salary === undefined || num(t.salary, 0, 1e9)),
         )
       )
         fail();
