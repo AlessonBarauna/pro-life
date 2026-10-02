@@ -245,3 +245,174 @@ test("signing hides all offers until a different transfer window opens, includin
   assert.equal(loaded.careerTransferAvailableDay, 365);
   S.parse(JSON.stringify(loaded));
 });
+
+
+test("offer preferences filter future proposals and rejected offers disappear", () => {
+  const s = D.create({}, 77);
+  assert.equal(C.init(s).offerPreferences.clubLevel, "any");
+  A.execute(s, "offerPrefs", { leagues: ["serieA"], clubLevel: "elite" });
+  assert.deepEqual(C.init(s).offerPreferences, { leagues: ["serieA"], clubLevel: "elite" });
+  s.offers = D.weightedCareerOffers(s, new D.Random(91), 8);
+  assert.ok(s.offers.length > 0);
+  assert.ok(s.offers.every((o) => { const c = D.club(s, o.clubId); return c.leagueId === "serieA" && c.structure >= 75; }));
+  const id = s.offers[0].clubId, before = s.offers.length;
+  A.execute(s, "reject", { id });
+  assert.equal(s.offers.length, before - 1);
+  assert.ok(!s.offers.some((o) => o.clubId === id));
+  assert.ok(C.init(s).feed.some((p) => p.title === "Proposta recusada"));
+  S.parse(JSON.stringify(s));
+});
+
+test("offer preferences require at least one Brazilian division", () => {
+  const s = D.create({}, 78);
+  assert.throws(() => A.execute(s, "offerPrefs", { leagues: [], clubLevel: "any" }), /pelo menos uma divisão/);
+});
+
+test("player career tracks coach trust, squad role and match objectives", () => {
+  const s = D.create({}, 501);
+  const pc = C.init(s).playerCareer;
+  assert.equal(pc.coachTrust, 55);
+  assert.equal(pc.squadRole, "Rotação");
+  const target = s.offers[0];
+  A.execute(s, "join", { id: target.clubId });
+  const before = pc.coachTrust;
+  C.match(s, { home:s.clubId, away:s.clubs.find(c=>c.id!==s.clubId).id, hg:2, ag:0, ratings:{hero:8.2}, events:[{type:"goal",playerId:"hero"}], participants:[["hero"],[]] });
+  assert.ok(pc.coachTrust > before);
+  assert.equal(pc.starts, 1);
+  assert.equal(pc.objectivesTotal, 2);
+  assert.ok(pc.lastEvaluation);
+});
+
+test("coach trust changes squad role across career thresholds", () => {
+  const s = D.create({}, 502), pc = C.init(s).playerCareer;
+  pc.coachTrust = 90; C.updatePlayerRole(s); assert.equal(pc.squadRole, "Estrela");
+  pc.coachTrust = 20; C.updatePlayerRole(s); assert.equal(pc.squadRole, "Fora dos planos");
+});
+
+
+test("professional career stores market value, contract terms and negotiated offers", () => {
+  const s = D.create({}, 610), pc = C.init(s).playerCareer;
+  assert.ok(pc.marketValue >= 50000);
+  const offer = s.offers[0];
+  assert.ok(offer.durationDays >= 365);
+  assert.ok(offer.signingBonus >= 0);
+  const oldSalary=offer.salary;
+  A.execute(s,"counterOffer",{id:offer.clubId});
+  assert.ok(offer.salary > oldSalary);
+  assert.equal(offer.negotiated,true);
+  A.execute(s,"join",{id:offer.clubId});
+  assert.equal(pc.contract.clubId,s.clubId);
+  assert.equal(pc.contract.salary,s.salary);
+  assert.equal(s.contract,offer.durationDays);
+  S.parse(JSON.stringify(s));
+});
+
+test("renewal can be offered, accepted and expires into free agency", () => {
+  const s=D.create({},611), offer=s.offers[0]; A.execute(s,"join",{id:offer.clubId});
+  s.contract=100; const pc=C.init(s).playerCareer; pc.contract.endDay=s.day+100;
+  const renewal=C.createRenewalOffer(s); assert.ok(renewal); const old=s.salary;
+  A.execute(s,"acceptRenewal"); assert.ok(s.salary>old); assert.ok(s.contract>=730); assert.equal(pc.renewalOffer,null);
+  s.contract=1; D.advance(s,1); assert.equal(s.clubId,null); assert.equal(pc.contract,null);
+});
+
+
+test("agent 2.0 stores strategy and produces career advice", () => {
+  const s = D.create({}, 720), pc = C.init(s).playerCareer;
+  A.execute(s, "agentStrategy", { priority:"playtime", stance:"loan" });
+  assert.equal(pc.agentStrategy.priority,"playtime");
+  assert.equal(pc.agentStrategy.stance,"loan");
+  assert.ok(pc.agentAdvice && pc.agentAdvice.action);
+  S.parse(JSON.stringify(s));
+});
+
+test("agent 2.0 advances interest pipeline from rumor to official offer", () => {
+  const s=D.create({},721), pc=C.init(s).playerCareer, rng=new D.Random(722);
+  s.offers=[]; pc.interests=[]; s.careerTransferAvailableDay=0;
+  const target=s.clubs.find(c=>c.id!==s.clubId);
+  C.registerInterest(s,target.id,"Rumor");
+  C.progressInterest(s,rng,D.weightedCareerOffers);
+  assert.equal(pc.interests[0].stage,"Sondagem");
+  C.progressInterest(s,rng,D.weightedCareerOffers);
+  assert.equal(pc.interests[0].stage,"Negociação");
+  C.progressInterest(s,rng,D.weightedCareerOffers);
+  assert.ok(["Negociação","Oferta oficial"].includes(pc.interests[0].stage));
+});
+
+
+test("media profile evolves independently from overall and persists", () => {
+  const s = D.create({ mode: "player", clubId: "c0" }, 81);
+  const beforeOverall = D.overall(s.person);
+  const beforeRep = s.reputation;
+  C.updateMediaProfile(s, { fans: 12, sponsor: 8, pressure: 5, controversy: 1 });
+  const m = C.mediaProfile(s);
+  assert.equal(D.overall(s.person), beforeOverall);
+  assert.equal(s.reputation, beforeRep);
+  assert.ok(m.fanSentiment >= 67);
+  assert.equal(m.controversies, 1);
+  const restored = S.parse(JSON.stringify(s));
+  assert.equal(restored.extras.playerCareer.mediaProfile.controversies, 1);
+});
+
+test("career media events create different public consequences", () => {
+  const s = D.create({ mode: "player", clubId: "c0" }, 82);
+  D.Life.init(s); C.init(s);
+  s.decision = { id:"criticism", title:"Crítica", body:"Teste", choices:[["respond_fire","Rebater"]] };
+  const beforeFans=s.fans;
+  D.decide(s,"respond_fire");
+  assert.ok(s.fans > beforeFans);
+  assert.ok(C.mediaProfile(s).controversies >= 1);
+});
+
+test("living world tracks club form, position competition and persistent events", () => {
+  const s = D.create({ mode: "player", clubId: "c0" }, 901);
+  const lw0 = C.livingWorldSnapshot(s);
+  assert.ok(lw0 && Array.isArray(lw0.positionRivals));
+  D.advance(s, 30);
+  const lw = C.livingWorldSnapshot(s);
+  assert.ok(lw.lastTick >= 7);
+  assert.ok(Object.keys(lw.clubForm).length >= 80);
+  assert.ok(C.init(s).feed.some((p) => p.category === "Mundo do futebol"));
+  const restored = S.parse(JSON.stringify(s));
+  assert.ok(restored.extras.livingWorld);
+  assert.ok(Object.keys(restored.extras.livingWorld.clubForm).length >= 80);
+});
+
+test("living world AI absences are safe for selection and old saves get defaults", () => {
+  const s = D.create({ mode: "player", clubId: "c0" }, 902);
+  const old = JSON.parse(JSON.stringify(s));
+  delete old.extras.livingWorld;
+  const restored = S.parse(JSON.stringify(old));
+  const lw = C.init(restored).livingWorld;
+  assert.deepEqual(lw.headlines, []);
+  const rival = D.club(restored).roster.find((p) => p.id !== "hero" && p.pos === restored.person.pos);
+  if (rival) rival.suspension = 1;
+  D.advance(restored, 7);
+  S.parse(JSON.stringify(restored));
+});
+
+
+test("legacy tracks rivalries and survives old-save normalization", () => {
+  const s = D.create({ mode: "player", clubId: "c0" }, 1201);
+  const old = JSON.parse(JSON.stringify(s));
+  delete old.extras.legacy;
+  const restored = S.parse(JSON.stringify(old));
+  assert.ok(C.init(restored).legacy);
+  D.advance(restored, 30);
+  const legacy = C.legacySnapshot(restored);
+  assert.ok(Number.isFinite(legacy.score));
+  assert.ok(typeof legacy.tier === "string");
+  assert.ok(Array.isArray(legacy.rivals));
+  S.parse(JSON.stringify(restored));
+});
+
+test("retirement freezes a legacy snapshot before coach transition", () => {
+  const s = D.create({ mode: "player", clubId: "c0", age: 30 }, 1202);
+  D.advance(s, 30);
+  const before = C.legacySnapshot(s);
+  D.retire(s);
+  assert.equal(s.mode, "coach");
+  assert.equal(C.init(s).legacy.retired, true);
+  assert.ok(C.init(s).legacy.retirement);
+  assert.equal(C.init(s).legacy.retirement.score, before.score);
+  S.parse(JSON.stringify(s));
+});

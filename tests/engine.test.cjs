@@ -140,3 +140,28 @@ test("decisions cost money and retirement preserves wealth/history", () => {
   assert.ok(s.clubs.every((c) => !c.roster.some((p) => p.id === "hero")));
   S.validate(s);
 });
+test("offensive balance rewards elite forwards without making goals automatic", () => {
+  function sample(level, trust, runs = 240) {
+    let goals = 0, shots = 0, starts = 0;
+    for (let i = 1; i <= runs; i++) {
+      const s = D.create({ world: "legacy", pos: "ATA", clubId: "c0" }, 8000 + i);
+      Object.keys(s.person.attrs).forEach((key) => { s.person.attrs[key] = level; });
+      s.person.morale = 90;
+      s.extras.playerCareer.coachTrust = trust;
+      const c = D.club(s), rival = s.clubs[1];
+      c.lineup = c.lineup.filter((id) => id !== "hero");
+      const samePos = c.lineup.findIndex((id) => c.roster.find((p) => p.id === id)?.pos === "ATA");
+      if (samePos >= 0) c.lineup[samePos] = "hero"; else c.lineup[c.lineup.length - 1] = "hero";
+      const m = D.simulate(c, rival, new D.Random(12000 + i), s);
+      if (m.ratings.hero) starts++;
+      goals += m.events.filter((e) => e.type === "goal" && e.playerId === "hero").length;
+      shots += m.offensiveStats.hero?.shots || 0;
+    }
+    return { goals, shots, starts };
+  }
+  const elite = sample(95, 100), average = sample(72, 50);
+  assert.ok(elite.starts > 220);
+  assert.ok(elite.shots > average.shots * 1.2, `${JSON.stringify({ elite, average })}`);
+  assert.ok(elite.goals > average.goals * 1.35, `${JSON.stringify({ elite, average })}`);
+  assert.ok(elite.goals < 240, "elite forward must not score automatically every match");
+});

@@ -51,6 +51,46 @@
         D.join(s, o.clubId, o.salary);
         break;
       }
+      case "acceptRenewal":
+        D.Career.acceptRenewal(s);
+        break;
+      case "rejectRenewal":
+        D.Career.rejectRenewal(s);
+        break;
+      case "counterOffer": {
+        D.Career.counterOffer(s, data.id);
+        break;
+      }
+      case "reject": {
+        const index = s.offers.findIndex((x) => x.clubId === data.id && x.expires >= s.day);
+        if (index < 0) throw Error("Esta proposta não está disponível.");
+        const rejected = s.offers.splice(index, 1)[0];
+        const c = D.club(s, rejected.clubId);
+        D.Career.post(s, "Carreira", "Agente", "Proposta recusada", `A proposta de ${c?.name || "clube"} foi recusada.`);
+        break;
+      }
+      case "agentStrategy": {
+        D.Career.setAgentStrategy(s, { priority: data.priority, stance: data.stance });
+        break;
+      }
+      case "offerPrefs": {
+        const validLeagues = ["serieA", "serieB", "serieC", "serieD"];
+        const leagues = Array.isArray(data.leagues) ? data.leagues.filter((x) => validLeagues.includes(x)) : [];
+        if (s.world === "brazil2026" && !leagues.length) throw Error("Selecione pelo menos uma divisão.");
+        const clubLevel = ["any", "elite", "competitive", "intermediate", "small"].includes(data.clubLevel) ? data.clubLevel : "any";
+        D.Career.init(s).offerPreferences = { leagues, clubLevel };
+        s.offers = s.offers.filter((o) => {
+          const c = D.club(s, o.clubId);
+          if (!c) return false;
+          if (s.world === "brazil2026" && !leagues.includes(c.leagueId)) return false;
+          if (clubLevel === "elite") return c.structure >= 75;
+          if (clubLevel === "competitive") return c.structure >= 60 && c.structure < 75;
+          if (clubLevel === "intermediate") return c.structure >= 45 && c.structure < 60;
+          if (clubLevel === "small") return c.structure < 45;
+          return true;
+        });
+        break;
+      }
       case "train":
         if (
           !["balanced", ...Object.keys(D.Training.skills)].includes(data.focus) ||
@@ -61,6 +101,10 @@
         s.intensity = data.intensity;
         D.Training.init(s).focus = data.focus;
         D.Training.init(s).style = data.style || s.person.style;
+        break;
+      case "specialization":
+        if (s.mode !== "player") throw Error("Especializações são da carreira de jogador.");
+        D.Training.unlockSpecialization(s, data.id);
         break;
       case "tactic": {
         const c = D.club(s);

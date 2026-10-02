@@ -80,3 +80,6 @@ social funcional. Nada é promessa de simular toda a vida de um atleta agora.
 7. Retrato mais completo e cenas de apresentação. Partidas visuais só se fizer sentido.
 
 A base foi projetada para expansão. Os tópicos acima ainda não estão implementados.
+
+## Career 2.0 — Etapa 7: Mundo Vivo
+O universo da carreira agora mantém forma recente dos clubes, notícias contextuais, baixas médicas e suspensões da IA, mudanças de comissão técnica em clubes em crise e disputa por posição no clube do jogador. Os acontecimentos são derivados do estado real da simulação e aparecem na Rede do Futebol/História; saves anteriores recebem valores padrão sem perder progresso.

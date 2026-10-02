@@ -36,10 +36,13 @@
     Charts = ProLifeCharts,
     Expansion = ProLifeExpansion;
   const Career = D.Career;
+  const Calendar = window.ProLifeCalendar;
   let chartKey = "overall",
     chartRange = "90",
     leagueKey = "",
-    feedKey = "Todos";
+    statisticsKey = "",
+    feedKey = "Todos",
+    calendarMonth = null;
   const dayDate = (day) =>
     new Date(
       Date.UTC(2026, 0, state?.world === "legacy" ? 5 : 1) + day * 86400000,
@@ -167,8 +170,8 @@
       topNext = D.nextCommitment(state),
       topStage = topNext ? D.Competitions.fixtureStage(state, topNext) : null,
       nav = state.mode === "player"
-        ? [["home", "Início"], ["inbox", "Caixa"], ["profile", "Meu jogador"], ["training", "Treino"], ["league", "Temporada"], ["competitions", "Competições"], ["matches", "Partidas"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["market", "Mercado"], ["squad", "Elenco"], ["life", "Vida"], ["finance", "Finanças"], ["history", "História"], ["save", "Saves"]]
-        : [["home", "Início"], ["inbox", "Caixa"], ["squad", "Elenco e tática"], ["market", "Transferências"], ["league", "Calendário"], ["competitions", "Competições"], ["matches", "Partidas"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["training", "Desenvolvimento"], ["profile", "Treinador"], ["finance", "Diretoria"], ["life", "Decisões"], ["history", "História"], ["save", "Saves"]];
+        ? [["home", "Início"], ["inbox", "Caixa"], ["profile", "Meu jogador"], ["training", "Treino"], ["calendar", "Calendário"], ["league", "Temporada"], ["competitions", "Competições"], ["matches", "Partidas"], ["statistics", "Estatísticas"], ["national", "Seleção"], ["awards", "Prêmios"], ["market", "Mercado"], ["squad", "Elenco"], ["life", "Vida"], ["finance", "Finanças"], ["history", "História"], ["legacy", "Legado"], ["save", "Saves"]]
+        : [["home", "Início"], ["inbox", "Caixa"], ["squad", "Elenco e tática"], ["market", "Transferências"], ["calendar", "Calendário"], ["league", "Temporada"], ["competitions", "Competições"], ["matches", "Partidas"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["training", "Desenvolvimento"], ["profile", "Treinador"], ["finance", "Diretoria"], ["life", "Decisões"], ["history", "História"], ["save", "Saves"]];
     const unread = (state.decision ? 1 : 0) + (Career.canTransfer(state) ? state.offers.length : 0);
     $("#app").innerHTML =
       `<div class="game-shell"><header class="game-nav"><div class="brand">PRO<span>LIFE</span></div><nav>${nav.map(([id, label]) => `<button data-page="${id}" class="${page === id ? "active" : ""}">${label}${id === "inbox" && unread ? `<i>${unread}</i>` : ""}</button>`).join("")}</nav><div class="club-chip"><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b></div></header><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(nav.find((n) => n[0] === page)?.[1] || "Início")}</h1><small>${topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado"}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-advance="7">Avançar 7 dias →</button><button data-advance="30">+30 dias</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
@@ -306,21 +309,25 @@
     home() {
       const c = D.club(state), p = state.person, e = Career.init(state), next = D.nextCommitment(state), w = Career.windowStatus(state),
         own = state.matches.filter((m) => m.home === state.clubId || m.away === state.clubId), last = own[0],
+        national = state.mode === "player" ? D.NationalTeam?.init(state) : null,
+        lastNational = national?.schedule?.filter((match) => match.played && Number.isFinite(match.brazil) && Number.isFinite(match.other)).slice().sort((a, b) => b.day - a.day)[0] || null,
         table = c ? D.table(state) : [], position = c ? table.findIndex((x) => x.id === c.id) + 1 : 0,
         avg = e.played ? (e.ratingTotal / e.played).toFixed(1) : "—",
         unread = (state.decision ? 1 : 0) + (Career.canTransfer(state) ? state.offers.length : 0),
-        statuses = c ? D.Competitions.clubStatus(state) : [];
-      const opponent = next && c ? D.club(state, next.home === c.id ? next.away : next.home) : null;
+        statuses = c ? D.Competitions.clubStatus(state) : [],
+        pendingOffer = Career.canTransfer(state) ? state.offers.find((offer) => offer.expires >= state.day) : null,
+        pendingClub = pendingOffer ? D.club(state, pendingOffer.clubId) : null;
+      const nationalNext = next?.competitionId === "nationalTeam", opponent = next && c && !nationalNext ? D.club(state, next.home === c.id ? next.away : next.home) : null;
       return `<div class="career-dashboard">
         <section class="career-hero">
-          <div class="career-hero-copy"><div class="tag">${state.mode === "player" ? "MINHA CARREIRA" : "CENTRAL DO TREINADOR"}</div><h2>${esc(c?.name || "Aguardando clube")}</h2>${next ? `<p class="next-kicker">PRÓXIMO JOGO · ${esc(next.competitionName)} · ${esc(D.Competitions.fixtureStage(state, next))}</p><div class="versus"><b>${esc(c?.name || "—")}</b><span>×</span><b>${esc(opponent?.name || "—")}</b></div><p>${dayDate(next.date)} · Em ${Math.max(0, next.date - state.day)} dias</p>` : `<p>Nenhum compromisso oficial agendado.</p>`}<div class="actions"><button class="primary" data-advance="7">Avançar semana →</button><button data-page="league">Abrir calendário</button></div></div>
+          <div class="career-hero-copy"><div class="tag">${state.mode === "player" ? "MINHA CARREIRA" : "CENTRAL DO TREINADOR"}</div><h2>${esc(nationalNext ? "Seleção Brasileira" : c?.name || "Aguardando clube")}</h2>${next ? `<p class="next-kicker">PRÓXIMO JOGO · ${esc(next.competitionName)} · ${esc(D.Competitions.fixtureStage(state, next))}</p><div class="versus"><b>${esc(nationalNext ? next.homeName : c?.name || "—")}</b><span>×</span><b>${esc(nationalNext ? next.awayName : opponent?.name || "—")}</b></div><p>${dayDate(next.date)} · Em ${Math.max(0, next.date - state.day)} dias</p>` : `<p>Nenhum compromisso oficial agendado.</p>`}<div class="actions"><button class="primary" data-advance="7">Avançar semana →</button><button data-page="calendar">Abrir calendário</button></div></div>
           <div class="career-identity">${state.mode === "player" ? `<span class="mega-rating">${D.overall(p)}<small>GER</small></span><h3>${esc(p.name)}</h3><p>${p.pos} · ${esc(p.style)}</p><div class="mini-bars">${bar("Condição", p.condition)}${bar("Moral", p.morale)}</div>` : `<span class="mega-rating">${Math.round(state.board)}<small>CONF</small></span><h3>${esc(p.name)}</h3><p>Treinador · ${esc(c?.name || "Sem clube")}</p><div class="mini-bars">${bar("Confiança", state.board)}${bar("Moral", p.morale)}</div>`}</div>
         </section>
         <div class="dashboard-grid">
-          <section class="dash-card season-card"><div class="tag">${state.mode === "player" ? "MINHA TEMPORADA" : "DESEMPENHO DO CLUBE"}</div><h2>${state.season}</h2><div class="metric-row">${state.mode === "player" ? `<span><b>${p.goals}</b><small>Gols</small></span><span><b>${e.assists || 0}</b><small>Assist.</small></span><span><b>${avg}</b><small>Nota média</small></span><span><b>${e.played || 0}</b><small>Jogos</small></span>` : `<span><b>${position || "—"}º</b><small>Liga</small></span><span><b>${own.filter(m=>m.hg!==m.ag && ((m.home===state.clubId&&m.hg>m.ag)||(m.away===state.clubId&&m.ag>m.hg))).length}</b><small>Vitórias</small></span><span><b>${Math.round(state.board)}</b><small>Diretoria</small></span><span><b>${money(c?.budget || 0)}</b><small>Orçamento</small></span>`}</div>${last ? `<p class="last-result">Último resultado · ${esc(D.club(state,last.home).name)} <b>${last.hg} × ${last.ag}</b> ${esc(D.club(state,last.away).name)}</p>` : ""}</section>
-          <section class="dash-card inbox-card" data-page="inbox"><div class="tag">CAIXA DE ENTRADA</div><div class="mail-count">${unread}</div><h2>${unread === 1 ? "mensagem importante" : "mensagens importantes"}</h2><p>${state.decision ? esc(state.decision.title) : state.offers.length && Career.canTransfer(state) ? `${state.offers.length} proposta(s) de contrato aguardando resposta.` : "Sem pendências. Os comunicados da carreira aparecerão aqui."}</p><button data-page="inbox">Abrir caixa de entrada</button></section>
+          <section class="dash-card season-card"><div class="tag">${state.mode === "player" ? "MINHA TEMPORADA" : "DESEMPENHO DO CLUBE"}</div><h2>${state.season}</h2><div class="metric-row">${state.mode === "player" ? `<span><b>${p.goals}</b><small>Gols</small></span><span><b>${e.assists || 0}</b><small>Assist.</small></span><span><b>${avg}</b><small>Nota média</small></span><span><b>${e.played || 0}</b><small>Jogos</small></span>` : `<span><b>${position || "—"}º</b><small>Liga</small></span><span><b>${own.filter(m=>m.hg!==m.ag && ((m.home===state.clubId&&m.hg>m.ag)||(m.away===state.clubId&&m.ag>m.hg))).length}</b><small>Vitórias</small></span><span><b>${Math.round(state.board)}</b><small>Diretoria</small></span><span><b>${money(c?.budget || 0)}</b><small>Orçamento</small></span>`}</div>${last ? `<p class="last-result">Último resultado · ${esc(D.club(state,last.home).name)} <b>${last.hg} × ${last.ag}</b> ${esc(D.club(state,last.away).name)}</p>` : ""}${lastNational ? `<p class="last-result national-result">Último resultado da Seleção · Brasil <b>${lastNational.brazil} × ${lastNational.other}</b> ${esc(lastNational.opponent)}<small>${dayDate(lastNational.day)} · ${esc(lastNational.competition)}</small></p>` : ""}</section>
+          <section class="dash-card inbox-card"><div class="tag">CAIXA DE ENTRADA</div><div class="mail-count">${unread}</div><h2>${unread === 1 ? "mensagem importante" : "mensagens importantes"}</h2>${state.decision ? `<div class="home-invite"><small>CONVITE PENDENTE</small><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><div class="actions">${state.decision.choices.map(([id, label]) => `<button class="${id === state.decision.choices[0][0] ? "primary" : ""}" data-choice="${id}">${esc(label)}</button>`).join("")}</div></div>` : pendingOffer && pendingClub ? `<div class="home-invite"><small>${pendingOffer.transferType === "loan" ? "PROPOSTA DE EMPRÉSTIMO" : "PROPOSTA DE CONTRATO"}</small><h3>${esc(pendingClub.name)}</h3><p>${esc(pendingOffer.squadRole || pendingOffer.role || "Projeto esportivo")} · ${money(pendingOffer.salary)}/mês<br>Expira em ${Math.max(0, pendingOffer.expires - state.day)} dias.</p><button class="primary" data-join="${pendingOffer.clubId}">Aceitar proposta</button></div>` : `<p>Sem pendências. Os comunicados da carreira aparecerão aqui.</p>`}<button data-page="inbox">${unread ? "Ver também na caixa de entrada" : "Abrir caixa de entrada"}</button></section>
           <section class="dash-card competitions-card"><div class="tag">STATUS DAS COMPETIÇÕES</div><h2>Competições</h2>${statuses.map((x)=>`<div class="competition-line"><span><b>${esc(x.name)}</b><small>${esc(x.detail)}</small></span><strong>${esc(x.status)}</strong></div>`).join("") || `<p class="muted">Assine com um clube para acompanhar competições.</p>`}<button data-page="competitions">Ver competições</button></section>
-          <section class="dash-card table-card"><div class="tag">CLASSIFICAÇÃO</div><h2>${c ? esc(leagueName(c.leagueId)) : "Brasileirão"}</h2>${table.slice(0,5).map((x,i)=>`<div class="standing-line ${x.id===state.clubId?"me":""}"><span>${i+1}</span><b>${esc(D.club(state,x.id).name)}</b><strong>${x.pts} pts</strong></div>`).join("") || `<p class="muted">Classificação indisponível.</p>`}<button data-page="league">Tabela completa</button></section>
+          <section class="dash-card table-card"><div class="tag">CLASSIFICAÇÃO</div><h2>${c ? esc(leagueName(c.leagueId)) : "Brasileirão"}</h2>${table.slice(0,5).map((x,i)=>`<div class="standing-line ${x.id===state.clubId?"me":""}"><span>${i+1}</span><b>${esc(D.club(state,x.id).name)}</b><strong>${x.stats.points} pts</strong></div>`).join("") || `<p class="muted">Classificação indisponível.</p>`}<button data-page="league">Tabela completa</button></section>
           <section class="dash-card objectives-card"><div class="tag">OBJETIVOS E EVOLUÇÃO</div><h2>${state.mode === "player" ? `Auge projetado · GER ${D.Training.ceiling(state,D)}` : `Diretoria · ${Math.round(state.board)}/100`}</h2>${state.mode === "player" ? `${bar("GER atual",D.overall(p))}${bar("Reputação",state.reputation)}<p>${e.weeklyXI || 0} seleção(ões) da rodada · ${e.careerGoals || 0} gols na carreira.</p><button data-page="training">Abrir desenvolvimento</button>` : `${bar("Confiança da diretoria",state.board)}${bar("Pressão",state.stress)}<p>${w.name} · ${w.open ? w.remaining+" dias restantes" : "abre em "+w.remaining+" dias"}</p><button data-page="finance">Abrir diretoria</button>`}</section>
           <section class="dash-card news-card"><div class="tag">NOTÍCIAS DA CARREIRA</div><h2>Central</h2>${news(3)}<button data-page="history">Ver histórico</button></section>
         </div>
@@ -359,20 +366,33 @@
         )}</tbody></table></div>${coach ? '<p><button class="primary" data-action="lineup">Salvar os 11 titulares</button></p><small>Inclua um goleiro. Ausências por lesão ou cansaço são cobertas pelo banco automaticamente.</small>' : ""}</section>`;
     },
     training() {
-      return `<div class="grid"><section class="card"><h2>Rotina de trabalho</h2><label>Especialidade<select id="focus">${opt([["balanced", "Plano pelo estilo"], ...Object.entries(D.Training.skills)], state.training)}</select></label><label>Carga<select id="intensity">${opt(
-        [
-          ["rest", "Recuperação"],
-          ["normal", "Normal"],
-          ["hard", "Intensa"],
-        ],
-        state.intensity,
-        )}</select></label><button data-action="train" class="primary">Aplicar rotina</button><p class="muted">${state.mode === "player" ? "A evolução combina especialidade, estilo de jogo, disciplina, idade e carga. O progresso fecha ciclos a cada 8 pontos; carga intensa evolui mais rápido e aumenta o risco de lesão." : "O plano individual é voltado ao atleta. Como treinador, use tática, escalação e licenças."}</p></section><section class="card"><h2>Seu estado</h2>${bar("Condição", state.person.condition)}${bar("Moral", state.person.morale)}${bar("Pressão", state.stress)}<p>Estilo aplicado: <b>${esc(D.Training.init(state).style)}</b><br>Sessões registradas: ${D.Training.init(state).sessions}<br>Melhorias: ${D.Training.init(state).improvements}<br>Seleções da rodada: ${D.Training.init(state).weeklyXI || 0}<br>Auge atual projetado: GER ${D.Training.ceiling(state, D)}</p><p>${state.person.injury ? "Lesão: " + state.person.injury + " dias de recuperação." : "Sem lesão atual."}</p>${state.mode === "coach" ? `<p>Licença atual: <b>${state.license}</b></p><button data-action="license">Curso de licença (${money({ C: 2500, B: 5000, A: 10000, PRO: 0 }[state.license] || 0)})</button>` : ""}</section></div><section class="card section"><h2>27 atributos técnicos e físicos</h2><div class="skill-grid">${Object.entries(D.Training.skills).map(([k, label]) => `<div><small>${esc(label)}</small><b>${state.person.attrs[k]}</b></div>`).join("")}</div></section>`;
+      if (state.mode === "coach") {
+        const nextLicense = { C: "B", B: "A", A: "PRO" }[state.license];
+        const licensePrice = { C: 2500, B: 5000, A: 10000 }[state.license];
+        return `<div class="grid"><section class="card"><div class="tag">DESENVOLVIMENTO DO TREINADOR</div><h2>Rotina de trabalho</h2><label>Foco do treino<select id="focus">${opt([["balanced", "Equilibrado"], ...Object.entries(D.Training.skills)], state.training)}</select></label><label>Carga<select id="intensity">${opt([["rest", "Recuperação"],["normal", "Normal"],["hard", "Intensa"]], state.intensity)}</select></label><button data-action="train" class="primary">Aplicar rotina</button><p class="muted">A rotina mantém o desenvolvimento do elenco sem misturar o sistema de arquétipos exclusivo da carreira de jogador.</p></section><section class="card"><div class="tag">FORMAÇÃO PROFISSIONAL</div><h2>Licença ${esc(state.license)}</h2>${nextLicense ? `<p>Próximo nível: <b>Licença ${nextLicense}</b><br>Investimento: <b>${money(licensePrice)}</b></p><button data-action="license" ${state.wallet < licensePrice ? "disabled" : ""}>Fazer curso da Licença ${nextLicense}</button>` : `<p><b>Licença PRO concluída.</b></p><button data-action="license" disabled>Licença máxima</button>`}<p class="muted">Cursos usam o saldo pessoal do treinador e aumentam sua reputação profissional.</p></section></div><section class="card section"><h2>Estado da equipe</h2>${bar("Confiança da diretoria", state.board)}${bar("Pressão", state.stress)}<p>Reputação: <b>${Math.round(state.reputation)}/100</b><br>Saldo pessoal: <b>${money(state.wallet)}</b></p></section>`;
+      }
+      const plan = D.Training.init(state), arch = plan.archetype || D.Training.archetypes[state.person.pos] || D.Training.archetypes.MEI;
+      const levelProgress = Math.round(((plan.developmentXp || 0) % 18) / 18 * 100);
+      const unlocked = new Set(plan.specializations || []);
+      const specs = Object.entries(D.Training.specializations).map(([id, spec]) => `<div class="card"><div class="tag">${unlocked.has(id) ? "ATIVA" : "ESPECIALIZAÇÃO"}</div><h3>${esc(spec.name)}</h3><p>${esc(spec.description)}</p>${unlocked.has(id) ? '<b>Especialização desbloqueada</b>' : `<button data-specialization="${id}" ${plan.specializationPoints < 1 || unlocked.size >= 3 ? "disabled" : ""}>Desbloquear · 1 ponto</button>`}</div>`).join("");
+      return `<section class="card"><div class="tag">DESENVOLVIMENTO 2.0</div><div class="split"><div><h2>${esc(arch.name)} · Nível ${plan.level}</h2><p>${esc(arch.description)}</p></div><div><b>${plan.specializationPoints} ponto(s)</b><br><small>de especialização</small></div></div>${bar("Progresso do nível", levelProgress)}<p class="muted">Seu arquétipo nasce da posição e sua identidade é aprofundada pelas especializações. Partidas, objetivos e treino geram experiência de desenvolvimento.</p></section><div class="grid section"><section class="card"><h2>Rotina de trabalho</h2><label>Especialidade<select id="focus">${opt([["balanced", "Plano pelo estilo"], ...Object.entries(D.Training.skills)], state.training)}</select></label><label>Carga<select id="intensity">${opt([["rest", "Recuperação"],["normal", "Normal"],["hard", "Intensa"]], state.intensity)}</select></label><button data-action="train" class="primary">Aplicar rotina</button><p class="muted">Especializações ativas aceleram o progresso quando o treino ou a atuação combina com sua identidade. Carga intensa evolui mais rápido, mas aumenta o risco físico.</p></section><section class="card"><h2>Seu estado</h2>${bar("Condição", state.person.condition)}${bar("Moral", state.person.morale)}${bar("Pressão", state.stress)}<p>Estilo: <b>${esc(plan.style)}</b><br>Sessões: ${plan.sessions}<br>Melhorias: ${plan.improvements}<br>Seleções da rodada: ${plan.weeklyXI || 0}<br>Auge projetado: GER ${D.Training.ceiling(state,D)}</p><p>${state.person.injury ? "Lesão: " + state.person.injury + " dias de recuperação." : "Sem lesão atual."}</p></section></div><section class="section"><div class="tag">IDENTIDADE DO JOGADOR</div><h2>Especializações</h2><div class="grid">${specs}</div></section><section class="card section"><h2>27 atributos técnicos e físicos</h2><div class="skill-grid">${Object.entries(D.Training.skills).map(([k,label])=>`<div><small>${esc(label)}</small><b>${state.person.attrs[k]}</b></div>`).join("")}</div></section>`;
     },
     competitions() {
       return Expansion.competitions(state);
     },
     statistics() {
-      return Expansion.statistics(state);
+      return Expansion.statistics(state, statisticsKey);
+    },
+    national() {
+      if (state.mode !== "player") return empty("A Seleção Brasileira está disponível na carreira de jogador.");
+      if (!D.NationalTeam?.init) return `<section class="card"><h2>Seleção Brasileira</h2><p class="muted">O módulo da Seleção não foi carregado. Recarregue a aplicação.</p></section>`;
+      const n = D.NationalTeam.init(state), avg = n.caps ? (n.ratingTotal / n.caps).toFixed(1) : "—", radar = D.NationalTeam.radar(state, D), upcoming = D.NationalTeam.upcoming(state);
+      return `<div class="grid national-dashboard"><section class="card"><div class="tag">SELEÇÃO BRASILEIRA</div><h2>${esc(n.calledUp ? n.status : radar.label)}</h2><p>${n.calledUp ? `Você faz parte da convocação atual para <b>${esc(n.competition)}</b>. Papel previsto: <b>${esc(n.status)}</b>.` : radar.gap ? `Você está a aproximadamente <b>${radar.gap} ponto(s)</b> do nível atual de disputa. Continue atuando bem pelo clube.` : "Seu desempenho já coloca você na disputa pela próxima convocação."}</p>${bar("Momento para convocação", radar.score)}<div class="profile-data"><span>GER <b>${D.overall(state.person)}</b></span><span>Reputação <b>${Math.round(state.reputation)}</b></span><span>Moral <b>${Math.round(state.person.morale)}</b></span><span>Posição <b>${esc(state.person.pos)}</b></span></div><p class="muted">A comissão considera nível, forma no clube, reputação, moral, papel no elenco e disponibilidade física. O corte é uma estimativa, não uma garantia.</p></section><section class="card"><div class="tag">PRÓXIMA DATA FIFA</div><h2>${dayDate(n.nextWindow)}</h2><p>Em aproximadamente <b>${Math.max(0, n.nextWindow - state.day)} dias</b> · ${esc(upcoming[0]?.competition || "Agenda internacional")}</p><div class="national-fixtures">${upcoming.map((match) => `<div><time>${dayDate(match.day)}</time><b>Brasil × ${esc(match.opponent)}</b><small>${n.calledUp ? "Convocado" : "Convocação ainda não definida"}</small></div>`).join("")}</div><button data-page="calendar">Ver no calendário</button></section></div><section class="card section"><div class="tag">CARREIRA INTERNACIONAL</div><h2>Números pela Seleção</h2><div class="profile-data"><span>Jogos <b>${n.caps}</b></span><span>Titular <b>${n.starts}</b></span><span>Gols <b>${n.goals}</b></span><span>Assist. <b>${n.assists}</b></span><span>Nota média <b>${avg}</b></span><span>Melhor em campo <b>${n.motm}</b></span></div><p>Última convocação: <b>${n.lastCallupDay == null ? "Ainda não convocado" : dayDate(n.lastCallupDay)}</b></p></section><section class="card section"><h2>Jogos pela Seleção</h2>${n.matches.length ? `<div class="tablewrap"><table><thead><tr><th>Data</th><th>Competição</th><th>Jogo</th><th>Min.</th><th>Nota</th><th>G</th><th>A</th></tr></thead><tbody>${n.matches.map(m=>`<tr><td>${dayDate(m.day)}</td><td>${esc(m.competition)}</td><td>Brasil ${m.brazil} × ${m.other} ${esc(m.opponent)}</td><td>${m.minutes}</td><td>${Number(m.rating).toFixed(1)}</td><td>${m.goals}</td><td>${m.assists}</td></tr>`).join("")}</tbody></table></div>` : '<div class="empty">Nenhuma partida disputada pela Seleção ainda. Sua página continuará sendo atualizada a cada Data FIFA.</div>'}</section>`;
+    },
+    calendar() {
+      if (!Calendar) return empty("O calendário não pôde ser carregado.");
+      calendarMonth ||= Calendar.monthId(state);
+      return Calendar.render(state, D, { month: calendarMonth, esc, dayDate });
     },
     awards() {
       return Expansion.awards(state);
@@ -452,11 +472,13 @@
       const eligible = Career.canTransfer(state),
         w = Career.windowStatus(state),
         e = Career.init(state);
-      const offers = eligible ? state.offers : [];
+      const offers = eligible ? state.offers : [],
+        prefs = e.offerPreferences || { leagues: ["serieA", "serieB", "serieC", "serieD"], clubLevel: "any" },
+        leagueOptions = [["serieA", "Série A"], ["serieB", "Série B"], ["serieC", "Série C"], ["serieD", "Série D"]];
       return `<div class="grid"><section class="card"><div class="tag">CAIXA DE ENTRADA</div><h2>Mensagens da carreira</h2><p class="muted">Propostas, decisões e comunicados importantes ficam concentrados aqui.</p>${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life">Responder agora</button></article>` : ""}${offers.map((o) => {
         const c = D.club(state, o.clubId), uf = D.Competitions.clubState(c) || "—";
-        return `<article class="news offer"><time>PROPOSTA DE CONTRATO · expira em ${Math.max(0, o.expires - state.day)} dias</time><h3>${esc(c.name)}</h3><p><b>Estado:</b> ${esc(uf)}<br><b>Competição:</b> ${esc(leagueName(c.leagueId))}<br><b>Contrato:</b> ${esc(o.role)}<br>Estrutura: ${c.structure}/100 · Salário: ${money(o.salary)}/mês</p><button class="primary" data-join="${o.clubId}" ${w.open ? "" : "disabled"}>${w.open ? "Aceitar proposta" : "Janela fechada"}</button></article>`;
-      }).join("") || empty(state.day < state.careerTransferAvailableDay ? "Você já assinou nesta janela. Novas propostas chegam na próxima janela." : "Nenhuma proposta pendente no momento.")} </section><section class="card"><h2>Comunicados recentes</h2>${state.news.slice(0, 12).map((n) => `<article class="news"><time>${dayDate(n.day)}</time><h3>${esc(n.title)}</h3><p>${esc(n.body)}</p></article>`).join("") || empty("Nenhuma mensagem recente.")}<h3 class="section">Movimentações relacionadas</h3>${e.feed.filter((p) => ["Carreira", "Imprensa", "Vida pessoal"].includes(p.category)).slice(0, 6).map((p) => `<article class="news"><time>${dayDate(p.day)} · ${esc(p.author)}</time><h3>${esc(p.title)}</h3><p>${esc(p.body)}</p></article>`).join("")}</section></div>`;
+        return `<article class="news offer"><time>${o.transferType === "loan" ? "PROPOSTA DE EMPRÉSTIMO" : "PROPOSTA DE CONTRATO"} · expira em ${Math.max(0, o.expires - state.day)} dias</time><h3>${esc(c.name)}</h3><p><b>Estado:</b> ${esc(uf)}<br><b>Competição:</b> ${esc(leagueName(c.leagueId))}<br><b>Projeto:</b> ${esc(o.role)}<br><b>Papel esperado:</b> ${esc(o.squadRole || "Rotação")}<br><b>Duração:</b> ${Math.round((o.durationDays || 730)/365)} ano(s)<br><b>Salário:</b> ${money(o.salary)}/mês · <b>Luvas:</b> ${money(o.signingBonus || 0)}<br>Estrutura: ${c.structure}/100${o.negotiated ? " · <b>Contraproposta negociada</b>" : ""}</p><div class="actions"><button class="primary" data-join="${o.clubId}" ${w.open ? "" : "disabled"}>${w.open ? "Aceitar proposta" : "Janela fechada"}</button><button data-counter="${o.clubId}" ${o.negotiated ? "disabled" : ""}>${o.negotiated ? "Negociado" : "Pedir melhores termos"}</button><button data-reject="${o.clubId}">Recusar</button></div></article>`;
+      }).join("") || empty(state.day < state.careerTransferAvailableDay ? "Você já assinou nesta janela. Novas propostas chegam na próxima janela." : "Nenhuma proposta pendente no momento.")}</section><section class="card"><div class="tag">PREFERÊNCIAS DO AGENTE</div><h2>Quais propostas quero receber?</h2><p class="muted">As preferências são usadas na geração das próximas propostas, não apenas na tela.</p>${state.mode === "player" ? (() => { const pc=e.playerCareer, ct=pc.contract, interests=pc.interests||[], advice=Career.agentAdvice(state), strategy=pc.agentStrategy||{priority:"balanced",stance:"open"}; return `<div class="notice"><div class="tag">AGENTE 2.0</div><h3>${esc(advice?.action || "Planejamento de carreira")}</h3><p>${esc(advice?.reason || "Seu agente está analisando o próximo passo.")}</p><label>Prioridade<select id="agent-priority"><option value="balanced" ${strategy.priority==="balanced"?"selected":""}>Equilíbrio</option><option value="playtime" ${strategy.priority==="playtime"?"selected":""}>Tempo de jogo</option><option value="salary" ${strategy.priority==="salary"?"selected":""}>Salário</option><option value="prestige" ${strategy.priority==="prestige"?"selected":""}>Prestígio</option><option value="development" ${strategy.priority==="development"?"selected":""}>Desenvolvimento</option></select></label><label>Postura<select id="agent-stance"><option value="stay" ${strategy.stance==="stay"?"selected":""}>Quero permanecer</option><option value="open" ${strategy.stance==="open"?"selected":""}>Aberto a propostas</option><option value="loan" ${strategy.stance==="loan"?"selected":""}>Buscar empréstimo</option><option value="leave" ${strategy.stance==="leave"?"selected":""}>Buscar saída</option></select></label><button class="primary" data-action="agent-strategy">Atualizar estratégia</button><p><b>Pipeline de mercado:</b><br>${interests.length ? interests.slice(0,5).map(x=>`${esc(D.club(state,x.clubId)?.name||"Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhum interesse ativo."}</p></div><div class="notice"><div class="tag">CARREIRA PROFISSIONAL</div><h3>Valor de mercado: ${money(pc.marketValue || 0)}</h3>${ct ? `<p><b>Contrato atual:</b> ${Math.max(0, Math.ceil((ct.endDay-state.day)/30))} mês(es) restantes<br><b>Salário:</b> ${money(state.salary)}/mês · <b>Papel:</b> ${esc(ct.role || pc.squadRole)}<br><b>Vínculo:</b> ${ct.type === "loan" ? "Empréstimo" : "Definitivo"}</p>` : `<p>Sem contrato ativo.</p>`}<p><b>Clubes interessados:</b><br>${interests.length ? interests.slice(0,5).map(x=>`${esc(D.club(state,x.clubId)?.name||"Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhuma sondagem ativa."}</p>${pc.renewalOffer ? `<div class="news"><b>Renovação disponível</b><br>${Math.round(pc.renewalOffer.durationDays/365)} anos · ${money(pc.renewalOffer.salary)}/mês · luvas ${money(pc.renewalOffer.signingBonus)}<div class="actions"><button class="primary" data-action="accept-renewal">Aceitar renovação</button><button data-action="reject-renewal">Recusar</button></div></div>` : ""}</div>`; })() : ""}${state.mode === "player" && state.clubId ? (() => { const pc=e.playerCareer, objectives=Career.matchObjectives(state); return `<div class="notice"><div class="tag">RELAÇÃO COM O TÉCNICO</div><h3>${esc(pc.squadRole)} · ${Math.round(pc.coachTrust)}/100</h3>${bar("Confiança do técnico",pc.coachTrust)}<p><b>Objetivos da próxima partida:</b><br>${objectives.map(o=>"• "+esc(o.label)).join("<br>")}</p><small>Cumpridos na carreira: ${pc.objectivesMet}/${pc.objectivesTotal}${pc.lastEvaluation ? ` · última nota ${pc.lastEvaluation.rating}` : ""}</small></div>`; })() : ""}${state.world === "brazil2026" ? `<h3>Divisões</h3><div class="offer-pref-leagues">${leagueOptions.map(([id, label]) => `<label><input type="checkbox" class="offer-league" value="${id}" ${prefs.leagues.includes(id) ? "checked" : ""}> ${label}</label>`).join("")}</div>` : ""}<label>Nível dos clubes<select id="offer-club-level"><option value="any" ${prefs.clubLevel === "any" ? "selected" : ""}>Qualquer clube</option><option value="elite" ${prefs.clubLevel === "elite" ? "selected" : ""}>Somente clubes de elite</option><option value="competitive" ${prefs.clubLevel === "competitive" ? "selected" : ""}>Clubes competitivos</option><option value="intermediate" ${prefs.clubLevel === "intermediate" ? "selected" : ""}>Clubes intermediários</option><option value="small" ${prefs.clubLevel === "small" ? "selected" : ""}>Clubes menores</option></select></label><button class="primary" data-action="offer-prefs">Salvar preferências</button><h2 class="section">Comunicados recentes</h2>${state.news.slice(0, 8).map((n) => `<article class="news"><time>${dayDate(n.day)}</time><h3>${esc(n.title)}</h3><p>${esc(n.body)}</p></article>`).join("") || empty("Nenhuma mensagem recente.")}</section></div>`;
     },
     market() {
       const c = D.club(state),
@@ -473,7 +495,8 @@
     life() {
       const e = Career.init(state);
       const life = D.Life.init(state);
-      return `<div class="grid"><section class="card"><h2>Fora das quatro linhas</h2>${bar("Relação com a família", state.family)}${bar("Pressão e estresse", state.stress)}${bar("Reputação", state.reputation)}<p>Seguidores: ${state.fans.toLocaleString("pt-BR")}<br>Saldo: ${money(state.wallet)}</p>${life.agency ? `<div class="notice"><h3>Assessoria ativa</h3><p>${esc(life.agency.name)} · desde ${dayDate(life.agency.hiredDay)}</p><b>${money(life.agency.monthlyCost)} por mês</b></div>` : '<p class="muted">Sem agência contratada. Uma proposta pode chegar pela caixa de entrada.</p>'}<p class="muted">Decisões alteram indicadores, moral, finanças e progresso de treino.</p>${e.promise ? `<div class="notice"><h3>Promessa da entrevista</h3><p>Vencer dois dos próximos três jogos.</p><b>${e.promise.wins} vitória(s) · ${e.promise.games} jogo(s) restante(s)</b></div>` : ""}</section><section class="card"><div class="tag">CAIXA DE ENTRADA</div><h2 class="section">${esc(state.decision?.title || "Nenhum convite pendente")}</h2>${state.decision ? `<p>${esc(state.decision.body)}</p><div class="actions">${state.decision.choices.map(([id, label]) => `<button data-choice="${id}">${esc(label)}</button>`).join("")}</div>` : '<p class="muted">Continue a carreira. Convites surgem a cada três semanas.</p>'}</section></div><section class="card section"><h2>Repercussão na imprensa</h2>${
+      const media = Career.mediaProfile(state);
+      return `<div class="grid"><section class="card"><h2>Fora das quatro linhas</h2>${bar("Relação com a família", state.family)}${bar("Pressão e estresse", state.stress)}${bar("Reputação", state.reputation)}${bar("Percepção da torcida", media.fanSentiment)}${bar("Apelo comercial", media.sponsorAppeal)}<div class="notice"><div class="tag">IMAGEM PÚBLICA</div><h3>${esc(media.image)}</h3><p>Pressão da mídia: <b>${Math.round(media.pressure)}/100</b><br>Entrevistas: <b>${media.interviews}</b> · Controvérsias: <b>${media.controversies}</b></p></div><p>Seguidores: ${state.fans.toLocaleString("pt-BR")}<br>Saldo: ${money(state.wallet)}</p>${life.agency ? `<div class="notice"><h3>Assessoria ativa</h3><p>${esc(life.agency.name)} · desde ${dayDate(life.agency.hiredDay)}</p><b>${money(life.agency.monthlyCost)} por mês</b></div>` : '<p class="muted">Sem agência contratada. Uma proposta pode chegar pela caixa de entrada.</p>'}<p class="muted">Decisões alteram indicadores, moral, finanças e progresso de treino.</p>${e.promise ? `<div class="notice"><h3>Promessa da entrevista</h3><p>Vencer dois dos próximos três jogos.</p><b>${e.promise.wins} vitória(s) · ${e.promise.games} jogo(s) restante(s)</b></div>` : ""}</section><section class="card"><div class="tag">CAIXA DE ENTRADA</div><h2 class="section">${esc(state.decision?.title || "Nenhum convite pendente")}</h2>${state.decision ? `<p>${esc(state.decision.body)}</p><div class="actions">${state.decision.choices.map(([id, label]) => `<button data-choice="${id}">${esc(label)}</button>`).join("")}</div>` : '<p class="muted">Continue a carreira. Convites surgem a cada três semanas.</p>'}</section></div><section class="card section"><h2>Repercussão na imprensa</h2>${
         e.feed
           .filter((p) => p.category === "Imprensa")
           .slice(0, 6)
@@ -506,12 +529,18 @@
           "",
         )}</tbody></table></div>${!e.ledger.length ? empty("O extrato começa a registrar movimentos nesta versão.") : ""}</section>`;
     },
+    legacy() {
+      const l = Career.legacySnapshot(state), n=l.national;
+      return `<div class="grid"><section class="card"><div class="tag">LEGADO DA CARREIRA</div><h1>${esc(l.tier)}</h1><div class="metric-row"><span><b>${l.score}</b><small>Pontos de legado</small></span><span><b>${l.seasons}</b><small>Temporadas</small></span><span><b>${l.titles}</b><small>Títulos de liga</small></span><span><b>${l.awards}</b><small>Prêmios</small></span></div><h3 class="section">Números da carreira</h3><div class="profile-data"><span>Jogos <b>${l.games}</b></span><span>Gols <b>${l.goals}</b></span><span>Assistências <b>${l.assists}</b></span><span>Reputação <b>${Math.round(state.reputation)}</b></span></div><h3 class="section">Eficiência ofensiva</h3>${(()=>{const a=l.offensiveAnalytics||{}, apps=a.appearances||0, shots=a.shots||0; return `<div class="profile-data"><span>Finalizações <b>${shots}</b></span><span>No alvo <b>${a.onTarget||0}</b></span><span>xG acumulado <b>${Number(a.xg||0).toFixed(1)}</b></span><span>Gols / jogo <b>${apps ? ((a.goals||0)/apps).toFixed(2) : "0.00"}</b></span><span>Conversão <b>${shots ? Math.round((a.goals||0)/shots*100) : 0}%</b></span></div>`})()}${l.retired ? `<div class="section"><span class="pill">CARREIRA ENCERRADA</span><p>O legado permanece disponível neste save.</p></div>` : `<p class="chart-note">Seu legado cresce com desempenho, títulos, Seleção e grandes temporadas.</p>`}</section><section class="card"><div class="tag">SELEÇÃO BRASILEIRA</div><h2>Marca internacional</h2><div class="profile-data"><span>Jogos <b>${n.caps}</b></span><span>Gols <b>${n.goals}</b></span><span>Assistências <b>${n.assists}</b></span></div><h3 class="section">Clubes defendidos</h3><p>${l.clubs.length ? l.clubs.map(esc).join(" · ") : "A trajetória por clubes será registrada nas transferências."}</p>${l.biggestTransfer ? `<p><b>Maior transferência:</b> ${esc(l.biggestTransfer.from)} → ${esc(l.biggestTransfer.to)} · ${money(l.biggestTransfer.fee || 0)}</p>` : ""}<h3 class="section">Rivalidades</h3>${l.rivals.length ? l.rivals.map((r)=>`<article class="news"><h3>${esc(r.club)}</h3><p>${r.games} jogos · ${r.wins}V ${r.draws}E ${r.losses}D · ${r.goals} gols · ${r.assists} assistências</p></article>`).join("") : empty("As rivalidades surgem conforme você enfrenta os mesmos adversários.")}</section></div>`;
+    },
     history() {
       const e = Career.init(state),
+        living = Career.livingWorldSnapshot(state),
         posts = e.feed.filter(
           (p) => feedKey === "Todos" || p.category === feedKey,
         );
-      return `<div class="grid"><section class="card"><h2>Histórico da carreira</h2>${state.history.length ? state.history.map((h) => `<article class="news"><time>Temporada ${h.season} · ${esc(h.league || "Carreira")}</time><h3>${h.event ? esc(h.event) : esc(h.champion) + " campeão"}</h3><p>${h.event ? esc(h.event) : "Sua posição: " + (h.position || "Sem participação") + " · " + h.goals + " gols · " + (h.minutes || 0) + " minutos"}</p></article>`).join("") : empty("Os títulos e resumos entram ao encerrar a temporada.")}<h3 class="section">Transferências registradas</h3>${
+      const worldPanel = `<section class="card"><div class="tag">MUNDO VIVO</div><h2>O futebol continua acontecendo</h2><div class="grid"><div><small>MOMENTO DO SEU CLUBE</small><h3>${esc(living.currentClubForm?.status || "Sem tendência")}</h3><p>${living.currentClubForm?.games ? `${living.currentClubForm.points} ponto(s) nos últimos ${living.currentClubForm.games} jogos registrados.` : "A forma será calculada conforme os jogos acontecem."}</p></div><div><small>DISPUTA NA SUA POSIÇÃO</small>${living.positionRivals.length ? living.positionRivals.map((r)=>`<p><b>${esc(r.name)}</b> · GER ${r.overall}${r.injury ? ` · lesionado (${r.injury}d)` : r.suspension ? " · suspenso" : ""}</p>`).join("") : "<p>Sem concorrentes diretos registrados.</p>"}</div></div><h3 class="section">Bastidores recentes</h3>${living.managerChanges.slice(0,3).map((x)=>`<article class="news"><time>${dayDate(x.day)}</time><h3>Mudança no comando</h3><p>${esc(x.club)} alterou a comissão técnica.</p></article>`).join("") || ""}${living.injuries.slice(0,3).map((x)=>`<article class="news"><time>${dayDate(x.day)}</time><h3>Departamento médico</h3><p>${esc(x.player)} · ${x.days} dias previstos.</p></article>`).join("") || empty("O mundo vivo ganhará acontecimentos conforme a carreira avança.")}</section>`;
+      return `<div class="grid">${worldPanel}<section class="card"><h2>Histórico da carreira</h2>${state.history.length ? state.history.map((h) => `<article class="news"><time>Temporada ${h.season} · ${esc(h.league || "Carreira")}</time><h3>${h.event ? esc(h.event) : esc(h.champion) + " campeão"}</h3><p>${h.event ? esc(h.event) : "Sua posição: " + (h.position || "Sem participação") + " · " + h.goals + " gols · " + (h.minutes || 0) + " minutos"}</p></article>`).join("") : empty("Os títulos e resumos entram ao encerrar a temporada.")}<h3 class="section">Transferências registradas</h3>${
         e.transfers
           .slice(0, 12)
           .map(
@@ -519,7 +548,7 @@
               `<article class="news"><time>${dayDate(t.day)}</time><h3>${esc(t.player)}</h3><p>${esc(t.from)} → ${esc(t.to)}${t.fee ? " · " + money(t.fee) : ""}</p></article>`,
           )
           .join("") || empty("Nenhuma transferência registrada.")
-      }</section><section class="card social-feed"><div class="split"><div><div class="tag">REDE DO FUTEBOL</div><h2>O que está acontecendo</h2></div><label class="chart-select">Filtrar<select id="feed-key">${opt(["Todos", "Carreira", "Transferências", "Competições", "Imprensa", "Torcida", "Rumores", "Vida pessoal"], feedKey)}</select></label></div><p class="chart-note">Todas as publicações retratam sua carreira simulada. Rumores não confirmam acordos.</p>${
+      }</section><section class="card social-feed"><div class="split"><div><div class="tag">REDE DO FUTEBOL</div><h2>O que está acontecendo</h2></div><label class="chart-select">Filtrar<select id="feed-key">${opt(["Todos", "Mundo do futebol", "Carreira", "Transferências", "Competições", "Imprensa", "Torcida", "Rumores", "Vida pessoal"], feedKey)}</select></label></div><p class="chart-note">Todas as publicações retratam sua carreira simulada. Rumores não confirmam acordos.</p>${
         posts
           .slice(0, 30)
           .map(
@@ -601,6 +630,7 @@
     if (!b) return;
     if (b.dataset.page) {
       page = b.dataset.page;
+      if (page === "calendar" && !calendarMonth) calendarMonth = Calendar?.monthId(state);
       render();
       window.scrollTo(0, 0);
       return;
@@ -609,8 +639,21 @@
       command("advance", { days: Number(b.dataset.advance) });
       return;
     }
+    if (b.dataset.calendar) {
+      calendarMonth = b.dataset.calendar === "today" ? Calendar.monthId(state) : Calendar.shift(calendarMonth || Calendar.monthId(state), b.dataset.calendar === "prev" ? -1 : 1);
+      render();
+      return;
+    }
     if (b.dataset.join) {
       command("join", { id: b.dataset.join });
+      return;
+    }
+    if (b.dataset.reject) {
+      command("reject", { id: b.dataset.reject });
+      return;
+    }
+    if (b.dataset.counter) {
+      command("counterOffer", { id: b.dataset.counter });
       return;
     }
     if (b.dataset.choice) {
@@ -634,6 +677,10 @@
       });
       return;
     }
+    if (b.dataset.specialization) {
+      command("specialization", { id: b.dataset.specialization });
+      return;
+    }
     switch (b.dataset.action) {
       case "number":
         command("number", { value: $("#shirt-number").value });
@@ -654,6 +701,24 @@
       case "resume":
         setup = false;
         render();
+        break;
+      case "accept-renewal":
+        command("acceptRenewal");
+        break;
+      case "reject-renewal":
+        command("rejectRenewal");
+        break;
+      case "agent-strategy":
+        command("agentStrategy", {
+          priority: $("#agent-priority")?.value || "balanced",
+          stance: $("#agent-stance")?.value || "open",
+        });
+        break;
+      case "offer-prefs":
+        command("offerPrefs", {
+          leagues: [...document.querySelectorAll(".offer-league:checked")].map((el) => el.value),
+          clubLevel: $("#offer-club-level")?.value || "any",
+        });
         break;
       case "train":
         command("train", {
@@ -721,6 +786,11 @@
     }
     if (e.target.id === "league-key") {
       leagueKey = e.target.value;
+      render();
+      return;
+    }
+    if (e.target.id === "statistics-key") {
+      statisticsKey = e.target.value;
       render();
       return;
     }

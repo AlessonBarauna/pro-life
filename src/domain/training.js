@@ -24,6 +24,23 @@
     Organizador: ["pass", "longPass", "vision", "crossing", "technique", "ballControl"],
     Combativo: ["defense", "tackling", "interception", "strength", "stamina", "positioning"],
   };
+  const archetypes = {
+    GOL: { name: "Guardião", description: "Reflexos, posicionamento e segurança sob pressão.", focus: ["positioning", "composure", "longPass", "jumping"] },
+    ZAG: { name: "Muralha", description: "Leitura defensiva, força e domínio dos duelos.", focus: ["defense", "tackling", "interception", "strength", "heading"] },
+    LAT: { name: "Ala Dinâmico", description: "Explosão, resistência e apoio pelos lados.", focus: ["pace", "stamina", "crossing", "tackling", "acceleration"] },
+    VOL: { name: "Motor", description: "Equilíbrio entre proteção, intensidade e construção.", focus: ["interception", "stamina", "pass", "strength", "positioning"] },
+    MEI: { name: "Maestro", description: "Visão, técnica e criação entre as linhas.", focus: ["vision", "pass", "technique", "ballControl", "longPass"] },
+    PE: { name: "Ponta Incisivo", description: "Aceleração, drible e agressividade no último terço.", focus: ["acceleration", "sprint", "dribbling", "finesseShot", "crossing"] },
+    PD: { name: "Ponta Incisivo", description: "Aceleração, drible e agressividade no último terço.", focus: ["acceleration", "sprint", "dribbling", "finesseShot", "crossing"] },
+    ATA: { name: "Finalizador", description: "Movimentação, frieza e definição das chances.", focus: ["finish", "positioning", "composure", "powerShot", "heading"] },
+  };
+  const specializations = {
+    explosive: { name: "Explosão", description: "Treinos de velocidade rendem mais progresso.", attrs: ["pace", "acceleration", "sprint"] },
+    creator: { name: "Criador", description: "Ações de criação valorizam passe, visão e técnica.", attrs: ["pass", "vision", "technique", "longPass"] },
+    finisher: { name: "Matador", description: "Gols aceleram o desenvolvimento ofensivo.", attrs: ["finish", "positioning", "composure", "powerShot"] },
+    engine: { name: "Motor", description: "Treino físico favorece resistência e equilíbrio.", attrs: ["stamina", "strength", "balance"] },
+    stopper: { name: "Especialista Defensivo", description: "Atuações sólidas favorecem marcação e desarme.", attrs: ["defense", "tackling", "interception", "positioning"] },
+  };
   const related = {
     acceleration: "pace", sprint: "pace", agility: "pace", powerShot: "finish", finesseShot: "finish", longShot: "finish",
     freeKick: "finish", penalty: "finish", heading: "finish", jumping: "strength", longPass: "pass", vision: "pass",
@@ -61,6 +78,11 @@
     if (!s.trainingPlan) s.trainingPlan = { focus: s.training || "balanced", style: s.person.style || "Técnico", sessions: 0, improvements: 0, accoladePoints: 0, weeklyXI: 0 };
     if (!Number.isFinite(s.trainingPlan.accoladePoints)) s.trainingPlan.accoladePoints = 0;
     if (!Number.isFinite(s.trainingPlan.weeklyXI)) s.trainingPlan.weeklyXI = 0;
+    if (!Number.isFinite(s.trainingPlan.developmentXp)) s.trainingPlan.developmentXp = 0;
+    if (!Number.isFinite(s.trainingPlan.level)) s.trainingPlan.level = 1;
+    if (!Array.isArray(s.trainingPlan.specializations)) s.trainingPlan.specializations = [];
+    if (!Number.isFinite(s.trainingPlan.specializationPoints)) s.trainingPlan.specializationPoints = 0;
+    s.trainingPlan.archetype = archetypes[s.person.pos] || archetypes.MEI;
     s.trainingPlan.style = s.person.style || s.trainingPlan.style || "Técnico";
     return s.trainingPlan;
   }
@@ -70,12 +92,34 @@
     s.person.attrs[key] = helpers.clamp(before + amount, 20, 100);
     return s.person.attrs[key] > before;
   }
+  function addDevelopmentXp(s, amount) {
+    const plan = init(s), before = plan.level;
+    plan.developmentXp += Math.max(0, amount || 0);
+    plan.level = Math.min(30, 1 + Math.floor(plan.developmentXp / 18));
+    if (plan.level > before) plan.specializationPoints += plan.level - before;
+    return plan.level - before;
+  }
+  function unlockSpecialization(s, id) {
+    const plan = init(s);
+    if (!specializations[id]) throw Error("Especialização inválida.");
+    if (plan.specializations.includes(id)) return plan;
+    if (plan.specializationPoints < 1) throw Error("Você precisa de um ponto de especialização.");
+    if (plan.specializations.length >= 3) throw Error("Limite de três especializações atingido.");
+    plan.specializationPoints--;
+    plan.specializations.push(id);
+    return plan;
+  }
+  function specializationBonus(plan, key) {
+    return plan.specializations.some((id) => specializations[id]?.attrs.includes(key)) ? 0.18 : 0;
+  }
   function daily(s, rng, helpers) {
     const plan = init(s);
     if (s.person.injury || s.mode !== "player") return null;
     const ageFactor = s.person.age <= 20 ? 1.35 : s.person.age <= 24 ? 1.2 : s.person.age <= 29 ? 1 : 0.72;
-    const gain = (s.intensity === "hard" ? 3.6 : s.intensity === "rest" ? 0.4 : 2.35) * ageFactor;
-    s.trainingProgress += gain; plan.sessions++;
+    const focusKey = plan.focus === "balanced" ? null : plan.focus;
+    const specBoost = focusKey ? specializationBonus(plan, focusKey) : 0;
+    const gain = (s.intensity === "hard" ? 3.6 : s.intensity === "rest" ? 0.4 : 2.35) * ageFactor * (1 + specBoost);
+    s.trainingProgress += gain; plan.sessions++; addDevelopmentXp(s, 0.35 + gain * 0.08);
     if (s.trainingProgress < 8) return null;
     s.trainingProgress -= 8;
     const stylePool = styleFocus[plan.style] || Object.keys(skills);
@@ -102,6 +146,7 @@
     let xp = rating >= 8.5 ? 3.2 : rating >= 7.5 ? 2.2 : 1.1;
     xp += goals * 1.4 + assists;
     s.trainingProgress += xp;
+    addDevelopmentXp(s, Math.max(0.5, (rating - 6) * 1.4 + goals * 1.5 + assists));
     if (rating >= 8) { plan.weeklyXI++; plan.accoladePoints += 1; }
     if (goals) plan.accoladePoints += goals * 0.6;
     if (assists) plan.accoladePoints += assists * 0.5;
@@ -131,7 +176,7 @@
     if (points) s.person.potential = Math.min(100, Math.max(s.person.potential || 0, helpers.overall(s.person) + 4 + Math.floor(points / 2)));
     return points;
   }
-  const api = { core, skills, groups, styleFocus, expand, groupRatings, init, ceiling, daily, matchDevelopment, seasonRewards };
+  const api = { core, skills, groups, styleFocus, archetypes, specializations, expand, groupRatings, init, ceiling, addDevelopmentXp, unlockSpecialization, daily, matchDevelopment, seasonRewards };
   root.ProLifeTraining = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

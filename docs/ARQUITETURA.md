@@ -96,3 +96,26 @@ treinamento, estatísticas e vida. `engine.js` continua sendo o orquestrador pur
 `validate-expansion.js` valida os campos opcionais sem mudar o schema externo do
 save. `expansion.js` renderiza as telas novas mantendo a interface escura existente.
 Consulte `ATUALIZACAO_0.4.md` para cobertura e limites vigentes.
+
+## Career 2.0 — Etapa 5
+
+`domain/national-team.js` centraliza normalização, radar, janelas e partidas da
+Seleção. `ui/calendar.js` deriva uma agenda mensal do estado canônico sem criar
+um segundo calendário persistido: partidas, tabelas básicas, copas, estadual,
+janelas e decisões continuam pertencendo aos seus módulos originais. O mês em
+exibição é estado efêmero da interface e não altera o formato do save.
+
+Os estaduais ficam em `competitionSchedule.state` para o campeonato do clube da
+carreira e em `competitionSchedule.otherStates` para os demais. Todos usam a
+mesma estrutura de grupos, tabela e rodadas eliminatórias. Saves com o formato
+estadual anterior são aceitos, migrados na inicialização e preservam a chave da
+Copa do Brasil já existente. `statistics.byCompetition` usa os identificadores
+da liga, da copa e de cada estadual como fonte única das telas e premiações.
+O módulo estatístico também consolida defesas e desarmes e monta um 4-3-3 por
+competição, preservando a seleção no histórico ao encerrar a temporada.
+
+`national-team.js` mantém uma agenda internacional persistente por temporada e
+protege o intervalo entre D-7 e D+4 de cada Data FIFA. `engine.nextCommitment`
+combina clube e Seleção; quando o atleta está convocado, o compromisso mais
+próximo é apresentado pelo mesmo fluxo usado no painel inicial. O calendário
+deriva eventos futuros e resultados internacionais da agenda persistida.

@@ -22,6 +22,9 @@
   const Statistics =
     root.ProLifeStatistics ||
     (typeof require === "function" ? require("./statistics.js") : null);
+  const NationalTeam =
+    root.ProLifeNationalTeam ||
+    (typeof require === "function" ? require("./national-team.js") : null);
   const Life =
     root.ProLifeLife ||
     (typeof require === "function" ? require("./life.js") : null);
@@ -148,8 +151,19 @@
   }
   function weightedCareerOffers(s, rng, count = 3) {
     const heroLevel = overall(s.person);
+    const preferences = Career.init(s).offerPreferences || { leagues: ["serieA", "serieB", "serieC", "serieD"], clubLevel: "any" };
+    const allowedLeagues = new Set(preferences.leagues || []);
+    const levelAllowed = (c) => {
+      if (preferences.clubLevel === "elite") return c.structure >= 75;
+      if (preferences.clubLevel === "competitive") return c.structure >= 60 && c.structure < 75;
+      if (preferences.clubLevel === "intermediate") return c.structure >= 45 && c.structure < 60;
+      if (preferences.clubLevel === "small") return c.structure < 45;
+      return true;
+    };
     const pool = s.clubs
       .filter((c) => c.id !== s.clubId)
+      .filter((c) => (s.world === "brazil2026" ? allowedLeagues.has(c.leagueId) : true))
+      .filter(levelAllowed)
       .map((c) => {
         const need = s.mode === "player" ? positionNeed(c, s.person.pos) : 1;
         const fit = Math.max(0, 24 - Math.abs(c.structure - (heroLevel + s.reputation / 3)));
@@ -182,6 +196,10 @@
       role: s.mode === "coach"
         ? (need >= 2 ? "Projeto com necessidade imediata" : "Projeto de reconstrução")
         : (need >= 2 ? "Necessidade imediata na sua posição" : need === 1 ? "Disputa aberta por posição" : "Concorrência forte por posição"),
+      squadRole: s.mode === "player" ? (need >= 2 ? "Titular" : c.structure < heroLevel ? "Importante" : "Rotação") : "Treinador",
+      durationDays: (s.mode === "player" ? (s.person.age <= 22 && need >= 2 && c.structure + 10 < heroLevel ? 365 : rng.pick([365, 730, 1095, 1460])) : 730),
+      signingBonus: s.mode === "player" ? Math.round((1200 + s.reputation * 140 + heroLevel * 90 + c.structure * 60) / 100) * 100 : 0,
+      transferType: s.mode === "player" && s.person.age <= 22 && need >= 2 && c.structure + 10 < heroLevel ? "loan" : "permanent",
       expires: s.day + 21 + rng.int(0, 7),
     }));
   }
@@ -336,10 +354,12 @@
       seasonGoals: 0,
     };
     Career.init(s);
+    Career.updateProfessionalCareer(s);
     Training?.init(s);
     Statistics?.init(s);
     Competitions?.init(s);
     Life?.init(s);
+    NationalTeam?.init(s);
     s.offers = weightedCareerOffers(s, rng, 3);
     if (config.clubId && clubs.some((c) => c.id === config.clubId))
       join(s, config.clubId, s.salary);
@@ -376,6 +396,7 @@
         "Você já assinou nesta janela. Aguarde a próxima janela para trocar de clube.",
       );
     const previous = club(s);
+    const previousSalary = s.salary, previousContract = s.contract;
     const next = club(s, id);
     if (!next) throw Error("Clube inválido.");
     if (s.mode === "player") {
@@ -387,8 +408,10 @@
     }
     s.clubId = id;
     s.careerTransferAvailableDay = Career.nextWindowDay(s.day);
+    const acceptedOffer = s.offers.find((o) => o.clubId === id && o.expires >= s.day) || { clubId:id, salary, durationDays:730, signingBonus:0, squadRole:"Rotação", transferType:"permanent" };
+    if (acceptedOffer.transferType === "loan" && previous) { acceptedOffer.parentClubId=previous.id; acceptedOffer.parentSalary=previousSalary; acceptedOffer.parentContractRemaining=Math.max(previousContract, acceptedOffer.durationDays+30); }
     s.salary = salary;
-    s.contract = 365;
+    Career.signContract(s, acceptedOffer);
     s.offers = [];
     s.board = 65;
     Competitions?.ensureState(s);
@@ -405,7 +428,7 @@
     );
   }
   function selected(c) {
-    const active = c.roster.filter((p) => !p.injury && p.condition > 35);
+    const active = c.roster.filter((p) => !p.injury && !(p.suspension > 0) && p.condition > 35);
     let chosen = c.lineup
       .map((id) => active.find((p) => p.id === id))
       .filter(Boolean);
@@ -431,7 +454,7 @@
       ) / ps.length
     );
   }
-  function simulate(home, away, rng) {
+  function simulate(home, away, rng, context = null) {
     const hp = selected(home),
       ap = selected(away);
     let m = {
@@ -446,6 +469,8 @@
       events: [],
       participants: [hp.map((p) => p.id), ap.map((p) => p.id)],
       ratings: {},
+      playerStats: {},
+      offensiveStats: {},
       date: 0,
     };
     const squads = [hp, ap],
@@ -490,27 +515,44 @@
         const candidates = ps.filter((p) => p.pos !== "GOL").length ? ps.filter((p) => p.pos !== "GOL") : ps;
         const shooterWeights = candidates.map((p) => {
           const g = Training?.groupRatings ? Training.groupRatings(p.attrs) : p.attrs;
-          const role = p.pos === "ATA" ? 1.35 : p.pos === "MEI" ? 1.08 : 0.72;
-          return Math.max(1, role * (g.finish * 0.55 + g.pace * 0.2 + (p.attrs.positioning || g.finish) * 0.25));
+          const role = p.pos === "ATA" ? 1.65 : p.pos === "MEI" ? 1.02 : 0.58;
+          const candidateOverall = overall(p);
+          const peers = candidates.filter((x) => x.pos === p.pos && x.id !== p.id);
+          const peerOverall = peers.length ? peers.reduce((n, x) => n + overall(x), 0) / peers.length : candidateOverall;
+          const relativeQuality = clamp(1 + (candidateOverall - peerOverall) / 42, 0.72, 1.55);
+          let protagonism = 1;
+          if (context && p.id === "hero") {
+            const pc = Career.init(context).playerCareer;
+            const trust = clamp(pc?.coachTrust ?? 50, 0, 100);
+            const morale = clamp(p.morale ?? 50, 0, 100);
+            protagonism *= 0.82 + trust / 260 + morale / 500;
+          }
+          return Math.max(1, role * relativeQuality * protagonism * (g.finish * 0.5 + g.pace * 0.16 + (p.attrs.positioning || g.finish) * 0.34));
         });
         let shooterRoll = rng.next() * shooterWeights.reduce((n, v) => n + v, 0), shooter = candidates[0];
         for (let si = 0; si < candidates.length; si++) { shooterRoll -= shooterWeights[si]; if (shooterRoll <= 0) { shooter = candidates[si]; break; } }
         if (!shooter) continue;
+        if (!m.offensiveStats[shooter.id]) m.offensiveStats[shooter.id] = { shots: 0, onTarget: 0, xg: 0, goals: 0 };
+        m.offensiveStats[shooter.id].shots++;
         const shotXg = clamp(
           0.045 + rng.next() * 0.18 + (attack - defense) / 1600,
           0.025,
           0.32,
         );
         m.xg[i] += shotXg;
+        m.offensiveStats[shooter.id].xg += shotXg;
         const shooterGroups = Training?.groupRatings ? Training.groupRatings(shooter.attrs) : shooter.attrs,
           finish = shooterGroups.finish * (0.7 + (0.3 * shooter.condition) / 100),
           keeper = opp.find((p) => p.pos === "GOL"),
           keeperGroups = keeper && Training?.groupRatings ? Training.groupRatings(keeper.attrs) : keeper?.attrs;
         const onTarget = rng.next() < clamp(0.28 + finish / 220, 0.3, 0.72);
-        if (onTarget) m.target[i]++;
+        if (onTarget) { m.target[i]++; m.offensiveStats[shooter.id].onTarget++; }
+        const heroTrust = context && shooter.id === "hero" ? clamp(Career.init(context).playerCareer?.coachTrust ?? 50, 0, 100) : 50;
+        const heroMorale = context && shooter.id === "hero" ? clamp(shooter.morale ?? 50, 0, 100) : 50;
+        const conversionBoost = shooter.id === "hero" && context ? (0.9 + heroTrust / 500 + heroMorale / 1000) : 1;
         const conversion = clamp(
           shotXg *
-            (0.9 + finish / 500) *
+            (0.82 + finish / 310) * conversionBoost *
             (1 - ((keeperGroups?.defense || 50) - 50) / 360),
           0.015,
           0.6,
@@ -522,6 +564,7 @@
           if (i === 0) m.hg++;
           else m.ag++;
           shooter.goals++;
+          m.offensiveStats[shooter.id].goals++;
           m.events.push({
             minute,
             type: "goal",
@@ -546,6 +589,8 @@
             minute,
             type: "save",
             side: j,
+            player: keeper?.name,
+            playerId: keeper?.id,
             text: "Defesa importante de " + (keeper?.name || "goleiro") + ".",
           });
       }
@@ -582,13 +627,18 @@
       ps.forEach((p) => {
         p.condition = clamp(p.condition - rng.int(15, 28), 0, 100);
         p.minutes += 90;
+        const groups = Training?.groupRatings ? Training.groupRatings(p.attrs) : p.attrs,
+          saves = m.events.filter((event) => event.type === "save" && event.playerId === p.id).length,
+          tackleBase = p.pos === "DEF" ? 1.8 : p.pos === "MEI" ? 1.05 : p.pos === "ATA" ? 0.38 : 0,
+          tackles = p.pos === "GOL" ? 0 : Math.max(0, Math.round(tackleBase * (groups.defense || 50) / 25 + rng.next() * 2 - 0.7));
+        m.playerStats[p.id] = { saves, tackles };
         m.ratings[p.id] = +clamp(
           6 +
             (i === 0 ? m.hg - m.ag : m.ag - m.hg) * 0.2 +
             rng.next() * 0.8 +
             m.events.filter((e) => e.playerId === p.id && e.type === "goal")
               .length *
-              0.8,
+              0.8 + saves * 0.08 + tackles * 0.035,
           3,
           10,
         ).toFixed(1);
@@ -627,11 +677,16 @@
   function preparePlayerLineup(s, rng, homeId, awayId) {
     if (s.mode !== "player" || !s.clubId || ![homeId, awayId].includes(s.clubId)) return;
     const c = club(s);
-    c.lineup = c.roster.filter((p) => !p.injury).slice().sort((a, b) => overall(b) + b.morale / 20 - overall(a) - a.morale / 20).slice(0, 10).map((p) => p.id);
-    const goalkeeper = c.roster.find((p) => p.pos === "GOL" && !p.injury);
+    c.lineup = c.roster.filter((p) => !p.injury && !(p.suspension > 0)).slice().sort((a, b) => overall(b) + b.morale / 20 - overall(a) - a.morale / 20).slice(0, 10).map((p) => p.id);
+    const goalkeeper = c.roster.find((p) => p.pos === "GOL" && !p.injury && !(p.suspension > 0));
     if (goalkeeper && !c.lineup.includes(goalkeeper.id)) c.lineup.push(goalkeeper.id);
-    const hero = s.person;
-    if (!hero.injury && hero.condition > 65 && !c.lineup.includes("hero") && rng.next() < clamp(0.18 + (overall(hero) - c.structure) / 140, 0.08, 0.45)) {
+    const hero = s.person, pc = Career.init(s).playerCareer;
+    const trustChance = (pc?.coachTrust || 50) / 120;
+    const formChance = (hero.morale - 50) / 250;
+    const samePosition = c.roster.filter((p) => p.id !== "hero" && p.pos === hero.pos && !p.injury && !(p.suspension > 0));
+    const bestRival = samePosition.length ? Math.max(...samePosition.map(overall)) : 0;
+    const meritStarter = (pc?.coachTrust || 50) >= 80 && overall(hero) >= bestRival + 3 && hero.morale >= 55;
+    if (!hero.injury && hero.condition > 65 && !c.lineup.includes("hero") && (meritStarter || rng.next() < clamp(0.08 + trustChance + formChance + (overall(hero) - c.structure) / 160, 0.05, 0.96))) {
       const replace = c.lineup.findIndex((id) => c.roster.find((p) => p.id === id)?.pos === hero.pos);
       if (replace >= 0) c.lineup[replace] = "hero";
     }
@@ -639,7 +694,7 @@
   function registerMatch(s, rng, homeId, awayId, meta, leagueMatch) {
     const hc = club(s, homeId), ac = club(s, awayId);
     preparePlayerLineup(s, rng, homeId, awayId);
-    const m = simulate(hc, ac, rng);
+    const m = simulate(hc, ac, rng, s);
     Object.assign(m, {
       date: s.day,
       round: meta.round,
@@ -649,9 +704,12 @@
       competitionName: meta.competitionName,
     });
     if (!leagueMatch) Competitions?.recordResult(s, m, rng);
+    const heroOffense = m.offensiveStats?.hero;
+    m.offensiveStats = heroOffense ? { hero: heroOffense } : {};
     s.matches.unshift(m);
     Statistics?.recordMatch(s, m);
     Training?.matchDevelopment?.(s, m, { overall, clamp });
+    delete m.playerStats;
     if (leagueMatch) [hc, ac].forEach((c, i) => {
       const gf = i ? m.ag : m.hg, ga = i ? m.hg : m.ag, t = c.stats;
       t.played++; t.gf += gf; t.ga += ga;
@@ -698,7 +756,9 @@
     const pair = s.fixtures[s.round]?.find((fixture) => fixture.includes(s.clubId));
     const league = pair && { home: pair[0], away: pair[1], date: nextFixtureDay(s), round: s.round + 1, competitionId: club(s)?.leagueId, competitionName: s.leagues.find((l) => l.id === club(s)?.leagueId)?.name };
     const extra = Competitions?.nextFixture(s);
-    return [league, extra].filter(Boolean).sort((a, b) => a.date - b.date)[0] || null;
+    const nationalMatch = s.mode === "player" && NationalTeam?.init(s).calledUp ? NationalTeam.upcoming(s)[0] : null;
+    const national = nationalMatch && { date: nationalMatch.day, competitionId: "nationalTeam", competitionName: nationalMatch.competition, stage: "Seleção Brasileira", opponent: nationalMatch.opponent, homeName: "Brasil", awayName: nationalMatch.opponent };
+    return [league, extra, national].filter(Boolean).sort((a, b) => a.date - b.date)[0] || null;
   }
   function newSeason(s, rng) {
     const orders = Object.fromEntries((s.leagues || []).map((league) => [league.id, table(s, league.id)]));
@@ -821,11 +881,27 @@
     for (let d = 0; d < clamp(days, 1, 30); d++) {
       s.day++;
       Career.daily(s);
+      NationalTeam?.daily(s, rng, API, log);
       s.contract = Math.max(0, s.contract - 1);
       s.offers = s.offers.filter((o) => o.expires >= s.day);
+      if (s.mode === "player" && s.clubId) {
+        const pc = Career.init(s).playerCareer;
+        if (pc.renewalOffer && pc.renewalOffer.expires < s.day) pc.renewalOffer = null;
+        if (s.contract > 0 && s.contract <= 120 && !pc.renewalOffer && s.day % 30 === 0) Career.createRenewalOffer(s);
+        if (s.contract === 0) {
+          const old = club(s);
+          if (old) { old.roster = old.roster.filter((p) => p.id !== "hero"); old.lineup = old.lineup.filter((id) => id !== "hero"); }
+          if (pc.contract?.type === "loan" && pc.contract.parentClubId) {
+            const parent=club(s,pc.contract.parentClubId);
+            if(parent){ parent.roster.push(s.person); s.clubId=parent.id; s.salary=pc.contract.parentSalary||s.salary; s.contract=Math.max(30,(pc.contract.parentContractRemaining||395)-pc.contract.durationDays); pc.contract={clubId:parent.id,signedDay:s.day,endDay:s.day+s.contract,durationDays:s.contract,salary:s.salary,signingBonus:0,role:pc.squadRole,type:"permanent"}; log(s,"Fim do empréstimo",`Você retornou ao ${parent.name} após o período de empréstimo.`); }
+          } else { s.clubId = null; pc.contract = null; s.careerTransferAvailableDay = 0; log(s, "Fim de contrato", "Seu vínculo terminou. Você está livre para assinar com um novo clube."); }
+          pc.renewalOffer = null;
+        }
+      }
       for (const c of s.clubs)
         for (const p of c.roster) {
           p.injury = Math.max(0, p.injury - 1);
+          p.suspension = Math.max(0, (p.suspension || 0) - (s.day % 7 === 0 ? 1 : 0));
           p.condition = clamp(
             p.condition + (p.id === "hero" && s.intensity === "hard" ? 2 : 5),
             0,
@@ -901,12 +977,15 @@
         Career.canTransfer(s)
       ) {
         s.offers = weightedCareerOffers(s, rng, 3);
+        if (s.mode === "player") s.offers.forEach((o) => Career.registerInterest(s, o.clubId, "Oferta oficial"));
         log(
           s,
           "Mercado de trabalho",
           "Três clubes demonstram interesse. As propostas expiram em 21 dias.",
         );
       }
+      if (s.day % 7 === 0) Career.livingWorld(s, rng, API);
+      if (s.day % 7 === 0 && s.mode === "player") Career.progressInterest(s, rng, weightedCareerOffers);
       if (s.day % 14 === 0) Career.rumor(s, rng);
       if (s.day % 365 === 0) newSeason(s, rng);
       if (s.day % 7 === 0 || s.day % 365 === 0) recordDevelopment(s);
@@ -952,6 +1031,7 @@
   function retire(s) {
     if (s.mode !== "player" || s.person.age < 30)
       throw Error("A transição está disponível a partir dos 30 anos.");
+    Career.retirementSnapshot?.(s);
     for (const c of s.clubs) {
       c.roster = c.roster.filter((p) => p.id !== "hero");
       c.lineup = c.lineup.filter((id) => id !== "hero");
@@ -1004,6 +1084,7 @@
     Training,
     Statistics,
     Life,
+    NationalTeam,
     schedule,
     migrateWorld,
     VERSION,

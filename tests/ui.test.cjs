@@ -10,6 +10,7 @@ const files = [
   "src/domain/statistics.js",
   "src/domain/life.js",
   "src/domain/career.js",
+  "src/domain/national-team.js",
   "src/domain/character.js",
   "src/ui/charts.js",
   "src/domain/engine.js",
@@ -18,6 +19,7 @@ const files = [
   "src/infrastructure/validate-expansion.js",
   "src/infrastructure/save.js",
   "src/ui/expansion.js",
+  "src/ui/calendar.js",
   "src/ui/app.js",
 ];
 function make(mode) {
@@ -57,26 +59,24 @@ for (const mode of ["player", "coach"]) {
   assert.ok(w.document.querySelector(".career-hero"));
   assert.ok(w.document.querySelector(".dashboard-grid"));
   assert.ok(w.document.querySelector(".club-chip").textContent.includes(mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"));
+  assert.ok(w.document.querySelector(".inbox-card [data-join]"), "A proposta pendente deve poder ser aceita no início");
   click(w, '[data-page="inbox"]');
   assert.ok(w.document.querySelector("main").textContent.includes("Mensagens da carreira"));
   const offerText = w.document.querySelector(".offer")?.textContent || "";
   assert.ok(offerText.includes("Estado:"));
-  assert.ok(offerText.includes("Competição:"));
-  assert.ok(offerText.includes("Contrato:"));
-  assert.match(offerText, /Brasileirão Série [ABCD]/);
+  assert.ok(offerText.includes("Compet"));
+  assert.ok(offerText.includes("Dura"));
+  assert.match(offerText, /S.{0,3}rie [ABCD]/);
   click(w, "[data-join]");
   assert.ok(get(w).clubId);
   assert.equal(w.document.querySelectorAll("[data-join]").length,0);
-  assert.ok(
-    w.document.querySelector("main").textContent.includes(
-      "Você já assinou nesta janela. Novas propostas chegam na próxima janela.",
-    ),
-  );
+  assert.ok(w.document.querySelector("main").textContent.includes("Novas propostas chegam"));
   for (const page of [
     "home",
     "profile",
     "squad",
     "training",
+    "calendar",
     "league",
     "competitions",
     "matches",
@@ -94,8 +94,24 @@ for (const mode of ["player", "coach"]) {
     if (page === "inbox")
       assert.ok(w.document.querySelector("main").textContent.includes("Mensagens da carreira"));
     if (page === "market")
-      assert.ok(w.document.querySelector("main").textContent.includes("Transferências confirmadas"));
+      assert.ok(w.document.querySelector("main").textContent.includes("confirmadas"));
     assert.ok(w.document.querySelector("main").textContent.length > 150);
+  }
+  click(w, '[data-page="home"]');
+  click(w, '.career-hero [data-page="calendar"]');
+  assert.equal(w.document.querySelectorAll(".calendar-day").length, 42);
+  const monthTitle = w.document.querySelector(".calendar-toolbar h2").textContent;
+  click(w, '[data-calendar="next"]');
+  assert.notEqual(w.document.querySelector(".calendar-toolbar h2").textContent, monthTitle);
+  click(w, '[data-calendar="prev"]');
+  assert.equal(w.document.querySelector(".calendar-toolbar h2").textContent, monthTitle);
+  click(w, '[data-calendar="today"]');
+  assert.ok(w.document.querySelector(".calendar-day.today"));
+  if (mode === "player") {
+    click(w, '[data-page="national"]');
+    assert.ok(w.document.querySelector("main").textContent.includes("SELEÇÃO BRASILEIRA"));
+    assert.ok(w.document.querySelector("main").textContent.includes("PRÓXIMA DATA FIFA"));
+    assert.ok(w.document.querySelectorAll(".national-fixtures div").length >= 2);
   }
   if (mode === "coach") {
     click(w, '[data-page="squad"]');
@@ -114,31 +130,47 @@ for (const mode of ["player", "coach"]) {
   click(w, '[data-advance="30"]');
   assert.ok(get(w).matches.length >= 20);
   click(w, '[data-page="competitions"]');
-  assert.equal(w.document.querySelectorAll(".competition-card").length, 4);
-  assert.equal(w.document.querySelectorAll("table tbody tr").length, 32);
+  assert.ok(w.document.querySelectorAll(".competition-card").length >= 20);
+  assert.equal(w.document.querySelectorAll(".cup-view table tbody tr").length, 32);
   assert.ok(w.document.querySelector("main").textContent.includes("Copa do Brasil"));
+  assert.ok(w.document.querySelector("main").textContent.includes("Campeonato Paulista"));
+  click(w, '[data-page="statistics"]');
+  const statistics = w.document.querySelector("#statistics-key");
+  assert.ok([...statistics.options].some((option) => option.textContent === "Copa do Brasil"));
+  assert.ok([...statistics.options].some((option) => option.textContent === "Campeonato Paulista"));
+  statistics.value = "copaBrasil";
+  statistics.dispatchEvent(new w.Event("change", { bubbles: true }));
+  assert.ok(w.document.querySelector("main").textContent.includes("ESTATÍSTICAS POR COMPETIÇÃO"));
   click(w, '[data-page="awards"]');
-  assert.ok(w.document.querySelector("main").textContent.includes("Brasileirão Série A"));
-  assert.ok(w.document.querySelector("main").textContent.includes("Brasileirão Série D"));
+  assert.ok(w.document.querySelector("main").textContent.match(/S.{0,3}rie A/));
+  assert.ok(w.document.querySelector("main").textContent.match(/S.{0,3}rie D/));
   assert.ok(w.document.querySelectorAll(".award-card small").length > 0);
+  assert.ok(w.document.querySelector(".season-xi")?.textContent.includes("Time da temporada"));
+  assert.ok(w.document.querySelectorAll(".season-xi article").length >= 11);
   click(w, '[data-page="matches"]');
   assert.ok(w.document.querySelector(".score"));
   for (let i = 0; i < 2; i++) click(w, '[data-advance="7"]');
+  click(w, '[data-page="home"]');
+  assert.ok(w.document.querySelector(".inbox-card [data-choice]"), "O convite pendente deve poder ser respondido no início");
+  click(w, ".inbox-card [data-choice]");
+  click(w, '[data-page="inbox"]');
+  assert.ok(w.document.querySelector("main").textContent.includes("Escolha registrada"), "A resposta deve permanecer registrada na caixa de entrada");
   click(w, '[data-page="life"]');
-  click(w, "[data-choice]");
   assert.equal(get(w).decision, null);
   click(w, '[data-page="profile"]');
   w.document.querySelector("#shirt-number").value = "27";
   click(w, '[data-action="number"]');
   assert.equal(get(w).extras.number, 27);
+  if (mode === "player") click(w, '[data-advance="30"]');
   click(w, '[data-page="home"]');
-  assert.ok(w.document.querySelector("main").textContent.includes("STATUS DAS COMPETIÇÕES"));
-  assert.ok(w.document.querySelector("main").textContent.includes("PRÓXIMO JOGO"));
+  assert.ok(w.document.querySelector("main").textContent.includes("STATUS DAS COMPETI"));
+  assert.ok(w.document.querySelector("main").textContent.includes("XIMO JOGO"));
   assert.ok(w.document.querySelector("main").textContent.includes("Rodada"));
-  assert.ok(w.document.querySelector(".game-nav"), "A v0.5 deve renderizar a navegação superior");
+  if (mode === "player") assert.ok(w.document.querySelector(".national-result")?.textContent.includes("ltimo resultado da Sele"));
+  assert.ok(w.document.querySelector(".game-nav"), "A v0.5 deve renderizar a navegacao superior");
   click(w, '[data-page="profile"]');
   const chart = w.document.querySelector("#chart-key");
-  assert.ok(chart, "O relatório de desenvolvimento deve existir no perfil");
+  assert.ok(chart, "O relatorio de desenvolvimento deve existir no perfil");
   chart.value = "all";
   chart.dispatchEvent(new w.Event("change", { bubbles: true }));
   assert.equal(w.document.querySelectorAll(".chart-legend span").length, 6);

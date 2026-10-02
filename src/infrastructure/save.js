@@ -408,6 +408,19 @@
         (!Number.isInteger(e.postSequence) || !num(e.postSequence, 0, 1e9))
       )
         fail();
+      if (e.offerPreferences !== undefined) {
+        const p = e.offerPreferences, validLeagues = ["serieA", "serieB", "serieC", "serieD"];
+        if (!p || !Array.isArray(p.leagues) || p.leagues.length > 4 || new Set(p.leagues).size !== p.leagues.length || !p.leagues.every((id) => validLeagues.includes(id)) || !["any", "elite", "competitive", "intermediate", "small"].includes(p.clubLevel)) fail();
+      }
+      if (e.playerCareer !== undefined) {
+        const pc=e.playerCareer;
+        if (!pc || !num(pc.coachTrust,0,100) || !str(pc.squadRole,40) || !num(pc.marketValue,0,1e10) || !Array.isArray(pc.interests) || pc.interests.length>8 || !num(pc.negotiations,0,1000)) fail();
+        if (!pc.interests.every(x=>x && str(x.clubId,20) && str(x.stage,40) && num(x.day,0,s.day) && num(x.expires,x.day,s.day+365))) fail();
+        const contractOk = c => c===null || (c && str(c.clubId,20) && num(c.signedDay,0,s.day) && num(c.endDay,c.signedDay,s.day+5000) && num(c.durationDays,1,5000) && num(c.salary,0,1e9) && num(c.signingBonus,0,1e10) && str(c.role,100) && ["permanent","loan"].includes(c.type) && (c.parentClubId===undefined || str(c.parentClubId,20)) && (c.parentSalary===undefined || num(c.parentSalary,0,1e9)) && (c.parentContractRemaining===undefined || num(c.parentContractRemaining,1,5000)));
+        if (!contractOk(pc.contract)) fail();
+        const r=pc.renewalOffer; if(r!==null && r!==undefined && (!r || !str(r.clubId,20) || !num(r.salary,0,1e9) || !num(r.durationDays,1,5000) || !num(r.signingBonus,0,1e10) || !num(r.expires,s.day,s.day+365))) fail();
+        const mp=pc.mediaProfile; if(mp!==undefined && (!mp || !str(mp.image,40) || !num(mp.pressure,0,100) || !num(mp.fanSentiment,0,100) || !num(mp.sponsorAppeal,0,100) || !Number.isInteger(mp.interviews) || !num(mp.interviews,0,10000) || !Number.isInteger(mp.controversies) || !num(mp.controversies,0,10000))) fail();
+      }
     } else if (root.ProLife?.Career) root.ProLife.Career.init(s);
     if (
       s.careerTransferAvailableDay !== undefined &&

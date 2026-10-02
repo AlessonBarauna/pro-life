@@ -1,6 +1,7 @@
 const test = require("node:test"), assert = require("node:assert/strict");
 const D = require("../src/domain/engine.js"), A = require("../src/application/game.js"), S = require("../src/infrastructure/save.js");
 const Codec = require("../src/infrastructure/codec.js");
+const Calendar = require("../src/ui/calendar.js");
 
 test("Series C and D are available with explicit partial roster coverage", () => {
   const s = D.create({}, 401);
@@ -22,10 +23,34 @@ test("expanded training exposes 27 skills and improves according to style", () =
 
 test("statistics collect appearances, goals, assists and best-player awards", () => {
   const s = D.create({ clubId: "c0" }, 403);
-  D.Statistics.recordMatch(s, { participants: [["hero"], []], ratings: { hero: 8.4 }, events: [{ type: "goal", playerId: "hero", assistPlayerId: "x" }] });
+  D.Statistics.recordMatch(s, { participants: [["hero"], []], ratings: { hero: 8.4 }, playerStats: { hero: { saves: 2, tackles: 5 } }, events: [{ type: "goal", playerId: "hero", assistPlayerId: "x" }] });
   const hero = D.Statistics.init(s).hero;
   assert.deepEqual([hero.appearances, hero.goals, hero.motm], [1, 1, 1]);
+  assert.deepEqual([hero.saves, hero.tackles], [2, 5]);
   assert.equal(D.Statistics.leaders(s, "goals")[0].id, "hero");
+});
+
+test("match simulation produces goalkeeper saves and outfield tackles for competition statistics", () => {
+  const s = D.create({ clubId: "c0" }, 424), match = D.simulate(s.clubs[0], s.clubs[1], new D.Random(424));
+  assert.equal(Object.keys(match.playerStats).length, 22);
+  assert.ok(Object.values(match.playerStats).some((performance) => performance.tackles > 0));
+  assert.ok(match.events.filter((event) => event.type === "save").every((event) => event.playerId));
+});
+
+test("team of the season selects a 4-3-3 using ratings and position metrics", () => {
+  const s = D.create({ clubId: "c17" }, 425), competitionId = s.competitionSchedule.state.id,
+    pool = s.clubs.flatMap((club) => club.roster.map((player) => ({ player, club }))),
+    selected = [pool.find((item) => item.player.pos === "GOL"), ...pool.filter((item) => item.player.pos === "DEF").slice(0, 4), ...pool.filter((item) => item.player.pos === "MEI").slice(0, 3), ...pool.filter((item) => item.player.pos === "ATA").slice(0, 3)],
+    ratings = Object.fromEntries(selected.map(({ player }, index) => [player.id, 7 + index / 20])),
+    playerStats = Object.fromEntries(selected.map(({ player }, index) => [player.id, { saves: player.pos === "GOL" ? 6 : 0, tackles: player.pos === "DEF" ? 5 + index : 1 }]));
+  D.Statistics.recordMatch(s, { competitionId, participants: [selected.map(({ player }) => player.id), []], ratings, playerStats, events: [{ type: "goal", playerId: selected[8].player.id, assistPlayerId: selected[5].player.id }] });
+  const team = D.Statistics.teamOfSeason(s, competitionId, 1);
+  assert.equal(team.length, 11);
+  assert.deepEqual(Object.fromEntries(["GOL", "DEF", "MEI", "ATA"].map((position) => [position, team.filter((player) => player.position === position).length])), { GOL: 1, DEF: 4, MEI: 3, ATA: 3 });
+  assert.equal(team.find((player) => player.position === "GOL").saves, 6);
+  assert.ok(team.filter((player) => player.position === "DEF").every((player) => player.tackles >= 5));
+  D.Statistics.closeSeason(s);
+  assert.equal(D.Statistics.init(s).root.seasons[0].teams.find((entry) => entry.competitionId === competitionId).players.length, 11);
 });
 
 test("career agency persists and charges one monthly fee", () => {
@@ -39,11 +64,12 @@ test("career agency persists and charges one monthly fee", () => {
   assert.equal(s.wallet, afterHire - 250);
 });
 
-test("competition catalog includes the national cup and only the career club state tournament", () => {
+test("competition catalog includes the national cup and every represented state tournament", () => {
   const s = D.create({ clubId: "c17" }, 405), ids = D.Competitions.init(s).map((c) => c.id);
   assert.ok(ids.includes("copaBrasil"));
   assert.ok(ids.includes("state-sp"));
   assert.equal(ids.filter((id) => /^serie/.test(id)).length, 4);
+  assert.ok(ids.filter((id) => id.startsWith("state-")).length >= 15);
   assert.equal(s.competitionSchedule.state.name, "Campeonato Paulista");
 });
 
@@ -55,7 +81,7 @@ test("expanded save round-trip preserves training, statistics, competitions and 
   const restored = S.parse(JSON.stringify(s));
   assert.equal(restored.clubId, "c40");
   assert.ok(restored.life.agency);
-  assert.equal(restored.competitions.length, D.Competitions.catalog.length + 1);
+  assert.equal(restored.competitions.length, D.Competitions.catalog.length + D.Competitions.allStates(restored).length);
   assert.equal(Object.keys(restored.person.attrs).length, 27);
 });
 
@@ -74,18 +100,18 @@ test("Brazil Cup selects 32 ranked clubs with top four from every division", () 
   assert.ok(cup.champion);
 });
 
-test("career club plays its state tournament at the start of the year", () => {
+test("state tournaments play groups, knockouts and a final at the start of the year", () => {
   const s = D.create({ clubId: "c17" }, 412), state = s.competitionSchedule.state;
   assert.equal(state.name, "Campeonato Paulista");
   assert.equal(state.clubId, "c17");
-  assert.equal(state.fixtures.length, 5);
-  for (const fixture of state.fixtures) {
-    s.day = fixture.date - 1;
-    D.advance(s, 1);
-  }
-  assert.equal(state.stats.played, 5);
+  assert.ok(state.groups.length >= 2);
+  assert.ok(state.fixtures.some((fixture) => fixture.stage.includes("Fase de grupos")));
+  while (s.day < 48) D.advance(s, Math.min(30, 48 - s.day));
+  assert.ok(state.stats.played >= 1);
   assert.ok(state.fixtures.every((fixture) => fixture.played));
-  assert.ok(s.matches.filter((m) => m.competitionId === state.id).length === 5);
+  assert.ok(state.rounds.some((round) => round.name === "Final"));
+  assert.ok(state.champion && state.runnerUp);
+  assert.ok(s.matches.filter((m) => m.competitionId === state.id).length >= state.fixtures.length);
 });
 
 test("four clubs are promoted and relegated at each division boundary", () => {
@@ -112,8 +138,35 @@ test("division awards store player, club and league for Series A B C and D", () 
     D.Statistics.recordMatch(s, { competitionId: league.id, participants: [[p.id], []], ratings: { [p.id]: 8.8 }, events: [{ type: "goal", playerId: p.id, assistPlayerId: p.id }] });
   }
   const awards = D.Statistics.closeSeason(s);
-  assert.deepEqual(new Set(awards.map((a) => a.leagueId)), new Set(["serieA", "serieB", "serieC", "serieD"]));
+  assert.ok(["serieA", "serieB", "serieC", "serieD", "overall"].every((id) => awards.some((award) => award.leagueId === id)));
   assert.ok(awards.every((a) => a.winner && a.winnerClub && a.league));
+});
+
+test("cup, state and yearly awards use their own competition statistics", () => {
+  const s = D.create({ clubId: "c17" }, 419), stateId = s.competitionSchedule.state.id;
+  for (let index = 0; index < 6; index++) for (const competitionId of ["copaBrasil", stateId]) D.Statistics.recordMatch(s, {
+    competitionId, participants: [["hero"], []], ratings: { hero: 8.7 },
+    events: [{ type: "goal", playerId: "hero", assistPlayerId: "hero" }],
+  });
+  const awards = D.Statistics.closeSeason(s);
+  assert.ok(awards.some((award) => award.competitionId === "copaBrasil" && award.name === "Artilheiro"));
+  assert.ok(awards.some((award) => award.competitionId === stateId && award.name === "Craque da competição"));
+  for (const name of ["Melhor jogador do ano", "Revelação do ano", "Artilheiro do ano", "Líder de assistências do ano", "Melhor técnico"]) assert.ok(awards.some((award) => award.name === name), name);
+});
+
+test("legacy state schedule migrates without replacing the current Brazil Cup", () => {
+  const s = D.create({ clubId: "c17" }, 420), cup = s.competitionSchedule.cup;
+  s.competitionSchedule.state = {
+    id: "state-sp", name: "Campeonato Paulista", state: "SP", season: s.season,
+    clubId: s.clubId, status: "Em andamento", champion: null,
+    stats: { points: 0, played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, fixtures: [],
+  };
+  delete s.competitionSchedule.otherStates;
+  const restored = S.parse(JSON.stringify(s));
+  D.Competitions.init(restored);
+  assert.equal(restored.competitionSchedule.cup.entrants[0].clubId, cup.entrants[0].clubId);
+  assert.equal(restored.competitionSchedule.state.formatVersion, 2);
+  assert.ok(D.Competitions.allStates(restored).length >= 15);
 });
 
 test("corrupt expanded save data is rejected", () => {
@@ -156,10 +209,10 @@ test("career overview exposes league, cup and state status with the true next co
   assert.equal(status.find((x) => x.type === "state").name, "Campeonato Paulista");
   const next = D.nextCommitment(s);
   assert.equal(next.competitionName, "Campeonato Paulista");
-  assert.equal(D.Competitions.fixtureStage(s, next), "Rodada 1/5");
+  assert.equal(D.Competitions.fixtureStage(s, next), "Fase de grupos · Rodada 1");
   D.advance(s, 8);
   assert.equal(s.competitionSchedule.state.stats.played, 1);
-  assert.match(D.Competitions.clubStatus(s).find((x) => x.type === "state").status, /Rodada 2\/5/);
+  assert.match(D.Competitions.clubStatus(s).find((x) => x.type === "state").status, /Fase de grupos/);
 });
 
 test("Brazil Cup next commitment exposes knockout phase and elimination status", () => {
@@ -256,4 +309,92 @@ test("elite performances add progression and career accolades can raise ceiling"
   const oldPotential=s.person.potential;
   D.Training.seasonRewards(s,[{name:"Artilheiro",winner:s.person.name},{name:"Craque da temporada",winner:s.person.name}],{overall:D.overall,clamp:D.clamp});
   assert.ok(s.person.potential >= oldPotential);
+});
+
+test("Brazil national team tracks callups and international career separately", () => {
+  const s = D.create({ clubId: "c0" }, 520);
+  Object.values(s.person.attrs).forEach((_, i) => {});
+  for (const k of Object.keys(s.person.attrs)) s.person.attrs[k] = 90;
+  s.reputation = 85; s.person.morale = 90;
+  while (s.day < 67) D.advance(s, Math.min(30, 67 - s.day));
+  const n = D.NationalTeam.init(s);
+  assert.equal(n.country, "Brasil");
+  assert.equal(n.calledUp, true);
+  assert.equal(n.lastCallupDay, 67);
+  assert.equal(D.nextCommitment(s).competitionId, "nationalTeam");
+  D.advance(s, 7);
+  assert.ok(n.caps >= 1);
+  assert.ok(["Titular", "Rotação", "Reserva"].includes(n.status));
+  assert.ok(n.matches.every(m => m.competition && m.opponent));
+  assert.ok(n.schedule.some((match) => match.day === 74 && match.played));
+  assert.deepEqual(n.schedule.filter((match) => match.windowDay === 149).map((match) => [match.day, match.opponent]), [[149, "Argentina"], [152, "Uruguai"]]);
+  assert.ok(!s.calendarDays.some((day) => D.NationalTeam.protectedDay(day)));
+  const integrated = Calendar.events(s, D);
+  assert.ok(integrated.some((event) => event.type === "national" && event.day === 74));
+  assert.ok(!integrated.some((event) => ["club", "state", "cup"].includes(event.type) && event.day >= 67 && event.day <= 78));
+  assert.ok(!integrated.some((event) => ["club", "state", "cup"].includes(event.type) && event.day >= 142 && event.day <= 153));
+  while (s.day < 142) D.advance(s, Math.min(30, 142 - s.day));
+  assert.equal(n.calledUp, true);
+  assert.equal(D.nextCommitment(s).competitionId, "nationalTeam");
+  assert.equal(D.nextCommitment(s).date, 149);
+});
+
+test("national team data survives save round-trip", () => {
+  const s = D.create({ clubId: "c0" }, 521);
+  const n = D.NationalTeam.init(s); n.caps = 12; n.goals = 4; n.assists = 3;
+  const restored = S.parse(JSON.stringify(s));
+  assert.equal(restored.nationalTeam.caps, 12);
+  assert.equal(restored.nationalTeam.goals, 4);
+  assert.equal(restored.nationalTeam.assists, 3);
+});
+
+test("Brazil result is recorded even when the career player is not called up", () => {
+  const s = D.create({ clubId: "c0" }, 524);
+  while (s.day < 74) D.advance(s, Math.min(30, 74 - s.day));
+  const fixture = D.NationalTeam.init(s).schedule.find((match) => match.day === 74);
+  assert.equal(fixture.played, true);
+  assert.equal(fixture.participated, false);
+  assert.equal(fixture.status, "Não convocado");
+  assert.ok(Number.isFinite(fixture.brazil));
+  assert.ok(Number.isFinite(fixture.other));
+});
+
+test("old saves without national team data are normalized on demand", () => {
+  const original = D.create({ clubId: "c0" }, 522);
+  delete original.nationalTeam;
+  const restored = S.parse(JSON.stringify(original));
+  assert.equal(restored.nationalTeam, undefined);
+  const national = D.NationalTeam.init(restored);
+  assert.equal(national.country, "Brasil");
+  assert.equal(national.calledUp, false);
+  assert.equal(national.matches.length, 0);
+  assert.ok(national.nextWindow > restored.day);
+});
+
+test("integrated calendar combines club, cup, state, national and transfer events", () => {
+  const s = D.create({ clubId: "c0" }, 523), list = Calendar.events(s, D);
+  assert.ok(list.some((event) => event.type === "club"));
+  assert.ok(list.some((event) => event.type === "state"));
+  assert.ok(list.some((event) => event.type === "national"));
+  assert.ok(list.some((event) => event.type === "window"));
+  assert.equal(Calendar.shift(Calendar.monthId(s), 1), "2026-02");
+  assert.equal(Calendar.shift("2026-01", -1), "2025-12");
+});
+
+
+test("Development 2.0 normalizes archetype, levels and specializations for old saves", () => {
+  const s = D.create({ clubId: "c0", pos: "ATA" }, 610);
+  delete s.trainingPlan;
+  const plan = D.Training.init(s);
+  assert.equal(plan.archetype.name, "Finalizador");
+  assert.equal(plan.level, 1);
+  assert.deepEqual(plan.specializations, []);
+  D.Training.addDevelopmentXp(s, 36);
+  assert.equal(plan.level, 3);
+  assert.equal(plan.specializationPoints, 2);
+  D.Training.unlockSpecialization(s, "finisher");
+  assert.deepEqual(plan.specializations, ["finisher"]);
+  assert.equal(plan.specializationPoints, 1);
+  const restored = S.parse(JSON.stringify(s));
+  assert.deepEqual(D.Training.init(restored).specializations, ["finisher"]);
 });

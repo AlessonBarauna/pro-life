@@ -20,6 +20,7 @@ personagem, carreira, ferramentas e a expansão da v0.4, incluindo:
 11. Estadual do clube da carreira no início do ano.
 12. Quatro acessos e quatro rebaixamentos entre A/B, B/C e C/D.
 13. Prêmios por Série A/B/C/D com atleta, clube e divisão registrados.
+14. Time da temporada 4-3-3 por competição, combinando nota, gols, assistências, defesas e desarmes.
 
 ### Calibração
 Capital Esporte (nível base 76, mandante) versus Mogi Atlético (base 53):
@@ -101,3 +102,26 @@ competições, autosave, exportação/importação, save manual, reabertura e in
 após round-trip. Também cobre Copa do Brasil, estadual da carreira, ranking,
 acesso/rebaixamento e premiações com clube. O fluxo DOM percorre todas as telas
 nos modos Jogador e Treinador.
+
+## Career 2.0 — Etapa 5
+
+Os testes cobrem normalização de saves antigos sem dados internacionais,
+persistência da carreira pela Seleção, composição da agenda integrada, mudança
+de mês, retorno ao mês atual, grade de 42 dias, rota do botão Abrir calendário e
+renderização não vazia da Seleção antes da primeira convocação.
+
+A cobertura de competições valida todos os estaduais representados, fase de
+grupos, geração das eliminatórias e final, campeão/vice, estatísticas isoladas
+da Copa do Brasil e dos estaduais, cinco prêmios gerais do ano e migração do
+calendário estadual antigo sem recriar a Copa do Brasil em andamento.
+
+Datas FIFA são verificadas quanto à convocação com sete dias de antecedência,
+Brasil x Argentina em 30/05, Brasil x Uruguai em 02/06, ausência de partidas de
+clube durante a janela protegida, prioridade na tela inicial e permanência dos
+jogos da Seleção no calendário depois de disputados.
+
+### Etapa 7 — Mundo Vivo
+- normalização do estado `extras.livingWorld` em saves anteriores;
+- cálculo de forma dos 80 clubes a partir de partidas reais da carreira;
+- persistência de acontecimentos e feed `Mundo do futebol`;
+- ausências da IA por lesão/suspensão sem quebrar escalações.
