@@ -34,7 +34,7 @@ test("2026 world has four separate leagues, 80 clubs and complete official Serie
   assert.equal(D.table(s, "serieD").length, 20);
   S.parse(JSON.stringify(s));
 });
-test("a full Brazilian season plays 38 rounds in both leagues and produces saveable histories", () => {
+test("a full Brazilian season plays 38 rounds in all four leagues and produces saveable histories", () => {
   const s = D.create({ clubId: "c0" }, 17);
   until(s, 364);
   assert.equal(s.round, 38);

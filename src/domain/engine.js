@@ -349,6 +349,7 @@
     s.contract = 365;
     s.offers = [];
     s.board = 65;
+    Competitions?.ensureState(s);
     Career.transfer(s, s.person, previous, next, 0);
     log(
       s,
@@ -573,104 +574,83 @@
           b.stats.gf - a.stats.gf,
       );
   }
+  function preparePlayerLineup(s, rng, homeId, awayId) {
+    if (s.mode !== "player" || !s.clubId || ![homeId, awayId].includes(s.clubId)) return;
+    const c = club(s);
+    c.lineup = c.roster.filter((p) => !p.injury).slice().sort((a, b) => overall(b) + b.morale / 20 - overall(a) - a.morale / 20).slice(0, 10).map((p) => p.id);
+    const goalkeeper = c.roster.find((p) => p.pos === "GOL" && !p.injury);
+    if (goalkeeper && !c.lineup.includes(goalkeeper.id)) c.lineup.push(goalkeeper.id);
+    const hero = s.person;
+    if (!hero.injury && hero.condition > 65 && !c.lineup.includes("hero") && rng.next() < clamp(0.18 + (overall(hero) - c.structure) / 140, 0.08, 0.45)) {
+      const replace = c.lineup.findIndex((id) => c.roster.find((p) => p.id === id)?.pos === hero.pos);
+      if (replace >= 0) c.lineup[replace] = "hero";
+    }
+  }
+  function registerMatch(s, rng, homeId, awayId, meta, leagueMatch) {
+    const hc = club(s, homeId), ac = club(s, awayId);
+    preparePlayerLineup(s, rng, homeId, awayId);
+    const m = simulate(hc, ac, rng);
+    Object.assign(m, {
+      date: s.day,
+      round: meta.round,
+      season: s.season,
+      leagueId: leagueMatch ? hc.leagueId : null,
+      competitionId: meta.competitionId,
+      competitionName: meta.competitionName,
+    });
+    if (!leagueMatch) Competitions?.recordResult(s, m, rng);
+    s.matches.unshift(m);
+    Statistics?.recordMatch(s, m);
+    if (leagueMatch) [hc, ac].forEach((c, i) => {
+      const gf = i ? m.ag : m.hg, ga = i ? m.hg : m.ag, t = c.stats;
+      t.played++; t.gf += gf; t.ga += ga;
+      if (gf > ga) { t.w++; t.points += 3; } else if (gf === ga) { t.d++; t.points++; } else t.l++;
+      c.roster.forEach((p) => (p.morale = clamp(p.morale + (gf > ga ? 4 : gf < ga ? -4 : 0), 15, 100)));
+    });
+    if ([homeId, awayId].includes(s.clubId)) {
+      Career.match(s, m);
+      const own = homeId === s.clubId ? m.hg : m.ag, other = homeId === s.clubId ? m.ag : m.hg;
+      s.board = clamp(s.board + (own > other ? 5 : own < other ? -5 : 0), 0, 100);
+      s.reputation = clamp(s.reputation + (own > other ? 1 : own < other ? -0.4 : 0.2), 0, 100);
+      s.fans += own > other ? 60 : 10;
+      log(s, (m.competitionName || "Partida") + " · " + hc.name + " " + m.hg + " × " + m.ag + " " + ac.name, m.summary);
+      if (s.mode === "player" && !m.participants.flat().includes("hero")) log(s, "Fora da escalação", "O treinador priorizou outros jogadores. Treino, moral, atributos e concorrência influenciam a escolha.");
+    }
+    s.matches = s.matches.slice(0, 800);
+    for (const old of s.matches.slice(200)) {
+      if ([old.home, old.away].includes(s.clubId)) continue;
+      old.events = [];
+      old.participants = [[], []];
+      old.ratings = {};
+      old.summary = "Resultado arquivado. Estatísticas consolidadas na temporada.";
+    }
+    return m;
+  }
   function playRound(s, rng) {
     const pairs = s.fixtures[s.round];
     if (!pairs) return;
-    for (const [h, a] of pairs) {
-      let hc = club(s, h),
-        ac = club(s, a);
-      if (s.mode === "player" && s.clubId) {
-        let c = club(s);
-        c.lineup = c.roster
-          .filter((p) => !p.injury)
-          .slice()
-          .sort(
-            (a, b) => overall(b) + b.morale / 20 - overall(a) - a.morale / 20,
-          )
-          .slice(0, 10)
-          .map((p) => p.id);
-        let g = c.roster.find((p) => p.pos === "GOL" && !p.injury);
-        if (g && !c.lineup.includes(g.id)) c.lineup.push(g.id);
-        const hero = s.person;
-        if (
-          !hero.injury &&
-          hero.condition > 65 &&
-          !c.lineup.includes("hero") &&
-          rng.next() <
-            clamp(0.18 + (overall(hero) - c.structure) / 140, 0.08, 0.45)
-        ) {
-          const replace = c.lineup.findIndex(
-            (id) => c.roster.find((p) => p.id === id)?.pos === hero.pos,
-          );
-          if (replace >= 0) c.lineup[replace] = "hero";
-        }
-      }
-      const m = simulate(hc, ac, rng);
-      m.date = s.day;
-      m.round = s.round + 1;
-      m.season = s.season;
-      m.leagueId = hc.leagueId;
-      s.matches.unshift(m);
-      Statistics?.recordMatch(s, m);
-      [hc, ac].forEach((c, i) => {
-        let gf = i ? m.ag : m.hg,
-          ga = i ? m.hg : m.ag,
-          t = c.stats;
-        t.played++;
-        t.gf += gf;
-        t.ga += ga;
-        if (gf > ga) {
-          t.w++;
-          t.points += 3;
-        } else if (gf === ga) {
-          t.d++;
-          t.points++;
-        } else t.l++;
-        c.roster.forEach(
-          (p) =>
-            (p.morale = clamp(
-              p.morale + (gf > ga ? 4 : gf < ga ? -4 : 0),
-              15,
-              100,
-            )),
-        );
-      });
-      if (h === s.clubId || a === s.clubId) {
-        Career.match(s, m);
-        const own = h === s.clubId ? m.hg : m.ag,
-          other = h === s.clubId ? m.ag : m.hg;
-        s.board = clamp(
-          s.board + (own > other ? 5 : own < other ? -5 : 0),
-          0,
-          100,
-        );
-        s.reputation = clamp(
-          s.reputation + (own > other ? 1 : own < other ? -0.4 : 0.2),
-          0,
-          100,
-        );
-        s.fans += own > other ? 60 : 10;
-        log(s, hc.name + " " + m.hg + " × " + m.ag + " " + ac.name, m.summary);
-        if (s.mode === "player") {
-          const played = m.participants.flat().includes("hero");
-          if (!played)
-            log(
-              s,
-              "Fora da escalação",
-              "O treinador priorizou outros jogadores. Treino, moral, atributos e concorrência influenciam a escolha.",
-            );
-        }
-      }
+    for (const [homeId, awayId] of pairs) {
+      const leagueId = club(s, homeId).leagueId;
+      registerMatch(s, rng, homeId, awayId, { round: s.round + 1, competitionId: leagueId, competitionName: s.leagues.find((l) => l.id === leagueId)?.name || leagueId }, true);
     }
     s.round++;
-    s.matches = s.matches.slice(0, 800);
+  }
+  function playCompetitions(s, rng) {
+    for (const fixture of Competitions?.due(s) || []) registerMatch(s, rng, fixture.home, fixture.away, fixture, false);
   }
   function nextFixtureDay(s) {
     return (
       (s.season - 2026) * 365 + (s.calendarDays?.[s.round] ?? 7 + s.round * 21)
     );
   }
+  function nextCommitment(s) {
+    const pair = s.fixtures[s.round]?.find((fixture) => fixture.includes(s.clubId));
+    const league = pair && { home: pair[0], away: pair[1], date: nextFixtureDay(s), round: s.round + 1, competitionId: club(s)?.leagueId, competitionName: s.leagues.find((l) => l.id === club(s)?.leagueId)?.name };
+    const extra = Competitions?.nextFixture(s);
+    return [league, extra].filter(Boolean).sort((a, b) => a.date - b.date)[0] || null;
+  }
   function newSeason(s, rng) {
+    const orders = Object.fromEntries((s.leagues || []).map((league) => [league.id, table(s, league.id)]));
     Statistics?.closeSeason(s);
     Competitions?.closeSeason(s, table);
     for (const league of s.leagues || [
@@ -704,8 +684,17 @@
       );
     }
     s.history = s.history.slice(0, 300);
+    const movement = [];
+    if (s.world === "brazil2026") {
+      for (const [upper, lower] of [["serieA", "serieB"], ["serieB", "serieC"], ["serieC", "serieD"]]) {
+        const relegated = orders[upper].slice(-4), promoted = orders[lower].slice(0, 4);
+        for (const c of relegated) movement.push({ club: c, from: upper, to: lower, type: "rebaixado" });
+        for (const c of promoted) movement.push({ club: c, from: lower, to: upper, type: "promovido" });
+      }
+      for (const move of movement) move.club.leagueId = move.to;
+      log(s, "Acesso e rebaixamento", movement.map((m) => m.club.name + " " + (m.type === "promovido" ? "subiu para " : "caiu para ") + (Competitions?.leagueNames[m.to] || m.to)).join("; ") + ".");
+    }
     s.season++;
-    Competitions?.nextSeason(s);
     s.round = 0;
     s.person.age++;
     for (const c of s.clubs) {
@@ -736,11 +725,12 @@
     }
     s.person.goals = 0;
     if (s.world === "brazil2026") {
-      const lower = ["serieB", "serieC", "serieD"].map((leagueId) =>
+      const rounds = ["serieA", "serieB", "serieC", "serieD"].map((leagueId) =>
         schedule(s.clubs.filter((c) => c.leagueId === leagueId).map((c) => c.id)),
       );
-      s.fixtures = World.serieAFixtures.map((r, i) => r.map((p) => p.slice()).concat(...lower.map((rounds) => rounds[i])));
+      s.fixtures = rounds[0].map((round, i) => round.concat(...rounds.slice(1).map((leagueRounds) => leagueRounds[i])));
     } else s.fixtures = schedule(s.clubs.map((c) => c.id));
+    Competitions?.nextSeason(s, orders);
     if (s.upgradeClub) migrateWorld(s, s.upgradeClub, rng);
     if (s.person.age >= 35 && s.mode === "player")
       log(
@@ -819,6 +809,7 @@
       }
       if (s.day === nextFixtureDay(s) && s.round < s.fixtures.length)
         playRound(s, rng);
+      playCompetitions(s, rng);
       if (s.day % 30 === 0) {
         if (s.clubId) Career.transaction(s, s.salary, "Salário mensal");
         Career.transaction(
@@ -968,7 +959,7 @@
     log(
       s,
       "Novo universo brasileiro",
-      "Sua carreira e patrimônio foram preservados. A temporada agora usa as Séries A e B da base 2026. Os relatórios da antiga liga ficam resumidos no diário e no histórico.",
+      "Sua carreira e patrimônio foram preservados. A temporada agora usa as Séries A, B, C e D, Copa do Brasil e o estadual do clube. Os relatórios da antiga liga ficam resumidos no diário e no histórico.",
     );
   }
   const API = {
@@ -998,6 +989,7 @@
     labels,
     clamp,
     nextFixtureDay,
+    nextCommitment,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
   root.ProLife = API;

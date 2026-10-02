@@ -39,11 +39,12 @@ test("career agency persists and charges one monthly fee", () => {
   assert.equal(s.wallet, afterHire - 250);
 });
 
-test("competition catalog includes national cup and simulated state competitions", () => {
-  const s = D.create({}, 405), ids = D.Competitions.init(s).map((c) => c.id);
+test("competition catalog includes the national cup and only the career club state tournament", () => {
+  const s = D.create({ clubId: "c17" }, 405), ids = D.Competitions.init(s).map((c) => c.id);
   assert.ok(ids.includes("copaBrasil"));
-  assert.ok(ids.includes("paulista"));
+  assert.ok(ids.includes("state-sp"));
   assert.equal(ids.filter((id) => /^serie/.test(id)).length, 4);
+  assert.equal(s.competitionSchedule.state.name, "Campeonato Paulista");
 });
 
 test("expanded save round-trip preserves training, statistics, competitions and agency", () => {
@@ -54,8 +55,65 @@ test("expanded save round-trip preserves training, statistics, competitions and 
   const restored = S.parse(JSON.stringify(s));
   assert.equal(restored.clubId, "c40");
   assert.ok(restored.life.agency);
-  assert.equal(restored.competitions.length, D.Competitions.catalog.length);
+  assert.equal(restored.competitions.length, D.Competitions.catalog.length + 1);
   assert.equal(Object.keys(restored.person.attrs).length, 27);
+});
+
+test("Brazil Cup selects 32 ranked clubs with top four from every division", () => {
+  const s = D.create({ clubId: "c0" }, 411), cup = s.competitionSchedule.cup;
+  assert.equal(cup.entrants.length, 32);
+  assert.equal(new Set(cup.entrants.map((e) => e.clubId)).size, 32);
+  assert.equal(cup.entrants.filter((e) => e.qualifiedBy.startsWith("Top 4")).length, 16);
+  assert.ok(cup.entrants.every((e) => Number.isInteger(e.rank) && e.rank >= 1 && e.rank <= 80));
+  for (const date of [50, 100, 170, 240, 340]) {
+    s.day = date - 1;
+    D.advance(s, 1);
+  }
+  assert.equal(cup.rounds.reduce((total, round) => total + round.pairs.length, 0), 31);
+  assert.ok(cup.rounds.every((round) => round.pairs.every((pair) => pair.played && pair.winnerId)));
+  assert.ok(cup.champion);
+});
+
+test("career club plays its state tournament at the start of the year", () => {
+  const s = D.create({ clubId: "c17" }, 412), state = s.competitionSchedule.state;
+  assert.equal(state.name, "Campeonato Paulista");
+  assert.equal(state.clubId, "c17");
+  assert.equal(state.fixtures.length, 5);
+  for (const fixture of state.fixtures) {
+    s.day = fixture.date - 1;
+    D.advance(s, 1);
+  }
+  assert.equal(state.stats.played, 5);
+  assert.ok(state.fixtures.every((fixture) => fixture.played));
+  assert.ok(s.matches.filter((m) => m.competitionId === state.id).length === 5);
+});
+
+test("four clubs are promoted and relegated at each division boundary", () => {
+  const s = D.create({ clubId: "c0" }, 413), before = {};
+  for (const league of s.leagues) {
+    const clubs = s.clubs.filter((c) => c.leagueId === league.id);
+    clubs.forEach((c, index) => { c.stats.points = 100 - index; });
+    before[league.id] = D.table(s, league.id).map((c) => c.id);
+  }
+  s.round = 38;
+  s.day = 364;
+  D.advance(s, 1);
+  for (const [upper, lower] of [["serieA", "serieB"], ["serieB", "serieC"], ["serieC", "serieD"]]) {
+    assert.ok(before[upper].slice(-4).every((id) => D.club(s, id).leagueId === lower));
+    assert.ok(before[lower].slice(0, 4).every((id) => D.club(s, id).leagueId === upper));
+  }
+  for (const league of s.leagues) assert.equal(s.clubs.filter((c) => c.leagueId === league.id).length, 20);
+});
+
+test("division awards store player, club and league for Series A B C and D", () => {
+  const s = D.create({}, 414);
+  for (const league of s.leagues) {
+    const c = s.clubs.find((club) => club.leagueId === league.id), p = c.roster[0];
+    D.Statistics.recordMatch(s, { competitionId: league.id, participants: [[p.id], []], ratings: { [p.id]: 8.8 }, events: [{ type: "goal", playerId: p.id, assistPlayerId: p.id }] });
+  }
+  const awards = D.Statistics.closeSeason(s);
+  assert.deepEqual(new Set(awards.map((a) => a.leagueId)), new Set(["serieA", "serieB", "serieC", "serieD"]));
+  assert.ok(awards.every((a) => a.winner && a.winnerClub && a.league));
 });
 
 test("corrupt expanded save data is rejected", () => {

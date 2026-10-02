@@ -21,4 +21,5 @@ TESTAR
 Veja docs/ATUALIZACAO_0.4.md: regras, compatibilidade, limitações e validação.
 Não há partidas visuais; o personagem 3D é estilizado. Série A usa os confrontos
 da tabela básica CBF 2026; Séries B/C/D têm confrontos gerados para a simulação.
-Sem acesso/rebaixamento; Copa do Brasil e estaduais são complementos simulados.
+Quatro clubes sobem e quatro caem entre as divisões a cada temporada. A Copa do
+Brasil usa 32 classificados nesta adaptação; só o estadual do clube é processado.

@@ -7,7 +7,9 @@ base brasileira de clubes e atletas de 2026 e partidas probabilísticas. Código
 
 Séries A, B, C e D, com cobertura parcial de elencos nas Séries C/D; 27 atributos,
 treino por especialidade e estilo, progressão mais rápida, estatísticas, assistências,
-prêmios, novas competições/telas, decisões pessoais e agência persistente.
+prêmios por divisão com clube do vencedor, quatro acessos e rebaixamentos,
+Copa do Brasil em mata-mata, estadual do clube da carreira, decisões pessoais e
+agência persistente.
 Leia [mudanças, compatibilidade e limites](docs/ATUALIZACAO_0.4.md).
 
 ## Atualização 0.3

@@ -93,6 +93,14 @@ for (const mode of ["player", "coach"]) {
   assert.equal(get(w).matches.length, 0);
   click(w, '[data-advance="30"]');
   assert.ok(get(w).matches.length >= 20);
+  click(w, '[data-page="competitions"]');
+  assert.equal(w.document.querySelectorAll(".competition-card").length, 4);
+  assert.equal(w.document.querySelectorAll("table tbody tr").length, 32);
+  assert.ok(w.document.querySelector("main").textContent.includes("Copa do Brasil"));
+  click(w, '[data-page="awards"]');
+  assert.ok(w.document.querySelector("main").textContent.includes("Brasileirão Série A"));
+  assert.ok(w.document.querySelector("main").textContent.includes("Brasileirão Série D"));
+  assert.ok(w.document.querySelectorAll(".award-card small").length > 0);
   click(w, '[data-page="matches"]');
   assert.ok(w.document.querySelector(".score"));
   for (let i = 0; i < 2; i++) click(w, '[data-advance="7"]');

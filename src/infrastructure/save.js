@@ -203,6 +203,10 @@
           num(m.date, 0, 100000) &&
           num(m.round, 1, 38) &&
           num(m.season, 2026, 2300) &&
+          (m.competitionId === undefined || m.competitionId === null || str(m.competitionId, 60)) &&
+          (m.competitionName === undefined || str(m.competitionName, 100)) &&
+          (m.winnerId === undefined || s.clubs.some((c) => c.id === m.winnerId)) &&
+          (m.penalties === undefined || (Array.isArray(m.penalties) && m.penalties.length === 2 && m.penalties.every((v) => num(v, 0, 30)))) &&
           m.ratings &&
           Object.values(m.ratings).every((v) => num(v, 0, 10)) &&
           Array.isArray(m.participants) &&

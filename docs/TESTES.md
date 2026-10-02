@@ -2,7 +2,7 @@
 
 ## Executado na v0.4
 
-Node 24 no Windows. A suíte automatizada terminou com 36 testes aprovados,
+Node 24 no Windows. A suíte automatizada terminou com 40 testes aprovados,
 sem falhas, cancelamentos, testes ignorados ou pendentes. Ela cobre motor,
 personagem, carreira, ferramentas e a expansão da v0.4, incluindo:
 
@@ -16,6 +16,10 @@ personagem, carreira, ferramentas e a expansão da v0.4, incluindo:
 8. Novo save, autosave, save manual, exportação/importação, reabertura e
    integridade do round-trip.
 9. Rejeição de saves corrompidos e renderização segura de conteúdo importado.
+10. Copa do Brasil com 32 classificados, cinco fases e 31 jogos.
+11. Estadual do clube da carreira no início do ano.
+12. Quatro acessos e quatro rebaixamentos entre A/B, B/C e C/D.
+13. Prêmios por Série A/B/C/D com atleta, clube e divisão registrados.
 
 ### Calibração
 Capital Esporte (nível base 76, mandante) versus Mogi Atlético (base 53):
@@ -94,4 +98,6 @@ configurado e da validação no computador do usuário.
 A suíte automatizada inclui testes de Séries A/B/C/D, cobertura parcial C/D,
 27 atributos, evolução por estilo, estatísticas, assistências, prêmios, agência,
 competições, autosave, exportação/importação, save manual, reabertura e integridade
-após round-trip. O fluxo DOM percorre todas as telas nos modos Jogador e Treinador.
+após round-trip. Também cobre Copa do Brasil, estadual da carreira, ranking,
+acesso/rebaixamento e premiações com clube. O fluxo DOM percorre todas as telas
+nos modos Jogador e Treinador.
