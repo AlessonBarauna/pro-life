@@ -6,6 +6,7 @@ const { files } = require("./assets.cjs");
 function build(root = path.resolve(__dirname, "..")) {
   const output = path.join(root, "dist");
   const hash = crypto.createHash("sha256");
+  hash.update(fs.readFileSync(__filename));
   const contents = files.map((file) => ({ file, bytes: fs.readFileSync(path.join(root, file)) }));
   for (const { file, bytes } of contents) {
     hash.update(file);
@@ -26,7 +27,8 @@ function build(root = path.resolve(__dirname, "..")) {
               `<script src="src/ui/update.js" data-version="${version}"></script>\n</body>`,
             )
         : bytes;
-    fs.writeFileSync(target, content);
+    const versioned = file === "index.html" ? content.replace(/((?:src|href)=")([^"]+)(")/g, (match, prefix, asset, suffix) => prefix + asset + "?v=" + version + suffix) : content;
+    fs.writeFileSync(target, versioned);
   }
   fs.writeFileSync(path.join(output, "version.json"), JSON.stringify({ version }));
   fs.writeFileSync(path.join(output, ".nojekyll"), "");

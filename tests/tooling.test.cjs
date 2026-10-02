@@ -29,7 +29,7 @@ test("published build only contains game assets and detects content changes", ()
     fs.appendFileSync(path.join(root, "src/ui/style.css"), "\n/* edited */");
     assert.notEqual(build(root).version, first.version);
     const refs = [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map((m) => m[1]);
-    assert.ok(refs.every((file) => fs.existsSync(path.join(first.output, file))));
+    assert.ok(refs.every((file) => fs.existsSync(path.join(first.output, file.split("?")[0]))));
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
