@@ -3,6 +3,12 @@
   const D = root.ProLife || (typeof require === "function" ? require("../domain/engine.js") : null);
   function execute(s, action, data = {}) {
     switch (action) {
+      case "appearance": {
+        const C = root.ProLifeCharacter || require("../domain/character.js");
+        s.person.appearance = C.normalize(data.appearance);
+        if (C.celebrations.includes(data.celebration)) s.person.celebration = data.celebration;
+        break;
+      }
       case "advance":
         D.advance(s, data.days);
         break;

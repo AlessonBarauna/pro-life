@@ -190,6 +190,36 @@
       if (!p || JSON.stringify(p) !== JSON.stringify(s.person)) fail();
       c.roster[c.roster.indexOf(p)] = s.person;
     }
+    if (s.development !== undefined) {
+      if (
+        !Array.isArray(s.development) ||
+        s.development.length > 260 ||
+        !s.development.length ||
+        !s.development.every(
+          (e, i) =>
+            e &&
+            num(e.day, 0, s.day) &&
+            num(e.season, 2026, s.season) &&
+            num(e.overall, 0, 100) &&
+            e.attrs &&
+            ["pace", "finish", "pass", "defense", "strength", "stamina"].every((k) =>
+              num(e.attrs[k], 0, 100),
+            ) &&
+            (i === 0 || e.day > s.development[i - 1].day),
+        )
+      )
+        fail();
+    } else
+      s.development = [
+        {
+          day: s.day,
+          season: s.season,
+          overall: Math.round(Object.values(s.person.attrs).reduce((a, b) => a + b, 0) / 6),
+          attrs: { ...s.person.attrs },
+        },
+      ];
+    if (root.ProLifeCharacter)
+      s.person.appearance = root.ProLifeCharacter.normalize(s.person.appearance);
     return s;
   }
   function parse(text) {

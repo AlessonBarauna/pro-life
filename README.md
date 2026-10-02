@@ -1,8 +1,7 @@
 # PRO LIFE — Football Career
 
 Simulador local de carreira no futebol, em português, com jogador e treinador,
-universo fictício e partidas probabilísticas. Código do jogo v0.1, ferramentas
-para desenvolvimento/publicação v0.1.1. Saves versão 1 permanecem compatíveis.
+universo fictício e partidas probabilísticas. Código e ferramentas v0.2. Saves versão 1 permanecem compatíveis.
 
 ## Jogar
 Abra `index.html` ou `ABRIR_PRO_LIFE.bat`. Não precisa instalar nada para jogar
@@ -63,3 +62,9 @@ O save não é enviado ao GitHub nem sincronizado entre computadores. Mantenha o
 endereço local fixo e o schema versão 1 até implementar migrações.
 
 Código sob MIT. Retratos SVG originais; clubes e atletas fictícios.
+
+## Atualização 0.2
+Personagem 3D procedural, aparência editável, uniforme por clube, 16 comemorações,
+radar de atributos e histórico semanal de evolução. Interface reformulada.
+Leia docs/ATUALIZACAO_0.2.md para limites do 3D, migração de saves e testes.
+Fonte do personagem: src/ui/avatar3d.source.js; recompilar com `npm run avatar`.

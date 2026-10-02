@@ -3,6 +3,8 @@ const { JSDOM } = require("jsdom"),
   assert = require("node:assert/strict");
 const base = require("node:path").resolve(__dirname, "..") + "/";
 const files = [
+  "src/domain/character.js",
+  "src/ui/charts.js",
   "src/domain/engine.js",
   "src/application/game.js",
   "src/infrastructure/save.js",
@@ -105,30 +107,43 @@ console.log("save injection and invalid history: passed");
 
 // Published update checker: same version is silent, a newer version shows an action.
 (async function testUpdateNotice() {
-  const source = fs.readFileSync(base + 'src/ui/update.js', 'utf8');
+  const source = fs.readFileSync(base + "src/ui/update.js", "utf8");
   for (const newer of [false, true]) {
-    const installed = 'a'.repeat(64);
+    const installed = "a".repeat(64);
     const updateDom = new JSDOM(
-      '<!doctype html><body><script data-version="' + installed + '">' + source + '</script></body>',
+      '<!doctype html><body><script data-version="' +
+        installed +
+        '">' +
+        source +
+        "</script></body>",
       {
-        runScripts: 'dangerously',
+        runScripts: "dangerously",
         pretendToBeVisual: true,
-        url: 'https://example.invalid/pro-life/',
+        url: "https://example.invalid/pro-life/",
         beforeParse(window) {
-          window.fetch = async url => {
-            assert.ok(String(url).startsWith('https://example.invalid/pro-life/version.json'));
-            return { ok: true, json: async () => ({ version: newer ? 'b'.repeat(64) : installed }) };
+          window.fetch = async (url) => {
+            assert.ok(String(url).startsWith("https://example.invalid/pro-life/version.json"));
+            return {
+              ok: true,
+              json: async () => ({ version: newer ? "b".repeat(64) : installed }),
+            };
           };
-          window.setTimeout = fn => { Promise.resolve().then(fn); return 1; };
+          window.setTimeout = (fn) => {
+            Promise.resolve().then(fn);
+            return 1;
+          };
           window.setInterval = () => 1;
-        }
-      }
+        },
+      },
     );
-    await new Promise(resolve => setImmediate(resolve));
-    const banner = updateDom.window.document.querySelector('#update-banner');
+    await new Promise((resolve) => setImmediate(resolve));
+    const banner = updateDom.window.document.querySelector("#update-banner");
     assert.equal(Boolean(banner), newer);
-    if (newer) assert.equal(banner.querySelector('button').textContent, 'Atualizar jogo');
+    if (newer) assert.equal(banner.querySelector("button").textContent, "Atualizar jogo");
     updateDom.window.close();
   }
-  console.log('published update checker: same version silent, new version prompts update');
-})().catch(error => { console.error(error); process.exitCode = 1; });
+  console.log("published update checker: same version silent, new version prompts update");
+})().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

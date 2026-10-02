@@ -1,6 +1,8 @@
 /* PRO LIFE — pure domain. No DOM, network or storage. */
 (function (root) {
   "use strict";
+  const Character =
+    root.ProLifeCharacter || (typeof require === "function" ? require("./character.js") : null);
   const VERSION = 1,
     clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   class Random {
@@ -168,7 +170,7 @@
       injury: 0,
       goals: 0,
       minutes: 0,
-      appearance: config.appearance || {},
+      appearance: Character.normalize(config.appearance),
       height: clamp(Number(config.height) || 178, 150, 210),
       weight: clamp(Number(config.weight) || 72, 45, 120),
       foot: config.foot === "left" ? "left" : "right",
@@ -202,6 +204,7 @@
       offers: [],
       history: [],
       decision: null,
+      development: [{ day: 0, season: 2026, overall: overall(person), attrs: { ...person.attrs } }],
       trainingProgress: 0,
       seasonGoals: 0,
     };
@@ -557,6 +560,18 @@
         "Você já pode se aposentar e seguir como treinador no mesmo universo.",
       );
   }
+  function recordDevelopment(s) {
+    if (!s.development) s.development = [];
+    const entry = {
+      day: s.day,
+      season: s.season,
+      overall: overall(s.person),
+      attrs: { ...s.person.attrs },
+    };
+    if (s.development.at(-1)?.day === s.day) s.development[s.development.length - 1] = entry;
+    else s.development.push(entry);
+    s.development = s.development.slice(-260);
+  }
   function advance(s, days = 1) {
     const rng = new Random(s.rng);
     for (let d = 0; d < clamp(days, 1, 30); d++) {
@@ -677,6 +692,7 @@
         );
       }
       if (s.day % 365 === 0) newSeason(s, rng);
+      if (s.day % 7 === 0 || s.day % 365 === 0) recordDevelopment(s);
       s.stress = clamp(s.stress + (s.intensity === "hard" ? 0.3 : -0.1), 0, 100);
     }
     s.rng = rng.state;
@@ -744,6 +760,7 @@
     Random,
     create,
     advance,
+    recordDevelopment,
     simulate,
     selected,
     overall,

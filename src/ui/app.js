@@ -21,14 +21,50 @@
     clearTimeout(toast.timer);
     toast.timer = setTimeout(() => ($("#toast").style.display = "none"), 4500);
   }
-  function avatar(p) {
-    const a = p.appearance || {},
-      skin = color(a.skin, "#bf895f"),
-      hair = color(a.hairColor, "#302724"),
-      shirt = color(a.shirt, "#52d2a5"),
-      eyes = color(a.eyeColor, "#493924"),
-      hairStyle = ["short", "long", "bald", "curly"].includes(a.hair) ? a.hair : "short";
-    return `<svg class="avatar" viewBox="0 0 160 190" role="img" aria-label="Retrato estilizado do personagem"><rect width="160" height="190" rx="22" fill="#0b1728"/><circle cx="80" cy="79" r="60" fill="#233b45"/><path d="M20 190v-32q5-25 42-30h36q37 5 42 30v32" fill="${shirt}"/><path d="M64 113v22q16 18 32 0v-22" fill="${skin}"/><ellipse cx="80" cy="79" rx="${a.body === "strong" ? 39 : 34}" ry="47" fill="${skin}"/><ellipse cx="44" cy="84" rx="5" ry="9" fill="${skin}"/><ellipse cx="116" cy="84" rx="5" ry="9" fill="${skin}"/>${hairStyle === "bald" ? "" : hairStyle === "long" ? `<path d="M42 87V56q0-40 38-38t38 38v65h-12V57q-35-5-50 9v55H42" fill="${hair}"/>` : hairStyle === "curly" ? `<path d="M42 65Q22 38 48 29Q60 6 80 24Q110 4 120 38Q140 57 113 67Q100 51 80 56Q56 53 42 65" fill="${hair}"/>` : `<path d="M44 67V52q0-32 36-32t36 32v13q-20-10-33-19Q63 65 44 67" fill="${hair}"/>`}<path d="M57 74h15m17 0h15" stroke="${hair}" stroke-width="3"/><circle cx="65" cy="83" r="4" fill="${eyes}"/><circle cx="96" cy="83" r="4" fill="${eyes}"/><path d="M80 86l-4 13h8M67 110q13 8 26 0" fill="none" stroke="#79553e" stroke-width="2"/>${a.beard === "yes" ? `<path d="M49 100q4 33 31 34q27-1 31-34l-9 12q-22 15-44 0z" fill="${hair}" opacity=".75"/>` : ""}${a.accessory === "glasses" ? '<g fill="none" stroke="#15191e" stroke-width="3"><rect x="51" y="75" width="27" height="18" rx="6"/><rect x="84" y="75" width="27" height="18" rx="6"/><path d="M78 81h6"/></g>' : ""}${a.tattoo === "yes" ? '<path d="M30 158l10 8-7 8 10 7M120 158l8 7-6 12" stroke="#24364b" stroke-width="3" fill="none"/>' : ""}<path d="M58 138l22 16 22-16" stroke="#e9fff4" stroke-width="3" fill="none"/></svg>`;
+  const C = ProLifeCharacter,
+    Charts = ProLifeCharts;
+  let chartKey = "overall";
+  function avatar(p, team = !setup && state ? D.club(state) : null) {
+    const a = C.normalize(p.appearance),
+      kit = C.kit(team),
+      skin = color(a.skin, "#bc8660"),
+      hair = color(a.hairColor, "#241e1a");
+    return `<div class="avatar-stage" data-mode="fallback"><svg class="avatar-fallback" viewBox="0 0 260 350" role="img" aria-label="Retrato de corpo superior com braços e uniforme"><rect width="260" height="350" fill="#171b20"/><path d="M53 160Q43 174 32 284L48 292L76 185M207 160Q217 174 228 284L212 292L184 185" fill="${skin}"/><path d="M75 155Q130 136 185 155L205 195L189 205L174 178L179 312H81L86 178L71 205L55 195Z" fill="${kit.primary}"/><path d="M112 147v19q18 20 36 0v-19" fill="${skin}"/><ellipse cx="130" cy="99" rx="41" ry="59" fill="${skin}"/><path d="M102 100h15m26 0h15" stroke="${hair}" stroke-width="4"/><circle cx="112" cy="112" r="3" fill="${a.eyeColor}"/><circle cx="148" cy="112" r="3" fill="${a.eyeColor}"/><path d="M125 117v14h10M115 141q15 6 30 0" fill="none" stroke="#7d5040" stroke-width="2"/>${a.hair === "bald" ? "" : `<path d="M89 100V70Q92 34 130 35T171 70V98L159 65Q121 59 100 74V100" fill="${hair}"/>`}${a.beard === "none" ? "" : `<path d="M100 131Q100 163 130 166Q160 163 160 131L149 145Q130 157 111 145Z" fill="${hair}"/>`}${a.tattoo === "none" ? "" : `<g stroke="#222d35" fill="none" stroke-width="2.5">${["left", "both"].includes(a.tattoo) ? '<path d="M218 234l-9 9 8 10-10 10 8 8M217 244l-13 3M214 265l-10 5"/>' : ""}${["right", "both"].includes(a.tattoo) ? '<path d="M42 234l9 9-8 10 10 10-8 8M43 244l13 3M46 265l10 5"/>' : ""}</g>`}<path d="M112 168l18 13 18-13" stroke="${kit.secondary}" stroke-width="6" fill="none"/><text x="130" y="248" text-anchor="middle" fill="#fff" font-family="Arial" font-size="38" font-weight="bold">10</text></svg><span class="avatar-render-label">3D · ARRASTE PARA GIRAR</span><span class="avatar-fallback-label">Retrato 2D · 3D indisponível neste navegador</span></div>`;
+  }
+  function configFromForm() {
+    const form = $("#creator");
+    if (!form) return null;
+    const f = new FormData(form),
+      config = Object.fromEntries(f.entries());
+    config.appearance = {};
+    ["skin", "hairColor", "eyeColor", "hair", "beard", "body", "accessory", "tattoo"].forEach(
+      (k) => (config.appearance[k] = f.get(k)),
+    );
+    config.points = {};
+    D.attrs.forEach((k) => (config.points[k] = Number(f.get("point_" + k)) || 0));
+    const base = config.profile === "prodigy" ? 54 : config.profile === "promise" ? 46 : 40;
+    config.attrs = {};
+    D.attrs.forEach((k) => (config.attrs[k] = base + config.points[k]));
+    return config;
+  }
+  function mountAvatar() {
+    const container = $(".avatar-stage");
+    if (!container) return;
+    const config = configFromForm(),
+      person = config || state?.person,
+      team = config
+        ? config.clubId
+          ? D.create({}).clubs.find((c) => c.id === config.clubId)
+          : null
+        : D.club(state);
+    if (person) window.ProLifeAvatar3D?.show(container, person, C.kit(team));
+  }
+  function appearanceFields(a) {
+    a = C.normalize(a);
+    return `<div class="formgrid avatar-options"><label>Tom de pele<input name="skin" type="color" value="${a.skin}"></label><label>Cor do cabelo<input name="hairColor" type="color" value="${a.hairColor}"></label><label>Cor dos olhos<input name="eyeColor" type="color" value="${a.eyeColor}"></label><label>Corte de cabelo<select name="hair">${opt(C.hair, a.hair)}</select></label><label>Barba e bigode<select name="beard">${opt(C.beard, a.beard)}</select></label><label>Porte físico<select name="body">${opt(C.body, a.body)}</select></label><label>Acessório<select name="accessory">${opt(C.accessory, a.accessory)}</select></label><label>Tatuagens<select name="tattoo">${opt(C.tattoo, a.tattoo)}</select></label></div>`;
+  }
+  function evolutionPanel() {
+    return `<section class="card section development-panel"><div class="split"><div><div class="tag">RELATÓRIO DE DESENVOLVIMENTO</div><h2>Evolução do jogador</h2></div><label class="chart-select">Indicador<select id="chart-key">${opt([["overall", "Nível geral"], ...D.attrs.map((k) => [k, D.labels[k]])], chartKey)}</select></label></div>${Charts.evolution(state.development, chartKey)}</section>`;
   }
   function opt(values, current) {
     return values
@@ -50,6 +86,7 @@
     });
   }
   function render() {
+    window.ProLifeAvatar3D?.dispose();
     if (!state || setup) {
       landing();
       return;
@@ -69,12 +106,13 @@
         ["save", "Saves e ajuda"],
       ];
     $("#app").innerHTML =
-      `<div class="layout"><aside class="sidebar"><div class="brand">PRO<span>LIFE</span></div><nav>${nav.map(([id, label]) => `<button data-page="${id}" class="${page === id ? "active" : ""}">${label}</button>`).join("")}</nav><small>FOOTBALL CAREER<br><br>Versão 0.1 • Offline<br>Universo fictício<br>Modo ${state.mode === "player" ? "Jogador" : "Treinador"}</small></aside><main class="main"><div class="topbar"><div><div class="tag">${esc(c?.name || "Livre no mercado")} · Temporada ${state.season}</div><h1>${esc(nav.find((n) => n[0] === page)?.[1] || "Visão geral")}</h1><small>${date()} · Rodada ${state.round}/14</small></div><div class="actions"><button data-action="export">Exportar save</button><button data-advance="1">+1 dia</button><button class="primary" data-advance="7">Avançar 7 dias →</button><button data-advance="30">+30 dias</button></div></div>${views[page]()}<div class="footer">PRO LIFE v0.1 · Simulação probabilística · Autosave após cada ação. Exporte uma cópia para guardar sua carreira.</div></main></div>`;
+      `<div class="layout"><aside class="sidebar"><div class="brand">PRO<span>LIFE</span></div><nav>${nav.map(([id, label]) => `<button data-page="${id}" class="${page === id ? "active" : ""}">${label}</button>`).join("")}</nav><small>FOOTBALL CAREER<br><br>CARREIRA 2026<br>Universo fictício<br>Modo ${state.mode === "player" ? "Jogador" : "Treinador"}</small></aside><main class="main"><div class="topbar"><div><div class="tag">${esc(c?.name || "Livre no mercado")} · Temporada ${state.season}</div><h1>${esc(nav.find((n) => n[0] === page)?.[1] || "Visão geral")}</h1><small>${date()} · Rodada ${state.round}/14</small></div><div class="actions"><button data-action="export">Exportar save</button><button data-advance="1">+1 dia</button><button class="primary" data-advance="7">Avançar 7 dias →</button><button data-advance="30">+30 dias</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.2 · Carreira salva automaticamente · Exportar save cria sua cópia de segurança.</div></main></div>`;
+    mountAvatar();
   }
   function landing() {
     const saved = state;
     $("#app").innerHTML =
-      `<div class="landing"><header><div class="brand">PRO<span>LIFE</span></div><div class="tag">Football Career • v0.1</div></header><div class="tag">Sua carreira. Suas escolhas.</div><h1>O futebol acontece.<br>Você constrói sua história.</h1><p class="intro">Comece na base ou assuma o banco. Treine, dispute espaço e decida seu futuro em um mundo de futebol simulado, com vitórias, derrotas e caminhos que mudam.</p>${saved ? '<button data-action="resume">Voltar à carreira atual</button>' : ""}<form id="creator" class="setup"><div class="grid"><section class="card"><h2>01 / Sua história</h2><div class="formgrid"><label>Carreira<select name="mode" id="mode">${opt(
+      `<div class="landing"><header><div class="brand">PRO<span>LIFE</span></div><div class="tag">FOOTBALL CAREER / 2026</div></header><div class="tag">CENTRAL DE CARREIRA</div><h1>NOVA CARREIRA</h1><p class="intro">Defina seu perfil, escolha seu primeiro projeto e entre no mundo do futebol.</p>${saved ? '<button data-action="resume">Voltar à carreira atual</button>' : ""}<form id="creator" class="setup"><div class="grid"><section class="card"><h2>PERFIL DO ATLETA OU TREINADOR</h2><div class="formgrid"><label>Carreira<select name="mode" id="mode">${opt(
         [
           ["player", "Jogador — da base ao profissional"],
           ["coach", "Treinador — conduza seu projeto"],
@@ -107,39 +145,8 @@
         .clubs.map((c) => `<option value="${c.id}">${c.name}</option>`)
         .join(
           "",
-        )}</select></label><label>Estilo de jogo<select name="style">${opt(["Técnico", "Velocista", "Organizador", "Combativo"], "Técnico")}</select></label><label>Comemoração (perfil)<select name="celebration">${opt(["Braços abertos", "Punho erguido", "Ajoelhado", "Discreto"], "Braços abertos")}</select></label></div><p class="muted">Começos diferentes alteram seus atributos iniciais. Potencial e sucesso não são garantidos. Treinador usa reputação e licenças; os atributos abaixo são futebolísticos.</p><h3>Distribua até 30 pontos adicionais</h3><div id="points">${D.attrs.map((k) => `<label class="attribute">${D.labels[k]}<input name="point_${k}" type="number" min="0" max="20" value="5" required></label>`).join("")}</div><small id="points-total">30 / 30 pontos</small></section><section class="card"><h2>02 / Identidade visual</h2><div id="preview">${avatar({ appearance: {} })}</div><p class="muted">Retrato 2D estilizado. Personalize sua identidade; aparência não altera desempenho.</p><div class="formgrid avatar-options"><label>Tom de pele<input name="skin" type="color" value="#bf895f"></label><label>Cor do cabelo<input name="hairColor" type="color" value="#302724"></label><label>Olhos<input name="eyeColor" type="color" value="#493924"></label><label>Roupa<input name="shirt" type="color" value="#52d2a5"></label><label>Cabelo<select name="hair">${opt(
-        [
-          ["short", "Curto"],
-          ["long", "Longo"],
-          ["curly", "Cacheado"],
-          ["bald", "Sem cabelo"],
-        ],
-        "short",
-      )}</select></label><label>Barba<select name="beard">${opt(
-        [
-          ["no", "Sem barba"],
-          ["yes", "Com barba"],
-        ],
-        "no",
-      )}</select></label><label>Porte<select name="body">${opt(
-        [
-          ["normal", "Regular"],
-          ["strong", "Robusto"],
-        ],
-        "normal",
-      )}</select></label><label>Acessório<select name="accessory">${opt(
-        [
-          ["none", "Nenhum"],
-          ["glasses", "Óculos"],
-        ],
-        "none",
-      )}</select></label><label>Tatuagem<select name="tattoo">${opt(
-        [
-          ["no", "Nenhuma"],
-          ["yes", "Braços"],
-        ],
-        "no",
-      )}</select></label></div><div class="notice">Liga Horizonte: oito clubes, 14 rodadas por temporada. As semanas entre partidas também importam.</div><label>Seed do mundo (opcional)<input name="seed" type="number" placeholder="Um número para reproduzir o mesmo universo"></label><button class="primary" type="submit">Iniciar minha carreira →</button><div class="section"><button type="button" data-action="import">Importar carreira salva</button></div></section></div></form><p class="footer">Sem conexão, contas ou compras. Clubes e jogadores fictícios. Leia LEIA_PRIMEIRO.txt para começar.</p></div>`;
+        )}</select></label><label>Estilo de jogo<select name="style">${opt(["Técnico", "Velocista", "Organizador", "Combativo"], "Técnico")}</select></label><label>Comemoração (perfil)<select name="celebration">${opt(C.celebrations, "Braços abertos")}</select></label></div><p class="muted">Começos diferentes alteram seus atributos iniciais. Potencial e sucesso não são garantidos. Treinador usa reputação e licenças; os atributos abaixo são futebolísticos.</p><h3>Distribua até 30 pontos adicionais</h3><div id="points">${D.attrs.map((k) => `<label class="attribute">${D.labels[k]}<input name="point_${k}" type="number" min="0" max="20" value="5" required></label>`).join("")}</div><small id="points-total">30 / 30 pontos</small><div id="initial-radar">${Charts.radar(Object.fromEntries(D.attrs.map((k) => [k, 45])))}</div></section><section class="card"><h2>PERSONALIZAR PERSONAGEM</h2><div id="preview">${avatar({ appearance: {} })}</div><div class="kit-caption"><b id="kit-name">UNIFORME DE TREINO</b><small>O uniforme acompanha o clube escolhido.</small></div>${appearanceFields({})}<div class="notice">Liga Horizonte: oito clubes, 14 rodadas por temporada. As semanas entre partidas também importam.</div><label>Seed do mundo (opcional)<input name="seed" type="number" placeholder="Um número para reproduzir o mesmo universo"></label><button class="primary" type="submit">Iniciar minha carreira →</button><div class="section"><button type="button" data-action="import">Importar carreira salva</button></div></section></div></form><p class="footer">Sem conexão, contas ou compras. Clubes e jogadores fictícios. Leia LEIA_PRIMEIRO.txt para começar.</p></div>`;
+    mountAvatar();
     $("#creator").addEventListener("input", (e) => {
       const f = new FormData($("#creator"));
       if (e.target.name === "mode") {
@@ -160,7 +167,29 @@
         "accessory",
         "tattoo",
       ].forEach((k) => (a[k] = f.get(k)));
-      $("#preview").innerHTML = avatar({ appearance: a });
+      const current = configFromForm();
+      if (
+        [
+          "skin",
+          "hairColor",
+          "eyeColor",
+          "hair",
+          "beard",
+          "body",
+          "accessory",
+          "tattoo",
+          "clubId",
+          "mode",
+        ].includes(e.target.name)
+      ) {
+        const team = current.clubId
+          ? D.create({}).clubs.find((c) => c.id === current.clubId)
+          : null;
+        $("#preview").innerHTML = avatar(current, team);
+        $("#kit-name").textContent = team?.name || "UNIFORME DE TREINO";
+        mountAvatar();
+      }
+      $("#initial-radar").innerHTML = Charts.radar(current.attrs);
       let n = D.attrs.reduce((n, k) => n + Number(f.get("point_" + k)), 0);
       $("#points-total").textContent = n + " / 30 pontos";
       $("#points-total").className = n > 30 ? "bad" : "";
@@ -205,11 +234,12 @@
       const c = D.club(state),
         p = state.person,
         m = state.matches.find((m) => m.home === state.clubId || m.away === state.clubId);
-      return `<section class="card hero"><div class="profileflex">${avatar(p)}<div><div class="tag">${state.mode === "player" ? (p.age < 20 ? "Da base ao profissional" : "Carreira de jogador") : "Carreira de treinador"}</div><h1>${esc(p.name)}</h1><p>${p.age} anos · ${esc(p.city)} · ${c ? esc(c.name) : "À procura do primeiro projeto"}</p><span class="pill">${state.mode === "player" ? p.pos : "Licença " + state.license}</span><span class="pill">${esc(p.style)}</span><span class="pill">${p.injury ? "Lesionado por " + p.injury + " dias" : "Disponível"}</span></div></div></section><div class="stats"><div class="stat"><small>${state.mode === "player" ? "Nível atual" : "Confiança da diretoria"}</small><b>${state.mode === "player" ? D.overall(p) : Math.round(state.board)}</b></div><div class="stat"><small>Reputação</small><b>${Math.round(state.reputation)}</b></div><div class="stat"><small>Patrimônio pessoal</small><b style="font-size:21px">${money(state.wallet)}</b></div><div class="stat"><small>${c ? "Posição na liga" : "Propostas disponíveis"}</small><b>${c ? D.table(state).findIndex((t) => t.id === c.id) + 1 + "º" : state.offers.length}</b></div></div><div class="grid"><section class="card"><h2>Agenda da carreira</h2>${state.decision ? `<div class="notice">${esc(state.decision.title)}<p>Há uma escolha esperando por você.</p><button data-page="life">Resolver decisão</button></div>` : ""}${!c ? '<div class="notice">Escolha um projeto para disputar a liga.<p><button data-page="market">Ver propostas</button></p></div>' : `<p>${state.round < 14 ? `Próxima rodada em ${Math.max(0, D.nextFixtureDay(state) - state.day)} dia(s).` : `Temporada encerrada. O novo ciclo começa em ${365 - (state.day % 365)} dias.`} O treinador escolhe quem joga conforme nível, disponibilidade e concorrência.</p>${m ? `<div class="score">${m.hg} × ${m.ag}</div><p>${esc(m.summary)}</p><button data-page="matches">Ver relatório</button>` : "<p>A temporada ainda está começando.</p>"}`}${bar("Condição física", p.condition)}${bar("Moral", p.morale)}</section><section class="card"><h2>Caixa de entrada</h2>${news(5)}</section></div>`;
+      return `<section class="card hero"><div class="profileflex">${avatar(p)}<div><div class="tag">${state.mode === "player" ? (p.age < 20 ? "Da base ao profissional" : "Carreira de jogador") : "Carreira de treinador"}</div><h1>${esc(p.name)}</h1><p>${p.age} anos · ${esc(p.city)} · ${c ? esc(c.name) : "À procura do primeiro projeto"}</p><span class="pill">${state.mode === "player" ? p.pos : "Licença " + state.license}</span><span class="pill">${esc(p.style)}</span><span class="pill">${p.injury ? "Lesionado por " + p.injury + " dias" : "Disponível"}</span></div></div></section><div class="stats"><div class="stat"><small>${state.mode === "player" ? "Nível atual" : "Confiança da diretoria"}</small><b>${state.mode === "player" ? D.overall(p) : Math.round(state.board)}</b></div><div class="stat"><small>Reputação</small><b>${Math.round(state.reputation)}</b></div><div class="stat"><small>Patrimônio pessoal</small><b style="font-size:21px">${money(state.wallet)}</b></div><div class="stat"><small>${c ? "Posição na liga" : "Propostas disponíveis"}</small><b>${c ? D.table(state).findIndex((t) => t.id === c.id) + 1 + "º" : state.offers.length}</b></div></div><div class="grid"><section class="card"><h2>Agenda da carreira</h2>${state.decision ? `<div class="notice">${esc(state.decision.title)}<p>Há uma escolha esperando por você.</p><button data-page="life">Resolver decisão</button></div>` : ""}${!c ? '<div class="notice">Escolha um projeto para disputar a liga.<p><button data-page="market">Ver propostas</button></p></div>' : `<p>${state.round < 14 ? `Próxima rodada em ${Math.max(0, D.nextFixtureDay(state) - state.day)} dia(s).` : `Temporada encerrada. O novo ciclo começa em ${365 - (state.day % 365)} dias.`} O treinador escolhe quem joga conforme nível, disponibilidade e concorrência.</p>${m ? `<div class="score">${m.hg} × ${m.ag}</div><p>${esc(m.summary)}</p><button data-page="matches">Ver relatório</button>` : "<p>A temporada ainda está começando.</p>"}`}${bar("Condição física", p.condition)}${bar("Moral", p.morale)}</section><section class="card"><h2>Caixa de entrada</h2>${news(5)}</section></div>${evolutionPanel()}`;
     },
     profile() {
-      const p = state.person;
-      return `<div class="grid"><section class="card"><div class="profileflex">${avatar(p)}<div><h2>${esc(p.name)}</h2><p>${p.age} anos · ${esc(p.city)}<br>${p.height} cm · ${p.weight} kg<br>Pé ${p.foot === "left" ? "esquerdo" : "direito"}</p></div></div><p>Estilo: ${esc(p.style)}<br>Comemoração registrada: ${esc(p.celebration)}</p><span class="pill">${state.fans} seguidores</span><span class="pill">${p.goals} gols na temporada</span><span class="pill">${p.minutes} minutos</span><p class="muted">Potencial é oculto. O desenvolvimento depende de treino, idade, disciplina e incerteza. O retrato é estilizado; comemorações não são animadas nesta versão.</p></section><section class="card"><h2>Atributos futebolísticos</h2>${D.attrs.map((k) => bar(D.labels[k], p.attrs[k])).join("")}<p class="muted">${state.mode === "coach" ? "Como treinador, você decide táticas e escalação; esses atributos permanecem como histórico pessoal." : "Um número maior aumenta suas possibilidades, sem garantir titularidade ou vitória."}</p>${state.mode === "player" && p.age >= 30 ? '<button data-action="retire">Aposentar e virar treinador</button>' : ""}</section></div>`;
+      const p = state.person,
+        c = D.club(state);
+      return `<div class="grid character-profile"><section class="card character-card"><h2>PERFIL DO PERSONAGEM</h2>${avatar(p)}<div class="kit-caption"><b>${esc(c?.name || "UNIFORME DE TREINO")}</b><small>Uniforme definido pelo clube.</small></div><h1>${esc(p.name)}</h1><p>${p.age} anos · ${esc(p.city)} · ${p.height} cm · ${p.weight} kg</p><div class="profile-data"><span>Posição <b>${p.pos}</b></span><span>Pé <b>${p.foot === "left" ? "Esquerdo" : "Direito"}</b></span><span>Estilo <b>${esc(p.style)}</b></span></div><div class="section"><h3>APARÊNCIA</h3><form id="appearance-editor">${appearanceFields(p.appearance)}<label>Comemoração<select name="celebration">${opt(C.celebrations, p.celebration)}</select></label><button class="primary" type="submit">Salvar aparência</button></form></div>${state.mode === "player" && p.age >= 30 ? '<button class="section" data-action="retire">Aposentar e virar treinador</button>' : ""}</section><section class="card"><div class="split"><h2>ATRIBUTOS</h2><span class="rating-badge">${D.overall(p)}</span></div>${Charts.radar(p.attrs)}${D.attrs.map((k) => bar(D.labels[k], p.attrs[k])).join("")}<div class="profile-data"><span>Gols <b>${p.goals}</b></span><span>Minutos <b>${p.minutes}</b></span><span>Seguidores <b>${state.fans}</b></span></div><p class="chart-note">Comemoração: ${esc(p.celebration)}. Registrada no perfil; ainda sem animação.</p></section></div>${evolutionPanel()}`;
     },
     squad() {
       const c = D.club(state);
@@ -326,7 +356,7 @@
       return `<section class="card"><h2>O universo continua</h2>${state.history.length ? state.history.map((h) => `<div class="news"><h3>Temporada ${h.season}</h3><p>${h.event ? esc(h.event) : `Campeão: ${esc(h.champion)} · Sua posição: ${h.position || "Sem clube"} · ${h.goals} gols`}</p></div>`).join("") : empty("Finalize uma temporada para registrar sua história.")}<h3 class="section">Diário</h3>${news(30)}</section>`;
     },
     save() {
-      return `<div class="grid"><section class="card"><h2>Guarde sua história</h2><p>Autosave usa o armazenamento deste navegador. Trocar de navegador, mover o jogo ou limpar dados pode impedir recuperar esse save.</p><div class="actions"><button class="primary" data-action="export">Exportar arquivo JSON</button><button data-action="import">Importar save</button></div><p>Exporte ao encerrar e guarde o JSON numa pasta sua. A importação valida a estrutura e a versão do arquivo.</p><button data-action="new" class="danger">Criar outra carreira</button><p class="muted">Criar uma carreira substitui o autosave após confirmação. Exporte primeiro.</p></section><section class="card"><h2>Guia rápido</h2><p>1. Escolha uma proposta no Mercado.<br>2. Ajuste o treino, ou escalação e tática como treinador.<br>3. Avance sete dias para a primeira rodada.<br>4. Leia relatórios e tome decisões de vida.<br>5. Exporte seu save.</p><p>Versão 0.1 inclui uma liga fictícia de oito clubes. Sem partidas visuais, editor 3D ou competições reais. Acesse a pasta docs para arquitetura, regras, testes e limitações.</p><p class="muted">Não há telemetria, chamadas externas, conta, senha ou conexão de rede no jogo.</p></section></div>`;
+      return `<div class="grid"><section class="card"><h2>Guarde sua história</h2><p>Autosave usa o armazenamento deste navegador. Trocar de navegador, mover o jogo ou limpar dados pode impedir recuperar esse save.</p><div class="actions"><button class="primary" data-action="export">Exportar arquivo JSON</button><button data-action="import">Importar save</button></div><p>Exporte ao encerrar e guarde o JSON numa pasta sua. A importação valida a estrutura e a versão do arquivo.</p><button data-action="new" class="danger">Criar outra carreira</button><p class="muted">Criar uma carreira substitui o autosave após confirmação. Exporte primeiro.</p></section><section class="card"><h2>Guia rápido</h2><p>1. Escolha uma proposta no Mercado.<br>2. Ajuste o treino, ou escalação e tática como treinador.<br>3. Avance sete dias para a primeira rodada.<br>4. Leia relatórios e tome decisões de vida.<br>5. Exporte seu save.</p><p>Versão 0.2 inclui uma liga fictícia de oito clubes, personagem 3D editável e histórico de evolução. Sem partidas visuais ou competições reais. Acesse a pasta docs para arquitetura, regras, testes e limitações.</p><p class="muted">Não há telemetria, chamadas externas, conta, senha ou conexão de rede no jogo.</p></section></div>`;
     },
   };
   function news(n) {
@@ -440,7 +470,30 @@
         break;
     }
   });
+  document.addEventListener("submit", (e) => {
+    if (e.target.id !== "appearance-editor") return;
+    e.preventDefault();
+    const f = new FormData(e.target),
+      appearance = {};
+    ["skin", "hairColor", "eyeColor", "hair", "beard", "body", "accessory", "tattoo"].forEach(
+      (k) => (appearance[k] = f.get(k)),
+    );
+    command("appearance", { appearance, celebration: f.get("celebration") });
+  });
+  document.addEventListener("input", (e) => {
+    if (e.target.closest("#appearance-editor") && e.target.name !== "celebration") {
+      const f = new FormData($("#appearance-editor")),
+        p = { ...state.person, appearance: Object.fromEntries(f.entries()) };
+      const holder = $(".character-card .avatar-stage");
+      window.ProLifeAvatar3D?.show(holder, p, C.kit(D.club(state)));
+    }
+  });
   document.addEventListener("change", (e) => {
+    if (e.target.id === "chart-key") {
+      chartKey = e.target.value;
+      render();
+      return;
+    }
     if (e.target.id === "tactic") command("tactic", { value: e.target.value });
   });
   render();
