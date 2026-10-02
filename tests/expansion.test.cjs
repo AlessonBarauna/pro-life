@@ -147,3 +147,113 @@ test("autosave stores, loads and replaces a newly created career", () => {
   assert.equal(loaded.clubId, "c0");
   delete global.localStorage;
 });
+
+test("career overview exposes league, cup and state status with the true next commitment", () => {
+  const s = D.create({ clubId: "c17" }, 415);
+  const status = D.Competitions.clubStatus(s);
+  assert.equal(status.length, 3);
+  assert.match(status.find((x) => x.type === "league").status, /Rodada 1\/38/);
+  assert.equal(status.find((x) => x.type === "state").name, "Campeonato Paulista");
+  const next = D.nextCommitment(s);
+  assert.equal(next.competitionName, "Campeonato Paulista");
+  assert.equal(D.Competitions.fixtureStage(s, next), "Rodada 1/5");
+  D.advance(s, 8);
+  assert.equal(s.competitionSchedule.state.stats.played, 1);
+  assert.match(D.Competitions.clubStatus(s).find((x) => x.type === "state").status, /Rodada 2\/5/);
+});
+
+test("Brazil Cup next commitment exposes knockout phase and elimination status", () => {
+  const s = D.create({ clubId: "c0" }, 416), cup = s.competitionSchedule.cup;
+  const entrant = cup.entrants[0].clubId;
+  s.clubId = entrant;
+  D.Competitions.ensureState(s);
+  const cupFixture = D.Competitions.nextFixture(s, entrant);
+  if (cupFixture?.competitionId === "copaBrasil") assert.equal(D.Competitions.fixtureStage(s, cupFixture), "Primeira fase");
+  s.day = 49;
+  D.advance(s, 1);
+  const item = D.Competitions.clubStatus(s, entrant).find((x) => x.type === "cup");
+  assert.ok(["Eliminado", "Oitavas de final"].includes(item.status));
+});
+
+test("detailed training attributes drive position-weighted overall and progress faster", () => {
+  const s = D.create({ clubId: "c0", style: "Velocista", pos: "ATA" }, 912);
+  const before = D.overall(s.person), accel = s.person.attrs.acceleration;
+  A.execute(s, "train", { focus: "acceleration", intensity: "hard" });
+  for (let i = 0; i < 45; i++) D.advance(s, 1);
+  assert.ok(s.person.attrs.acceleration > accel);
+  assert.ok(D.Training.groupRatings(s.person.attrs).pace >= before - 5);
+  assert.ok(D.overall(s.person) > before);
+});
+
+test("playing well adds development progress while style remains the training priority", () => {
+  const s = D.create({ clubId: "c0", style: "Organizador", pos: "MEI" }, 913);
+  const before = s.trainingProgress;
+  D.Training.matchDevelopment(s, { participants: [["hero"], []], ratings: { hero: 8.4 }, events: [] }, { overall: D.overall, clamp: (v,a,b) => Math.max(a,Math.min(b,v)) });
+  assert.ok(s.trainingProgress > before);
+  assert.ok(D.Training.styleFocus.Organizador.includes("vision"));
+});
+
+
+test("profile radar groups and GER stay coherent up to 100", () => {
+  const s = D.create({ clubId: "c0", pos: "ATA" }, 914);
+  Object.assign(s.person.attrs, { pace: 95, finish: 95, pass: 84, defense: 53, strength: 95, stamina: 83 });
+  const g = D.Training.groupRatings(s.person.attrs);
+  assert.ok(g.pace >= 75 && g.finish >= 75 && g.strength >= 75);
+  assert.ok(D.overall(s.person) >= 70);
+  for (const key of Object.keys(s.person.attrs)) s.person.attrs[key] = 100;
+  assert.equal(D.overall(s.person), 100);
+  assert.ok(Object.values(D.Training.groupRatings(s.person.attrs)).every((v) => v === 100));
+});
+
+test("elite striker quality materially increases goal output", () => {
+  const base = D.create({ clubId: "c0" }, 915);
+  const home = D.club(base, "c0"), away = D.club(base, "c1");
+  const striker = home.roster.find((p) => p.pos === "ATA");
+  home.lineup = [striker.id, ...home.lineup.filter((id) => id !== striker.id)].slice(0, 11);
+  for (const key of Object.keys(striker.attrs)) striker.attrs[key] = 100;
+  let eliteGoals = 0;
+  for (let i = 0; i < 120; i++) {
+    home.roster.forEach((p) => p.condition = 100); away.roster.forEach((p) => p.condition = 100);
+    const m = D.simulate(home, away, new D.Random(1000 + i));
+    eliteGoals += m.events.filter((e) => e.type === "goal" && e.playerId === striker.id).length;
+  }
+  for (const key of Object.keys(striker.attrs)) striker.attrs[key] = 35;
+  let lowGoals = 0;
+  for (let i = 0; i < 120; i++) {
+    home.roster.forEach((p) => p.condition = 100); away.roster.forEach((p) => p.condition = 100);
+    const m = D.simulate(home, away, new D.Random(1000 + i));
+    lowGoals += m.events.filter((e) => e.type === "goal" && e.playerId === striker.id).length;
+  }
+  assert.ok(eliteGoals > lowGoals, `${eliteGoals} should exceed ${lowGoals}`);
+});
+
+
+test("training and profile share the same canonical core attributes", () => {
+  const s = D.create({ clubId: "c0", pos: "ATA" }, 916);
+  Object.assign(s.person.attrs, { pace: 95, finish: 95, pass: 84, defense: 53, strength: 95, stamina: 83, acceleration: 53 });
+  const g = D.Training.groupRatings(s.person.attrs);
+  assert.deepEqual(D.attrs.map((k) => g[k]), D.attrs.map((k) => s.person.attrs[k]));
+  assert.ok(D.overall(s.person) >= 88);
+});
+
+test("focused training visibly raises detailed skill and its canonical parent", () => {
+  const s = D.create({ clubId: "c0", pos: "ATA", style: "Velocista" }, 917);
+  s.person.potential = 100;
+  const detail = s.person.attrs.acceleration, core = s.person.attrs.pace;
+  A.execute(s, "train", { focus: "acceleration", intensity: "hard" });
+  for (let i=0;i<35;i++) D.advance(s,1);
+  assert.ok(s.person.attrs.acceleration > detail);
+  assert.ok(s.person.attrs.pace > core);
+  assert.equal(D.Training.groupRatings(s.person.attrs).pace, s.person.attrs.pace);
+});
+
+test("elite performances add progression and career accolades can raise ceiling", () => {
+  const s = D.create({ clubId: "c0", pos: "ATA" }, 918);
+  const plan = D.Training.init(s), before = plan.accoladePoints;
+  D.Training.matchDevelopment(s, { participants:[["hero"],[]], ratings:{hero:8.8}, events:[{type:"goal",playerId:"hero"},{type:"goal",playerId:"x",assistPlayerId:"hero"}] }, { overall:D.overall, clamp:D.clamp });
+  assert.ok(plan.accoladePoints > before);
+  assert.ok(plan.weeklyXI >= 1);
+  const oldPotential=s.person.potential;
+  D.Training.seasonRewards(s,[{name:"Artilheiro",winner:s.person.name},{name:"Craque da temporada",winner:s.person.name}],{overall:D.overall,clamp:D.clamp});
+  assert.ok(s.person.potential >= oldPotential);
+});

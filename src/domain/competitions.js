@@ -179,6 +179,55 @@
     syncCatalog(s);
     return match;
   }
+  function fixtureStage(s, fixture) {
+    if (!fixture) return "Sem compromisso";
+    if (fixture.competitionId === "copaBrasil") {
+      const round = s.competitionSchedule?.cup?.rounds?.find((r) => r.index + 1 === fixture.round);
+      return round?.name || "Copa do Brasil";
+    }
+    if (String(fixture.competitionId || "").startsWith("state-")) {
+      const total = s.competitionSchedule?.state?.fixtures?.length || 0;
+      return "Rodada " + fixture.round + (total ? "/" + total : "");
+    }
+    return "Rodada " + fixture.round + "/" + (s.fixtures?.length || 38);
+  }
+  function clubStatus(s, clubId = s.clubId) {
+    init(s); ensureState(s);
+    const own = s.clubs.find((c) => c.id === clubId);
+    if (!own) return [];
+    const leagueTable = s.clubs.filter((c) => c.leagueId === own.leagueId).slice().sort((a,b) => b.stats.points-a.stats.points || (b.stats.gf-b.stats.ga)-(a.stats.gf-a.stats.ga) || b.stats.gf-a.stats.gf);
+    const leagueNextRound = Math.min((s.round || 0) + 1, s.fixtures?.length || 38);
+    const leagueDone = (s.round || 0) >= (s.fixtures?.length || 38);
+    const league = {
+      id: own.leagueId, name: leagueNames[own.leagueId] || "Liga Horizonte", type: "league",
+      status: leagueDone ? "Finalizado" : "Rodada " + leagueNextRound + "/" + (s.fixtures?.length || 38),
+      detail: "Posição: " + (leagueTable.findIndex((c) => c.id === clubId) + 1) + "º",
+    };
+    const cup = s.competitionSchedule?.cup;
+    let cupStatus = "Não classificado", cupDetail = "Fora da edição atual";
+    if (cup?.entrants?.some((e) => e.clubId === clubId)) {
+      if (cup.champion) {
+        cupStatus = cup.champion === own.name ? "Campeão" : "Eliminado";
+        cupDetail = cup.champion === own.name ? "Título conquistado" : "Competição encerrada";
+      } else {
+        const pending = cup.rounds.flatMap((r) => r.pairs.map((pair) => ({ r, pair }))).find(({ pair }) => !pair.played && [pair.home, pair.away].includes(clubId));
+        if (pending) { cupStatus = pending.r.name; cupDetail = "Próximo confronto definido"; }
+        else {
+          const played = cup.rounds.flatMap((r) => r.pairs.map((pair) => ({ r, pair }))).filter(({ pair }) => pair.played && [pair.home, pair.away].includes(clubId));
+          const last = played.at(-1);
+          cupStatus = last && last.pair.winnerId !== clubId ? "Eliminado" : (cup.status || "Aguardando próxima fase");
+          cupDetail = last && last.pair.winnerId !== clubId ? "Eliminado em " + last.r.name : "Aguardando chave";
+        }
+      }
+    }
+    const state = s.competitionSchedule?.state;
+    const stateItem = state && state.clubId === clubId ? {
+      id: state.id, name: state.name, type: "state",
+      status: state.fixtures.every((f) => f.played) ? state.status : "Rodada " + (state.stats.played + 1) + "/" + state.fixtures.length,
+      detail: state.stats.points + " pts · " + state.stats.w + "V " + state.stats.d + "E " + state.stats.l + "D",
+    } : null;
+    return [league, { id: "copaBrasil", name: "Copa do Brasil", type: "cup", status: cupStatus, detail: cupDetail }, stateItem].filter(Boolean);
+  }
   function nextFixture(s, clubId = s.clubId) {
     init(s); ensureState(s);
     const pending = [], state = s.competitionSchedule?.state, cup = s.competitionSchedule?.cup;
@@ -201,7 +250,7 @@
     syncCatalog(s);
   }
   function nextSeason(s, orders) { return prepareSeason(s, orders); }
-  const api = { catalog, leagueNames, stateNames, clubState, nationalRanking, init, ensureState, prepareSeason, due, recordResult, nextFixture, closeSeason, nextSeason };
+  const api = { catalog, leagueNames, stateNames, clubState, nationalRanking, init, ensureState, prepareSeason, due, recordResult, fixtureStage, clubStatus, nextFixture, closeSeason, nextSeason };
   root.ProLifeCompetitions = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

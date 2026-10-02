@@ -96,7 +96,14 @@
     stamina: "Resistência",
   };
   function overall(p) {
-    return Math.round(attrs.reduce((n, k) => n + p.attrs[k], 0) / 6);
+    const ratings = Training?.groupRatings ? Training.groupRatings(p.attrs) : Object.fromEntries(attrs.map((k) => [k, p.attrs[k]]));
+    const weights = {
+      GOL: { pace: 0.08, finish: 0.03, pass: 0.12, defense: 0.32, strength: 0.2, stamina: 0.25 },
+      DEF: { pace: 0.13, finish: 0.04, pass: 0.12, defense: 0.34, strength: 0.22, stamina: 0.15 },
+      MEI: { pace: 0.14, finish: 0.13, pass: 0.32, defense: 0.1, strength: 0.09, stamina: 0.22 },
+      ATA: { pace: 0.23, finish: 0.32, pass: 0.13, defense: 0.03, strength: 0.12, stamina: 0.17 },
+    }[p.pos] || { pace: 1 / 6, finish: 1 / 6, pass: 1 / 6, defense: 1 / 6, strength: 1 / 6, stamina: 1 / 6 };
+    return Math.round(attrs.reduce((n, k) => n + ratings[k] * weights[k], 0));
   }
   function player(rng, id, level, pos) {
     const a = {};
@@ -480,11 +487,14 @@
             : 0);
       if (rng.next() < clamp(0.2 + (attack - defense) / 650, 0.12, 0.29)) {
         m.shots[i]++;
-        const shooter = rng.pick(
-          ps.filter((p) => p.pos !== "GOL").length
-            ? ps.filter((p) => p.pos !== "GOL")
-            : ps,
-        );
+        const candidates = ps.filter((p) => p.pos !== "GOL").length ? ps.filter((p) => p.pos !== "GOL") : ps;
+        const shooterWeights = candidates.map((p) => {
+          const g = Training?.groupRatings ? Training.groupRatings(p.attrs) : p.attrs;
+          const role = p.pos === "ATA" ? 1.35 : p.pos === "MEI" ? 1.08 : 0.72;
+          return Math.max(1, role * (g.finish * 0.55 + g.pace * 0.2 + (p.attrs.positioning || g.finish) * 0.25));
+        });
+        let shooterRoll = rng.next() * shooterWeights.reduce((n, v) => n + v, 0), shooter = candidates[0];
+        for (let si = 0; si < candidates.length; si++) { shooterRoll -= shooterWeights[si]; if (shooterRoll <= 0) { shooter = candidates[si]; break; } }
         if (!shooter) continue;
         const shotXg = clamp(
           0.045 + rng.next() * 0.18 + (attack - defense) / 1600,
@@ -492,15 +502,16 @@
           0.32,
         );
         m.xg[i] += shotXg;
-        const finish =
-            shooter.attrs.finish * (0.7 + (0.3 * shooter.condition) / 100),
-          keeper = opp.find((p) => p.pos === "GOL");
+        const shooterGroups = Training?.groupRatings ? Training.groupRatings(shooter.attrs) : shooter.attrs,
+          finish = shooterGroups.finish * (0.7 + (0.3 * shooter.condition) / 100),
+          keeper = opp.find((p) => p.pos === "GOL"),
+          keeperGroups = keeper && Training?.groupRatings ? Training.groupRatings(keeper.attrs) : keeper?.attrs;
         const onTarget = rng.next() < clamp(0.28 + finish / 220, 0.3, 0.72);
         if (onTarget) m.target[i]++;
         const conversion = clamp(
           shotXg *
             (0.9 + finish / 500) *
-            (1 - ((keeper?.attrs.defense || 50) - 50) / 500),
+            (1 - ((keeperGroups?.defense || 50) - 50) / 360),
           0.015,
           0.6,
         );
@@ -517,7 +528,11 @@
             side: i,
             player: shooter.name,
             playerId: shooter.id,
-            assistPlayerId: rng.next() < 0.7 ? rng.pick(ps.filter((p) => p.id !== shooter.id))?.id : undefined,
+            assistPlayerId: rng.next() < 0.72 ? ps.filter((p) => p.id !== shooter.id).slice().sort((a, b) => {
+              const ga = Training?.groupRatings ? Training.groupRatings(a.attrs) : a.attrs;
+              const gb = Training?.groupRatings ? Training.groupRatings(b.attrs) : b.attrs;
+              return (gb.pass + (b.attrs.vision || gb.pass)) - (ga.pass + (a.attrs.vision || ga.pass));
+            })[Math.floor(rng.next() * Math.min(3, Math.max(1, ps.length - 1)))]?.id : undefined,
             text:
               shooter.name +
               " aproveitou " +
@@ -636,6 +651,7 @@
     if (!leagueMatch) Competitions?.recordResult(s, m, rng);
     s.matches.unshift(m);
     Statistics?.recordMatch(s, m);
+    Training?.matchDevelopment?.(s, m, { overall, clamp });
     if (leagueMatch) [hc, ac].forEach((c, i) => {
       const gf = i ? m.ag : m.hg, ga = i ? m.hg : m.ag, t = c.stats;
       t.played++; t.gf += gf; t.ga += ga;
@@ -686,8 +702,9 @@
   }
   function newSeason(s, rng) {
     const orders = Object.fromEntries((s.leagues || []).map((league) => [league.id, table(s, league.id)]));
-    Statistics?.closeSeason(s);
+    const seasonAwards = Statistics?.closeSeason(s) || [];
     Competitions?.closeSeason(s, table);
+    Training?.seasonRewards?.(s, seasonAwards, { overall, clamp });
     for (const league of s.leagues || [
       { id: undefined, name: "Liga Horizonte" },
     ]) {
@@ -828,7 +845,6 @@
         );
         const improved = Training?.daily(s, rng, { overall, clamp });
         if (improved) {
-          recordDevelopment(s);
           log(s, "Evolução no treino", improved.label + " melhorou com a rotina de trabalho.");
         }
         if (s.intensity === "hard" && rng.next() < 0.015) {

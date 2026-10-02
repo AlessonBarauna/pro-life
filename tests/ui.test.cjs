@@ -52,6 +52,11 @@ for (const mode of ["player", "coach"]) {
   const dom = make(mode),
     w = dom.window;
   assert.equal(get(w).mode, mode);
+  assert.ok(w.document.querySelector(".game-nav"));
+  assert.ok(w.document.querySelector(".career-dashboard"));
+  assert.ok(w.document.querySelector(".career-hero"));
+  assert.ok(w.document.querySelector(".dashboard-grid"));
+  assert.ok(w.document.querySelector(".club-chip").textContent.includes(mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"));
   click(w, '[data-page="inbox"]');
   assert.ok(w.document.querySelector("main").textContent.includes("Mensagens da carreira"));
   const offerText = w.document.querySelector(".offer")?.textContent || "";
@@ -127,7 +132,13 @@ for (const mode of ["player", "coach"]) {
   click(w, '[data-action="number"]');
   assert.equal(get(w).extras.number, 27);
   click(w, '[data-page="home"]');
+  assert.ok(w.document.querySelector("main").textContent.includes("STATUS DAS COMPETIÇÕES"));
+  assert.ok(w.document.querySelector("main").textContent.includes("PRÓXIMO JOGO"));
+  assert.ok(w.document.querySelector("main").textContent.includes("Rodada"));
+  assert.ok(w.document.querySelector(".game-nav"), "A v0.5 deve renderizar a navegação superior");
+  click(w, '[data-page="profile"]');
   const chart = w.document.querySelector("#chart-key");
+  assert.ok(chart, "O relatório de desenvolvimento deve existir no perfil");
   chart.value = "all";
   chart.dispatchEvent(new w.Event("change", { bubbles: true }));
   assert.equal(w.document.querySelectorAll(".chart-legend span").length, 6);
