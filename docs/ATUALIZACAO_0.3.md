@@ -87,3 +87,10 @@ janelas, bens, promessas, transferência NPC, conservação de dinheiro e corrup
 numérica/estrutural. Fluxos DOM verificam ambos os modos e escape de dados. A
 verificação em Chromium cobre tema, WebGL, camisa, compra, gráfico, ligas, bloqueio
 do mercado, feed, reload e ausência de overflow horizontal em 390 px.
+
+## Correção de propostas após assinatura
+Assinar com um clube encerra as propostas de carreira da janela atual. Novas
+propostas só voltam na abertura da janela seguinte, mesmo que a janela atual
+ainda esteja aberta. Isso não bloqueia o scouting do treinador ou o mercado NPC.
+Saves existentes usam o último contrato registrado para recuperar esse prazo e
+removem as propostas antigas que estavam aparecendo indevidamente.

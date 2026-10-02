@@ -393,6 +393,13 @@
       )
         fail();
     } else if (root.ProLife?.Career) root.ProLife.Career.init(s);
+    if (
+      s.careerTransferAvailableDay !== undefined &&
+      (!Number.isInteger(s.careerTransferAvailableDay) ||
+        !num(s.careerTransferAvailableDay, 0, 100365))
+    )
+      fail();
+    if (root.ProLife?.Career) root.ProLife.Career.init(s);
     return s;
   }
   function parse(text) {

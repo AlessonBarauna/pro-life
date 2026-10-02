@@ -89,7 +89,31 @@
         ratingTotal: 0,
       };
     if (s.extras.postSequence === undefined) s.extras.postSequence = 0;
+    if (s.careerTransferAvailableDay === undefined) {
+      const club = s.clubs.find((c) => c.id === s.clubId);
+      const signing = s.extras.transfers.find(
+        (t) => t.player === s.person.name && t.to === club?.name,
+      );
+      const news = s.news.find(
+        (n) =>
+          n.title === "Contrato assinado" && n.body.includes(s.person.name),
+      );
+      s.careerTransferAvailableDay = club
+        ? nextWindowDay(signing?.day ?? news?.day ?? s.day)
+        : 0;
+    }
+    if (s.day < s.careerTransferAvailableDay) s.offers = [];
     return s.extras;
+  }
+  function nextWindowDay(day) {
+    const year = Math.floor(day / 365) * 365,
+      current = day % 365;
+    const next = windows.find((w) => w.start > current);
+    return next ? year + next.start : year + 365;
+  }
+  function canTransfer(s) {
+    init(s);
+    return windowStatus(s).open && s.day >= s.careerTransferAvailableDay;
   }
   function windowStatus(s) {
     const day = s.day % 365,
@@ -358,6 +382,8 @@
     windows,
     shop,
     windowStatus,
+    nextWindowDay,
+    canTransfer,
     post,
     transaction,
     assetValue,

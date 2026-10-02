@@ -212,3 +212,32 @@ test("new save data rejects corrupted assets, money, press promises, feed and cr
     assert.throws(() => S.validate(bad));
   }
 });
+
+test("signing hides all offers until a different transfer window opens, including existing saves", () => {
+  const s = D.create({ clubId: "c22" }, 31);
+  assert.equal(s.careerTransferAvailableDay, 181);
+  until(s, 56);
+  assert.equal(s.offers.length, 0);
+  assert.throws(() => D.join(s, "c2", 1800), /já assinou/);
+  const old = JSON.parse(JSON.stringify(s));
+  delete old.careerTransferAvailableDay;
+  old.offers = [{ clubId: "c2", salary: 1800, role: "Contrato", expires: 70 }];
+  const loaded = S.parse(JSON.stringify(old));
+  assert.equal(loaded.offers.length, 0);
+  assert.equal(loaded.careerTransferAvailableDay, 181);
+  until(loaded, 180);
+  assert.equal(loaded.offers.length, 0);
+  D.advance(loaded, 1);
+  assert.equal(loaded.offers.length, 3);
+  A.execute(loaded, "join", { id: loaded.offers[0].clubId });
+  assert.equal(loaded.offers.length, 0);
+  assert.equal(loaded.careerTransferAvailableDay, 318);
+  until(loaded, 210);
+  assert.equal(loaded.offers.length, 0);
+  assert.throws(() => D.join(loaded, "c2", 1800), /já assinou/);
+  until(loaded, 318);
+  assert.equal(loaded.offers.length, 3);
+  A.execute(loaded, "join", { id: loaded.offers[0].clubId });
+  assert.equal(loaded.careerTransferAvailableDay, 365);
+  S.parse(JSON.stringify(loaded));
+});

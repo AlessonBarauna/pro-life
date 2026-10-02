@@ -301,6 +301,10 @@
       throw Error(
         "Janela de transferências fechada. Aguarde a próxima abertura.",
       );
+    if (!Career.canTransfer(s))
+      throw Error(
+        "Você já assinou nesta janela. Aguarde a próxima janela para trocar de clube.",
+      );
     const previous = club(s);
     const next = club(s, id);
     if (!next) throw Error("Clube inválido.");
@@ -312,6 +316,7 @@
       next.roster.push(s.person);
     }
     s.clubId = id;
+    s.careerTransferAvailableDay = Career.nextWindowDay(s.day);
     s.salary = salary;
     s.contract = 365;
     s.offers = [];
@@ -853,7 +858,13 @@
         ]);
         log(s, "Decisão pendente", s.decision.title);
       }
-      if (s.day % 28 === 0 && Career.windowStatus(s).open) {
+      if (s.day % 28 === 0 && Career.windowStatus(s).open)
+        Career.world(s, rng, API);
+      if (
+        (s.day % 28 === 0 ||
+          Career.windows.some((w) => w.start === s.day % 365)) &&
+        Career.canTransfer(s)
+      ) {
         let candidates = s.clubs
           .filter((c) => c.id !== s.clubId)
           .sort(
@@ -872,7 +883,6 @@
               : "Contrato com disputa por posição",
           expires: s.day + 21,
         }));
-        Career.world(s, rng, API);
         log(
           s,
           "Mercado de trabalho",

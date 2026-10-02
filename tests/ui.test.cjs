@@ -47,6 +47,8 @@ for (const mode of ["player", "coach"]) {
   click(w, '[data-page="market"]');
   click(w, "[data-join]");
   assert.ok(get(w).clubId);
+  assert.equal(w.document.querySelectorAll("[data-join]").length,0);
+  assert.ok(w.document.querySelector("main").textContent.includes("Você já escolheu seu clube"));
   for (const page of [
     "home",
     "profile",

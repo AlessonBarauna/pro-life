@@ -450,6 +450,7 @@
         .join("")}</section>`;
     },
     market() {
+      const eligible = Career.canTransfer(state);
       const c = D.club(state),
         w = Career.windowStatus(state);
       return `<section class="card"><h2>Janelas de transferências</h2><div class="grid3">${[
@@ -464,14 +465,18 @@
         .join(
           "",
         )}</div><p class="${w.open ? "good" : "bad"}">${esc(w.name)} · ${w.open ? w.remaining + " dias restantes" : "Próxima abertura em " + w.remaining + " dias"}</p><p class="chart-note">Três janelas definidas para o jogo. Aceites e contratações ficam bloqueados fora delas; essas datas não representam o regulamento oficial da CBF.</p></section><section class="card section"><h2>Propostas para sua carreira</h2><p class="muted">Salários pessoais e mensais. Confira o projeto e a concorrência no elenco.</p><div class="grid3">${
-        state.offers
+        (eligible ? state.offers : [])
           .map((o) => {
             const c = D.club(state, o.clubId);
             return `<article class="card offer"><div class="tag">${esc(c.city)}</div><h3 class="section">${esc(c.name)}</h3><p>${esc(o.role)}</p><p>Estrutura: ${c.structure}/100<br>Salário: ${money(o.salary)}<br>Expira em ${Math.max(0, o.expires - state.day)} dias</p><button class="primary" data-join="${o.clubId}" ${w.open ? "" : "disabled"}>${w.open ? "Aceitar proposta" : "Janela fechada"}</button></article>`;
           })
           .join("") ||
         empty(
-          "Novas propostas chegam durante as janelas abertas, a cada 28 dias.",
+          state.day < state.careerTransferAvailableDay
+            ? "Você já escolheu seu clube. Novas propostas só estarão disponíveis na próxima janela, a partir de " +
+                dayDate(state.careerTransferAvailableDay) +
+                "."
+            : "Novas propostas chegam durante as janelas abertas.",
         )
       }</div></section>${
         state.mode === "coach" && c

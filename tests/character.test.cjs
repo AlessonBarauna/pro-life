@@ -24,6 +24,7 @@ test("legacy appearance maps without losing supported colors", () => {
 test("club uniform follows transfers and is independent of appearance colors", () => {
   const s = D.create({ world: "legacy", clubId: "c0" }, 50),
     first = C.kit(D.club(s));
+  s.day = 181;
   D.join(s, "c3", 1200);
   assert.equal(C.kit(D.club(s)).primary, D.club(s).color);
   assert.notEqual(C.kit(D.club(s)).primary, first.primary);
