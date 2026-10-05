@@ -1170,6 +1170,17 @@
       );
     }
   });
+  // Autosave de ciclo de vida: protege o progresso também ao recarregar, fechar,
+  // trocar de app/aba ou quando o navegador suspende a PWA no celular.
+  function persistOnLifecycle() {
+    if (!state || setup) return;
+    S.save(state);
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") persistOnLifecycle();
+  });
+  window.addEventListener("pagehide", persistOnLifecycle);
+
   document.addEventListener("change", (e) => {
     if (["focus", "intensity", "exercise"].includes(e.target.id)) {
       const button = $("#training-action");
