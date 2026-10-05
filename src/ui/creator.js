@@ -74,9 +74,9 @@
   function stepPlayer(ctx) {
     const { D, esc, opt, appearanceFields, C } = ctx, c = W.cfg, st = D.Training.origins[W.storyId].story;
     const [minA, maxA] = W.storyId === "custom" ? [14, 32] : [14, st.ages[1]];
-    const minBirthYear=2026-maxA, maxBirthYear=2026-minA;
+    const minBirthDate=`${2026-maxA-1}-01-02`, maxBirthDate=`${2026-minA}-01-01`;
     const birthValue=c.birthDate||birthDateForAge(c.age);
-    const ageField = `<label>Data de nascimento<input type="date" name="birthDate" min="${minBirthYear}-01-01" max="${maxBirthYear}-12-31" value="${birthValue}" required></label><label>Idade<input type="number" name="age" value="${c.age}" disabled></label>`;
+    const ageField = `<label>Data de nascimento<input type="date" name="birthDate" min="${minBirthDate}" max="${maxBirthDate}" value="${birthValue}" required></label><label>Idade<input type="number" name="age" value="${c.age}" readonly tabindex="-1" aria-readonly="true"></label>`;
     return `<h2>Quem é você?</h2><div class="grid"><section class="card"><div class="formgrid"><label>Nome completo<input name="name" maxlength="60" value="${esc(c.name)}"></label><label>Cidade natal<input name="city" maxlength="60" value="${esc(c.city)}"></label>${ageField}<label>Pé dominante<select name="foot">${opt([["right", "Direito"], ["left", "Esquerdo"]], c.foot)}</select></label><label>Altura (cm)<input name="height" type="number" min="150" max="210" value="${c.height}"></label><label>Peso (kg)<input name="weight" type="number" min="45" max="120" value="${c.weight}"></label></div></section><section class="card"><div id="w-avatar"></div>${appearanceFields(c.appearance)}</section></div>`;
   }
   function stepPosition(ctx) {
@@ -109,6 +109,15 @@
   }
   function valid(ctx) {
     if (W.step === 1 && !String(W.cfg.name).trim()) return "Informe o nome do jogador.";
+    if (W.step === 1) {
+      const st=ctx.D.Training.origins[W.storyId].story;
+      const [minA,maxA]=W.storyId === "custom" ? [14,32] : [14,st.ages[1]];
+      const age=ageFromBirthDate(W.cfg.birthDate);
+      if(age===null) return "Informe uma data de nascimento válida.";
+      if(age<minA || age>maxA) return `A data de nascimento deve resultar em idade entre ${minA} e ${maxA} anos no início da carreira.`;
+      W.cfg.age=age;
+      if(W.storyId==="custom") W.custom.age=age;
+    }
     if (W.step === 4 && !W.clubId) return "Escolha uma das oportunidades.";
     return "";
   }
@@ -138,7 +147,11 @@
     if (["name", "city", "foot", "celebration"].includes(n)) c[n] = t.value;
     else if (n === "birthDate") {
       const age=ageFromBirthDate(t.value);
-      if(age!==null){ c.birthDate=t.value; c.age=age; if(W.storyId==="custom") W.custom.age=age; }
+      if(age!==null){
+        c.birthDate=t.value; c.age=age; if(W.storyId==="custom") W.custom.age=age;
+        const ageInput=ctx.$('.wizard input[name="age"]');
+        if(ageInput) ageInput.value=String(age);
+      }
     }
     else if (["height", "weight"].includes(n)) c[n] = Number(t.value);
     else if (["skin", "hairColor", "eyeColor", "hair", "beard", "body", "accessory", "tattoo"].includes(n)) { c.appearance[n] = t.value; mountAvatar(ctx); }
