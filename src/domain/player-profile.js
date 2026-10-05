@@ -29,12 +29,14 @@
     const careerSeasons=stats.seasons||[], stints=stats.stints||[];
     const clubs=[...new Set(stints.map(x=>x.club).filter(Boolean))];
     const awards=(s.statistics?.awards||[]).filter(a=>a?.winner?.id==="hero"||a?.playerId==="hero"||a?.id==="hero").length;
-    const xp=Number(plan.developmentXp||0), level=Number(plan.level||1), nextXp=level>=30?xp:level*18;
+    const xp=Number(plan.developmentXp||0), level=Number(plan.level||1);
+    const nextXp=level>=50?xp:D.Training.xpForLevel(level+1);
+    const archetypeXp=Number(plan.archetypeXp||0), archetypeLevel=Number(plan.archetypeLevel||1);
     return {
       identity:{name:p.name,number:career.number,club:club?.name||"Sem clube",position:p.pos,age:p.age,nationality:p.nationality||null,overall,marketValue:pc.marketValue||0,salary:s.salary||0,squadRole:pc.squadRole||ct?.role||null,form:pc.form??null,condition:p.condition,morale:p.morale,origin:p.originName||null,style:p.style||null},
       season:stats.season, careerStats:stats.career, national:stats.national,
       archetype:{...(plan.archetype||{}),specializations:(plan.specializations||[]).map(id=>D.Training.specializations[id]).filter(Boolean)},
-      development:{overall,seasonStart:seasonStart?.overall??overall,seasonGrowth:overall-(seasonStart?.overall??overall),level,xp,nextXp,gains,history},
+      development:{overall,seasonStart:seasonStart?.overall??overall,seasonGrowth:overall-(seasonStart?.overall??overall),level,xp,nextXp,archetypeXp,archetypeLevel,attributePoints:Number(plan.attributePoints||0),potential:Number(p.potential||0),gains,history},
       attributes:categories,
       contract:ct?{club:club?.name||"—",salary:s.salary||ct.salary||0,signedDay:ct.signedDay,endDay:ct.endDay,remainingDays:remaining,role:ct.role||pc.squadRole,type:ct.type||"permanent"}:null,
       career:{clubs,seasons:careerSeasons.length||Math.max(1,new Set(stints.map(x=>x.season)).size),awards,stints,transfers:(s.extras?.transfers||[]).filter(x=>x.playerId==="hero"||x.id==="hero"||x.player?.id==="hero")}
