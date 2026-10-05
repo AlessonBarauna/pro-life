@@ -18,6 +18,7 @@ const files = [
   "src/domain/career.js",
   "src/domain/commercial.js",
   "src/domain/squad.js",
+  "src/domain/simulation-tactics.js",
   "src/domain/national-team.js",
   "src/ui/avatar3d.js",
   "src/ui/charts.js",
