@@ -189,7 +189,10 @@
   }
   function xpForLevel(level) {
     const n = Math.max(1, Math.min(50, Number(level) || 1));
-    return Math.round(18 * Math.pow(n - 1, 1.18));
+    // Mantém os primeiros níveis compatíveis com saves antigos (18 XP por nível)
+    // e aumenta gradualmente o custo após o nível 3.
+    if (n <= 3) return (n - 1) * 18;
+    return Math.round(36 + 18 * Math.pow(n - 3, 1.18));
   }
   function addDevelopmentXp(s, amount) {
     const plan = init(s), before = plan.level;
