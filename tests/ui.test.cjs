@@ -327,10 +327,11 @@ console.log("save injection and invalid history: passed");
 });
 
 
-test("autosave persists on browser lifecycle events",()=>{
-  const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+{
+  const app=fs.readFileSync(base+"src/ui/app.js","utf8");
   assert.match(app,/visibilitychange/);
   assert.match(app,/document\.visibilityState === "hidden"/);
   assert.match(app,/pagehide/);
   assert.match(app,/S\.save\(state\)/);
-});
+  console.log("autosave lifecycle persistence: passed");
+}
