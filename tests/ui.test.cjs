@@ -325,3 +325,12 @@ console.log("save injection and invalid history: passed");
   console.error(error);
   process.exitCode = 1;
 });
+
+
+test("autosave persists on browser lifecycle events",()=>{
+  const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+  assert.match(app,/visibilitychange/);
+  assert.match(app,/document\.visibilityState === "hidden"/);
+  assert.match(app,/pagehide/);
+  assert.match(app,/S\.save\(state\)/);
+});
