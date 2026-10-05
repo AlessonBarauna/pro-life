@@ -1293,3 +1293,36 @@ button,a,select,input,label,summary{touch-action:manipulation}
 
 .captain-mark{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;margin-left:5px;border-radius:99px;border:1px solid currentColor;font-size:.62rem;vertical-align:middle}
 .captain-mark.vice{opacity:.72}
+
+
+/* iPhone / iOS — refinamento responsivo */
+@supports (-webkit-touch-callout:none){
+  html,body{min-height:-webkit-fill-available}
+  body{overscroll-behavior-y:none}
+  input,select,textarea{border-radius:8px;-webkit-appearance:none;appearance:none}
+  input[type="date"]{min-height:44px;line-height:44px}
+}
+@media(max-width:700px){
+  .wizard{width:100%;max-width:100%;padding:calc(10px + env(safe-area-inset-top)) 12px calc(104px + env(safe-area-inset-bottom))}
+  .wizard header{padding-left:2px;padding-right:2px}
+  .w-steps{margin-left:-12px;margin-right:-12px;padding:0 12px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+  .w-step{flex:0 0 auto;min-height:44px;scroll-snap-align:start}
+  .wizard .grid,.wizard .formgrid{grid-template-columns:1fr!important}
+  .wizard .card{min-width:0;padding:14px}
+  .wizard input,.wizard select{width:100%;max-width:100%;min-height:44px}
+  .wizard input[type="date"]{display:block}
+  .wizard .avatar-stage{min-height:260px}
+  .story-card,.offer-card{min-height:44px}
+  .w-actions{position:sticky;bottom:calc(58px + env(safe-area-inset-bottom));z-index:20;margin-left:-12px;margin-right:-12px;padding:10px 12px;background:rgba(10,16,22,.97);box-shadow:0 -10px 24px rgba(0,0,0,.28)}
+  .w-actions button{flex:1 1 calc(50% - 5px);min-width:0}
+  .w-actions .primary{flex-basis:100%}
+  .main{padding-left:12px;padding-right:12px}
+  .card,.dash-card{max-width:100%;overflow-wrap:anywhere}
+  table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+}
+@media(max-width:390px){
+  .wizard{padding-left:10px;padding-right:10px}
+  .w-actions{margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px}
+  .w-actions button{flex-basis:100%}
+  .game-nav nav button{flex-basis:24vw}
+}
