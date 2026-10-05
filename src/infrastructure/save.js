@@ -377,7 +377,7 @@
             str(p.author, 100) &&
             str(p.title, 200) &&
             str(p.body, 2000) &&
-            ["confirmed", "rumor"].includes(p.kind) &&
+            ["confirmed", "rumor", "story"].includes(p.kind) &&
             typeof p.liked === "boolean" &&
             num(p.likes, 0, 1e9),
         )
