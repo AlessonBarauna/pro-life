@@ -1326,3 +1326,27 @@ button,a,select,input,label,summary{touch-action:manipulation}
   .w-actions button{flex-basis:100%}
   .game-nav nav button{flex-basis:24vw}
 }
+
+
+/* Central de carreiras — desktop e iPhone */
+.career-hub{max-width:980px;margin:0 auto;padding:22px 18px calc(40px + env(safe-area-inset-bottom))}
+.career-continue{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:22px 0;padding:20px;border:1px solid rgba(73,230,220,.3);border-radius:16px;background:linear-gradient(135deg,rgba(73,230,220,.10),rgba(18,27,37,.92))}
+.career-continue h2,.career-slot h2{margin:4px 0 5px;font-size:20px}
+.career-continue p,.career-slot p{margin:4px 0;color:var(--muted)}
+.career-hub-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0 28px}
+.career-hub-actions button{min-height:52px}
+.career-slots{display:grid;gap:10px}
+.career-slot{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.025)}
+.career-slot.active{border-color:rgba(73,230,220,.28)}
+.career-slot-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:700px){
+  .career-hub{padding:calc(16px + env(safe-area-inset-top)) 12px calc(28px + env(safe-area-inset-bottom))}
+  .career-hub .intro{font-size:14px}
+  .career-continue,.career-slot{display:grid;grid-template-columns:1fr;padding:16px}
+  .career-continue>button{width:100%;min-height:48px}
+  .career-hub-actions{grid-template-columns:1fr}
+  .career-hub-actions button{min-height:50px;text-align:left;padding-left:16px}
+  .career-slot-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .career-slot-actions .primary{grid-column:1/-1;min-height:48px}
+  .career-slot-actions button:not(.primary){min-height:44px}
+}
