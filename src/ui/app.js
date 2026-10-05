@@ -851,8 +851,10 @@
       try {
         const f = input.files[0];
         if (!f) return;
-        if (f.size > 3000000)
-          throw Error("Arquivo muito grande. Limite: 3 MB.");
+        // Deve acompanhar o mesmo teto aceito por ProLifeSave.parse (8 MB).
+        // A interface não pode rejeitar um backup que o próprio validador suporta.
+        if (f.size > 8000000)
+          throw Error("Arquivo muito grande. Limite: 8 MB.");
         const parsed = S.parse(await f.text());
         S.saveAsNew?.(parsed);
         state = parsed;
