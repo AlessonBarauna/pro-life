@@ -1,6 +1,9 @@
 (function (root) {
   "use strict";
   const KEY = "prolife.v1.save";
+  const SLOTS_KEY = "prolife.v1.slots";
+  const ACTIVE_KEY = "prolife.v1.activeSlot";
+  const SLOT_PREFIX = "prolife.v1.slot.";
   const ExpansionValidator =
     root.ProLifeValidateExpansion ||
     (typeof require === "function" ? require("./validate-expansion.js") : null);
@@ -440,32 +443,69 @@
       throw Error("Save excede o limite de 3 MB.");
     return validate(JSON.parse(text));
   }
+  function readSlots() {
+    try { return JSON.parse(localStorage.getItem(SLOTS_KEY) || "[]"); } catch { return []; }
+  }
+  function writeSlots(slots) { localStorage.setItem(SLOTS_KEY, JSON.stringify(slots)); }
+  function slotSummary(id, s, updatedAt) {
+    const club=s.clubs?.find(c=>c.id===s.clubId);
+    return { id, name:s.person?.name||"Carreira", mode:s.mode, club:club?.name||"Sem clube", pos:s.person?.pos||"", age:s.person?.age||0, season:s.season, day:s.day, updatedAt:updatedAt||Date.now() };
+  }
+  function migrateLegacy() {
+    let slots=readSlots();
+    if(slots.length) return slots;
+    const legacy=localStorage.getItem(KEY);
+    if(!legacy) return slots;
+    try {
+      const s=validate(JSON.parse(legacy)), id="career_legacy";
+      localStorage.setItem(SLOT_PREFIX+id, JSON.stringify(s));
+      slots=[slotSummary(id,s,Date.now())]; writeSlots(slots); localStorage.setItem(ACTIVE_KEY,id);
+    } catch {}
+    return slots;
+  }
+  function listSlots() { return migrateLegacy().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)); }
+  function activeId() { migrateLegacy(); return localStorage.getItem(ACTIVE_KEY); }
+  function loadSlot(id) {
+    try { const data=localStorage.getItem(SLOT_PREFIX+id); if(!data) return null; const s=validate(JSON.parse(data)); localStorage.setItem(ACTIVE_KEY,id); return s; } catch { return null; }
+  }
+  function saveAsNew(s) {
+    try {
+      validate(s);
+      const id="career_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,7);
+      localStorage.setItem(SLOT_PREFIX+id,JSON.stringify(s));
+      const slots=readSlots(); slots.push(slotSummary(id,s,Date.now())); writeSlots(slots);
+      localStorage.setItem(ACTIVE_KEY,id); localStorage.setItem(KEY,JSON.stringify(s));
+      return id;
+    } catch { return null; }
+  }
   function save(s) {
     try {
-      localStorage.setItem(KEY, JSON.stringify(s));
-      return true;
-    } catch {
-      return false;
-    }
+      validate(s);
+      let id=activeId();
+      if(!id) return !!saveAsNew(s);
+      localStorage.setItem(SLOT_PREFIX+id,JSON.stringify(s));
+      localStorage.setItem(KEY,JSON.stringify(s));
+      const slots=readSlots(), i=slots.findIndex(x=>x.id===id), summary=slotSummary(id,s,Date.now());
+      if(i>=0) slots[i]=summary; else slots.push(summary);
+      writeSlots(slots); return true;
+    } catch { return false; }
   }
   function load() {
-    try {
-      const data = localStorage.getItem(KEY);
-      if (data) {
-        const old = JSON.parse(data);
-        if (
-          old.world === undefined &&
-          !localStorage.getItem("prolife.v02.backup")
-        )
-          localStorage.setItem("prolife.v02.backup", data);
-        return validate(old);
-      }
-      return null;
-    } catch {
-      return null;
-    }
+    const id=activeId();
+    if(id) return loadSlot(id);
+    return null;
   }
-  root.ProLifeSave = { parse, validate, save, load, KEY };
+  function removeSlot(id) {
+    const slots=readSlots().filter(x=>x.id!==id); writeSlots(slots); localStorage.removeItem(SLOT_PREFIX+id);
+    if(localStorage.getItem(ACTIVE_KEY)===id) localStorage.removeItem(ACTIVE_KEY);
+    return true;
+  }
+  function renameSlot(id,name) {
+    const slots=readSlots(), x=slots.find(s=>s.id===id); if(!x) return false;
+    x.label=String(name||"").trim().slice(0,60); writeSlots(slots); return true;
+  }
+  function clearActive() { localStorage.removeItem(ACTIVE_KEY); }
+  root.ProLifeSave = { parse, validate, save, load, saveAsNew, listSlots, loadSlot, removeSlot, renameSlot, activeId, clearActive, KEY, SLOTS_KEY, ACTIVE_KEY };
   if (typeof module !== "undefined" && module.exports)
     module.exports = root.ProLifeSave;
 })(typeof globalThis !== "undefined" ? globalThis : this);
