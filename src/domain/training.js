@@ -154,6 +154,10 @@
     if (!Number.isFinite(s.trainingPlan.weeklyXI)) s.trainingPlan.weeklyXI = 0;
     if (!Number.isFinite(s.trainingPlan.developmentXp)) s.trainingPlan.developmentXp = 0;
     if (!Number.isFinite(s.trainingPlan.level)) s.trainingPlan.level = 1;
+    if (!Number.isFinite(s.trainingPlan.archetypeXp)) s.trainingPlan.archetypeXp = 0;
+    if (!Number.isFinite(s.trainingPlan.archetypeLevel)) s.trainingPlan.archetypeLevel = 1;
+    if (!Number.isFinite(s.trainingPlan.attributePoints)) s.trainingPlan.attributePoints = 0;
+    if (!Number.isFinite(s.trainingPlan.lastPotentialReviewSeason)) s.trainingPlan.lastPotentialReviewSeason = s.season || 2026;
     if (!Array.isArray(s.trainingPlan.specializations)) s.trainingPlan.specializations = [];
     if (!Number.isFinite(s.trainingPlan.specializationPoints)) s.trainingPlan.specializationPoints = 0;
     if (s.trainingPlan.activeSpecialization !== undefined && s.trainingPlan.activeSpecialization !== null && (!specializations[s.trainingPlan.activeSpecialization] || specializations[s.trainingPlan.activeSpecialization].legacy || !s.trainingPlan.specializations.includes(s.trainingPlan.activeSpecialization))) s.trainingPlan.activeSpecialization = null;
@@ -183,12 +187,45 @@
     s.person.attrs[key] = helpers.clamp(before + amount, 20, 100);
     return s.person.attrs[key] > before;
   }
+  function xpForLevel(level) {
+    const n = Math.max(1, Math.min(50, Number(level) || 1));
+    return Math.round(18 * Math.pow(n - 1, 1.18));
+  }
   function addDevelopmentXp(s, amount) {
     const plan = init(s), before = plan.level;
     plan.developmentXp += Math.max(0, amount || 0);
-    plan.level = Math.min(30, 1 + Math.floor(plan.developmentXp / 18));
-    if (plan.level > before) plan.specializationPoints += plan.level - before;
-    return plan.level - before;
+    let level = 1;
+    while (level < 50 && plan.developmentXp >= xpForLevel(level + 1)) level++;
+    plan.level = level;
+    const gained = Math.max(0, plan.level - before);
+    if (gained) {
+      plan.attributePoints += gained;
+      const oldSpecMilestones = Math.floor(before / 5), newSpecMilestones = Math.floor(plan.level / 5);
+      plan.specializationPoints += Math.max(0, newSpecMilestones - oldSpecMilestones);
+    }
+    return gained;
+  }
+  function addArchetypeXp(s, amount) {
+    const plan = init(s), before = plan.archetypeLevel;
+    plan.archetypeXp += Math.max(0, amount || 0);
+    plan.archetypeLevel = Math.min(50, 1 + Math.floor(Math.sqrt(plan.archetypeXp / 3.2)));
+    return Math.max(0, plan.archetypeLevel - before);
+  }
+  function potentialReview(s, metrics) {
+    if (!s.person || !Number.isFinite(s.person.potential)) return 0;
+    const age = Number(s.person.age || 18);
+    const rating = Number(metrics.rating || 0), minutes = Number(metrics.minutes || 0);
+    const impact = Number(metrics.goals || 0) * 0.7 + Number(metrics.assists || 0) * 0.55 + Number(metrics.cleanSheet || 0) * 0.2;
+    let delta = 0;
+    if (age <= 23 && minutes >= 45 && rating >= 7.6) delta = 0.035 + Math.min(0.045, impact * 0.01);
+    else if (age <= 23 && minutes < 20) delta = -0.008;
+    else if (age >= 30 && rating < 6.2) delta = -0.012;
+    s.person.potential = Math.max(helpersPotentialFloor(s), Math.min(99, s.person.potential + delta));
+    return delta;
+  }
+  function helpersPotentialFloor(s) {
+    const attrs = core.map(k => Number(s.person.attrs?.[k] || 20));
+    return Math.max(45, Math.round(attrs.reduce((a,b)=>a+b,0) / attrs.length));
   }
   const MAX_SPECIALIZATIONS = 6;
   function unlockSpecialization(s, id) {
@@ -325,12 +362,21 @@
     if(mult){ const relatedAction=mult.action==="goals"?goals:mult.action==="assists"?assists:mult.action==="tackles"?tackles:mult.action==="saves"?saves:mult.action==="minutes"?minutes/90:Math.max(0,rating-6.5); xp+=relatedAction*Math.max(0,mult.value-1); }
     const offense=match.offensiveStats?.hero||{}, metrics={goals,assists,minutes,tackles,saves,cleanSheet,rating,shots:Number(offense.shots||0),onTarget:Number(offense.onTarget||0),xg:Number(offense.xg||0)};
     xp+=root.ProLifeIdentity?.matchXpBonus?.(s,metrics,Math.max(.35,xp))||0;
-    xp=Math.max(.35,xp); s.trainingProgress=Math.min(100,(s.trainingProgress||0)+xp); const beforeLevel=plan.level; addDevelopmentXp(s,xp);
-    const changes=[]; const performancePoints=Math.max(2,((rating-6)*4+goals*4+assists*3+tackles*.35+saves*.3+cleanSheet)*3.6);
+    xp=Math.max(.35,xp);
+    const matchXp = xp * 1.35;
+    const archetypeFocus = plan.archetype?.focus || [];
+    const archetypeActionBonus = archetypeFocus.length ? 1.12 : 1;
+    const archetypeXp = matchXp * archetypeActionBonus;
+    s.trainingProgress=Math.min(100,(s.trainingProgress||0)+matchXp);
+    const beforeLevel=plan.level, beforeArchetypeLevel=plan.archetypeLevel;
+    addDevelopmentXp(s,matchXp);
+    addArchetypeXp(s,archetypeXp);
+    const potentialDelta=potentialReview(s,metrics);
+    const changes=[]; const performancePoints=Math.max(2,((rating-6)*4+goals*4+assists*3+tackles*.35+saves*.3+cleanSheet)*4.25);
     for(const key of pool.slice(0,4)) changes.push(...progressAttribute(s,key,performancePoints/pool.slice(0,4).length,helpers));
     root.ProLifeIdentity?.onMatch?.(s,metrics);
     if(rating>=8){plan.weeklyXI++;plan.accoladePoints+=1;} if(goals)plan.accoladePoints+=goals*.6;if(assists)plan.accoladePoints+=assists*.5;
-    return {bonus:true,rating,goals,assists,xp,changes,levelBefore:beforeLevel,levelAfter:plan.level};
+    return {bonus:true,rating,goals,assists,xp:matchXp,archetypeXp,potentialDelta,changes,levelBefore:beforeLevel,levelAfter:plan.level,archetypeLevelBefore:beforeArchetypeLevel,archetypeLevelAfter:plan.archetypeLevel};
   }
   function seasonRewards(s, awards, helpers) {
     if (s.mode !== "player") return 0;
@@ -347,7 +393,7 @@
     if (points) s.person.potential = Math.min(100, Math.max(s.person.potential || 0, helpers.overall(s.person) + 4 + Math.floor(points / 2)));
     return points;
   }
-  const api = { core, skills, groups, styleFocus, archetypes, archetypeCatalog, defaultArchetypeId, origins, specializations, trainingCategories, exercises, gradeRank, expand, groupRatings, init, ceiling, addDevelopmentXp, unlockSpecialization, activateSpecialization, MAX_SPECIALIZATIONS, archetypeSpecializations, ageFactor, attributeProgressPercent, mandatoryCommitmentToday, trainingAvailable, performTraining, progressAttribute, daily, matchDevelopment, seasonRewards };
+  const api = { core, skills, groups, styleFocus, archetypes, archetypeCatalog, defaultArchetypeId, origins, specializations, trainingCategories, exercises, gradeRank, expand, groupRatings, init, ceiling, xpForLevel, addDevelopmentXp, addArchetypeXp, unlockSpecialization, activateSpecialization, MAX_SPECIALIZATIONS, archetypeSpecializations, ageFactor, attributeProgressPercent, mandatoryCommitmentToday, trainingAvailable, performTraining, progressAttribute, daily, matchDevelopment, seasonRewards };
   root.ProLifeTraining = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
