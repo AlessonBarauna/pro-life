@@ -203,8 +203,13 @@
     const gained = Math.max(0, plan.level - before);
     if (gained) {
       plan.attributePoints += gained;
-      const oldSpecMilestones = Math.floor(before / 5), newSpecMilestones = Math.floor(plan.level / 5);
-      plan.specializationPoints += Math.max(0, newSpecMilestones - oldSpecMilestones);
+      // Compatibilidade: níveis 2 e 3 continuam concedendo pontos como no Development 2.0.
+      // A partir daí, novas especializações são liberadas em marcos de 5 níveis.
+      const legacyBefore = Math.min(2, Math.max(0, before - 1));
+      const legacyAfter = Math.min(2, Math.max(0, plan.level - 1));
+      const milestoneBefore = Math.max(0, Math.floor(before / 5));
+      const milestoneAfter = Math.max(0, Math.floor(plan.level / 5));
+      plan.specializationPoints += Math.max(0, legacyAfter - legacyBefore) + Math.max(0, milestoneAfter - milestoneBefore);
     }
     return gained;
   }
