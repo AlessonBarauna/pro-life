@@ -37,6 +37,9 @@
   const Physical =
     root.ProLifePhysical ||
     (typeof require === "function" ? require("./physical.js") : null);
+  const SimulationTactics =
+    root.ProLifeSimulationTactics ||
+    (typeof require === "function" ? require("./simulation-tactics.js") : null);
   const NationalTeam =
     root.ProLifeNationalTeam ||
     (typeof require === "function" ? require("./national-team.js") : null);
@@ -549,6 +552,7 @@
     [hp,ap].forEach((ps,side)=>ps.forEach(p=>{m.participation[p.id]={side,starter:true,entryMinute:0,exitMinute:94,minutes:94};}));
     const squads = [hp, ap],
       clubs = [home, away],
+      tactical = SimulationTactics ? [SimulationTactics.matchup(home, away), SimulationTactics.matchup(away, home)] : [{possession:0,attack:0,defense:0,fatigue:0},{possession:0,attack:0,defense:0,fatigue:0}],
       fatigue = [0, 0];
     for (let minute = 1; minute <= 94; minute++) {
       const control = squads.map(
@@ -556,7 +560,8 @@
           quality(ps, "pass") +
           quality(ps, "stamina") * 0.2 +
           (i === 0 ? 3 : 0) +
-          (clubs[i].tactic === "possession" ? 5 : 0) -
+          (clubs[i].tactic === "possession" ? 5 : 0) +
+          tactical[i].possession -
           fatigue[i],
       );
       const i =
@@ -567,7 +572,7 @@
         ps = squads[i],
         opp = squads[j];
       m.possessions[i]++;
-      fatigue[i] += 0.07;
+      fatigue[i] += 0.07 + tactical[i].fatigue;
       const attack =
         quality(ps, "pace") * 0.4 +
         quality(ps, "pass") * 0.6 +
@@ -575,7 +580,8 @@
           ? 7
           : clubs[i].tactic === "counter"
             ? 2
-            : 0);
+            : 0) +
+        tactical[i].attack;
       const defense =
         quality(opp, "defense") * 0.65 +
         quality(opp, "strength") * 0.35 +
@@ -583,7 +589,8 @@
           ? 8
           : clubs[j].tactic === "attack"
             ? -6
-            : 0);
+            : 0) +
+        tactical[j].defense;
       if (rng.next() < clamp(0.2 + (attack - defense) / 650, 0.12, 0.29)) {
         m.shots[i]++;
         const candidates = ps.filter((p) => p.pos !== "GOL").length ? ps.filter((p) => p.pos !== "GOL") : ps;
