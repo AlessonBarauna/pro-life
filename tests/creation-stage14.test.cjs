@@ -180,7 +180,9 @@ test("Etapa 14: assistente na interface percorre os 6 passos, volta sem perder e
   click("[data-w-next]");
   assert.match(q("#wizard").textContent, /Teste Criador/);
   click("[data-w-next]");
-  const saved = w.ProLifeSave.parse(w.localStorage.getItem(w.ProLifeSave.KEY));
+  const slots = w.ProLifeSave.listSlots();
+  assert.equal(slots.length, 1, "nova carreira cria um slot independente");
+  const saved = w.ProLifeSave.loadSlot(slots[0].id);
   assert.equal(saved.person.name, "Teste Criador");
   assert.equal(saved.creation.status, "started");
   assert.equal(saved.clubId, first);
