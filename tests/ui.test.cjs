@@ -335,3 +335,12 @@ console.log("save injection and invalid history: passed");
   assert.match(app,/S\.save\(state\)/);
   console.log("autosave lifecycle persistence: passed");
 }
+
+{
+  const app=fs.readFileSync(base+"src/ui/app.js","utf8");
+  const save=fs.readFileSync(base+"src/infrastructure/save.js","utf8");
+  assert.match(app,/f\.size > 8000000/);
+  assert.match(app,/Limite: 8 MB/);
+  assert.match(save,/text\.length > 8000000/);
+  console.log("save import size limit matches validator: passed");
+}
