@@ -39,12 +39,13 @@
   const defaultArchetypeId = { GOL: "guardian", DEF: "wall", MEI: "maestro", ATA: "finisher" };
   const archetypes = Object.fromEntries(Object.entries(defaultArchetypeId).map(([pos,id]) => [pos, archetypeCatalog[id]]));
   const origins = {
-    academy: { name: "Jovem da Base", description: "Formação estruturada, disciplina alta e pressão por evolução.", age: 16, reputation: 12, potential: 4, attrs: { pass: 2, stamina: 2 }, offerBoost: 0 },
-    regional: { name: "Promessa Regional", description: "Destaque local que chega ao profissional já conhecido na região.", age: 18, reputation: 20, potential: 2, attrs: { pace: 2, finish: 2 }, offerBoost: 1 },
-    comeback: { name: "Recomeço", description: "Uma segunda oportunidade: mais maturidade, menos margem para errar.", age: 23, reputation: 14, potential: -2, attrs: { strength: 3, stamina: 2 }, offerBoost: 0 },
-    legacy: { name: "Herdeiro de uma Lenda", description: "Nome conhecido, atenção imediata e expectativa elevada.", age: 17, reputation: 28, potential: 3, attrs: { pass: 2, finish: 2 }, offerBoost: 1 },
-    blank: { name: "Página em Branco", description: "Sem vantagem narrativa: sua trajetória será definida em campo.", age: 16, reputation: 15, potential: 0, attrs: {}, offerBoost: 0 },
-    custom: { name: "Personalizada", description: "Mantém idade e perfil definidos por você, sem bônus forçados.", age: null, reputation: 15, potential: 0, attrs: {}, offerBoost: 0 },
+    academy: { name: "Jovem da Base", description: "Formação estruturada, disciplina alta e pressão por evolução.", age: 16, reputation: 12, potential: 4, attrs: { pass: 2, stamina: 2 }, offerBoost: 0, story: { title: "Joia da Base", tagline: "Formado no clube desde cedo: técnica refinada e boa projeção.", ages: [17, 19], age: 18, ovr: [67, 72], potential: [74, 88], reputation: [16, 22], popularity: [7, 11], wallet: 3500, salaryMult: 0.95, expectation: 35, offers: 3, tiers: { serieA: .8, serieB: 3, serieC: 2, serieD: .5 }, level: "Promissor", hint: "Equilibrada" } },
+    regional: { name: "Promessa Regional", description: "Destaque local que chega ao profissional já conhecido na região.", age: 18, reputation: 20, potential: 2, attrs: { pace: 2, finish: 2 }, offerBoost: 1, story: { title: "Grande Promessa", tagline: "A mídia já fala de você. Clubes grandes observam — e cobram.", ages: [18, 20], age: 19, ovr: [70, 75], potential: [80, 94], reputation: [26, 34], popularity: [16, 24], wallet: 6000, salaryMult: 1.1, expectation: 60, offers: 3, tiers: { serieA: 3, serieB: 3, serieC: .8, serieD: .1 }, level: "Alto", hint: "Exigente" } },
+    comeback: { name: "Recomeço", description: "Uma segunda oportunidade: mais maturidade, menos margem para errar.", age: 23, reputation: 14, potential: -2, attrs: { strength: 3, stamina: 2 }, offerBoost: 0, story: { title: "Recomeço", tagline: "Uma segunda chance depois de anos longe do topo. Menos tempo, mais maturidade.", ages: [23, 28], age: 24, ovr: [64, 70], potential: [66, 76], reputation: [10, 16], popularity: [4, 8], wallet: 3000, salaryMult: 0.95, expectation: 25, offers: 3, tiers: { serieA: .2, serieB: 2, serieC: 3, serieD: 3 }, level: "Maduro", hint: "Desafiadora" } },
+    legacy: { name: "Herdeiro de uma Lenda", description: "Nome conhecido, atenção imediata e expectativa elevada.", age: 17, reputation: 28, potential: 3, attrs: { pass: 2, finish: 2 }, offerBoost: 1, story: { title: "Herdeiro de uma Lenda", tagline: "Sobrenome pesado, atenção imediata e comparações inevitáveis.", ages: [16, 19], age: 17, ovr: [64, 70], potential: [78, 92], reputation: [28, 36], popularity: [20, 28], wallet: 8000, salaryMult: 1.05, expectation: 70, offers: 3, tiers: { serieA: 2, serieB: 3, serieC: 1.2, serieD: .3 }, level: "Promissor", hint: "Exigente" } },
+    blank: { name: "Página em Branco", description: "Sem vantagem narrativa: sua trajetória será definida em campo.", age: 16, reputation: 15, potential: 0, attrs: {}, offerBoost: 0, story: { title: "Começando do Zero", tagline: "Ninguém conhece você ainda. Cada minuto em campo será conquistado.", ages: [17, 19], age: 18, ovr: [62, 67], potential: [66, 82], reputation: [8, 13], popularity: [3, 6], wallet: 2500, salaryMult: 0.9, expectation: 15, offers: 3, tiers: { serieA: 0, serieB: 1, serieC: 3, serieD: 3 }, level: "Modesto", hint: "Moderada" } },
+    hardRoad: { name: "Caminho Difícil", description: "Pouca estrutura, pouca atenção e pouco dinheiro: tudo precisa ser provado em campo.", age: 18, reputation: 6, potential: 0, attrs: {}, offerBoost: -1, story: { title: "Caminho Difícil", tagline: "Pouca estrutura, pouca atenção, pouco dinheiro. Tudo precisa ser provado.", ages: [17, 22], age: 18, ovr: [55, 61], potential: [62, 80], reputation: [4, 8], popularity: [1, 3], wallet: 1200, salaryMult: 0.8, expectation: 10, offers: 2, tiers: { serieA: 0, serieB: .2, serieC: 1.5, serieD: 4 }, level: "Baixo", hint: "Alta" } },
+    custom: { name: "Personalizada", description: "Mantém idade e perfil definidos por você, sem bônus forçados.", age: null, reputation: 15, potential: 0, attrs: {}, offerBoost: 0, story: { title: "História Personalizada", tagline: "Você define o ponto de partida dentro de limites realistas.", ages: [16, 32], age: 18, ovr: [45, 80], potential: [70, 86], reputation: [0, 60], popularity: [0, 45], wallet: 5000, salaryMult: 1, expectation: 30, offers: 3, tiers: { serieA: 1, serieB: 2, serieC: 2, serieD: 2 }, level: "Livre", hint: "Você escolhe" } },
   };
   // Especializações da Etapa 13: árvores por arquétipo. Requisitos e efeitos pertencem ao domínio (ver identity.js).
   // req.stats usa somente métricas registradas pela Estatística (carreira do herói).
@@ -166,6 +167,7 @@
     if (!s.trainingPlan.attributeProgress || typeof s.trainingPlan.attributeProgress !== "object") s.trainingPlan.attributeProgress = {};
     for (const key of Object.keys(skills)) if (!Number.isFinite(s.trainingPlan.attributeProgress[key])) s.trainingPlan.attributeProgress[key] = 0;
     if (!Number.isFinite(s.trainingPlan.lastTrainingDay)) s.trainingPlan.lastTrainingDay = -999;
+    if (!Number.isFinite(s.trainingPlan.lastAutoDay)) s.trainingPlan.lastAutoDay = -999;
     if (!Array.isArray(s.trainingPlan.recentTraining)) s.trainingPlan.recentTraining = [];
     if (!Array.isArray(s.trainingPlan.processedMatches)) s.trainingPlan.processedMatches = [];
     if (!s.trainingPlan.lastResult || typeof s.trainingPlan.lastResult !== "object") s.trainingPlan.lastResult = null;
@@ -230,7 +232,7 @@
     const archBoost=arch.focus?.includes(key) ? 1.16 : 1;
     const styleBoost=styleFocus[s.person.style]?.includes(key) ? 1.18 : 1;
     const specBoost=1+specializationBonus(plan,key);
-    let gain=Math.max(0,points)*ageFactor(s.person.age)*archBoost*styleBoost*specBoost;
+    let gain=Math.max(0,points)*ageFactor(s.person.age)*archBoost*styleBoost*specBoost*(root.ProLifeCreation?.progressionMultiplier?.(s)||1);
     const changes=[];
     while(gain>0 && s.person.attrs[key] < 100 && helpers.overall(s.person) < ceiling(s,helpers)){
       const need=difficultyCost(s.person.attrs[key]);
@@ -261,7 +263,7 @@
   function trainingAvailable(s){ return s.mode==="player" && !s.person.injury && !mandatoryCommitmentToday(s) && s.day > init(s).lastTrainingDay; }
   function performTraining(s,rng,helpers,{automatic=false}={}){
     const plan=init(s);
-    const available = automatic ? (s.mode==="player" && !s.person.injury && s.day > plan.lastTrainingDay) : trainingAvailable(s);
+    const available = automatic ? (s.mode==="player" && !s.person.injury && s.day > plan.lastAutoDay) : trainingAvailable(s);
     if(!available) return {available:false,reason:s.person.injury?"Lesionado":(!automatic&&mandatoryCommitmentToday(s))?"Há um compromisso obrigatório hoje.":"Você já treinou hoje."};
     const ex=plan.exerciseId && exercises[plan.exerciseId];
     if(!ex) return {available:false,reason:"Escolha um exercício."};
@@ -281,7 +283,8 @@
     const previous=plan.exerciseGrades[ex.id];
     if(!previous || gradeRank[grade]>gradeRank[previous]) plan.exerciseGrades[ex.id]=grade;
     plan.activeMultiplier={exerciseId:ex.id,category:ex.category,action:category.action,value:Math.max(1.03,Math.min(1.35,category.multiplier*gm)),expiresDay:s.day+7,grade};
-    plan.lastTrainingDay=s.day; plan.sessions++;
+    if(automatic) plan.lastAutoDay=s.day; else plan.lastTrainingDay=s.day;
+    plan.sessions++;
     root.ProLifeIdentity?.onTraining?.(s,category);
     s.person.condition=helpers.clamp(s.person.condition-energyCost,0,100);
     const result={available:true,automatic,day:s.day,exerciseId:ex.id,exercise:ex.name,grade,xp,energyCost,changes,levelBefore:beforeLevel,levelAfter:plan.level};
@@ -299,7 +302,7 @@
       const archetyped=compatible.find(ex=>trainingCategories[ex.category].attrs.some(k=>plan.archetype?.focus?.includes(k)));
       plan.exerciseId=(focused||archetyped||compatible[0])?.id||null;
     }
-    if(plan.exerciseId && s.day>plan.lastTrainingDay) return performTraining(s,rng,helpers,{automatic:true});
+    if(plan.exerciseId && s.day>plan.lastAutoDay) return performTraining(s,rng,helpers,{automatic:true});
     return null;
   }
   function matchDevelopment(s, match, helpers) {

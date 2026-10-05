@@ -8,6 +8,7 @@ const files = [
   "src/domain/competitions.js",
   "src/domain/training.js",
   "src/domain/identity.js",
+  "src/domain/creation.js",
   "src/domain/statistics.js",
   "src/domain/life.js",
   "src/domain/career.js",
@@ -25,6 +26,7 @@ const files = [
   "src/ui/calendar.js",
   "src/ui/home-dashboard.js",
   "src/ui/live-match.js",
+  "src/ui/creator.js",
   "src/ui/app.js",
 ];
 function make(mode) {
@@ -38,6 +40,7 @@ function make(mode) {
   w.URL.createObjectURL = () => "blob:test";
   w.URL.revokeObjectURL = () => {};
   files.forEach((f) => w.eval(fs.readFileSync(base + f, "utf8")));
+  w.document.querySelector("[data-w-coach]").click();
   const form = w.document.querySelector("#creator");
   form.elements.mode.value = mode;
   form.elements.age.value = mode === "coach" ? "35" : "16";

@@ -1220,3 +1220,33 @@ button,a,select,input,label,summary{touch-action:manipulation}
   #update-banner{bottom:calc(58px + 12px + env(safe-area-inset-bottom))}
 }
 .id-grid h3{margin-top:18px}.id-grid>div>h3:first-child{margin-top:0}
+
+/* Etapa 14 — criador de jogador (assistente) */
+.wizard{max-width:1180px;margin:0 auto;padding:18px 18px 40px}
+.w-steps{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:14px 0 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+.w-steps::-webkit-scrollbar{display:none}
+.w-step{display:flex;align-items:center;gap:8px;white-space:nowrap;background:transparent;border:0;border-bottom:3px solid transparent;border-radius:0;color:#8e9ba8;font-size:11px;letter-spacing:.8px;padding:10px 12px}
+.w-step i{font-style:normal;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1px solid #3a4b5b;font-size:10px}
+.w-step.on{color:#fff;border-bottom-color:var(--game-cyan,#49e6dc)}
+.w-step.on i{background:var(--game-cyan,#49e6dc);color:#071416;border-color:transparent}
+.w-step.done{color:var(--accent)}
+.w-step:disabled{opacity:.45}
+.story-grid,.offer-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:12px 0 18px}
+.story-card,.offer-card{display:flex;flex-direction:column;gap:6px;text-align:left;align-items:flex-start;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(18,27,37,.8);color:var(--ink);cursor:pointer}
+.story-card b,.offer-card b{font-size:16px;color:#fff}
+.story-card small,.offer-card small{color:var(--muted);line-height:1.35}
+.story-card.on,.offer-card.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 10px 30px rgba(229,176,78,.12);background:linear-gradient(160deg,rgba(229,176,78,.1),rgba(18,27,37,.9))}
+.story-meta{display:flex;flex-wrap:wrap;gap:5px}
+.story-meta i{font-style:normal;font-size:10px;padding:3px 7px;border-radius:20px;background:rgba(73,230,220,.08);border:1px solid rgba(73,230,220,.22);color:#bfeeea}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.chip{border-radius:20px;padding:7px 14px;font-size:12px}
+.chip.on{background:var(--accent);color:#151719;border-color:transparent}
+.stepper{display:inline-flex;align-items:center;gap:10px}
+.stepper button{width:30px;height:30px;padding:0;border-radius:50%}
+.wizard .attribute{display:grid;grid-template-columns:1fr auto 44px;align-items:center;gap:10px}
+.wizard .attribute em{font-style:normal;color:var(--game-cyan,#49e6dc);font-weight:800;text-align:right}
+.w-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)}
+.w-actions .primary{margin-left:auto}
+.offer-card .tag{color:var(--game-cyan,#49e6dc)}
+.offer-card p{margin:2px 0;font-size:13px}
+@media (max-width:700px){.wizard{padding:12px 16px 90px}.w-actions{position:sticky;bottom:0;background:rgba(10,16,22,.96);padding:10px 0;margin-top:14px}.w-actions .primary{flex:1 1 100%;margin-left:0}.story-grid,.offer-grid{grid-template-columns:1fr}}

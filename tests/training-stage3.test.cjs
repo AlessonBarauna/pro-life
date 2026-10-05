@@ -7,5 +7,15 @@ test("age and archetype change progression efficiency",()=>{const young=hero("AT
 test("match XP is position-aware and cannot be awarded twice",()=>{const s=hero("DEF",22),p=D.Training.init(s);const m={season:s.season,date:s.day,competitionId:"test",round:1,homeId:s.clubId,awayId:"c1",participants:[["hero"],[]],ratings:{hero:8.2},playerStats:{hero:{tackles:7,minutes:90}},events:[],hg:1,ag:0};const first=D.Training.matchDevelopment(s,m,D),xp=p.developmentXp,second=D.Training.matchDevelopment(s,m,D);assert.ok(first.xp>0);assert.equal(second.duplicate,true);assert.equal(p.developmentXp,xp);assert.ok((p.attributeProgress.defense||0)+(p.attributeProgress.tackling||0)>0);});
 test("training stage 3 survives save and migrates an old training plan",()=>{const s=hero();delete s.trainingPlan.attributeProgress;delete s.trainingPlan.recentTraining;delete s.trainingPlan.processedMatches;s.trainingPlan.exerciseId="finishing";D.Training.init(s);assert.equal(s.trainingPlan.exerciseId,"boxFinish");A.execute(s,"train",{focus:"finish",intensity:"normal",exerciseId:"boxFinish"});const r=S.parse(JSON.stringify(s));D.Training.init(r);assert.ok(r.trainingPlan.attributeProgress);assert.equal(r.trainingPlan.lastTrainingDay,s.day);assert.ok(r.trainingPlan.exerciseGrades.boxFinish);});
 
-test("auto training runs on every eligible simulated day and keeps player preferences",()=>{const s=hero("ATA",20);const p=D.Training.init(s);p.exerciseId="boxFinish";s.training="shooting";s.intensity="normal";const start=s.day;D.advance(s,10);assert.equal(p.sessions,10);assert.equal(p.lastTrainingDay,start+10);assert.equal(s.training,"shooting");assert.equal(s.intensity,"normal");});
+test("auto training runs on every eligible simulated day and keeps player preferences",()=>{const s=hero("ATA",20);const p=D.Training.init(s);p.exerciseId="boxFinish";s.training="shooting";s.intensity="normal";const start=s.day;D.advance(s,10);assert.equal(p.sessions,10);assert.equal(p.lastAutoDay,start+10);assert.equal(p.lastTrainingDay,-999);assert.equal(s.training,"shooting");assert.equal(s.intensity,"normal");});
 test("30-day bulk advance is deterministic-equivalent to 30 daily advances for training",()=>{const a=hero("ATA",21),b=hero("ATA",21);D.Training.init(a).exerciseId="boxFinish";D.Training.init(b).exerciseId="boxFinish";a.training=b.training="shooting";a.intensity=b.intensity="normal";D.advance(a,30);for(let i=0;i<30;i++)D.advance(b,1);assert.equal(a.trainingPlan.sessions,b.trainingPlan.sessions);assert.equal(a.trainingPlan.lastTrainingDay,b.trainingPlan.lastTrainingDay);assert.deepEqual(a.person.attrs,b.person.attrs);assert.equal(a.trainingPlan.developmentXp,b.trainingPlan.developmentXp);assert.equal(a.rng,b.rng);});
+test("treino automático do dia simulado não bloqueia o treino manual; 30 dias e próximo jogo também liberam",()=>{
+  const s=hero("ATA",20);D.Training.init(s).exerciseId="boxFinish";
+  for(const step of [()=>D.advance(s,1),()=>D.advance(s,1),()=>D.simulateAdvance(s,"nextMatch"),()=>D.simulateAdvance(s,"30days")]){
+    step();
+    assert.equal(D.Training.trainingAvailable(s),true,"dia "+s.day);
+    const r=A.execute(s,"train",{focus:"finish",intensity:"normal",exerciseId:"boxFinish"});
+    assert.ok(r!==undefined);
+    assert.equal(D.Training.trainingAvailable(s),false,"só uma sessão manual por dia");
+  }
+});

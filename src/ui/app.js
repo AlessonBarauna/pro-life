@@ -5,7 +5,8 @@
     S = ProLifeSave;
   let state = S.load(),
     page = "home",
-    setup = false;
+    setup = false,
+    classicForm = false;
   const $ = (q) => document.querySelector(q),
     esc = (v) =>
       String(v ?? "").replace(
@@ -118,6 +119,14 @@
       return `<li class="id-spec ${sp.state === "ATIVA" ? "active" : sp.state === "BLOQUEADA" ? "locked" : "open"}"><div class="split"><div><b>${esc(sp.name)}</b> <span class="pill">${stateLabel[sp.state]}</span><p class="muted">${esc(sp.description)} · Foco: ${sp.attrs.map(esc).join(", ")}</p></div>${action}</div>${reqs}</li>`;
     }).join("")}</ul></div>`).join("");
   }
+  // Etapa 14: história de origem e início de carreira (somente apresentação; dados vêm de D.Creation.summary).
+  function originPanel() {
+    if (state?.mode !== "player") return "";
+    const v = D.Creation?.summary?.(state);
+    if (!v) return `<section class="card section"><div class="tag">HISTÓRIA DE ORIGEM</div><h2>${esc(state.person.originName || "Carreira em andamento")}</h2><p class="muted">Esta carreira foi criada antes do criador de histórias. Nenhuma origem foi atribuída retroativamente.</p></section>`;
+    const ex = v.expectation, ob = v.objectives, i = v.initial;
+    return `<section class="card section origin-panel"><div class="split"><div><div class="tag">HISTÓRIA DE ORIGEM</div><h2>${esc(v.title)}</h2></div><span class="pill">${esc(v.difficulty.name)}</span></div><p class="muted">${esc(v.hint ? "Desafio da história: " + v.hint + ". " : "")}Personalidade: <b>${esc(v.personality.name)}</b>. Ponto de partida: ${i.age} anos · ${i.overall} GER · reputação ${i.reputation} · popularidade ${i.popularity}.</p>${ex ? `<p><b>Expectativa do clube:</b> ${esc(ex.label)} (${ex.value}/100)</p>` : `<p class="muted">Sem clube: escolha uma proposta para iniciar a carreira profissional.</p>`}${ob.length ? `<div class="stats">${ob.map((o) => `<div class="stat"><small>${o.done ? "✓ CUMPRIDO" : "OBJETIVO"}</small><b>${esc(o.label)}</b></div>`).join("")}</div>` : ""}</section>`;
+  }
   function identityPanel() {
     const v = D.Identity?.view?.(state);
     if (!v) return "";
@@ -225,9 +234,22 @@
     if (nav && on && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = on.offsetLeft - (nav.clientWidth - on.offsetWidth) / 2;
   }
   function landing() {
+    if (window.ProLifeCreator && !classicForm) {
+      window.ProLifeCreator.mount({
+        $, esc, opt, D, C, Charts, avatar, appearanceFields, toast,
+        hasSaved: () => !!state,
+        classic: () => { classicForm = true; landing(); },
+        confirmReplace: () => !state || confirm("Substituir a carreira atual? Exporte seu save primeiro para guardá-lo."),
+        onStart: (fresh) => { state = fresh; setup = false; page = "home"; persist(); render(); window.scrollTo(0, 0); },
+      });
+      return;
+    }
+    classicLanding();
+  }
+  function classicLanding() {
     const saved = state;
     $("#app").innerHTML =
-      `<div class="landing"><header><div class="brand">PRO<span>LIFE</span></div><div class="tag">FOOTBALL CAREER / 2026</div></header><div class="tag">CENTRAL DE CARREIRA</div><h1>NOVA CARREIRA</h1><p class="intro">Defina seu perfil, escolha seu primeiro projeto e entre no mundo do futebol.</p>${saved ? '<button data-action="resume">Voltar à carreira atual</button>' : ""}<form id="creator" class="setup"><div class="grid"><section class="card"><h2>PERFIL DO ATLETA OU TREINADOR</h2><div class="formgrid"><label>Carreira<select name="mode" id="mode">${opt(
+      `<div class="landing"><header><div class="brand">PRO<span>LIFE</span></div><div class="tag">FOOTBALL CAREER / 2026</div></header><div class="tag">CENTRAL DE CARREIRA</div><h1>NOVA CARREIRA</h1><p class="intro">Defina seu perfil, escolha seu primeiro projeto e entre no mundo do futebol.</p>${saved ? '<button data-action="resume">Voltar à carreira atual</button>' : ""}${window.ProLifeCreator ? '<button type="button" data-action="guided">Criador guiado de jogador</button>' : ""}<form id="creator" class="setup"><div class="grid"><section class="card"><h2>PERFIL DO ATLETA OU TREINADOR</h2><div class="formgrid"><label>Carreira<select name="mode" id="mode">${opt(
         [
           ["player", "Jogador — da base ao profissional"],
           ["coach", "Treinador — conduza seu projeto"],
@@ -403,7 +425,7 @@
           <section class="card player-hero">${avatar(p)}<div class="player-hero-copy"><div class="tag">MEU JOGADOR</div><h1>${esc(I.name)}</h1><p><b>#${I.number}</b> · ${esc(I.club)} · ${esc(I.position)} · ${I.age} anos${I.nationality?` · ${esc(I.nationality)}`:""}</p><div class="player-tags"><span>${esc(I.squadRole||"Status não definido")}</span>${I.archetype?.name?`<span>${esc(I.archetype.name)}</span>`:""}${I.origin?`<span>${esc(I.origin)}</span>`:""}</div></div><div class="player-ovr"><strong>${I.overall}</strong><small>GER</small><span>${money(I.marketValue)}</span><small>Valor de mercado</small></div></section>
           <nav class="player-tabs"><a href="#player-overview">Visão Geral</a><a href="#player-identity">Identidade</a><a href="#player-attributes">Atributos</a><a href="#player-development">Evolução</a><a href="#player-career">Carreira</a></nav>
           <section id="player-overview" class="card section"><div class="tag">VISÃO GERAL</div><div class="player-overview-grid"><div><h2>Temporada atual</h2><div class="player-kpis">${stat("Jogos",S.appearances)}${stat("Titular",S.starts)}${stat("Minutos",S.minutes)}${stat("Gols",S.goals)}${stat("Assistências",S.assists)}${stat("Nota média",S.averageRating||"—")}${stat("Cartões",(S.yellowCards||0)+(S.redCards||0))}${stat("Melhor em campo",S.motm||0)}</div></div><div><h2>Perfil profissional</h2><div class="player-kpis">${stat("Salário",money(I.salary)+"/mês")}${stat("Status",esc(I.squadRole||"—"))}${stat("Forma",I.form??"—")}${stat("Energia",Math.round(I.condition)+"%")}${stat("Moral",Math.round(I.morale))}${stat("Estilo",esc(I.style||"—"))}</div></div></div><div class="player-archetype"><div><div class="tag">ARQUÉTIPO</div><h2>${esc(P.archetype.name||"Perfil em formação")}</h2><p>${esc(P.archetype.description||"A identidade futebolística evolui com sua carreira.")}</p></div>${P.archetype.specializations.length?`<div><small>Especializações</small><p>${P.archetype.specializations.map(x=>esc(x.name)).join(" · ")}</p></div>`:""}</div></section>
-          ${identityPanel()}
+          ${originPanel()}${identityPanel()}
           <section id="player-attributes" class="card section"><div class="split"><div><div class="tag">ATRIBUTOS</div><h2>Perfil técnico</h2></div><span class="rating-badge">${I.overall}</span></div><p class="muted">Os atributos abaixo são os mesmos usados pelo treino e pela simulação. Verde destaca pontos fortes; valores menores indicam áreas em desenvolvimento.</p><div class="player-attributes-grid">${attrGroups}</div></section>
           <section id="player-development" class="card section"><div class="tag">EVOLUÇÃO DO JOGADOR</div><div class="player-development-head"><div><small>GER no início da temporada</small><b>${DEV.seasonStart}</b></div><strong>${DEV.overall}</strong><div><small>Evolução na temporada</small><b class="${DEV.seasonGrowth>=0?"good":"bad"}">${signed(DEV.seasonGrowth)}</b></div></div><div class="player-kpis">${stat("Nível",DEV.level)}${stat("XP atual",DEV.xp.toFixed(1))}${stat("Próximo nível",DEV.level>=30?"Nível máximo":DEV.nextXp.toFixed(1)+" XP")}</div><h3>Atributos que mais mudaram</h3><div class="player-gains">${gains}</div><h3>Histórico de GER</h3><div class="player-history">${history}</div></section>
           ${evolutionPanel()}
@@ -848,7 +870,14 @@
       case "import":
         importSave();
         break;
+      case "guided":
+        classicForm = false;
+        window.ProLifeCreator?.reset();
+        render();
+        break;
       case "new":
+        classicForm = false;
+        window.ProLifeCreator?.reset();
         setup = true;
         render();
         break;

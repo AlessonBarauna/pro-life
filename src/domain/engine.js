@@ -19,6 +19,9 @@
   const Training =
     root.ProLifeTraining ||
     (typeof require === "function" ? require("./training.js") : null);
+  const Creation =
+    root.ProLifeCreation ||
+    (typeof require === "function" ? require("./creation.js") : null);
   const Identity =
     root.ProLifeIdentity ||
     (typeof require === "function" ? require("./identity.js") : null);
@@ -275,6 +278,7 @@
       originId = Training?.origins?.[config.origin] ? config.origin : "blank",
       origin = Training?.origins?.[originId] || { age: null, reputation: 15, potential: 0, attrs: {}, offerBoost: 0 },
       base = profile === "prodigy" ? 54 : profile === "promise" ? 46 : 40;
+    const plan = mode === "player" && config.creation && Creation ? Creation.resolve(API, config, seed) : null;
     const a = {};
     attrs.forEach(
       (k) => (a[k] = base + clamp(Number(config.points?.[k]) || 0, 0, 20)),
@@ -282,7 +286,7 @@
     Training?.expand(a);
     if (mode === "player" && origin.attrs) for (const [key, bonus] of Object.entries(origin.attrs)) if (Number.isFinite(a[key])) a[key] = clamp(a[key] + bonus, 20, 100);
     const points = attrs.reduce((n, k) => n + (base + clamp(Number(config.points?.[k]) || 0, 0, 20)) - base, 0);
-    if (points > 30) throw Error("Distribua no máximo 30 pontos.");
+    if (points > 30 && !plan) throw Error("Distribua no máximo 30 pontos.");
     const person = {
       id: "hero",
       name: String(config.name || "Alesson Rodrigues")
@@ -290,7 +294,7 @@
         .slice(0, 60),
       city: String(config.city || "Mogi das Cruzes").slice(0, 60),
       nationality: "Brasil",
-      age: clamp(
+      age: plan ? plan.age : clamp(
         Number(config.age) || (mode === "coach" ? 35 : (origin.age || 16)),
         mode === "coach" ? 25 : 14,
         mode === "coach" ? 65 : 35,
@@ -298,11 +302,11 @@
       pos: ["GOL", "DEF", "MEI", "ATA"].includes(config.pos)
         ? config.pos
         : "MEI",
-      attrs: a,
+      attrs: plan ? plan.attrs : a,
       condition: 100,
-      morale: 70,
-      discipline: 70,
-      potential: clamp(rng.int(profile === "prodigy" ? 85 : 65, 96) + (mode === "player" ? origin.potential || 0 : 0), 55, 100),
+      morale: plan ? plan.morale : 70,
+      discipline: plan ? plan.discipline : 70,
+      potential: plan ? plan.potential : clamp(rng.int(profile === "prodigy" ? 85 : 65, 96) + (mode === "player" ? origin.potential || 0 : 0), 55, 100),
       injury: 0,
       goals: 0,
       minutes: 0,
@@ -312,8 +316,8 @@
       foot: config.foot === "left" ? "left" : "right",
       style: config.style || "Técnico",
       originId: mode === "player" ? originId : null,
-      originName: mode === "player" ? origin.name : null,
-      archetypeId: mode === "player" ? (config.archetypeId || Training?.defaultArchetypeId?.[config.pos] || "maestro") : null,
+      originName: mode === "player" ? (plan ? plan.story.title : origin.name) : null,
+      archetypeId: mode === "player" ? (plan ? plan.archetypeId : config.archetypeId || Training?.defaultArchetypeId?.[config.pos] || "maestro") : null,
       celebration: config.celebration || "Braços abertos",
     };
     let s = {
@@ -379,8 +383,10 @@
     Life?.init(s);
     Commercial?.init(s, { overall, club });
     NationalTeam?.init(s);
-    s.offers = weightedCareerOffers(s, rng, mode === "player" ? Math.min(5, 3 + (origin.offerBoost || 0)) : 3);
-    if (config.clubId && clubs.some((c) => c.id === config.clubId)) {
+    if (plan) Creation.applyContext(s, plan);
+    s.offers = plan ? Creation.opportunities(s, rng, API, plan) : weightedCareerOffers(s, rng, mode === "player" ? Math.min(5, 3 + (origin.offerBoost || 0)) : 3);
+    if (plan && config.clubId) Creation.accept(s, config.clubId, API);
+    else if (config.clubId && clubs.some((c) => c.id === config.clubId)) {
       movePlayerToClub(s, config.clubId);
       if (mode === "player") {
         const initialOffer = s.offers.find((o) => o.clubId === config.clubId);
@@ -398,7 +404,8 @@
       "Sua história começa",
       "Analise estrutura, concorrência e salário antes de escolher seu clube.",
     );
-    if (mode === "player") Career.post(s, "Carreira", "Agente", "Sua origem: " + origin.name, origin.description + " Seu arquétipo inicial é " + (Training?.init(s)?.archetype?.name || "definido pela posição") + ".");
+    if (plan && s.creation?.started) return s;
+    if (mode === "player") Career.post(s, "Carreira", "Agente", "Sua origem: " + (plan ? plan.story.title : origin.name), origin.description + " Seu arquétipo inicial é " + (Training?.init(s)?.archetype?.name || "definido pela posição") + ".");
     Career.post(
       s,
       "Carreira",
@@ -458,6 +465,7 @@
     const fee = Career.transferValue(s, previous, next, previous ? transferType : "free");
     Career.transfer(s, s.person, previous, next, fee);
     if (s.mode === "player") { Career.clearAgreement(s); Career.updatePlayerRole(s); }
+    if (s.creation?.status === "unsigned") Creation.registerStart(s, API);
     log(
       s,
       "Contrato assinado",
@@ -1311,6 +1319,8 @@
     Competitions,
     Training,
     Identity,
+    Creation,
+    log,
     Statistics,
     Squad,
     Life,
