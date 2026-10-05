@@ -433,6 +433,22 @@
       fail();
     if (root.ProLife?.Career) root.ProLife.Career.init(s);
     ExpansionValidator?.validate(s, fail);
+    // JSON não preserva referências compartilhadas. O protagonista precisa ser
+    // exatamente o mesmo objeto em s.person e no roster; caso contrário uma
+    // partida pode atualizar uma cópia enquanto a UI lê outra.
+    if (s.mode === "player") {
+      for (const club of s.clubs) {
+        const heroIndex = club.roster.findIndex((p) => p.id === "hero");
+        if (heroIndex < 0) continue;
+        const rosterHero = club.roster[heroIndex];
+        // Recupera contadores monotônicos de saves antigos que já divergiram.
+        for (const key of ["goals", "minutes"]) {
+          const a = Number(s.person[key] || 0), b = Number(rosterHero[key] || 0);
+          s.person[key] = Math.max(a, b);
+        }
+        club.roster[heroIndex] = s.person;
+      }
+    }
     return s;
   }
   function parse(text) {
