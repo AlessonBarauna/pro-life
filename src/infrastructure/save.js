@@ -400,6 +400,7 @@
       )
         fail();
       if (
+        e.promise !== undefined &&
         e.promise !== null &&
         (!e.promise ||
           !Number.isInteger(e.promise.games) ||
@@ -439,8 +440,8 @@
     return s;
   }
   function parse(text) {
-    if (typeof text !== "string" || text.length > 3000000)
-      throw Error("Save excede o limite de 3 MB.");
+    if (typeof text !== "string" || text.length > 8000000)
+      throw Error("Save excede o limite de 8 MB.");
     return validate(JSON.parse(text));
   }
   function readSlots() {
