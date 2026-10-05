@@ -399,16 +399,13 @@
         )
       )
         fail();
-      if (
-        e.promise !== undefined &&
-        e.promise !== null &&
-        (!e.promise ||
-          !Number.isInteger(e.promise.games) ||
-          !num(e.promise.games, 1, 3) ||
-          !Number.isInteger(e.promise.wins) ||
-          !num(e.promise.wins, 0, 3))
-      )
-        fail();
+      if (e.promise !== undefined && e.promise !== null) {
+        if (!e.promise || typeof e.promise !== "object") fail();
+        if (e.promise.games !== undefined &&
+            (!Number.isInteger(e.promise.games) || !num(e.promise.games, 1, 3))) fail();
+        if (e.promise.wins !== undefined &&
+            (!Number.isInteger(e.promise.wins) || !num(e.promise.wins, 0, 3))) fail();
+      }
       if (
         e.postSequence !== undefined &&
         (!Number.isInteger(e.postSequence) || !num(e.postSequence, 0, 1e9))
