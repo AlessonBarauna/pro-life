@@ -9,6 +9,7 @@ const files = [
   "src/domain/training.js",
   "src/domain/identity.js",
   "src/domain/creation.js",
+  "src/domain/universe.js",
   "src/domain/statistics.js",
   "src/domain/life.js",
   "src/domain/career.js",

@@ -107,10 +107,11 @@
       for(const club of s.clubs||[]) for(const p of club.roster||[]) players.set(p.id,{p,club:club.name});
       squad=stored.map(x=>{
         if(x.id==="hero") return {...x,overall:api.overall(s.person),score:score(s,api)};
-        const found=players.get(x.id); if(!found) return x;
+        const found=players.get(x.id); if(!found) return {...x,unavailable:true};
         const overall=api.overall?api.overall(found.p):(found.p.ovr||x.overall||70);
         return {...x,club:found.club,age:found.p.age||x.age,overall,score:candidateScore(found.p,overall)};
       });
+      squad=squad.filter(x=>!x.unavailable);
       s.nationalTeam.squad=squad;
     }
     const pos=s.person.pos; return squad.filter(x=>x.pos===pos).sort((a,b)=>b.score-a.score||b.overall-a.overall||a.id.localeCompare(b.id)).map((x,i)=>({...x,rank:i+1}));

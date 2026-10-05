@@ -119,6 +119,16 @@
       return `<li class="id-spec ${sp.state === "ATIVA" ? "active" : sp.state === "BLOQUEADA" ? "locked" : "open"}"><div class="split"><div><b>${esc(sp.name)}</b> <span class="pill">${stateLabel[sp.state]}</span><p class="muted">${esc(sp.description)} · Foco: ${sp.attrs.map(esc).join(", ")}</p></div>${action}</div>${reqs}</li>`;
     }).join("")}</ul></div>`).join("");
   }
+  // Etapa 15: movimentações do mundo (somente apresentação; dados vêm de D.World2).
+  function worldMovesPanel() {
+    const u = state?.universe;
+    if (!u || !D.World2) return "";
+    const moves = D.World2.recentMoves(state, { limit: 10, minOvr: 70 }).filter((m) => m.type !== "release");
+    const rets = u.retirements.filter((r) => r.peak >= 74).slice(0, 5);
+    const free = u.free.slice().sort((a, b) => D.overall(b) - D.overall(a)).slice(0, 5);
+    const row = (m) => `<tr><td>${m.season}</td><td>${esc(m.name)}</td><td>${esc(m.pos)}</td><td>${m.age}</td><td>${m.ovr}</td><td>${esc(m.from)} → ${esc(m.to)}</td><td>${m.fee ? money(m.fee) : "Livre"}</td></tr>`;
+    return `<section class="card section"><h2>Movimentações do mundo</h2><p class="muted">Somente as mais relevantes (GER 70+). O mercado da IA acontece uma vez por janela.</p>${moves.length ? `<div class="tablewrap"><table><thead><tr><th>Ano</th><th>Jogador</th><th>Pos</th><th>Idade</th><th>GER</th><th>Clubes</th><th>Valor</th></tr></thead><tbody>${moves.map(row).join("")}</tbody></table></div>` : `<p class="muted">Nenhuma movimentação relevante registrada ainda.</p>`}<details><summary>Aposentadorias e jogadores livres</summary><p><b>Aposentados recentes:</b> ${rets.length ? rets.map((r) => `${esc(r.name)} (${r.age}, ${esc(r.club)})`).join(" · ") : "—"}</p><p><b>Melhores jogadores livres:</b> ${free.length ? free.map((p) => `${esc(p.name)} (${p.pos}, ${p.age}, GER ${D.overall(p)})`).join(" · ") : "—"}</p></details></section>`;
+  }
   // Etapa 14: história de origem e início de carreira (somente apresentação; dados vêm de D.Creation.summary).
   function originPanel() {
     if (state?.mode !== "player") return "";
@@ -608,7 +618,7 @@
         state.mode === "coach" && c
           ? `<section class="card section"><h2>Scouting e contratação</h2><p>Orçamento do clube: <b>${money(c.budget)}</b></p><p class="muted">Valores estimados por nível e idade. Atletas muito acima da estrutura podem recusar; clubes preservam o elenco mínimo.</p><div class="tablewrap"><table><thead><tr><th>Atleta</th><th>Clube</th><th>Pos.</th><th>Idade</th><th>Nível</th><th>Preço</th><th></th></tr></thead><tbody>${state.clubs.filter((x) => x.id !== c.id).flatMap((x) => x.roster.filter((p) => p.pos !== "GOL").slice().sort((a, b) => D.overall(b) - D.overall(a)).slice(0, 3).map((p) => `<tr><td>${esc(p.name)}</td><td>${esc(x.name)}</td><td>${p.pos}</td><td>${p.age}</td><td>${D.overall(p)}</td><td>${money(A.valuation(p))}</td><td><button data-recruit="${p.id}" data-source="${x.id}" ${w.open ? "" : "disabled"}>Contratar</button></td></tr>`)).join("")}</tbody></table></div></section>`
           : ""
-      }`;
+      }${worldMovesPanel()}`;
     },
     sponsorships() {
       const C=D.Commercial,c=C.init(state,D),s=C.summary(state,D),fmtFollowers=(n)=>n>=1000000?(n/1000000).toLocaleString("pt-BR",{maximumFractionDigits:1})+" milhões":n>=1000?(n/1000).toLocaleString("pt-BR",{maximumFractionDigits:0})+" mil":Math.round(n).toLocaleString("pt-BR");

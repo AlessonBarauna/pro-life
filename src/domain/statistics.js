@@ -2,6 +2,7 @@
   "use strict";
   const fields = ["appearances", "starts", "minutes", "goals", "assists", "motm", "ratingTotal", "saves", "tackles", "shots", "onTarget", "xg", "yellowCards", "redCards"];
   const blank = () => ({ appearances: 0, starts: 0, minutes: 0, goals: 0, assists: 0, motm: 0, ratingTotal: 0, saves: 0, tackles: 0, shots: 0, onTarget: 0, xg: 0, yellowCards: 0, redCards: 0, byCompetition: {}, byClub: {} });
+  const checked = new WeakMap();
   function normalize(row) {
     const value = row || blank();
     for (const key of fields) if (!Number.isFinite(value[key])) value[key] = 0;
@@ -57,8 +58,10 @@
     if (s.statistics.processedMatches.length) s.statistics.processedMatches=[];
     if (!Array.isArray(s.statistics.milestones)) s.statistics.milestones=[];
     if (!s.statistics.records || typeof s.statistics.records !== "object") s.statistics.records={};
-    for (const [id, row] of Object.entries(s.statistics.players || {})) s.statistics.players[id] = normalize(row);
-    repairSeasonSnapshots(s);
+    // Normalização e reparo são caros com ~1800 jogadores: executam uma vez por objeto carregado e quando a lista de temporadas muda.
+    let mark = checked.get(s.statistics);
+    if (!mark) { for (const [id, row] of Object.entries(s.statistics.players || {})) s.statistics.players[id] = normalize(row); mark = { seasons: -1 }; checked.set(s.statistics, mark); }
+    if (mark.seasons !== s.statistics.seasons.length) { repairSeasonSnapshots(s); mark.seasons = s.statistics.seasons.length; }
     const hero = s.statistics.players.hero || (s.statistics.players.hero = blank());
     return { root: s.statistics, hero };
   }

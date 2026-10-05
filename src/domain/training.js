@@ -136,7 +136,7 @@
     return a;
   }
   function groupRatings(attrs) {
-    const a = expand(attrs);
+    const a = attrs;
     // Os seis atributos principais são a fonte canônica exibida em todo o jogo.
     // Os 21 subatributos detalham esses grupos e afetam treino/desempenho, sem criar um segundo valor visual.
     return Object.fromEntries(core.map((key) => [key, clamp(a[key])]));
@@ -149,7 +149,6 @@
   }
   function init(s) {
     expand(s.person.attrs);
-    for (const c of s.clubs) for (const p of c.roster) expand(p.attrs);
     if (!s.trainingPlan) s.trainingPlan = { focus: s.training || "balanced", style: s.person.style || "Técnico", sessions: 0, improvements: 0, accoladePoints: 0, weeklyXI: 0 };
     if (!Number.isFinite(s.trainingPlan.accoladePoints)) s.trainingPlan.accoladePoints = 0;
     if (!Number.isFinite(s.trainingPlan.weeklyXI)) s.trainingPlan.weeklyXI = 0;

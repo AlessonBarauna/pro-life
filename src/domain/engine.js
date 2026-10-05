@@ -22,6 +22,9 @@
   const Creation =
     root.ProLifeCreation ||
     (typeof require === "function" ? require("./creation.js") : null);
+  const World2 =
+    root.ProLifeUniverse ||
+    (typeof require === "function" ? require("./universe.js") : null);
   const Identity =
     root.ProLifeIdentity ||
     (typeof require === "function" ? require("./identity.js") : null);
@@ -124,7 +127,6 @@
     const a = {};
     attrs.forEach((k) => (a[k] = clamp(level + rng.int(-13, 13), 20, 91)));
     a[pos === "ATA" ? "finish" : pos === "MEI" ? "pass" : "defense"] += 5;
-    Training?.expand(a);
     return {
       id,
       name: rng.pick(first) + " " + rng.pick(last),
@@ -383,6 +385,7 @@
     Life?.init(s);
     Commercial?.init(s, { overall, club });
     NationalTeam?.init(s);
+    World2?.init(s, API, seed);
     if (plan) Creation.applyContext(s, plan);
     s.offers = plan ? Creation.opportunities(s, rng, API, plan) : weightedCareerOffers(s, rng, mode === "player" ? Math.min(5, 3 + (origin.offerBoost || 0)) : 3);
     if (plan && config.clubId) Creation.accept(s, config.clubId, API);
@@ -579,7 +582,7 @@
             const morale = clamp(p.morale ?? 50, 0, 100);
             protagonism *= 0.82 + trust / 260 + morale / 500;
           }
-          return Math.max(1, role * relativeQuality * protagonism * (g.finish * 0.5 + g.pace * 0.16 + (p.attrs.positioning || g.finish) * 0.34));
+          return Math.max(1, role * relativeQuality * protagonism * (g.finish * 0.5 + g.pace * 0.16 + (p.attrs.positioning ?? (((p.attrs.pass ?? g.pass) + (p.attrs.finish ?? g.finish)) / 2)) * 0.34));
         });
         let shooterRoll = rng.next() * shooterWeights.reduce((n, v) => n + v, 0), shooter = candidates[0];
         for (let si = 0; si < candidates.length; si++) { shooterRoll -= shooterWeights[si]; if (shooterRoll <= 0) { shooter = candidates[si]; break; } }
@@ -626,7 +629,7 @@
             assistPlayerId: rng.next() < 0.72 ? ps.filter((p) => p.id !== shooter.id).slice().sort((a, b) => {
               const ga = Training?.groupRatings ? Training.groupRatings(a.attrs) : a.attrs;
               const gb = Training?.groupRatings ? Training.groupRatings(b.attrs) : b.attrs;
-              return (gb.pass + (b.attrs.vision || gb.pass)) - (ga.pass + (a.attrs.vision || ga.pass));
+              return (gb.pass + (b.attrs.vision ?? gb.pass)) - (ga.pass + (a.attrs.vision ?? ga.pass));
             })[Math.floor(rng.next() * Math.min(3, Math.max(1, ps.length - 1)))]?.id : undefined,
             text:
               shooter.name +
@@ -833,6 +836,8 @@
     return [league, extra, national].filter(Boolean).sort((a, b) => a.date - b.date)[0] || null;
   }
   function newSeason(s, rng) {
+    World2?.init(s, API);
+    World2?.snapshotPerformance(s);
     const orders = Object.fromEntries((s.leagues || []).map((league) => [league.id, table(s, league.id)]));
     Competitions?.closeSeason(s, table);
     const seasonAwards = Statistics?.closeSeason(s) || [];
@@ -895,29 +900,10 @@
     for (const c of s.clubs) {
       c.budget += 180000 + c.stats.points * 1000;
       c.stats = { points: 0, played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 };
-      for (const p of c.roster) {
-        if (p.id !== "hero") p.age++;
-        p.goals = 0;
-        p.minutes = 0;
-        if (p.age > 36 && p.id !== "hero") {
-          const n = player(rng, p.id, clamp(overall(p) - 8, 35, 75), p.pos);
-          n.age = 17;
-          n.real = false;
-          n.number = p.number || 0;
-          n.nationality = "Brasil";
-          Object.assign(p, n);
-        }
-        attrs.forEach(
-          (k) =>
-            (p.attrs[k] = clamp(
-              p.attrs[k] +
-                (p.age < 23 ? rng.int(0, 2) : p.age > 31 ? -rng.int(0, 2) : 0),
-              20,
-              95,
-            )),
-        );
-      }
     }
+    // Etapa 15: idade, evolução/declínio, aposentadoria, contratos e novos talentos (World2). O protagonista segue seu fluxo próprio.
+    World2.rollSeason(s, API);
+    for (const c of s.clubs) for (const p of c.roster) { if (p.id === "hero") { p.goals = 0; p.minutes = 0; } }
     s.person.goals = 0;
     if (s.world === "brazil2026") {
       const rounds = ["serieA", "serieB", "serieC", "serieD"].map((leagueId) =>
@@ -965,6 +951,7 @@
     for (let d = 0; d < clamp(days, 1, 30); d++) {
       s.day++;
       Career.daily(s);
+      World2?.daily(s, API);
       NationalTeam?.daily(s, rng, API, log);
       Commercial?.daily?.(s, rng, Career, API);
       s.contract = Math.max(0, s.contract - 1);
@@ -1320,6 +1307,7 @@
     Training,
     Identity,
     Creation,
+    World2,
     log,
     Statistics,
     Squad,

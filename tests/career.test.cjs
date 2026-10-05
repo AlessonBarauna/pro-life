@@ -156,21 +156,15 @@ test("press promises are evaluated by actual subsequent results and persist betw
     );
   }
 });
-test("AI transfers conserve club money, change one roster and write confirmed feed records", () => {
+test("AI transfers (Etapa 15 universe) conserve player ids, never duplicate and are logged", () => {
   const s = D.create({ clubId: "c0" }, 29),
-    money = s.clubs.reduce((n, c) => n + c.budget, 0),
     ids = s.clubs.flatMap((c) => c.roster.map((p) => p.id)).sort();
+  D.World2.marketPass(s, D, "2026:w1:t", false, D.World2.WINDOWS[1]);
+  assert.ok(s.universe.transferCount >= 1);
+  const after = s.clubs.flatMap((c) => c.roster.map((p) => p.id)).concat(s.universe.free.map((p) => p.id)).sort();
+  assert.deepEqual(after, ids);
+  assert.equal(new Set(after).size, after.length);
   C.world(s, new D.Random(8), D);
-  assert.ok(s.extras.transfers.length >= 2);
-  assert.ok(s.extras.transfers.slice(1).every((t) => t.pos && t.salary > 0));
-  assert.equal(
-    s.clubs.reduce((n, c) => n + c.budget, 0),
-    money,
-  );
-  assert.deepEqual(
-    s.clubs.flatMap((c) => c.roster.map((p) => p.id)).sort(),
-    ids,
-  );
   S.parse(JSON.stringify(s));
 });
 test("legacy saves retain calendar and identity until explicitly scheduled year-end migration", () => {

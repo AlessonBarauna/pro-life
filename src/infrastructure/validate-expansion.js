@@ -2,6 +2,10 @@
   "use strict";
   function validate(s, fail) {
     const finite = (v, a, b) => Number.isFinite(v) && v >= a && v <= b;
+    if (s.universe !== undefined) {
+      const u = s.universe;
+      if (!u || typeof u !== "object" || !finite(u.seed, 0, 4294967295) || !u.done || typeof u.done !== "object" || !Array.isArray(u.transfers) || u.transfers.length > 500 || !Array.isArray(u.retirements) || u.retirements.length > 500 || !Array.isArray(u.free) || u.free.length > 300 || (u.seasons !== undefined && (!Array.isArray(u.seasons) || u.seasons.length > 60))) fail();
+    }
     if (s.creation !== undefined) {
       const c = s.creation;
       if (!c || typeof c !== "object" || !["unsigned", "started"].includes(c.status) || !finite(c.seed, 0, 4294967295) || !["casual", "normal", "realistic", "challenging"].includes(c.difficulty) || !["balanced", "professional", "ambitious", "charismatic", "leader"].includes(c.personality) || typeof c.storyId !== "string" || (c.objectives !== undefined && (!Array.isArray(c.objectives) || c.objectives.length > 10))) fail();
