@@ -370,7 +370,7 @@
         e.feed.length > 160 ||
         !e.feed.every(
           (p) =>
-            str(p.id, 100) &&
+            str(p.id, 200) &&
             num(p.day, 0, s.day) &&
             num(p.season, 2026, s.season) &&
             str(p.category, 80) &&
