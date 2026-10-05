@@ -43,6 +43,8 @@
       case "advance":
         D.advance(s, data.days);
         break;
+      case "simulateAdvance":
+        return D.simulateAdvance(s, data.mode);
       case "join": {
         const o = s.offers.find(
           (x) => x.clubId === data.id && x.expires >= s.day,
@@ -54,6 +56,12 @@
       case "acceptRenewal":
         D.Career.acceptRenewal(s);
         break;
+      case "requestRenewal":
+        D.Career.requestRenewal(s);
+        break;
+      case "counterRenewal":
+        D.Career.counterRenewal(s, data);
+        break;
       case "rejectRenewal":
         D.Career.rejectRenewal(s);
         break;
@@ -61,18 +69,17 @@
         D.Career.counterOffer(s, data.id);
         break;
       }
-      case "reject": {
-        const index = s.offers.findIndex((x) => x.clubId === data.id && x.expires >= s.day);
-        if (index < 0) throw Error("Esta proposta não está disponível.");
-        const rejected = s.offers.splice(index, 1)[0];
-        const c = D.club(s, rejected.clubId);
-        D.Career.post(s, "Carreira", "Agente", "Proposta recusada", `A proposta de ${c?.name || "clube"} foi recusada.`);
-        break;
-      }
+      case "reject": D.Career.rejectOffer(s,data.id); break;
+      case "holdOffer": D.Career.holdOffer(s,data.id); break;
+      case "hireAgency": D.Career.hireAgency(s,data.id); break;
       case "agentStrategy": {
         D.Career.setAgentStrategy(s, { priority: data.priority, stance: data.stance });
         break;
       }
+      case "targetClub":
+        D.Career.setTargetClub(s, data.clubId); break;
+      case "clearTargetClub":
+        D.Career.clearTargetClub(s); break;
       case "offerPrefs": {
         const validLeagues = ["serieA", "serieB", "serieC", "serieD"];
         const leagues = Array.isArray(data.leagues) ? data.leagues.filter((x) => validLeagues.includes(x)) : [];
@@ -101,10 +108,25 @@
         s.intensity = data.intensity;
         D.Training.init(s).focus = data.focus;
         D.Training.init(s).style = data.style || s.person.style;
+        if (data.exerciseId !== undefined) {
+          if (data.exerciseId && !D.Training.exercises[data.exerciseId]) throw Error("Exercício inválido.");
+          D.Training.init(s).exerciseId = data.exerciseId || null;
+        }
+        if (s.mode === "player" && data.exerciseId) {
+          const rng = new D.Random(s.rng);
+          const result = D.Training.performTraining(s, rng, { overall: D.overall, clamp: D.clamp });
+          D.Squad?.trainingResult?.(s, result);
+          s.rng = rng.state;
+          if (!result.available) throw Error(result.reason || "Treino indisponível.");
+        }
         break;
       case "specialization":
         if (s.mode !== "player") throw Error("Especializações são da carreira de jogador.");
         D.Training.unlockSpecialization(s, data.id);
+        break;
+      case "activateSpecialization":
+        if (s.mode !== "player") throw Error("Especializações são da carreira de jogador.");
+        D.Training.activateSpecialization(s, data.id);
         break;
       case "tactic": {
         const c = D.club(s);
@@ -138,9 +160,49 @@
         c.lineup = data.ids;
         break;
       }
+      case "markMessageRead":
+        D.Career.markMessageRead(s, data.id);
+        break;
+      case "respondInterview":
+        D.Career.respondInterview(s, data.id, data.choice);
+        break;
       case "decide":
         D.decide(s, data.choice);
         break;
+      case "lifeActivity":
+        D.Life.activity(s, data.id, D.Career);
+        break;
+      case "lifeHousing":
+        D.Life.buyHousing(s, data.id, D.Career);
+        break;
+      case "lifeVehicle":
+        D.Life.buyVehicle(s, data.id, D.Career);
+        break;
+      case "lifeSellVehicle":
+        D.Life.sellVehicle(s, data.id, D.Career);
+        break;
+      case "lifeInvest":
+        D.Life.invest(s, data.id, data.amount, D.Career);
+        break;
+      case "lifePurchase":
+        D.Life.buyPurchase(s, data.id, D.Career);
+        break;
+      case "lifeLifestyle":
+        D.Life.setLifestyle(s, data.value);
+        break;
+      case "commercialAccept":
+        D.Commercial.accept(s, data.id, D.Career, D);
+        break;
+      case "commercialReject":
+        D.Commercial.reject(s, data.id, D.Career, D);
+        break;
+      case "commercialHold":
+        D.Commercial.hold(s, data.id, D.Career, D);
+        break;
+      case "commercialNegotiate":
+        return D.Commercial.negotiate(s, data.id, data, D.Career, D);
+      case "commercialEvent":
+        return D.Commercial.eventAction(s, data.id, data.choice, D.Career, D);
       case "retire":
         D.retire(s);
         break;

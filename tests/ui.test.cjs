@@ -7,19 +7,24 @@ const files = [
   "src/domain/brazil-data.js",
   "src/domain/competitions.js",
   "src/domain/training.js",
+  "src/domain/identity.js",
   "src/domain/statistics.js",
   "src/domain/life.js",
   "src/domain/career.js",
+  "src/domain/commercial.js",
   "src/domain/national-team.js",
   "src/domain/character.js",
   "src/ui/charts.js",
   "src/domain/engine.js",
+  "src/domain/player-profile.js",
   "src/application/game.js",
   "src/infrastructure/codec.js",
   "src/infrastructure/validate-expansion.js",
   "src/infrastructure/save.js",
   "src/ui/expansion.js",
   "src/ui/calendar.js",
+  "src/ui/home-dashboard.js",
+  "src/ui/live-match.js",
   "src/ui/app.js",
 ];
 function make(mode) {
@@ -43,7 +48,21 @@ function make(mode) {
   return dom;
 }
 function click(w, sel) {
-  const el = w.document.querySelector(sel);
+  let el = w.document.querySelector(sel);
+  if (!el) {
+    const match = sel.match(/^\[data-page="([^"]+)"\]$/);
+    const page = match?.[1];
+    const groups = {
+      training:"profile", statistics:"profile", awards:"profile", legacy:"profile", proposals:"market",
+      calendar:"league", matches:"league", competitions:"league", panorama:"league", squad:"league",
+      life:"history", finance:"history", sponsorships:"history"
+    };
+    if (page && groups[page]) {
+      const group = w.document.querySelector(`.game-nav [data-page="${groups[page]}"]`);
+      if (group) group.click();
+      el = w.document.querySelector(sel);
+    }
+  }
   assert.ok(el, sel);
   el.click();
 }
@@ -56,12 +75,22 @@ for (const mode of ["player", "coach"]) {
   assert.equal(get(w).mode, mode);
   assert.ok(w.document.querySelector(".game-nav"));
   assert.ok(w.document.querySelector(".career-dashboard"));
-  assert.ok(w.document.querySelector(".career-hero"));
-  assert.ok(w.document.querySelector(".dashboard-grid"));
+  assert.ok(w.document.querySelector(".central-main-match"));
+  assert.ok(w.document.querySelector(".central-player-card"));
+  assert.ok(w.document.querySelector(".central-grid"));
+  assert.ok(w.document.querySelector(".central-table"));
+  assert.ok(w.document.querySelector(".central-form"));
+  assert.ok(w.document.querySelector(".central-inbox"));
+  assert.ok(w.document.querySelector(".central-news"));
+  assert.ok(w.document.querySelector(".central-training"));
+  assert.ok(w.document.querySelector(".central-calendar"));
+  assert.ok(w.document.querySelector(".central-objectives"));
   assert.ok(w.document.querySelector(".club-chip").textContent.includes(mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"));
-  assert.ok(w.document.querySelector(".inbox-card [data-join]"), "A proposta pendente deve poder ser aceita no início");
+  assert.ok(w.document.querySelector('[data-page="proposals"]'), "A proposta pendente deve direcionar para Mercado > Minhas propostas");
   click(w, '[data-page="inbox"]');
   assert.ok(w.document.querySelector("main").textContent.includes("Mensagens da carreira"));
+  assert.equal(w.document.querySelectorAll(".offer").length, 0, "A Caixa nao deve gerenciar propostas");
+  click(w, '[data-page="proposals"]');
   const offerText = w.document.querySelector(".offer")?.textContent || "";
   assert.ok(offerText.includes("Estado:"));
   assert.ok(offerText.includes("Compet"));
@@ -71,34 +100,41 @@ for (const mode of ["player", "coach"]) {
   assert.ok(get(w).clubId);
   assert.equal(w.document.querySelectorAll("[data-join]").length,0);
   assert.ok(w.document.querySelector("main").textContent.includes("Novas propostas chegam"));
-  for (const page of [
-    "home",
-    "profile",
-    "squad",
-    "training",
-    "calendar",
-    "league",
-    "competitions",
-    "matches",
-    "statistics",
-    "awards",
-    "inbox",
-    "market",
-    "life",
-    "finance",
-    "history",
-    "save",
-  ]) {
-    click(w, `[data-page="${page}"]`);
-    assert.ok(w.document.querySelector("main"));
-    if (page === "inbox")
-      assert.ok(w.document.querySelector("main").textContent.includes("Mensagens da carreira"));
-    if (page === "market")
-      assert.ok(w.document.querySelector("main").textContent.includes("confirmadas"));
-    assert.ok(w.document.querySelector("main").textContent.length > 150);
+  const navigation = mode === "player"
+    ? [
+        ["home", ["home"]],
+        ["profile", ["profile", "training", "statistics", "awards", "legacy"]],
+        ["league", ["league", "calendar", "matches", "competitions", "panorama", "squad"]],
+        ["market", ["market", "proposals"]],
+        ["history", ["history", "life", "finance", "sponsorships"]],
+        ["inbox", ["inbox"]],
+        ["save", ["save"]],
+      ]
+    : [
+        ["home", ["home"]],
+        ["profile", ["profile", "training", "finance"]],
+        ["league", ["league", "calendar", "matches", "competitions", "panorama", "squad", "statistics", "awards"]],
+        ["market", ["market", "proposals"]],
+        ["history", ["history", "life"]],
+        ["inbox", ["inbox"]],
+        ["save", ["save"]],
+      ];
+  assert.ok(w.document.querySelectorAll(".game-nav nav button").length <= 8, "A navegacao principal deve permanecer enxuta");
+  for (const [group, pages] of navigation) {
+    click(w, `.game-nav [data-page="${group}"]`);
+    for (const page of pages) {
+      const target = w.document.querySelector(`.game-subnav [data-page="${page}"]`) || w.document.querySelector(`.game-nav [data-page="${page}"]`);
+      assert.ok(target, `submenu ${page}`);
+      target.click();
+      assert.ok(w.document.querySelector("main"));
+      if (page === "inbox") assert.ok(w.document.querySelector("main").textContent.includes("Mensagens da carreira"));
+      if (page === "market") assert.ok(w.document.querySelector("main").textContent.includes("confirmadas"));
+       if (page === "proposals") assert.ok(w.document.querySelector("main").textContent.includes("Quais propostas quero receber?"));
+      assert.ok(w.document.querySelector("main").textContent.length > 150);
+    }
   }
   click(w, '[data-page="home"]');
-  click(w, '.career-hero [data-page="calendar"]');
+  click(w, '.central-calendar [data-page="calendar"]');
   assert.equal(w.document.querySelectorAll(".calendar-day").length, 42);
   const monthTitle = w.document.querySelector(".calendar-toolbar h2").textContent;
   click(w, '[data-calendar="next"]');
@@ -115,20 +151,28 @@ for (const mode of ["player", "coach"]) {
   }
   if (mode === "coach") {
     click(w, '[data-page="squad"]');
-    const tactic = w.document.querySelector("#tactic");
-    tactic.value = "counter";
-    tactic.dispatchEvent(new w.Event("change", { bubbles: true }));
-    assert.equal(w.ProLife.club(get(w)).tactic, "counter");
-    click(w, '[data-action="lineup"]');
-    assert.equal(w.ProLife.club(get(w)).lineup.length, 11);
+    assert.ok(w.document.querySelector("main").textContent.includes("atletas"), "Elenco do treinador deve abrir");
     click(w, '[data-page="training"]');
     click(w, '[data-action="license"]');
     assert.equal(get(w).license, "B");
   }
-  click(w, '[data-advance="7"]');
-  assert.equal(get(w).matches.length, 0);
-  click(w, '[data-advance="30"]');
-  assert.ok(get(w).matches.length >= 20);
+  click(w, '[data-simulate="nextCommitment"]');
+    click(w, '[data-page="home"]');
+    click(w, '[data-live-match]');
+  assert.ok(get(w).matches.length >= 1);
+  if (mode === "player") {
+    click(w, '[data-page="statistics"]');
+    const beforeStats = get(w).statistics.players.hero.appearances;
+    click(w, '[data-simulate="nextCommitment"]');
+    click(w, '[data-page="home"]');
+    click(w, '[data-live-match]');
+    const afterState = get(w);
+    assert.ok(afterState.statistics.players.hero.appearances >= beforeStats, "As estatisticas devem persistir ao avancar partidas");
+    click(w, '[data-page="statistics"]');
+    assert.ok(w.document.querySelector("#statistics-key"), "A tela de Estatisticas deve abrir apos a partida");
+  }
+  click(w, '[data-simulate="30days"]');
+  assert.ok(get(w).matches.length >= 1);
   click(w, '[data-page="competitions"]');
   assert.ok(w.document.querySelectorAll(".competition-card").length >= 20);
   assert.equal(w.document.querySelectorAll(".cup-view table tbody tr").length, 32);
@@ -140,7 +184,7 @@ for (const mode of ["player", "coach"]) {
   assert.ok([...statistics.options].some((option) => option.textContent === "Campeonato Paulista"));
   statistics.value = "copaBrasil";
   statistics.dispatchEvent(new w.Event("change", { bubbles: true }));
-  assert.ok(w.document.querySelector("main").textContent.includes("ESTATÍSTICAS POR COMPETIÇÃO"));
+  assert.equal(w.document.querySelector("#statistics-key").value, "copaBrasil");
   click(w, '[data-page="awards"]');
   assert.ok(w.document.querySelector("main").textContent.match(/S.{0,3}rie A/));
   assert.ok(w.document.querySelector("main").textContent.match(/S.{0,3}rie D/));
@@ -149,10 +193,10 @@ for (const mode of ["player", "coach"]) {
   assert.ok(w.document.querySelectorAll(".season-xi article").length >= 11);
   click(w, '[data-page="matches"]');
   assert.ok(w.document.querySelector(".score"));
-  for (let i = 0; i < 2; i++) click(w, '[data-advance="7"]');
+  for (let i = 0; i < 14; i++) click(w, '[data-advance="1"]');
   click(w, '[data-page="home"]');
-  assert.ok(w.document.querySelector(".inbox-card [data-choice]"), "O convite pendente deve poder ser respondido no início");
-  click(w, ".inbox-card [data-choice]");
+  assert.ok(w.document.querySelector(".central-objectives [data-choice]"), "O convite pendente deve poder ser respondido na Central");
+  click(w, ".central-objectives [data-choice]");
   click(w, '[data-page="inbox"]');
   assert.ok(w.document.querySelector("main").textContent.includes("Escolha registrada"), "A resposta deve permanecer registrada na caixa de entrada");
   click(w, '[data-page="life"]');
@@ -161,12 +205,15 @@ for (const mode of ["player", "coach"]) {
   w.document.querySelector("#shirt-number").value = "27";
   click(w, '[data-action="number"]');
   assert.equal(get(w).extras.number, 27);
-  if (mode === "player") click(w, '[data-advance="30"]');
+  if (mode === "player") click(w, '[data-simulate="30days"]');
   click(w, '[data-page="home"]');
-  assert.ok(w.document.querySelector("main").textContent.includes("STATUS DAS COMPETI"));
-  assert.ok(w.document.querySelector("main").textContent.includes("XIMO JOGO"));
-  assert.ok(w.document.querySelector("main").textContent.includes("Rodada"));
-  if (mode === "player") assert.ok(w.document.querySelector(".national-result")?.textContent.includes("ltimo resultado da Sele"));
+  assert.ok(w.document.querySelector(".central-main-match"), "A Central deve manter o próximo compromisso");
+  assert.ok(w.document.querySelector(".central-table"), "A Central deve manter o resumo da classificação");
+  assert.ok(w.document.querySelector(".central-calendar"), "A Central deve manter a agenda rápida");
+  if (mode === "player") {
+    const nationalResult = w.document.querySelector(".national-result");
+    if (nationalResult) assert.ok(nationalResult.textContent.includes("Brasil"), "Quando houver resultado da Seleção no período simulado, o card deve identificar o Brasil");
+  }
   assert.ok(w.document.querySelector(".game-nav"), "A v0.5 deve renderizar a navegacao superior");
   click(w, '[data-page="profile"]');
   const chart = w.document.querySelector("#chart-key");

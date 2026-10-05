@@ -19,15 +19,24 @@
   const Training =
     root.ProLifeTraining ||
     (typeof require === "function" ? require("./training.js") : null);
+  const Identity =
+    root.ProLifeIdentity ||
+    (typeof require === "function" ? require("./identity.js") : null);
   const Statistics =
     root.ProLifeStatistics ||
     (typeof require === "function" ? require("./statistics.js") : null);
+  const Squad =
+    root.ProLifeSquad ||
+    (typeof require === "function" ? require("./squad.js") : null);
   const NationalTeam =
     root.ProLifeNationalTeam ||
     (typeof require === "function" ? require("./national-team.js") : null);
   const Life =
     root.ProLifeLife ||
     (typeof require === "function" ? require("./life.js") : null);
+  const Commercial =
+    root.ProLifeCommercial ||
+    (typeof require === "function" ? require("./commercial.js") : null);
   const VERSION = 1,
     clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   class Random {
@@ -164,14 +173,16 @@
       .filter((c) => c.id !== s.clubId)
       .filter((c) => (s.world === "brazil2026" ? allowedLeagues.has(c.leagueId) : true))
       .filter(levelAllowed)
+      .filter((c) => !(Career.init(s).playerCareer?.marketState?.rejectionCooldowns?.[c.id] > s.day))
       .map((c) => {
+        const assessment = s.mode === "player" ? Career.interestAssessment(s,c.id) : null;
         const need = s.mode === "player" ? positionNeed(c, s.person.pos) : 1;
         const fit = Math.max(0, 24 - Math.abs(c.structure - (heroLevel + s.reputation / 3)));
         const budgetFit = Math.max(1, Math.min(10, c.budget / 1000000));
         const weight = s.mode === "coach"
           ? 2 + fit / 6 + budgetFit / 3
-          : 0.5 + need * 5 + fit / 3 + budgetFit / 4;
-        return { c, need, weight };
+          : Math.max(0, (assessment?.score || 0) - 34) / 8 + need * 1.5 + budgetFit / 6 + (Identity?.styleFit?.(s, c) || 0) * 0.8;
+        return { c, need, weight, assessment };
       })
       .filter((x) => x.weight > 0);
     const picked = [];
@@ -184,15 +195,11 @@
       }
       picked.push(pool.splice(index, 1)[0]);
     }
-    return picked.map(({ c, need }, i) => ({
+    return picked.map(({ c, need, assessment }, i) => ({
       clubId: c.id,
-      salary: Math.round(
-        (s.mode === "coach" ? 6500 : 900) +
-          s.reputation * (s.mode === "coach" ? 70 : 55) +
-          c.structure * (s.mode === "coach" ? 45 : 18) +
-          heroLevel * (s.mode === "coach" ? 10 : 22) +
-          rng.int(0, s.mode === "coach" ? 1800 : 700),
-      ),
+      salary: s.mode === "coach" ? Math.round(
+        6500 + s.reputation * 70 + c.structure * 45 + heroLevel * 10 + rng.int(0, 1800)
+      ) : Math.max(2500, Math.round((Career.realisticSalary(s, c.id) * (0.94 + rng.next() * .14)) / 1000) * 1000),
       role: s.mode === "coach"
         ? (need >= 2 ? "Projeto com necessidade imediata" : "Projeto de reconstrução")
         : (need >= 2 ? "Necessidade imediata na sua posição" : need === 1 ? "Disputa aberta por posição" : "Concorrência forte por posição"),
@@ -200,7 +207,11 @@
       durationDays: (s.mode === "player" ? (s.person.age <= 22 && need >= 2 && c.structure + 10 < heroLevel ? 365 : rng.pick([365, 730, 1095, 1460])) : 730),
       signingBonus: s.mode === "player" ? Math.round((1200 + s.reputation * 140 + heroLevel * 90 + c.structure * 60) / 100) * 100 : 0,
       transferType: s.mode === "player" && s.person.age <= 22 && need >= 2 && c.structure + 10 < heroLevel ? "loan" : "permanent",
-      expires: s.day + 21 + rng.int(0, 7),
+      expires: s.day + 14 + rng.int(0, 8),
+      interestScore: assessment?.score,
+      interestLabel: assessment?.label,
+      responseDeadline: s.day + 14 + rng.int(0, 8),
+      round: 0,
     }));
   }
 
@@ -261,13 +272,16 @@
       };
     });
     const profile = config.profile || "realistic",
+      originId = Training?.origins?.[config.origin] ? config.origin : "blank",
+      origin = Training?.origins?.[originId] || { age: null, reputation: 15, potential: 0, attrs: {}, offerBoost: 0 },
       base = profile === "prodigy" ? 54 : profile === "promise" ? 46 : 40;
     const a = {};
     attrs.forEach(
       (k) => (a[k] = base + clamp(Number(config.points?.[k]) || 0, 0, 20)),
     );
     Training?.expand(a);
-    const points = attrs.reduce((n, k) => n + a[k] - base, 0);
+    if (mode === "player" && origin.attrs) for (const [key, bonus] of Object.entries(origin.attrs)) if (Number.isFinite(a[key])) a[key] = clamp(a[key] + bonus, 20, 100);
+    const points = attrs.reduce((n, k) => n + (base + clamp(Number(config.points?.[k]) || 0, 0, 20)) - base, 0);
     if (points > 30) throw Error("Distribua no máximo 30 pontos.");
     const person = {
       id: "hero",
@@ -277,7 +291,7 @@
       city: String(config.city || "Mogi das Cruzes").slice(0, 60),
       nationality: "Brasil",
       age: clamp(
-        Number(config.age) || (mode === "coach" ? 35 : 16),
+        Number(config.age) || (mode === "coach" ? 35 : (origin.age || 16)),
         mode === "coach" ? 25 : 14,
         mode === "coach" ? 65 : 35,
       ),
@@ -288,7 +302,7 @@
       condition: 100,
       morale: 70,
       discipline: 70,
-      potential: rng.int(profile === "prodigy" ? 85 : 65, 96),
+      potential: clamp(rng.int(profile === "prodigy" ? 85 : 65, 96) + (mode === "player" ? origin.potential || 0 : 0), 55, 100),
       injury: 0,
       goals: 0,
       minutes: 0,
@@ -297,6 +311,9 @@
       weight: clamp(Number(config.weight) || 72, 45, 120),
       foot: config.foot === "left" ? "left" : "right",
       style: config.style || "Técnico",
+      originId: mode === "player" ? originId : null,
+      originName: mode === "player" ? origin.name : null,
+      archetypeId: mode === "player" ? (config.archetypeId || Training?.defaultArchetypeId?.[config.pos] || "maestro") : null,
       celebration: config.celebration || "Braços abertos",
     };
     let s = {
@@ -331,7 +348,7 @@
       wallet: 5000,
       salary: mode === "coach" ? 8000 : 1200,
       contract: 365,
-      reputation: mode === "coach" ? 35 : 15,
+      reputation: mode === "coach" ? 35 : clamp(origin.reputation || 15, 0, 100),
       board: 65,
       license: mode === "coach" ? "C" : "Sem licença",
       family: 70,
@@ -356,18 +373,32 @@
     Career.init(s);
     Career.updateProfessionalCareer(s);
     Training?.init(s);
+    Identity?.init(s);
     Statistics?.init(s);
     Competitions?.init(s);
     Life?.init(s);
+    Commercial?.init(s, { overall, club });
     NationalTeam?.init(s);
-    s.offers = weightedCareerOffers(s, rng, 3);
-    if (config.clubId && clubs.some((c) => c.id === config.clubId))
-      join(s, config.clubId, s.salary);
+    s.offers = weightedCareerOffers(s, rng, mode === "player" ? Math.min(5, 3 + (origin.offerBoost || 0)) : 3);
+    if (config.clubId && clubs.some((c) => c.id === config.clubId)) {
+      movePlayerToClub(s, config.clubId);
+      if (mode === "player") {
+        const initialOffer = s.offers.find((o) => o.clubId === config.clubId);
+        const durationDays = Math.max(730, initialOffer?.durationDays || 730);
+        Career.signContract(s, { clubId: config.clubId, salary: s.salary, durationDays, signingBonus: 0, squadRole: "Rotação", transferType: "permanent" });
+        s.careerTransferAvailableDay = Career.nextWindowDay(s.day);
+        s.offers = [];
+        Statistics?.ensureHeroStint?.(s, config.clubId);
+        Competitions?.ensureState(s);
+        Career.updatePlayerRole(s);
+      }
+    }
     log(
       s,
       "Sua história começa",
       "Analise estrutura, concorrência e salário antes de escolher seu clube.",
     );
+    if (mode === "player") Career.post(s, "Carreira", "Agente", "Sua origem: " + origin.name, origin.description + " Seu arquétipo inicial é " + (Training?.init(s)?.archetype?.name || "definido pela posição") + ".");
     Career.post(
       s,
       "Carreira",
@@ -386,17 +417,7 @@
     s.news = s.news.slice(0, 160);
     Career.post(s, "Carreira", "Diário da carreira", title, body);
   }
-  function join(s, id, salary) {
-    if (!Career.windowStatus(s).open)
-      throw Error(
-        "Janela de transferências fechada. Aguarde a próxima abertura.",
-      );
-    if (!Career.canTransfer(s))
-      throw Error(
-        "Você já assinou nesta janela. Aguarde a próxima janela para trocar de clube.",
-      );
-    const previous = club(s);
-    const previousSalary = s.salary, previousContract = s.contract;
+  function movePlayerToClub(s, id) {
     const next = club(s, id);
     if (!next) throw Error("Clube inválido.");
     if (s.mode === "player") {
@@ -407,6 +428,24 @@
       next.roster.push(s.person);
     }
     s.clubId = id;
+    return next;
+  }
+  function join(s, id, salary) {
+    if (Career.windowStatus(s).open && s.clubId && s.day < s.careerTransferAvailableDay) throw Error("Você já assinou nesta janela. Aguarde a próxima janela para trocar de clube.");
+    const proposed = s.offers.find((o) => o.clubId === id && o.expires >= s.day) || (s.mode === "player" && Career.init(s).playerCareer?.marketState?.signedAgreement?.clubId === id ? Career.init(s).playerCareer.marketState.signedAgreement : null) || (s.mode === "coach" && !s.clubId ? {clubId:id,salary,durationDays:730,signingBonus:0,squadRole:"Rotação",transferType:"free",expires:s.day+1} : null);
+    if (!proposed) throw Error("Esta proposta não está disponível.");
+    const pc0 = s.mode === "player" ? Career.init(s).playerCareer : null;
+    if (pc0?.marketState?.signedAgreement && pc0.marketState.signedAgreement.clubId !== id) throw Error("Você já possui um acordo assinado com outro clube.");
+    if (!Career.windowStatus(s).open) {
+      if (s.mode === "player") { Career.signAgreement(s, proposed); return { scheduled:true, startDay:Career.nextWindowStart(s.day) }; }
+      throw Error("Janela de transferências fechada. Aguarde a próxima abertura.");
+    }
+    if (!Career.canTransfer(s)) throw Error("Você já assinou nesta janela. Aguarde a próxima janela para trocar de clube.");
+    const previous = club(s);
+    if (s.mode === "player" && previous) Statistics?.closeHeroStint?.(s, previous.id, "transfer");
+    const previousSalary = s.salary, previousContract = s.contract;
+    const next = movePlayerToClub(s, id);
+    if (s.mode === "player") Statistics?.ensureHeroStint?.(s, id);
     s.careerTransferAvailableDay = Career.nextWindowDay(s.day);
     const acceptedOffer = s.offers.find((o) => o.clubId === id && o.expires >= s.day) || { clubId:id, salary, durationDays:730, signingBonus:0, squadRole:"Rotação", transferType:"permanent" };
     if (acceptedOffer.transferType === "loan" && previous) { acceptedOffer.parentClubId=previous.id; acceptedOffer.parentSalary=previousSalary; acceptedOffer.parentContractRemaining=Math.max(previousContract, acceptedOffer.durationDays+30); }
@@ -415,7 +454,10 @@
     s.offers = [];
     s.board = 65;
     Competitions?.ensureState(s);
-    Career.transfer(s, s.person, previous, next, 0);
+    const transferType = acceptedOffer.transferType || "permanent";
+    const fee = Career.transferValue(s, previous, next, previous ? transferType : "free");
+    Career.transfer(s, s.person, previous, next, fee);
+    if (s.mode === "player") { Career.clearAgreement(s); Career.updatePlayerRole(s); }
     log(
       s,
       "Contrato assinado",
@@ -472,7 +514,9 @@
       playerStats: {},
       offensiveStats: {},
       date: 0,
+      participation: {},
     };
+    [hp,ap].forEach((ps,side)=>ps.forEach(p=>{m.participation[p.id]={side,starter:true,entryMinute:0,exitMinute:94,minutes:94};}));
     const squads = [hp, ap],
       clubs = [home, away],
       fatigue = [0, 0];
@@ -594,6 +638,27 @@
             text: "Defesa importante de " + (keeper?.name || "goleiro") + ".",
           });
       }
+      if (minute === 65 && context && [home.id,away.id].includes(context.clubId)) {
+        const heroSide=home.id===context.clubId?0:1, heroSquad=squads[heroSide], ownClub=clubs[heroSide];
+        const hero=ownClub.roster.find(p=>p.id==="hero"), pc=Career.init(context).playerCareer;
+        if(hero && !hero.injury && !(hero.suspension>0)){
+          const on=heroSquad.some(p=>p.id==="hero");
+          if(!on){
+            const eligible=pc.matchSelection?.bench?.includes("hero");
+            const chance=clamp(.35+(pc.coachTrust-50)/120+(hero.morale-50)/180, .15,.9);
+            if(eligible && rng.next()<chance){
+              let idx=heroSquad.findIndex(p=>p.pos===hero.pos); if(idx<0)idx=heroSquad.length-1;
+              const out=heroSquad[idx]; heroSquad[idx]=hero;
+              if(m.participation[out.id]){m.participation[out.id].exitMinute=minute;m.participation[out.id].minutes=minute-m.participation[out.id].entryMinute;}
+              m.participation.hero={side:heroSide,starter:false,entryMinute:minute,exitMinute:94,minutes:94-minute};m.participants[heroSide].push("hero");
+              m.events.push({minute,type:"substitution",side:heroSide,player:hero.name,playerId:"hero",outPlayer:out.name,outPlayerId:out.id,text:`Substituição: sai ${out.name}, entra ${hero.name}.`});
+            }
+          } else if(hero.condition<58 && rng.next()<.7){
+            const sub=ownClub.roster.filter(x=>!heroSquad.includes(x)&&!x.injury&&!(x.suspension>0)&&x.pos===hero.pos).sort((a,b)=>overall(b)-overall(a))[0];
+            if(sub){const idx=heroSquad.findIndex(p=>p.id==="hero");heroSquad[idx]=sub;m.participation.hero.exitMinute=minute;m.participation.hero.minutes=minute;m.participation[sub.id]={side:heroSide,starter:false,entryMinute:minute,exitMinute:94,minutes:94-minute};m.participants[heroSide].push(sub.id);m.events.push({minute,type:"substitution",side:heroSide,player:sub.name,playerId:sub.id,outPlayer:hero.name,outPlayerId:"hero",text:`Substituição: sai ${hero.name}, entra ${sub.name}.`});}
+          }
+        }
+      }
       if (rng.next() < 0.012 && ps.length) {
         let p = rng.pick(ps);
         if (rng.next() > p.discipline / 120)
@@ -619,31 +684,24 @@
         );
         if (sub) {
           ps[ps.indexOf(p)] = sub;
+          if(m.participation[p.id]){m.participation[p.id].exitMinute=minute;m.participation[p.id].minutes=Math.max(1,minute-m.participation[p.id].entryMinute);}
+          m.participation[sub.id]={side:i,starter:false,entryMinute:minute,exitMinute:94,minutes:94-minute};
           m.participants[i].push(sub.id);
+          m.events.push({minute,type:"substitution",side:i,player:sub.name,playerId:sub.id,outPlayer:p.name,outPlayerId:p.id,text:`Substituição: sai ${p.name}, entra ${sub.name}.`});
         }
       }
     }
-    [hp, ap].forEach((ps, i) =>
-      ps.forEach((p) => {
-        p.condition = clamp(p.condition - rng.int(15, 28), 0, 100);
-        p.minutes += 90;
-        const groups = Training?.groupRatings ? Training.groupRatings(p.attrs) : p.attrs,
-          saves = m.events.filter((event) => event.type === "save" && event.playerId === p.id).length,
-          tackleBase = p.pos === "DEF" ? 1.8 : p.pos === "MEI" ? 1.05 : p.pos === "ATA" ? 0.38 : 0,
-          tackles = p.pos === "GOL" ? 0 : Math.max(0, Math.round(tackleBase * (groups.defense || 50) / 25 + rng.next() * 2 - 0.7));
-        m.playerStats[p.id] = { saves, tackles };
-        m.ratings[p.id] = +clamp(
-          6 +
-            (i === 0 ? m.hg - m.ag : m.ag - m.hg) * 0.2 +
-            rng.next() * 0.8 +
-            m.events.filter((e) => e.playerId === p.id && e.type === "goal")
-              .length *
-              0.8 + saves * 0.08 + tackles * 0.035,
-          3,
-          10,
-        ).toFixed(1);
-      }),
-    );
+    for (const [id,part] of Object.entries(m.participation)) {
+      const p=clubs[part.side].roster.find(x=>x.id===id); if(!p)continue;
+      const minutes=Math.max(0,Math.min(94,Number(part.exitMinute??94)-Number(part.entryMinute??0)));part.minutes=minutes;
+      p.condition=clamp(p.condition-rng.int(15,28)*(minutes/94),0,100);p.minutes+=minutes;
+      const groups=Training?.groupRatings?Training.groupRatings(p.attrs):p.attrs,
+        saves=m.events.filter(e=>e.type==="save"&&e.playerId===p.id).length,
+        tackleBase=p.pos==="DEF"?1.8:p.pos==="MEI"?1.05:p.pos==="ATA"?.38:0,
+        tackles=p.pos==="GOL"?0:Math.max(0,Math.round(tackleBase*(groups.defense||50)/25+rng.next()*2-.7));
+      m.playerStats[p.id]={saves,tackles,minutes,starter:!!part.starter,entryMinute:part.entryMinute,exitMinute:part.exitMinute};
+      m.ratings[p.id]=+clamp(6+(part.side===0?m.hg-m.ag:m.ag-m.hg)*.2+rng.next()*.8+m.events.filter(e=>e.playerId===p.id&&e.type==="goal").length*.8+saves*.08+tackles*.035,3,10).toFixed(1);
+    }
     m.xg = m.xg.map((x) => +x.toFixed(2));
     m.possession = Math.round((m.possessions[0] / 94) * 100);
     m.summary =
@@ -670,25 +728,24 @@
       .sort(
         (a, b) =>
           b.stats.points - a.stats.points ||
+          b.stats.w - a.stats.w ||
           b.stats.gf - b.stats.ga - (a.stats.gf - a.stats.ga) ||
-          b.stats.gf - a.stats.gf,
+          b.stats.gf - a.stats.gf ||
+          a.name.localeCompare(b.name),
       );
   }
   function preparePlayerLineup(s, rng, homeId, awayId) {
     if (s.mode !== "player" || !s.clubId || ![homeId, awayId].includes(s.clubId)) return;
-    const c = club(s);
-    c.lineup = c.roster.filter((p) => !p.injury && !(p.suspension > 0)).slice().sort((a, b) => overall(b) + b.morale / 20 - overall(a) - a.morale / 20).slice(0, 10).map((p) => p.id);
-    const goalkeeper = c.roster.find((p) => p.pos === "GOL" && !p.injury && !(p.suspension > 0));
-    if (goalkeeper && !c.lineup.includes(goalkeeper.id)) c.lineup.push(goalkeeper.id);
-    const hero = s.person, pc = Career.init(s).playerCareer;
-    const trustChance = (pc?.coachTrust || 50) / 120;
-    const formChance = (hero.morale - 50) / 250;
-    const samePosition = c.roster.filter((p) => p.id !== "hero" && p.pos === hero.pos && !p.injury && !(p.suspension > 0));
-    const bestRival = samePosition.length ? Math.max(...samePosition.map(overall)) : 0;
-    const meritStarter = (pc?.coachTrust || 50) >= 80 && overall(hero) >= bestRival + 3 && hero.morale >= 55;
-    if (!hero.injury && hero.condition > 65 && !c.lineup.includes("hero") && (meritStarter || rng.next() < clamp(0.08 + trustChance + formChance + (overall(hero) - c.structure) / 160, 0.05, 0.96))) {
-      const replace = c.lineup.findIndex((id) => c.roster.find((p) => p.id === id)?.pos === hero.pos);
-      if (replace >= 0) c.lineup[replace] = "hero";
+    const c = club(s), pc = Career.init(s).playerCareer;
+    const selection = Squad?.choose ? Squad.choose(s,c) : null;
+    if (selection) {
+      c.formation=selection.formation;
+      c.lineup=selection.starters.map(p=>p.id);
+      const role=Squad.roleForHero(s,selection);
+      const reason=role==="Titular"?"Mérito na disputa por posição, forma, confiança e condição física.":role==="Banco"?"Você está relacionado, mas outro atleta inicia na posição.":"Concorrência, condição ou disponibilidade deixaram você fora da relação.";
+      Squad.recordDecision(s,role,reason);
+      pc.matchSelection={day:s.day,role,formation:selection.formation,bench:selection.bench.map(p=>p.id),reason};
+      return;
     }
   }
   function registerMatch(s, rng, homeId, awayId, meta, leagueMatch) {
@@ -709,7 +766,8 @@
     s.matches.unshift(m);
     Statistics?.recordMatch(s, m);
     Training?.matchDevelopment?.(s, m, { overall, clamp });
-    delete m.playerStats;
+    if (![homeId, awayId].includes(s.clubId)) { delete m.participation; delete m.playerStats; }
+    else m.playerStats = m.playerStats?.hero ? { hero:m.playerStats.hero } : {};
     if (leagueMatch) [hc, ac].forEach((c, i) => {
       const gf = i ? m.ag : m.hg, ga = i ? m.hg : m.ag, t = c.stats;
       t.played++; t.gf += gf; t.ga += ga;
@@ -718,6 +776,8 @@
     });
     if ([homeId, awayId].includes(s.clubId)) {
       Career.match(s, m);
+      Career.processMatchEvent?.(s, m);
+      Commercial?.onMatch?.(s, m, Career, API);
       const own = homeId === s.clubId ? m.hg : m.ag, other = homeId === s.clubId ? m.ag : m.hg;
       s.board = clamp(s.board + (own > other ? 5 : own < other ? -5 : 0), 0, 100);
       s.reputation = clamp(s.reputation + (own > other ? 1 : own < other ? -0.4 : 0.2), 0, 100);
@@ -726,12 +786,16 @@
       if (s.mode === "player" && !m.participants.flat().includes("hero")) log(s, "Fora da escalação", "O treinador priorizou outros jogadores. Treino, moral, atributos e concorrência influenciam a escolha.");
     }
     s.matches = s.matches.slice(0, 800);
-    for (const old of s.matches.slice(200)) {
+    for (const old of s.matches.slice(120)) {
       if ([old.home, old.away].includes(s.clubId)) continue;
-      old.events = [];
-      old.participants = [[], []];
-      old.ratings = {};
-      old.summary = "Resultado arquivado. Estatísticas consolidadas na temporada.";
+      old.events=[];
+      old.participants=[[],[]];
+      old.ratings={};
+      old.summary="Arquivado";
+      old.shots=[0,0]; old.target=[0,0]; old.xg=[0,0]; old.possession=50;
+      delete old.offensiveStats;
+      delete old.playerStats;
+      delete old.possessions;
     }
     return m;
   }
@@ -762,8 +826,18 @@
   }
   function newSeason(s, rng) {
     const orders = Object.fromEntries((s.leagues || []).map((league) => [league.id, table(s, league.id)]));
-    const seasonAwards = Statistics?.closeSeason(s) || [];
     Competitions?.closeSeason(s, table);
+    const seasonAwards = Statistics?.closeSeason(s) || [];
+    if (s.mode === "player" && Career && seasonAwards.length) {
+      const heroAwards=seasonAwards.filter(a=>a?.winner===s.person.name);
+      for(const a of heroAwards){
+        const eid=`AWARD_WON:${s.season}:${a.competitionId||a.leagueId}:${String(a.name).replace(/[^a-zA-Z0-9_-]/g,"_")}:hero`;
+        Career.emitEvent?.(s,"AWARD_WON",eid,{name:a.name,competition:a.league,value:a.value});
+        Career.addMessage?.(s,{category:"CARREIRA",sender:"PRO LIFE",subject:`Prêmio: ${a.name}`,body:`Você conquistou ${a.name} em ${a.league}.`,priority:"IMPORTANTE",eventId:eid});
+        Career.addArticle?.(s,{category:"JOGADOR",title:`${s.person.name} conquista ${a.name}`,body:`O reconhecimento foi confirmado em ${a.league}, com base no desempenho registrado na temporada.`,eventId:eid});
+      }
+      if(heroAwards.length) s.reputation=clamp(s.reputation+Math.min(6,heroAwards.length*1.5),0,100);
+    }
     Training?.seasonRewards?.(s, seasonAwards, { overall, clamp });
     for (const league of s.leagues || [
       { id: undefined, name: "Liga Horizonte" },
@@ -807,6 +881,7 @@
       log(s, "Acesso e rebaixamento", movement.map((m) => m.club.name + " " + (m.type === "promovido" ? "subiu para " : "caiu para ") + (Competitions?.leagueNames[m.to] || m.to)).join("; ") + ".");
     }
     s.season++;
+    if (s.mode === "player") Statistics?.ensureHeroStint?.(s, s.clubId);
     s.round = 0;
     s.person.age++;
     for (const c of s.clubs) {
@@ -877,17 +952,19 @@
     Statistics?.init(s);
     Competitions?.init(s);
     Life?.init(s);
+    Commercial?.init(s, API);
     const rng = new Random(s.rng);
     for (let d = 0; d < clamp(days, 1, 30); d++) {
       s.day++;
       Career.daily(s);
       NationalTeam?.daily(s, rng, API, log);
+      Commercial?.daily?.(s, rng, Career, API);
       s.contract = Math.max(0, s.contract - 1);
       s.offers = s.offers.filter((o) => o.expires >= s.day);
       if (s.mode === "player" && s.clubId) {
         const pc = Career.init(s).playerCareer;
         if (pc.renewalOffer && pc.renewalOffer.expires < s.day) pc.renewalOffer = null;
-        if (s.contract > 0 && s.contract <= 120 && !pc.renewalOffer && s.day % 30 === 0) Career.createRenewalOffer(s);
+        if (s.contract > 0 && s.contract <= 180 && !pc.renewalOffer && s.day % 30 === 0) Career.createRenewalOffer(s);
         if (s.contract === 0) {
           const old = club(s);
           if (old) { old.roster = old.roster.filter((p) => p.id !== "hero"); old.lineup = old.lineup.filter((id) => id !== "hero"); }
@@ -937,13 +1014,10 @@
       if (s.day === nextFixtureDay(s) && s.round < s.fixtures.length)
         playRound(s, rng);
       playCompetitions(s, rng);
+      // Investimentos vencem no dia exato, independentemente do fechamento mensal.
+      Life?.dailyFinance?.(s, Career);
       if (s.day % 30 === 0) {
-        if (s.clubId) Career.transaction(s, s.salary, "Salário mensal");
-        Career.transaction(
-          s,
-          -(s.mode === "coach" ? 2000 : 650),
-          "Despesas pessoais",
-        );
+        Life?.monthlyFinance?.(s, Career);
         Career.monthly(s);
         Life?.monthly(s, Career);
         const c = club(s);
@@ -969,12 +1043,16 @@
         s.decision = Life?.next(s, rng);
         log(s, "Decisão pendente", s.decision.title);
       }
+      if (s.mode === "player") {
+        const due = Career.marketTick(s);
+        if (due && Career.windowStatus(s).open && s.day >= due.startDay) join(s,due.clubId,due.salary);
+      }
       if (s.day % 28 === 0 && Career.windowStatus(s).open)
         Career.world(s, rng, API);
       if (
         (s.day % 28 === 0 ||
           Career.windows.some((w) => w.start === s.day % 365)) &&
-        Career.canTransfer(s)
+        Career.canTransfer(s) && s.mode === "coach"
       ) {
         s.offers = weightedCareerOffers(s, rng, 3);
         if (s.mode === "player") s.offers.forEach((o) => Career.registerInterest(s, o.clubId, "Oferta oficial"));
@@ -998,9 +1076,144 @@
     s.rng = rng.state;
     return s;
   }
+  function simulationBlocker(s, before = {}) {
+    const pc = s.mode === "player" ? Career.init(s).playerCareer : null;
+    if (s.decision && !before.decision) return { type: "decision", message: `Simulação interrompida: ${s.decision.title}.` };
+    if (pc?.renewalOffer && !before.renewalOffer) return { type: "renewal", message: "Simulação interrompida: chegou uma proposta de renovação." };
+    const previousOffers = new Set(before.offers || []);
+    const newOffer = (s.offers || []).find((o) => !previousOffers.has(`${o.clubId}:${o.expires}:${o.salary}`));
+    if (newOffer) return { type: "offer", message: `Simulação interrompida: chegou uma proposta de ${club(s, newOffer.clubId)?.name || "outro clube"}.` };
+    return null;
+  }
+  function autoTrainingPlan(s) {
+    if (s.mode !== "player" || !s.person?.attrs) return;
+    const archetype = Training?.archetypes?.[s.person.pos];
+    const focusAttrs = archetype?.focus || [];
+    const groups = Training?.groups || {};
+    const candidates = Object.entries(groups).map(([group, attrs]) => {
+      const relevant = attrs.filter((a) => focusAttrs.includes(a));
+      const pool = relevant.length ? relevant : attrs;
+      const avg = pool.reduce((sum, a) => sum + Number(s.person.attrs[a] || 50), 0) / Math.max(1, pool.length);
+      return { group, avg, relevant: relevant.length };
+    }).sort((a,b) => (b.relevant-a.relevant) || (a.avg-b.avg));
+    if (candidates[0]) s.training = candidates[0].group;
+    s.intensity = s.person.condition < 58 ? "rest" : s.person.condition > 82 && !s.person.injury ? "hard" : "normal";
+  }
+  function autoResolveDecision(s) {
+    if (!s.decision?.choices?.length) return false;
+    const rng = new Random(s.rng);
+    const picked = rng.pick(s.decision.choices);
+    s.rng = rng.state;
+    const title = s.decision.title, label = picked[1];
+    decide(s, picked[0]);
+    log(s, "Decisão automática", `${title} · Escolha: ${label}.`);
+    return true;
+  }
+  function autoResolveRenewal(s) {
+    if (s.mode !== "player" || !s.clubId) return false;
+    const pc = Career.init(s).playerCareer;
+    if (!pc.renewalOffer) return false;
+    const fair = Career.realisticSalary(s);
+    const offer = pc.renewalOffer;
+    if ((offer.round || 0) < 2 && offer.salary < fair * 1.02) {
+      Career.counterRenewal(s, {
+        salary: Math.round(Math.max(fair * 1.08, offer.salary * 1.08) / 1000) * 1000,
+        years: pc.coachTrust >= 80 ? 4 : 3,
+        signingBonus: Math.round(Math.max(offer.signingBonus || 0, fair * 3) / 1000) * 1000,
+        performanceBonus: Math.round(Math.max(offer.performanceBonus || 0, fair * .5) / 1000) * 1000,
+        role: pc.coachTrust >= 88 ? "Estrela" : pc.coachTrust >= 70 ? "Importante" : "Titular",
+      });
+    }
+    const finalOffer = pc.renewalOffer;
+    if (finalOffer && finalOffer.salary >= fair * .82) {
+      const salary = finalOffer.salary;
+      Career.acceptRenewal(s);
+      log(s, "Decisão automática · Agente", `Renovação concluída por R$ ${salary.toLocaleString("pt-BR")}/mês após negociação automática.`);
+      return true;
+    }
+    if (pc.renewalOffer) {
+      Career.rejectRenewal(s);
+      log(s, "Decisão automática · Agente", "A proposta de renovação ficou abaixo do valor considerado adequado e foi recusada.");
+    }
+    return true;
+  }
+  function autoResolveOffers(s) {
+    if (!s.offers?.length || s.mode !== "player") return false;
+    const pc = Career.init(s).playerCareer;
+    const stance = pc.agentStrategy?.stance || "stay";
+    const valid = s.offers.filter(o => o.expires >= s.day);
+    if (!valid.length) return false;
+    const currentSalary = s.salary || 0;
+    const candidates = valid.slice().sort((a,b) => (b.salary || 0) - (a.salary || 0));
+    const best = candidates[0];
+    const wantsMove = ["exit", "loan"].includes(stance) || !s.clubId;
+    if (wantsMove && best && (!s.clubId || best.salary >= currentSalary * 1.12)) {
+      const name = club(s, best.clubId)?.name || "novo clube";
+      join(s, best.clubId, best.salary);
+      log(s, "Decisão automática · Agente", `A melhor proposta disponível foi aceita: ${name}, salário de R$ ${best.salary.toLocaleString("pt-BR")}/mês.`);
+    } else {
+      s.offers = [];
+      log(s, "Decisão automática · Agente", "As propostas de transferência foram analisadas e recusadas para preservar o projeto atual.");
+    }
+    return true;
+  }
+  function autoSeasonActions(s) {
+    if (s.mode === "player") {
+      const pc = Career.init(s).playerCareer;
+      if (s.clubId && s.contract > 0 && s.contract <= 180 && !pc.renewalOffer && (s.day - (pc.lastRenewalRequestDay || -999)) >= 30) {
+        try { Career.requestRenewal(s); } catch (_) {}
+      }
+      autoResolveRenewal(s);
+      autoResolveOffers(s);
+      for (const proposal of (Commercial?.init(s, API)?.proposals || []).filter((p) => p.status === "PROPOSTA" && p.expires >= s.day)) {
+        try { Commercial.accept(s, proposal.id, Career, API); }
+        catch (_) { Commercial.reject(s, proposal.id, Career, API); }
+      }
+      // A simulação não substitui as preferências de treino escolhidas pelo jogador.
+    }
+    autoResolveDecision(s);
+  }
+  function simulateAdvance(s, mode = "nextMatch") {
+    Career.init(s);
+    const startDay = s.day;
+    const startSeason = s.season;
+    const initialCommitment = nextCommitment(s);
+    let targetDay;
+    if (mode === "nextMatch") {
+      if (!initialCommitment || initialCommitment.date <= s.day) throw Error("Não há próximo jogo agendado.");
+      targetDay = initialCommitment.date;
+    } else if (mode === "nextCommitment") {
+      if (!initialCommitment || initialCommitment.date <= s.day) throw Error("Não há próximo compromisso agendado.");
+      targetDay = Math.max(s.day, initialCommitment.date - 1);
+    } else if (mode === "30days") targetDay = s.day + 30;
+    else if (mode === "season") targetDay = (Math.floor(s.day / 365) + 1) * 365;
+    else throw Error("Tipo de simulação inválido.");
+    let stop = null;
+    const automatic = mode === "season";
+    while (s.day < targetDay && s.season === startSeason) {
+      const pc = s.mode === "player" ? Career.init(s).playerCareer : null;
+      const before = { decision: !!s.decision, renewalOffer: !!pc?.renewalOffer, offers: (s.offers || []).map((o) => `${o.clubId}:${o.expires}:${o.salary}`) };
+      advance(s, 1);
+      if (automatic) autoSeasonActions(s);
+      else {
+        stop = simulationBlocker(s, before);
+        if (stop) break;
+      }
+    }
+    const completed = mode === "season" ? s.season !== startSeason : s.day >= targetDay;
+    const result = { mode, startDay, endDay: s.day, days: s.day - startDay, completed, stop, automatic };
+    s.lastSimulation = result;
+    if (stop) log(s, "Simulação pausada", stop.message);
+    else if (mode === "nextCommitment") log(s, "Próximo compromisso preparado", `A carreira avançou ${result.days} dia(s) e parou antes do próximo compromisso.`);
+    else if (mode === "nextMatch") log(s, "Próximo jogo alcançado", `A carreira avançou ${result.days} dia(s) até o próximo compromisso.`);
+    else if (mode === "30days") log(s, "Simulação concluída", `A carreira avançou ${result.days} dia(s).`);
+    else if (completed) log(s, "Temporada simulada", `A temporada ${startSeason} foi processada até o encerramento com decisões automáticas.`);
+    return result;
+  }
   function decide(s, choice) {
     if (!s.decision || !s.decision.choices.some((c) => c[0] === choice))
       throw Error("Decisão inválida.");
+    const resolvedDecision = s.decision;
     if (choice === "visit") {
       s.family = clamp(s.family + 12, 0, 100);
       s.stress = clamp(s.stress - 15, 0, 100);
@@ -1021,11 +1234,20 @@
     }
     Life?.decide(s, choice, Career);
     if (s.decision.id === "media") Career.interview(s, choice);
-    log(
-      s,
-      "Escolha registrada",
-      s.decision.choices.find((c) => c[0] === choice)[1],
-    );
+    const choiceLabel = resolvedDecision.choices.find((c) => c[0] === choice)[1];
+    log(s, "Escolha registrada", choiceLabel);
+    if (Career?.addMessage) {
+      const eventId = `decision_${s.season}_${s.day}_${resolvedDecision.id}_${choice}`;
+      Career.emitEvent?.(s, "CAREER_DECISION_RESOLVED", eventId, { decisionId: resolvedDecision.id, choice });
+      Career.addMessage(s, {
+        category: "CARREIRA",
+        sender: "PRO LIFE",
+        subject: "Escolha registrada",
+        body: `${resolvedDecision.title}: ${choiceLabel}`,
+        priority: "NORMAL",
+        eventId,
+      });
+    }
     s.decision = null;
   }
   function retire(s) {
@@ -1069,7 +1291,13 @@
     s.matches = [];
     s.clubId = null;
     s.upgradeClub = null;
-    join(s, id, s.salary);
+    movePlayerToClub(s, id);
+    if (s.mode === "player") {
+      const pc = Career.init(s).playerCareer;
+      if (pc.contract) pc.contract.clubId = id;
+      Statistics?.ensureHeroStint?.(s, id);
+      Career.updatePlayerRole(s);
+    }
     log(
       s,
       "Novo universo brasileiro",
@@ -1082,8 +1310,11 @@
     BrazilData,
     Competitions,
     Training,
+    Identity,
     Statistics,
+    Squad,
     Life,
+    Commercial,
     NationalTeam,
     schedule,
     migrateWorld,
@@ -1093,6 +1324,7 @@
     weightedCareerOffers,
     create,
     advance,
+    simulateAdvance,
     recordDevelopment,
     simulate,
     selected,
@@ -1100,6 +1332,7 @@
     table,
     club,
     join,
+    movePlayerToClub,
     decide,
     retire,
     attrs,

@@ -165,3 +165,48 @@ test("offensive balance rewards elite forwards without making goals automatic", 
   assert.ok(elite.goals > average.goals * 1.35, `${JSON.stringify({ elite, average })}`);
   assert.ok(elite.goals < 240, "elite forward must not score automatically every match");
 });
+
+
+test("advanced simulation reaches next match and can pause for decisions", () => {
+  const s = D.create({ world: "brazil2026", mode: "player" }, 17001);
+  D.movePlayerToClub(s, s.clubs.find((c) => c.name === "São Paulo").id);
+  const next = D.nextCommitment(s);
+  assert.ok(next && next.date > s.day);
+  const result = D.simulateAdvance(s, "nextMatch");
+  assert.ok(result.days > 0);
+  assert.ok(result.completed || result.stop);
+  if (result.completed) assert.ok(s.day >= next.date);
+});
+
+test("advanced season simulation processes daily systems and closes the season", () => {
+  const s = D.create({ world: "legacy", mode: "coach", clubId: "c0" }, 17002);
+  D.advance(s, 350);
+  s.decision = { id: "hold", title: "Decisão já conhecida", body: "", choices: [["x", "x"]] };
+  s.careerTransferAvailableDay = 99999;
+  const season = s.season;
+  const result = D.simulateAdvance(s, "season");
+  assert.equal(result.completed, true);
+  assert.equal(s.season, season + 1);
+  assert.ok(result.days > 0 && result.days <= 365);
+});
+
+
+test("full-season simulation auto-resolves decisions and contract renewal", () => {
+  const s = D.create({ world: "brazil2026", mode: "player" }, 18003);
+  const saoPaulo = s.clubs.find((c) => c.name === "São Paulo");
+  D.movePlayerToClub(s, saoPaulo.id);
+  s.contract = 175;
+  const pc = D.Career.init(s).playerCareer;
+  pc.contract.endDay = s.day + 175;
+  pc.coachTrust = 95;
+  s.reputation = 90;
+  s.person.morale = 90;
+  s.decision = { id: "social", title: "Publicação viral", body: "", choices: [["embrace_social", "Aproveitar"], ["quiet_social", "Reduzir"]] };
+  s.careerTransferAvailableDay = 99999;
+  const result = D.simulateAdvance(s, "season");
+  assert.equal(result.completed, true);
+  assert.equal(result.automatic, true);
+  assert.equal(s.decision, null);
+  assert.ok(s.news.some((n) => n.title.includes("Decisão automática")));
+  assert.ok(s.contract > 175, `contract should be renewed automatically: ${s.contract}`);
+});

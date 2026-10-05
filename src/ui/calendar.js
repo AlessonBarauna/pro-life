@@ -28,6 +28,7 @@
       result.push({ day: base + window.end, type: "window", title: `Encerramento: ${window.name}`, detail: "Janela de transferências", destination: "market" });
     }
     if (s.decision) result.push({ day: s.day, type: "event", title: s.decision.title, detail: "Decisão pendente", destination: "life" });
+    for (const event of s.commercial?.events || []) if (["AGENDADO", "REAGENDADO"].includes(event.status)) result.push({ day: event.day, type: "event", title: `${event.type} · ${event.brand}`, detail: "Compromisso comercial", destination: "sponsorships" });
     return result.filter((event) => Number.isInteger(event.day) && event.day >= 0).sort((a, b) => a.day - b.day || a.title.localeCompare(b.title));
   }
   function monthId(s) { return dateForDay(s.day).toISOString().slice(0, 7); }

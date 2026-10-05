@@ -29,6 +29,8 @@
       num(p.minutes, 0, 10000000) &&
       num(p.discipline, 0, 100) &&
       num(p.potential, 0, 100);
+    // Saves com XP de partida acumulado acima do limite histórico são normalizados em vez de descartados.
+    if (s && typeof s.trainingProgress === "number" && Number.isFinite(s.trainingProgress) && s.trainingProgress > 100) s.trainingProgress = 100;
     if (
       !s ||
       s.version !== 1 ||
@@ -416,6 +418,7 @@
         const pc=e.playerCareer;
         if (!pc || !num(pc.coachTrust,0,100) || !str(pc.squadRole,40) || !num(pc.marketValue,0,1e10) || !Array.isArray(pc.interests) || pc.interests.length>8 || !num(pc.negotiations,0,1000)) fail();
         if (!pc.interests.every(x=>x && str(x.clubId,20) && str(x.stage,40) && num(x.day,0,s.day) && num(x.expires,x.day,s.day+365))) fail();
+        if (pc.targetClub!==undefined && pc.targetClub!==null && (!pc.targetClub || !str(pc.targetClub.clubId,20) || !num(pc.targetClub.selectedDay,0,s.day) || !pc.targetClub.assessment || !num(pc.targetClub.assessment.score,0,200) || !num(pc.targetClub.assessment.required,0,200) || !str(pc.targetClub.assessment.label,80))) fail();
         const contractOk = c => c===null || (c && str(c.clubId,20) && num(c.signedDay,0,s.day) && num(c.endDay,c.signedDay,s.day+5000) && num(c.durationDays,1,5000) && num(c.salary,0,1e9) && num(c.signingBonus,0,1e10) && str(c.role,100) && ["permanent","loan"].includes(c.type) && (c.parentClubId===undefined || str(c.parentClubId,20)) && (c.parentSalary===undefined || num(c.parentSalary,0,1e9)) && (c.parentContractRemaining===undefined || num(c.parentContractRemaining,1,5000)));
         if (!contractOk(pc.contract)) fail();
         const r=pc.renewalOffer; if(r!==null && r!==undefined && (!r || !str(r.clubId,20) || !num(r.salary,0,1e9) || !num(r.durationDays,1,5000) || !num(r.signingBonus,0,1e10) || !num(r.expires,s.day,s.day+365))) fail();

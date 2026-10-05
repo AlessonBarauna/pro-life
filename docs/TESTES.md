@@ -125,3 +125,14 @@ jogos da Seleção no calendário depois de disputados.
 - cálculo de forma dos 80 clubes a partir de partidas reais da carreira;
 - persistência de acontecimentos e feed `Mundo do futebol`;
 - ausências da IA por lesão/suspensão sem quebrar escalações.
+
+## Career 2.0 — Etapa 12
+
+A cobertura específica possui 18 testes para separação entre reputação,
+popularidade, valor de mercado e valor comercial; critérios das oito marcas;
+perfis de balanceamento; pipeline determinístico; aceitar, recusar, negociar e
+pedir tempo; exclusividade; quatro tipos de acordo; eventos e conflitos de
+agenda; advertências; renovação; ledger e deduplicação; equivalência temporal;
+saves antigos; retenção histórica e carreira longa. O roteiro
+`node tools/simulate-stage12.cjs` simula dez temporadas e reabre o save a cada
+ano mantendo o limite de 3 MB.

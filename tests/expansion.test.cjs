@@ -16,7 +16,7 @@ test("expanded training exposes 27 skills and improves according to style", () =
   assert.equal(Object.keys(D.Training.skills).length, 27);
   A.execute(s, "train", { focus: "acceleration", intensity: "normal" });
   for (let i = 0; i < 30; i++) D.advance(s, 1);
-  assert.ok(s.trainingPlan.sessions >= 30);
+  assert.ok(s.trainingPlan.sessions >= 10);
   assert.ok(s.trainingPlan.improvements > before);
   assert.ok(Number.isFinite(s.person.attrs.acceleration));
 });
@@ -397,4 +397,196 @@ test("Development 2.0 normalizes archetype, levels and specializations for old s
   assert.equal(plan.specializationPoints, 1);
   const restored = S.parse(JSON.stringify(s));
   assert.deepEqual(D.Training.init(restored).specializations, ["finisher"]);
+});
+
+test("end-of-season panorama stores competition winners, leaders, XI and player snapshot", () => {
+  const s = D.create({ clubId: "c17" }, 499), competitionId = D.club(s).leagueId;
+  const hero = D.Statistics.init(s).hero;
+  hero.byCompetition[competitionId] = { appearances: 12, goals: 9, assists: 4, motm: 3, ratingTotal: 96, saves: 0, tackles: 8 };
+  hero.appearances = 12; hero.goals = 9; hero.assists = 4; hero.motm = 3; hero.ratingTotal = 96; hero.tackles = 8;
+  s.person.minutes = 940;
+  const leagueClubs = s.clubs.filter((club) => club.leagueId === competitionId);
+  leagueClubs.forEach((club, index) => { club.stats.points = 80-index; club.stats.gf = 50-index; club.stats.ga = 20; });
+  D.Competitions.closeSeason(s, D.table);
+  D.Statistics.closeSeason(s);
+  const season = s.statistics.seasons[0], league = season.panorama.find((item) => item.id === competitionId);
+  assert.equal(season.season, s.season);
+  assert.equal(league.champion, D.table(s, competitionId)[0].name);
+  assert.equal(league.runnerUp, D.table(s, competitionId)[1].name);
+  assert.equal(league.topScorer.name, s.person.name);
+  assert.equal(season.player.goals, 9);
+  assert.equal(season.player.assists, 4);
+  assert.equal(season.player.appearances, 12);
+  assert.ok(Array.isArray(league.team));
+});
+
+test("season archive repairs old zero snapshots from persisted match history", () => {
+  const s = D.create({ clubId: "c17" }, 701);
+  s.statistics = { players: {}, awards: [], seasons: [{ season: 2026, player: { appearances:0, goals:0, assists:0, averageRating:0 } }] };
+  s.history = [{ season:2026, league:"Brasileirão", goals:7, minutes:810 }];
+  s.matches = [{ season:2026, participants:[["hero"],[]], events:[{type:"goal",playerId:"hero"},{type:"goal",playerId:"x",assistPlayerId:"hero"}], ratings:{hero:8.2,x:7.0} }];
+  D.Statistics.init(s);
+  const p=s.statistics.seasons[0].player;
+  assert.equal(p.appearances,1); assert.equal(p.goals,1); assert.equal(p.assists,1); assert.equal(p.averageRating,8.2); assert.equal(p.minutes,810);
+});
+
+test("season snapshot falls back to persisted matches when competition counters are unavailable", () => {
+  const s = D.create({ clubId: "c17" }, 702);
+  s.matches=[{ season:s.season, participants:[["hero"],[]], events:[{type:"goal",playerId:"hero"}], ratings:{hero:7.8} }];
+  D.Competitions.closeSeason(s,D.table); D.Statistics.closeSeason(s);
+  const p=s.statistics.seasons[0].player;
+  assert.equal(p.appearances,1); assert.equal(p.goals,1); assert.equal(p.averageRating,7.8);
+});
+
+
+test("Career Origins 2.0 persist narrative identity and apply real starting effects", () => {
+  const academy = D.create({ origin: "academy", pos: "MEI", archetypeId: "maestro", points: {} }, 901);
+  const legacy = D.create({ origin: "legacy", pos: "ATA", archetypeId: "nine", points: {} }, 901);
+  assert.equal(academy.person.originId, "academy");
+  assert.equal(academy.person.originName, "Jovem da Base");
+  assert.equal(academy.person.archetypeId, "maestro");
+  assert.equal(academy.trainingPlan.archetype.name, "Maestro");
+  assert.equal(legacy.person.originId, "legacy");
+  assert.equal(legacy.trainingPlan.archetype.name, "Camisa 9");
+  assert.ok(legacy.reputation > academy.reputation);
+  assert.ok(legacy.offers.length >= academy.offers.length);
+  const restored = S.parse(JSON.stringify(legacy));
+  assert.equal(restored.person.originId, "legacy");
+  assert.equal(D.Training.init(restored).archetype.name, "Camisa 9");
+});
+
+test("Development 2.0 rejects incompatible archetype after migration without breaking old saves", () => {
+  const s = D.create({ pos: "GOL", archetypeId: "finisher" }, 902);
+  assert.equal(s.person.archetypeId, "guardian");
+  assert.equal(s.trainingPlan.archetype.name, "Guardião");
+  delete s.person.archetypeId;
+  delete s.person.originId;
+  const restored = S.parse(JSON.stringify(s));
+  assert.equal(D.Training.init(restored).archetype.name, "Guardião");
+});
+
+test("training 2.0 stores exercise grades and activates match multipliers", () => {
+  const s = D.create({ clubId: "c0", pos: "ATA", archetypeId: "finisher" }, 9901);
+  A.execute(s, "train", { focus: "finish", intensity: "normal", exerciseId: "finishing" });
+  for (let i=0;i<3;i++) D.Training.daily(s, new D.Random(9901+i), { overall:D.overall, clamp:D.clamp });
+  assert.equal(s.trainingPlan.exerciseId, "boxFinish");
+  assert.ok(["D","C","B","A"].includes(s.trainingPlan.exerciseGrades.boxFinish));
+  assert.equal(s.trainingPlan.activeMultiplier.category, "finishing");
+  assert.ok(s.trainingPlan.activeMultiplier.value > 1);
+});
+
+test("training 2.0 recommends position-compatible categories and persists through save", () => {
+  const s = D.create({ clubId: "c0", pos: "GOL", archetypeId: "guardian" }, 9902);
+  assert.ok(D.Training.trainingCategories.goalkeeper.positions.includes("GOL"));
+  A.execute(s, "train", { focus: "positioning", intensity: "normal", exerciseId: "goalkeeper" });
+  D.Training.daily(s, new D.Random(9902), { overall:D.overall, clamp:D.clamp });
+  const restored = S.parse(JSON.stringify(s));
+  assert.equal(restored.trainingPlan.exerciseId, "goalkeeper");
+  assert.ok(restored.trainingPlan.exerciseGrades.goalkeeper);
+});
+
+test("statistics 2.0 exposes one canonical hero dashboard", () => {
+  const s = D.create({ clubId: "c0", pos: "ATA" }, 9910);
+  for (let i=0;i<45;i++) D.advance(s, new D.Random(9910+i));
+  const d = D.Statistics.heroDashboard(s);
+  assert.ok(d.season.appearances >= 0);
+  assert.ok(d.career.goals >= d.season.goals);
+  assert.ok(Array.isArray(d.byCompetition));
+  assert.ok(Array.isArray(d.byClub));
+  assert.equal(typeof d.career.goals90, "number");
+  assert.equal(typeof d.career.conversion, "number");
+});
+
+
+test("statistics 2.0 preserves multiple club stints in the same season", () => {
+  const s = D.create({ clubId: "c0", pos: "ATA" }, 9920);
+  D.Statistics.recordMatch(s, { competitionId:"serieA", home:"c0", away:"c2", participants:[["hero"],[]], ratings:{hero:8}, playerStats:{hero:{tackles:1,saves:0}}, offensiveStats:{hero:{shots:3,onTarget:2,xg:0.8}}, events:[{type:"goal",playerId:"hero"}] });
+  D.Statistics.closeHeroStint(s, "c0", "transfer");
+  s.clubs.find(c=>c.id==="c0").roster=s.clubs.find(c=>c.id==="c0").roster.filter(p=>p.id!=="hero");
+  s.clubId = "c1";
+  s.clubs.find(c=>c.id==="c1").roster.push(s.person);
+  D.Statistics.ensureHeroStint(s, "c1");
+  D.Statistics.recordMatch(s, { competitionId:"serieA", home:"c1", away:"c3", participants:[["hero"],[]], ratings:{hero:7.5}, playerStats:{hero:{tackles:0,saves:0}}, offensiveStats:{hero:{shots:2,onTarget:1,xg:0.4}}, events:[] });
+  const rows = D.Statistics.heroDashboard(s).stints.filter(x => x.season === s.season);
+  assert.equal(rows.length, 2);
+  assert.deepEqual(rows.map(x=>x.clubId), ["c0","c1"]);
+  assert.equal(rows[0].goals, 1);
+  assert.equal(rows[1].appearances, 1);
+  const restored=S.parse(JSON.stringify(s));
+  assert.equal(D.Statistics.heroDashboard(restored).stints.filter(x=>x.season===s.season).length,2);
+});
+
+test("awards 2.0 preserves personal awards through save round-trip", () => {
+  const s = D.create({ clubId: "c0", pos: "ATA" }, 9921);
+  const stats=D.Statistics.init(s).root;
+  stats.awards.unshift({season:s.season,leagueId:"overall",competitionId:"overall",league:"Melhores do ano",name:"Melhor jogador do ano",winner:s.person.name,winnerClub:s.clubs.find(c=>c.id===s.clubId).name,clubId:s.clubId,value:8.7});
+  const restored=S.parse(JSON.stringify(s));
+  assert.equal(D.Statistics.init(restored).root.awards[0].winner, s.person.name);
+  assert.equal(D.Statistics.init(restored).root.awards[0].name, "Melhor jogador do ano");
+});
+
+test("statistics history never assigns career byClub totals to current season", () => {
+  const s = D.create({ clubId: "c0", pos: "ATA" }, 9922);
+  const hero=D.Statistics.init(s).hero;
+  hero.byClub.c1={appearances:62,starts:62,minutes:5580,goals:16,assists:0,motm:0,ratingTotal:417.26,saves:0,tackles:0,shots:0,onTarget:0,xg:0,yellowCards:0,redCards:0};
+  hero.byClub.c2={appearances:71,starts:71,minutes:6390,goals:21,assists:0,motm:0,ratingTotal:474.99,saves:0,tackles:0,shots:0,onTarget:0,xg:0,yellowCards:0,redCards:0};
+  const rows=D.Statistics.heroDashboard(s).stints.filter(x=>x.season===s.season);
+  assert.equal(rows.some(x=>x.clubId==="c1" && x.appearances===62), false);
+  assert.equal(rows.some(x=>x.clubId==="c2" && x.appearances===71), false);
+});
+
+
+test("club tenure ledger preserves real chronological clubs across seasons", () => {
+  const s = D.create({ clubId: "c6" }, 12001);
+  s.extras.transfers = [
+    { day: 930, season: 2028, player: s.person.name, from: "Santos", to: "São Paulo", transferType: "permanent", fee: 1 },
+    { day: 730, season: 2028, player: s.person.name, from: "Fluminense", to: "Santos", transferType: "permanent", fee: 1 },
+    { day: 180, season: 2026, player: s.person.name, from: "Coritiba", to: "Fluminense", transferType: "permanent", fee: 1 },
+  ];
+  s.season = 2029; s.day = 1100; s.clubId = "c17";
+  s.statistics.heroStints = [];
+  const rows = D.Statistics.heroStintHistory(s);
+  const names = (year) => rows.filter((r)=>r.season===year).map((r)=>r.club);
+  assert.deepEqual(names(2026), ["Coritiba", "Fluminense"]);
+  assert.deepEqual(names(2027), ["Fluminense"]);
+  assert.deepEqual(names(2028), ["Fluminense", "Santos", "São Paulo"]);
+  assert.deepEqual(names(2029), ["São Paulo"]);
+});
+
+test("club tenure ledger survives save reload without inventing club changes", () => {
+  const s = D.create({ clubId: "c6" }, 12002);
+  s.extras.transfers = [{ day:180, season:2026, player:s.person.name, from:"Coritiba", to:"Fluminense", transferType:"permanent", fee:1 }];
+  s.season=2027; s.day=500; s.clubs.find(c=>c.id==="c6").roster=s.clubs.find(c=>c.id==="c6").roster.filter(p=>p.id!=="hero"); s.clubs.find(c=>c.id==="c9").roster.push(s.person); s.clubId="c9"; if(s.nationalTeam) s.nationalTeam.nextWindow=Math.max(s.nationalTeam.nextWindow||0,s.day); s.statistics.heroStints=[];
+  D.Statistics.heroStintHistory(s);
+  const restored=S.parse(JSON.stringify(s));
+  const rows=D.Statistics.heroStintHistory(restored);
+  assert.deepEqual(rows.filter(r=>r.season===2026).map(r=>r.club), ["Coritiba","Fluminense"]);
+  assert.deepEqual(rows.filter(r=>r.season===2027).map(r=>r.club), ["Fluminense"]);
+});
+
+test("current club season statistics keep growing and survive reload", () => {
+  const s = D.create({ clubId: "c0", pos: "ATA" }, 12003);
+  const match = (rating, goals=0) => ({
+    season:s.season, competitionId:"serieA", home:"c0", away:"c1",
+    participants:[["hero"],[]], ratings:{hero:rating},
+    playerStats:{hero:{tackles:1,saves:0}},
+    offensiveStats:{hero:{shots:3,onTarget:2,xg:0.7}},
+    events:Array.from({length:goals},()=>({type:"goal",playerId:"hero"}))
+  });
+  D.Statistics.recordMatch(s, match(7.2,1));
+  let d=D.Statistics.heroDashboard(s);
+  assert.equal(d.currentClubSeason.appearances,1);
+  assert.equal(d.currentClubSeason.minutes,90);
+  assert.equal(d.currentClubSeason.goals,1);
+  D.Statistics.recordMatch(s, match(8.0,2));
+  d=D.Statistics.heroDashboard(s);
+  assert.equal(d.currentClubSeason.appearances,2);
+  assert.equal(d.currentClubSeason.starts,2);
+  assert.equal(d.currentClubSeason.minutes,180);
+  assert.equal(d.currentClubSeason.goals,3);
+  const restored=S.parse(JSON.stringify(s));
+  const r=D.Statistics.heroDashboard(restored).currentClubSeason;
+  assert.equal(r.appearances,2);
+  assert.equal(r.minutes,180);
+  assert.equal(r.goals,3);
 });

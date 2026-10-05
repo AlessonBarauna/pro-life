@@ -31,6 +31,13 @@
     ...Object.entries(leagueNames).map(([id, name]) => ({ id, name, type: "league", coverage: ["serieC", "serieD"].includes(id) ? "partial" : "complete" })),
     { id: "copaBrasil", name: "Copa do Brasil", type: "cup", coverage: "simulated" },
   ];
+  const competitionConfigs = {
+    serieA:{type:"league",teams:20,rounds:38,format:"double-round-robin",points:{win:3,draw:1,loss:0},tieBreakers:["points","wins","goalDifference","goalsFor"]},
+    serieB:{type:"league",teams:20,rounds:38,format:"double-round-robin",points:{win:3,draw:1,loss:0},tieBreakers:["points","wins","goalDifference","goalsFor"]},
+    serieC:{type:"league",teams:20,rounds:38,format:"double-round-robin",points:{win:3,draw:1,loss:0},tieBreakers:["points","wins","goalDifference","goalsFor"]},
+    serieD:{type:"league",teams:20,rounds:38,format:"double-round-robin",points:{win:3,draw:1,loss:0},tieBreakers:["points","wins","goalDifference","goalsFor"]},
+    copaBrasil:{type:"cup",format:"single-leg-knockout",drawResolution:"penalties"}
+  };
   const cupDates = [50, 100, 170, 240, 340];
   const cupRoundNames = ["Primeira fase", "Oitavas de final", "Quartas de final", "Semifinal", "Final"];
   const stateDates = [8, 13, 18, 23, 28, 33, 38, 43];
@@ -344,7 +351,27 @@
     init(s);
     return [...(s.leagues || []).map((league) => ({ id: league.id, name: league.name, type: "league" })), { id: "copaBrasil", name: "Copa do Brasil", type: "cup" }, ...allStates(s).map((state) => ({ id: state.id, name: state.name, type: "state" }))];
   }
-  const api = { catalog, leagueNames, stateNames, clubState, nationalRanking, init, ensureState, prepareSeason, allStates, stateTable, statCompetitions, due, recordResult, fixtureStage, clubStatus, nextFixture, closeSeason, nextSeason };
+  function integrity(s) {
+    init(s);
+    const issues=[], seen=new Set(), base=baseDay(s);
+    (s.fixtures||[]).forEach((round,ri)=>round.forEach(([home,away])=>{
+      const key=`league:${s.season}:${ri}:${home}:${away}`; if(seen.has(key)) issues.push("Partida de liga duplicada: "+key); seen.add(key);
+      if(home===away) issues.push("Clube enfrenta a si mesmo na rodada "+(ri+1));
+    }));
+    for(const league of s.leagues||[]){
+      const clubs=s.clubs.filter(c=>c.leagueId===league.id), expected=(clubs.length-1)*2;
+      if((s.fixtures||[]).length!==expected) issues.push(`${league.name}: esperado ${expected} rodadas, encontrado ${s.fixtures?.length||0}`);
+    }
+    const own=s.clubId, mandatory=new Map();
+    const add=(day,label)=>{if(!Number.isInteger(day))return; if(!mandatory.has(day))mandatory.set(day,[]); mandatory.get(day).push(label);};
+    (s.fixtures||[]).forEach((round,ri)=>{if(round.some(pair=>pair.includes(own))) add(base+(s.calendarDays?.[ri]??7+ri*21),"Liga");});
+    for(const state of allStates(s)) for(const round of state.rounds||[]) if(round.pairs?.some(p=>!p.played&&(p.home===own||p.away===own))) add(round.date,state.name);
+    for(const round of s.competitionSchedule?.cup?.rounds||[]) if(round.pairs?.some(p=>!p.played&&(p.home===own||p.away===own))) add(round.date,"Copa do Brasil");
+    if(s.nationalTeam?.calledUp) for(const match of s.nationalTeam.schedule||[]) if(!match.played) add(match.day,"Seleção Brasileira");
+    const conflicts=[...mandatory.entries()].filter(([,labels])=>labels.length>1).map(([day,labels])=>({day,labels}));
+    return {ok:issues.length===0&&conflicts.length===0,issues,conflicts,season:s.season,currentDay:s.day};
+  }
+  const api = { catalog, competitionConfigs, leagueNames, stateNames, clubState, nationalRanking, init, ensureState, prepareSeason, allStates, stateTable, statCompetitions, due, recordResult, fixtureStage, clubStatus, nextFixture, closeSeason, nextSeason, integrity };
   root.ProLifeCompetitions = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

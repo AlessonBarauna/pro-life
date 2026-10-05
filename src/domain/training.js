@@ -24,23 +24,97 @@
     Organizador: ["pass", "longPass", "vision", "crossing", "technique", "ballControl"],
     Combativo: ["defense", "tackling", "interception", "strength", "stamina", "positioning"],
   };
-  const archetypes = {
-    GOL: { name: "Guardião", description: "Reflexos, posicionamento e segurança sob pressão.", focus: ["positioning", "composure", "longPass", "jumping"] },
-    ZAG: { name: "Muralha", description: "Leitura defensiva, força e domínio dos duelos.", focus: ["defense", "tackling", "interception", "strength", "heading"] },
-    LAT: { name: "Ala Dinâmico", description: "Explosão, resistência e apoio pelos lados.", focus: ["pace", "stamina", "crossing", "tackling", "acceleration"] },
-    VOL: { name: "Motor", description: "Equilíbrio entre proteção, intensidade e construção.", focus: ["interception", "stamina", "pass", "strength", "positioning"] },
-    MEI: { name: "Maestro", description: "Visão, técnica e criação entre as linhas.", focus: ["vision", "pass", "technique", "ballControl", "longPass"] },
-    PE: { name: "Ponta Incisivo", description: "Aceleração, drible e agressividade no último terço.", focus: ["acceleration", "sprint", "dribbling", "finesseShot", "crossing"] },
-    PD: { name: "Ponta Incisivo", description: "Aceleração, drible e agressividade no último terço.", focus: ["acceleration", "sprint", "dribbling", "finesseShot", "crossing"] },
-    ATA: { name: "Finalizador", description: "Movimentação, frieza e definição das chances.", focus: ["finish", "positioning", "composure", "powerShot", "heading"] },
+  const archetypeCatalog = {
+    guardian: { id: "guardian", positions: ["GOL"], name: "Guardião", description: "Segurança, posicionamento e saída limpa sob pressão.", focus: ["positioning", "composure", "longPass", "jumping"], weak: ["dribbling", "finish"], xpActions: ["defesas", "clean sheets"] },
+    wall: { id: "wall", positions: ["DEF"], name: "Muralha", description: "Leitura defensiva, força e domínio dos duelos.", focus: ["defense", "tackling", "interception", "strength", "heading"], weak: ["dribbling", "finesseShot"], xpActions: ["desarmes", "interceptações"] },
+    builder: { id: "builder", positions: ["DEF", "MEI"], name: "Construtor", description: "Defende e inicia jogadas com qualidade desde trás.", focus: ["pass", "longPass", "vision", "interception", "composure"], weak: ["finish", "sprint"], xpActions: ["passes-chave", "saídas limpas"] },
+    engine: { id: "engine", positions: ["MEI", "DEF"], name: "Motor", description: "Intensidade, resistência e presença nas duas fases.", focus: ["stamina", "interception", "pass", "strength", "positioning"], weak: ["finesseShot", "heading"], xpActions: ["recuperações", "minutos"] },
+    maestro: { id: "maestro", positions: ["MEI"], name: "Maestro", description: "Visão, técnica e criação entre as linhas.", focus: ["vision", "pass", "technique", "ballControl", "longPass"], weak: ["defense", "strength"], xpActions: ["assistências", "passes-chave"] },
+    dribbler: { id: "dribbler", positions: ["MEI", "ATA"], name: "Driblador", description: "Desequilíbrio individual, controle e aceleração com a bola.", focus: ["dribbling", "ballControl", "agility", "acceleration", "technique"], weak: ["defense", "heading"], xpActions: ["dribles", "criação"] },
+    finisher: { id: "finisher", positions: ["ATA"], name: "Finalizador", description: "Movimentação, frieza e definição das chances.", focus: ["finish", "positioning", "composure", "powerShot", "heading"], weak: ["defense", "longPass"], xpActions: ["gols", "finalizações"] },
+    nine: { id: "nine", positions: ["ATA"], name: "Camisa 9", description: "Presença de área, força e jogo aéreo para decidir perto do gol.", focus: ["finish", "heading", "strength", "positioning", "jumping"], weak: ["defense", "crossing"], xpActions: ["gols", "duelos aéreos"] },
+    winger: { id: "winger", positions: ["ATA", "MEI"], name: "Ponta Veloz", description: "Ataca o espaço pelos lados com aceleração e cruzamento.", focus: ["pace", "acceleration", "sprint", "crossing", "dribbling"], weak: ["heading", "defense"], xpActions: ["assistências", "arrancadas"] },
+    fullback: { id: "fullback", positions: ["DEF"], name: "Lateral Ofensivo", description: "Defende o corredor e chega ao ataque com fôlego e cruzamento.", focus: ["pace", "stamina", "crossing", "defense", "acceleration"], weak: ["heading", "finish"], xpActions: ["assistências", "desarmes"] },
+  };
+  const defaultArchetypeId = { GOL: "guardian", DEF: "wall", MEI: "maestro", ATA: "finisher" };
+  const archetypes = Object.fromEntries(Object.entries(defaultArchetypeId).map(([pos,id]) => [pos, archetypeCatalog[id]]));
+  const origins = {
+    academy: { name: "Jovem da Base", description: "Formação estruturada, disciplina alta e pressão por evolução.", age: 16, reputation: 12, potential: 4, attrs: { pass: 2, stamina: 2 }, offerBoost: 0 },
+    regional: { name: "Promessa Regional", description: "Destaque local que chega ao profissional já conhecido na região.", age: 18, reputation: 20, potential: 2, attrs: { pace: 2, finish: 2 }, offerBoost: 1 },
+    comeback: { name: "Recomeço", description: "Uma segunda oportunidade: mais maturidade, menos margem para errar.", age: 23, reputation: 14, potential: -2, attrs: { strength: 3, stamina: 2 }, offerBoost: 0 },
+    legacy: { name: "Herdeiro de uma Lenda", description: "Nome conhecido, atenção imediata e expectativa elevada.", age: 17, reputation: 28, potential: 3, attrs: { pass: 2, finish: 2 }, offerBoost: 1 },
+    blank: { name: "Página em Branco", description: "Sem vantagem narrativa: sua trajetória será definida em campo.", age: 16, reputation: 15, potential: 0, attrs: {}, offerBoost: 0 },
+    custom: { name: "Personalizada", description: "Mantém idade e perfil definidos por você, sem bônus forçados.", age: null, reputation: 15, potential: 0, attrs: {}, offerBoost: 0 },
+  };
+  // Especializações da Etapa 13: árvores por arquétipo. Requisitos e efeitos pertencem ao domínio (ver identity.js).
+  // req.stats usa somente métricas registradas pela Estatística (carreira do herói).
+  const S = (archetype, name, description, attrs, action, req) => ({ archetype, name, description, attrs, action, req });
+  const archetypeSpecializations = {
+    matador: S("finisher", "Matador", "Frieza para transformar chances em gols.", ["finish", "composure", "positioning"], "goals", { level: 6, affinity: 62, attrs: { finish: 78, composure: 70 }, stats: { goals: 15 } }),
+    areaSpecialist: S("finisher", "Especialista de Área", "Movimentação curta e presença no primeiro e segundo pau.", ["positioning", "heading", "finish", "strength"], "onTarget", { level: 5, affinity: 58, attrs: { positioning: 74, heading: 66 }, stats: { goals: 8 } }),
+    longRange: S("finisher", "Longa Distância", "Ameaça constante de fora da área.", ["longShot", "powerShot", "finesseShot"], "onTarget", { level: 7, affinity: 55, attrs: { longShot: 74, powerShot: 72 }, stats: { shots: 60 } }),
+    targetMan: S("nine", "Pivô", "Segura a bola de costas e faz o time jogar.", ["strength", "ballControl", "pass", "balance"], "assists", { level: 5, affinity: 58, attrs: { strength: 74, ballControl: 68 }, stats: { appearances: 20 } }),
+    aerialNine: S("nine", "Cabeceador", "Domínio do jogo aéreo dentro da área.", ["heading", "jumping", "strength"], "goals", { level: 6, affinity: 60, attrs: { heading: 76, jumping: 72 }, stats: { goals: 10 } }),
+    mobileNine: S("nine", "Centroavante Móvel", "Ataca a profundidade sem perder a referência.", ["pace", "acceleration", "finish", "positioning"], "goals", { level: 7, affinity: 58, attrs: { pace: 74, finish: 74 }, stats: { goals: 12 } }),
+    artist: S("dribbler", "Artista", "Controle curto e repertório no um contra um.", ["dribbling", "ballControl", "agility", "balance"], "rating", { level: 5, affinity: 60, attrs: { dribbling: 78, ballControl: 74 }, stats: { appearances: 20 } }),
+    infiltrator: S("dribbler", "Infiltrador", "Conduz em velocidade até a finalização.", ["acceleration", "dribbling", "finish"], "goals", { level: 6, affinity: 58, attrs: { dribbling: 74, acceleration: 74 }, stats: { goals: 6 } }),
+    skilledPlaymaker: S("dribbler", "Armador Habilidoso", "Dribla para abrir linhas de passe.", ["dribbling", "vision", "pass", "technique"], "assists", { level: 7, affinity: 58, attrs: { dribbling: 72, vision: 72 }, stats: { assists: 6 } }),
+    sprinter: S("winger", "Velocista", "Explosão para ganhar as costas da defesa.", ["pace", "acceleration", "sprint"], "rating", { level: 5, affinity: 60, attrs: { pace: 80, sprint: 76 }, stats: { appearances: 20 } }),
+    breakaway: S("winger", "Ponta de Ruptura", "Diagonal curta e finalização após a arrancada.", ["acceleration", "finish", "positioning"], "goals", { level: 6, affinity: 58, attrs: { acceleration: 76, finish: 70 }, stats: { goals: 6 } }),
+    creativeWinger: S("winger", "Ponta Criador", "Último passe e cruzamento com qualidade.", ["crossing", "vision", "pass", "dribbling"], "assists", { level: 7, affinity: 58, attrs: { crossing: 76, vision: 68 }, stats: { assists: 8 } }),
+    numberTen: S("maestro", "Camisa 10", "Decide entre as linhas com técnica e visão.", ["vision", "technique", "finesseShot", "dribbling"], "assists", { level: 7, affinity: 62, attrs: { vision: 78, technique: 76 }, stats: { assists: 10 } }),
+    organizer: S("maestro", "Organizador", "Dita o ritmo e mantém a posse sob pressão.", ["pass", "composure", "vision", "ballControl"], "assists", { level: 5, affinity: 58, attrs: { pass: 76, composure: 70 }, stats: { appearances: 20 } }),
+    verticalPass: S("maestro", "Passe Vertical", "Quebra linhas com passes longos e em profundidade.", ["longPass", "vision", "pass"], "assists", { level: 6, affinity: 58, attrs: { longPass: 76, vision: 72 }, stats: { assists: 6 } }),
+    marker: S("engine", "Marcador", "Recupera bolas e protege a defesa.", ["tackling", "interception", "defense", "stamina"], "tackles", { level: 5, affinity: 58, attrs: { tackling: 74, interception: 72 }, stats: { tackles: 40 } }),
+    distributor: S("engine", "Distribuidor", "Primeiro passe limpo depois da recuperação.", ["pass", "longPass", "composure"], "assists", { level: 6, affinity: 58, attrs: { pass: 74, longPass: 70 }, stats: { appearances: 25 } }),
+    boxToBox: S("engine", "Box-to-box", "Presença nas duas áreas durante os 90 minutos.", ["stamina", "strength", "positioning", "finish"], "minutes", { level: 7, affinity: 60, attrs: { stamina: 80, strength: 70 }, stats: { appearances: 30 } }),
+    sheriff: S("wall", "Xerife", "Impõe respeito nos duelos e comanda a linha.", ["tackling", "strength", "defense", "heading"], "tackles", { level: 6, affinity: 60, attrs: { tackling: 76, strength: 76 }, stats: { tackles: 50 } }),
+    anticipator: S("wall", "Antecipador", "Lê a jogada e intercepta antes do duelo.", ["interception", "positioning", "pace"], "tackles", { level: 5, affinity: 58, attrs: { interception: 76, positioning: 70 }, stats: { tackles: 35 } }),
+    aerialDefender: S("wall", "Defensor Aéreo", "Vence as bolas altas na própria área.", ["heading", "jumping", "strength"], "cleanSheet", { level: 6, affinity: 58, attrs: { heading: 74, jumping: 72 }, stats: { cleanSheets: 8 } }),
+    cleanExit: S("builder", "Saída Limpa", "Calma para iniciar a jogada sob pressão.", ["pass", "composure", "ballControl"], "rating", { level: 5, affinity: 58, attrs: { pass: 74, composure: 72 }, stats: { appearances: 20 } }),
+    launcher: S("builder", "Lançador", "Inverte o jogo e acha o atacante em profundidade.", ["longPass", "vision"], "assists", { level: 6, affinity: 58, attrs: { longPass: 78, vision: 70 }, stats: { assists: 4 } }),
+    modernSweeper: S("builder", "Líbero Moderno", "Cobre espaços e sai jogando após interceptar.", ["interception", "positioning", "pass"], "tackles", { level: 7, affinity: 60, attrs: { interception: 74, pass: 72 }, stats: { tackles: 30 } }),
+    wingBack: S("fullback", "Ala Incansável", "Sobe e volta o jogo inteiro pelo corredor.", ["stamina", "pace", "sprint"], "minutes", { level: 5, affinity: 58, attrs: { stamina: 78, pace: 74 }, stats: { appearances: 25 } }),
+    supportFullback: S("fullback", "Lateral Apoiador", "Chega ao fundo e cruza com precisão.", ["crossing", "pass", "dribbling"], "assists", { level: 6, affinity: 58, attrs: { crossing: 76, pass: 70 }, stats: { assists: 5 } }),
+    defensiveFullback: S("fullback", "Lateral Marcador", "Fecha o corredor e vence o ponta adversário.", ["defense", "tackling", "interception", "pace"], "tackles", { level: 5, affinity: 58, attrs: { defense: 74, tackling: 72 }, stats: { tackles: 35 } }),
+    reflexKeeper: S("guardian", "Reflexo", "Reação rápida em finalizações de perto.", ["jumping", "agility", "positioning"], "saves", { level: 5, affinity: 60, attrs: { jumping: 74, positioning: 74 }, stats: { saves: 60 } }),
+    sweeperKeeper: S("guardian", "Goleiro Líbero", "Sai da área e participa da construção.", ["longPass", "composure", "pass", "pace"], "cleanSheet", { level: 6, affinity: 58, attrs: { longPass: 72, composure: 72 }, stats: { cleanSheets: 8 } }),
+    boxCommander: S("guardian", "Comandante da Área", "Domina cruzamentos e organiza a defesa.", ["positioning", "jumping", "strength", "composure"], "cleanSheet", { level: 7, affinity: 60, attrs: { positioning: 76, composure: 74 }, stats: { cleanSheets: 12 } }),
   };
   const specializations = {
-    explosive: { name: "Explosão", description: "Treinos de velocidade rendem mais progresso.", attrs: ["pace", "acceleration", "sprint"] },
-    creator: { name: "Criador", description: "Ações de criação valorizam passe, visão e técnica.", attrs: ["pass", "vision", "technique", "longPass"] },
-    finisher: { name: "Matador", description: "Gols aceleram o desenvolvimento ofensivo.", attrs: ["finish", "positioning", "composure", "powerShot"] },
-    engine: { name: "Motor", description: "Treino físico favorece resistência e equilíbrio.", attrs: ["stamina", "strength", "balance"] },
-    stopper: { name: "Especialista Defensivo", description: "Atuações sólidas favorecem marcação e desarme.", attrs: ["defense", "tackling", "interception", "positioning"] },
+    ...archetypeSpecializations,
+    explosive: { legacy: true, name: "Explosão", description: "Treinos de velocidade rendem mais progresso.", attrs: ["pace", "acceleration", "sprint"] },
+    creator: { legacy: true, name: "Criador", description: "Ações de criação valorizam passe, visão e técnica.", attrs: ["pass", "vision", "technique", "longPass"] },
+    finisher: { legacy: true, name: "Matador", description: "Gols aceleram o desenvolvimento ofensivo.", attrs: ["finish", "positioning", "composure", "powerShot"] },
+    engine: { legacy: true, name: "Motor", description: "Treino físico favorece resistência e equilíbrio.", attrs: ["stamina", "strength", "balance"] },
+    stopper: { legacy: true, name: "Especialista Defensivo", description: "Atuações sólidas favorecem marcação e desarme.", attrs: ["defense", "tackling", "interception", "positioning"] },
   };
+  const trainingCategories = {
+    finishing: { name: "Finalização", positions: ["ATA", "MEI"], attrs: ["finish", "powerShot", "finesseShot", "positioning"], action: "goals", multiplier: 1.28 },
+    passing: { name: "Passe", positions: ["MEI", "DEF", "ATA"], attrs: ["pass", "vision", "longPass", "crossing"], action: "assists", multiplier: 1.25 },
+    dribbling: { name: "Drible", positions: ["ATA", "MEI"], attrs: ["dribbling", "ballControl", "agility", "technique"], action: "rating", multiplier: 1.18 },
+    physical: { name: "Físico", positions: ["ATA", "MEI", "DEF", "GOL"], attrs: ["strength", "stamina", "balance", "jumping"], action: "minutes", multiplier: 1.16 },
+    defending: { name: "Defesa", positions: ["DEF", "MEI"], attrs: ["defense", "tackling", "interception", "positioning"], action: "tackles", multiplier: 1.28 },
+    setpieces: { name: "Bola parada", positions: ["ATA", "MEI", "DEF"], attrs: ["freeKick", "penalty", "crossing", "finesseShot"], action: "goals", multiplier: 1.20 },
+    speed: { name: "Velocidade", positions: ["ATA", "MEI", "DEF"], attrs: ["pace", "acceleration", "sprint", "agility"], action: "rating", multiplier: 1.18 },
+    goalkeeper: { name: "Goleiro", positions: ["GOL"], attrs: ["positioning", "composure", "jumping", "longPass"], action: "saves", multiplier: 1.30 },
+  };
+  const exercises = {
+    boxFinish: { id:"boxFinish", category:"finishing", name:"Finalização dentro da área", difficulty:"C" },
+    pressureFinish: { id:"pressureFinish", category:"finishing", name:"Finalização sob pressão", difficulty:"A" },
+    quickPass: { id:"quickPass", category:"passing", name:"Passe rápido", difficulty:"C" },
+    throughPass: { id:"throughPass", category:"passing", name:"Passe em profundidade", difficulty:"B" },
+    closeControl: { id:"closeControl", category:"dribbling", name:"Controle próximo e 1 contra 1", difficulty:"B" },
+    sprint: { id:"sprint", category:"speed", name:"Arrancada e sprint", difficulty:"B" },
+    endurance: { id:"endurance", category:"physical", name:"Resistência, força e impulsão", difficulty:"C" },
+    defensiveDuel: { id:"defensiveDuel", category:"defending", name:"Marcação, interceptação e desarme", difficulty:"B" },
+    setpieces: { id:"setpieces", category:"setpieces", name:"Faltas, pênaltis e cruzamentos", difficulty:"A" },
+    goalkeeper: { id:"goalkeeper", category:"goalkeeper", name:"Reflexo e posicionamento", difficulty:"B" },
+  };
+  // Aliases não enumeráveis mantêm compatibilidade com saves/comandos do Treinamento 2.0 sem duplicar cartões na UI.
+  for (const [legacy,current] of Object.entries({finishing:"boxFinish",passing:"quickPass",dribbling:"closeControl",physical:"endurance",defending:"defensiveDuel",speed:"sprint"}))
+    Object.defineProperty(exercises,legacy,{value:exercises[current],enumerable:false});
+  const gradeRank = { D:1, C:2, B:3, A:4 };
   const related = {
     acceleration: "pace", sprint: "pace", agility: "pace", powerShot: "finish", finesseShot: "finish", longShot: "finish",
     freeKick: "finish", penalty: "finish", heading: "finish", jumping: "strength", longPass: "pass", vision: "pass",
@@ -82,7 +156,23 @@
     if (!Number.isFinite(s.trainingPlan.level)) s.trainingPlan.level = 1;
     if (!Array.isArray(s.trainingPlan.specializations)) s.trainingPlan.specializations = [];
     if (!Number.isFinite(s.trainingPlan.specializationPoints)) s.trainingPlan.specializationPoints = 0;
-    s.trainingPlan.archetype = archetypes[s.person.pos] || archetypes.MEI;
+    if (s.trainingPlan.activeSpecialization !== undefined && s.trainingPlan.activeSpecialization !== null && (!specializations[s.trainingPlan.activeSpecialization] || specializations[s.trainingPlan.activeSpecialization].legacy || !s.trainingPlan.specializations.includes(s.trainingPlan.activeSpecialization))) s.trainingPlan.activeSpecialization = null;
+    if (s.trainingPlan.activeSpecialization === undefined) s.trainingPlan.activeSpecialization = null;
+    if (!s.trainingPlan.exerciseGrades || typeof s.trainingPlan.exerciseGrades !== "object") s.trainingPlan.exerciseGrades = {};
+    if (!s.trainingPlan.activeMultiplier || typeof s.trainingPlan.activeMultiplier !== "object") s.trainingPlan.activeMultiplier = null;
+    const legacyExercise = { finishing:"boxFinish", passing:"quickPass", dribbling:"closeControl", physical:"endurance", defending:"defensiveDuel", speed:"sprint" };
+    if (legacyExercise[s.trainingPlan.exerciseId]) s.trainingPlan.exerciseId = legacyExercise[s.trainingPlan.exerciseId];
+    if (!s.trainingPlan.exerciseId || !exercises[s.trainingPlan.exerciseId]) s.trainingPlan.exerciseId = null;
+    if (!s.trainingPlan.attributeProgress || typeof s.trainingPlan.attributeProgress !== "object") s.trainingPlan.attributeProgress = {};
+    for (const key of Object.keys(skills)) if (!Number.isFinite(s.trainingPlan.attributeProgress[key])) s.trainingPlan.attributeProgress[key] = 0;
+    if (!Number.isFinite(s.trainingPlan.lastTrainingDay)) s.trainingPlan.lastTrainingDay = -999;
+    if (!Array.isArray(s.trainingPlan.recentTraining)) s.trainingPlan.recentTraining = [];
+    if (!Array.isArray(s.trainingPlan.processedMatches)) s.trainingPlan.processedMatches = [];
+    if (!s.trainingPlan.lastResult || typeof s.trainingPlan.lastResult !== "object") s.trainingPlan.lastResult = null;
+    const requested = s.person.archetypeId && archetypeCatalog[s.person.archetypeId];
+    const compatible = requested && requested.positions.includes(s.person.pos);
+    s.person.archetypeId = compatible ? requested.id : (defaultArchetypeId[s.person.pos] || "maestro");
+    s.trainingPlan.archetype = archetypeCatalog[s.person.archetypeId];
     s.trainingPlan.style = s.person.style || s.trainingPlan.style || "Técnico";
     return s.trainingPlan;
   }
@@ -99,67 +189,146 @@
     if (plan.level > before) plan.specializationPoints += plan.level - before;
     return plan.level - before;
   }
+  const MAX_SPECIALIZATIONS = 6;
   function unlockSpecialization(s, id) {
-    const plan = init(s);
-    if (!specializations[id]) throw Error("Especialização inválida.");
+    const plan = init(s), spec = specializations[id];
+    if (!spec) throw Error("Especialização inválida.");
     if (plan.specializations.includes(id)) return plan;
+    if (!spec.legacy) {
+      const check = root.ProLifeIdentity?.requirements?.(s, id);
+      if (!check || !check.met) throw Error(check?.reason || "Requisitos da especialização não atendidos.");
+    }
     if (plan.specializationPoints < 1) throw Error("Você precisa de um ponto de especialização.");
-    if (plan.specializations.length >= 3) throw Error("Limite de três especializações atingido.");
+    if (plan.specializations.length >= MAX_SPECIALIZATIONS) throw Error("Limite de especializações atingido.");
     plan.specializationPoints--;
     plan.specializations.push(id);
+    if (!spec.legacy) {
+      if (!plan.activeSpecialization) plan.activeSpecialization = id;
+      root.ProLifeIdentity?.onUnlock?.(s, id);
+    }
     return plan;
   }
-  function specializationBonus(plan, key) {
-    return plan.specializations.some((id) => specializations[id]?.attrs.includes(key)) ? 0.18 : 0;
+  function activateSpecialization(s, id) {
+    const plan = init(s), spec = specializations[id];
+    if (!spec || spec.legacy) throw Error("Especialização inválida.");
+    if (!plan.specializations.includes(id)) throw Error("Desbloqueie a especialização antes de ativá-la.");
+    plan.activeSpecialization = id;
+    return plan;
   }
-  function daily(s, rng, helpers) {
-    const plan = init(s);
-    if (s.person.injury || s.mode !== "player") return null;
-    const ageFactor = s.person.age <= 20 ? 1.35 : s.person.age <= 24 ? 1.2 : s.person.age <= 29 ? 1 : 0.72;
-    const focusKey = plan.focus === "balanced" ? null : plan.focus;
-    const specBoost = focusKey ? specializationBonus(plan, focusKey) : 0;
-    const gain = (s.intensity === "hard" ? 3.6 : s.intensity === "rest" ? 0.4 : 2.35) * ageFactor * (1 + specBoost);
-    s.trainingProgress += gain; plan.sessions++; addDevelopmentXp(s, 0.35 + gain * 0.08);
-    if (s.trainingProgress < 8) return null;
-    s.trainingProgress -= 8;
-    const stylePool = styleFocus[plan.style] || Object.keys(skills);
-    // O foco escolhido domina o treino; o estilo define a evolução secundária.
-    const pool = plan.focus === "balanced" ? stylePool : [plan.focus, plan.focus, plan.focus, plan.focus, ...(stylePool.includes(plan.focus) ? [] : stylePool.slice(0, 3))];
-    const key = pool[Math.floor(rng.next() * pool.length)] || "pace";
-    const currentOverall = helpers.overall(s.person), cap = ceiling(s, helpers);
-    const chance = Math.min(0.99, 0.78 + s.person.discipline / 500 + (s.person.age < 23 ? 0.08 : 0));
-    if (rng.next() <= chance && currentOverall < cap && s.person.age < 36) {
-      const improved = improve(s, key, 1, helpers);
-      const parent = related[key];
-      if (improved && parent && !core.includes(key) && plan.improvements % 2 === 0) improve(s, parent, 1, helpers);
-      if (improved) { plan.improvements++; s.person.potential = Math.max(s.person.potential || 0, Math.min(100, cap)); return { key, label: skills[key], groups: groupRatings(s.person.attrs) }; }
+  // Legadas (Treinamento 2.0) mantêm o bônus original; as novas só orientam a progressão quando ativas e de forma moderada.
+  function specializationBonus(plan, key) {
+    const legacy = plan.specializations.some((id) => specializations[id]?.legacy && specializations[id].attrs.includes(key)) ? 0.18 : 0;
+    const active = specializations[plan.activeSpecialization];
+    return Math.max(legacy, active && !active.legacy && active.attrs.includes(key) ? 0.10 : 0);
+  }
+  function ageFactor(age) { return age <= 20 ? 1.28 : age <= 24 ? 1.14 : age <= 29 ? 1 : 0.76; }
+  function gradeMultiplier(grade) { return ({D:.55,C:.78,B:1,A:1.25})[grade] || 1; }
+  function difficultyCost(value) { return 62 + Math.max(0, value - 60) * 1.55 + Math.max(0, value - 80) * 1.8 + Math.max(0, value - 90) * 2.6; }
+  function progressAttribute(s, key, points, helpers) {
+    const plan=init(s); expand(s.person.attrs);
+    const arch=plan.archetype || {};
+    const archBoost=arch.focus?.includes(key) ? 1.16 : 1;
+    const styleBoost=styleFocus[s.person.style]?.includes(key) ? 1.18 : 1;
+    const specBoost=1+specializationBonus(plan,key);
+    let gain=Math.max(0,points)*ageFactor(s.person.age)*archBoost*styleBoost*specBoost;
+    const changes=[];
+    while(gain>0 && s.person.attrs[key] < 100 && helpers.overall(s.person) < ceiling(s,helpers)){
+      const need=difficultyCost(s.person.attrs[key]);
+      const current=plan.attributeProgress[key]||0, remaining=need-current;
+      if(gain < remaining){ plan.attributeProgress[key]=current+gain; gain=0; break; }
+      gain-=remaining; const before=s.person.attrs[key]; improve(s,key,1,helpers); plan.attributeProgress[key]=0;
+      if(s.person.attrs[key]>before){ plan.improvements++; changes.push({key,label:skills[key],before,after:s.person.attrs[key]}); } else break;
     }
+    const parent=related[key];
+    if(parent && !core.includes(key) && parent!==key) changes.push(...progressAttribute(s,parent,points*.55,helpers));
+    return changes;
+  }
+  function attributeProgressPercent(s,key){ const plan=init(s), value=s.person.attrs[key]||20; return Math.max(0,Math.min(99,Math.round((plan.attributeProgress[key]||0)/difficultyCost(value)*100))); }
+  function mandatoryCommitmentToday(s){
+    const own=s.clubId;
+    if(!own) return false;
+    const seasonBase=(s.season-2026)*365;
+    const leagueDay=seasonBase+(s.calendarDays?.[s.round] ?? 7+(s.round||0)*21);
+    const leaguePair=s.fixtures?.[s.round]?.some(pair=>pair.includes(own));
+    if(leaguePair && leagueDay===s.day) return true;
+    const schedule=s.competitionSchedule||{};
+    for(const state of [schedule.state,...(schedule.otherStates||[])].filter(Boolean))
+      for(const round of state.rounds||[]) if(round.date===s.day && round.pairs?.some(pair=>!pair.played&&(pair.home===own||pair.away===own))) return true;
+    for(const round of schedule.cup?.rounds||[]) if(round.date===s.day && round.pairs?.some(pair=>!pair.played&&(pair.home===own||pair.away===own))) return true;
+    if(s.nationalTeam?.calledUp && s.nationalTeam.schedule?.some(match=>!match.played&&match.day===s.day)) return true;
+    return false;
+  }
+  function trainingAvailable(s){ return s.mode==="player" && !s.person.injury && !mandatoryCommitmentToday(s) && s.day > init(s).lastTrainingDay; }
+  function performTraining(s,rng,helpers,{automatic=false}={}){
+    const plan=init(s);
+    const available = automatic ? (s.mode==="player" && !s.person.injury && s.day > plan.lastTrainingDay) : trainingAvailable(s);
+    if(!available) return {available:false,reason:s.person.injury?"Lesionado":(!automatic&&mandatoryCommitmentToday(s))?"Há um compromisso obrigatório hoje.":"Você já treinou hoje."};
+    const ex=plan.exerciseId && exercises[plan.exerciseId];
+    if(!ex) return {available:false,reason:"Escolha um exercício."};
+    const category=trainingCategories[ex.category];
+    const intensity=s.intensity || "normal";
+    if(intensity==="rest") return {available:false,reason:"Recuperação não conta como sessão de treino."};
+    const quality=Math.max(0,Math.min(.999,rng.next()+s.person.discipline/520));
+    const grade=quality>=.88?"A":quality>=.66?"B":quality>=.42?"C":"D";
+    const gm=gradeMultiplier(grade), load=intensity==="hard"?1.28:1;
+    const energyCost=intensity==="hard"?11:6;
+    const xp=(intensity==="hard"?3.8:2.8)*gm*ageFactor(s.person.age)*(root.ProLifeIdentity?.trainingXpMultiplier?.(s,category)||1);
+    const beforeLevel=plan.level; addDevelopmentXp(s,xp);
+    const changes=[];
+    for(const key of category.attrs){
+      changes.push(...progressAttribute(s,key,(automatic?(intensity==="hard"?24:9):(intensity==="hard"?29:22))*gm/category.attrs.length,helpers));
+    }
+    const previous=plan.exerciseGrades[ex.id];
+    if(!previous || gradeRank[grade]>gradeRank[previous]) plan.exerciseGrades[ex.id]=grade;
+    plan.activeMultiplier={exerciseId:ex.id,category:ex.category,action:category.action,value:Math.max(1.03,Math.min(1.35,category.multiplier*gm)),expiresDay:s.day+7,grade};
+    plan.lastTrainingDay=s.day; plan.sessions++;
+    root.ProLifeIdentity?.onTraining?.(s,category);
+    s.person.condition=helpers.clamp(s.person.condition-energyCost,0,100);
+    const result={available:true,automatic,day:s.day,exerciseId:ex.id,exercise:ex.name,grade,xp,energyCost,changes,levelBefore:beforeLevel,levelAfter:plan.level};
+    plan.lastResult=result; plan.recentTraining.unshift(result); plan.recentTraining=plan.recentTraining.slice(0,12);
+    return result;
+  }
+  function daily(s,rng,helpers){
+    const plan=init(s);
+    if(s.mode!=="player" || s.person.injury) return null;
+    if(root.ProLifeNationalTeam?.onDuty?.(s)) return null;
+    // Todo dia simulado executa a rotina canônica de treino, respeitando foco/exercício/intensidade e impedimentos do dia.
+    if(!plan.exerciseId){
+      const compatible=Object.values(exercises).filter(ex=>trainingCategories[ex.category].positions.includes(s.person.pos));
+      const focused=compatible.find(ex=>trainingCategories[ex.category].attrs.includes(s.training));
+      const archetyped=compatible.find(ex=>trainingCategories[ex.category].attrs.some(k=>plan.archetype?.focus?.includes(k)));
+      plan.exerciseId=(focused||archetyped||compatible[0])?.id||null;
+    }
+    if(plan.exerciseId && s.day>plan.lastTrainingDay) return performTraining(s,rng,helpers,{automatic:true});
     return null;
   }
   function matchDevelopment(s, match, helpers) {
     if (s.mode !== "player" || !match?.participants?.flat().includes("hero")) return null;
-    const plan = init(s), rating = Number(match.ratings?.hero || 0);
-    if (rating < 6.5) return null;
-    const events = match.events || [];
-    const goals = events.filter((e) => e.type === "goal" && e.playerId === "hero").length;
-    const assists = events.filter((e) => e.assistPlayerId === "hero").length;
-    let xp = rating >= 8.5 ? 3.2 : rating >= 7.5 ? 2.2 : 1.1;
-    xp += goals * 1.4 + assists;
-    s.trainingProgress += xp;
-    addDevelopmentXp(s, Math.max(0.5, (rating - 6) * 1.4 + goals * 1.5 + assists));
-    if (rating >= 8) { plan.weeklyXI++; plan.accoladePoints += 1; }
-    if (goals) plan.accoladePoints += goals * 0.6;
-    if (assists) plan.accoladePoints += assists * 0.5;
-    const performance = goals ? ["finish", "positioning", "composure", "powerShot"] : assists ? ["pass", "vision", "technique", "ballControl"] : (styleFocus[s.person.style] || core);
-    // Atuações excepcionais podem gerar uma melhoria direta, além do progresso de treino.
-    if (rating >= 8.2 && helpers.overall(s.person) < ceiling(s, helpers)) {
-      const key = performance[Math.floor((rating * 10 + goals + assists) % performance.length)];
-      if (improve(s, key, 1, helpers)) {
-        const parent = related[key]; if (parent && !core.includes(key)) improve(s, parent, 1, helpers);
-        plan.improvements++;
-      }
-    }
-    return { bonus: true, rating, goals, assists, xp };
+    const plan=init(s), matchKey=[match.season||s.season,match.date??s.day,match.competitionId||match.leagueId||"match",match.homeId||"",match.awayId||"",match.round||""].join(":");
+    if(plan.processedMatches.includes(matchKey)) return {duplicate:true,xp:0,changes:[]};
+    plan.processedMatches.push(matchKey); plan.processedMatches=plan.processedMatches.slice(-160);
+    const rating=Number(match.ratings?.hero||0), stats=match.playerStats?.hero||{}, events=match.events||[];
+    const goals=events.filter(e=>e.type==="goal"&&e.playerId==="hero").length;
+    const assists=events.filter(e=>e.assistPlayerId==="hero").length;
+    const minutes=Number(stats.minutes||90), tackles=Number(stats.tackles||0), saves=Number(stats.saves||0);
+    const heroSide=(match.participants?.[0]||[]).includes("hero")?0:1, conceded=heroSide===0?Number(match.ag||0):Number(match.hg||0), cleanSheet=conceded===0?1:0;
+    const motm=rating>=8.3?1:0;
+    let xp=Math.max(0,(rating-5.8)*1.55)+(minutes/90)*.8+motm*.9;
+    let pool=[];
+    if(s.person.pos==="ATA"){ xp+=goals*2.1+assists*1.25; pool=goals?["finish","positioning","composure","powerShot"]:["finish","pace","dribbling","positioning"]; }
+    else if(s.person.pos==="MEI"){ xp+=assists*1.8+goals*1.1+tackles*.12; pool=["pass","vision","ballControl","stamina","technique"]; }
+    else if(s.person.pos==="DEF"){ xp+=tackles*.28+cleanSheet*1.15+goals*.8; pool=["defense","tackling","interception","strength","positioning"]; }
+    else { xp+=saves*.25+cleanSheet*1.35-Math.max(0,conceded-2)*.2; pool=["positioning","composure","jumping","longPass"]; }
+    const mult=plan.activeMultiplier&&plan.activeMultiplier.expiresDay>=s.day?plan.activeMultiplier:null;
+    if(mult){ const relatedAction=mult.action==="goals"?goals:mult.action==="assists"?assists:mult.action==="tackles"?tackles:mult.action==="saves"?saves:mult.action==="minutes"?minutes/90:Math.max(0,rating-6.5); xp+=relatedAction*Math.max(0,mult.value-1); }
+    const offense=match.offensiveStats?.hero||{}, metrics={goals,assists,minutes,tackles,saves,cleanSheet,rating,shots:Number(offense.shots||0),onTarget:Number(offense.onTarget||0),xg:Number(offense.xg||0)};
+    xp+=root.ProLifeIdentity?.matchXpBonus?.(s,metrics,Math.max(.35,xp))||0;
+    xp=Math.max(.35,xp); s.trainingProgress=Math.min(100,(s.trainingProgress||0)+xp); const beforeLevel=plan.level; addDevelopmentXp(s,xp);
+    const changes=[]; const performancePoints=Math.max(2,((rating-6)*4+goals*4+assists*3+tackles*.35+saves*.3+cleanSheet)*3.6);
+    for(const key of pool.slice(0,4)) changes.push(...progressAttribute(s,key,performancePoints/pool.slice(0,4).length,helpers));
+    root.ProLifeIdentity?.onMatch?.(s,metrics);
+    if(rating>=8){plan.weeklyXI++;plan.accoladePoints+=1;} if(goals)plan.accoladePoints+=goals*.6;if(assists)plan.accoladePoints+=assists*.5;
+    return {bonus:true,rating,goals,assists,xp,changes,levelBefore:beforeLevel,levelAfter:plan.level};
   }
   function seasonRewards(s, awards, helpers) {
     if (s.mode !== "player") return 0;
@@ -176,7 +345,7 @@
     if (points) s.person.potential = Math.min(100, Math.max(s.person.potential || 0, helpers.overall(s.person) + 4 + Math.floor(points / 2)));
     return points;
   }
-  const api = { core, skills, groups, styleFocus, archetypes, specializations, expand, groupRatings, init, ceiling, addDevelopmentXp, unlockSpecialization, daily, matchDevelopment, seasonRewards };
+  const api = { core, skills, groups, styleFocus, archetypes, archetypeCatalog, defaultArchetypeId, origins, specializations, trainingCategories, exercises, gradeRank, expand, groupRatings, init, ceiling, addDevelopmentXp, unlockSpecialization, activateSpecialization, MAX_SPECIALIZATIONS, archetypeSpecializations, ageFactor, attributeProgressPercent, mandatoryCommitmentToday, trainingAvailable, performTraining, progressAttribute, daily, matchDevelopment, seasonRewards };
   root.ProLifeTraining = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

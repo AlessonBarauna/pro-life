@@ -13,6 +13,14 @@ Copa do Brasil em mata-mata, estadual do clube da carreira, decisões pessoais e
 agência persistente.
 Leia [mudanças, compatibilidade e limites](docs/ATUALIZACAO_0.4.md).
 
+## Career 2.0 — Etapa 12
+
+Patrocínios, marcas fictícias, popularidade, seguidores e valor comercial agora
+formam um sistema separado da reputação e do valor de mercado. Propostas,
+negociação, exclusividade, contratos, bônus, eventos e renovações usam o agente,
+o calendário, a Inbox e a carteira/ledger já existentes. Veja
+[arquitetura, regras e validação da Etapa 12](docs/ETAPA_12.md).
+
 ## Atualização 0.3
 
 Tema escuro, visão geral detalhada, evolução por período, Séries A/B, janelas,

@@ -7,7 +7,7 @@
       if (s.trainingPlan.developmentXp !== undefined && !finite(s.trainingPlan.developmentXp, 0, 1e9)) fail();
       if (s.trainingPlan.level !== undefined && !finite(s.trainingPlan.level, 1, 30)) fail();
       if (s.trainingPlan.specializationPoints !== undefined && !finite(s.trainingPlan.specializationPoints, 0, 30)) fail();
-      if (s.trainingPlan.specializations !== undefined && (!Array.isArray(s.trainingPlan.specializations) || s.trainingPlan.specializations.length > 3)) fail();
+      if (s.trainingPlan.specializations !== undefined && (!Array.isArray(s.trainingPlan.specializations) || s.trainingPlan.specializations.length > 6)) fail();
     }
     if (s.life) {
       if (!Array.isArray(s.life.events) || s.life.events.length > 80 || !finite(s.life.lastDecisionDay, 0, s.day)) fail();
@@ -52,6 +52,17 @@
       if (!n || typeof n !== "object" || typeof n.country !== "string" || typeof n.calledUp !== "boolean" || typeof n.status !== "string" || !["caps", "starts", "goals", "assists", "ratingTotal", "motm"].every((key) => finite(n[key], 0, 1e9)) || (n.lastCallupDay !== null && !finite(n.lastCallupDay, 0, s.day)) || !finite(n.nextWindow, s.day, s.day + 365) || !Array.isArray(n.matches) || n.matches.length > 100 || !Array.isArray(n.history) || n.history.length > 80) fail();
       for (const match of n.matches) if (!match || !finite(match.day, 0, s.day) || typeof match.opponent !== "string" || typeof match.competition !== "string" || !finite(match.brazil, 0, 30) || !finite(match.other, 0, 30) || !finite(match.minutes, 0, 130) || !finite(match.rating, 0, 10) || !finite(match.goals, 0, 20) || !finite(match.assists, 0, 20)) fail();
       if (n.schedule !== undefined && (!Array.isArray(n.schedule) || n.schedule.length > 24 || !n.schedule.every((match) => match && typeof match.id === "string" && finite(match.day, 0, s.day + 730) && finite(match.windowDay, 0, s.day + 730) && typeof match.opponent === "string" && typeof match.competition === "string" && typeof match.played === "boolean" && typeof match.participated === "boolean" && (match.brazil === null || finite(match.brazil, 0, 30)) && (match.other === null || finite(match.other, 0, 30))))) fail();
+    }
+    if (s.commercial === undefined && root.ProLife?.Commercial) root.ProLife.Commercial.init(s, root.ProLife);
+    if (s.commercial !== undefined) {
+      const c=s.commercial, text=(v,n=300)=>typeof v==="string"&&v.length>0&&v.length<=n;
+      if (!c || !finite(c.popularity,0,100) || !finite(c.followers,0,1e10) || !finite(c.commercialValue,0,1e12) || !finite(c.exposure,0,100) || !finite(c.revenue,0,1e12) || !finite(c.bonusRevenue,0,1e12)) fail();
+      for (const key of ["interests","proposals","negotiations","contracts","events","history","milestones"]) if (!Array.isArray(c[key]) || c[key].length>300) fail();
+      for (const key of ["payments","relations","processed"]) if (!c[key] || typeof c[key]!=="object" || Array.isArray(c[key])) fail();
+      for (const i of c.interests) if (!i || !text(i.brandId,40) || !text(i.stage,40) || !finite(i.score,0,200) || !finite(i.startedDay,0,s.day)) fail();
+      for (const p of c.proposals) if (!p || !text(p.id,160) || !text(p.brandId,40) || !text(p.brand,100) || !text(p.category,80) || !text(p.status,40) || !finite(p.amount,0,1e10) || !finite(p.durationDays,1,5000) || !finite(p.expires,0,s.day+5000) || !Number.isInteger(p.round) || !finite(p.round,0,5)) fail();
+      for (const x of c.contracts) if (!x || !text(x.id,180) || !text(x.brandId,40) || !text(x.brand,100) || !text(x.category,80) || !text(x.status,40) || !finite(x.amount,0,1e10) || !finite(x.startDay,0,s.day+5000) || !finite(x.endDay,x.startDay,s.day+5000) || !finite(x.relationship,0,100)) fail();
+      for (const e of c.events) if (!e || !text(e.id,200) || !text(e.brand,100) || !text(e.type,80) || !text(e.status,40) || !finite(e.day,0,s.day+5000)) fail();
     }
     return s;
   }
