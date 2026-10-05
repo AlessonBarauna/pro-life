@@ -159,7 +159,9 @@ test("Etapa 14: assistente na interface percorre os 6 passos, volta sem perder e
   const order = fs.readFileSync(base + "index.html", "utf8").match(/src="(src\/[^"]+\.js)"/g).map((x) => x.slice(5, -1)).filter((f) => !/update\.js|avatar/.test(f));
   for (const f of order) w.eval(fs.readFileSync(base + f, "utf8"));
   const q = (s) => w.document.querySelector(s), click = (s) => { const el = q(s); assert.ok(el, s); el.click(); };
-  assert.ok(q(".wizard"), "assistente é a tela inicial");
+  assert.ok(q(".career-hub"), "central de carreiras é a tela inicial");
+  click('[data-action="new-player"]');
+  assert.ok(q(".wizard"), "nova carreira de jogador abre o assistente");
   assert.equal(w.document.querySelectorAll(".story-card").length, 6);
   click('[data-w-story="regional"]');
   click("[data-w-next]");
