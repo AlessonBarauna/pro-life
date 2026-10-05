@@ -79,7 +79,9 @@ function click(w, sel) {
   el.click();
 }
 function get(w) {
-  return w.ProLifeSave.parse(w.localStorage.getItem(w.ProLifeSave.KEY));
+  const id = w.ProLifeSave.activeId();
+  assert.ok(id, "deve existir um slot de carreira ativo");
+  return w.ProLifeSave.loadSlot(id);
 }
 for (const mode of ["player", "coach"]) {
   const dom = make(mode),
@@ -258,7 +260,7 @@ const dom = make("player"),
   w = dom.window;
 let s = get(w);
 s.person.name = '<img src=x onerror="globalThis.hacked=true">';
-w.localStorage.setItem(w.ProLifeSave.KEY, JSON.stringify(s));
+w.localStorage.setItem("prolife.v1.slot." + w.ProLifeSave.activeId(), JSON.stringify(s));
 w.eval(fs.readFileSync(base + "src/ui/app.js", "utf8"));
 assert.equal(w.document.querySelectorAll("img").length, 0);
 assert.equal(w.hacked, undefined);
