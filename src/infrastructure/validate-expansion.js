@@ -13,8 +13,12 @@
     if (s.trainingPlan && (!s.trainingPlan.style || !finite(s.trainingPlan.sessions, 0, 1e8) || !finite(s.trainingPlan.improvements, 0, 1e8))) fail();
     if (s.trainingPlan) {
       if (s.trainingPlan.developmentXp !== undefined && !finite(s.trainingPlan.developmentXp, 0, 1e9)) fail();
-      if (s.trainingPlan.level !== undefined && !finite(s.trainingPlan.level, 1, 30)) fail();
-      if (s.trainingPlan.specializationPoints !== undefined && !finite(s.trainingPlan.specializationPoints, 0, 30)) fail();
+      if (s.trainingPlan.level !== undefined && !finite(s.trainingPlan.level, 1, 50)) fail();
+      if (s.trainingPlan.archetypeXp !== undefined && !finite(s.trainingPlan.archetypeXp, 0, 1e9)) fail();
+      if (s.trainingPlan.archetypeLevel !== undefined && !finite(s.trainingPlan.archetypeLevel, 1, 50)) fail();
+      if (s.trainingPlan.attributePoints !== undefined && !finite(s.trainingPlan.attributePoints, 0, 1000)) fail();
+      if (s.trainingPlan.lastPotentialReviewSeason !== undefined && !finite(s.trainingPlan.lastPotentialReviewSeason, 2026, 2300)) fail();
+      if (s.trainingPlan.specializationPoints !== undefined && !finite(s.trainingPlan.specializationPoints, 0, 50)) fail();
       if (s.trainingPlan.specializations !== undefined && (!Array.isArray(s.trainingPlan.specializations) || s.trainingPlan.specializations.length > 6)) fail();
     }
     if (s.life) {

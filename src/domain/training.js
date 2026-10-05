@@ -189,7 +189,10 @@
   }
   function xpForLevel(level) {
     const n = Math.max(1, Math.min(50, Number(level) || 1));
-    return Math.round(18 * Math.pow(n - 1, 1.18));
+    // Mantém os primeiros níveis compatíveis com saves antigos (18 XP por nível)
+    // e aumenta gradualmente o custo após o nível 3.
+    if (n <= 3) return (n - 1) * 18;
+    return Math.round(36 + 18 * Math.pow(n - 3, 1.18));
   }
   function addDevelopmentXp(s, amount) {
     const plan = init(s), before = plan.level;
@@ -200,8 +203,13 @@
     const gained = Math.max(0, plan.level - before);
     if (gained) {
       plan.attributePoints += gained;
-      const oldSpecMilestones = Math.floor(before / 5), newSpecMilestones = Math.floor(plan.level / 5);
-      plan.specializationPoints += Math.max(0, newSpecMilestones - oldSpecMilestones);
+      // Compatibilidade: níveis 2 e 3 continuam concedendo pontos como no Development 2.0.
+      // A partir daí, novas especializações são liberadas em marcos de 5 níveis.
+      const legacyBefore = Math.min(2, Math.max(0, before - 1));
+      const legacyAfter = Math.min(2, Math.max(0, plan.level - 1));
+      const milestoneBefore = Math.max(0, Math.floor(before / 5));
+      const milestoneAfter = Math.max(0, Math.floor(plan.level / 5));
+      plan.specializationPoints += Math.max(0, legacyAfter - legacyBefore) + Math.max(0, milestoneAfter - milestoneBefore);
     }
     return gained;
   }
