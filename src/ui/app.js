@@ -3,7 +3,7 @@
   const D = ProLife,
     A = ProLifeApp,
     S = ProLifeSave;
-  let state = S.load(),
+  let state = null,
     page = "home",
     setup = false,
     classicForm = false;
@@ -297,14 +297,21 @@
     const nav = document.querySelector(".game-nav nav"), on = nav?.querySelector("button.active");
     if (nav && on && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = on.offsetLeft - (nav.clientWidth - on.offsetWidth) / 2;
   }
+  function careerHub() {
+    const slots=S.listSlots?.()||[], active=S.activeId?.();
+    const last=slots.find(x=>x.id===active)||slots[0];
+    const cards=slots.map(x=>`<article class="career-slot ${x.id===active?"active":""}"><div><small>${x.mode==="coach"?"TREINADOR":"JOGADOR"} · TEMPORADA ${x.season}</small><h2>${esc(x.label||x.name)}</h2><p>${esc(x.club)}${x.pos?` · ${esc(x.pos)}`:""} · ${x.age} anos</p><small>Último acesso: ${new Date(x.updatedAt||Date.now()).toLocaleDateString("pt-BR")}</small></div><div class="career-slot-actions"><button class="primary" data-load-slot="${esc(x.id)}">Carregar</button><button data-rename-slot="${esc(x.id)}">Renomear</button><button class="danger" data-delete-slot="${esc(x.id)}">Excluir</button></div></article>`).join("");
+    $("#app").innerHTML=`<div class="landing career-hub"><header><div class="brand">PRO<span>LIFE</span></div><div class="tag">FOOTBALL CAREER</div></header><div class="tag">CENTRAL DE CARREIRAS</div><h1>Escolha sua carreira</h1><p class="intro">Continue de onde parou, carregue outro save ou comece uma nova história.</p>${last?`<section class="career-continue"><div><small>ÚLTIMA CARREIRA</small><h2>${esc(last.label||last.name)}</h2><p>${esc(last.club)} · Temporada ${last.season}</p></div><button class="primary" data-load-slot="${esc(last.id)}">Continuar carreira →</button></section>`:""}<div class="career-hub-actions"><button class="primary" data-action="new-player">Nova carreira de jogador</button><button data-action="new-coach">Nova carreira de treinador</button><button data-action="import">Importar carreira</button></div><section class="career-slots"><div class="split"><div><div class="tag">CARREIRAS SALVAS</div><h2>Carregar carreira</h2></div><span class="pill">${slots.length} save${slots.length===1?"":"s"}</span></div>${cards||'<div class="empty">Nenhuma carreira salva neste aparelho.</div>'}</section><p class="muted">Os saves ficam separados neste navegador. No iPhone, exporte uma carreira se quiser manter uma cópia fora do navegador.</p></div>`;
+  }
   function landing() {
+    if (!setup) { careerHub(); return; }
     if (window.ProLifeCreator && !classicForm) {
       window.ProLifeCreator.mount({
         $, esc, opt, D, C, Charts, avatar, appearanceFields, toast,
         hasSaved: () => !!state,
         classic: () => { classicForm = true; landing(); },
-        confirmReplace: () => !state || confirm("Substituir a carreira atual? Exporte seu save primeiro para guardá-lo."),
-        onStart: (fresh) => { state = fresh; setup = false; page = "home"; persist(); render(); window.scrollTo(0, 0); },
+        confirmReplace: () => true,
+        onStart: (fresh) => { S.saveAsNew?.(fresh); state = fresh; setup = false; page = "home"; persist(); render(); window.scrollTo(0, 0); },
       });
       return;
     }
@@ -455,13 +462,7 @@
           config,
           config.seed ? Number(config.seed) : Date.now(),
         );
-        if (
-          state &&
-          !confirm(
-            "Substituir a carreira atual? Exporte seu save primeiro para guardá-lo.",
-          )
-        )
-          return;
+        S.saveAsNew?.(fresh);
         state = fresh;
         setup = false;
         page = "home";
@@ -804,7 +805,7 @@
       }</section></div>`;
     },
     save() {
-      return `<div class="grid"><section class="card"><h2>Guarde sua história</h2><p>Autosave usa o armazenamento deste navegador. Trocar de navegador, mover o jogo ou limpar dados pode impedir recuperar esse save.</p><div class="actions"><button class="primary" data-action="export">Exportar arquivo JSON</button><button data-action="import">Importar save</button></div><p>Exporte ao encerrar e guarde o JSON numa pasta sua. A importação valida estrutura, versão e dados expandidos.</p><button data-action="new" class="danger">Criar outra carreira</button></section><section class="card"><h2>Guia rápido</h2><p>1. Escolha uma proposta.<br>2. Configure treino ou tática.<br>3. Navegue por competições, estatísticas e prêmios.<br>4. Tome decisões de vida.<br>5. Exporte seu save.</p><p>Versão 0.4 inclui Séries A/B/C/D, cobertura parcial C/D, competições complementares, 27 atributos, estatísticas, prêmios e agência persistente.</p><p class="muted">Não há telemetria, conta, senha ou pagamentos reais.</p></section></div>`;
+      return `<div class="grid"><section class="card"><h2>Guarde sua história</h2><p>Autosave usa o armazenamento deste navegador. Trocar de navegador, mover o jogo ou limpar dados pode impedir recuperar esse save.</p><div class="actions"><button class="primary" data-action="export">Exportar arquivo JSON</button><button data-action="import">Importar save</button></div><p>Exporte ao encerrar e guarde o JSON numa pasta sua. A importação valida estrutura, versão e dados expandidos.</p><button data-action="careers">Selecionar outra carreira</button><button data-action="new" class="danger">Criar nova carreira</button></section><section class="card"><h2>Guia rápido</h2><p>1. Escolha uma proposta.<br>2. Configure treino ou tática.<br>3. Navegue por competições, estatísticas e prêmios.<br>4. Tome decisões de vida.<br>5. Exporte seu save.</p><p>Versão 0.4 inclui Séries A/B/C/D, cobertura parcial C/D, competições complementares, 27 atributos, estatísticas, prêmios e agência persistente.</p><p class="muted">Não há telemetria, conta, senha ou pagamentos reais.</p></section></div>`;
     },
   };
   function news(n) {
@@ -853,11 +854,7 @@
         if (f.size > 3000000)
           throw Error("Arquivo muito grande. Limite: 3 MB.");
         const parsed = S.parse(await f.text());
-        if (
-          state &&
-          !confirm("Substituir a carreira atual pelo arquivo importado?")
-        )
-          return;
+        S.saveAsNew?.(parsed);
         state = parsed;
         setup = false;
         page = "home";
@@ -873,6 +870,22 @@
   document.addEventListener("click", (e) => {
     const b = e.target.closest("button");
     if (!b) return;
+    if (b.dataset.loadSlot) {
+      const loaded=S.loadSlot?.(b.dataset.loadSlot);
+      if(!loaded){toast("Não foi possível carregar esta carreira.");return;}
+      state=loaded; setup=false; page="home"; render(); return;
+    }
+    if (b.dataset.deleteSlot) {
+      if(!confirm("Excluir esta carreira deste aparelho? Esta ação não pode ser desfeita.")) return;
+      const deleting=b.dataset.deleteSlot, wasActive=S.activeId?.()===deleting;
+      S.removeSlot?.(deleting); if(wasActive) state=null; render(); return;
+    }
+    if (b.dataset.renameSlot) {
+      const slots=S.listSlots?.()||[], slot=slots.find(x=>x.id===b.dataset.renameSlot);
+      const name=prompt("Nome desta carreira:",slot?.label||slot?.name||"Carreira");
+      if(name!==null&&String(name).trim()) S.renameSlot?.(b.dataset.renameSlot,name);
+      render(); return;
+    }
     if (b.dataset.recentMatch !== undefined) {
       const x=(window.__proLifeRecentMatches||[])[Number(b.dataset.recentMatch)], box=document.getElementById("recent-match-detail");
       if(!x||!box) return;
@@ -1044,12 +1057,22 @@
         render();
         break;
       case "new":
+      case "new-player":
         classicForm = false;
         window.ProLifeCreator?.reset();
         setup = true;
         render();
         break;
+      case "new-coach":
+        classicForm = true;
+        setup = true;
+        render();
+        setTimeout(()=>{const mode=document.getElementById("mode");if(mode){mode.value="coach";mode.dispatchEvent(new Event("change",{bubbles:true}));}},0);
+        break;
+      case "careers":
+        state = null; setup = false; S.clearActive?.(); render(); break;
       case "resume":
+        if(!state){const id=S.activeId?.(); state=id?S.loadSlot?.(id):null;}
         setup = false;
         render();
         break;
