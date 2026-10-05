@@ -41,8 +41,16 @@ function make(mode) {
   w.URL.createObjectURL = () => "blob:test";
   w.URL.revokeObjectURL = () => {};
   files.forEach((f) => w.eval(fs.readFileSync(base + f, "utf8")));
-  w.document.querySelector("[data-w-coach]").click();
+  const newCareer = w.document.querySelector(mode === "coach" ? '[data-action="new-coach"]' : '[data-action="new-player"]');
+  assert.ok(newCareer, "Central de Carreiras deve oferecer nova carreira");
+  newCareer.click();
+  if (mode === "player") {
+    const classic = w.document.querySelector("[data-w-coach]");
+    assert.ok(classic, "Criador de jogador deve permitir abrir o formulário clássico");
+    classic.click();
+  }
   const form = w.document.querySelector("#creator");
+  assert.ok(form, "Formulário de criação deve abrir");
   form.elements.mode.value = mode;
   form.elements.age.value = mode === "coach" ? "35" : "16";
   form.elements.seed.value = "44";
