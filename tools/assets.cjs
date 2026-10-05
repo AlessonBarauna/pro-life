@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 const files = [
   "index.html",
   "manifest.webmanifest",
@@ -23,6 +23,7 @@ const files = [
   "src/ui/charts.js",
   "src/domain/engine.js",
   "src/domain/player-profile.js",
+  "src/domain/physical.js",
   "src/application/game.js",
   "src/infrastructure/save.js",
   "src/infrastructure/codec.js",

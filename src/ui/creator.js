@@ -8,11 +8,23 @@
   let W = null;
 
   function freshSeed() { return (Date.now() >>> 0) || 1; }
+  function birthDateForAge(age) {
+    const y = 2026 - Number(age || 18);
+    return `${y}-01-01`;
+  }
+  function ageFromBirthDate(value) {
+    const m = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return null;
+    const y=Number(m[1]), mo=Number(m[2]), d=Number(m[3]);
+    let age=2026-y;
+    if (1<mo || (mo===1 && 1<d)) age--;
+    return age;
+  }
   function init(ctx, keepSeed) {
     const D = ctx.D, id = "blank", story = D.Training.origins[id].story;
     W = {
       step: 0, seed: keepSeed || freshSeed(), storyId: id, difficulty: "normal", personality: "balanced",
-      cfg: { name: "Alesson Rodrigues", city: "Mogi das Cruzes", age: story.age, pos: "ATA", foot: "right", height: 178, weight: 72, style: "Técnico", celebration: "Braços abertos", archetypeId: null, appearance: { ...ctx.C.normalize({}) } },
+      cfg: { name: "Alesson Rodrigues", city: "Mogi das Cruzes", age: story.age, birthDate: birthDateForAge(story.age), pos: "ATA", foot: "right", height: 178, weight: 72, style: "Técnico", celebration: "Braços abertos", archetypeId: null, appearance: { ...ctx.C.normalize({}) } },
       points: {}, custom: { age: 18, overall: 64, reputation: 12, popularity: 5, wallet: 5000 },
       clubId: null, cache: null,
     };
@@ -21,7 +33,10 @@
   // Configuração que alimenta o domínio. Mesma entrada + mesma seed ⇒ mesmo resultado.
   function config(withClub) {
     const c = { mode: "player", ...W.cfg, origin: W.storyId, points: { ...W.points }, creation: { difficulty: W.difficulty, personality: W.personality, custom: W.storyId === "custom" ? { ...W.custom } : undefined } };
-    if (W.storyId === "custom") c.age = W.custom.age;
+    if (W.storyId === "custom") {
+      c.age = W.custom.age;
+      c.birthDate = W.cfg.birthDate || birthDateForAge(W.custom.age);
+    }
     if (withClub && W.clubId) c.clubId = W.clubId;
     return c;
   }
@@ -52,14 +67,16 @@
     let custom = "";
     if (W.storyId === "custom") {
       const s = D.Creation.sanitizeCustom(W.custom);
-      custom = `<section class="card w-custom"><h3>HISTÓRIA PERSONALIZADA</h3><div class="formgrid">${[["age", "Idade", 16, 32], ["overall", "Overall", 45, 80], ["reputation", "Reputação", 0, 60], ["popularity", "Popularidade", 0, 45], ["wallet", "Patrimônio (R$)", 0, 40000]].map(([k, l, a, b]) => `<label>${l}<input type="number" min="${a}" max="${b}" data-w-custom="${k}" value="${W.custom[k]}"></label>`).join("")}</div><p class="muted">Aplicado: ${s.age} anos · overall ${s.overall} · reputação ${s.reputation} · popularidade ${s.popularity} · ${money(s.wallet)}</p>${s.notes.map((n) => `<div class="notice">${esc(n)}</div>`).join("")}</section>`;
+      custom = `<section class="card w-custom"><h3>HISTÓRIA PERSONALIZADA</h3><div class="formgrid">${[["age", "Idade", 14, 32], ["overall", "Overall", 45, 80], ["reputation", "Reputação", 0, 60], ["popularity", "Popularidade", 0, 45], ["wallet", "Patrimônio (R$)", 0, 40000]].map(([k, l, a, b]) => `<label>${l}<input type="number" min="${a}" max="${b}" data-w-custom="${k}" value="${W.custom[k]}"></label>`).join("")}</div><p class="muted">Aplicado: ${s.age} anos · overall ${s.overall} · reputação ${s.reputation} · popularidade ${s.popularity} · ${money(s.wallet)}</p>${s.notes.map((n) => `<div class="notice">${esc(n)}</div>`).join("")}</section>`;
     }
     return `<h2>Escolha sua história</h2><div class="story-grid">${cards}</div>${custom}<h3>Dificuldade</h3><div class="chips">${diffs}</div><p class="muted">${esc(D.Creation.difficulties[W.difficulty].description)} A dificuldade é separada da origem e nunca altera o resultado das partidas.</p>`;
   }
   function stepPlayer(ctx) {
     const { D, esc, opt, appearanceFields, C } = ctx, c = W.cfg, st = D.Training.origins[W.storyId].story;
-    const [minA, maxA] = W.storyId === "custom" ? [16, 32] : st.ages;
-    const ageField = W.storyId === "custom" ? `<label>Idade<input type="number" disabled value="${W.custom.age}"></label>` : `<label>Idade (${minA}–${maxA})<input type="number" name="age" min="${minA}" max="${maxA}" value="${c.age}"></label>`;
+    const [minA, maxA] = W.storyId === "custom" ? [14, 32] : [14, st.ages[1]];
+    const minBirthYear=2026-maxA, maxBirthYear=2026-minA;
+    const birthValue=c.birthDate||birthDateForAge(c.age);
+    const ageField = `<label>Data de nascimento<input type="date" name="birthDate" min="${minBirthYear}-01-01" max="${maxBirthYear}-12-31" value="${birthValue}" required></label><label>Idade<input type="number" name="age" value="${c.age}" disabled></label>`;
     return `<h2>Quem é você?</h2><div class="grid"><section class="card"><div class="formgrid"><label>Nome completo<input name="name" maxlength="60" value="${esc(c.name)}"></label><label>Cidade natal<input name="city" maxlength="60" value="${esc(c.city)}"></label>${ageField}<label>Pé dominante<select name="foot">${opt([["right", "Direito"], ["left", "Esquerdo"]], c.foot)}</select></label><label>Altura (cm)<input name="height" type="number" min="150" max="210" value="${c.height}"></label><label>Peso (kg)<input name="weight" type="number" min="45" max="120" value="${c.weight}"></label></div></section><section class="card"><div id="w-avatar"></div>${appearanceFields(c.appearance)}</section></div>`;
   }
   function stepPosition(ctx) {
@@ -112,10 +129,18 @@
   }
   function onInput(ctx, e) {
     const t = e.target, n = t.name, c = W.cfg;
-    if (t.dataset.wCustom) { W.custom[t.dataset.wCustom] = Number(t.value); return; }
+    if (t.dataset.wCustom) {
+      W.custom[t.dataset.wCustom] = Number(t.value);
+      if(t.dataset.wCustom==="age"){W.cfg.age=W.custom.age;W.cfg.birthDate=birthDateForAge(W.custom.age);}
+      return;
+    }
     if (!n) return;
     if (["name", "city", "foot", "celebration"].includes(n)) c[n] = t.value;
-    else if (["height", "weight", "age"].includes(n)) c[n] = Number(t.value);
+    else if (n === "birthDate") {
+      const age=ageFromBirthDate(t.value);
+      if(age!==null){ c.birthDate=t.value; c.age=age; if(W.storyId==="custom") W.custom.age=age; }
+    }
+    else if (["height", "weight"].includes(n)) c[n] = Number(t.value);
     else if (["skin", "hairColor", "eyeColor", "hair", "beard", "body", "accessory", "tattoo"].includes(n)) { c.appearance[n] = t.value; mountAvatar(ctx); }
   }
   function onClick(ctx, e) {
@@ -123,7 +148,7 @@
     if (!b) return;
     const d = b.dataset, D = ctx.D;
     if (d.wStory) {
-      W.storyId = d.wStory; const st = D.Training.origins[W.storyId].story; W.cfg.age = st.age; W.clubId = null;
+      W.storyId = d.wStory; const st = D.Training.origins[W.storyId].story; W.cfg.age = st.age; W.cfg.birthDate = birthDateForAge(st.age); W.clubId = null;
     } else if (d.wDiff) W.difficulty = d.wDiff;
     else if (d.wPos) { W.cfg.pos = d.wPos; W.cfg.archetypeId = D.Training.defaultArchetypeId[d.wPos]; W.points = {}; W.clubId = null; }
     else if (d.wStyle) W.cfg.style = d.wStyle;

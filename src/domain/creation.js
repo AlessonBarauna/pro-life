@@ -44,7 +44,7 @@
   // Modo personalizado: valores controlados; nunca produz estado impossível. Devolve também o que foi ajustado.
   function sanitizeCustom(input = {}) {
     const notes = [], num = (v, d) => (Number.isFinite(Number(v)) && v !== "" && v !== null && v !== undefined ? Number(v) : d);
-    const age = clamp(Math.round(num(input.age, 18)), 16, 32);
+    const age = clamp(Math.round(num(input.age, 18)), 14, 32);
     const cap = maxOverallForAge(age);
     let overall = clamp(Math.round(num(input.overall, 64)), 45, 80);
     if (overall > cap) { overall = cap; notes.push(`Aos ${age} anos o overall máximo realista é ${cap}.`); }
@@ -56,7 +56,7 @@
     const wallet = clamp(Math.round(num(input.wallet, 5000)), 0, 40000);
     return { age, overall, reputation, popularity, wallet, notes };
   }
-  function ageRange(storyId, story) { return storyId === "custom" ? story.ages : story.ages; }
+  function ageRange(storyId, story) { return [14, story.ages[1]]; }
 
   // Geração de atributos: perfil por posição + arquétipo + estilo + variação semeada, normalizado ao overall alvo.
   function buildAttributes(api, { pos, archetypeId, style, target, age, points }, rng) {

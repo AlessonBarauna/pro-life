@@ -1,0 +1,4 @@
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const e=fs.readFileSync(path.join(__dirname,"../src/domain/engine.js"),"utf8"),a=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+test("registro so recebe confirmacao depois de Career.transfer",()=>{assert.match(e,/Career\.transfer\(s, s\.person, previous, next, fee\);[\s\S]{0,500}status="CONFIRMED"/)});
+test("recusa remove registro fantasma criado no mesmo fluxo",()=>{assert.match(a,/career\.transfers=career\.transfers\.filter/);assert.match(a,/command\("reject"/)});

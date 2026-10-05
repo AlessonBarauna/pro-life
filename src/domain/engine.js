@@ -34,6 +34,9 @@
   const Squad =
     root.ProLifeSquad ||
     (typeof require === "function" ? require("./squad.js") : null);
+  const Physical =
+    root.ProLifePhysical ||
+    (typeof require === "function" ? require("./physical.js") : null);
   const NationalTeam =
     root.ProLifeNationalTeam ||
     (typeof require === "function" ? require("./national-team.js") : null);
@@ -321,6 +324,7 @@
       originName: mode === "player" ? (plan ? plan.story.title : origin.name) : null,
       archetypeId: mode === "player" ? (plan ? plan.archetypeId : config.archetypeId || Training?.defaultArchetypeId?.[config.pos] || "maestro") : null,
       celebration: config.celebration || "Braços abertos",
+      birthDate: (()=>{const age=plan ? plan.age : clamp(Number(config.age)||(origin.age||16),14,35), raw=String(config.birthDate||""); const m=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/); return m?{year:Number(m[1]),month:Number(m[2]),day:Number(m[3])}:{year:2026-age,month:1,day:1};})(),
     };
     let s = {
       version: VERSION,
@@ -365,6 +369,7 @@
       offers: [],
       history: [],
       decision: null,
+      birthday: { lastCelebratedYear:null, history:[] },
       development: [
         {
           day: 0,
@@ -461,12 +466,26 @@
     if (acceptedOffer.transferType === "loan" && previous) { acceptedOffer.parentClubId=previous.id; acceptedOffer.parentSalary=previousSalary; acceptedOffer.parentContractRemaining=Math.max(previousContract, acceptedOffer.durationDays+30); }
     s.salary = salary;
     Career.signContract(s, acceptedOffer);
+    // Novo clube, nova hierarquia: reputação e contrato influenciam a primeira impressão,
+    // mas o atleta precisa conquistar o status esportivo com treino e partidas neste clube.
+    if (s.mode === "player" && previous && previous.id !== next.id) {
+      const pc = Career.init(s).playerCareer;
+      const promised = acceptedOffer.squadRole || acceptedOffer.role || "Rotação";
+      const promiseBoost = {"Fora dos planos":0,"Reserva":0,"Rotação":1,"Titular":4,"Importante":6,"Estrela":7}[promised] || 0;
+      const reputationBoost = clamp(Math.round((Number(s.reputation || 50) - 50) / 25), -2, 2);
+      pc.coachTrust = clamp(51 + promiseBoost + reputationBoost, 42, 60);
+      pc.clubArrival = { clubId: next.id, day: s.day, promisedRole: promised, initialTrust: pc.coachTrust };
+      Career.updatePlayerRole(s);
+    }
     s.offers = [];
     s.board = 65;
     Competitions?.ensureState(s);
     const transferType = acceptedOffer.transferType || "permanent";
     const fee = Career.transferValue(s, previous, next, previous ? transferType : "free");
     Career.transfer(s, s.person, previous, next, fee);
+    const careerAfterTransfer=Career.init(s);
+    const confirmedRecord=(careerAfterTransfer.transfers||[]).find(t=>t.player===s.person.name&&Number(t.day)===Number(s.day)&&t.to===next.name);
+    if(confirmedRecord){confirmedRecord.status="CONFIRMED";confirmedRecord.accepted=true;confirmedRecord.confirmedDay=s.day;}
     if (s.mode === "player") { Career.clearAgreement(s); Career.updatePlayerRole(s); }
     if (s.creation?.status === "unsigned") Creation.registerStart(s, API);
     log(
@@ -481,7 +500,7 @@
     );
   }
   function selected(c) {
-    const active = c.roster.filter((p) => !p.injury && !(p.suspension > 0) && p.condition > 35);
+    const active = c.roster.filter((p) => !p.injury && !(p.suspension > 0) && !p._competitionSuspended && p.condition > 35);
     let chosen = c.lineup
       .map((id) => active.find((p) => p.id === id))
       .filter(Boolean);
@@ -581,6 +600,8 @@
             const trust = clamp(pc?.coachTrust ?? 50, 0, 100);
             const morale = clamp(p.morale ?? 50, 0, 100);
             protagonism *= 0.82 + trust / 260 + morale / 500;
+            if (p.archetypeId === "finisher") protagonism *= 1.16;
+            else if (p.archetypeId === "nine") protagonism *= 1.09;
           }
           return Math.max(1, role * relativeQuality * protagonism * (g.finish * 0.5 + g.pace * 0.16 + (p.attrs.positioning ?? (((p.attrs.pass ?? g.pass) + (p.attrs.finish ?? g.finish)) / 2)) * 0.34));
         });
@@ -604,7 +625,8 @@
         if (onTarget) { m.target[i]++; m.offensiveStats[shooter.id].onTarget++; }
         const heroTrust = context && shooter.id === "hero" ? clamp(Career.init(context).playerCareer?.coachTrust ?? 50, 0, 100) : 50;
         const heroMorale = context && shooter.id === "hero" ? clamp(shooter.morale ?? 50, 0, 100) : 50;
-        const conversionBoost = shooter.id === "hero" && context ? (0.9 + heroTrust / 500 + heroMorale / 1000) : 1;
+        const archetypeFinish = shooter.id === "hero" && shooter.archetypeId === "finisher" ? 1.12 : shooter.id === "hero" && shooter.archetypeId === "nine" ? 1.06 : 1;
+        const conversionBoost = shooter.id === "hero" && context ? (0.9 + heroTrust / 500 + heroMorale / 1000) * archetypeFinish : 1;
         const conversion = clamp(
           shotXg *
             (0.82 + finish / 310) * conversionBoost *
@@ -649,46 +671,60 @@
             text: "Defesa importante de " + (keeper?.name || "goleiro") + ".",
           });
       }
-      if (minute === 65 && context && [home.id,away.id].includes(context.clubId)) {
+      if (context && [home.id,away.id].includes(context.clubId)) {
         const heroSide=home.id===context.clubId?0:1, heroSquad=squads[heroSide], ownClub=clubs[heroSide];
         const hero=ownClub.roster.find(p=>p.id==="hero"), pc=Career.init(context).playerCareer;
         if(hero && !hero.injury && !(hero.suspension>0)){
-          const on=heroSquad.some(p=>p.id==="hero");
-          if(!on){
+          const on=heroSquad.some(p=>p.id==="hero"), subPlan=Squad?.substitutePlan?.(context,hero)||{minute:65,chance:clamp(.35+(pc.coachTrust-50)/120+(hero.morale-50)/180,.15,.9)};
+          if(!on && minute===subPlan.minute){
             const eligible=pc.matchSelection?.bench?.includes("hero");
-            const chance=clamp(.35+(pc.coachTrust-50)/120+(hero.morale-50)/180, .15,.9);
-            if(eligible && rng.next()<chance){
+            // Se foi relacionado no banco, recebe minutos para ganhar experiencia.
+            if(eligible){
               let idx=heroSquad.findIndex(p=>p.pos===hero.pos); if(idx<0)idx=heroSquad.length-1;
               const out=heroSquad[idx]; heroSquad[idx]=hero;
               if(m.participation[out.id]){m.participation[out.id].exitMinute=minute;m.participation[out.id].minutes=minute-m.participation[out.id].entryMinute;}
               m.participation.hero={side:heroSide,starter:false,entryMinute:minute,exitMinute:94,minutes:94-minute};m.participants[heroSide].push("hero");
               m.events.push({minute,type:"substitution",side:heroSide,player:hero.name,playerId:"hero",outPlayer:out.name,outPlayerId:out.id,text:`Substituição: sai ${out.name}, entra ${hero.name}.`});
             }
-          } else if(hero.condition<58 && rng.next()<.7){
+          } else if(on && minute===65 && hero.condition<58 && rng.next()<.7){
             const sub=ownClub.roster.filter(x=>!heroSquad.includes(x)&&!x.injury&&!(x.suspension>0)&&x.pos===hero.pos).sort((a,b)=>overall(b)-overall(a))[0];
             if(sub){const idx=heroSquad.findIndex(p=>p.id==="hero");heroSquad[idx]=sub;m.participation.hero.exitMinute=minute;m.participation.hero.minutes=minute;m.participation[sub.id]={side:heroSide,starter:false,entryMinute:minute,exitMinute:94,minutes:94-minute};m.participants[heroSide].push(sub.id);m.events.push({minute,type:"substitution",side:heroSide,player:sub.name,playerId:sub.id,outPlayer:hero.name,outPlayerId:"hero",text:`Substituição: sai ${hero.name}, entra ${sub.name}.`});}
           }
         }
       }
       if (rng.next() < 0.012 && ps.length) {
-        let p = rng.pick(ps);
-        if (rng.next() > p.discipline / 120)
-          m.events.push({
-            minute,
-            type: "yellow",
-            side: i,
-            player: p.name,
-            text: p.name + " recebeu cartão amarelo.",
-          });
+        const eligible=ps.filter(p=>!m.events.some(ev=>ev.type==="red"&&ev.playerId===p.id));
+        let p = eligible.length ? rng.pick(eligible) : null;
+        if (p && rng.next() > p.discipline / 120) {
+          const previousYellow=m.events.some(ev=>ev.type==="yellow"&&ev.playerId===p.id);
+          m.events.push({minute,type:"yellow",side:i,player:p.name,playerId:p.id,text:p.name+" recebeu cartão amarelo."});
+          if(previousYellow){
+            m.events.push({minute,type:"red",reason:"second-yellow",side:i,player:p.name,playerId:p.id,text:p.name+" recebeu o segundo amarelo e foi expulso."});
+            const idx=ps.findIndex(x=>x.id===p.id); if(idx>=0)ps.splice(idx,1);
+            if(m.participation[p.id]){m.participation[p.id].exitMinute=minute;m.participation[p.id].minutes=Math.max(1,minute-m.participation[p.id].entryMinute);}
+          }
+        }
       }
-      if (rng.next() < 0.0018 && ps.length) {
+      if (rng.next() < 0.00065 && ps.length) {
+        const eligible=ps.filter(p=>!m.events.some(ev=>ev.type==="red"&&ev.playerId===p.id));
+        const p=eligible.length?rng.pick(eligible):null;
+        if(p && rng.next() > (p.discipline||60)/150){
+          m.events.push({minute,type:"red",reason:"direct",side:i,player:p.name,playerId:p.id,text:p.name+" recebeu cartão vermelho direto."});
+          const idx=ps.findIndex(x=>x.id===p.id); if(idx>=0)ps.splice(idx,1);
+          if(m.participation[p.id]){m.participation[p.id].exitMinute=minute;m.participation[p.id].minutes=Math.max(1,minute-m.participation[p.id].entryMinute);}
+        }
+      }
+      if (ps.length) {
         let p = rng.pick(ps);
-        p.injury = rng.int(3, 25);
+        const injuryChance = Physical?.risk ? Physical.risk(p, "match") : 0.0018;
+        if (rng.next() < injuryChance) {
+        const diagnosed = Physical?.injure?.(p, rng, context?.day ?? 0, "partida");
+        if (!diagnosed) p.injury = rng.int(3, 25);
         m.events.push({
           minute,
           type: "injury",
           side: i,
-          text: p.name + " sofreu uma lesão (" + p.injury + " dias).",
+          text: p.name + " sofreu " + (diagnosed?.name || "uma lesão") + " (" + p.injury + " dias).",
         });
         const sub = clubs[i].roster.find(
           (x) => !ps.includes(x) && !x.injury && x.pos === p.pos,
@@ -700,17 +736,19 @@
           m.participants[i].push(sub.id);
           m.events.push({minute,type:"substitution",side:i,player:sub.name,playerId:sub.id,outPlayer:p.name,outPlayerId:p.id,text:`Substituição: sai ${p.name}, entra ${sub.name}.`});
         }
+        }
       }
     }
     for (const [id,part] of Object.entries(m.participation)) {
       const p=clubs[part.side].roster.find(x=>x.id===id); if(!p)continue;
       const minutes=Math.max(0,Math.min(94,Number(part.exitMinute??94)-Number(part.entryMinute??0)));part.minutes=minutes;
-      p.condition=clamp(p.condition-rng.int(15,28)*(minutes/94),0,100);p.minutes+=minutes;
+      p.condition=clamp(p.condition-rng.int(15,28)*(minutes/94),0,100); Physical?.matchLoad?.(p,minutes); p.minutes+=minutes;
       const groups=Training?.groupRatings?Training.groupRatings(p.attrs):p.attrs,
         saves=m.events.filter(e=>e.type==="save"&&e.playerId===p.id).length,
         tackleBase=p.pos==="DEF"?1.8:p.pos==="MEI"?1.05:p.pos==="ATA"?.38:0,
-        tackles=p.pos==="GOL"?0:Math.max(0,Math.round(tackleBase*(groups.defense||50)/25+rng.next()*2-.7));
-      m.playerStats[p.id]={saves,tackles,minutes,starter:!!part.starter,entryMinute:part.entryMinute,exitMinute:part.exitMinute};
+        tackles=p.pos==="GOL"?0:Math.max(0,Math.round(tackleBase*(groups.defense||50)/25+rng.next()*2-.7)),
+        assists=m.events.filter(ev=>ev.type==="goal"&&ev.assistPlayerId===p.id).length;
+      m.playerStats[p.id]={saves,tackles,assists,minutes,starter:!!part.starter,entryMinute:part.entryMinute,exitMinute:part.exitMinute};
       m.ratings[p.id]=+clamp(6+(part.side===0?m.hg-m.ag:m.ag-m.hg)*.2+rng.next()*.8+m.events.filter(e=>e.playerId===p.id&&e.type==="goal").length*.8+saves*.08+tackles*.035,3,10).toFixed(1);
     }
     m.xg = m.xg.map((x) => +x.toFixed(2));
@@ -745,13 +783,127 @@
           a.name.localeCompare(b.name),
       );
   }
+  function competitionDisciplineKey(meta={}) {
+    return String(meta.competitionId || meta.leagueId || meta.competitionName || "geral");
+  }
+  function disciplineState(p) {
+    p.disciplineState ||= { competitions:{} };
+    p.disciplineState.competitions ||= {};
+    return p.disciplineState;
+  }
+  function disciplineCompetition(p,key) {
+    const d=disciplineState(p);
+    d.competitions[key] ||= { yellows:0, suspensions:0, yellowTotal:0, redTotal:0 };
+    return d.competitions[key];
+  }
+  function isSuspendedFor(p,key) { return Number(disciplineCompetition(p,key).suspensions||0)>0; }
+  function processDiscipline(s,m,meta,home,away) {
+    const key=competitionDisciplineKey(meta), all=[...(home?.roster||[]),...(away?.roster||[])];
+    const byId=new Map(all.map(p=>[p.id,p]));
+    const grouped=new Map();
+    for(const ev of (m.events||[]).filter(ev=>["yellow","red"].includes(ev.type)&&ev.playerId)){
+      const g=grouped.get(ev.playerId)||{yellows:[],directRed:false,secondYellowRed:false};
+      if(ev.type==="yellow") g.yellows.push(ev);
+      if(ev.type==="red"){ if(ev.reason==="second-yellow")g.secondYellowRed=true; else g.directRed=true; }
+      grouped.set(ev.playerId,g);
+    }
+    for(const [id,g] of grouped){
+      const p=byId.get(id); if(!p)continue;
+      const d=disciplineCompetition(p,key);
+      d.yellowTotal+=g.yellows.length; d.redTotal+=(g.directRed||g.secondYellowRed)?1:0;
+      if(g.secondYellowRed){
+        // No Brasil, os dois amarelos que produzem o vermelho não entram na série de 3.
+        d.suspensions+=1;
+      } else {
+        d.yellows+=g.yellows.length;
+        if(g.directRed) d.suspensions+=1;
+        while(d.yellows>=3){d.yellows-=3;d.suspensions+=1;}
+      }
+      d.lastDay=s.day;
+    }
+    m.disciplineKey=key;
+  }
+  function prepareDisciplineAvailability(s,team,meta) {
+    const key=competitionDisciplineKey(meta);
+    for(const p of (team?.roster||[])) p._competitionSuspended=isSuspendedFor(p,key);
+    return key;
+  }
+  function serveDisciplineSuspensions(team,key) {
+    for(const p of (team?.roster||[])){
+      if(p._competitionSuspended){
+        const d=disciplineCompetition(p,key); d.suspensions=Math.max(0,d.suspensions-1);
+      }
+      delete p._competitionSuspended;
+    }
+  }
+  function captaincy(s, team = club(s)) {
+    if (!team) return { captain:null, vice:null, ranking:[], heroRank:null, heroScore:null };
+    const pc=s.mode==="player" ? Career.init(s).playerCareer : null;
+    const arrivalDay=pc?.clubArrival?.clubId===team.id ? Number(pc.clubArrival.day||s.day) : null;
+    const heroYears=arrivalDay==null ? 0 : Math.max(0,(s.day-arrivalDay)/365);
+    const score=(p)=>{
+      const age=Math.max(14,Number(p.age||24)), ovr=overall(p), form=Number(p.form||6.5);
+      const years=p.id==="hero" ? heroYears : Math.max(0,Number(p.clubYears ?? p.yearsAtClub ?? Math.max(0,(age-20)*0.45)));
+      const experience=Math.min(12,Math.max(0,age-20));
+      const positionLeadership=["GOL","DEF","MEI"].includes(p.pos)?4:1;
+      const regularity=Math.max(0,Math.min(8,(form-6)*4));
+      const heroRole=p.id==="hero" ? ({Estrela:8,Importante:6,Titular:4,Rotação:2,Reserva:0,"Fora dos planos":-5}[pc?.squadRole]||0) : 3;
+      // Longevidade e experiência pesam mais; GER/status e forma apenas complementam.
+      return +(years*7 + experience*2.1 + ovr*.32 + positionLeadership + regularity + heroRole).toFixed(2);
+    };
+    const ranking=(team.roster||[]).filter(p=>!p.injury).map(p=>({player:p,score:score(p)})).sort((x,y)=>y.score-x.score || overall(y.player)-overall(x.player));
+    const captain=ranking[0]?.player||null, vice=ranking[1]?.player||null, heroIndex=ranking.findIndex(x=>x.player.id==="hero");
+    return {captain,vice,ranking,heroRank:heroIndex>=0?heroIndex+1:null,heroScore:heroIndex>=0?ranking[heroIndex].score:null,heroYears:+heroYears.toFixed(1)};
+  }
   function preparePlayerLineup(s, rng, homeId, awayId) {
     if (s.mode !== "player" || !s.clubId || ![homeId, awayId].includes(s.clubId)) return;
     const c = club(s), pc = Career.init(s).playerCareer;
     const selection = Squad?.choose ? Squad.choose(s,c) : null;
     if (selection) {
+      const opponent = club(s, homeId === s.clubId ? awayId : homeId);
+      const arrivalDays = pc.clubArrival?.clubId === s.clubId ? Math.max(0, s.day - Number(pc.clubArrival.day || 0)) : 999;
+      const heroAvailable = !s.person.injury && !(s.person.suspension > 0) && !s.person._competitionSuspended && s.person.condition > 35;
+      const selectedAlready = selection.starters.some(p=>p.id==="hero") || selection.bench.some(p=>p.id==="hero");
+      const favorableMatch = Number(c.structure || 50) - Number(opponent?.structure || 50) >= 8;
+      const developmentPlayer = s.person.age <= 21 || arrivalDays <= 180;
+      const earnedOpportunity = Number(pc.coachTrust || 0) >= 45;
+      if (heroAvailable && !selectedAlready && favorableMatch && developmentPlayer && earnedOpportunity && selection.bench.length) {
+        selection.bench[selection.bench.length - 1] = s.person;
+      }
+
+      // A hierarquia do elenco e a escalação agora falam a mesma língua.
+      // Titular/Importante/Estrela: se disponível, precisa estar no XI.
+      // Rotação/Reserva: se disponível, precisa ao menos estar relacionado no banco.
+      const hierarchy = pc.squadRole || "Fora dos planos";
+      const starterRole = ["Titular","Importante","Estrela"].includes(hierarchy);
+      const benchRole = ["Reserva","Rotação"].includes(hierarchy);
+      const heroInXI = selection.starters.some(p=>p.id==="hero");
+      const heroInBench = selection.bench.some(p=>p.id==="hero");
+
+      if (heroAvailable && starterRole && !heroInXI) {
+        // Retira o jogador da reserva, se necessário, e troca pelo concorrente mais fraco
+        // da mesma posição (ou pelo último do XI como fallback).
+        const benchHero = selection.bench.findIndex(p=>p.id==="hero");
+        if (benchHero >= 0) selection.bench.splice(benchHero,1);
+        let idx = selection.starters.map((p,i)=>({p,i})).filter(x=>x.p.pos===s.person.pos)
+          .sort((a,b)=>overall(a.p)-overall(b.p))[0]?.i;
+        if (idx === undefined) idx = selection.starters.length-1;
+        const displaced = selection.starters[idx];
+        selection.starters[idx] = s.person;
+        if (displaced && selection.bench.length < 7) selection.bench.push(displaced);
+        else if (displaced && selection.bench.length) selection.bench[selection.bench.length-1]=displaced;
+      } else if (heroAvailable && benchRole && !heroInXI && !heroInBench && selection.bench.length) {
+        selection.bench[selection.bench.length-1]=s.person;
+      }
       c.formation=selection.formation;
       c.lineup=selection.starters.map(p=>p.id);
+      const leadership=captaincy(s,c);
+      const xiIds=new Set(selection.starters.map(p=>p.id));
+      const captain=leadership.ranking.find(x=>xiIds.has(x.player.id))?.player || selection.starters[0] || null;
+      const vice=leadership.ranking.find(x=>xiIds.has(x.player.id) && x.player.id!==captain?.id)?.player || selection.starters.find(p=>p.id!==captain?.id) || null;
+      c.captainId=captain?.id||null;
+      c.viceCaptainId=vice?.id||null;
+      pc.captaincy={captainId:c.captainId,viceCaptainId:c.viceCaptainId,heroRank:leadership.heroRank,heroYears:leadership.heroYears,day:s.day};
       const role=Squad.roleForHero(s,selection);
       const reason=role==="Titular"?"Mérito na disputa por posição, forma, confiança e condição física.":role==="Banco"?"Você está relacionado, mas outro atleta inicia na posição.":"Concorrência, condição ou disponibilidade deixaram você fora da relação.";
       Squad.recordDecision(s,role,reason);
@@ -761,8 +913,15 @@
   }
   function registerMatch(s, rng, homeId, awayId, meta, leagueMatch) {
     const hc = club(s, homeId), ac = club(s, awayId);
+    const disciplineMeta={...meta,leagueId:leagueMatch?hc.leagueId:null};
+    const disciplineKey=prepareDisciplineAvailability(s,hc,disciplineMeta);
+    prepareDisciplineAvailability(s,ac,disciplineMeta);
     preparePlayerLineup(s, rng, homeId, awayId);
     const m = simulate(hc, ac, rng, s);
+    if (s.mode === "player") {
+      const q=Physical?.init?.(s.person,s.day), a=q?.active, key=a&&`injury:${a.startDay}:${a.type}`;
+      if(a&&a.startDay===s.day&&key&&!q.processed.includes(key)){q.processed.push(key);Career.addMessage?.(s,{category:"CARREIRA",sender:"Departamento médico",subject:`Diagnóstico: ${a.name}`,body:`${a.severity}. Previsão inicial: ${a.totalDays} dia(s). A recuperação será acompanhada pelo calendário.`,priority:a.severity==="GRAVE"?"IMPORTANTE":"NORMAL",eventId:key});}
+    }
     Object.assign(m, {
       date: s.day,
       round: meta.round,
@@ -771,12 +930,15 @@
       competitionId: meta.competitionId,
       competitionName: meta.competitionName,
     });
+    processDiscipline(s,m,disciplineMeta,hc,ac);
+    serveDisciplineSuspensions(hc,disciplineKey);
+    serveDisciplineSuspensions(ac,disciplineKey);
     if (!leagueMatch) Competitions?.recordResult(s, m, rng);
     const heroOffense = m.offensiveStats?.hero;
     m.offensiveStats = heroOffense ? { hero: heroOffense } : {};
     s.matches.unshift(m);
     Statistics?.recordMatch(s, m);
-    Training?.matchDevelopment?.(s, m, { overall, clamp });
+    const heroDevelopment = Training?.matchDevelopment?.(s, m, { overall, clamp });
     if (![homeId, awayId].includes(s.clubId)) { delete m.participation; delete m.playerStats; }
     else m.playerStats = m.playerStats?.hero ? { hero:m.playerStats.hero } : {};
     if (leagueMatch) [hc, ac].forEach((c, i) => {
@@ -786,7 +948,32 @@
       c.roster.forEach((p) => (p.morale = clamp(p.morale + (gf > ga ? 4 : gf < ga ? -4 : 0), 15, 100)));
     });
     if ([homeId, awayId].includes(s.clubId)) {
+      const trustBefore = s.mode === "player" ? Number(Career.init(s).playerCareer?.coachTrust || 0) : 0;
       Career.match(s, m);
+      if (s.mode === "player") {
+        const pc = Career.init(s).playerCareer, perf = m.playerStats?.hero, played = !!m.ratings?.hero;
+        const goals = m.events.filter((e) => e.type === "goal" && e.playerId === "hero").length;
+        const assists = m.events.filter((e) => e.type === "goal" && e.assistPlayerId === "hero").length;
+        const yellowCards=m.events.filter(e=>e.type==="yellow"&&e.playerId==="hero").length, redCard=m.events.some(e=>e.type==="red"&&e.playerId==="hero");
+        const selection = pc.matchSelection || {}, unavailable = !!s.person.injury || Number(s.person.suspension || 0) > 0;
+        const status = played ? (perf?.starter === false ? "ENTROU_DO_BANCO" : "TITULAR") : unavailable ? "INDISPONIVEL" : selection.role === "Banco" ? "NAO_UTILIZADO" : "NAO_RELACIONADO";
+        const report = {
+          day:s.day, season:s.season, competition:m.competitionName || "Partida", opponent:(homeId===s.clubId?ac:hc)?.name || "Adversário",
+          status, entryMinute:played && perf?.starter === false ? Number(perf.entryMinute || 0) : null, minutes:played ? Number(perf?.minutes || 0) : 0,
+          rating:played ? Number(m.ratings.hero || 0) : null, goals, assists, yellowCards, redCard, xp:played ? +(heroDevelopment?.xp || 0).toFixed(2) : 0,
+          levelBefore:heroDevelopment?.levelBefore ?? null, levelAfter:heroDevelopment?.levelAfter ?? null, coachTrustBefore:trustBefore, coachTrustAfter:Number(pc.coachTrust || 0),
+          objectivesMet:played ? Number(pc.lastEvaluation?.met || 0) : 0, objectivesTotal:played ? Number(pc.lastEvaluation?.total || 0) : 0
+        };
+        pc.lastMatchReport = report;
+        const eventId = `match-report:${s.season}:${s.day}:${homeId}:${awayId}`;
+        let body;
+        if (status === "TITULAR") body = `${s.person.name} foi titular, jogou ${report.minutes} min, nota ${report.rating.toFixed(1)}, ${goals} gol(s) e ${assists} assistência(s). XP +${report.xp.toFixed(1)} · confiança ${report.coachTrustAfter-trustBefore>=0?"+":""}${Math.round(report.coachTrustAfter-trustBefore)}.`;
+        else if (status === "ENTROU_DO_BANCO") body = `${s.person.name} entrou aos ${report.entryMinute}', jogou ${report.minutes} min, nota ${report.rating.toFixed(1)}, ${goals} gol(s) e ${assists} assistência(s). XP +${report.xp.toFixed(1)} · confiança ${report.coachTrustAfter-trustBefore>=0?"+":""}${Math.round(report.coachTrustAfter-trustBefore)}.`;
+        else if (status === "INDISPONIVEL") body = `${s.person.name} não esteve disponível para a partida por condição clínica ou suspensão.`;
+        else if (status === "NAO_UTILIZADO") body = `${s.person.name} ficou no banco, mas não foi utilizado pelo treinador.`;
+        else body = `${s.person.name} não foi relacionado para esta partida.`;
+        Career.addMessage?.(s,{category:"TREINADOR",sender:"Comissão técnica",subject:"Resumo da partida",body,eventId});
+      }
       Career.processMatchEvent?.(s, m);
       Commercial?.onMatch?.(s, m, Career, API);
       const own = homeId === s.clubId ? m.hg : m.ag, other = homeId === s.clubId ? m.ag : m.hg;
@@ -940,6 +1127,62 @@
     else s.development.push(entry);
     s.development = s.development.slice(-260);
   }
+  function birthdayDefaults(s) {
+    if (s.mode!=="player") return null;
+    if(!s.person.birthDate){
+      // Compatibilidade com saves antigos: preserva a idade atual e fixa uma data de aniversário.
+      // 01/01 evita alterar retroativamente a idade do save.
+      const startYear=2026-Math.max(14,Number(s.person.age||18));
+      s.person.birthDate={day:1,month:1,year:startYear};
+    }
+    s.birthday ||= { lastCelebratedYear:null, history:[] };
+    return s.person.birthDate;
+  }
+  function calendarDateForDay(day){
+    const d=new Date(Date.UTC(2026,0,1)+Number(day||0)*86400000);
+    return {day:d.getUTCDate(),month:d.getUTCMonth()+1,year:d.getUTCFullYear()};
+  }
+  function birthdayTick(s){
+    if(s.mode!=="player")return false;
+    const b=birthdayDefaults(s), now=calendarDateForDay(s.day);
+    const age=Math.max(14,now.year-Number(b.year||now.year-18)-((now.month<b.month||(now.month===b.month&&now.day<b.day))?1:0));
+    s.person.age=age;
+    if(now.day!==Number(b.day)||now.month!==Number(b.month)||s.birthday.lastCelebratedYear===now.year||s.decision)return false;
+    s.birthday.lastCelebratedYear=now.year;
+    s.decision={
+      id:`birthday_${now.year}`, kind:"birthday", title:`Seu aniversário de ${age} anos`,
+      body:"Hoje é seu aniversário. Como você quer comemorar? Sua escolha pode repercutir na vida pessoal, no elenco, entre os fãs e nas redes sociais.",
+      choices:[
+        ["birthday_family","Comemorar com a família"],
+        ["birthday_team","Jantar com companheiros de equipe"],
+        ["birthday_fans","Evento com os fãs"],
+        ["birthday_charity","Ação beneficente"],
+        ["birthday_private","Comemoração reservada"]
+      ],
+      createdDay:s.day,deadline:s.day+1,birthdayYear:now.year
+    };
+    log(s,"Aniversário",`${s.person.name} completa ${age} anos.`);
+    return true;
+  }
+  function birthdayDecision(s,choice,resolvedDecision){
+    if(resolvedDecision?.kind!=="birthday")return false;
+    const effects={
+      birthday_family:{family:14,morale:5,stress:-10,fans:80,reputation:1,title:"Aniversário em família",body:"O jogador escolheu passar o aniversário perto da família. A postura reservada foi bem recebida."},
+      birthday_team:{family:1,morale:8,stress:-5,fans:180,reputation:1,title:"Celebração com o elenco",body:"Companheiros celebraram o aniversário juntos, reforçando o ambiente e a integração no grupo."},
+      birthday_fans:{family:0,morale:4,stress:5,fans:650,reputation:2,title:"Festa perto da torcida",body:"A comemoração com torcedores movimentou as redes e aproximou ainda mais o jogador dos fãs."},
+      birthday_charity:{family:3,morale:6,stress:1,fans:450,reputation:4,title:"Aniversário com propósito",body:"O aniversário foi marcado por uma ação beneficente e recebeu forte repercussão positiva."},
+      birthday_private:{family:2,morale:3,stress:-12,fans:20,reputation:0,title:"Dia reservado",body:"O jogador preferiu uma comemoração discreta, preservando a vida pessoal e recuperando as energias."}
+    };
+    const x=effects[choice]; if(!x)return false;
+    s.family=clamp(s.family+x.family,0,100);s.person.morale=clamp(s.person.morale+x.morale,0,100);
+    s.stress=clamp(s.stress+x.stress,0,100);s.fans=Math.max(0,Number(s.fans||0)+x.fans);
+    s.reputation=clamp(s.reputation+x.reputation,0,100);
+    const career=Career.init(s); career.feed ||= [];
+    career.feed.unshift({id:`birthday_${s.day}_${choice}`,day:s.day,author:"PRO LIFE Futebol",category:"Vida pessoal",kind:"story",title:x.title,body:x.body,likes:Math.max(25,Math.round(x.fans*.7+Math.max(0,s.reputation)*5)),liked:false});
+    s.birthday.history.push({day:s.day,age:s.person.age,choice,title:x.title,effects:{family:x.family,morale:x.morale,stress:x.stress,fans:x.fans,reputation:x.reputation}});
+    Career.addMessage?.(s,{category:"VIDA PESSOAL",sender:"Assessoria",subject:x.title,body:x.body,priority:"NORMAL",eventId:`birthday_result_${s.day}_${choice}`});
+    return true;
+  }
   function advance(s, days = 1) {
     Career.init(s);
     Training?.init(s);
@@ -951,6 +1194,7 @@
     for (let d = 0; d < clamp(days, 1, 30); d++) {
       s.day++;
       Career.daily(s);
+      birthdayTick(s);
       World2?.daily(s, API);
       NationalTeam?.daily(s, rng, API, log);
       Commercial?.daily?.(s, rng, Career, API);
@@ -972,17 +1216,13 @@
       }
       for (const c of s.clubs)
         for (const p of c.roster) {
-          p.injury = Math.max(0, p.injury - 1);
-          p.suspension = Math.max(0, (p.suspension || 0) - (s.day % 7 === 0 ? 1 : 0));
-          p.condition = clamp(
-            p.condition + (p.id === "hero" && s.intensity === "hard" ? 2 : 5),
-            0,
-            100,
-          );
+          Physical?.daily?.(p, s.day, p.id === "hero" ? s.intensity : "normal");
+          if (!Physical) { p.injury = Math.max(0, p.injury - 1); p.condition = clamp(p.condition + (p.id === "hero" && s.intensity === "hard" ? 2 : 5), 0, 100); }
+          p.suspension = Math.max(0, (p.suspension || 0));
         }
       if (s.mode === "player" && !s.clubId) {
-        s.person.injury = Math.max(0, s.person.injury - 1);
-        s.person.condition = clamp(s.person.condition + 5, 0, 100);
+        Physical?.daily?.(s.person, s.day, s.intensity);
+        if (!Physical) { s.person.injury = Math.max(0, s.person.injury - 1); s.person.condition = clamp(s.person.condition + 5, 0, 100); }
       }
       if (!s.person.injury && s.mode === "player") {
         s.person.condition = clamp(
@@ -993,10 +1233,13 @@
         );
         const improved = Training?.daily(s, rng, { overall, clamp });
         if (improved) {
+          Squad?.trainingResult?.(s, improved);
           log(s, "Evolução no treino", improved.label + " melhorou com a rotina de trabalho.");
         }
-        if (s.intensity === "hard" && rng.next() < 0.015) {
-          s.person.injury = rng.int(3, 12);
+        Physical?.trainLoad?.(s.person, s.intensity);
+        if (s.intensity === "hard" && rng.next() < (Physical?.risk?.(s.person, "hard") ?? 0.015)) {
+          const trainingInjury = Physical?.injure?.(s.person, rng, s.day, "treino");
+          if (!trainingInjury) s.person.injury = rng.int(3, 12);
           log(
             s,
             "Carga elevada",
@@ -1036,6 +1279,7 @@
       }
       if (s.day % 21 === 0 && !s.decision) {
         s.decision = Life?.next(s, rng);
+        if (s.decision) { s.decision.createdDay = s.day; s.decision.deadline = s.day + 7; }
         log(s, "Decisão pendente", s.decision.title);
       }
       if (s.mode === "player") {
@@ -1071,13 +1315,38 @@
     s.rng = rng.state;
     return s;
   }
+  function pendingActions(s) {
+    if (s.mode !== "player") return [];
+    const pc = Career.init(s).playerCareer, out = [];
+    if (s.decision) out.push({ id:`life:${s.decision.id || s.decision.title}`, entityId:s.decision.id, type:"decision", title:s.decision.title, deadline:Number.isFinite(s.decision.deadline)?s.decision.deadline:s.day+7, page:"life", anchor:"current-decision", priority:"URGENTE" });
+    const interviews=(Career.init(s)?.communications?.interviews || []).filter(i=>!i.answered);
+    for (const i of interviews) out.push({ id:`interview:${i.id}`, entityId:i.id, type:"interview", title:i.title || i.subject || "Convite para uma entrevista", deadline:Number.isFinite(i.deadline)?i.deadline:s.day+7, page:"inbox", anchor:`interview-${i.id}`, priority:"URGENTE" });
+    if (pc?.renewalOffer) out.push({ id:`renewal:${pc.renewalOffer.expires}`, entityId:String(pc.renewalOffer.expires), type:"renewal", title:"Responder proposta de renovação", deadline:pc.renewalOffer.expires, page:"proposals", anchor:"renewal-offer", priority:"URGENTE" });
+    for (const o of (s.offers || []).filter(o=>o.expires>=s.day)) out.push({ id:`offer:${o.clubId}:${o.expires}`, entityId:o.clubId, type:"offer", title:`Responder proposta de ${club(s,o.clubId)?.name || "transferência"}`, deadline:o.expires, page:"proposals", anchor:`transfer-offer-${o.clubId}`, priority:"URGENTE" });
+    const commercial=Commercial?.init(s,API);
+    for (const p of (commercial?.proposals || []).filter(p=>p.status==="PROPOSTA"&&p.expires>=s.day)) out.push({ id:`commercial:${p.id}`, entityId:p.id, type:"commercial", title:`Responder proposta de ${p.brand}`, deadline:p.expires, page:"sponsorships", anchor:`commercial-proposal-${p.id}`, priority:"URGENTE" });
+    for (const e of (commercial?.events || []).filter(e=>["AGENDADO","REAGENDADO"].includes(e.status)&&e.mandatory&&e.day>=s.day)) out.push({ id:`commercial-event:${e.id}`, entityId:e.id, type:"commercial-event", title:`Confirmar compromisso com ${e.brand}`, deadline:e.day, page:"sponsorships", anchor:`commercial-event-${e.id}`, priority:"URGENTE" });
+    return out.sort((a,b)=>a.deadline-b.deadline);
+  }
+  function expiringAction(s, targetDay) { return pendingActions(s).find(x=>x.deadline<=targetDay) || null; }
   function simulationBlocker(s, before = {}) {
-    const pc = s.mode === "player" ? Career.init(s).playerCareer : null;
-    if (s.decision && !before.decision) return { type: "decision", message: `Simulação interrompida: ${s.decision.title}.` };
-    if (pc?.renewalOffer && !before.renewalOffer) return { type: "renewal", message: "Simulação interrompida: chegou uma proposta de renovação." };
+    const career = s.mode === "player" ? Career.init(s) : null;
+    const pc = career?.playerCareer || null;
+    if (s.decision && !before.decision) return { type:"decision", id:s.decision.id, title:s.decision.title, page:"life", anchor:"current-decision", message:`Simulação interrompida: ${s.decision.title}.` };
+    if (pc?.renewalOffer && !before.renewalOffer) return { type:"renewal", page:"proposals", anchor:"renewal-offer", message:"Simulação interrompida: chegou uma proposta de renovação." };
     const previousOffers = new Set(before.offers || []);
-    const newOffer = (s.offers || []).find((o) => !previousOffers.has(`${o.clubId}:${o.expires}:${o.salary}`));
-    if (newOffer) return { type: "offer", message: `Simulação interrompida: chegou uma proposta de ${club(s, newOffer.clubId)?.name || "outro clube"}.` };
+    const newOffer = (s.offers || []).find(o=>!previousOffers.has(`${o.clubId}:${o.expires}:${o.salary}`));
+    if (newOffer) return { type:"offer", id:newOffer.clubId, page:"proposals", anchor:`transfer-offer-${newOffer.clubId}`, message:`Simulação interrompida: chegou uma proposta de ${club(s,newOffer.clubId)?.name || "outro clube"}.` };
+    const previousInterviews = new Set(before.interviews || []);
+    const interview = (career?.communications?.interviews || []).find(i=>!i.answered && !previousInterviews.has(i.id));
+    if (interview) return { type:"interview", id:interview.id, title:"Convite para uma entrevista", page:"inbox", anchor:`interview-${interview.id}`, message:"Simulação interrompida: convite para uma entrevista." };
+    const commercial = Commercial?.init(s, API);
+    const previousCommercial = new Set(before.commercialProposals || []);
+    const proposal = (commercial?.proposals || []).find(p=>p.status==="PROPOSTA" && !previousCommercial.has(p.id));
+    if (proposal) return { type:"commercial", id:proposal.id, title:`Proposta de ${proposal.brand}`, page:"sponsorships", anchor:`commercial-proposal-${proposal.id}`, message:`Simulação interrompida: ${proposal.brand} enviou uma proposta comercial.` };
+    const previousEvents = new Set(before.commercialEvents || []);
+    const event = (commercial?.events || []).find(ev=>["AGENDADO","REAGENDADO"].includes(ev.status) && !previousEvents.has(ev.id));
+    if (event) return { type:"commercial-event", id:event.id, title:`Campanha de ${event.brand}`, page:"sponsorships", anchor:`commercial-event-${event.id}`, message:`Simulação interrompida: há uma campanha de patrocinador aguardando sua decisão.` };
     return null;
   }
   function autoTrainingPlan(s) {
@@ -1186,8 +1455,17 @@
     let stop = null;
     const automatic = mode === "season";
     while (s.day < targetDay && s.season === startSeason) {
-      const pc = s.mode === "player" ? Career.init(s).playerCareer : null;
-      const before = { decision: !!s.decision, renewalOffer: !!pc?.renewalOffer, offers: (s.offers || []).map((o) => `${o.clubId}:${o.expires}:${o.salary}`) };
+      const career = s.mode === "player" ? Career.init(s) : null;
+      const pc = career?.playerCareer || null;
+      const commercialBefore = s.mode === "player" ? Commercial?.init(s, API) : null;
+      const before = {
+        decision: !!s.decision,
+        renewalOffer: !!pc?.renewalOffer,
+        offers: (s.offers || []).map((o) => `${o.clubId}:${o.expires}:${o.salary}`),
+        interviews: (career?.communications?.interviews || []).map((i) => i.id),
+        commercialProposals: (commercialBefore?.proposals || []).filter(p=>p.status==="PROPOSTA").map(p=>p.id),
+        commercialEvents: (commercialBefore?.events || []).filter(ev=>["AGENDADO","REAGENDADO"].includes(ev.status)).map(ev=>ev.id)
+      };
       advance(s, 1);
       if (automatic) autoSeasonActions(s);
       else {
@@ -1205,10 +1483,61 @@
     else if (completed) log(s, "Temporada simulada", `A temporada ${startSeason} foi processada até o encerramento com decisões automáticas.`);
     return result;
   }
+  function decisionSnapshot(s){
+    return {
+      money:Number(s.money||0), reputation:Number(s.reputation||0), fans:Number(s.fans||0),
+      morale:Number(s.person?.morale||0), stress:Number(s.stress||0), family:Number(s.family||0),
+      training:Number(s.trainingProgress||0), fitness:Number(s.person?.fitness??s.person?.condition??0),
+      overall:Number(s.person?.overall||0), board:Number(s.board||0)
+    };
+  }
+  function decisionDelta(before,s){
+    const after=decisionSnapshot(s), delta={};
+    for(const k of Object.keys(before)){const d=Number(after[k]||0)-Number(before[k]||0);if(Math.abs(d)>0.0001)delta[k]=d;}
+    return delta;
+  }
+  function applyDecisionConsequence(s,decision,choice,before){
+    let delta=decisionDelta(before,s);
+    // Regra estrutural: nenhuma escolha narrativa termina sem efeito jogável.
+    // Se o sistema específico já aplicou efeito, preserva-o. Caso contrário aplica
+    // uma consequência contextual, pequena e coerente.
+    if(!Object.keys(delta).length){
+      const id=String(decision?.id||decision?.kind||"").toLowerCase();
+      const label=String(decision?.choices?.find(c=>c[0]===choice)?.[1]||choice).toLowerCase();
+      if(/treino|training|academ|coach|técn|tecn|work/.test(id+" "+label)){
+        s.trainingProgress=Number(s.trainingProgress||0)+2;
+      }else if(/descans|saúde|saude|fisic|físic|recovery|recover/.test(id+" "+label)){
+        s.person.fitness=clamp(Number(s.person.fitness??s.person.condition??75)+4,0,100);
+        s.person.condition=s.person.fitness;
+        s.stress=clamp(Number(s.stress||0)-3,0,100);
+      }else if(/patro|sponsor|invest|compra|buy|carro|casa|finance|dinheiro/.test(id+" "+label)){
+        s.reputation=clamp(Number(s.reputation||0)+1,0,100);
+        s.fans=Math.max(0,Number(s.fans||0)+75);
+      }else if(/fam|amig|festa|social|fan|mídia|midia|media|entrevista/.test(id+" "+label)){
+        s.reputation=clamp(Number(s.reputation||0)+1,0,100);
+        s.fans=Math.max(0,Number(s.fans||0)+100);
+        s.person.morale=clamp(Number(s.person.morale||0)+2,0,100);
+      }else{
+        s.person.morale=clamp(Number(s.person.morale||0)+2,0,100);
+        s.reputation=clamp(Number(s.reputation||0)+1,0,100);
+      }
+      delta=decisionDelta(before,s);
+    }
+    s.decisionConsequences ||= [];
+    const labels={money:"Finanças",reputation:"Reputação",fans:"Seguidores",morale:"Moral",stress:"Estresse",family:"Família",training:"Evolução técnica",fitness:"Físico",overall:"Overall",board:"Diretoria"};
+    const parts=Object.entries(delta).map(([k,v])=>`${labels[k]||k} ${v>0?"+":""}${Math.round(v*100)/100}`);
+    const result={day:s.day,decisionId:decision?.id||decision?.kind||"decision",choice,delta,summary:parts.join(" · ")};
+    s.decisionConsequences.unshift(result);
+    s.decisionConsequences=s.decisionConsequences.slice(0,100);
+    const career=Career.init(s); career.feed ||= [];
+    career.feed.unshift({id:`decision_effect_${s.day}_${result.decisionId}_${choice}`,day:s.day,author:"PRO LIFE",category:"Repercussão",kind:"story",title:"Consequências da decisão",body:result.summary||"A escolha teve impacto na carreira.",likes:Math.max(10,Math.round(Number(s.reputation||0)*4+Number(s.fans||0)*0.01)),liked:false});
+    return result;
+  }
   function decide(s, choice) {
     if (!s.decision || !s.decision.choices.some((c) => c[0] === choice))
       throw Error("Decisão inválida.");
     const resolvedDecision = s.decision;
+    const consequenceBefore=decisionSnapshot(s);
     if (choice === "visit") {
       s.family = clamp(s.family + 12, 0, 100);
       s.stress = clamp(s.stress - 15, 0, 100);
@@ -1227,10 +1556,12 @@
       s.stress = clamp(s.stress + 15, 0, 100);
       s.board = clamp(s.board - 3, 0, 100);
     }
-    Life?.decide(s, choice, Career);
-    if (s.decision.id === "media") Career.interview(s, choice);
+    const handledBirthday=birthdayDecision(s,choice,resolvedDecision);
+    if(!handledBirthday) Life?.decide(s, choice, Career);
+    if (resolvedDecision.id === "media") Career.interview(s, choice);
     const choiceLabel = resolvedDecision.choices.find((c) => c[0] === choice)[1];
-    log(s, "Escolha registrada", choiceLabel);
+    const consequence=applyDecisionConsequence(s,resolvedDecision,choice,consequenceBefore);
+    log(s, "Escolha registrada", `${choiceLabel} | ${consequence.summary}`);
     if (Career?.addMessage) {
       const eventId = `decision_${s.season}_${s.day}_${resolvedDecision.id}_${choice}`;
       Career.emitEvent?.(s, "CAREER_DECISION_RESOLVED", eventId, { decisionId: resolvedDecision.id, choice });
@@ -1238,7 +1569,7 @@
         category: "CARREIRA",
         sender: "PRO LIFE",
         subject: "Escolha registrada",
-        body: `${resolvedDecision.title}: ${choiceLabel}`,
+        body: `${resolvedDecision.title}: ${choiceLabel}. Consequências: ${consequence.summary}`,
         priority: "NORMAL",
         eventId,
       });
@@ -1313,6 +1644,7 @@
     Squad,
     Life,
     Commercial,
+    Physical,
     NationalTeam,
     schedule,
     migrateWorld,
@@ -1323,6 +1655,15 @@
     create,
     advance,
     simulateAdvance,
+    pendingActions,
+    birthdayDefaults,
+    birthdayTick,
+    decisionSnapshot,
+    applyDecisionConsequence,
+    captaincy,
+    disciplineState,
+    disciplineCompetition,
+    isSuspendedFor,
     recordDevelopment,
     simulate,
     selected,

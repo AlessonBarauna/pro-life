@@ -560,7 +560,7 @@
     pruneMessages(s);
     if (s.mode === "player" && s.clubId && s.contract > 0) {
       const pc=e.playerCareer;
-      for (const threshold of [180,90,30]) {
+      for (const threshold of [365,180,90,30]) {
         if (s.contract <= threshold && !pc.contractNotices[threshold]) {
           pc.contractNotices[threshold]=s.day;
           post(s,"Carreira","Agente",`Contrato: ${threshold} dias ou menos`,`Seu vínculo entra na reta final. Restam ${s.contract} dias. Acompanhe a situação e, se quiser permanecer, peça ao seu agente para abrir conversas com o clube.`);
@@ -640,7 +640,9 @@
     if (m.ratings.hero) e.careerMinutes += Number(m.playerStats?.hero?.minutes||90);
     const own = m.home === s.clubId ? m.hg : m.ag,
       other = m.home === s.clubId ? m.ag : m.hg;
-    if (s.mode === "player") {
+    if (s.mode === "player" && m.ratings.hero) {
+      // Repercussão individual exige atuação real. Resultado do clube enquanto o
+      // jogador ficou no banco/indisponível não pode virar crítica de desempenho.
       const rating = m.ratings.hero || 0;
       updateMediaProfile(s, own > other ? { fans: 2, sponsor: rating >= 7.5 ? 2 : 0, pressure: -1 } : own < other ? { fans: -2, pressure: 3 } : { pressure: 1 });
     }

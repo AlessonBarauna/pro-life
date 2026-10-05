@@ -184,3 +184,10 @@ test("Etapa 14: assistente na interface percorre os 6 passos, volta sem perder e
   assert.equal(saved.clubId, first);
   assert.equal(saved.person.pos, "MEI");
 });
+
+test('criador de historia e jogador aceitam idade inicial de 14 anos', () => {
+  const custom = D.Creation.sanitizeCustom({ age: 14, overall: 55 });
+  assert.equal(custom.age, 14);
+  const s = D.create({ mode:'player', world:'legacy', name:'Alesson', age:14, pos:'ATA', origin:'custom', creation:{ custom:{ age:14, overall:55, reputation:5, popularity:3, wallet:0 } }, points:{} }, 1414);
+  assert.equal(s.person.age, 14);
+});

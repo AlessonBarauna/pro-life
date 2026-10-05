@@ -15,16 +15,17 @@
   }
   function recentRatings(s,id="hero",limit=5){return (s.matches||[]).filter(m=>Number.isFinite(Number(m.ratings?.[id]))).slice(0,limit).map(m=>Number(m.ratings[id]));}
   function formValue(s,p){const rs=recentRatings(s,p.id);return rs.length?rs.reduce((a,b)=>a+b,0)/rs.length:6.5;}
+  const Physical=root.ProLifePhysical||(typeof require==="function"?require("./physical.js"):null);
   function score(s,p){
     const ov=root.ProLife?.overall?root.ProLife.overall(p):50, form=formValue(s,p), cond=Number(p.condition??100), morale=Number(p.morale??50);
     let v=ov*.64+form*2.6+cond*.075+morale*.045;
     if(p.id==="hero"){const pc=root.ProLifeCareer.init(s).playerCareer,q=init(s);v+=(pc.coachTrust-50)*.105+clamp(q.trainingTrend,-5,5)*.35;}
-    if(p.injury||p.suspension>0||cond<25) v=-999;
+    if(!(Physical?.canPlay?.(p) ?? (!p.injury&&cond>=25))||p.suspension>0) v=-999;
     return v;
   }
   function formationFor(c){return c?.formation&&slots[c.formation]?c.formation:"4-3-3";}
   function choose(s,c){
-    const formation=formationFor(c), need=slots[formation], active=c.roster.filter(p=>!p.injury&&!(p.suspension>0)&&Number(p.condition??100)>=25);
+    const formation=formationFor(c), need=slots[formation], active=c.roster.filter(p=>(Physical?.canPlay?.(p) ?? (!p.injury&&Number(p.condition??100)>=25))&&!(p.suspension>0));
     const starters=[];
     for(const [pos,count] of Object.entries(need)){
       const pool=active.filter(p=>p.pos===pos&&!starters.includes(p)).sort((a,b)=>score(s,b)-score(s,a));
@@ -41,7 +42,27 @@
     return {formation:selection.formation,selection,heroRole:roleForHero(s,selection),rivals:rivals.map((p,i)=>({id:p.id,name:p.name,pos:p.pos,age:p.age,overall:root.ProLife.overall(p),form:+formValue(s,p).toFixed(2),condition:Math.round(p.condition),score:+score(s,p).toFixed(2),rank:i+1,status:selection.starters.includes(p)?"Titular":selection.bench.includes(p)?"Banco":"Fora"})),heroRank:Math.max(1,rivals.findIndex(p=>p.id==="hero")+1)};
   }
   function recordDecision(s,role,reason){const q=init(s),pc=root.ProLifeCareer.init(s).playerCareer;const row={day:s.day,season:s.season,role,trust:Math.round(pc.coachTrust),reason};if(!q.lastDecision||q.lastDecision.day!==s.day||q.lastDecision.role!==role){q.history.unshift(row);q.history=q.history.slice(0,40);q.lastDecision=row;}return row;}
-  function trainingResult(s,result){if(!result?.available||result.automatic)return;const pc=root.ProLifeCareer.init(s).playerCareer,q=init(s),d={A:1.2,B:.7,C:.25,D:-.2}[result.grade]||0;pc.coachTrust=clamp(pc.coachTrust+d,0,100);q.trainingTrend=clamp(q.trainingTrend*.72+d,-5,5);root.ProLifeCareer.updatePlayerRole(s);}
-  const api={init,slots,recentRatings,formValue,score,formationFor,choose,competition,roleForHero,recordDecision,trainingResult};
+  function trainingResult(s,result){
+    if(!result?.available)return;
+    const pc=root.ProLifeCareer.init(s).playerCareer,q=init(s);
+    const base={A:1.2,B:.7,C:.25,D:-.2}[result.grade]||0;
+    // FC 26: treino alimenta a avaliação do manager. Na rotina automática o ganho é menor
+    // para que minutos e objetivos de partida continuem sendo decisivos na disputa por posição.
+    const d=result.automatic?base*.24:base;
+    pc.coachTrust=clamp(pc.coachTrust+d,0,100);
+    q.trainingTrend=clamp(q.trainingTrend*.72+d,-5,5);
+    root.ProLifeCareer.updatePlayerRole(s);
+  }
+  function substitutePlan(s,p){
+    const pc=root.ProLifeCareer.init(s).playerCareer,q=init(s),physical=Physical?.init?.(p,s.day);
+    const trust=clamp(Number(pc.coachTrust??50),0,100), morale=clamp(Number(p.morale??50),0,100);
+    const fitness=clamp(Number(physical?.fitness??p.condition??100),0,100), fatigue=clamp(Number(physical?.fatigue??0),0,100);
+    const form=clamp((formValue(s,p)-6)*18,0,40), training=clamp(q.trainingTrend,-5,5);
+    const readiness=trust*.52+morale*.12+fitness*.12+form+training*1.6-fatigue*.08;
+    const minute=readiness>=78?58:readiness>=66?64:readiness>=54?70:readiness>=42?76:82;
+    const chance=clamp(.18+(trust/100)*.46+(morale/100)*.10+(fitness/100)*.10+Math.max(0,training)*.025-fatigue*.0025,.12,.92);
+    return {minute,chance:+chance.toFixed(3),readiness:+readiness.toFixed(2)};
+  }
+  const api={init,slots,recentRatings,formValue,score,formationFor,choose,competition,roleForHero,recordDecision,trainingResult,substitutePlan};
   root.ProLifeSquad=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

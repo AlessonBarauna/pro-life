@@ -104,20 +104,26 @@
           !["rest", "normal", "hard"].includes(data.intensity)
         )
           throw Error("Treino inválido.");
-        s.training = data.focus;
-        s.intensity = data.intensity;
-        D.Training.init(s).focus = data.focus;
-        D.Training.init(s).style = data.style || s.person.style;
-        if (data.exerciseId !== undefined) {
-          if (data.exerciseId && !D.Training.exercises[data.exerciseId]) throw Error("Exercício inválido.");
-          D.Training.init(s).exerciseId = data.exerciseId || null;
-        }
-        if (s.mode === "player" && data.exerciseId) {
-          const rng = new D.Random(s.rng);
-          const result = D.Training.performTraining(s, rng, { overall: D.overall, clamp: D.clamp });
-          D.Squad?.trainingResult?.(s, result);
-          s.rng = rng.state;
-          if (!result.available) throw Error(result.reason || "Treino indisponível.");
+        {
+          const plan = D.Training.init(s);
+          const nextExercise = data.exerciseId !== undefined ? (data.exerciseId || null) : plan.exerciseId;
+          if (nextExercise && !D.Training.exercises[nextExercise]) throw Error("Exercício inválido.");
+          const changed = plan.focus !== data.focus || s.intensity !== data.intensity || plan.exerciseId !== nextExercise;
+          s.training = data.focus;
+          s.intensity = data.intensity;
+          plan.focus = data.focus;
+          plan.style = data.style || s.person.style;
+          plan.exerciseId = nextExercise;
+          if (s.mode === "player" && nextExercise) {
+            // Alterar o plano após a sessão do dia apenas salva a nova rotina.
+            // Não concede XP, não consome condição e não cria uma segunda sessão manual.
+            if (s.day <= plan.lastTrainingDay && changed) return { planUpdated: true, trained: false };
+            const rng = new D.Random(s.rng);
+            const result = D.Training.performTraining(s, rng, { overall: D.overall, clamp: D.clamp });
+            D.Squad?.trainingResult?.(s, result);
+            s.rng = rng.state;
+            if (!result.available) throw Error(result.reason || "Treino indisponível.");
+          }
         }
         break;
       case "specialization":
@@ -168,6 +174,9 @@
         break;
       case "decide":
         D.decide(s, data.choice);
+        break;
+      case "physicalReturn":
+        D.Physical.chooseReturn(s.person, s.day, data.choice);
         break;
       case "lifeActivity":
         D.Life.activity(s, data.id, D.Career);
