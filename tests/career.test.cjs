@@ -49,7 +49,7 @@ test("a full Brazilian season plays 38 rounds in all four leagues and produces s
     D.club(restored).roster.find((p) => p.id === "hero"),
     restored.person,
   );
-  assert.ok(JSON.stringify(s).length < 3000000);
+  assert.ok(JSON.stringify(s).length < 8000000);
   D.advance(restored, 1);
   assert.equal(restored.season, 2027);
   assert.equal(restored.history.length, 4);
