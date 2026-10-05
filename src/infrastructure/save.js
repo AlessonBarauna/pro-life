@@ -365,24 +365,23 @@
         )
       )
         fail();
-      if (
-        !Array.isArray(e.feed) ||
-        e.feed.length > 160 ||
-        !e.feed.every(
-          (p) =>
-            str(p.id, 200) &&
-            num(p.day, 0, s.day) &&
-            num(p.season, 2026, s.season) &&
-            str(p.category, 80) &&
-            str(p.author, 100) &&
-            str(p.title, 200) &&
-            str(p.body, 2000) &&
-            ["confirmed", "rumor", "story"].includes(p.kind) &&
-            typeof p.liked === "boolean" &&
-            num(p.likes, 0, 1e9),
-        )
-      )
-        fail();
+      if (!Array.isArray(e.feed) || e.feed.length > 160) fail();
+      for (const p of e.feed) {
+        if (!p || typeof p !== "object") fail();
+        if (p.id === undefined) p.id = `legacy_feed_${p.day ?? s.day}_${Math.random().toString(36).slice(2, 8)}`;
+        if (p.day === undefined) p.day = s.day;
+        if (p.season === undefined) p.season = s.season;
+        if (p.category === undefined) p.category = "Carreira";
+        if (p.author === undefined) p.author = "PRO LIFE";
+        if (p.title === undefined) p.title = "Atualização";
+        if (p.body === undefined) p.body = "";
+        if (p.kind === undefined || !["confirmed", "rumor", "story"].includes(p.kind)) p.kind = "story";
+        if (p.liked === undefined) p.liked = false;
+        if (p.likes === undefined) p.likes = 0;
+        if (!str(p.id, 300) || !num(p.day, 0, s.day) || !num(p.season, 2026, s.season) ||
+            !str(p.category, 120) || !str(p.author, 160) || !str(p.title, 300) ||
+            !str(p.body, 4000) || typeof p.liked !== "boolean" || !num(p.likes, 0, 1e12)) fail();
+      }
       if (
         !Array.isArray(e.transfers) ||
         e.transfers.length > 100 ||
