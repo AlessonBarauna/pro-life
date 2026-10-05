@@ -3,6 +3,8 @@
   "use strict";
   const installed = document.currentScript?.dataset.version;
   if (!installed || !["http:", "https:"].includes(location.protocol)) return;
+  // PWA: guarda o jogo no aparelho para abrir offline e funcionar como app na tela de início do iPhone.
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
   let shown = false;
   async function check() {
     if (shown || document.hidden) return;

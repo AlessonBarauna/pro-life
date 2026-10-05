@@ -1189,5 +1189,34 @@ body{background:radial-gradient(circle at 18% 18%,#14313a 0,transparent 30%),rad
 @media(max-width:520px){.life-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* Etapa 13 — Identidade */
-.id-head,.id-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;margin-top:10px}.id-head h2,.id-head h3{margin:.2rem 0}.id-aff{display:grid;grid-template-columns:1fr 34px;gap:4px 10px;align-items:center;margin:8px 0}.id-aff i{grid-column:1/-1;height:5px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}.id-aff em{display:block;height:100%;background:currentColor;opacity:.7}.id-aff.primary{color:#72e7a9}.id-tree{display:grid;gap:14px}.id-branch{border:1px solid var(--line);border-radius:14px;padding:12px 14px}.id-root{display:flex;gap:10px;align-items:baseline}.id-root small{color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.id-branch ul{list-style:none;margin:8px 0 0;padding:0 0 0 14px;border-left:2px solid var(--line)}.id-spec{position:relative;padding:8px 0 8px 12px}.id-spec::before{content:"";position:absolute;left:-14px;top:20px;width:12px;border-top:2px solid var(--line)}.id-spec p{margin:.2rem 0}.id-spec.locked{opacity:.78}.id-spec.active b{color:#72e7a9}.id-reqs{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.85rem}.id-reqs .ok{color:#72e7a9}.id-reqs .no{color:#d7aa6a}
+.id-head,.id-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;margin-top:10px}.id-head h2,.id-head h3{margin:.2rem 0}.id-aff{display:grid;grid-template-columns:1fr 34px;gap:4px 10px;align-items:center;margin:8px 0}.id-aff i{grid-column:1/-1;height:5px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}.id-aff em{display:block;height:100%;background:currentColor;opacity:.7}.id-aff.lead{color:#72e7a9}.id-tree{display:grid;gap:14px}.id-branch{border:1px solid var(--line);border-radius:14px;padding:12px 14px}.id-root{display:flex;gap:10px;align-items:baseline}.id-root small{color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.id-branch ul{list-style:none;margin:8px 0 0;padding:0 0 0 14px;border-left:2px solid var(--line)}.id-spec{position:relative;padding:8px 0 8px 12px}.id-spec::before{content:"";position:absolute;left:-14px;top:20px;width:12px;border-top:2px solid var(--line)}.id-spec p{margin:.2rem 0}.id-spec.locked{opacity:.78}.id-spec.active b{color:#72e7a9}.id-reqs{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.85rem}.id-reqs .ok{color:#72e7a9}.id-reqs .no{color:#d7aa6a}
 @media(max-width:850px){.id-head,.id-grid{grid-template-columns:1fr}}
+
+/* ===== Versão para celular / iPhone (PWA) ===== */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+button,a,select,input,label,summary{touch-action:manipulation}
+.game-shell{min-height:100vh;min-height:100dvh}
+.live-match-overlay{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+@media(max-width:760px){
+  /* iOS dá zoom automático em campos com fonte menor que 16px */
+  input,select,textarea{font-size:16px}
+  button,select,.game-subnav button{min-height:44px}
+  .landing header{padding-top:calc(14px + env(safe-area-inset-top))}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stat{border-bottom:1px solid var(--line)}.stat:nth-child(2n){border-right:0}.stat b{font-size:22px;overflow-wrap:anywhere}
+  /* topo enxuto: só a marca; a navegação vai para a barra inferior */
+  .game-nav{height:calc(50px + env(safe-area-inset-top));min-height:0;padding:env(safe-area-inset-top) 16px 0;flex-direction:row;align-items:center;justify-content:flex-start;gap:12px;backdrop-filter:none;-webkit-backdrop-filter:none;background:#080e14;box-sizing:border-box}
+  .game-nav .brand{font-size:21px}
+  .game-subnav{top:calc(50px + env(safe-area-inset-top))}
+  /* barra inferior no padrão iOS; rolagem lateral com a aba ativa centralizada */
+  .game-nav nav{position:fixed;left:0;right:0;bottom:0;z-index:30;width:auto;height:auto;flex:none;gap:0;padding:0 0 env(safe-area-inset-bottom);background:#0a1118;border-top:1px solid rgba(255,255,255,.1);overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;align-items:stretch}
+  .game-nav nav button{flex:0 0 19vw;min-width:68px;height:58px;padding:0 4px;border:0;border-radius:0;background:transparent;flex-direction:column;gap:3px;font-size:11px;scroll-snap-align:start;position:relative}
+  .game-nav nav button.active{background:rgba(73,230,220,.08);color:var(--game-cyan);border:0}
+  .game-nav nav button.active:after{top:0;bottom:auto;left:14px;right:14px;height:3px}
+  .game-nav nav button i{position:absolute;top:6px;left:calc(50% + 10px);margin:0}
+  .game-shell .main{padding-bottom:calc(58px + 28px + env(safe-area-inset-bottom))}
+  #toast{bottom:calc(58px + 16px + env(safe-area-inset-bottom))}
+  #update-banner{bottom:calc(58px + 12px + env(safe-area-inset-bottom))}
+}
+.id-grid h3{margin-top:18px}.id-grid>div>h3:first-child{margin-top:0}

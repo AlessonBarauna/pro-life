@@ -34,6 +34,25 @@ test("published build only contains game assets and detects content changes", ()
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+test("published build is an installable offline PWA for iPhone", () => {
+  const root = temporaryProject();
+  try {
+    const built = build(root), out = (f) => path.join(built.output, f);
+    const html = fs.readFileSync(out("index.html"), "utf8");
+    for (const needle of ["viewport-fit=cover", 'rel="manifest"', 'rel="apple-touch-icon"', "apple-mobile-web-app-capable"]) assert.ok(html.includes(needle), needle);
+    const manifest = JSON.parse(fs.readFileSync(out("manifest.webmanifest"), "utf8"));
+    assert.equal(manifest.display, "standalone");
+    assert.ok(manifest.icons.every((icon) => fs.existsSync(out(icon.src))));
+    const sw = fs.readFileSync(out("sw.js"), "utf8");
+    assert.ok(sw.includes("prolife-" + built.version));
+    new Function(sw);
+    const cached = JSON.parse(sw.match(/const ASSETS = (\[.*\]);/)[1]);
+    assert.ok(cached.every((url) => fs.existsSync(out(url.split("?")[0]))));
+    assert.ok(cached.includes("src/ui/app.js?v=" + built.version));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
 test("local preview serves game only and emits live update when source changes", async () => {
   const root = temporaryProject(),
     server = createDevServer(root);

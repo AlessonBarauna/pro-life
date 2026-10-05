@@ -9,6 +9,8 @@ const mime = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
+  ".png": "image/png",
+  ".webmanifest": "application/manifest+json; charset=utf-8",
 };
 const client = `<script>
 (function(){let version; const events = new EventSource('/__live');

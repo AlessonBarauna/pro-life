@@ -1,6 +1,10 @@
 "use strict";
 const files = [
   "index.html",
+  "manifest.webmanifest",
+  "src/assets/icon-180.png",
+  "src/assets/icon-192.png",
+  "src/assets/icon-512.png",
   "src/domain/character.js",
   "src/domain/world2026.js",
   "src/domain/brazil-data.js",

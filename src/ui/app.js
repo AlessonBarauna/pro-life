@@ -121,7 +121,7 @@
   function identityPanel() {
     const v = D.Identity?.view?.(state);
     if (!v) return "";
-    const affs = v.affinities.slice(0, 6).map((a) => `<div class="id-aff ${a.id === v.primary.id ? "primary" : ""}"><span>${esc(a.name)}${a.compatible ? "" : " <small>(posição vizinha)</small>"}</span><b>${a.value}</b><i><em style="width:${a.value}%"></em></i></div>`).join("");
+    const affs = v.affinities.slice(0, 6).map((a) => `<div class="id-aff ${a.id === v.primary.id ? "lead" : ""}"><span>${esc(a.name)}${a.compatible ? "" : " <small>(posição vizinha)</small>"}</span><b>${a.value}</b><i><em style="width:${a.value}%"></em></i></div>`).join("");
     const attrList = (list, withTarget) => list.length ? list.map((x) => `<span><small>${esc(x.label)}</small><b>${x.value}${withTarget ? ` / ${x.target}` : ""}</b></span>`).join("") : `<span><small>Sem lacunas no perfil atual</small><b>—</b></span>`;
     const rec = v.recommendation;
     return `<section id="player-identity" class="card section"><div class="tag">IDENTIDADE</div><div class="id-head"><div><small>Arquétipo atual</small><h2>${esc(v.primary.name)}</h2><p class="muted">${esc(v.primary.description || "")}</p>${v.secondary ? `<p>Perfil secundário: <b>${esc(v.secondary.name)}</b></p>` : `<p class="muted">Sem perfil secundário definido.</p>`}</div><div><small>Especialização ativa</small><h3>${esc(v.activeSpecialization?.name || "Nenhuma")}</h3><p class="muted">${v.points} ponto(s) de especialização · Nível ${v.level}</p>${v.legacy.length ? `<p class="muted">Anteriores: ${v.legacy.map((x) => esc(x.name)).join(" · ")}</p>` : ""}</div></div>
@@ -217,6 +217,12 @@
     $("#app").innerHTML =
       `<div class="game-shell"><header class="game-nav"><div class="brand">PRO<span>LIFE</span></div><nav>${groups.map(([id, label, pages]) => `<button data-page="${id}" class="${pages.some(([pid])=>pid===page) ? "active" : ""}">${label}${id === "inbox" && unread ? `<i>${unread}</i>` : id === "market" && offerCount ? `<i>${offerCount}</i>` : ""}</button>`).join("")}</nav><div class="club-chip"><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b></div></header><div class="game-subnav">${subnav.map(([id,label])=>`<button data-page="${id}" class="${page===id?"active":""}">${esc(label)}${id==="proposals" && offerCount ? ` <i>${offerCount}</i>`:""}</button>`).join("")}</div><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado"}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
     mountAvatar();
+    revealActiveTab();
+  }
+  // Celular: a barra de abas rola na horizontal e é recriada a cada render; mantém a aba atual visível.
+  function revealActiveTab() {
+    const nav = document.querySelector(".game-nav nav"), on = nav?.querySelector("button.active");
+    if (nav && on && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = on.offsetLeft - (nav.clientWidth - on.offsetWidth) / 2;
   }
   function landing() {
     const saved = state;
