@@ -992,11 +992,169 @@
       const coach = state.mode === "coach";
       const sq = !coach && D.Squad?.competition ? D.Squad.competition(state) : null;
       const pc = !coach ? D.Career.init(state).playerCareer : null;
+      const trust = !coach && D.Squad?.trustSummary ? D.Squad.trustSummary(state,5) : null;
+      const coachObjectives = !coach && Career.matchObjectives ? Career.matchObjectives(state) : [];
+      const conversationStatus = !coach && D.Squad?.coachConversationStatus
+        ? D.Squad.coachConversationStatus(state)
+        : null;
+      const promiseStatus = !coach && D.Squad?.coachPromiseStatus
+        ? D.Squad.coachPromiseStatus(state)
+        : null;
+      const coachRelation = !coach && trust ? (() => {
+        const trendValue = Number(trust.trend || 0);
+        const trendLabel = trust.direction === "SUBINDO"
+          ? `SUBINDO ${trendValue > 0 ? "+" : ""}${trendValue}`
+          : trust.direction === "CAINDO"
+            ? `CAINDO ${trendValue}`
+            : "EST\u00c1VEL";
+
+        const objectiveHtml = coachObjectives.length
+          ? coachObjectives.map((o) => `<li>${esc(o.label)}</li>`).join("")
+          : "<li>Manter regularidade e competir por espa\u00e7o.</li>";
+
+        const promiseHtml = promiseStatus ? (() => {
+          const active = promiseStatus.active;
+          const history = Array.isArray(promiseStatus.history) ? promiseStatus.history : [];
+
+          const progressValue = (promise) => {
+            if (!promise) return 0;
+            if (promise.metric === "minutes") return Number(promise.minutes || 0);
+            if (promise.metric === "starts") return Number(promise.starts || 0);
+            return Number(promise.appearances || 0);
+          };
+
+          const progressLabel = (promise) => {
+            const value = progressValue(promise);
+            if (promise.metric === "minutes") return `${value}/${promise.target} minutos`;
+            if (promise.metric === "starts") return `${value}/${promise.target} titularidades`;
+            return `${value}/${promise.target} oportunidade(s)`;
+          };
+
+          const gamesLabel = (promise) =>
+            `${promise.eligibleGames}/${promise.maxGames} jogos eleg\u00edveis`;
+
+          const activeHtml = active
+            ? `<div class="notice coach-promise-active">
+                <div class="split">
+                  <div>
+                    <div class="tag">COMPROMISSO DO TREINADOR</div>
+                    <h3>${esc(active.label)}</h3>
+                  </div>
+                  <span class="pill">ATIVA</span>
+                </div>
+                <p><b>Progresso:</b> ${esc(progressLabel(active))}</p>
+                <p><b>Janela:</b> ${esc(gamesLabel(active))}</p>
+                <p class="muted">Les\u00e3o ou suspens\u00e3o n\u00e3o consome um jogo eleg\u00edvel da promessa.</p>
+              </div>`
+            : "";
+
+          const historyHtml = history.length
+            ? `<details class="section coach-promise-history">
+                <summary><b>Hist\u00f3rico de compromissos</b></summary>
+                <div class="section">
+                  ${history.slice(0,5).map((promise) => {
+                    const stateLabel = promise.status || "\u2014";
+                    return `<div class="notice">
+                      <div class="split">
+                        <div>
+                          <b>${esc(promise.label)}</b>
+                          <p>${esc(progressLabel(promise))} \u00b7 ${esc(gamesLabel(promise))}</p>
+                        </div>
+                        <span class="pill">${esc(stateLabel)}</span>
+                      </div>
+                      ${promise.resolution ? `<small>${esc(promise.resolution)}</small>` : ""}
+                    </div>`;
+                  }).join("")}
+                </div>
+              </details>`
+            : "";
+
+          if (!activeHtml && !historyHtml) return "";
+
+          return `<div class="coach-promises-stage19">${activeHtml}${historyHtml}</div>`;
+        })() : "";
+        const conversationHtml = conversationStatus ? (() => {
+          const active = conversationStatus.active;
+
+          if (active) {
+            const choices = Array.isArray(active.choices) ? active.choices : [];
+
+            return `<div class="notice coach-conversation-active">
+              <div class="tag">CONVERSA INDIVIDUAL</div>
+              <h3>${esc(active.question)}</h3>
+              <p class="muted">Escolha sua resposta. A decis\u00e3o pode ter um impacto pequeno na confian\u00e7a e no moral.</p>
+              <div class="actions">
+                ${choices.map((choice) =>
+                  `<button data-coach-conversation-choice="${esc(choice.id)}">${esc(choice.label)}</button>`
+                ).join("")}
+              </div>
+            </div>`;
+          }
+
+          if (conversationStatus.available) {
+            return `<div class="notice coach-conversation-ready">
+              <div class="split">
+                <div>
+                  <div class="tag">CONVERSA COM O TREINADOR</div>
+                  <h3>Conversa individual dispon\u00edvel</h3>
+                  <p class="muted">Fale sobre seu momento, papel no elenco e disputa por minutos.</p>
+                </div>
+                <button class="primary" data-start-coach-conversation>Conversar com o treinador</button>
+              </div>
+            </div>`;
+          }
+
+          return `<div class="notice coach-conversation-cooldown">
+            <div class="split">
+              <div>
+                <div class="tag">CONVERSA COM O TREINADOR</div>
+                <h3>Pr\u00f3xima conversa em ${conversationStatus.daysRemaining} dia(s)</h3>
+                <p class="muted">O intervalo evita conversas repetitivas e mant\u00e9m o relacionamento ligado aos acontecimentos da carreira.</p>
+              </div>
+              <button disabled>Em cooldown</button>
+            </div>
+          </div>`;
+        })() : "";
+        const historyHtml = trust.history.length
+          ? trust.history.slice(0,5).map((row) => {
+              const sign = row.delta > 0 ? "+" : "";
+              return `<div class="notice"><div class="split"><small>Dia ${row.day} \u00b7 ${esc(row.source)}</small><b>${sign}${row.delta}</b></div><p>${esc(row.reason)}</p></div>`;
+            }).join("")
+          : `<p class="muted">A rela\u00e7\u00e3o ainda n\u00e3o possui eventos suficientes. Treinos e partidas passar\u00e3o a formar este hist\u00f3rico.</p>`;
+
+        return `<section class="card section coach-relationship-stage19">
+          <div class="split">
+            <div>
+              <div class="tag">RELA\u00c7\u00c3O COM O TREINADOR</div>
+              <h2>${Math.round(trust.current)}/100 \u00b7 ${esc(trust.role || "\u2014")}</h2>
+            </div>
+            <span class="pill">${esc(trendLabel)}</span>
+          </div>
+          ${bar("Confian\u00e7a do treinador", trust.current)}
+          ${conversationHtml}
+          ${promiseHtml}
+          <div class="grid">
+            <div>
+              <h3>Metas da pr\u00f3xima partida</h3>
+              <ul>${objectiveHtml}</ul>
+              <p class="muted">Cumprir metas, manter bons treinos e aproveitar minutos em campo influencia sua disputa por espa\u00e7o.</p>
+            </div>
+            <div>
+              <h3>Feedback recente</h3>
+              ${trust.last ? `<p><b>${esc(trust.last.reason)}</b></p>` : `<p class="muted">Ainda sem feedback recente.</p>`}
+            </div>
+          </div>
+          <details class="section">
+            <summary><b>Hist\u00f3rico da rela\u00e7\u00e3o</b></summary>
+            <div class="section">${historyHtml}</div>
+          </details>
+        </section>`;
+      })() : "";
       const selection=sq?.selection;
       const status=(p)=>selection?.starters.includes(p)?"Titular":selection?.bench.includes(p)?"Banco":"Fora";
       const form=(p)=>D.Squad?.formValue?D.Squad.formValue(state,p).toFixed(1):"—";
       const relation = sq ? `<section class="card section"><div class="tag">DISPUTA POR POSIÇÃO</div><div class="split"><div><h2>${esc(state.person.pos)} · ${esc(sq.heroRole)}</h2><p>Minha posição na disputa: <b>${sq.heroRank}º</b> · Confiança do treinador: <b>${Math.round(pc.coachTrust)}/100</b></p></div><span class="pill">${esc(sq.formation)}</span></div><div class="tablewrap"><table><thead><tr><th>#</th><th>Concorrente</th><th>OVR</th><th>Forma</th><th>Condição</th><th>Situação</th></tr></thead><tbody>${sq.rivals.map(r=>`<tr class="${r.id==="hero"?"highlight":""}"><td>${r.rank}</td><td>${esc(r.name)}</td><td>${r.overall}</td><td>${r.form}</td><td>${r.condition}%</td><td>${esc(r.status)}</td></tr>`).join("")}</tbody></table></div><p class="muted">A escalação considera posição, OVR, forma recente, condição, moral e confiança. Status contratual não garante vaga.</p>${pc.matchSelection?`<div class="notice"><b>Última decisão do treinador:</b> ${esc(pc.matchSelection.role)}<br><small>${esc(pc.matchSelection.reason||"")}</small></div>`:""}</section>` : "";
-      return `${relation}<section class="card"><div class="split"><h2>${esc(c.name)} · ${c.roster.length} atletas</h2><span class="pill">Formação ${esc(sq?.formation||c.formation||"4-3-3")}</span></div>${coach?`<label>Plano tático<select id="tactic">${opt([["balanced","Equilibrado"],["possession","Posse e construção"],["counter","Bloco baixo e contra-ataque"],["attack","Ataque e risco"]],c.tactic)}</select></label>`:'<p class="muted">No modo jogador, a escalação é decidida pelo treinador conforme mérito e disponibilidade.</p>'}<div class="tablewrap"><table><thead><tr>${coach?"<th>XI</th>":""}<th>Nome</th><th>Pos.</th><th>Idade</th><th>OVR</th><th>Forma</th><th>Condição</th><th>Status</th></tr></thead><tbody>${c.roster.slice().sort((a,b)=>D.overall(b)-D.overall(a)).map(p=>`<tr class="${p.id==="hero"?"highlight":""}">${coach?`<td><input type="checkbox" class="lineup" value="${p.id}" ${c.lineup.includes(p.id)?"checked":""} ${p.injury?"disabled":""}></td>`:""}<td>${esc(p.name)}</td><td>${p.pos}</td><td>${p.age}</td><td>${D.overall(p)}</td><td>${form(p)}</td><td>${Math.round(p.condition)}%</td><td>${p.injury?"Lesionado":p.suspension>0?"Suspenso":coach?"Disponível":esc(status(p))}</td></tr>`).join("")}</tbody></table></div>${coach?'<p><button class="primary" data-action="lineup">Salvar os 11 titulares</button></p>':""}</section>`;
+      return `${coachRelation}${relation}<section class="card"><div class="split"><h2>${esc(c.name)} · ${c.roster.length} atletas</h2><span class="pill">Formação ${esc(sq?.formation||c.formation||"4-3-3")}</span></div>${coach?`<label>Plano tático<select id="tactic">${opt([["balanced","Equilibrado"],["possession","Posse e construção"],["counter","Bloco baixo e contra-ataque"],["attack","Ataque e risco"]],c.tactic)}</select></label>`:'<p class="muted">No modo jogador, a escalação é decidida pelo treinador conforme mérito e disponibilidade.</p>'}<div class="tablewrap"><table><thead><tr>${coach?"<th>XI</th>":""}<th>Nome</th><th>Pos.</th><th>Idade</th><th>OVR</th><th>Forma</th><th>Condição</th><th>Status</th></tr></thead><tbody>${c.roster.slice().sort((a,b)=>D.overall(b)-D.overall(a)).map(p=>`<tr class="${p.id==="hero"?"highlight":""}">${coach?`<td><input type="checkbox" class="lineup" value="${p.id}" ${c.lineup.includes(p.id)?"checked":""} ${p.injury?"disabled":""}></td>`:""}<td>${esc(p.name)}</td><td>${p.pos}</td><td>${p.age}</td><td>${D.overall(p)}</td><td>${form(p)}</td><td>${Math.round(p.condition)}%</td><td>${p.injury?"Lesionado":p.suspension>0?"Suspenso":coach?"Disponível":esc(status(p))}</td></tr>`).join("")}</tbody></table></div>${coach?'<p><button class="primary" data-action="lineup">Salvar os 11 titulares</button></p>':""}</section>`;
     },
     training() {
       if (state.mode === "coach") {
@@ -1441,6 +1599,18 @@
       return;
     }
     if (b.dataset.messageRead) { command("markMessageRead", { id:b.dataset.messageRead }); return; }
+    if (b.hasAttribute("data-start-coach-conversation")) {
+      command("startCoachConversation");
+      return;
+    }
+
+    if (b.dataset.coachConversationChoice) {
+      command(
+        "respondCoachConversation",
+        { choiceId:b.dataset.coachConversationChoice }
+      );
+      return;
+    }
     if (b.dataset.interview) { command("respondInterview", { id:b.dataset.interview, choice:b.dataset.interviewChoice }); return; }
     if (b.dataset.choice) {
       command("decide", { choice: b.dataset.choice });

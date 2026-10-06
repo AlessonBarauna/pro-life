@@ -154,6 +154,15 @@
         D.Training.deactivateArchetypePerk(s, data.id);
         break;
 
+      case "startCoachConversation":
+        if(s.mode!=="player")
+          throw Error("Dispon\u00edvel apenas para carreira de jogador.");
+        return D.Squad.startCoachConversation(s);
+
+      case "respondCoachConversation":
+        if(s.mode!=="player")
+          throw Error("Dispon\u00edvel apenas para carreira de jogador.");
+        return D.Squad.respondCoachConversation(s,data.choiceId);
 case "tactic": {
         const c = D.club(s);
         if (s.mode !== "coach" || !c)

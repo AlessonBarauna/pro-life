@@ -972,6 +972,14 @@
           objectivesMet:played ? Number(pc.lastEvaluation?.met || 0) : 0, objectivesTotal:played ? Number(pc.lastEvaluation?.total || 0) : 0
         };
         pc.lastMatchReport = report;
+        Squad?.evaluateCoachPromise?.(s,report);
+        Squad?.recordTrustChange?.(s,"match",trustBefore,pc.coachTrust,{
+          eventId:`coach-trust:${s.season}:${s.day}:${homeId}:${awayId}`,
+          status,
+          rating:report.rating,
+          objectivesMet:report.objectivesMet,
+          objectivesTotal:report.objectivesTotal
+        });
         const eventId = `match-report:${s.season}:${s.day}:${homeId}:${awayId}`;
         let body;
         if (status === "TITULAR") body = `${s.person.name} foi titular, jogou ${report.minutes} min, nota ${report.rating.toFixed(1)}, ${goals} gol(s) e ${assists} assistência(s). XP +${report.xp.toFixed(1)} · confiança ${report.coachTrustAfter-trustBefore>=0?"+":""}${Math.round(report.coachTrustAfter-trustBefore)}.`;

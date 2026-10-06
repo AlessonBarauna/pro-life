@@ -1511,7 +1511,8 @@
         pc.lastEvaluation = { day:s.day, rating, met, total:objectives.length, goals, assists, minutes, starter, shots:attack.shots||0, onTarget:attack.onTarget||0, xg:+(attack.xg||0).toFixed(2) };
       } else {
         pc.benchGames++;
-        pc.coachTrust = clamp(pc.coachTrust - 1, 0, 100);
+        const unavailable = !!s.person.injury || Number(s.person.suspension || 0) > 0 || !!s.person._competitionSuspended;
+        if(!unavailable) pc.coachTrust = clamp(pc.coachTrust - 1, 0, 100);
       }
       updatePlayerRole(s);
     }
@@ -1695,8 +1696,8 @@
       if(candidates.length && rng.next()<0.55){ const c=rng.pick(candidates), p=rng.pick(c.roster.filter((x)=>x.id!=="hero"&&!x.injury&&!(x.suspension>0))); p.suspension=1; const item={day:s.day,season:s.season,clubId:c.id,playerId:p.id,player:p.name,games:1}; lw.suspensions.unshift(item); lw.suspensions=lw.suspensions.slice(0,40); post(s,"Mundo do futebol","Tribunal esportivo","Suspensão",`${p.name}, do ${c.name}, cumprirá uma partida de suspensão.`); }
     }
     if (s.day > 0 && s.day % 56 === 0) {
-      const crisis=s.clubs.filter((c)=>c.id!==s.clubId && lw.clubForm[c.id]?.status==="Em crise");
-      if(crisis.length && rng.next()<0.45){ const c=rng.pick(crisis), item={day:s.day,season:s.season,clubId:c.id,club:c.name,reason:"sequência ruim"}; lw.managerChanges.unshift(item); lw.managerChanges=lw.managerChanges.slice(0,24); post(s,"Mundo do futebol","Noticiário dos clubes","Mudança no comando",`${c.name} mudou a comissão técnica após uma sequência ruim de resultados.`); }
+      const crisis=s.clubs.filter((c)=>(s.mode==="coach" ? c.id!==s.clubId : true) && lw.clubForm[c.id]?.status==="Em crise");
+      if(crisis.length && rng.next()<0.45){ const c=rng.pick(crisis), item={day:s.day,season:s.season,clubId:c.id,club:c.name,reason:"sequência ruim"}; lw.managerChanges.unshift(item); lw.managerChanges=lw.managerChanges.slice(0,24); root.ProLifeSquad?.handleManagerChange?.(s,item); post(s,"Mundo do futebol","Noticiário dos clubes","Mudança no comando",`${c.name} mudou a comissão técnica após uma sequência ruim de resultados.`); }
     }
     lw.headlines = lw.headlines.slice(0, 50);
     return lw;
