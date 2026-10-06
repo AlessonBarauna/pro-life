@@ -76,6 +76,13 @@
       for (const x of c.contracts) if (!x || !text(x.id,180) || !text(x.brandId,40) || !text(x.brand,100) || !text(x.category,80) || !text(x.status,40) || !finite(x.amount,0,1e10) || !finite(x.startDay,0,s.day+5000) || !finite(x.endDay,x.startDay,s.day+5000) || !finite(x.relationship,0,100)) fail();
       for (const e of c.events) if (!e || !text(e.id,200) || !text(e.brand,100) || !text(e.type,80) || !text(e.status,40) || !finite(e.day,0,s.day+5000)) fail();
     }
+    if (s.extras && root.ProLife?.UnexpectedEvents) root.ProLife.UnexpectedEvents.init(s);
+    if (s.extras?.unexpectedEvents !== undefined) {
+      const u=s.extras.unexpectedEvents;
+      if (!u || u.version!==1 || !Array.isArray(u.history) || u.history.length>80 || !u.cooldowns || typeof u.cooldowns!=="object" || Array.isArray(u.cooldowns) || !u.processed || typeof u.processed!=="object" || Array.isArray(u.processed) || !finite(u.lastEventDay,-9999,s.day) || !finite(u.rngState,1,4294967295) || !u.stats || !["created","resolved","expired"].every((key)=>finite(u.stats[key],0,1e9))) fail();
+      for (const row of u.history) if (!row || typeof row.eventId!=="string" || typeof row.eventType!=="string" || typeof row.category!=="string" || typeof row.title!=="string" || !["RESOLVED","EXPIRED"].includes(row.status) || !finite(row.day,0,s.day)) fail();
+      for (const day of Object.values(u.cooldowns)) if (!finite(day,-9999,s.day+5000)) fail();
+    }
     return s;
   }
   root.ProLifeValidateExpansion = { validate };

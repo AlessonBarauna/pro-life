@@ -49,6 +49,9 @@
   const Commercial =
     root.ProLifeCommercial ||
     (typeof require === "function" ? require("./commercial.js") : null);
+  const UnexpectedEvents =
+    root.ProLifeUnexpectedEvents ||
+    (typeof require === "function" ? require("./unexpected-events.js") : null);
   const VERSION = 1,
     clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   class Random {
@@ -392,6 +395,7 @@
     Competitions?.init(s);
     Life?.init(s);
     Commercial?.init(s, { overall, club });
+    UnexpectedEvents?.init(s);
     NationalTeam?.init(s);
     World2?.init(s, API, seed);
     if (plan) Creation.applyContext(s, plan);
@@ -1205,6 +1209,7 @@
     Competitions?.init(s);
     Life?.init(s);
     Commercial?.init(s, API);
+    UnexpectedEvents?.init(s);
     const rng = new Random(s.rng);
     for (let d = 0; d < clamp(days, 1, 30); d++) {
       s.day++;
@@ -1269,6 +1274,7 @@
       playCompetitions(s, rng);
       // Investimentos vencem no dia exato, independentemente do fechamento mensal.
       Life?.dailyFinance?.(s, Career);
+      UnexpectedEvents?.daily?.(s, rng, Career, API);
       if (s.day % 30 === 0) {
         Life?.monthlyFinance?.(s, Career);
         Career.monthly(s);
@@ -1552,6 +1558,11 @@
     if (!s.decision || !s.decision.choices.some((c) => c[0] === choice))
       throw Error("Decisão inválida.");
     const resolvedDecision = s.decision;
+    if (resolvedDecision.source === "unexpected_event") {
+      const result = UnexpectedEvents.resolve(s, choice, Career, API);
+      log(s, "Escolha registrada", `${result.choiceLabel} | ${result.summary}`);
+      return result;
+    }
     const consequenceBefore=decisionSnapshot(s);
     if (choice === "visit") {
       s.family = clamp(s.family + 12, 0, 100);
@@ -1659,6 +1670,7 @@
     Squad,
     Life,
     Commercial,
+    UnexpectedEvents,
     Physical,
     NationalTeam,
     schedule,
