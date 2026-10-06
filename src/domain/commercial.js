@@ -473,6 +473,7 @@
     const popularity=Number(c.popularity||0);
     const reputation=Number(s.reputation||0);
     const image=imageScore(s);
+    const personality=root.ProLifePlayerPersonality?.commercialModifier?.(s)||0;
 
     const ageFit=
       age>=brand.age[0]&&age<=brand.age[1]
@@ -489,6 +490,7 @@
       commercial*weights.commercial+
       image*weights.image+
       profileFit(s,brand)+
+      personality+
       (hasNational(s)?4:0)+
       ageFit;
 

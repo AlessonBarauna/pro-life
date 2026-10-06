@@ -1,6 +1,7 @@
 (function(root){
   "use strict";
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const PlayerPersonality=root.ProLifePlayerPersonality||(typeof require==="function"?require("./player-personality.js"):null);
   const slots={"4-3-3":{GOL:1,DEF:4,MEI:3,ATA:3},"4-4-2":{GOL:1,DEF:4,MEI:4,ATA:2},"4-2-3-1":{GOL:1,DEF:4,MEI:5,ATA:1}};
   const tacticalStyles=["POSSE","TRANSICAO","PRESSAO_ALTA","BLOCO_BAIXO","EQUILIBRADO","JOGO_DIRETO"];
   const managerNames={
@@ -298,6 +299,7 @@
     if(!conversation||conversation.answered) throw Error("Conversa com treinador indispon\u00edvel.");
     const choice=conversation.choices.find(x=>x.id===choiceId);
     if(!choice) throw Error("Resposta inv\u00e1lida.");
+    PlayerPersonality?.applyChoice?.(s,"coach_conversation",choice.id,{eventId:"personality:"+conversation.id,label:choice.label});
     const before=Number(pc.coachTrust||0);
     pc.coachTrust=clamp(before+Number(choice.trust||0),0,100);
     s.person.morale=clamp(Number(s.person.morale||50)+Number(choice.morale||0),0,100);
@@ -367,6 +369,7 @@
     if(manager?.archetype==="CONSERVADOR") plan.minTrust=Math.min(75,plan.minTrust+6);
     if(manager?.archetype==="MERITOCRATICO"&&init(s).trainingTrend>0) plan.minTrust=Math.max(20,plan.minTrust-4);
     if(manager?.archetype==="PROTETOR") plan.maxGames=Math.min(4,plan.maxGames+1);
+    plan.minTrust=clamp(plan.minTrust-(PlayerPersonality?.coachModifier?.(s)||0),20,75);
     return plan;
   }
 
