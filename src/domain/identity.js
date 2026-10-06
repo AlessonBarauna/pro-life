@@ -5,7 +5,7 @@
   // Tudo é determinístico: nenhuma decisão usa RNG, relógio ou UUID.
   const Training = root.ProLifeTraining || (typeof require === "function" ? require("./training.js") : null);
   const Stats = () => root.ProLifeStatistics || (typeof require === "function" ? require("./statistics.js") : null);
-  const VERSION = 1;
+  const VERSION = 2;
   const MATCH_RATE = 0.02, TRAINING_RATE = 0.004, SHIFT_MARGIN = 7, SHIFT_STREAK = 20, SHIFT_COOLDOWN = 40, SECONDARY_MIN = 55, XP_BONUS = 0.06;
   // Perfil secundário pode vir de posição vizinha (híbrido); o principal precisa ser compatível com a posição.
   const adjacent = { ATA: ["MEI"], MEI: ["ATA", "DEF"], DEF: ["MEI"], GOL: [] };
@@ -37,6 +37,7 @@
     if (!Array.isArray(id.notified)) id.notified = [];
     if (!Array.isArray(id.history)) id.history = [];
     for (const k of ["matches", "sessions", "shiftStreak"]) if (!Number.isFinite(id[k])) id[k] = 0;
+    id.version = VERSION;
     // Mudança de posição: novos arquétipos rastreados entram com base nos atributos, sem apagar os anteriores.
     const seed = fresh(s).behavior;
     for (const a of tracked(s.person.pos)) if (!Number.isFinite(id.behavior[a])) id.behavior[a] = seed[a];
@@ -60,6 +61,7 @@
       finisher: g * 28 + ot * 5 + xg * 10, nine: g * 24 + ot * 4 + xg * 12, dribbler: a * 18 + g * 10 + sh * 3 + (m.rating >= 7.5 ? 10 : 0),
       winger: a * 20 + g * 14 + sh * 2, maestro: a * 30 + (m.rating >= 7.2 ? 8 : 0), engine: tk * 5 + a * 10 + g * 8 + mins * 10,
       builder: tk * 4 + a * 14 + cs * 12, wall: tk * 7 + cs * 22, fullback: tk * 4 + a * 22 + cs * 8, guardian: sv * 7 + cs * 30,
+      sweeper: sv * 5 + cs * 22 + (m.rating >= 7.2 ? 10 : 0), anchor: tk * 7 + cs * 12 + mins * 12, shadow: g * 20 + a * 18 + sh * 3 + (m.rating >= 7.4 ? 8 : 0),
     };
     return clamp(base + (table[id] || 0), 0, 100);
   }
@@ -93,6 +95,7 @@
     id.shiftStreak = 0;
     s.person.archetypeId = leader.id;
     const plan = Training.init(s);
+    Training.reconcileArchetypePerks?.(s);
     id.history.push({ season: s.season, day: s.day, match: id.matches, from: primary, to: leader.id });
     id.history = id.history.slice(-20);
     post(s, "Evolução de perfil reconhecida", `A comissão técnica percebeu que seu jogo mudou: de ${catalog()[primary]?.name || primary} para ${plan.archetype.name}. Os treinos passam a considerar essa identidade.`);
@@ -197,7 +200,7 @@
     };
   }
   // ---- Integrações leves (peso pequeno, nunca decisivo) ----
-  const tacticPrefs = { possession: ["maestro", "builder", "dribbler", "fullback"], counter: ["winger", "finisher", "engine", "wall"], attack: ["finisher", "nine", "dribbler", "winger", "fullback"] };
+  const tacticPrefs = { possession: ["maestro", "builder", "dribbler", "fullback", "anchor", "sweeper"], counter: ["winger", "finisher", "engine", "wall", "shadow", "sweeper"], attack: ["finisher", "nine", "dribbler", "winger", "fullback", "shadow"] };
   // Mercado: clube valoriza o que o jogador agrega ao grupo da posição (complementaridade) e, se houver, o plano tático.
   function styleFit(s, club) {
     if (s.mode !== "player" || !club || !s.person?.archetypeId) return 0;
@@ -216,7 +219,7 @@
     return round3(clamp(((a?.value || 50) - 50) / 40, 0, 1));
   }
   // Patrocínio: identidade marcante tem apelo comercial pequeno (até +2,5 pontos no score).
-  const flair = ["finisher", "nine", "dribbler", "winger", "maestro"];
+  const flair = ["finisher", "nine", "dribbler", "winger", "maestro", "shadow"];
   function commercialAppeal(s) {
     if (s.mode !== "player" || !s.person?.archetypeId || !s.trainingPlan?.identity) return 0;
     const a = affinities(s).find((x) => x.id === s.person.archetypeId), strength = clamp(((a?.value || 50) - 45) / 40, 0, 1);

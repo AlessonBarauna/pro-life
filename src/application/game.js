@@ -136,7 +136,25 @@
         if (s.mode !== "player") throw Error("Especializações são da carreira de jogador.");
         D.Training.activateSpecialization(s, data.id);
         break;
-      case "tactic": {
+            case "unlockArchetypePerk":
+        if (s.mode !== "player")
+          throw Error("Perks de arqu\u00e9tipo s\u00e3o da carreira de jogador.");
+        D.Training.unlockArchetypePerk(s, data.id);
+        break;
+
+      case "activateArchetypePerk":
+        if (s.mode !== "player")
+          throw Error("Perks de arqu\u00e9tipo s\u00e3o da carreira de jogador.");
+        D.Training.activateArchetypePerk(s, data.id);
+        break;
+
+      case "deactivateArchetypePerk":
+        if (s.mode !== "player")
+          throw Error("Perks de arqu\u00e9tipo s\u00e3o da carreira de jogador.");
+        D.Training.deactivateArchetypePerk(s, data.id);
+        break;
+
+case "tactic": {
         const c = D.club(s);
         if (s.mode !== "coach" || !c)
           throw Error("Escolha um clube como treinador.");

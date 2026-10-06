@@ -190,6 +190,77 @@
     const ex = v.expectation, ob = v.objectives, i = v.initial;
     return `<section class="card section origin-panel"><div class="split"><div><div class="tag">HISTÓRIA DE ORIGEM</div><h2>${esc(v.title)}</h2></div><span class="pill">${esc(v.difficulty.name)}</span></div><p class="muted">${esc(v.hint ? "Desafio da história: " + v.hint + ". " : "")}Personalidade: <b>${esc(v.personality.name)}</b>. Ponto de partida: ${i.age} anos · ${i.overall} GER · reputação ${i.reputation} · popularidade ${i.popularity}.</p>${ex ? `<p><b>Expectativa do clube:</b> ${esc(ex.label)} (${ex.value}/100)</p>` : `<p class="muted">Sem clube: escolha uma proposta para iniciar a carreira profissional.</p>`}${ob.length ? `<div class="stats">${ob.map((o) => `<div class="stat"><small>${o.done ? "✓ CUMPRIDO" : "OBJETIVO"}</small><b>${esc(o.label)}</b></div>`).join("")}</div>` : ""}</section>`;
   }
+  function archetypePerkPanel() {
+    if (state?.mode !== "player") return "";
+
+    const plan = D.Training.init(state);
+    D.Training.reconcileArchetypePerks?.(state);
+
+    const view = D.Identity?.view?.(state);
+    const primary = state.person.archetypeId;
+    const secondary = view?.secondary?.id || null;
+
+    const slots = D.Training.archetypePerkSlots(state);
+    const active = D.Training.activeArchetypePerks(state);
+    const activeIds = new Set(active.map((x) => x.id));
+    const unlockedIds = new Set(plan.archetypePerks || []);
+    const perks = D.Training.availableArchetypePerks(state);
+
+    const branches = [primary, secondary]
+      .filter(Boolean)
+      .map((archetypeId) => {
+        const arch = D.Training.archetypeCatalog[archetypeId];
+        const list = perks.filter((perk) => perk.archetype === archetypeId);
+
+        if (!list.length) return "";
+
+        const role = archetypeId === primary ? "principal" : "secundário";
+
+        const items = list.map((perk) => {
+          const isActive = activeIds.has(perk.id);
+          const unlocked = unlockedIds.has(perk.id);
+          const eligible = plan.archetypeLevel >= perk.level;
+
+          const status =
+            isActive ? "ATIVO" :
+            unlocked ? "DESBLOQUEADO" :
+            eligible ? "DISPONÍVEL" :
+            "BLOQUEADO";
+
+          let action = "";
+
+          if (!unlocked && eligible) {
+            action = `<button data-unlock-archetype-perk="${perk.id}">Desbloquear</button>`;
+          }
+          else if (unlocked && !isActive) {
+            const full = active.length >= slots;
+            action = `<button data-activate-archetype-perk="${perk.id}" ${full ? "disabled" : ""}>Ativar</button>`;
+          }
+          else if (isActive) {
+            action = `<button data-deactivate-archetype-perk="${perk.id}">Desativar</button>`;
+          }
+
+          const effect = perk.kind === "training"
+            ? `Treino: ${esc(D.Training.trainingCategories[perk.category]?.name || perk.category)} +${Math.round(perk.value * 100)}%`
+            : `Partida: ${esc(perk.action)} +${Math.round(perk.value * 100)}%`;
+
+          const requirement = !eligible
+            ? `<div class="id-reqs"><span class="no">○ Nível de arquétipo ${perk.level} <small>(atual: ${plan.archetypeLevel})</small></span></div>`
+            : "";
+
+          return `<li class="id-spec ${isActive ? "active" : !eligible ? "locked" : "open"}"><div class="split"><div><b>${esc(perk.name)}</b> <span class="pill">${status}</span><p class="muted">${esc(perk.description)}</p><small>${effect}</small></div>${action}</div>${requirement}</li>`;
+        }).join("");
+
+        return `<div class="id-branch archetype-perk-branch"><div class="id-root"><b>${esc(arch?.name || archetypeId)}</b><small>${role}</small></div><ul>${items}</ul></div>`;
+      })
+      .join("");
+
+    const activeNames = active.length
+      ? active.map((perk) => esc(perk.name)).join(" · ")
+      : "Nenhum";
+
+    return `<div class="archetype-perk-panel"><div class="split"><div><h3>Perks de arquétipo</h3><p class="muted">Características situacionais do seu perfil. Não aumentam o overall diretamente.</p></div><div><small>Nível de arquétipo</small><h3>${plan.archetypeLevel}</h3><p class="muted">XP: ${Math.round(plan.archetypeXp || 0)} · Slots: ${active.length}/${slots}</p></div></div><div class="notice"><b>Perks ativos:</b> ${activeNames}</div><div class="id-tree">${branches}</div></div>`;
+  }
   function identityPanel() {
     const v = D.Identity?.view?.(state);
     if (!v) return "";
@@ -198,7 +269,7 @@
     const rec = v.recommendation;
     return `<section id="player-identity" class="card section"><div class="tag">IDENTIDADE</div><div class="id-head"><div><small>Arquétipo atual</small><h2>${esc(v.primary.name)}</h2><p class="muted">${esc(v.primary.description || "")}</p>${v.secondary ? `<p>Perfil secundário: <b>${esc(v.secondary.name)}</b></p>` : `<p class="muted">Sem perfil secundário definido.</p>`}</div><div><small>Especialização ativa</small><h3>${esc(v.activeSpecialization?.name || "Nenhuma")}</h3><p class="muted">${v.points} ponto(s) de especialização · Nível ${v.level}</p>${v.legacy.length ? `<p class="muted">Anteriores: ${v.legacy.map((x) => esc(x.name)).join(" · ")}</p>` : ""}</div></div>
       <div class="id-grid"><div><h3>Afinidades</h3>${affs}<p class="muted">Afinidades mudam aos poucos com o que você faz em campo e no treino.${v.shiftStreak ? ` Sinais de mudança de perfil: ${v.shiftStreak} jogo(s).` : ""}</p></div><div><h3>Pontos fortes</h3><div class="player-kpis">${attrList(v.strengths)}</div><h3>Pontos a desenvolver</h3><div class="player-kpis">${attrList(v.toDevelop, true)}</div>${rec ? `<div class="notice"><b>Recomendação de treino: ${esc(rec.name)}</b><p>${esc(rec.category)} · ${esc(rec.reason)}</p></div>` : ""}</div></div>
-      <h3>Especializações</h3><div class="id-tree">${identityTree(v)}</div></section>`;
+      <h3>Especializações</h3><div class="id-tree">${identityTree(v)}</div>${archetypePerkPanel()}</section>`;
   }
   function evolutionPanel() {
     const entries = state.development,
@@ -635,7 +706,7 @@
                 return "Valor de mercado";
 
               return x;
-            }).join(" ? ");
+            }).join(" · ");
 
         return `
           <article class="offer-card ${active?"on":""}">
@@ -1455,6 +1526,26 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
     }
     if (b.dataset.activateSpecialization) {
       command("activateSpecialization", { id: b.dataset.activateSpecialization });
+      return;
+    }
+    if (b.dataset.unlockArchetypePerk) {
+      command("unlockArchetypePerk", {
+        id: b.dataset.unlockArchetypePerk
+      });
+      return;
+    }
+
+    if (b.dataset.activateArchetypePerk) {
+      command("activateArchetypePerk", {
+        id: b.dataset.activateArchetypePerk
+      });
+      return;
+    }
+
+    if (b.dataset.deactivateArchetypePerk) {
+      command("deactivateArchetypePerk", {
+        id: b.dataset.deactivateArchetypePerk
+      });
       return;
     }
     switch (b.dataset.action) {

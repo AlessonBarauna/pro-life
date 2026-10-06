@@ -35,6 +35,9 @@
     nine: { id: "nine", positions: ["ATA"], name: "Camisa 9", description: "Presença de área, força e jogo aéreo para decidir perto do gol.", focus: ["finish", "heading", "strength", "positioning", "jumping"], weak: ["defense", "crossing"], xpActions: ["gols", "duelos aéreos"] },
     winger: { id: "winger", positions: ["ATA", "MEI"], name: "Ponta Veloz", description: "Ataca o espaço pelos lados com aceleração e cruzamento.", focus: ["pace", "acceleration", "sprint", "crossing", "dribbling"], weak: ["heading", "defense"], xpActions: ["assistências", "arrancadas"] },
     fullback: { id: "fullback", positions: ["DEF"], name: "Lateral Ofensivo", description: "Defende o corredor e chega ao ataque com fôlego e cruzamento.", focus: ["pace", "stamina", "crossing", "defense", "acceleration"], weak: ["heading", "finish"], xpActions: ["assistências", "desarmes"] },
+    sweeper: { id: "sweeper", positions: ["GOL"], name: "Goleiro Líbero", description: "Antecipa bolas longas, participa da construção e protege o espaço fora da área.", focus: ["positioning", "longPass", "composure", "pace", "ballControl"], weak: ["finish", "dribbling"], xpActions: ["defesas", "saídas", "passes longos"] },
+    anchor: { id: "anchor", positions: ["DEF", "MEI"], name: "Sentinela", description: "Protege a defesa, fecha linhas de passe e oferece equilíbrio posicional.", focus: ["interception", "positioning", "defense", "tackling", "composure"], weak: ["finish", "dribbling"], xpActions: ["interceptações", "desarmes", "recuperações"] },
+    shadow: { id: "shadow", positions: ["ATA", "MEI"], name: "Atacante Móvel", description: "Flutua entre linhas, associa com o meio e ataca o espaço para finalizar.", focus: ["positioning", "acceleration", "ballControl", "finish", "pass"], weak: ["defense", "heading"], xpActions: ["gols", "assistências", "movimentações"] },
   };
   const defaultArchetypeId = { GOL: "guardian", DEF: "wall", MEI: "maestro", ATA: "finisher" };
   const archetypes = Object.fromEntries(Object.entries(defaultArchetypeId).map(([pos,id]) => [pos, archetypeCatalog[id]]));
@@ -78,6 +81,15 @@
     wingBack: S("fullback", "Ala Incansável", "Sobe e volta o jogo inteiro pelo corredor.", ["stamina", "pace", "sprint"], "minutes", { level: 5, affinity: 58, attrs: { stamina: 78, pace: 74 }, stats: { appearances: 25 } }),
     supportFullback: S("fullback", "Lateral Apoiador", "Chega ao fundo e cruza com precisão.", ["crossing", "pass", "dribbling"], "assists", { level: 6, affinity: 58, attrs: { crossing: 76, pass: 70 }, stats: { assists: 5 } }),
     defensiveFullback: S("fullback", "Lateral Marcador", "Fecha o corredor e vence o ponta adversário.", ["defense", "tackling", "interception", "pace"], "tackles", { level: 5, affinity: 58, attrs: { defense: 74, tackling: 72 }, stats: { tackles: 35 } }),
+    keeperAnticipator: S("sweeper", "Antecipador", "Lê a profundidade e chega primeiro nas bolas fora da área.", ["positioning", "pace", "composure"], "saves", { level: 5, affinity: 58, attrs: { positioning: 74, pace: 62 }, stats: { saves: 40 } }),
+    keeperBuilder: S("sweeper", "Construtor", "Participa da primeira fase e encontra passes seguros sob pressão.", ["longPass", "pass", "composure", "ballControl"], "cleanSheet", { level: 6, affinity: 60, attrs: { longPass: 72, composure: 72 }, stats: { cleanSheets: 6 } }),
+    keeperLauncher: S("sweeper", "Lançador de Transição", "Transforma recuperações em ataques com distribuição longa.", ["longPass", "vision", "composure"], "rating", { level: 7, affinity: 60, attrs: { longPass: 76, vision: 66 }, stats: { appearances: 25 } }),
+    defensiveScreen: S("anchor", "Protetor da Zaga", "Ocupa o espaço à frente dos zagueiros e reduz linhas de progressão.", ["interception", "positioning", "defense", "stamina"], "tackles", { level: 5, affinity: 58, attrs: { interception: 74, positioning: 72 }, stats: { tackles: 35 } }),
+    ballHunter: S("anchor", "Caçador de Bolas", "Aumenta a agressividade funcional nas recuperações sem abandonar a estrutura.", ["tackling", "strength", "stamina", "interception"], "tackles", { level: 6, affinity: 60, attrs: { tackling: 76, stamina: 72 }, stats: { tackles: 50 } }),
+    deepController: S("anchor", "Regista Recuado", "Recupera e organiza a primeira construção com passe seguro.", ["pass", "longPass", "vision", "composure"], "assists", { level: 7, affinity: 60, attrs: { pass: 74, composure: 72 }, stats: { appearances: 30 } }),
+    roamingForward: S("shadow", "Atacante Flutuante", "Sai da referência para receber entre linhas e conectar o ataque.", ["ballControl", "pass", "positioning", "agility"], "assists", { level: 5, affinity: 58, attrs: { ballControl: 74, pass: 68 }, stats: { assists: 5 } }),
+    spaceRunner: S("shadow", "Ataque ao Espaço", "Acelera nas costas da defesa e aparece em zonas de finalização.", ["acceleration", "pace", "positioning", "finish"], "goals", { level: 6, affinity: 60, attrs: { acceleration: 76, positioning: 74 }, stats: { goals: 8 } }),
+    supportStriker: S("shadow", "Segundo Atacante", "Combina criação e chegada à área para participar de gols e assistências.", ["finish", "pass", "vision", "composure"], "goals", { level: 7, affinity: 60, attrs: { finish: 74, pass: 70 }, stats: { goals: 10, assists: 5 } }),
     reflexKeeper: S("guardian", "Reflexo", "Reação rápida em finalizações de perto.", ["jumping", "agility", "positioning"], "saves", { level: 5, affinity: 60, attrs: { jumping: 74, positioning: 74 }, stats: { saves: 60 } }),
     sweeperKeeper: S("guardian", "Goleiro Líbero", "Sai da área e participa da construção.", ["longPass", "composure", "pass", "pace"], "cleanSheet", { level: 6, affinity: 58, attrs: { longPass: 72, composure: 72 }, stats: { cleanSheets: 8 } }),
     boxCommander: S("guardian", "Comandante da Área", "Domina cruzamentos e organiza a defesa.", ["positioning", "jumping", "strength", "composure"], "cleanSheet", { level: 7, affinity: 60, attrs: { positioning: 76, composure: 74 }, stats: { cleanSheets: 12 } }),
@@ -90,6 +102,281 @@
     engine: { legacy: true, name: "Motor", description: "Treino físico favorece resistência e equilíbrio.", attrs: ["stamina", "strength", "balance"] },
     stopper: { legacy: true, name: "Especialista Defensivo", description: "Atuações sólidas favorecem marcação e desarme.", attrs: ["defense", "tackling", "interception", "positioning"] },
   };
+  const archetypePerks = {
+    guardianReflex: {
+      id: "guardianReflex",
+      archetype: "guardian",
+      name: "Reflexo de Emergencia",
+      description: "Melhora levemente a eficiencia em defesas quando o goleiro e muito exigido.",
+      level: 5,
+      kind: "match",
+      action: "saves",
+      value: 0.05
+    },
+    guardianCommand: {
+      id: "guardianCommand",
+      archetype: "guardian",
+      name: "Comando da Area",
+      description: "Premia atuacoes seguras em partidas sem sofrer gols.",
+      level: 10,
+      kind: "match",
+      action: "cleanSheet",
+      value: 0.05
+    },
+
+    sweeperRush: {
+      id: "sweeperRush",
+      archetype: "sweeper",
+      name: "Saida Antecipada",
+      description: "Valoriza jogos em que o goleiro libero participa ativamente e mantem boa nota.",
+      level: 5,
+      kind: "match",
+      action: "rating",
+      value: 0.05
+    },
+    sweeperDistribution: {
+      id: "sweeperDistribution",
+      archetype: "sweeper",
+      name: "Distribuicao Rapida",
+      description: "Favorece treino de passe e distribuicao para goleiros liberos.",
+      level: 10,
+      kind: "training",
+      category: "goalkeeper",
+      value: 0.05
+    },
+
+    wallDuel: {
+      id: "wallDuel",
+      archetype: "wall",
+      name: "Dominio de Duelo",
+      description: "Premia defensores que acumulam desarmes em uma atuacao.",
+      level: 5,
+      kind: "match",
+      action: "tackles",
+      value: 0.05
+    },
+    wallCleanSheet: {
+      id: "wallCleanSheet",
+      archetype: "wall",
+      name: "Linha Intocavel",
+      description: "Favorece o desenvolvimento apos partidas defensivamente solidas.",
+      level: 10,
+      kind: "match",
+      action: "cleanSheet",
+      value: 0.05
+    },
+
+    builderProgression: {
+      id: "builderProgression",
+      archetype: "builder",
+      name: "Primeiro Passe",
+      description: "Favorece sessoes de passe para defensores construtores.",
+      level: 5,
+      kind: "training",
+      category: "passing",
+      value: 0.05
+    },
+    builderComposure: {
+      id: "builderComposure",
+      archetype: "builder",
+      name: "Saida Sob Pressao",
+      description: "Premia partidas de boa nota no perfil construtor.",
+      level: 10,
+      kind: "match",
+      action: "rating",
+      value: 0.05
+    },
+
+    engineEndurance: {
+      id: "engineEndurance",
+      archetype: "engine",
+      name: "Pulmao",
+      description: "Favorece treinos fisicos coerentes com o perfil Motor.",
+      level: 5,
+      kind: "training",
+      category: "physical",
+      value: 0.05
+    },
+    enginePresence: {
+      id: "enginePresence",
+      archetype: "engine",
+      name: "Area a Area",
+      description: "Premia minutos e participacao constante durante a partida.",
+      level: 10,
+      kind: "match",
+      action: "minutes",
+      value: 0.05
+    },
+
+    anchorIntercept: {
+      id: "anchorIntercept",
+      archetype: "anchor",
+      name: "Leitura Defensiva",
+      description: "Favorece atuacoes com volume defensivo consistente.",
+      level: 5,
+      kind: "match",
+      action: "tackles",
+      value: 0.05
+    },
+    anchorDiscipline: {
+      id: "anchorDiscipline",
+      archetype: "anchor",
+      name: "Equilibrio Tatico",
+      description: "Favorece treino defensivo do perfil Sentinela.",
+      level: 10,
+      kind: "training",
+      category: "defending",
+      value: 0.05
+    },
+
+    maestroVision: {
+      id: "maestroVision",
+      archetype: "maestro",
+      name: "Visao de Jogo",
+      description: "Premia criacao direta de gols.",
+      level: 5,
+      kind: "match",
+      action: "assists",
+      value: 0.05
+    },
+    maestroPassing: {
+      id: "maestroPassing",
+      archetype: "maestro",
+      name: "Controle do Ritmo",
+      description: "Favorece sessoes de passe do perfil Maestro.",
+      level: 10,
+      kind: "training",
+      category: "passing",
+      value: 0.05
+    },
+
+    dribblerConfidence: {
+      id: "dribblerConfidence",
+      archetype: "dribbler",
+      name: "Um Contra Um",
+      description: "Favorece treino tecnico voltado ao drible.",
+      level: 5,
+      kind: "training",
+      category: "dribbling",
+      value: 0.05
+    },
+    dribblerImpact: {
+      id: "dribblerImpact",
+      archetype: "dribbler",
+      name: "Desequilibrio",
+      description: "Premia atuacoes de alta nota.",
+      level: 10,
+      kind: "match",
+      action: "rating",
+      value: 0.05
+    },
+
+    finisherInstinct: {
+      id: "finisherInstinct",
+      archetype: "finisher",
+      name: "Instinto de Gol",
+      description: "Premia partidas em que o jogador marca.",
+      level: 5,
+      kind: "match",
+      action: "goals",
+      value: 0.05
+    },
+    finisherSharpness: {
+      id: "finisherSharpness",
+      archetype: "finisher",
+      name: "Finalização Afiada",
+      description: "Favorece treino de finalização.",
+      level: 10,
+      kind: "training",
+      category: "finishing",
+      value: 0.05
+    },
+
+    ninePresence: {
+      id: "ninePresence",
+      archetype: "nine",
+      name: "Presença de Área",
+      description: "Premia gols marcados pelo centroavante de referência.",
+      level: 5,
+      kind: "match",
+      action: "goals",
+      value: 0.05
+    },
+    nineStrength: {
+      id: "nineStrength",
+      archetype: "nine",
+      name: "Jogo de Corpo",
+      description: "Favorece treino físico do Camisa 9.",
+      level: 10,
+      kind: "training",
+      category: "physical",
+      value: 0.05
+    },
+
+    wingerBurst: {
+      id: "wingerBurst",
+      archetype: "winger",
+      name: "Explosao pelo Corredor",
+      description: "Favorece treino de velocidade.",
+      level: 5,
+      kind: "training",
+      category: "speed",
+      value: 0.05
+    },
+    wingerCreation: {
+      id: "wingerCreation",
+      archetype: "winger",
+      name: "Ultimo Passe",
+      description: "Premia assistencias produzidas pelos lados.",
+      level: 10,
+      kind: "match",
+      action: "assists",
+      value: 0.05
+    },
+
+    fullbackEngine: {
+      id: "fullbackEngine",
+      archetype: "fullback",
+      name: "Corredor Infinito",
+      description: "Favorece treino fisico do lateral ofensivo.",
+      level: 5,
+      kind: "training",
+      category: "physical",
+      value: 0.05
+    },
+    fullbackSupport: {
+      id: "fullbackSupport",
+      archetype: "fullback",
+      name: "Apoio Constante",
+      description: "Premia assistencias e contribuicao ofensiva do lateral.",
+      level: 10,
+      kind: "match",
+      action: "assists",
+      value: 0.05
+    },
+
+    shadowMovement: {
+      id: "shadowMovement",
+      archetype: "shadow",
+      name: "Movimento Entre Linhas",
+      description: "Premia partidas de boa nota no perfil Atacante Móvel.",
+      level: 5,
+      kind: "match",
+      action: "rating",
+      value: 0.05
+    },
+    shadowCombination: {
+      id: "shadowCombination",
+      archetype: "shadow",
+      name: "Associacao Ofensiva",
+      description: "Premia assistencias do atacante que participa da construcao.",
+      level: 10,
+      kind: "match",
+      action: "assists",
+      value: 0.05
+    }
+  };
+
   const trainingCategories = {
     finishing: { name: "Finalização", positions: ["ATA", "MEI"], attrs: ["finish", "powerShot", "finesseShot", "positioning"], action: "goals", multiplier: 1.28 },
     passing: { name: "Passe", positions: ["MEI", "DEF", "ATA"], attrs: ["pass", "vision", "longPass", "crossing"], action: "assists", multiplier: 1.25 },
@@ -160,6 +447,11 @@
     if (!Number.isFinite(s.trainingPlan.lastPotentialReviewSeason)) s.trainingPlan.lastPotentialReviewSeason = s.season || 2026;
     if (!Array.isArray(s.trainingPlan.specializations)) s.trainingPlan.specializations = [];
     if (!Number.isFinite(s.trainingPlan.specializationPoints)) s.trainingPlan.specializationPoints = 0;
+    if (!Array.isArray(s.trainingPlan.archetypePerks)) s.trainingPlan.archetypePerks = [];
+    s.trainingPlan.archetypePerks = [...new Set(s.trainingPlan.archetypePerks)].filter((id) => archetypePerks[id]);
+    if (!Array.isArray(s.trainingPlan.activeArchetypePerks)) s.trainingPlan.activeArchetypePerks = [];
+    s.trainingPlan.activeArchetypePerks = [...new Set(s.trainingPlan.activeArchetypePerks)].filter((id) => s.trainingPlan.archetypePerks.includes(id) && archetypePerks[id]);
+
     if (s.trainingPlan.activeSpecialization !== undefined && s.trainingPlan.activeSpecialization !== null && (!specializations[s.trainingPlan.activeSpecialization] || specializations[s.trainingPlan.activeSpecialization].legacy || !s.trainingPlan.specializations.includes(s.trainingPlan.activeSpecialization))) s.trainingPlan.activeSpecialization = null;
     if (s.trainingPlan.activeSpecialization === undefined) s.trainingPlan.activeSpecialization = null;
     if (!s.trainingPlan.exerciseGrades || typeof s.trainingPlan.exerciseGrades !== "object") s.trainingPlan.exerciseGrades = {};
@@ -213,6 +505,256 @@
     }
     return gained;
   }
+  function archetypePerkSlots(s) {
+    if (s.mode !== "player") return 0;
+    const plan = init(s);
+    const level = Math.max(1, Number(plan.archetypeLevel) || 1);
+    return level >= 20 ? 3 : level >= 10 ? 2 : 1;
+  }
+
+  function availableArchetypePerks(s) {
+    if (s.mode !== "player") return [];
+    const plan = init(s);
+    const primary = s.person.archetypeId;
+    const secondary = root.ProLifeIdentity?.profile?.(s)?.secondary || null;
+    const allowed = new Set([primary, secondary].filter(Boolean));
+
+    return Object.values(archetypePerks)
+      .filter((perk) => allowed.has(perk.archetype))
+      .map((perk) => ({
+        ...perk,
+        unlocked: plan.archetypePerks.includes(perk.id),
+        active: plan.activeArchetypePerks.includes(perk.id),
+        eligible: plan.archetypeLevel >= perk.level
+      }));
+  }
+
+  function unlockArchetypePerk(s, id) {
+    if (s.mode !== "player") throw Error("Perks de arqu\u00e9tipo s\u00e3o da carreira de jogador.");
+    if (s.mode !== "player")
+      throw Error("Perks de arquétipo são da carreira de jogador.");
+
+    const plan = init(s);
+    const perk = archetypePerks[id];
+
+    if (!perk)
+      throw Error("Perk de arquétipo inválido.");
+
+    if (plan.archetypePerks.includes(id))
+      return plan;
+
+    const primary = s.person.archetypeId;
+    const secondary = root.ProLifeIdentity?.profile?.(s)?.secondary || null;
+
+    if (perk.archetype !== primary && perk.archetype !== secondary)
+      throw Error("Este perk não pertence ao seu perfil atual.");
+
+    if (plan.archetypeLevel < perk.level)
+      throw Error(`Perk disponível a partir do nível de arquétipo ${perk.level}.`);
+
+    plan.archetypePerks.push(id);
+
+    return plan;
+  }
+
+  function activateArchetypePerk(s, id) {
+    if (s.mode !== "player") throw Error("Perks de arqu\u00e9tipo s\u00e3o da carreira de jogador.");
+    if (s.mode !== "player")
+      throw Error("Perks de arquétipo são da carreira de jogador.");
+
+    const plan = init(s);
+    const perk = archetypePerks[id];
+
+    if (!perk)
+      throw Error("Perk de arquétipo inválido.");
+
+    if (!plan.archetypePerks.includes(id))
+      throw Error("Desbloqueie o perk antes de ativ?-lo.");
+
+    const primary = s.person.archetypeId;
+    const secondary = root.ProLifeIdentity?.profile?.(s)?.secondary || null;
+
+    if (perk.archetype !== primary && perk.archetype !== secondary)
+      throw Error("Este perk não pertence ao seu perfil atual.");
+
+    if (plan.activeArchetypePerks.includes(id))
+      return plan;
+
+    const slots = archetypePerkSlots(s);
+
+    if (plan.activeArchetypePerks.length >= slots)
+      throw Error("Todos os slots de perks est?o ocupados.");
+
+    plan.activeArchetypePerks.push(id);
+
+    return plan;
+  }
+
+  function deactivateArchetypePerk(s, id) {
+    if (s.mode !== "player") throw Error("Perks de arqu\u00e9tipo s\u00e3o da carreira de jogador.");
+    if (s.mode !== "player")
+      throw Error("Perks de arquétipo são da carreira de jogador.");
+
+    const plan = init(s);
+
+    if (!archetypePerks[id])
+      throw Error("Perk de arquétipo inválido.");
+
+    plan.activeArchetypePerks =
+      plan.activeArchetypePerks.filter((x) => x !== id);
+
+    return plan;
+  }
+
+  function activeArchetypePerks(s) {
+    if (s.mode !== "player") return [];
+    reconcileArchetypePerks(s);
+    return compatibleActiveArchetypePerks(s);
+  }
+
+  function reconcileArchetypePerks(s) {
+    const plan = init(s);
+
+    if (s.mode !== "player") {
+      plan.activeArchetypePerks = [];
+      return plan;
+    }
+
+    plan.archetypePerks = [...new Set(
+      Array.isArray(plan.archetypePerks)
+        ? plan.archetypePerks
+        : []
+    )].filter((id) => archetypePerks[id]);
+
+    const primary = s.person.archetypeId;
+    const secondary =
+      root.ProLifeIdentity?.profile?.(s)?.secondary || null;
+
+    const allowed = new Set(
+      [primary, secondary].filter(Boolean)
+    );
+
+    const level =
+      Math.max(
+        1,
+        Number(plan.archetypeLevel) || 1
+      );
+
+    const slots =
+      level >= 20
+        ? 3
+        : level >= 10
+          ? 2
+          : 1;
+
+    plan.activeArchetypePerks = [...new Set(
+      Array.isArray(plan.activeArchetypePerks)
+        ? plan.activeArchetypePerks
+        : []
+    )]
+      .filter((id) =>
+        plan.archetypePerks.includes(id) &&
+        archetypePerks[id] &&
+        allowed.has(
+          archetypePerks[id].archetype
+        )
+      )
+      .slice(0, slots);
+
+    return plan;
+  }
+
+  function compatibleActiveArchetypePerks(s) {
+    if (s.mode !== "player") return [];
+
+    const plan = init(s);
+    const primary = s.person.archetypeId;
+    const secondary =
+      root.ProLifeIdentity?.profile?.(s)?.secondary || null;
+
+    const allowed = new Set(
+      [primary, secondary].filter(Boolean)
+    );
+
+    const slots =
+      archetypePerkSlots(s);
+
+    return plan.activeArchetypePerks
+      .map((id) => archetypePerks[id])
+      .filter((perk) =>
+        perk &&
+        allowed.has(perk.archetype)
+      )
+      .slice(0, slots);
+  }
+
+  function archetypePerkTrainingMultiplier(s, category) {
+    if (s.mode !== "player" || !category) return 1;
+
+    const bonus = compatibleActiveArchetypePerks(s)
+      .filter((perk) =>
+        perk.kind === "training" &&
+        perk.category === category.id
+      )
+      .reduce((sum, perk) => sum + Number(perk.value || 0), 0);
+
+    return 1 + Math.min(0.10, Math.max(0, bonus));
+  }
+
+  function archetypePerkMatchBonus(s, metrics, xp) {
+    if (s.mode !== "player" || !metrics) return 0;
+
+    const signal = (action) => {
+      if (action === "goals")
+        return Number(metrics.goals || 0) > 0;
+
+      if (action === "assists")
+        return Number(metrics.assists || 0) > 0;
+
+      if (action === "tackles")
+        return Number(metrics.tackles || 0) > 0;
+
+      if (action === "saves")
+        return Number(metrics.saves || 0) > 0;
+
+      if (action === "cleanSheet")
+        return Number(metrics.cleanSheet || 0) > 0;
+
+      if (action === "rating")
+        return Number(metrics.rating || 0) >= 7.2;
+
+      if (action === "minutes")
+        return Number(metrics.minutes || 0) >= 60;
+
+      return false;
+    };
+
+    const bonus = compatibleActiveArchetypePerks(s)
+      .filter((perk) =>
+        perk.kind === "match" &&
+        signal(perk.action)
+      )
+      .reduce((sum, perk) => sum + Number(perk.value || 0), 0);
+
+    return Math.max(0, Number(xp || 0)) *
+      Math.min(0.10, Math.max(0, bonus));
+  }
+
+  function archetypeTrainingXp(s, category, xp) {
+    if (s.mode !== "player" || !category) return 0;
+
+    const plan = init(s);
+    const focus = plan.archetype?.focus || [];
+
+    const aligned = category.attrs.some(
+      (key) => focus.includes(key)
+    );
+
+    if (!aligned) return 0;
+
+    return Math.max(0, Number(xp || 0)) * 0.55;
+  }
+
   function addArchetypeXp(s, amount) {
     const plan = init(s), before = plan.archetypeLevel;
     plan.archetypeXp += Math.max(0, amount || 0);
@@ -311,15 +853,20 @@
     if(!available) return {available:false,reason:s.person.injury?"Lesionado":(!automatic&&mandatoryCommitmentToday(s))?"Há um compromisso obrigatório hoje.":"Você já treinou hoje."};
     const ex=plan.exerciseId && exercises[plan.exerciseId];
     if(!ex) return {available:false,reason:"Escolha um exercício."};
-    const category=trainingCategories[ex.category];
+    const category={...trainingCategories[ex.category],id:ex.category};
     const intensity=s.intensity || "normal";
     if(intensity==="rest") return {available:false,reason:"Recuperação não conta como sessão de treino."};
     const quality=Math.max(0,Math.min(.999,rng.next()+s.person.discipline/520));
     const grade=quality>=.88?"A":quality>=.66?"B":quality>=.42?"C":"D";
     const gm=gradeMultiplier(grade), load=intensity==="hard"?1.28:1;
     const energyCost=intensity==="hard"?11:6;
-    const xp=(intensity==="hard"?3.8:2.8)*gm*ageFactor(s.person.age)*(root.ProLifeIdentity?.trainingXpMultiplier?.(s,category)||1);
-    const beforeLevel=plan.level; addDevelopmentXp(s,xp);
+    const specializationMultiplier=root.ProLifeIdentity?.trainingXpMultiplier?.(s,category)||1;
+    const perkMultiplier=archetypePerkTrainingMultiplier(s,category);
+    const xp=(intensity==="hard"?3.8:2.8)*gm*ageFactor(s.person.age)*specializationMultiplier*perkMultiplier;
+    const beforeLevel=plan.level, beforeArchetypeLevel=plan.archetypeLevel;
+    addDevelopmentXp(s,xp);
+    const gainedArchetypeXp=archetypeTrainingXp(s,category,xp);
+    if(gainedArchetypeXp>0) addArchetypeXp(s,gainedArchetypeXp);
     const changes=[];
     for(const key of category.attrs){
       changes.push(...progressAttribute(s,key,(automatic?(intensity==="hard"?24:9):(intensity==="hard"?29:22))*gm/category.attrs.length,helpers));
@@ -331,7 +878,7 @@
     plan.sessions++;
     root.ProLifeIdentity?.onTraining?.(s,category);
     s.person.condition=helpers.clamp(s.person.condition-energyCost,0,100);
-    const result={available:true,automatic,day:s.day,exerciseId:ex.id,exercise:ex.name,grade,xp,energyCost,changes,levelBefore:beforeLevel,levelAfter:plan.level};
+    const result={available:true,automatic,day:s.day,exerciseId:ex.id,exercise:ex.name,grade,xp,archetypeXp:gainedArchetypeXp,perkMultiplier,energyCost,changes,levelBefore:beforeLevel,levelAfter:plan.level,archetypeLevelBefore:beforeArchetypeLevel,archetypeLevelAfter:plan.archetypeLevel};
     plan.lastResult=result; plan.recentTraining.unshift(result); plan.recentTraining=plan.recentTraining.slice(0,12);
     return result;
   }
@@ -371,6 +918,8 @@
     const offense=match.offensiveStats?.hero||{}, metrics={goals,assists,minutes,tackles,saves,cleanSheet,rating,shots:Number(offense.shots||0),onTarget:Number(offense.onTarget||0),xg:Number(offense.xg||0)};
     xp+=root.ProLifeIdentity?.matchXpBonus?.(s,metrics,Math.max(.35,xp))||0;
     xp=Math.max(.35,xp);
+    const perkMatchBonus=archetypePerkMatchBonus(s,metrics,xp);
+    xp+=perkMatchBonus;
     const matchXp = xp * 1.35;
     const archetypeFocus = plan.archetype?.focus || [];
     const archetypeActionBonus = archetypeFocus.length ? 1.12 : 1;
@@ -384,7 +933,7 @@
     for(const key of pool.slice(0,4)) changes.push(...progressAttribute(s,key,performancePoints/pool.slice(0,4).length,helpers));
     root.ProLifeIdentity?.onMatch?.(s,metrics);
     if(rating>=8){plan.weeklyXI++;plan.accoladePoints+=1;} if(goals)plan.accoladePoints+=goals*.6;if(assists)plan.accoladePoints+=assists*.5;
-    return {bonus:true,rating,goals,assists,xp:matchXp,archetypeXp,potentialDelta,changes,levelBefore:beforeLevel,levelAfter:plan.level,archetypeLevelBefore:beforeArchetypeLevel,archetypeLevelAfter:plan.archetypeLevel};
+    return {bonus:true,rating,goals,assists,xp:matchXp,archetypeXp,perkMatchBonus,potentialDelta,changes,levelBefore:beforeLevel,levelAfter:plan.level,archetypeLevelBefore:beforeArchetypeLevel,archetypeLevelAfter:plan.archetypeLevel};
   }
   function seasonRewards(s, awards, helpers) {
     if (s.mode !== "player") return 0;
@@ -401,7 +950,7 @@
     if (points) s.person.potential = Math.min(100, Math.max(s.person.potential || 0, helpers.overall(s.person) + 4 + Math.floor(points / 2)));
     return points;
   }
-  const api = { core, skills, groups, styleFocus, archetypes, archetypeCatalog, defaultArchetypeId, origins, specializations, trainingCategories, exercises, gradeRank, expand, groupRatings, init, ceiling, xpForLevel, addDevelopmentXp, addArchetypeXp, unlockSpecialization, activateSpecialization, MAX_SPECIALIZATIONS, archetypeSpecializations, ageFactor, attributeProgressPercent, mandatoryCommitmentToday, trainingAvailable, performTraining, progressAttribute, daily, matchDevelopment, seasonRewards };
+  const api = { core, skills, groups, styleFocus, archetypes, archetypeCatalog, defaultArchetypeId, origins, specializations, archetypePerks, trainingCategories, exercises, gradeRank, expand, groupRatings, init, ceiling, xpForLevel, addDevelopmentXp, addArchetypeXp, archetypePerkSlots, availableArchetypePerks, unlockArchetypePerk, activateArchetypePerk, deactivateArchetypePerk, activeArchetypePerks, reconcileArchetypePerks, compatibleActiveArchetypePerks, archetypePerkTrainingMultiplier, archetypePerkMatchBonus, archetypeTrainingXp, unlockSpecialization, activateSpecialization, MAX_SPECIALIZATIONS, archetypeSpecializations, ageFactor, attributeProgressPercent, mandatoryCommitmentToday, trainingAvailable, performTraining, progressAttribute, daily, matchDevelopment, seasonRewards };
   root.ProLifeTraining = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

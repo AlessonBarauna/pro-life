@@ -63,13 +63,13 @@ test("Etapa 13: MEI criador, volante defensivo e goleiro evoluem nos perfis coer
   assert.equal(top(mei, (x) => x.compatible), "maestro");
   const vol = hero("MEI", 24);
   play(vol, { tk: 5, r: 7, ga: 0 }, 45, "defensiveDuel");
-  assert.ok(["engine", "builder"].includes(vol.person.archetypeId));
-  assert.ok(["wall", "engine"].includes(top(vol)));
+  assert.ok(["engine", "builder", "anchor"].includes(vol.person.archetypeId));
+  assert.ok(["wall", "engine", "builder", "anchor"].includes(top(vol)));
   const gk = hero("GOL", 22);
   const before = aff(gk, "guardian");
   play(gk, { sv: 5, r: 7.2, ga: 0 }, 30, "goalkeeper");
   assert.ok(aff(gk, "guardian") > before);
-  assert.deepEqual(I.tracked("GOL"), ["guardian"]);
+  assert.deepEqual(I.tracked("GOL").sort(), ["guardian", "sweeper"].sort());
 });
 
 test("Etapa 13: ATA que treina passe e cria jogadas vira híbrido gradualmente", () => {
@@ -128,7 +128,19 @@ test("Etapa 13: arquétipos respeitam posição e especialização ativa tem efe
   const gk = hero("GOL", 25);
   assert.equal(gk.person.archetypeId, "guardian");
   assert.throws(() => D.Training.unlockSpecialization(gk, "matador"), /Requisito pendente/);
-  assert.ok(I.tree(gk).every((b) => b.archetype === "guardian"));
+  const gkTree=I.tree(gk);
+  assert.ok(
+    gkTree.some((b)=>b.archetype==="guardian")
+  );
+  assert.ok(
+    gkTree.some((b)=>b.archetype==="sweeper")
+  );
+  assert.ok(
+    gkTree.every((b)=>
+      D.Training.archetypeCatalog[b.archetype]
+        ?.positions.includes("GOL")
+    )
+  );;
   gk.person.archetypeId = "finisher"; D.Training.init(gk);
   assert.equal(gk.person.archetypeId, "guardian");
   assert.throws(() => A.execute(gk, "activateSpecialization", { id: "reflexKeeper" }), /Desbloqueie/);
