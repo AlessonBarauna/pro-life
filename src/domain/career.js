@@ -1,6 +1,7 @@
 /* Career rules: windows, personal assets, press and the simulated news feed. */
 (function (root) {
   "use strict";
+  const PlayerPersonality=root.ProLifePlayerPersonality||(typeof require==="function"?require("./player-personality.js"):null);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const windows = [
     { name: "Início do ano", start: 0, end: 58 },
@@ -142,6 +143,7 @@
     if (pc.marketState.signedAgreement === undefined) pc.marketState.signedAgreement=null;
     if (pc.marketState.futureTransfer === undefined) pc.marketState.futureTransfer=null;
     if (!pc.mediaProfile) pc.mediaProfile = { image: "Equilibrada", pressure: 20, fanSentiment: 55, sponsorAppeal: 45, interviews: 0, controversies: 0 };
+    PlayerPersonality?.init?.(s);
     if (!s.extras.legacy) s.extras.legacy = { rivalries: {}, records: {}, milestones: [], retired: false, retirement: null };
     const legacy = s.extras.legacy;
     if (!legacy.rivalries || typeof legacy.rivalries !== "object") legacy.rivalries = {};
@@ -267,6 +269,9 @@
     else if (months <= 4) { action = "Definir futuro contratual"; reason = "Seu contrato está perto do fim; renovação e mercado ganham prioridade."; }
     else if (pc.coachTrust < 35) { action = s.person.age <= 23 ? "Buscar empréstimo" : "Considerar transferência"; reason = "A confiança do técnico está baixa e o tempo de jogo pode limitar sua evolução."; }
     else if (pc.squadRole === "Estrela" || pc.squadRole === "Importante") { action = "Valorizar o momento"; reason = "Você tem espaço no elenco; só vale mudar por um projeto claramente melhor para sua estratégia."; }
+    const personality=PlayerPersonality?.init?.(s);
+    if(action==="Manter opções abertas"&&personality?.traits.ambition>=70) reason="Seu perfil ambicioso sugere observar projetos maiores, sem alterar a estratégia definida com o agente.";
+    else if(action==="Manter opções abertas"&&personality?.traits.loyalty>=70) reason="Sua lealdade favorece continuidade e renovação, mas a decisão de mercado continua sendo sua.";
     const advice = { action, reason, day: s.day };
     pc.agentAdvice = advice;
     return advice;
@@ -1295,7 +1300,7 @@
   function clubLevel(c) { return Math.round((c?.structure || 50) * .7 + Math.min(30, ((c?.roster || []).reduce((a,p)=>a+(root.ProLife?.overall?root.ProLife.overall(p):60),0)/Math.max(1,(c?.roster||[]).length)-55)*2)); }
   function positionCompetition(s,c){ const peers=(c?.roster||[]).filter(p=>p.id!=="hero"&&p.pos===s.person.pos).map(p=>root.ProLife?.overall?root.ProLife.overall(p):60).sort((a,b)=>b-a); return {best:peers[0]||55, depth:peers.length}; }
   function sportingReputation(s){ const pc=init(s).playerCareer, st=s.statistics?.players?.hero||{}; return clamp(Math.round(playerOverall(s)*.48+(s.reputation||0)*.22+(pc.coachTrust||50)*.12+Math.min(18,(st.goals||0)*.7+(st.assists||0)*.5)),0,100); }
-  function interestAssessment(s,clubId){ const c=root.ProLife?.club(s,clubId); if(!c||clubId===s.clubId) return null; const pc=init(s).playerCareer, ov=playerOverall(s), comp=positionCompetition(s,c), level=clubLevel(c), rep=sportingReputation(s), age=s.person.age; const ageBonus=age<=21?6:age<=25?3:age>=32?-5:0; const form=((pc.lastEvaluation?.rating||6.5)-6.5)*7; const need=Math.max(-18,Math.min(18,(ov-comp.best)*2.4 + (5-comp.depth)*1.5)); const levelGap=Math.abs(level-(ov+rep*.18)); const fit=Math.max(-20,18-levelGap*.8); const score=clamp(Math.round(28+rep*.28+form+ageBonus+need+fit),0,100); return {clubId,score,label:score>=72?"ALTO":score>=48?"MÉDIO":"BAIXO",clubLevel:level,bestRival:comp.best,competition:comp.best>=ov+5?"Alta":comp.best>=ov-2?"Média":"Favorável",recommendedOverall:Math.max(55,comp.best-1),sportingReputation:rep}; }
+  function interestAssessment(s,clubId){ const c=root.ProLife?.club(s,clubId); if(!c||clubId===s.clubId) return null; const pc=init(s).playerCareer, ov=playerOverall(s), comp=positionCompetition(s,c), level=clubLevel(c), rep=sportingReputation(s), age=s.person.age; const ageBonus=age<=21?6:age<=25?3:age>=32?-5:0; const form=((pc.lastEvaluation?.rating||6.5)-6.5)*7; const need=Math.max(-18,Math.min(18,(ov-comp.best)*2.4 + (5-comp.depth)*1.5)); const levelGap=Math.abs(level-(ov+rep*.18)); const fit=Math.max(-20,18-levelGap*.8); const personality=PlayerPersonality?.marketModifier?.(s)||0; const score=clamp(Math.round(28+rep*.28+form+ageBonus+need+fit+personality),0,100); return {clubId,score,label:score>=72?"ALTO":score>=48?"MÉDIO":"BAIXO",clubLevel:level,bestRival:comp.best,competition:comp.best>=ov+5?"Alta":comp.best>=ov-2?"Média":"Favorável",recommendedOverall:Math.max(55,comp.best-1),sportingReputation:rep,personalityModifier:personality}; }
   function nextWindowStart(day){ const year=Math.floor(day/365)*365,current=day%365; const w=windows.find(x=>x.start>current); return w?year+w.start:year+365+windows[0].start; }
   function holdOffer(s,clubId){ const o=s.offers.find(x=>x.clubId===clubId&&x.expires>=s.day); if(!o) throw Error("Esta proposta não está disponível."); o.expires=Math.max(o.expires,s.day+7); o.onHold=true; post(s,"Carreira","Agente","Mais tempo para decidir",`Seu agente conseguiu prazo até o dia ${o.expires} para responder.`); return o; }
   function rejectOffer(s,clubId){ const i=s.offers.findIndex(x=>x.clubId===clubId&&x.expires>=s.day); if(i<0) throw Error("Esta proposta não está disponível."); const o=s.offers.splice(i,1)[0],pc=init(s).playerCareer; pc.marketState.rejectionCooldowns[clubId]=s.day+60; const it=pc.interests.find(x=>x.clubId===clubId); if(it){it.stage="Recusado";it.expires=s.day+60;} post(s,"Carreira","Agente","Proposta recusada",`A proposta de ${root.ProLife?.club(s,clubId)?.name||"clube"} foi recusada. Um novo contato não é esperado no curto prazo.`); return o; }
@@ -1358,7 +1363,7 @@
     const total=Number(init(s).played||0); for(const milestone of [1,50,100]) if(total===milestone){ const id=eventId("MILESTONE_REACHED",["games",milestone]); emitEvent(s,"MILESTONE_REACHED",id,{kind:"games",value:milestone}); addArticle(s,{category:"JOGADOR",title:milestone===1?"Estreia profissional":`${milestone} jogos na carreira`,body:`${s.person.name} alcançou a marca de ${milestone} ${milestone===1?"partida":"partidas"} registrada na carreira.`,eventId:id}); }
     if(pc?.lastEvaluation){ const subj=rating>=7.5?"Bom desempenho":rating<6?"Precisamos de mais consistência":null; if(subj) addMessage(s,{category:"TREINADOR",sender:"Treinador",subject:subj,body:rating>=7.5?"Sua atuação fortaleceu sua posição na disputa por espaço.":"Uma partida ruim não define sua situação, mas quero uma resposta nos próximos compromissos.",eventId:base}); }
   }
-  function respondInterview(s,id,choice){ const comm=init(s).communications,i=comm.interviews.find(x=>x.id===id); if(!i||i.answered) throw Error("Entrevista indisponível."); if(!i.choices.some(x=>x.id===choice)) throw Error("Resposta inválida."); i.answered=true;i.response=choice;i.answeredDay=s.day; const delta=choice==="team"?{rep:1,morale:1,fans:1}:choice==="moment"?{rep:1,morale:2,fans:2}: {rep:1,morale:1,fans:1}; s.reputation=clamp(s.reputation+delta.rep,0,100);s.person.morale=clamp(s.person.morale+delta.morale,0,100);updateMediaProfile(s,{fans:delta.fans,sponsor:choice==="work"?2:1,pressure:choice==="moment"?1:-1,interview:1});comm.responses.unshift({interviewId:id,eventId:i.eventId,day:s.day,choice,effects:delta});comm.responses=comm.responses.slice(0,80);return i;}
+  function respondInterview(s,id,choice){ const comm=init(s).communications,i=comm.interviews.find(x=>x.id===id); if(!i||i.answered) throw Error("Entrevista indisponível."); if(!i.choices.some(x=>x.id===choice)) throw Error("Resposta inválida."); i.answered=true;i.response=choice;i.answeredDay=s.day; const delta=choice==="team"?{rep:1,morale:1,fans:1}:choice==="moment"?{rep:1,morale:2,fans:2}: {rep:1,morale:1,fans:1}; s.reputation=clamp(s.reputation+delta.rep,0,100);s.person.morale=clamp(s.person.morale+delta.morale,0,100);updateMediaProfile(s,{fans:delta.fans,sponsor:choice==="work"?2:1,pressure:choice==="moment"?1:-1,interview:1});PlayerPersonality?.applyChoice?.(s,"interview",choice,{eventId:`personality:interview:${id}`,label:i.choices.find(x=>x.id===choice)?.label});comm.responses.unshift({interviewId:id,eventId:i.eventId,day:s.day,choice,effects:delta});comm.responses=comm.responses.slice(0,80);return i;}
   function messageRetentionDays(m){
     if(m?.priority==="URGENT") return 120;
     if(m?.priority==="IMPORTANT") return 90;
@@ -1596,6 +1601,7 @@
   function interview(s, choice) {
     const e = init(s);
     updateMediaProfile(s, choice === "humble" ? {pressure:-4,fans:5,sponsor:3,interview:1} : {pressure:10,fans:2,sponsor:-2,interview:1,controversy:1});
+    PlayerPersonality?.applyChoice?.(s,"legacy_interview",choice,{eventId:`personality:legacy-interview:${s.season}:${s.day}:${choice}`,label:choice==="humble"?"Responder com humildade":"Fazer uma promessa ousada"});
     if (choice === "humble") {
       s.fans = clamp(s.fans + 70, 0, 1e9);
       s.stress = clamp(s.stress - 3, 0, 100);

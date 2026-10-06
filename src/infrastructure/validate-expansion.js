@@ -96,6 +96,14 @@
       if(!Array.isArray(squad.managerHistory)||squad.managerHistory.length>24) fail();
       for(const row of squad.managerHistory) if(!row||!text(row.id,200)||!text(row.name,120)||!text(row.clubId,40)||!Number.isInteger(row.generation)||!archetypes.includes(row.archetype)||!finite(row.arrivedDay,0,s.day)||!finite(row.departedDay,row.arrivedDay,s.day)) fail();
     }
+    const personality=s.extras?.playerCareer?.personality;
+    if(personality!==undefined){
+      const traits=["professionalism","ambition","loyalty","humility","leadership","discipline","mediaPresence","teamOrientation"];
+      const segments=["public","dressingRoom","coach","commercial"];
+      const profiles=["PROFISSIONAL","LÍDER","AMBICIOSO","HUMILDE","MIDIÁTICO","LEAL","COMPETITIVO","DISCIPLINADO","COLETIVO","CONTROVERSO","EQUILIBRADO"];
+      if(!personality||personality.version!==1||!personality.traits||!personality.reputation||!traits.every(key=>finite(personality.traits[key],0,100))||!segments.every(key=>finite(personality.reputation[key],0,100))||!profiles.includes(personality.dominantProfile)||!Array.isArray(personality.history)||personality.history.length>100||!personality.processed||typeof personality.processed!=="object"||Array.isArray(personality.processed)||(personality.lastUpdatedDay!==null&&!finite(personality.lastUpdatedDay,0,s.day))) fail();
+      for(const row of personality.history) if(!row||typeof row.source!=="string"||typeof row.choice!=="string"||!finite(row.day,0,s.day)||!profiles.includes(row.profileBefore)||!profiles.includes(row.profileAfter)||!row.deltas||typeof row.deltas!=="object") fail();
+    }
     return s;
   }
   root.ProLifeValidateExpansion = { validate };

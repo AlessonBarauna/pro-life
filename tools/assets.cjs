@@ -15,6 +15,7 @@ const files = [
   "src/domain/universe.js",
   "src/domain/statistics.js",
   "src/domain/life.js",
+  "src/domain/player-personality.js",
   "src/domain/career.js",
   "src/domain/commercial.js",
   "src/domain/squad.js",

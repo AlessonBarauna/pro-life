@@ -230,7 +230,10 @@
   }
 
   function eligibleEvents(s, options = {}) {
-    return catalog.filter((template) => eligible(template, s, options));
+    return catalog.filter((template) => eligible(template, s, options)).map((template)=>{
+      const factor=(root.ProLifePlayerPersonality?.unexpectedEventWeight?.(s,template.id)||1);
+      return factor===1?template:{...template,weight:template.weight*factor};
+    });
   }
 
   function isEligible(s, eventType, options = {}) {
@@ -343,6 +346,7 @@
     if (!template || !selected) throw Error("Decisão inválida.");
     const before = api?.decisionSnapshot ? api.decisionSnapshot(s) : null;
     applyEffects(s, selected[2], api);
+    (api?.Personality||root.ProLifePlayerPersonality)?.applyChoice?.(s,`unexpected_event:${template.id}`,choice,{eventId:`personality:${decision.eventId}`,label:selected[1]});
     const consequence = before && api?.applyDecisionConsequence ? api.applyDecisionConsequence(s, decision, choice, before) : { delta: {}, summary: "Escolha registrada." };
     const status = options.expired ? "EXPIRED" : "RESOLVED";
     const row = {

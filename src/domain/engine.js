@@ -7,6 +7,9 @@
   const Career =
     root.ProLifeCareer ||
     (typeof require === "function" ? require("./career.js") : null);
+  const Personality =
+    root.ProLifePlayerPersonality ||
+    (typeof require === "function" ? require("./player-personality.js") : null);
   const World =
     root.ProLifeWorld ||
     (typeof require === "function" ? require("./world2026.js") : null);
@@ -1628,6 +1631,7 @@
   }
   const API = {
     Career,
+    Personality,
     World,
     BrazilData,
     Competitions,
