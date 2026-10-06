@@ -22,6 +22,30 @@
       const national = D.NationalTeam.init(s);
       for (const match of national.schedule || []) result.push({ day: match.day, type: "national", title: match.played && match.brazil !== null ? `Brasil ${match.brazil} × ${match.other} ${match.opponent}` : `Brasil × ${match.opponent}`, detail: match.played && !match.participated ? `${match.competition} · sem participação` : match.calledUp || national.calledUp ? match.competition : `Data FIFA · ${match.competition}`, destination: "national" });
     }
+    // Datas especiais recorrentes da carreira.
+    // São eventos visuais: não bloqueiam partidas, treino ou avanço do calendário.
+    const currentYear = dateForDay(s.day).getUTCFullYear();
+    for (let year = Math.max(2026, currentYear - 1); year <= currentYear + 1; year++) {
+      const newYear = new Date(Date.UTC(year, 0, 1));
+      const christmas = new Date(Date.UTC(year, 11, 25));
+
+      result.push({
+        day: dayForDate(newYear),
+        type: "event",
+        title: "Ano-Novo",
+        detail: "1º de janeiro · Celebração de Ano-Novo",
+        destination: "calendar"
+      });
+
+      result.push({
+        day: dayForDate(christmas),
+        type: "event",
+        title: "Natal",
+        detail: "25 de dezembro · Celebração de Natal",
+        destination: "calendar"
+      });
+    }
+
     for (let year = Math.max(2026, s.season - 1); year <= s.season + 1; year++) for (const window of D.Career.windows || []) {
       const base = (year - 2026) * 365;
       result.push({ day: base + window.start, type: "window", title: `Abertura: ${window.name}`, detail: "Janela de transferências", destination: "market" });

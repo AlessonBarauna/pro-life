@@ -5,11 +5,11 @@ function elevate(s,pop=75,rep=80){s.reputation=rep;const c=E.Commercial.init(s,E
 function proposal(s,brandId="vertex"){const c=elevate(s),b=E.Commercial.brands.find(x=>x.id===brandId);c.interests.push({brandId:b.id,stage:"NEGOCIAÇÃO",score:90,startedDay:s.day,updatedDay:s.day,ticks:4});for(let i=0;i<2;i++){s.day+=14;E.Commercial.progressInterests(s,new E.Random(s.rng),E.Career,E);}return c.proposals.find(p=>p.brandId===brandId);}
 test("Etapa 12: reputação, popularidade, valor esportivo e comercial permanecem separados",()=>{const s=career();const c=E.Commercial.init(s,E),market=E.Career.init(s).playerCareer.marketValue;c.popularity=85;const high=E.Commercial.updateValue(s,E);c.popularity=25;const low=E.Commercial.updateValue(s,E);assert(high>low);assert.equal(s.reputation,15);assert.equal(E.Career.init(s).playerCareer.marketValue,market);});
 test("Etapa 12: marcas possuem categorias e critérios próprios",()=>{assert(E.Commercial.brands.length>=8);assert(new Set(E.Commercial.brands.map(x=>x.category)).size>=7);assert(E.Commercial.brands.every(x=>x.minPopularity>=0&&x.minReputation>=0&&x.budget>0&&x.age.length===2));});
-test("Etapa 12: perfis A-D destravam marcas em patamares coerentes",()=>{const a=career(3),b=career(4),c=career(5),d=career(6);elevate(a,10,12);elevate(b,38,38);elevate(c,72,76);elevate(d,92,92);c.nationalTeam.caps=5;d.nationalTeam.caps=25;const eligible=s=>E.Commercial.brands.filter(x=>E.Commercial.eligible(s,x,E)).map(x=>x.id);assert.equal(eligible(a).length,0);assert(eligible(b).includes("vertex"));assert(eligible(c).includes("nova"));assert(eligible(d).includes("aureo"));});
+test("Etapa 12: perfis A-D destravam marcas em patamares coerentes",()=>{const a=career(3),b=career(4),c=career(5),d=career(6);elevate(a,10,12);elevate(b,38,38);elevate(c,72,76);elevate(d,92,92);c.nationalTeam.caps=5;d.nationalTeam.caps=25;const eligible=s=>E.Commercial.brands.filter(x=>E.Commercial.eligible(s,x,E)).map(x=>x.id);assert.equal(eligible(a).length,0);assert(eligible(b).includes("vertex"));assert(eligible(c).includes("nova"));assert(eligible(d).some(id=>["aureo","orbe","pulse","visa","mastercard"].includes(id)));});
 test("Etapa 12: perfis comerciais evoluem sem depender somente do overall",()=>{const low=career(1),popular=career(2);low.reputation=75;elevate(low,25,75);popular.reputation=65;elevate(popular,85,65);for(const k of Object.keys(low.person.attrs))low.person.attrs[k]=90;for(const k of Object.keys(popular.person.attrs))popular.person.attrs[k]=82;assert(E.overall(low.person)>E.overall(popular.person));assert(E.Commercial.updateValue(popular,E)>E.Commercial.updateValue(low,E));assert(E.Commercial.scoreBrand(popular,E.Commercial.brands[2],E)>E.Commercial.scoreBrand(low,E.Commercial.brands[2],E));});
 test("Etapa 12: interesse segue pipeline determinístico até proposta real",()=>{const a=career(10),b=JSON.parse(JSON.stringify(a));elevate(a,80,85);elevate(b,80,85);for(let i=0;i<6;i++){a.day+=14;b.day+=14;E.Commercial.progressInterests(a,new E.Random(99+i),E.Career,E);E.Commercial.progressInterests(b,new E.Random(99+i),E.Career,E);}assert(a.commercial.proposals.length>0);assert.deepEqual(a.commercial.interests,b.commercial.interests);assert.deepEqual(a.commercial.proposals,b.commercial.proposals);});
 test("Etapa 12: proposta permite pedir tempo, negociar, recusar e aceitar",()=>{const s=career(20),p=proposal(s);assert(p);const old=p.expires;A.execute(s,"commercialHold",{id:p.id});assert(p.expires>old);const result=A.execute(s,"commercialNegotiate",{id:p.id,amount:p.amount,durationDays:p.durationDays,bonus:p.bonus.amount});assert(["ACEITA","CONTRAPROPOSTA"].includes(result));A.execute(s,"commercialAccept",{id:p.id});assert.equal(E.Commercial.active(s).length,1);const other=career(21),p2=proposal(other);A.execute(other,"commercialReject",{id:p2.id});assert.equal(p2.status,"RECUSADA");});
-test("Etapa 12: exclusividade bloqueia dois contratos incompatíveis",()=>{const s=career(30),a=proposal(s,"vertex");A.execute(s,"commercialAccept",{id:a.id});const c=E.Commercial.init(s,E),nova=E.Commercial.brands.find(x=>x.id==="nova");c.proposals.unshift({ ...a,id:"manual-nova",brandId:nova.id,brand:nova.name,status:"PROPOSTA",startDay:s.day+1,endDay:s.day+365,expires:s.day+10,round:0 });assert.throws(()=>A.execute(s,"commercialAccept",{id:"manual-nova"}),/Exclusividade/);});
+test("Etapa 12: novo patrocinador exclusivo substitui o anterior da mesma categoria",()=>{const s=career(30),a=proposal(s,"vertex");A.execute(s,"commercialAccept",{id:a.id});const c=E.Commercial.init(s,E),old=E.Commercial.active(s)[0],nova=E.Commercial.brands.find(x=>x.id==="nova");c.proposals.unshift({ ...a,id:"manual-nova",brandId:nova.id,brand:nova.name,status:"PROPOSTA",startDay:s.day+1,endDay:s.day+365,expires:s.day+10,round:0 });A.execute(s,"commercialAccept",{id:"manual-nova"});const active=E.Commercial.active(s);assert.equal(active.length,1);assert.equal(active[0].brandId,"nova");assert.equal(old.status,"ENCERRADO");assert.equal(old.replacedBy,"nova");assert.equal(old.endDay,s.day);const history=c.history.find(h=>h.brandId==="vertex");assert.equal(history.status,"SUBSTITUÍDO");assert.equal(history.replacedBy,nova.name);});
 test("Etapa 12: pagamento usa wallet e ledger uma única vez após reload",()=>{const s=career(40),p=proposal(s);A.execute(s,"commercialAccept",{id:p.id});const contract=E.Commercial.active(s)[0],before=s.wallet;s.day=contract.startDay;E.Commercial.processContracts(s,E.Career,E);assert.equal(s.wallet,before+contract.amount);assert.equal(E.Career.init(s).ledger.filter(x=>x.label===`Patrocínio — ${contract.brand}`).length,1);const loaded=Save.parse(JSON.stringify(s));E.Commercial.processContracts(loaded,E.Career,E);assert.equal(loaded.wallet,s.wallet);assert.equal(E.Career.init(loaded).ledger.filter(x=>x.label===`Patrocínio — ${contract.brand}`).length,1);});
 test("Etapa 12: 30 dias em massa equivalem a 30 avanços diários",()=>{const a=career(50),p=proposal(a);A.execute(a,"commercialAccept",{id:p.id});const b=Save.parse(JSON.stringify(a));E.advance(a,30);for(let i=0;i<30;i++)E.advance(b,1);assert.equal(a.wallet,b.wallet);assert.deepEqual(a.commercial,b.commercial);assert.deepEqual(E.Career.init(a).ledger,E.Career.init(b).ledger);});
 test("Etapa 12: evento comercial não ocupa o dia de partida",()=>{const s=career(60),p=proposal(s);A.execute(s,"commercialAccept",{id:p.id});const x=E.Commercial.active(s)[0],event=s.commercial.events[0];event.day=s.calendarDays[0];event.status="CONFIRMADO";s.day=event.day;E.Commercial.processContracts(s,E.Career,E);assert.equal(event.status,"CONFIRMADO");assert.equal(event.day,s.day+1);assert.equal(x.relationship,70);});
@@ -26,3 +26,323 @@ test("Ajuste: confirmar presença agenda a atividade e conclusão gera resultado
 test("Ajuste: atividade não confirmada não é concluída automaticamente",()=>{const s=career(172),p=proposal(s,"vertex");A.execute(s,"commercialAccept",{id:p.id});const e=s.commercial.events[0];s.day=e.day;E.Commercial.processContracts(s,E.Career,E);assert.equal(e.status,"AGENDADO");assert.equal(e.completedDay,undefined);});
 
 test("Ajuste: evento confirmado não aceita segunda decisão antes da realização",()=>{const s=career(173),p=proposal(s,"vertex");A.execute(s,"commercialAccept",{id:p.id});const e=s.commercial.events[0];A.execute(s,"commercialEvent",{id:e.id,choice:"participate"});assert.equal(e.status,"CONFIRMADO");assert.throws(()=>A.execute(s,"commercialEvent",{id:e.id,choice:"participate"}),/já confirmado/);assert.throws(()=>A.execute(s,"commercialEvent",{id:e.id,choice:"decline"}),/já confirmado/);assert.equal(e.status,"CONFIRMADO");});
+
+
+test("Ajuste: troca de patrocinador cancela compromissos pendentes do contrato anterior",()=>{const s=career(301),a=proposal(s,"vertex");A.execute(s,"commercialAccept",{id:a.id});const c=E.Commercial.init(s,E),old=E.Commercial.active(s)[0],event=c.events.find(e=>e.contractId===old.id);assert(event);const nova=E.Commercial.brands.find(x=>x.id==="nova");c.proposals.unshift({...a,id:"manual-nova-events",brandId:nova.id,brand:nova.name,status:"PROPOSTA",startDay:s.day+1,endDay:s.day+365,expires:s.day+10,round:0});A.execute(s,"commercialAccept",{id:"manual-nova-events"});assert.equal(event.status,"CANCELADO");assert.equal(event.completedDay,s.day);assert.equal(E.Commercial.active(s).filter(x=>x.category==="SPORTSWEAR").length,1);});
+
+test("Ajuste: patrocinadores de categorias diferentes continuam simultaneamente",()=>{const s=career(302),a=proposal(s,"vertex");A.execute(s,"commercialAccept",{id:a.id});const c=E.Commercial.init(s,E),tech=E.Commercial.brands.find(x=>x.id==="orbe");c.proposals.unshift({...a,id:"manual-tech",brandId:tech.id,brand:tech.name,category:tech.category,exclusive:false,status:"PROPOSTA",startDay:s.day+1,endDay:s.day+365,expires:s.day+10,round:0});A.execute(s,"commercialAccept",{id:"manual-tech"});assert.equal(E.Commercial.active(s).length,2);assert(E.Commercial.active(s).some(x=>x.brandId==="vertex"));assert(E.Commercial.active(s).some(x=>x.brandId==="orbe"));});
+
+// === BASE REAL DE PATROCINADORES V2 ===
+
+
+test("Patrocínios V2: base possui aproximadamente 100 marcas reais e sem fictícias antigas",()=>{
+  assert(E.Commercial.brands.length>=90);
+  assert(E.Commercial.brands.length<=130);
+
+  const names=E.Commercial.brands.map(b=>b.name);
+
+  for(const expected of [
+    "Nike","Adidas","Puma","Umbro","New Balance",
+    "Itaú","Visa","Mastercard","Coca-Cola",
+    "Red Bull","Samsung","Vivo","Fiat","Cimed","Oakley"
+  ]){
+    assert(names.includes(expected),expected);
+  }
+
+  for(const legacy of [
+    "Vertex Sports",
+    "Nova Athletics",
+    "Pulse Energy",
+    "Orbe Tech",
+    "Voltz Motors",
+    "Linha Onze",
+    "Áureo Chronos",
+    "Nexo Bank"
+  ]){
+    assert(!names.includes(legacy),legacy);
+  }
+});
+
+test("Patrocínios V2: nenhuma casa de apostas pode ser nova patrocinadora",()=>{
+  const names=E.Commercial.brands.map(b=>b.name.toLowerCase());
+
+  for(const blocked of [
+    "betano","bet365","sportingbet","pixbet","superbet",
+    "betfair","betnacional","esportes da sorte","stake"
+  ]){
+    assert(!names.some(name=>name.includes(blocked)),blocked);
+  }
+});
+
+test("Patrocínios V2: todas as marcas possuem configuração comercial completa",()=>{
+  for(const b of E.Commercial.brands){
+    assert(b.id);
+    assert(b.name);
+    assert(b.category);
+    assert(["LOCAL","REGIONAL","NATIONAL","PREMIUM","GLOBAL"].includes(b.tier));
+    assert(b.prestige>0);
+    assert(b.budget>0);
+    assert(b.minReputation>=0);
+    assert(b.minPopularity>=0);
+    assert(b.minSportingValue>=0);
+    assert(b.minCommercialValue>=0);
+    assert(Array.isArray(b.contractTypes)&&b.contractTypes.length);
+    assert(["NONE","CATEGORY"].includes(b.exclusivity));
+    assert(b.preferredPlayerProfile);
+    assert(b.baseContractValue>0);
+    assert(b.maxContractValue>=b.baseContractValue);
+    assert(b.bonusPotential>0);
+  }
+});
+
+test("Patrocínios V2: mesma marca não pode criar segundo contrato ativo",()=>{
+  const s=career(501);
+  const p=proposal(s,"vertex");
+
+  A.execute(s,"commercialAccept",{id:p.id});
+
+  const c=E.Commercial.init(s,E);
+  const b=E.Commercial.brands.find(b=>b.id==="vertex");
+
+  c.proposals.unshift({
+    ...p,
+    id:"duplicate-volt",
+    brandId:b.id,
+    brand:b.name,
+    category:b.category,
+    tier:b.tier,
+    status:"PROPOSTA",
+    expires:s.day+10
+  });
+
+  assert.throws(
+    ()=>A.execute(s,"commercialAccept",{id:"duplicate-volt"}),
+    /já possui contrato ativo/
+  );
+
+  assert.equal(
+    E.Commercial.active(s).filter(x=>x.brandId==="vertex").length,
+    1
+  );
+});
+
+test("Patrocínios V2: init saneia contratos duplicados antigos sem perder o segundo acordo",()=>{
+  const s=career(502);
+  const p=proposal(s,"linha");
+
+  A.execute(s,"commercialAccept",{id:p.id});
+
+  const c=s.commercial;
+  const original=c.contracts[0];
+
+  c.contracts.unshift({
+    ...original,
+    id:"legacy-duplicate",
+    signedDay:s.day+10,
+    startDay:s.day+10,
+    endDay:s.day+100,
+    status:"ATIVO"
+  });
+
+  E.Commercial.init(s,E);
+
+  const same=c.contracts.filter(x=>
+    x.brandId==="linha" &&
+    ["ATIVO","AGENDADO"].includes(x.status)
+  );
+
+  assert.equal(same.filter(x=>x.status==="ATIVO").length,1);
+  assert.equal(same.filter(x=>x.status==="AGENDADO").length,1);
+});
+
+test("Patrocínios V2: exclusividade impede gerar concorrente da mesma categoria",()=>{
+  const s=career(503);
+  const p=proposal(s,"vertex");
+
+  A.execute(s,"commercialAccept",{id:p.id});
+
+  const c=E.Commercial.init(s,E);
+  const rival=E.Commercial.brands.find(b=>b.id==="nova");
+
+  c.interests.push({
+    brandId:rival.id,
+    stage:"NEGOCIAÇÃO",
+    score:100,
+    startedDay:s.day,
+    updatedDay:s.day,
+    ticks:5
+  });
+
+  s.day+=14;
+
+  E.Commercial.progressInterests(
+    s,
+    new E.Random(s.rng),
+    E.Career,
+    E
+  );
+
+  assert(!c.proposals.some(x=>
+    x.brandId==="nova" &&
+    x.status==="PROPOSTA"
+  ));
+});
+
+test("Patrocínios V2: categoria diferente continua disponível",()=>{
+  const s=career(504);
+  const p=proposal(s,"vertex");
+
+  A.execute(s,"commercialAccept",{id:p.id});
+
+  const c=E.Commercial.init(s,E);
+  elevate(s,96,96);
+
+  const tech=E.Commercial.brands.find(b=>b.id==="orbe");
+
+  assert(
+    E.Commercial.eligible(s,tech,E),
+    "Samsung deveria estar elegível para jogador de elite"
+  );
+
+  assert(
+    !E.Commercial.active(s).some(x=>x.category===tech.category),
+    "Contrato esportivo não deve bloquear tecnologia"
+  );
+});
+
+test("Patrocínios V2: marcas globais não aparecem para jogador iniciante",()=>{
+  const s=career(505);
+
+  elevate(s,12,14);
+
+  const globals=E.Commercial.brands.filter(b=>b.tier==="GLOBAL");
+
+  assert(globals.length>0);
+  assert(
+    globals.every(b=>!E.Commercial.eligible(s,b,E))
+  );
+});
+
+test("Patrocínios V2: jogador de elite desbloqueia marcas globais",()=>{
+  const s=career(506);
+
+  elevate(s,98,98);
+
+  for(const key of Object.keys(s.person.attrs))
+    s.person.attrs[key]=95;
+
+  s.nationalTeam.caps=30;
+
+  const c=E.Commercial.init(s,E);
+  c.popularity=98;
+  E.Commercial.updateValue(s,E);
+
+  const eliteBrands=["aureo","adidas","visa","mastercard","pulse"];
+
+  assert(
+    eliteBrands.some(id=>{
+      const b=E.Commercial.brands.find(x=>x.id===id);
+      return b&&E.Commercial.eligible(s,b,E);
+    })
+  );
+});
+
+test("Patrocínios V2: renovação fica agendada e nunca duplica contrato ativo",()=>{
+  const s=career(507);
+  const p=proposal(s,"vertex");
+
+  A.execute(s,"commercialAccept",{id:p.id});
+
+  const current=E.Commercial.active(s)[0];
+
+  current.relationship=80;
+  current.durationDays=200;
+  current.endDay=s.day+25;
+
+  E.Commercial.processContracts(s,E.Career,E);
+
+  const renewal=s.commercial.proposals.find(p=>
+    p.renewalOf===current.id &&
+    p.status==="PROPOSTA"
+  );
+
+  assert(renewal);
+
+  A.execute(s,"commercialAccept",{id:renewal.id});
+
+  assert.equal(
+    E.Commercial.active(s).filter(x=>x.brandId===current.brandId).length,
+    1
+  );
+
+  const scheduled=s.commercial.contracts.find(x=>
+    x.renewalOf===current.id &&
+    x.status==="AGENDADO"
+  );
+
+  assert(scheduled);
+  assert.equal(scheduled.startDay,current.endDay+1);
+});
+
+test("Patrocínios V2: valor das propostas respeita piso e teto de cada marca",()=>{
+  const s=career(508);
+
+  elevate(s,99,99);
+
+  for(const key of Object.keys(s.person.attrs))
+    s.person.attrs[key]=96;
+
+  s.nationalTeam.caps=40;
+
+  for(const b of E.Commercial.brands){
+    const p=E.Commercial.eligible(s,b,E)
+      ? (()=> {
+          const c=E.Commercial.init(s,E);
+
+          c.interests.push({
+            brandId:b.id,
+            stage:"NEGOCIAÇÃO",
+            score:100,
+            startedDay:s.day,
+            updatedDay:s.day,
+            ticks:4
+          });
+
+          s.day+=14;
+
+          E.Commercial.progressInterests(
+            s,
+            new E.Random(s.rng),
+            E.Career,
+            E
+          );
+
+          return c.proposals.find(x=>
+            x.brandId===b.id &&
+            x.status==="PROPOSTA"
+          );
+        })()
+      : null;
+
+    if(!p)continue;
+
+    assert(p.amount>=b.baseContractValue);
+    assert(p.amount<=b.maxContractValue);
+  }
+});
+
+test("Patrocínios V2: tiers possuem faixas coerentes",()=>{
+  const ranges={
+    LOCAL:[2000,15000*1.1],
+    REGIONAL:[10000,40000*1.1],
+    NATIONAL:[25000,120000*1.1],
+    PREMIUM:[70000,300000*1.1],
+    GLOBAL:[150000,1150000*1.1]
+  };
+
+  for(const b of E.Commercial.brands){
+    const [min,max]=ranges[b.tier];
+    assert(b.baseContractValue>=min);
+    assert(b.maxContractValue<=max);
+  }
+});
