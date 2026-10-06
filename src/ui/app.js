@@ -1005,7 +1005,19 @@
       const promiseStatus = !coach && D.Squad?.coachPromiseStatus
         ? D.Squad.coachPromiseStatus(state)
         : null;
-      const coachRelation = !coach && trust ? (() => {
+      const manager = !coach && D.Squad?.managerProfile ? D.Squad.managerProfile(state) : null;
+      const managerPanel = manager ? (() => {
+        const criteria=(D.Squad.managerTopCriteria?.(state,3)||[]).map((item)=>item.label).join(" • ");
+        const level=(value)=>D.Squad.managerValueLabel?.(value)||"Média";
+        const history=(D.Squad.init(state).managerHistory||[]).slice(0,5);
+        return `<section class="card section dynamic-manager-stage21">
+          <div class="split"><div><div class="tag">TREINADOR</div><h2>${esc(manager.name)}</h2><p>${esc(manager.personality)} · ${esc(manager.tacticalStyle.replaceAll("_"," "))}</p></div><span class="pill">${esc(manager.preferredFormation)}</span></div>
+          <div class="profile-data manager-profile"><span>Disciplina <b>${esc(level(manager.discipline))}</b></span><span>Rotação <b>${esc(level(manager.rotationTendency))}</b></span><span>Jovens <b>${esc(level(manager.youthPreference))}</b></span><span>Paciência <b>${esc(level(manager.patience))}</b></span></div>
+          <div class="notice manager-criteria"><b>O que este treinador valoriza</b><p>${esc(criteria||"Qualidade geral • Forma recente • Condição física")}</p></div>
+          ${history.length?`<details class="manager-history"><summary><b>Últimos treinadores</b></summary><div class="section">${history.map((row)=>`<p><b>${esc(row.name)}</b> · ${esc(row.personality||row.archetype)}<br><small>${esc(String(row.arrivedSeason||"—"))} / dia ${Number(row.arrivedDay||0)} até ${esc(String(row.departedSeason||"—"))} / dia ${Number(row.departedDay||0)}</small></p>`).join("")}</div></details>`:""}
+        </section>`;
+      })() : "";
+      const coachRelationBody = !coach && trust ? (() => {
         const trendValue = Number(trust.trend || 0);
         const trendLabel = trust.direction === "SUBINDO"
           ? `SUBINDO ${trendValue > 0 ? "+" : ""}${trendValue}`
@@ -1155,6 +1167,7 @@
           </details>
         </section>`;
       })() : "";
+      const coachRelation=managerPanel+coachRelationBody;
       const selection=sq?.selection;
       const status=(p)=>selection?.starters.includes(p)?"Titular":selection?.bench.includes(p)?"Banco":"Fora";
       const form=(p)=>D.Squad?.formValue?D.Squad.formValue(state,p).toFixed(1):"—";

@@ -55,25 +55,7 @@
     const news=(s.news||[]).slice().sort((a,b)=>(b.day||0)-(a.day||0)).slice(0,4);
     const messages=[...(s.decision?[{day:s.day,title:s.decision.title,body:s.decision.body,kind:"decision"}]:[]), ...news].slice(0,4);
     const active=plan.activeMultiplier && plan.activeMultiplier.expiresDay>=s.day ? plan.activeMultiplier : null;
-    let lineup=s.mode==="player" && s.clubId && !next?.national && D.Squad?.competition ? D.Squad.competition(s) : null;
-    if(lineup && !s.person.injury && !(s.person.suspension>0) && s.person.condition>35){
-      const hierarchy=pc.squadRole||"Fora dos planos", selection=lineup.selection;
-      const inXI=selection.starters.some(p=>p.id==="hero"), inBench=selection.bench.some(p=>p.id==="hero");
-      if(["Titular","Importante","Estrela"].includes(hierarchy) && !inXI){
-        const oldBench=selection.bench.filter(p=>p.id!=="hero");
-        let candidates=selection.starters.map((p,i)=>({p,i})).filter(x=>x.p.pos===s.person.pos);
-        if(!candidates.length) candidates=selection.starters.map((p,i)=>({p,i}));
-        candidates.sort((a,b)=>D.overall(a.p)-D.overall(b.p));
-        const idx=candidates[0]?.i ?? selection.starters.length-1, displaced=selection.starters[idx];
-        selection.starters=[...selection.starters];
-        selection.starters[idx]=s.person;
-        selection.bench=oldBench;
-        if(displaced) selection.bench=[displaced,...selection.bench].slice(0,7);
-      } else if(["Reserva","Rotação"].includes(hierarchy) && !inXI && !inBench){
-        selection.bench=[...selection.bench.filter(p=>p.id!=="hero"),s.person].slice(-7);
-      }
-      lineup={...lineup,heroRole:D.Squad.roleForHero(s,selection),selection,hierarchyApplied:true};
-    }
+    const lineup=s.mode==="player" && s.clubId && !next?.national && D.Squad?.competition ? D.Squad.competition(s) : null;
     const subPlan=lineup?.heroRole==="Banco" && D.Squad?.substitutePlan ? D.Squad.substitutePlan(s,s.person) : null;
     const leadership=D.captaincy?.(s,c) || null;
     return { c, career, stats, current, plan, next, table, recent, events, objectives, news, messages, active, lineup, subPlan, leadership,

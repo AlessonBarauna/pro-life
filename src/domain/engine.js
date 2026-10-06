@@ -457,6 +457,7 @@
     const proposed = s.offers.find((o) => o.clubId === id && o.expires >= s.day) || (s.mode === "player" && Career.init(s).playerCareer?.marketState?.signedAgreement?.clubId === id ? Career.init(s).playerCareer.marketState.signedAgreement : null) || (s.mode === "coach" && !s.clubId ? {clubId:id,salary,durationDays:730,signingBonus:0,squadRole:"Rotação",transferType:"free",expires:s.day+1} : null);
     if (!proposed) throw Error("Esta proposta não está disponível.");
     const pc0 = s.mode === "player" ? Career.init(s).playerCareer : null;
+    const trustBeforeTransfer = Number(pc0?.coachTrust || 0);
     if (pc0?.marketState?.signedAgreement && pc0.marketState.signedAgreement.clubId !== id) throw Error("Você já possui um acordo assinado com outro clube.");
     if (!Career.windowStatus(s).open) {
       if (s.mode === "player") { Career.signAgreement(s, proposed); return { scheduled:true, startDay:Career.nextWindowStart(s.day) }; }
@@ -483,6 +484,10 @@
       pc.coachTrust = clamp(51 + promiseBoost + reputationBoost, 42, 60);
       pc.clubArrival = { clubId: next.id, day: s.day, promisedRole: promised, initialTrust: pc.coachTrust };
       Career.updatePlayerRole(s);
+      Squad?.handlePlayerTransfer?.(s,previous,next);
+      Squad?.recordTrustChange?.(s,"transfer",trustBeforeTransfer,pc.coachTrust,{
+        eventId:`coach-transfer:${s.season}:${s.day}:${previous.id}:${next.id}`
+      });
     }
     s.offers = [];
     s.board = 65;
@@ -871,41 +876,6 @@
     const c = club(s), pc = Career.init(s).playerCareer;
     const selection = Squad?.choose ? Squad.choose(s,c) : null;
     if (selection) {
-      const opponent = club(s, homeId === s.clubId ? awayId : homeId);
-      const arrivalDays = pc.clubArrival?.clubId === s.clubId ? Math.max(0, s.day - Number(pc.clubArrival.day || 0)) : 999;
-      const heroAvailable = !s.person.injury && !(s.person.suspension > 0) && !s.person._competitionSuspended && s.person.condition > 35;
-      const selectedAlready = selection.starters.some(p=>p.id==="hero") || selection.bench.some(p=>p.id==="hero");
-      const favorableMatch = Number(c.structure || 50) - Number(opponent?.structure || 50) >= 8;
-      const developmentPlayer = s.person.age <= 21 || arrivalDays <= 180;
-      const earnedOpportunity = Number(pc.coachTrust || 0) >= 45;
-      if (heroAvailable && !selectedAlready && favorableMatch && developmentPlayer && earnedOpportunity && selection.bench.length) {
-        selection.bench[selection.bench.length - 1] = s.person;
-      }
-
-      // A hierarquia do elenco e a escalação agora falam a mesma língua.
-      // Titular/Importante/Estrela: se disponível, precisa estar no XI.
-      // Rotação/Reserva: se disponível, precisa ao menos estar relacionado no banco.
-      const hierarchy = pc.squadRole || "Fora dos planos";
-      const starterRole = ["Titular","Importante","Estrela"].includes(hierarchy);
-      const benchRole = ["Reserva","Rotação"].includes(hierarchy);
-      const heroInXI = selection.starters.some(p=>p.id==="hero");
-      const heroInBench = selection.bench.some(p=>p.id==="hero");
-
-      if (heroAvailable && starterRole && !heroInXI) {
-        // Retira o jogador da reserva, se necessário, e troca pelo concorrente mais fraco
-        // da mesma posição (ou pelo último do XI como fallback).
-        const benchHero = selection.bench.findIndex(p=>p.id==="hero");
-        if (benchHero >= 0) selection.bench.splice(benchHero,1);
-        let idx = selection.starters.map((p,i)=>({p,i})).filter(x=>x.p.pos===s.person.pos)
-          .sort((a,b)=>overall(a.p)-overall(b.p))[0]?.i;
-        if (idx === undefined) idx = selection.starters.length-1;
-        const displaced = selection.starters[idx];
-        selection.starters[idx] = s.person;
-        if (displaced && selection.bench.length < 7) selection.bench.push(displaced);
-        else if (displaced && selection.bench.length) selection.bench[selection.bench.length-1]=displaced;
-      } else if (heroAvailable && benchRole && !heroInXI && !heroInBench && selection.bench.length) {
-        selection.bench[selection.bench.length-1]=s.person;
-      }
       c.formation=selection.formation;
       c.lineup=selection.starters.map(p=>p.id);
       const leadership=captaincy(s,c);
@@ -1688,6 +1658,7 @@
     decisionSnapshot,
     applyDecisionConsequence,
     captaincy,
+    preparePlayerLineup,
     disciplineState,
     disciplineCompetition,
     isSuspendedFor,

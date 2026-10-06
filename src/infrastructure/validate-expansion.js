@@ -83,6 +83,19 @@
       for (const row of u.history) if (!row || typeof row.eventId!=="string" || typeof row.eventType!=="string" || typeof row.category!=="string" || typeof row.title!=="string" || !["RESOLVED","EXPIRED"].includes(row.status) || !finite(row.day,0,s.day)) fail();
       for (const day of Object.values(u.cooldowns)) if (!finite(day,-9999,s.day+5000)) fail();
     }
+    const squad=s.extras?.playerCareer?.squadCompetition;
+    if (squad?.manager !== undefined) {
+      const m=squad.manager;
+      const archetypes=["DESENVOLVEDOR","DISCIPLINADOR","GESTOR_DE_ESTRELAS","CONSERVADOR","OFENSIVO","PRAGMATICO","ROTACIONADOR","MERITOCRATICO","PROTETOR","EXIGENTE"];
+      const styles=["POSSE","TRANSICAO","PRESSAO_ALTA","BLOCO_BAIXO","EQUILIBRADO","JOGO_DIRETO"];
+      const formations=["4-3-3","4-4-2","4-2-3-1"];
+      const text=(v,max=160)=>typeof v==="string"&&v.length>0&&v.length<=max;
+      if (!m||!text(m.id,200)||!text(m.name,120)||!Number.isInteger(m.generation)||!finite(m.generation,0,10000)||!text(m.clubId,40)||!archetypes.includes(m.archetype)||!styles.includes(m.tacticalStyle)||!formations.includes(m.preferredFormation)||!finite(m.seed,1,4294967295)||!m.selectionWeights||typeof m.selectionWeights!=="object") fail();
+      for (const key of ["riskTolerance","youthPreference","starManagement","rotationTendency","discipline","patience","trustVolatility","developmentFocus"]) if(!finite(m[key],0,100)) fail();
+      for (const key of ["overall","form","training","fitness","trust","potential","experience"]) if(!finite(m.selectionWeights[key],0,100)) fail();
+      if(!Array.isArray(squad.managerHistory)||squad.managerHistory.length>24) fail();
+      for(const row of squad.managerHistory) if(!row||!text(row.id,200)||!text(row.name,120)||!text(row.clubId,40)||!Number.isInteger(row.generation)||!archetypes.includes(row.archetype)||!finite(row.arrivedDay,0,s.day)||!finite(row.departedDay,row.arrivedDay,s.day)) fail();
+    }
     return s;
   }
   root.ProLifeValidateExpansion = { validate };

@@ -185,10 +185,15 @@
   }
   function matchObjectives(s) {
     const pos = s.person.pos;
-    return pos === "ATA" ? [{id:"rating",label:"Nota mínima 7,0"},{id:"goal",label:"Marcar ou dar assistência"}]
-      : pos === "MEI" ? [{id:"rating",label:"Nota mínima 6,8"},{id:"assist",label:"Criar uma assistência"}]
-      : pos === "DEF" ? [{id:"rating",label:"Nota mínima 6,7"},{id:"result",label:"Ajudar o time a não perder"}]
-      : [{id:"rating",label:"Nota mínima 6,7"},{id:"result",label:"Ajudar o time a não perder"}];
+    let target=pos==="ATA"?7:pos==="MEI"?6.8:6.7;
+    const manager=root.ProLifeSquad?.managerProfile?.(s);
+    if(manager?.archetype==="EXIGENTE") target+=.2;
+    if(manager?.archetype==="PROTETOR"&&Number(root.ProLifeSquad?.formValue?.(s,s.person)||6.5)<6.2) target-=.1;
+    target=clamp(target,6.5,7.3);
+    const rating={id:"rating",label:"Nota mínima "+target.toFixed(1).replace(".",","),target:+target.toFixed(1)};
+    return pos === "ATA" ? [rating,{id:"goal",label:manager?.archetype==="OFENSIVO"?"Participar diretamente de um gol":"Marcar ou dar assistência"}]
+      : pos === "MEI" ? [rating,{id:"assist",label:manager?.archetype==="OFENSIVO"?"Criar uma assistência ou marcar":"Criar uma assistência"}]
+      : [rating,{id:"result",label:"Ajudar o time a não perder"}];
   }
 
   function playerOverall(s) {
@@ -1497,9 +1502,11 @@
         const goals = m.events.filter((x) => x.type === "goal" && x.playerId === "hero").length;
         const assists = m.events.filter((x) => x.type === "goal" && x.assistPlayerId === "hero").length;
         const objectives = matchObjectives(s);
-        const met = objectives.filter((o) => o.id === "rating" ? rating >= (s.person.pos === "ATA" ? 7 : s.person.pos === "MEI" ? 6.8 : 6.7) : o.id === "goal" ? goals + assists > 0 : o.id === "assist" ? assists > 0 : own >= other).length;
+        const manager=root.ProLifeSquad?.managerProfile?.(s);
+        const met = objectives.filter((o) => o.id === "rating" ? rating >= Number(o.target||6.7) : o.id === "goal" ? goals + assists > 0 : o.id === "assist" ? (manager?.archetype==="OFENSIVO" ? goals+assists>0 : assists>0) : own >= other).length;
         pc.objectivesMet += met; pc.objectivesTotal += objectives.length;
-        const delta = (rating >= 7.5 ? 5 : rating >= 6.8 ? 2 : rating < 6 ? -4 : 0) + met * 2 + (goals + assists) * 2;
+        const baseDelta = (rating >= 7.5 ? 5 : rating >= 6.8 ? 2 : rating < 6 ? -4 : 0) + met * 2 + (goals + assists) * 2;
+        const delta = root.ProLifeSquad?.adjustTrustDeltaForManager?.(s,baseDelta,{type:"match",rating,objectivesMet:met}) ?? baseDelta;
         pc.coachTrust = clamp(pc.coachTrust + delta, 0, 100);
         s.person.morale = clamp(s.person.morale + (met === objectives.length ? 3 : met === 0 ? -2 : 1), 0, 100);
         const attack = m.offensiveStats?.hero || { shots: 0, onTarget: 0, xg: 0, goals };
