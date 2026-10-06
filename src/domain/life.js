@@ -96,8 +96,26 @@
     return once(s,key,()=>{
       const salary=s.clubId?contractSalary(s):0;
       if(salary>0) helpers.transaction(s,salary,"Salário mensal");
-      const commission=Math.round(salary*Number(s.extras?.playerCareer?.agent?.commission||0)/100);
-      if(commission>0) helpers.transaction(s,-commission,"Comissão da agência");
+      if(salary>0 && typeof helpers.chargeAgentCommission==="function"){
+      helpers.chargeAgentCommission(
+        s,
+        salary,
+        "salary"
+      );
+    }else{
+      const commission=Math.round(
+        salary*
+        Number(s.extras?.playerCareer?.agent?.commission||0)/
+        100
+      );
+
+      if(commission>0)
+        helpers.transaction(
+          s,
+          -commission,
+          "Comiss\u00e3o da ag\u00eancia"
+        );
+    }
       const base=s.mode==="coach"?2000:650, lifestyle={SIMPLES:0,CONFORTÁVEL:1200,"ALTO PADRÃO":4500,LUXO:15000}[f.lifestyle]||0;
       const recurring=base+lifestyle+Number(f.housing?.monthly||0)+f.vehicles.reduce((n,x)=>n+Number(x.monthly||0),0)+f.possessions.reduce((n,x)=>n+Number(x.monthly||0),0);
       if(recurring>0) helpers.transaction(s,-recurring,"Despesas pessoais e estilo de vida");

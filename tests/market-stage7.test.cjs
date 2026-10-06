@@ -6,7 +6,73 @@ test("recusa cria cooldown e nao duplica",()=>{const s=state(); const c=s.clubs.
 test("pedir tempo estende prazo",()=>{const s=state();s.careerTransferAvailableDay=0;const c=s.clubs.find(c=>c.id!==s.clubId);s.offers=[{clubId:c.id,salary:10000,expires:s.day+2}];E.Career.holdOffer(s,c.id);assert.ok(s.offers[0].expires>=s.day+7)});
 test("acordo fora da janela agenda transferencia e bloqueia outro",()=>{const s=state();s.day=100;const cs=s.clubs.filter(c=>c.id!==s.clubId).slice(0,2);s.offers=cs.map((c,i)=>({clubId:c.id,salary:12000+i*1000,durationDays:730,expires:s.day+20,squadRole:"Rotação"}));A.execute(s,"join",{id:cs[0].id});const pc=E.Career.init(s).playerCareer;assert.ok(s.clubId);assert.equal(pc.marketState.signedAgreement.clubId,cs[0].id);assert.throws(()=>A.execute(s,"join",{id:cs[1].id}))});
 test("efetivacao em janela preserva historico e entra no novo elenco",()=>{const s=state();s.day=100;const c=s.clubs.find(c=>c.id!==s.clubId);s.offers=[{clubId:c.id,salary:15000,durationDays:730,expires:130,squadRole:"Rotação",transferType:"permanent"}];A.execute(s,"join",{id:c.id});const pc=E.Career.init(s).playerCareer;s.day=pc.marketState.signedAgreement.startDay;const due=E.Career.marketTick(s);s.offers=[due];E.join(s,due.clubId,due.salary);assert.equal(s.clubId,c.id);assert.ok(c.roster.some(p=>p.id==="hero"));assert.ok(E.Career.init(s).transfers.some(t=>t.player===s.person.name))});
-test("agencia e agente persistem e possuem periodo minimo",()=>{const s=state();E.Career.hireAgency(s,"atlas");assert.equal(E.Career.init(s).playerCareer.agent.id,"atlas");assert.throws(()=>E.Career.hireAgency(s,"prime"));const copy=JSON.parse(JSON.stringify(s));assert.equal(E.Career.init(copy).playerCareer.agent.id,"atlas")});
+test("agencia e agente persistem e possuem periodo minimo",()=>{
+  const s=state();
+
+  const pc=
+    E.Career.init(s).playerCareer;
+
+  /*
+    Atlas agora e uma agencia ELITE.
+    Elevamos o atleta neste teste somente para validar
+    persistencia e periodo minimo respeitando a nova regra.
+  */
+
+  s.reputation=95;
+  pc.marketValue=50000000;
+
+  for(
+    const key of
+    Object.keys(s.person.attrs||{})
+  ){
+    s.person.attrs[key]=92;
+  }
+
+  const eligibility=
+    E.Career.agencyEligibility(
+      s,
+      "atlas"
+    );
+
+  assert.equal(
+    eligibility.eligible,
+    true
+  );
+
+  E.Career.hireAgency(
+    s,
+    "atlas"
+  );
+
+  assert.equal(
+    E.Career.init(s)
+      .playerCareer
+      .agent
+      .id,
+    "atlas"
+  );
+
+  assert.throws(
+    ()=>E.Career.hireAgency(
+      s,
+      "prime"
+    ),
+    /per\u00edodo m\u00ednimo/
+  );
+
+  const copy=
+    JSON.parse(
+      JSON.stringify(s)
+    );
+
+  assert.equal(
+    E.Career.init(copy)
+      .playerCareer
+      .agent
+      .id,
+    "atlas"
+  );
+});
 
 
 test("mudanca estrutural preserva hero no roster e transferencia publica sem proposta e rejeitada",()=>{

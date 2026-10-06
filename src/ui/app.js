@@ -264,7 +264,7 @@
         ? [
             ["home", "Início", [["home", "Central"], ["lineup", "Escalação do próximo jogo"]]],
             ["inbox", "Caixa", [["inbox", "Mensagens"]]],
-            ["profile", "Meu jogador", [["profile", "Perfil e carreira"], ["training", "Treinamento"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["legacy", "Evolução e legado"]]],
+            ["profile", "Meu jogador", [["profile", "Perfil e carreira"], ["training", "Treinamento"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["agency", "Empresário e Agência"], ["legacy", "Evolução e legado"]]],
             ["market", "Mercado", [["market", "Central do mercado"], ["proposals", "Minhas propostas"]]],
             ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["panorama", "Panorama"], ["squad", "Elenco"]]],
             ["national", "Seleção", [["national", "Seleção Brasileira"]]],
@@ -474,6 +474,363 @@
       }
     });
   }
+
+  function agencyManagementPanel() {
+    if(state.mode!=="player") return "";
+
+    const career=Career.init(state);
+    const pc=career.playerCareer;
+    const st=Career.agencyState(state);
+    const current=pc.agent;
+    const terms=Career.agencyCommissionTerms(current);
+
+    const relationshipLabel=
+      st.relationship>=85 ? "EXCELENTE" :
+      st.relationship>=70 ? "BOA" :
+      st.relationship>=50 ? "ESTAVEL" :
+      st.relationship>=30 ? "FRAGIL" :
+      "RUIM";
+
+    const objectives=(st.objectives||[]);
+
+    const objectiveProgress=(o)=>{
+      const stats=state.statistics?.players?.hero||{};
+
+      if(o.kind==="REPUTATION")
+        return Number(state.reputation||0);
+
+      if(o.kind==="OVERALL")
+        return D.overall(state.person);
+
+      if(o.kind==="SALARY")
+        return Number(state.salary||0);
+
+      if(o.kind==="PLAYTIME")
+        return Number(stats.appearances||0);
+
+      if(o.kind==="TRANSFER")
+        return pc.marketState?.signedAgreement ? 1 : 0;
+
+      return Number(o.baseline||0);
+    };
+
+    const objectiveHtml=objectives.length
+      ? objectives.map(o=>{
+          const currentValue=objectiveProgress(o);
+          const total=Math.max(
+            1,
+            Number(o.target||0)-
+            Number(o.baseline||0)
+          );
+
+          const progress=Math.max(
+            0,
+            Math.min(
+              100,
+              Math.round(
+                (
+                  (
+                    currentValue-
+                    Number(o.baseline||0)
+                  )/
+                  total
+                )*100
+              )
+            )
+          );
+
+          const statusClass=
+            o.status==="CONCLU\u00cdDO"
+              ? "good"
+              : o.status==="N\u00c3O CUMPRIDO"
+                ? "bad"
+                : "";
+
+          return `
+            <article class="card agency-objective">
+              <div class="split">
+                <b>${esc(o.title)}</b>
+                <small class="${statusClass}">
+                  ${esc(o.status)}
+                </small>
+              </div>
+
+              <div class="fc-manager-bar">
+                <i style="width:${progress}%"></i>
+              </div>
+
+              <p class="muted">
+                Progresso: ${progress}% ?
+                prazo ${dayDate(o.deadline)}
+              </p>
+            </article>
+          `;
+        }).join("")
+      : '<p class="muted">Nenhum objetivo ativo.</p>';
+
+    const openOffers=(st.offers||[])
+      .filter(x=>
+        x.status==="ABERTA" &&
+        x.expires>=state.day
+      );
+
+    const representationOffers=openOffers.length
+      ? openOffers.map(o=>{
+          const agency=Career.agencyById(o.agencyId);
+
+          return `
+            <article class="offer-card">
+              <small>
+                PROPOSTA DE REPRESENTACAO ?
+                ${esc(o.level||agency?.level||"LOCAL")}
+              </small>
+
+              <h3>${esc(o.agency)}</h3>
+
+              <p>
+                ${esc(agency?.specialty||"Gestao de carreira")}
+                <br>
+                Rede: ${esc(agency?.network||"Brasil")}
+                <br>
+                Comissao: ${agency?.commission||0}%
+                <br>
+                Expira em ${dayDate(o.expires)}
+              </p>
+
+              <div class="actions">
+                <button
+                  class="primary"
+                  data-hire-agency="${esc(o.agencyId)}"
+                >
+                  Aceitar representacao
+                </button>
+
+                <button
+                  data-reject-agency-offer="${esc(o.id)}"
+                >
+                  Recusar
+                </button>
+              </div>
+            </article>
+          `;
+        }).join("")
+      : '<p class="muted">Nenhuma proposta de representacao pendente.</p>';
+
+    const agencyMarket=Career.availableAgencies(state)
+      .filter(a=>a.id!=="prolife-base")
+      .map(a=>{
+        const e=a.eligibility;
+        const active=current?.id===a.id;
+
+        const requirementText=e.eligible
+          ? "Requisitos atendidos"
+          : (e.missing||[]).map(x=>{
+              if(x==="reputation")
+                return "Reputacao";
+
+              if(x==="overall")
+                return "Overall";
+
+              if(x==="marketValue")
+                return "Valor de mercado";
+
+              return x;
+            }).join(" ? ");
+
+        return `
+          <article class="offer-card ${active?"on":""}">
+            <div class="split">
+              <span class="tag">
+                ${esc(a.level)}
+              </span>
+
+              <span class="pill">
+                ${a.reputation}/100
+              </span>
+            </div>
+
+            <h3>${esc(a.name)}</h3>
+
+            <p>
+              ${esc(a.specialty)}
+              <br>
+              Rede: ${esc(a.network)}
+              <br>
+              Negociacao: ${a.negotiation}/100
+              <br>
+              Comissao: ${a.commission}%
+            </p>
+
+            <small class="${e.eligible?"good":"muted"}">
+              ${esc(requirementText||e.reason)}
+            </small>
+
+            <div class="section">
+              <button
+                data-hire-agency="${esc(a.id)}"
+                ${active||!e.eligible?"disabled":""}
+              >
+                ${active
+                  ? "Agencia atual"
+                  : e.eligible
+                    ? "Contratar"
+                    : "Bloqueada"}
+              </button>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+    const history=(st.history||[]).length
+      ? st.history.slice(0,6).map(h=>`
+          <div class="central-list-item">
+            <small>
+              ${dayDate(h.startDay)} ?
+              ${dayDate(h.endDay)}
+            </small>
+
+            <b>${esc(h.agency)}</b>
+
+            <p>
+              ${esc(h.status)}
+              ${Number(h.exitFee||0)>0
+                ? " ? rescisao "+money(h.exitFee)
+                : ""}
+            </p>
+          </div>
+        `).join("")
+      : '<p class="muted">Nenhuma agencia anterior registrada.</p>';
+
+    return `
+      <section
+        class="card section"
+        id="agency-management"
+      >
+        <div class="split">
+          <div>
+            <div class="tag">
+              EMPRESARIO E AGENCIA
+            </div>
+
+            <h2>
+              Gestao profissional da carreira
+            </h2>
+          </div>
+
+          <span class="pill">
+            ${current
+              ? esc(current.level||"LOCAL")
+              : "SEM AGENCIA"}
+          </span>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <small>Agencia atual</small>
+            <b>
+              ${esc(
+                current?.agency||
+                current?.name||
+                "Sem representacao"
+              )}
+            </b>
+          </div>
+
+          <div class="stat">
+            <small>Relacionamento</small>
+            <b>
+              ${st.relationship}/100 ?
+              ${relationshipLabel}
+            </b>
+          </div>
+
+          <div class="stat">
+            <small>Negociacao</small>
+            <b>
+              ${current?.negotiation||0}/100
+            </b>
+          </div>
+
+          <div class="stat">
+            <small>Total em comissoes</small>
+            <b>
+              ${money(st.totalCommission||0)}
+            </b>
+          </div>
+        </div>
+
+        ${current ? `
+          <div class="notice section">
+            <b>${esc(current.specialty||"Gestao de carreira")}</b>
+
+            <p>
+              Rede: ${esc(current.network||"Brasil")}
+              ? salario ${terms.salary}%
+              ? luvas ${terms.signingBonus}%
+              ? comercial ${terms.commercial}%
+            </p>
+
+            ${current.id!=="prolife-base" ? `
+              <button
+                data-dismiss-agency="1"
+              >
+                Encerrar representacao
+              </button>
+            ` : ""}
+          </div>
+        ` : `
+          <div class="notice section">
+            <b>Sem representacao ativa</b>
+
+            <p>
+              Voce pode receber propostas de agencias
+              conforme sua carreira evolui.
+            </p>
+          </div>
+        `}
+
+        <h3 class="section">
+          Objetivos definidos pelo empresario
+        </h3>
+
+        <div class="grid3">
+          ${objectiveHtml}
+        </div>
+
+        <h3 class="section">
+          Propostas de representacao
+        </h3>
+
+        <div class="grid3">
+          ${representationOffers}
+        </div>
+
+        <h3 class="section">
+          Mercado de agencias
+        </h3>
+
+        <p class="muted">
+          Agencias de nivel superior exigem reputacao,
+          overall e valor de mercado compat?veis.
+        </p>
+
+        <div class="grid3">
+          ${agencyMarket}
+        </div>
+
+        <details class="section">
+          <summary>
+            <b>Historico de representacao</b>
+          </summary>
+
+          <div class="section">
+            ${history}
+          </div>
+        </details>
+      </section>
+    `;
+  }
+
   const views = {
     home() {
       const H = window.ProLifeHomeDashboard.snapshot(state, D, Calendar), p=state.person, c=H.c, next=H.next, cur=H.current;
@@ -521,6 +878,14 @@
         <section class="card section"><div class="tag">DISPUTA POR POSIÇÃO</div><h2>Seu caminho no time</h2><p>Treinos e objetivos de partida alimentam sua avaliação do manager; a relação acima mostra a seleção efetiva usada pelo jogo.</p></section>
       </div>`;
     },
+    agency() {
+      if(state.mode!=="player"){
+        return '<section class="card"><h2>Empres?rio e Ag?ncia</h2><p class="muted">Dispon?vel apenas na carreira de jogador.</p></section>';
+      }
+
+      return agencyManagementPanel();
+    },
+
     profile() {
       const p = state.person,
         c = D.club(state);
@@ -977,6 +1342,29 @@
       if(Array.isArray(career.transfers)&&rejectedClub) career.transfers=career.transfers.filter(t=>!(t.player===state.person.name&&t.to===rejectedClub.name&&(!beforeClub||t.from===beforeClub.name)&&t.status!=="CONFIRMED"));
       persist(); render(); return;
     }
+    if (b.dataset.dismissAgency) {
+      const agent=Career.init(state).playerCareer.agent;
+      const fee=Career.agencyExitFee(state,agent);
+
+      const message=fee>0
+        ? "Encerrar a representacao atual? A rescisao estimada e de "+money(fee)+"."
+        : "Encerrar a representacao atual?";
+
+      if(window.confirm(message)){
+        command("dismissAgency");
+      }
+
+      return;
+    }
+
+    if (b.dataset.rejectAgencyOffer) {
+      command(
+        "rejectAgencyOffer",
+        { id:b.dataset.rejectAgencyOffer }
+      );
+      return;
+    }
+
     if (b.dataset.hireAgency) { command("hireAgency", { id:b.dataset.hireAgency }); return; }
     if (b.dataset.holdOffer) { command("holdOffer", { id:b.dataset.holdOffer }); return; }
     if (b.dataset.counter) {

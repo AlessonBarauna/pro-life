@@ -136,3 +136,21 @@ agenda; advertências; renovação; ledger e deduplicação; equivalência tempo
 saves antigos; retenção histórica e carreira longa. O roteiro
 `node tools/simulate-stage12.cjs` simula dez temporadas e reabre o save a cada
 ano mantendo o limite de 3 MB.
+
+
+## Etapa 17
+
+`tests/agency-stage17.test.cjs` cobre o sistema de empres?rio e ag?ncia.
+
+`tests/calendar-special-dates.test.cjs` protege os eventos recorrentes de Natal e Ano-Novo.
+
+Antes de publica??o, executar:
+
+```
+npm run check
+npm test
+npm run test:ui
+npm run build
+```
+
+Depois dos testes automatizados, realizar teste manual da carreira antes de commit/push.

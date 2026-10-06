@@ -119,3 +119,14 @@ protege o intervalo entre D-7 e D+4 de cada Data FIFA. `engine.nextCommitment`
 combina clube e Seleção; quando o atleta está convocado, o compromisso mais
 próximo é apresentado pelo mesmo fluxo usado no painel inicial. O calendário
 deriva eventos futuros e resultados internacionais da agenda persistida.
+
+
+## Etapa 17 ? Empres?rio, Ag?ncia e Gest?o de Carreira
+
+O m?dulo Career centraliza a representa??o profissional do jogador.
+
+A ag?ncia interfere em negocia??o, objetivos e progress?o, enquanto Life processa comiss?o salarial e Commercial processa receitas e comiss?es comerciais.
+
+A camada Application exp?e os comandos de contrata??o, demiss?o e recusa de representa??o.
+
+Detalhes completos: `docs/ETAPA_17.md`.

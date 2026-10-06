@@ -10,7 +10,98 @@ test("Etapa 12: perfis comerciais evoluem sem depender somente do overall",()=>{
 test("Etapa 12: interesse segue pipeline determinístico até proposta real",()=>{const a=career(10),b=JSON.parse(JSON.stringify(a));elevate(a,80,85);elevate(b,80,85);for(let i=0;i<6;i++){a.day+=14;b.day+=14;E.Commercial.progressInterests(a,new E.Random(99+i),E.Career,E);E.Commercial.progressInterests(b,new E.Random(99+i),E.Career,E);}assert(a.commercial.proposals.length>0);assert.deepEqual(a.commercial.interests,b.commercial.interests);assert.deepEqual(a.commercial.proposals,b.commercial.proposals);});
 test("Etapa 12: proposta permite pedir tempo, negociar, recusar e aceitar",()=>{const s=career(20),p=proposal(s);assert(p);const old=p.expires;A.execute(s,"commercialHold",{id:p.id});assert(p.expires>old);const result=A.execute(s,"commercialNegotiate",{id:p.id,amount:p.amount,durationDays:p.durationDays,bonus:p.bonus.amount});assert(["ACEITA","CONTRAPROPOSTA"].includes(result));A.execute(s,"commercialAccept",{id:p.id});assert.equal(E.Commercial.active(s).length,1);const other=career(21),p2=proposal(other);A.execute(other,"commercialReject",{id:p2.id});assert.equal(p2.status,"RECUSADA");});
 test("Etapa 12: novo patrocinador exclusivo substitui o anterior da mesma categoria",()=>{const s=career(30),a=proposal(s,"vertex");A.execute(s,"commercialAccept",{id:a.id});const c=E.Commercial.init(s,E),old=E.Commercial.active(s)[0],nova=E.Commercial.brands.find(x=>x.id==="nova");c.proposals.unshift({ ...a,id:"manual-nova",brandId:nova.id,brand:nova.name,status:"PROPOSTA",startDay:s.day+1,endDay:s.day+365,expires:s.day+10,round:0 });A.execute(s,"commercialAccept",{id:"manual-nova"});const active=E.Commercial.active(s);assert.equal(active.length,1);assert.equal(active[0].brandId,"nova");assert.equal(old.status,"ENCERRADO");assert.equal(old.replacedBy,"nova");assert.equal(old.endDay,s.day);const history=c.history.find(h=>h.brandId==="vertex");assert.equal(history.status,"SUBSTITUÍDO");assert.equal(history.replacedBy,nova.name);});
-test("Etapa 12: pagamento usa wallet e ledger uma única vez após reload",()=>{const s=career(40),p=proposal(s);A.execute(s,"commercialAccept",{id:p.id});const contract=E.Commercial.active(s)[0],before=s.wallet;s.day=contract.startDay;E.Commercial.processContracts(s,E.Career,E);assert.equal(s.wallet,before+contract.amount);assert.equal(E.Career.init(s).ledger.filter(x=>x.label===`Patrocínio — ${contract.brand}`).length,1);const loaded=Save.parse(JSON.stringify(s));E.Commercial.processContracts(loaded,E.Career,E);assert.equal(loaded.wallet,s.wallet);assert.equal(E.Career.init(loaded).ledger.filter(x=>x.label===`Patrocínio — ${contract.brand}`).length,1);});
+test("Etapa 12: pagamento usa wallet e ledger uma \u00fanica vez ap\u00f3s reload",()=>{
+  const s=career(40);
+  const p=proposal(s);
+
+  A.execute(
+    s,
+    "commercialAccept",
+    {id:p.id}
+  );
+
+  const contract=
+    E.Commercial.active(s)[0];
+
+  const before=s.wallet;
+
+  s.day=contract.startDay;
+
+  const agent=
+    E.Career.init(s).playerCareer.agent;
+
+  const terms=
+    E.Career.agencyCommissionTerms(agent);
+
+  const commission=Math.round(
+    contract.amount*
+    terms.commercial/
+    100
+  );
+
+  E.Commercial.processContracts(
+    s,
+    E.Career,
+    E
+  );
+
+  assert.equal(
+    s.wallet,
+    before+
+    contract.amount-
+    commission
+  );
+
+  assert.equal(
+    E.Career.init(s).ledger.filter(x=>
+      x.label===
+      "Patroc\u00ednio \u2014 "+contract.brand
+    ).length,
+    1
+  );
+
+  if(commission>0){
+    assert.equal(
+      E.Career.init(s).ledger.filter(x=>
+        x.label===
+        "Comiss\u00e3o da ag\u00eancia - patroc\u00ednio"
+      ).length,
+      1
+    );
+  }
+
+  const loaded=
+    Save.parse(JSON.stringify(s));
+
+  E.Commercial.processContracts(
+    loaded,
+    E.Career,
+    E
+  );
+
+  assert.equal(
+    loaded.wallet,
+    s.wallet
+  );
+
+  assert.equal(
+    E.Career.init(loaded).ledger.filter(x=>
+      x.label===
+      "Patroc\u00ednio \u2014 "+contract.brand
+    ).length,
+    1
+  );
+
+  if(commission>0){
+    assert.equal(
+      E.Career.init(loaded).ledger.filter(x=>
+        x.label===
+        "Comiss\u00e3o da ag\u00eancia - patroc\u00ednio"
+      ).length,
+      1
+    );
+  }
+});
 test("Etapa 12: 30 dias em massa equivalem a 30 avanços diários",()=>{const a=career(50),p=proposal(a);A.execute(a,"commercialAccept",{id:p.id});const b=Save.parse(JSON.stringify(a));E.advance(a,30);for(let i=0;i<30;i++)E.advance(b,1);assert.equal(a.wallet,b.wallet);assert.deepEqual(a.commercial,b.commercial);assert.deepEqual(E.Career.init(a).ledger,E.Career.init(b).ledger);});
 test("Etapa 12: evento comercial não ocupa o dia de partida",()=>{const s=career(60),p=proposal(s);A.execute(s,"commercialAccept",{id:p.id});const x=E.Commercial.active(s)[0],event=s.commercial.events[0];event.day=s.calendarDays[0];event.status="CONFIRMADO";s.day=event.day;E.Commercial.processContracts(s,E.Career,E);assert.equal(event.status,"CONFIRMADO");assert.equal(event.day,s.day+1);assert.equal(x.relationship,70);});
 test("Etapa 12: evento concluído afeta exposição sem comprar atributos",()=>{const s=career(70),p=proposal(s);A.execute(s,"commercialAccept",{id:p.id});const event=s.commercial.events[0],attrs=JSON.stringify(s.person.attrs),followers=s.commercial.followers;event.day=++s.day;event.status="CONFIRMADO";E.Commercial.processContracts(s,E.Career,E);assert.equal(event.status,"CONCLUÍDO");assert(s.commercial.followers>followers);assert.equal(JSON.stringify(s.person.attrs),attrs);});

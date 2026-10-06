@@ -72,6 +72,8 @@
       case "reject": D.Career.rejectOffer(s,data.id); break;
       case "holdOffer": D.Career.holdOffer(s,data.id); break;
       case "hireAgency": D.Career.hireAgency(s,data.id); break;
+      case "dismissAgency": D.Career.dismissAgency(s); break;
+      case "rejectAgencyOffer": D.Career.rejectAgencyOffer(s,data.id); break;
       case "agentStrategy": {
         D.Career.setAgentStrategy(s, { priority: data.priority, stance: data.stance });
         break;

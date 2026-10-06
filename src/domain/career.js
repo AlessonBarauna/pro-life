@@ -129,7 +129,14 @@
     if (!pc.agentStrategy) pc.agentStrategy = { priority: "balanced", stance: "open" };
     if (pc.agentAdvice === undefined) pc.agentAdvice = null;
     if (pc.targetClub === undefined) pc.targetClub = null;
-    if (!pc.agent) pc.agent = { id:"prolife-base", name:"Rafael Nunes", agency:"Nunes Career", reputation:55, commission:5, network:"Brasil e América do Sul", negotiation:55, specialty:"Desenvolvimento de carreira", hiredDay:s.day };
+    if (pc.agent === undefined) pc.agent = { id:"prolife-base", name:"Rafael Nunes", agency:"Nunes Career", level:"LOCAL", reputation:48, commission:4, network:"Brasil", negotiation:48, specialty:"Desenvolvimento de jovens", hiredDay:s.day, changedDay:null, minimumTermDays:0, exitFeeMonths:0 };
+    if (!pc.agencyState || typeof pc.agencyState !== "object") pc.agencyState = { version:1, relationship:70, objectives:[], history:[], offers:[], totalCommission:0, lastObjectiveRefreshDay:-9999, lastOfferCheckDay:-9999, dismissedDay:null };
+    if (!Array.isArray(pc.agencyState.objectives)) pc.agencyState.objectives=[];
+    if (!Array.isArray(pc.agencyState.history)) pc.agencyState.history=[];
+    if (!Array.isArray(pc.agencyState.offers)) pc.agencyState.offers=[];
+    if (!Number.isFinite(pc.agencyState.relationship)) pc.agencyState.relationship=70;
+    if (!Number.isFinite(pc.agencyState.totalCommission)) pc.agencyState.totalCommission=0;
+    pc.agencyState.version=1;
     if (!pc.marketState) pc.marketState = { version:3, rejectionCooldowns:{}, signedAgreement:null, futureTransfer:null, lastInterestTick:-9999 };
     if (!pc.marketState.rejectionCooldowns) pc.marketState.rejectionCooldowns={};
     if (pc.marketState.signedAgreement === undefined) pc.marketState.signedAgreement=null;
@@ -322,10 +329,47 @@
 
   function signContract(s, offer) {
     const pc=init(s).playerCareer;
-    pc.contract={clubId:offer.clubId,signedDay:s.day,endDay:s.day+(offer.durationDays||730),durationDays:offer.durationDays||730,salary:offer.salary,signingBonus:offer.signingBonus||0,role:offer.squadRole||offer.role,type:offer.transferType||"permanent",...(offer.parentClubId?{parentClubId:offer.parentClubId,parentSalary:offer.parentSalary,parentContractRemaining:offer.parentContractRemaining}:{})};
-    pc.negotiations=0; pc.interests=pc.interests.filter(x=>x.clubId!==offer.clubId);
+
+    pc.contract={
+      clubId:offer.clubId,
+      signedDay:s.day,
+      endDay:s.day+(offer.durationDays||730),
+      durationDays:offer.durationDays||730,
+      salary:offer.salary,
+      signingBonus:offer.signingBonus||0,
+      role:offer.squadRole||offer.role,
+      type:offer.transferType||"permanent",
+      ...(offer.parentClubId?{
+        parentClubId:offer.parentClubId,
+        parentSalary:offer.parentSalary,
+        parentContractRemaining:offer.parentContractRemaining
+      }:{})
+    };
+
+    pc.negotiations=0;
+
+    pc.interests=pc.interests.filter(
+      x=>x.clubId!==offer.clubId
+    );
+
     s.contract=offer.durationDays||730;
-    if(offer.signingBonus) transaction(s,offer.signingBonus,"Luvas de assinatura");
+
+    if(offer.signingBonus) {
+      transaction(
+        s,
+        offer.signingBonus,
+        "Luvas de assinatura"
+      );
+
+      chargeAgentCommission(
+        s,
+        offer.signingBonus,
+        "signing"
+      );
+    }
+
+    if(pc.agent)
+      agencyRelationship(s,3);
   }
 
   function renewalTerms(s, requested = null) {
@@ -373,12 +417,57 @@
     return pc.renewalOffer;
   }
   function acceptRenewal(s) {
-    const pc=init(s).playerCareer,o=pc.renewalOffer;
-    if(!o || o.expires<s.day || o.clubId!==s.clubId) throw Error("Não há renovação disponível.");
-    s.salary=o.salary; s.contract=o.durationDays;
-    pc.contract={clubId:s.clubId,signedDay:s.day,endDay:s.day+o.durationDays,durationDays:o.durationDays,salary:o.salary,signingBonus:o.signingBonus,performanceBonus:o.performanceBonus||0,role:o.role||pc.squadRole,type:"permanent"};
-    transaction(s,o.signingBonus,"Luvas de renovação"); pc.renewalOffer=null;
-    post(s,"Carreira","Diretoria","Contrato renovado",`Novo vínculo assinado. Salário de R$ ${o.salary.toLocaleString("pt-BR")} por mês · papel ${o.role||pc.squadRole} · bônus por desempenho R$ ${(o.performanceBonus||0).toLocaleString("pt-BR")}.`);
+    const pc=init(s).playerCareer;
+    const o=pc.renewalOffer;
+
+    if(
+      !o ||
+      o.expires<s.day ||
+      o.clubId!==s.clubId
+    )
+      throw Error("N\u00e3o h\u00e1 renova\u00e7\u00e3o dispon\u00edvel.");
+
+    s.salary=o.salary;
+    s.contract=o.durationDays;
+
+    pc.contract={
+      clubId:s.clubId,
+      signedDay:s.day,
+      endDay:s.day+o.durationDays,
+      durationDays:o.durationDays,
+      salary:o.salary,
+      signingBonus:o.signingBonus,
+      performanceBonus:o.performanceBonus||0,
+      role:o.role||pc.squadRole,
+      type:"permanent"
+    };
+
+    if(o.signingBonus) {
+      transaction(
+        s,
+        o.signingBonus,
+        "Luvas de renova\u00e7\u00e3o"
+      );
+
+      chargeAgentCommission(
+        s,
+        o.signingBonus,
+        "renewal"
+      );
+    }
+
+    pc.renewalOffer=null;
+
+    if(pc.agent)
+      agencyRelationship(s,3);
+
+    post(
+      s,
+      "Carreira",
+      "Diretoria",
+      "Contrato renovado",
+      "Novo v\u00ednculo assinado com o clube."
+    );
   }
   function rejectRenewal(s) {
     const pc=init(s).playerCareer; if(!pc.renewalOffer) throw Error("Não há renovação disponível."); pc.renewalOffer=null;
@@ -386,23 +475,818 @@
   }
 
   function counterOffer(s, clubId) {
-    const o=s.offers.find(x=>x.clubId===clubId && x.expires>=s.day);
-    if(!o) throw Error("Esta proposta não está disponível.");
-    if(o.negotiated) throw Error("Este clube já respondeu à sua contraproposta.");
-    const pc=init(s).playerCareer, leverage=(s.reputation+(pc.coachTrust||50))/200;
-    const raise=1.08+Math.min(.12,leverage*.12);
-    o.salary=Math.round(o.salary*raise/100)*100; o.signingBonus=Math.round((o.signingBonus||o.salary)*1.15/100)*100; o.negotiated=true; pc.negotiations++;
-    post(s,"Carreira","Agente","Contraproposta aceita",`O ${root.ProLife?.club(s,clubId)?.name||"clube"} melhorou salário e luvas. A oferta continua válida até o prazo original.`);
+    const o=s.offers.find(x=>
+      x.clubId===clubId &&
+      x.expires>=s.day
+    );
+
+    if(!o)
+      throw Error("Esta proposta n\u00e3o est\u00e1 dispon\u00edvel.");
+
+    if(o.negotiated)
+      throw Error("Este clube j\u00e1 respondeu \u00e0 sua contraproposta.");
+
+    const pc=init(s).playerCareer;
+
+    const agentNegotiation=
+      Number(pc.agent?.negotiation||40);
+
+    const relationship=
+      Number(agencyState(s).relationship||50);
+
+    const leverage=clamp(
+      (
+        Number(s.reputation||0)*0.25 +
+        Number(pc.coachTrust||50)*0.20 +
+        agentNegotiation*0.40 +
+        relationship*0.15
+      )/100,
+      0,
+      1
+    );
+
+    const salaryRaise=
+      1.04 + leverage*0.17;
+
+    const bonusRaise=
+      1.08 + leverage*0.16;
+
+    o.salary=Math.round(
+      o.salary*salaryRaise/100
+    )*100;
+
+    o.signingBonus=Math.round(
+      (o.signingBonus||o.salary)*
+      bonusRaise/100
+    )*100;
+
+    o.negotiated=true;
+    o.agentNegotiationScore=
+      Math.round(leverage*100);
+
+    pc.negotiations++;
+
+    if(pc.agent)
+      agencyRelationship(s,1);
+
+    post(
+      s,
+      "Carreira",
+      "Agente",
+      "Contraproposta aceita",
+      "Sua equipe de representa\u00e7\u00e3o conseguiu melhorar sal\u00e1rio e luvas. A oferta continua v\u00e1lida at\u00e9 o prazo original."
+    );
+
     return o;
   }
 
 
+  const AGENCY_LEVELS = {
+    LOCAL: 1,
+    NATIONAL: 2,
+    ELITE: 3,
+    GLOBAL: 4
+  };
+
   const agencies = [
-    {id:"nunes",name:"Nunes Career",reputation:55,commission:4,network:"Brasil e América do Sul",negotiation:55,specialty:"Jovens e desenvolvimento"},
-    {id:"atlas",name:"Atlas Football",reputation:72,commission:7,network:"América do Sul e Europa",negotiation:72,specialty:"Carreira internacional"},
-    {id:"prime",name:"Prime Eleven",reputation:64,commission:6,network:"Brasil e mercados intermediários",negotiation:65,specialty:"Negociação contratual"}
+    {
+      id:"prolife-base",
+      name:"Nunes Career",
+      level:"LOCAL",
+      reputation:48,
+      commission:4,
+      network:"Brasil",
+      negotiation:48,
+      specialty:"Desenvolvimento de jovens",
+      focus:["development","playtime"],
+      minReputation:0,
+      minOverall:0,
+      minMarketValue:0,
+      minimumTermDays:0,
+      exitFeeMonths:0
+    },
+    {
+      id:"nunes",
+      name:"Nunes Career Pro",
+      level:"LOCAL",
+      reputation:56,
+      commission:5,
+      network:"Brasil",
+      negotiation:58,
+      specialty:"Primeiro contrato e evolu\u00e7\u00e3o",
+      focus:["development","playtime"],
+      minReputation:20,
+      minOverall:50,
+      minMarketValue:150000,
+      minimumTermDays:120,
+      exitFeeMonths:0.15
+    },
+    {
+      id:"prime",
+      name:"Prime Eleven",
+      level:"NATIONAL",
+      reputation:66,
+      commission:6,
+      network:"Brasil e Am\u00e9rica do Sul",
+      negotiation:69,
+      specialty:"Negocia\u00e7\u00e3o contratual",
+      focus:["salary","balanced"],
+      minReputation:38,
+      minOverall:60,
+      minMarketValue:750000,
+      minimumTermDays:180,
+      exitFeeMonths:0.25
+    },
+    {
+      id:"horizon",
+      name:"Horizon Sports Management",
+      level:"NATIONAL",
+      reputation:70,
+      commission:6,
+      network:"Brasil e Am\u00e9rica do Sul",
+      negotiation:67,
+      specialty:"Jovens de alto potencial",
+      focus:["development","prestige"],
+      minReputation:42,
+      minOverall:62,
+      minMarketValue:1000000,
+      minimumTermDays:180,
+      exitFeeMonths:0.25
+    },
+    {
+      id:"atlas",
+      name:"Atlas Football",
+      level:"ELITE",
+      reputation:80,
+      commission:8,
+      network:"Am\u00e9rica do Sul e Europa",
+      negotiation:82,
+      specialty:"Transfer\u00eancias internacionais",
+      focus:["prestige","salary"],
+      minReputation:62,
+      minOverall:72,
+      minMarketValue:5000000,
+      minimumTermDays:240,
+      exitFeeMonths:0.40
+    },
+    {
+      id:"vanguard",
+      name:"Vanguard Players",
+      level:"ELITE",
+      reputation:84,
+      commission:8,
+      network:"Brasil, Europa e sele\u00e7\u00f5es",
+      negotiation:85,
+      specialty:"Carreiras de alto rendimento",
+      focus:["prestige","balanced"],
+      minReputation:68,
+      minOverall:76,
+      minMarketValue:7500000,
+      minimumTermDays:240,
+      exitFeeMonths:0.45
+    },
+    {
+      id:"global11",
+      name:"Global Eleven",
+      level:"GLOBAL",
+      reputation:94,
+      commission:10,
+      network:"Global",
+      negotiation:94,
+      specialty:"Superestrelas e grandes mercados",
+      focus:["prestige","salary"],
+      minReputation:82,
+      minOverall:84,
+      minMarketValue:20000000,
+      minimumTermDays:365,
+      exitFeeMonths:0.65
+    },
+    {
+      id:"apex",
+      name:"Apex World Sports",
+      level:"GLOBAL",
+      reputation:97,
+      commission:11,
+      network:"Global",
+      negotiation:97,
+      specialty:"\u00cdcones mundiais e contratos premium",
+      focus:["prestige","salary"],
+      minReputation:90,
+      minOverall:88,
+      minMarketValue:35000000,
+      minimumTermDays:365,
+      exitFeeMonths:0.80
+    }
   ];
-  function hireAgency(s,id){ const pc=init(s).playerCareer,a=agencies.find(x=>x.id===id); if(!a) throw Error("Agência inválida."); if(Number.isFinite(pc.agent?.changedDay) && s.day-pc.agent.changedDay<180) throw Error("Seu vínculo com a agência atual ainda está no período mínimo."); pc.agent={...a,name:a.name,agency:a.name,hiredDay:s.day,changedDay:s.day}; post(s,"Carreira","Agente","Representação definida",`${a.name} passa a representar sua carreira. Comissão ${a.commission}% · rede ${a.network}.`); return pc.agent; }
+
+  function agencyState(s) {
+    const pc=init(s).playerCareer;
+
+    if(!pc.agencyState || typeof pc.agencyState!=="object") {
+      pc.agencyState={
+        version:1,
+        relationship:70,
+        objectives:[],
+        history:[],
+        offers:[],
+        totalCommission:0,
+        lastObjectiveRefreshDay:-9999,
+        lastOfferCheckDay:-9999,
+        dismissedDay:null
+      };
+    }
+
+    return pc.agencyState;
+  }
+
+  function agencyById(id) {
+    return agencies.find(a=>a.id===id)||null;
+  }
+
+  function agencyEligibility(s,id) {
+    const pc=init(s).playerCareer;
+    const a=typeof id==="string" ? agencyById(id) : id;
+
+    if(!a) {
+      return {
+        eligible:false,
+        reason:"Ag\u00eancia inv\u00e1lida."
+      };
+    }
+
+    if(a.id==="prolife-base") {
+      return {
+        eligible:true,
+        score:100,
+        missing:[],
+        reason:"Representa\u00e7\u00e3o inicial dispon\u00edvel."
+      };
+    }
+
+    const overall=playerOverall(s);
+    const reputation=Number(s.reputation||0);
+    const marketValue=Number(pc.marketValue||0);
+
+    const missing=[];
+
+    if(reputation<a.minReputation)
+      missing.push("reputation");
+
+    if(overall<a.minOverall)
+      missing.push("overall");
+
+    if(marketValue<a.minMarketValue)
+      missing.push("marketValue");
+
+    return {
+      eligible:missing.length===0,
+      score:Math.round(clamp(
+        reputation*.35+
+        overall*.35+
+        Math.min(100,marketValue/250000)*.30,
+        0,
+        100
+      )),
+      missing,
+      reason:missing.length
+        ? "Requisitos de carreira ainda n\u00e3o atingidos."
+        : "Seu momento de carreira atende aos requisitos."
+    };
+  }
+
+  function availableAgencies(s) {
+    return agencies.map(a=>({
+      ...a,
+      eligibility:agencyEligibility(s,a)
+    }));
+  }
+
+  function agencyRelationship(s,delta=0) {
+    const st=agencyState(s);
+
+    if(delta!==0) {
+      st.relationship=clamp(
+        Number(st.relationship||70)+Number(delta),
+        0,
+        100
+      );
+    }
+
+    return st.relationship;
+  }
+
+  function buildAgencyObjectives(s) {
+    const pc=init(s).playerCareer;
+    const st=agencyState(s);
+
+    const strategy=pc.agentStrategy||{
+      priority:"balanced",
+      stance:"open"
+    };
+
+    const overall=playerOverall(s);
+    const stats=s.statistics?.players?.hero||{};
+
+    const objectives=[];
+
+    if(strategy.priority==="salary") {
+      objectives.push({
+        id:"agency:salary:"+s.day,
+        kind:"SALARY",
+        title:"Valorizar o contrato",
+        baseline:Number(s.salary||0),
+        target:Math.max(
+          Number(s.salary||0)+1000,
+          Math.round(Number(s.salary||0)*1.15/100)*100
+        ),
+        deadline:s.day+180,
+        status:"ATIVO"
+      });
+    }
+    else if(strategy.priority==="playtime") {
+      objectives.push({
+        id:"agency:playtime:"+s.day,
+        kind:"PLAYTIME",
+        title:"Ganhar espa\u00e7o no elenco",
+        baseline:Number(stats.appearances||0),
+        target:Number(stats.appearances||0)+8,
+        deadline:s.day+150,
+        status:"ATIVO"
+      });
+    }
+    else if(strategy.priority==="prestige") {
+      objectives.push({
+        id:"agency:reputation:"+s.day,
+        kind:"REPUTATION",
+        title:"Elevar o prest\u00edgio",
+        baseline:Number(s.reputation||0),
+        target:Math.min(100,Number(s.reputation||0)+8),
+        deadline:s.day+180,
+        status:"ATIVO"
+      });
+    }
+    else if(strategy.priority==="development") {
+      objectives.push({
+        id:"agency:overall:"+s.day,
+        kind:"OVERALL",
+        title:"Evoluir como atleta",
+        baseline:overall,
+        target:Math.min(99,overall+3),
+        deadline:s.day+180,
+        status:"ATIVO"
+      });
+    }
+    else {
+      objectives.push({
+        id:"agency:balanced:"+s.day,
+        kind:"REPUTATION",
+        title:"Consolidar a carreira",
+        baseline:Number(s.reputation||0),
+        target:Math.min(100,Number(s.reputation||0)+5),
+        deadline:s.day+180,
+        status:"ATIVO"
+      });
+    }
+
+    if(["leave","loan"].includes(strategy.stance)) {
+      objectives.push({
+        id:"agency:transfer:"+s.day,
+        kind:"TRANSFER",
+        title:strategy.stance==="loan"
+          ? "Encontrar um empr\u00e9stimo"
+          : "Encontrar novo projeto",
+        baseline:0,
+        target:1,
+        deadline:s.day+150,
+        status:"ATIVO"
+      });
+    }
+
+    st.objectives=objectives;
+    st.lastObjectiveRefreshDay=s.day;
+
+    return objectives;
+  }
+
+  function objectiveProgress(s,o) {
+    const pc=init(s).playerCareer;
+    const stats=s.statistics?.players?.hero||{};
+
+    if(o.kind==="REPUTATION")
+      return Number(s.reputation||0);
+
+    if(o.kind==="OVERALL")
+      return playerOverall(s);
+
+    if(o.kind==="SALARY")
+      return Number(s.salary||0);
+
+    if(o.kind==="PLAYTIME")
+      return Number(stats.appearances||0);
+
+    if(o.kind==="TRANSFER")
+      return pc.marketState?.signedAgreement ? 1 : 0;
+
+    return 0;
+  }
+
+  function processAgencyObjectives(s) {
+    if(s.mode!=="player") return [];
+
+    const pc=init(s).playerCareer;
+    if(!pc.agent) return [];
+
+    const st=agencyState(s);
+
+    if(!st.objectives.length)
+      buildAgencyObjectives(s);
+
+    for(const o of st.objectives) {
+      if(o.status!=="ATIVO") continue;
+
+      const progress=objectiveProgress(s,o);
+
+      if(progress>=o.target) {
+        o.status="CONCLU\u00cdDO";
+        o.completedDay=s.day;
+        agencyRelationship(s,5);
+        continue;
+      }
+
+      if(s.day>o.deadline) {
+        o.status="N\u00c3O CUMPRIDO";
+        o.completedDay=s.day;
+        agencyRelationship(s,-4);
+      }
+    }
+
+    return st.objectives;
+  }
+
+  function hireAgency(s,id) {
+    const pc=init(s).playerCareer;
+    const st=agencyState(s);
+    const a=agencyById(id);
+
+    if(!a)
+      throw Error("Ag\u00eancia inv\u00e1lida.");
+
+    if(pc.agent?.id===a.id)
+      throw Error("Esta j\u00e1 \u00e9 sua ag\u00eancia atual.");
+
+    const eligibility=agencyEligibility(s,a);
+
+    if(!eligibility.eligible)
+      throw Error("Requisitos de carreira ainda n\u00e3o atingidos.");
+
+    const current=pc.agent;
+
+    if(
+      current &&
+      Number.isFinite(current.changedDay) &&
+      s.day-current.changedDay<
+        Number(current.minimumTermDays||180)
+    ) {
+      throw Error(
+        "Seu v\u00ednculo com a ag\u00eancia atual ainda est\u00e1 no per\u00edodo m\u00ednimo."
+      );
+    }
+
+    if(
+      !current &&
+      st.dismissedDay!==null &&
+      st.dismissedDay!==undefined &&
+      s.day-Number(st.dismissedDay)<30
+    ) {
+      throw Error(
+        "Voc\u00ea encerrou uma representa\u00e7\u00e3o recentemente. Aguarde 30 dias para assinar com outra ag\u00eancia."
+      );
+    }
+
+    let exitFee=0;
+
+    if(current) {
+      exitFee=agencyExitFee(s,current);
+
+      if(exitFee>0) {
+        transaction(
+          s,
+          -exitFee,
+          "Rescis\u00e3o de representa\u00e7\u00e3o - "+(current.agency||current.name)
+        );
+      }
+
+      st.history.unshift({
+        agencyId:current.id,
+        agency:current.agency||current.name,
+        startDay:current.hiredDay,
+        endDay:s.day,
+        status:"ENCERRADO",
+        exitFee
+      });
+    }
+
+    pc.agent={
+      ...a,
+      agency:a.name,
+      hiredDay:s.day,
+      changedDay:s.day
+    };
+
+    st.relationship=70;
+    st.objectives=[];
+    st.dismissedDay=null;
+
+    const offer=st.offers.find(x=>
+      x.agencyId===a.id &&
+      x.status==="ABERTA" &&
+      x.expires>=s.day
+    );
+
+    if(offer) {
+      offer.status="ACEITA";
+      offer.closedDay=s.day;
+    }
+
+    buildAgencyObjectives(s);
+
+    post(
+      s,
+      "Carreira",
+      "Agente",
+      "Representa\u00e7\u00e3o definida",
+      a.name+" passa a representar sua carreira."
+    );
+
+    return pc.agent;
+  }
+
+
+
+  function agencyCommissionTerms(agent) {
+    if(!agent) {
+      return {
+        salary:0,
+        signingBonus:0,
+        commercial:0
+      };
+    }
+
+    const salary=Math.max(
+      0,
+      Number(agent.commission||0)
+    );
+
+    const level=agent.level||"LOCAL";
+
+    const commercial=
+      level==="GLOBAL" ? 4 :
+      level==="ELITE" ? 3 :
+      level==="NATIONAL" ? 2 :
+      level==="LOCAL" ? 1 :
+      0;
+
+    return {
+      salary,
+      signingBonus:Math.max(
+        salary,
+        Number(agent.bonusCommission||salary)
+      ),
+      commercial:Math.max(
+        0,
+        Number(
+          agent.commercialCommission ??
+          commercial
+        )
+      )
+    };
+  }
+
+  function chargeAgentCommission(s,gross,source,rate) {
+    const pc=init(s).playerCareer;
+    const agent=pc.agent;
+
+    if(!agent || Number(gross)<=0)
+      return 0;
+
+    const terms=agencyCommissionTerms(agent);
+
+    let pct;
+
+    if(Number.isFinite(Number(rate))) {
+      pct=Math.max(0,Number(rate));
+    } else if(source==="salary") {
+      pct=terms.salary;
+    } else if(source==="commercial") {
+      pct=terms.commercial;
+    } else {
+      pct=terms.signingBonus;
+    }
+
+    if(pct<=0)
+      return 0;
+
+    const fee=Math.round(
+      Number(gross)*pct/100
+    );
+
+    if(fee<=0)
+      return 0;
+
+    const labels={
+      salary:"Comiss\u00e3o da ag\u00eancia",
+      signing:"Comiss\u00e3o da ag\u00eancia - luvas de assinatura",
+      renewal:"Comiss\u00e3o da ag\u00eancia - luvas de renova\u00e7\u00e3o",
+      commercial:"Comiss\u00e3o da ag\u00eancia - patroc\u00ednio"
+    };
+
+    transaction(
+      s,
+      -fee,
+      labels[source] ||
+      "Comiss\u00e3o da ag\u00eancia"
+    );
+
+    const st=agencyState(s);
+    st.totalCommission=
+      Number(st.totalCommission||0)+fee;
+
+    return fee;
+  }
+
+  function agencyExitFee(s,agent) {
+    if(!agent || agent.id==="prolife-base")
+      return 0;
+
+    const months=Number(agent.exitFeeMonths||0);
+
+    if(months<=0)
+      return 0;
+
+    return Math.max(
+      0,
+      Math.round(Number(s.salary||0)*months)
+    );
+  }
+
+  function dismissAgency(s) {
+    const pc=init(s).playerCareer;
+    const st=agencyState(s);
+    const current=pc.agent;
+
+    if(!current)
+      throw Error("Voc\u00ea n\u00e3o possui ag\u00eancia ativa.");
+
+    if(
+      current.id!=="prolife-base" &&
+      Number.isFinite(current.changedDay) &&
+      s.day-current.changedDay<
+        Number(current.minimumTermDays||180)
+    ) {
+      throw Error(
+        "Seu v\u00ednculo com a ag\u00eancia atual ainda est\u00e1 no per\u00edodo m\u00ednimo."
+      );
+    }
+
+    const fee=agencyExitFee(s,current);
+
+    if(fee>0) {
+      transaction(
+        s,
+        -fee,
+        "Rescis\u00e3o de representa\u00e7\u00e3o - "+(current.agency||current.name)
+      );
+    }
+
+    st.history.unshift({
+      agencyId:current.id,
+      agency:current.agency||current.name,
+      startDay:current.hiredDay,
+      endDay:s.day,
+      status:"ENCERRADO",
+      exitFee:fee
+    });
+
+    pc.agent=null;
+
+    st.relationship=50;
+    st.objectives=[];
+    st.dismissedDay=s.day;
+
+    post(
+      s,
+      "Carreira",
+      "Agente",
+      "Representa\u00e7\u00e3o encerrada",
+      "Voc\u00ea encerrou o v\u00ednculo com sua ag\u00eancia."
+    );
+
+    return {
+      dismissed:true,
+      fee
+    };
+  }
+
+  function checkAgencyOffers(s) {
+    if(s.mode!=="player")
+      return [];
+
+    const pc=init(s).playerCareer;
+    const st=agencyState(s);
+
+    if(
+      s.day-Number(st.lastOfferCheckDay ?? -9999)<30
+    ) {
+      return st.offers.filter(x=>
+        x.status==="ABERTA" &&
+        x.expires>=s.day
+      );
+    }
+
+    st.lastOfferCheckDay=s.day;
+
+    for(const a of agencies) {
+      if(a.id==="prolife-base")
+        continue;
+
+      if(pc.agent?.id===a.id)
+        continue;
+
+      const eligibility=agencyEligibility(s,a);
+
+      if(!eligibility.eligible)
+        continue;
+
+      const duplicate=st.offers.some(x=>
+        x.agencyId===a.id &&
+        x.status==="ABERTA" &&
+        x.expires>=s.day
+      );
+
+      if(duplicate)
+        continue;
+
+      st.offers.unshift({
+        id:"agency-offer:"+a.id+":"+s.day,
+        agencyId:a.id,
+        agency:a.name,
+        level:a.level,
+        createdDay:s.day,
+        expires:s.day+45,
+        status:"ABERTA"
+      });
+    }
+
+    st.offers=st.offers.slice(0,20);
+
+    return st.offers.filter(x=>
+      x.status==="ABERTA" &&
+      x.expires>=s.day
+    );
+  }
+
+  function rejectAgencyOffer(s,id) {
+    const st=agencyState(s);
+
+    const offer=st.offers.find(x=>
+      x.id===id &&
+      x.status==="ABERTA" &&
+      x.expires>=s.day
+    );
+
+    if(!offer)
+      throw Error("Proposta de representa\u00e7\u00e3o indispon\u00edvel.");
+
+    offer.status="RECUSADA";
+    offer.closedDay=s.day;
+
+    return offer;
+  }
+
+  function agencyDaily(s) {
+    if(s.mode!=="player")
+      return;
+
+    const pc=init(s).playerCareer;
+    const st=agencyState(s);
+
+    for(const offer of st.offers) {
+      if(
+        offer.status==="ABERTA" &&
+        offer.expires<s.day
+      ) {
+        offer.status="EXPIRADA";
+        offer.closedDay=s.day;
+      }
+    }
+
+    if(pc.agent)
+      processAgencyObjectives(s);
+
+    if(s.day%30===0)
+      checkAgencyOffers(s);
+  }
+
   function clubLevel(c) { return Math.round((c?.structure || 50) * .7 + Math.min(30, ((c?.roster || []).reduce((a,p)=>a+(root.ProLife?.overall?root.ProLife.overall(p):60),0)/Math.max(1,(c?.roster||[]).length)-55)*2)); }
   function positionCompetition(s,c){ const peers=(c?.roster||[]).filter(p=>p.id!=="hero"&&p.pos===s.person.pos).map(p=>root.ProLife?.overall?root.ProLife.overall(p):60).sort((a,b)=>b-a); return {best:peers[0]||55, depth:peers.length}; }
   function sportingReputation(s){ const pc=init(s).playerCareer, st=s.statistics?.players?.hero||{}; return clamp(Math.round(playerOverall(s)*.48+(s.reputation||0)*.22+(pc.coachTrust||50)*.12+Math.min(18,(st.goals||0)*.7+(st.assists||0)*.5)),0,100); }
@@ -558,6 +1442,7 @@
   function daily(s) {
     const e = init(s);
     pruneMessages(s);
+    agencyDaily(s);
     if (s.mode === "player" && s.clubId && s.contract > 0) {
       const pc=e.playerCareer;
       for (const threshold of [365,180,90,30]) {
@@ -897,7 +1782,22 @@
     agentAdvice,
     setAgentStrategy,
     targetClubAssessment,
+    AGENCY_LEVELS,
     agencies,
+    agencyState,
+    agencyById,
+    agencyEligibility,
+    availableAgencies,
+    agencyRelationship,
+    buildAgencyObjectives,
+    processAgencyObjectives,
+    agencyCommissionTerms,
+    chargeAgentCommission,
+    agencyExitFee,
+    dismissAgency,
+    checkAgencyOffers,
+    rejectAgencyOffer,
+    agencyDaily,
     hireAgency,
     interestAssessment,
     sportingReputation,

@@ -950,7 +950,38 @@
   function scheduleEvent(s,contract,api,baseDay){const c=init(s,api),types=["SESSÃO DE FOTOS","EVENTO DA MARCA","CAMPANHA","ENTREVISTA PROMOCIONAL"],count=c.events.filter(x=>x.contractId===contract.id).length;let day=Math.max(Number(baseDay||s.day+5),contract.startDay+4);while(officialOnDay(s,day))day++;const id=`commercial-event:${contract.id}:${day}`;if(!c.events.some(x=>x.id===id))c.events.push({id,contractId:contract.id,brandId:contract.brandId,brand:contract.brand,day,type:types[count%types.length],status:"AGENDADO",mandatory:count%3===2,reschedules:0});}
   function endForWarnings(s,contract,c,helpers){if(contract.warnings<3||contract.relationship>=40)return false;contract.status="ENCERRADO";contract.endDay=s.day;const h=c.history.find(h=>h.brandId===contract.brandId&&h.startDay===contract.startDay);if(h){h.status="ENCERRADO";h.endDay=s.day;}message(s,helpers,"Contrato comercial encerrado",`${contract.brand} encerrou o acordo após obrigações comerciais ignoradas.`,"IMPORTANTE",`commercial:breach:${contract.id}`);return true;}
   function eventAction(s,id,choice,helpers,api){const c=init(s,api),e=c.events.find(x=>x.id===id&&["AGENDADO","REAGENDADO","CONFIRMADO"].includes(x.status));if(!e)throw Error("Evento comercial indisponível.");const x=c.contracts.find(x=>x.id===e.contractId&&x.status==="ATIVO");if(!x)throw Error("Contrato comercial não está ativo.");if(e.status==="CONFIRMADO")throw Error("Evento comercial já confirmado e aguardando realização.");if(choice==="participate"){e.status="CONFIRMADO";message(s,helpers,"Presença confirmada",`Você confirmou participação em ${e.type.toLowerCase()} da ${e.brand}.`,"NORMAL",`commercial:event:confirm:${e.id}`);return e;}if(choice==="reschedule"){if((e.reschedules||0)>=2)throw Error("Limite de reagendamentos atingido.");let day=Math.max(s.day+1,e.day+1);while(officialOnDay(s,day))day++;e.day=day;e.status="REAGENDADO";e.reschedules=(e.reschedules||0)+1;x.relationship=clamp(x.relationship-1,0,100);c.relations[x.brandId]=x.relationship;message(s,helpers,"Evento reagendado",`${e.brand} aceitou uma nova data para ${e.type.toLowerCase()}.`,"NORMAL",`commercial:event:reschedule:${e.id}:${e.reschedules}`);return e;}if(choice==="decline"){e.status="RECUSADO";e.completedDay=s.day;x.warnings=(x.warnings||0)+1;x.relationship=clamp(x.relationship-(e.mandatory?12:5),0,100);c.relations[x.brandId]=x.relationship;message(s,helpers,"Evento recusado",`${e.brand} registrou sua ausência${e.mandatory?" em uma obrigação importante":""}.`,e.mandatory?"IMPORTANTE":"NORMAL",`commercial:event:decline:${e.id}`);if(!endForWarnings(s,x,c,helpers)&&x.endDay>s.day+60)scheduleEvent(s,x,api,s.day+90);return e;}throw Error("Decisão comercial inválida.");}
-  function pay(s,contract,amount,label,key,helpers){const c=init(s);if(c.payments[key])return false;c.payments[key]=s.day;helpers.transaction(s,amount,label);c.revenue+=amount;if(label.includes("Bônus"))c.bonusRevenue+=amount;return true;}
+  function pay(s,contract,amount,label,key,helpers){
+    const c=init(s);
+
+    if(c.payments[key])
+      return false;
+
+    c.payments[key]=s.day;
+
+    helpers.transaction(
+      s,
+      amount,
+      label
+    );
+
+    if(
+      Number(amount)>0 &&
+      typeof helpers.chargeAgentCommission==="function"
+    ){
+      helpers.chargeAgentCommission(
+        s,
+        amount,
+        "commercial"
+      );
+    }
+
+    c.revenue+=amount;
+
+    if(label.includes("B\u00f4nus"))
+      c.bonusRevenue+=amount;
+
+    return true;
+  }
   function processContracts(s,helpers,api){
     const c=init(s,api);
 
