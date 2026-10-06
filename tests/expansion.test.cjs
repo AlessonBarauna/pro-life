@@ -590,3 +590,40 @@ test("current club season statistics keep growing and survive reload", () => {
   assert.equal(r.minutes,180);
   assert.equal(r.goals,3);
 });
+
+
+test("save valido maior que 8 MB pode ser importado",()=>{
+  const s=D.create(
+    {
+      mode:"player",
+      world:"legacy",
+      clubId:"c0"
+    },
+    417
+  );
+
+  const base=JSON.stringify(s);
+
+  // JSON permite whitespace depois do documento.
+  // Isso testa especificamente que o importador nao
+  // rejeita mais um arquivo valido apenas pelo tamanho.
+  const large=
+    base+
+    " ".repeat(8_100_000);
+
+  assert(
+    large.length>8_000_000
+  );
+
+  const imported=S.parse(large);
+
+  assert.equal(
+    imported.person.id,
+    s.person.id
+  );
+
+  assert.equal(
+    imported.clubId,
+    s.clubId
+  );
+});

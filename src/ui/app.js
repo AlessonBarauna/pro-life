@@ -1216,8 +1216,6 @@
       try {
         const f = input.files[0];
         if (!f) return;
-        if (f.size > 8000000)
-          throw Error("Arquivo muito grande. Limite: 8 MB.");
         const parsed = S.parse(await f.text());
         S.saveAsNew?.(parsed);
         state = parsed;

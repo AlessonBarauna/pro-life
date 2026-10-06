@@ -436,8 +436,8 @@
     return s;
   }
   function parse(text) {
-    if (typeof text !== "string" || text.length > 8000000)
-      throw Error("Save excede o limite de 8 MB.");
+    if (typeof text !== "string")
+      throw Error("Arquivo de save inv?lido ou incompat?vel.");
     return validate(JSON.parse(text));
   }
   function readSlots() {
