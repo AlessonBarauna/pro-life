@@ -456,7 +456,7 @@
     try {
       const s=validate(JSON.parse(legacy)), id="career_legacy";
       localStorage.setItem(SLOT_PREFIX+id, JSON.stringify(s));
-      slots=[slotSummary(id,s,Date.now())]; writeSlots(slots); localStorage.setItem(ACTIVE_KEY,id);
+      slots=[slotSummary(id,s,Date.now())]; writeSlots(slots); localStorage.setItem(ACTIVE_KEY,id); localStorage.removeItem(KEY);
     } catch {}
     return slots;
   }
@@ -471,7 +471,7 @@
       const id="career_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,7);
       localStorage.setItem(SLOT_PREFIX+id,JSON.stringify(s));
       const slots=readSlots(); slots.push(slotSummary(id,s,Date.now())); writeSlots(slots);
-      localStorage.setItem(ACTIVE_KEY,id); localStorage.setItem(KEY,JSON.stringify(s));
+      localStorage.setItem(ACTIVE_KEY,id);
       return id;
     } catch { return null; }
   }
@@ -481,7 +481,7 @@
       let id=activeId();
       if(!id) return !!saveAsNew(s);
       localStorage.setItem(SLOT_PREFIX+id,JSON.stringify(s));
-      localStorage.setItem(KEY,JSON.stringify(s));
+      
       const slots=readSlots(), i=slots.findIndex(x=>x.id===id), summary=slotSummary(id,s,Date.now());
       if(i>=0) slots[i]=summary; else slots.push(summary);
       writeSlots(slots); return true;

@@ -735,9 +735,9 @@
       const proposals=c.proposals.filter(p=>p.status==="PROPOSTA"&&p.expires>=state.day), active=s.active;
       return `<div class="subnav life-tabs"><a href="#commercial-overview">Visão geral</a><a href="#commercial-proposals">Propostas</a><a href="#commercial-contracts">Contratos</a><a href="#commercial-brands">Marcas</a><a href="#commercial-history">Histórico</a></div>
       <section class="card" id="commercial-overview"><div class="tag">IMAGEM E VALOR COMERCIAL</div><h2>Popularidade não é reputação esportiva</h2><div class="stats"><div class="stat"><small>Popularidade pública</small><b>${Math.round(s.popularity)}/100</b></div><div class="stat"><small>Reputação esportiva</small><b>${Math.round(state.reputation)}/100</b></div><div class="stat"><small>Seguidores</small><b>${fmtFollowers(s.followers)}</b></div><div class="stat"><small>Valor comercial</small><b>${money(s.commercialValue)}</b></div></div><div class="profile-data"><span>Patrocínios ativos <b>${active.length}</b></span><span>Receita comercial <b>${money(s.revenue)}</b></span><span>Bônus recebidos <b>${money(s.bonusRevenue)}</b></span><span>Próximo evento <b>${s.nextEvent?`${dayDate(s.nextEvent.day)} · ${esc(s.nextEvent.brand)}`:"Nenhum"}</b></span></div>${s.nextEvent?`<article class="news offer section" id="commercial-event-${esc(s.nextEvent.id)}"><time>${dayDate(s.nextEvent.day)} · ${esc(s.nextEvent.status)}</time><h3>${esc(s.nextEvent.type)} · ${esc(s.nextEvent.brand)}</h3><p>${s.nextEvent.mandatory?"Obrigação importante do contrato.":"Atividade comercial opcional."} Partidas oficiais sempre têm prioridade.</p>${s.nextEvent.status === "CONFIRMADO" ? `<div class="notice"><b>Presença confirmada.</b><p>Compromisso adicionado à agenda para ${dayDate(s.nextEvent.day)}. O resultado chegará após a realização.</p></div>` : `<div class="actions"><button class="primary" data-commercial-event="${esc(s.nextEvent.id)}" data-commercial-event-choice="participate">Confirmar presença</button><button data-commercial-event="${esc(s.nextEvent.id)}" data-commercial-event-choice="reschedule">Pedir reagendamento</button><button data-commercial-event="${esc(s.nextEvent.id)}" data-commercial-event-choice="decline">Recusar</button></div>`}</article>`:""}<p class="muted">Valor de mercado mede o atleta para transferências. Valor comercial mede imagem, alcance, exposição e capacidade de gerar acordos.</p></section>
-      <section class="card section" id="commercial-proposals"><div class="tag">PROPOSTAS REAIS</div><h2>Negociações comerciais</h2>${proposals.map(p=>`<article class="news offer" id="commercial-proposal-${esc(p.id)}"><time>${esc(p.category)} · expira em ${Math.max(0,p.expires-state.day)} dias</time><h3>${esc(p.brand)}</h3><p><b>${esc(p.type)}</b> · ${money(p.amount)} por pagamento<br>Duração: ${Math.ceil(p.durationDays/30)} meses · ${p.exclusive?"Exclusividade na categoria":"Sem exclusividade"}<br>${esc(p.bonus.label)}: ${money(p.bonus.amount)}<br>Exigências: ${p.requirements.map(esc).join(" · ")}</p><div class="grid3"><label>Valor desejado<input id="commercial-amount-${esc(p.id)}" type="number" min="${p.amount}" step="1000" value="${p.amount}"></label><label>Duração (dias)<input id="commercial-duration-${esc(p.id)}" type="number" min="90" max="1095" value="${p.durationDays}"></label><label>Bônus desejado<input id="commercial-bonus-${esc(p.id)}" type="number" min="0" step="1000" value="${p.bonus.amount}"></label></div><div class="actions"><button class="primary" data-commercial-accept="${esc(p.id)}">Aceitar</button><button data-commercial-negotiate="${esc(p.id)}" ${p.round>=2?"disabled":""}>Negociar</button><button data-commercial-hold="${esc(p.id)}">Pedir tempo</button><button data-commercial-reject="${esc(p.id)}">Recusar</button></div></article>`).join("")||empty("Nenhuma proposta comercial pendente. O interesse surge após desempenho, reputação e exposição consistentes.")}</section>
-      <section class="card section" id="commercial-contracts"><div class="tag">PATROCÍNIOS ATIVOS</div><h2>Contratos</h2><div class="grid3">${active.map(x=>`<article class="card"><small>${esc(x.category)} · ${x.exclusive?"EXCLUSIVO":"NÃO EXCLUSIVO"}</small><h3>${esc(x.brand)}</h3><b>${money(x.amount)}</b><p>${dayDate(x.startDay)} a ${dayDate(x.endDay)}<br>Próximo pagamento: ${dayDate(x.nextPaymentDay)}<br>${esc(x.bonus.label)}: ${money(x.bonus.amount)}<br>Relação: ${x.relationship>=85?"EXCELENTE":x.relationship>=65?"BOA":x.relationship>=40?"NORMAL":"RUIM"}</p></article>`).join("")||empty("Nenhum patrocínio ativo.")}</div></section>
-      <section class="card section" id="commercial-brands"><div class="tag">UNIVERSO PRO-LIFE</div><h2>Marcas</h2><div class="grid3">${C.brands.map(b=>{const i=c.interests.find(x=>x.brandId===b.id);return `<article class="card"><small>${esc(b.category)} · prestígio ${b.prestige}</small><h3>${esc(b.name)}</h3><p>${esc(b.profile)}<br>Mercados: ${b.regions.map(esc).join(" · ")}<br>Status: <b>${esc(i?.stage||"SEM INTERESSE")}</b></p></article>`}).join("")}</div></section>
+      <section class="card section" id="commercial-proposals"><div class="tag">PROPOSTAS REAIS</div><h2>Negociações comerciais</h2>${proposals.map(p=>{const rival=active.find(x=>x.category===p.category&&x.brandId!==p.brandId&&(x.exclusive||p.exclusive));const diff=rival?p.amount-rival.amount:0;const dispute=rival?`<div class="notice"><div class="tag">DISPUTA DE PATROCÍNIO</div><h3>${esc(rival.brand)} × ${esc(p.brand)}</h3><div class="profile-data"><span>Patrocinador atual <b>${esc(rival.brand)}</b></span><span>Contrato atual <b>${money(rival.amount)}</b></span><span>Nova proposta <b>${money(p.amount)}</b></span><span>Diferença <b class="${diff>0?"good":diff<0?"bad":""}">${diff>0?"+":""}${money(diff)}</b></span></div><p class="muted">As duas marcas disputam a categoria ${esc(C.categoryLabel(p.category))}. Você pode negociar valor, duração e bônus antes de decidir.</p><p><b>Ao assinar com ${esc(p.brand)}, o contrato exclusivo com ${esc(rival.brand)} será encerrado.</b></p></div>`:"";return `<article class="news offer" id="commercial-proposal-${esc(p.id)}"><time>${esc(C.categoryLabel(p.category))} · ${esc(p.tier||"NATIONAL")} · expira em ${Math.max(0,p.expires-state.day)} dias</time><h3>${esc(p.brand)}</h3><p><b>${esc(p.type)}</b> · ${money(p.amount)} por pagamento<br>Duração: ${Math.ceil(p.durationDays/30)} meses · ${p.exclusive?"Exclusividade na categoria":"Sem exclusividade"}<br>${esc(p.bonus.label)}: ${money(p.bonus.amount)}<br>Exigências: ${p.requirements.map(esc).join(" · ")}</p>${dispute}<div class="grid3"><label>Valor desejado<input id="commercial-amount-${esc(p.id)}" type="number" min="${p.amount}" step="1000" value="${p.amount}"></label><label>Duração (dias)<input id="commercial-duration-${esc(p.id)}" type="number" min="90" max="1095" value="${p.durationDays}"></label><label>Bônus desejado<input id="commercial-bonus-${esc(p.id)}" type="number" min="0" step="1000" value="${p.bonus.amount}"></label></div><div class="actions"><button class="primary" data-commercial-accept="${esc(p.id)}">${rival?"Assinar e trocar patrocinador":"Aceitar"}</button><button data-commercial-negotiate="${esc(p.id)}" ${p.round>=2?"disabled":""}>Negociar${p.round?" · rodada "+p.round:""}</button><button data-commercial-hold="${esc(p.id)}">Pedir tempo</button><button data-commercial-reject="${esc(p.id)}">Recusar</button></div></article>`}).join("")||empty("Nenhuma proposta comercial pendente. O interesse surge após desempenho, reputação e exposição consistentes.")}</section>
+      <section class="card section" id="commercial-contracts"><div class="tag">PATROCÍNIOS ATIVOS</div><h2>Contratos</h2><div class="grid3">${active.map(x=>`<article class="card"><small>${esc(C.categoryLabel(x.category))} · ${esc(x.tier||"NATIONAL")} · ${x.exclusive?"EXCLUSIVO":"NÃO EXCLUSIVO"}</small><h3>${esc(x.brand)}</h3><b>${money(x.amount)}</b><p>${dayDate(x.startDay)} a ${dayDate(x.endDay)}<br>Próximo pagamento: ${dayDate(x.nextPaymentDay)}<br>${esc(x.bonus.label)}: ${money(x.bonus.amount)}<br>Relação: ${x.relationship>=85?"EXCELENTE":x.relationship>=65?"BOA":x.relationship>=40?"NORMAL":"RUIM"}</p></article>`).join("")||empty("Nenhum patrocínio ativo.")}</div></section>
+      <section class="card section" id="commercial-brands"><div class="tag">UNIVERSO PRO-LIFE</div><h2>Marcas</h2><div class="grid3">${C.brands.map(b=>{const i=c.interests.find(x=>x.brandId===b.id);return `<article class="card"><small>${esc(C.categoryLabel(b.category))} · ${esc(b.tier)} · prestígio ${b.prestige}</small><h3>${esc(b.name)}</h3><p>${esc(b.profile)}<br>Mercados: ${b.regions.map(esc).join(" · ")}<br>Status: <b>${esc(i?.stage||"SEM INTERESSE")}</b></p></article>`}).join("")}</div></section>
       <section class="card section" id="commercial-history"><div class="tag">HISTÓRICO COMERCIAL</div><h2>Contratos da carreira</h2>${c.history.map(h=>`<article class="news"><time>${dayDate(h.startDay)} — ${dayDate(h.endDay)}</time><h3>${esc(h.brand)}</h3><p>${esc(h.category)} · ${money(h.value)} · ${esc(h.status)}</p></article>`).join("")||empty("Nenhum contrato comercial registrado.")}</section>`;
     },
     life() {
@@ -851,8 +851,8 @@
       try {
         const f = input.files[0];
         if (!f) return;
-        if (f.size > 3000000)
-          throw Error("Arquivo muito grande. Limite: 3 MB.");
+        if (f.size > 8000000)
+          throw Error("Arquivo muito grande. Limite: 8 MB.");
         const parsed = S.parse(await f.text());
         S.saveAsNew?.(parsed);
         state = parsed;
@@ -996,7 +996,43 @@
     if (b.dataset.lifeSellVehicle) { command("lifeSellVehicle", { id:b.dataset.lifeSellVehicle }); return; }
     if (b.dataset.lifeInvest) { command("lifeInvest", { id:b.dataset.lifeInvest, amount:Number($("#invest-"+b.dataset.lifeInvest)?.value||0) }); return; }
     if (b.dataset.lifePurchase) { command("lifePurchase", { id:b.dataset.lifePurchase }); return; }
-    if (b.dataset.commercialAccept) { command("commercialAccept", { id:b.dataset.commercialAccept }); return; }
+    if (b.dataset.commercialAccept) {
+      const id=b.dataset.commercialAccept;
+      const commercial=D.Commercial.init(state,D);
+      const proposal=commercial.proposals.find(p=>p.id===id&&p.status==="PROPOSTA");
+      const current=proposal
+        ? D.Commercial.active(state).find(x=>x.category===proposal.category&&x.brandId!==proposal.brandId&&(x.exclusive||proposal.exclusive))
+        : null;
+
+      if(current){
+        const difference=proposal.amount-current.amount;
+        const differenceText=difference>0
+          ? `A nova proposta paga ${money(difference)} a mais por pagamento.`
+          : difference<0
+            ? `A nova proposta paga ${money(Math.abs(difference))} a menos por pagamento.`
+            : "As duas propostas possuem o mesmo valor por pagamento.";
+
+        const confirmed=window.confirm(
+          `Trocar patrocinador de ${proposal.category}?
+
+` +
+          `Atual: ${current.brand} — ${money(current.amount)} por pagamento
+` +
+          `Nova: ${proposal.brand} — ${money(proposal.amount)} por pagamento
+
+` +
+          differenceText +
+          `
+
+Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand} assumirá a categoria.`
+        );
+
+        if(!confirmed)return;
+      }
+
+      command("commercialAccept", { id });
+      return;
+    }
     if (b.dataset.commercialReject) { command("commercialReject", { id:b.dataset.commercialReject }); return; }
     if (b.dataset.commercialHold) { command("commercialHold", { id:b.dataset.commercialHold }); return; }
     if (b.dataset.commercialEvent) {
