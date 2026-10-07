@@ -73,7 +73,34 @@
       for (const key of ["payments","relations","processed"]) if (!c[key] || typeof c[key]!=="object" || Array.isArray(c[key])) fail();
       for (const i of c.interests) if (!i || !text(i.brandId,40) || !text(i.stage,40) || !finite(i.score,0,200) || !finite(i.startedDay,0,s.day)) fail();
       for (const p of c.proposals) if (!p || !text(p.id,160) || !text(p.brandId,40) || !text(p.brand,100) || !text(p.category,80) || !text(p.status,40) || !finite(p.amount,0,1e10) || !finite(p.durationDays,1,5000) || !finite(p.expires,0,s.day+5000) || !Number.isInteger(p.round) || !finite(p.round,0,5)) fail();
-      for (const x of c.contracts) if (!x || !text(x.id,180) || !text(x.brandId,40) || !text(x.brand,100) || !text(x.category,80) || !text(x.status,40) || !finite(x.amount,0,1e10) || !finite(x.startDay,0,s.day+5000) || !finite(x.endDay,x.startDay,s.day+5000) || !finite(x.relationship,0,100)) fail();
+      for (const x of c.contracts) {
+      const legacyClosedContract =
+        x &&
+        Number.isFinite(x.startDay) &&
+        Number.isFinite(x.endDay) &&
+        x.endDay < x.startDay &&
+        ["ENCERRADO","CANCELADO","EXPIRADO"].includes(x.status) &&
+        (
+          Number.isFinite(x.replacedDay) ||
+          x.replacedBy !== undefined
+        );
+
+      if (legacyClosedContract)
+        x.endDay = x.startDay;
+
+      if (
+        !x ||
+        !text(x.id,180) ||
+        !text(x.brandId,40) ||
+        !text(x.brand,100) ||
+        !text(x.category,80) ||
+        !text(x.status,40) ||
+        !finite(x.amount,0,1e10) ||
+        !finite(x.startDay,0,s.day+5000) ||
+        !finite(x.endDay,x.startDay,s.day+5000) ||
+        !finite(x.relationship,0,100)
+      ) fail();
+    }
       for (const e of c.events) if (!e || !text(e.id,200) || !text(e.brand,100) || !text(e.type,80) || !text(e.status,40) || !finite(e.day,0,s.day+5000)) fail();
     }
     if (s.extras && root.ProLife?.UnexpectedEvents) root.ProLife.UnexpectedEvents.init(s);
