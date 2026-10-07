@@ -437,3 +437,173 @@ test("Patrocínios V2: tiers possuem faixas coerentes",()=>{
     assert(b.maxContractValue<=max);
   }
 });
+
+
+// === REGRESSAO MIDIA E FREQUENCIA COMERCIAL ===
+
+test("Patrocinios: no maximo uma nova proposta formal nasce por ciclo",()=>{
+  const s=career(801);
+  s.reputation=98;
+  s.nationalTeam.caps=30;
+
+  const c=elevate(s,98,98);
+
+  const candidates=E.Commercial.brands.filter(b=>
+    E.Commercial.eligible(s,b,E) &&
+    !c.contracts.some(x=>
+      x.status==="ATIVO" &&
+      x.category===b.category &&
+      (x.exclusive||b.exclusivity==="CATEGORY")
+    )
+  );
+
+  const chosen=[];
+  const categories=new Set();
+
+  for(const b of candidates){
+    if(categories.has(b.category))continue;
+    categories.add(b.category);
+    chosen.push(b);
+    if(chosen.length===3)break;
+  }
+
+  assert(chosen.length>=3,"cenario precisa de ao menos 3 marcas elegiveis");
+
+  for(const b of chosen){
+    c.interests.push({
+      brandId:b.id,
+      stage:"NEGOCIA\u00c7\u00c3O",
+      score:100,
+      startedDay:s.day,
+      updatedDay:s.day,
+      ticks:4
+    });
+  }
+
+  s.day+=14;
+
+  E.Commercial.progressInterests(
+    s,
+    new E.Random(801),
+    E.Career,
+    E
+  );
+
+  assert.equal(
+    c.proposals.filter(p=>p.status==="PROPOSTA").length,
+    1
+  );
+
+  s.day+=14;
+
+  E.Commercial.progressInterests(
+    s,
+    new E.Random(802),
+    E.Career,
+    E
+  );
+
+  assert.equal(
+    c.proposals.filter(p=>p.status==="PROPOSTA").length,
+    1,
+    "cooldown de 28 dias deve impedir nova proposta apos apenas 14 dias"
+  );
+
+  s.day+=14;
+
+  E.Commercial.progressInterests(
+    s,
+    new E.Random(803),
+    E.Career,
+    E
+  );
+
+  assert.equal(
+    c.proposals.filter(p=>p.status==="PROPOSTA").length,
+    2,
+    "segunda proposta pode surgir apos completar o cooldown"
+  );
+
+  s.day+=28;
+
+  E.Commercial.progressInterests(
+    s,
+    new E.Random(804),
+    E.Career,
+    E
+  );
+
+  assert.equal(
+    c.proposals.filter(p=>p.status==="PROPOSTA").length,
+    2,
+    "nunca deve ultrapassar duas propostas formais abertas"
+  );
+});
+
+test("Patrocinios: contrato assinado repercute nas noticias",()=>{
+  const s=career(802);
+  const p=proposal(s,"vertex");
+
+  assert(p);
+
+  A.execute(s,"commercialAccept",{id:p.id});
+
+  const articles=E.Career.init(s).communications.articles||[];
+
+  const news=articles.find(a=>
+    String(a.eventId||"").startsWith("commercial:contract:article:") &&
+    (
+      String(a.title||"").includes(p.brand) ||
+      String(a.body||"").includes(p.brand)
+    )
+  );
+
+  assert(news,"contrato comercial assinado deve gerar noticia");
+  assert(
+    String(news.body||"").includes(
+      Number(p.amount||0).toLocaleString("pt-BR")
+    ),
+    "noticia deve refletir o valor do acordo"
+  );
+});
+
+test("Patrocinios: renovacao assinada repercute nas noticias",()=>{
+  const s=career(803);
+  const p=proposal(s,"vertex");
+
+  assert(p);
+
+  A.execute(s,"commercialAccept",{id:p.id});
+
+  const current=E.Commercial.active(s)[0];
+
+  current.relationship=85;
+  current.durationDays=200;
+  current.endDay=s.day+20;
+
+  E.Commercial.processContracts(s,E.Career,E);
+
+  const renewal=s.commercial.proposals.find(x=>
+    x.renewalOf===current.id &&
+    x.status==="PROPOSTA"
+  );
+
+  assert(renewal,"renovacao deveria ser criada");
+
+  A.execute(s,"commercialAccept",{id:renewal.id});
+
+  const articles=E.Career.init(s).communications.articles||[];
+
+  assert(
+    articles.some(a=>
+      String(a.eventId||"").startsWith(
+        "commercial:renewal:article:"
+      ) &&
+      (
+        String(a.title||"").includes(renewal.brand) ||
+        String(a.body||"").includes(renewal.brand)
+      )
+    ),
+    "renovacao assinada deve gerar noticia"
+  );
+});

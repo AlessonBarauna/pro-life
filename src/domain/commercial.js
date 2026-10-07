@@ -615,6 +615,19 @@
     if(s.day-c.lastTick<14)return;
     c.lastTick=s.day;
 
+    const openProposalCount=()=>
+      c.proposals.filter(p=>p.status==="PROPOSTA").length;
+
+    let lastFormalProposalDay=c.proposals.reduce((latest,p)=>{
+      const inferredDay=Number.isFinite(p.startDay)
+        ? p.startDay-1
+        : -9999;
+
+      return Math.max(latest,inferredDay);
+    },-9999);
+
+    let formalProposalCreated=false;
+
     for(const b of brands){
       const sameActive=c.contracts.some(x=>
         x.brandId===b.id &&
@@ -710,7 +723,9 @@
         item.ticks>=5 &&
         eligible(s,b,api) &&
         !c.proposals.some(p=>p.brandId===b.id&&p.status==="PROPOSTA") &&
-        c.proposals.filter(p=>p.status==="PROPOSTA").length<8
+        openProposalCount()<2 &&
+        !formalProposalCreated &&
+        s.day-lastFormalProposalDay>=28
       ){
         if(
           c.contracts.some(x=>
@@ -725,6 +740,9 @@
         const p=offerFor(s,b,api);
         c.proposals.unshift(p);
         item.stage="PROPOSTA";
+
+        formalProposalCreated=true;
+        lastFormalProposalDay=s.day;
 
         message(
           s,helpers,
@@ -823,6 +841,13 @@
         contract.id
       );
 
+      article(
+        s,helpers,
+        `${s.person.name} renova parceria com ${p.brand}`,
+        `${p.brand} e ${s.person.name} acertaram a continuidade da parceria comercial. O novo vinculo tera ${p.durationDays} dias e valor de R$ ${Number(p.amount||0).toLocaleString("pt-BR")}. O acordo comeca apos o termino do contrato atual.`,
+        `commercial:renewal:article:${contract.id}`
+      );
+
       return contract;
     }
 
@@ -917,11 +942,15 @@
       contract.id
     );
 
+    const majorDeal=["NATIONAL","PREMIUM","GLOBAL"].includes(p.tier);
+
     article(
       s,helpers,
-      `${s.person.name} fecha acordo com ${p.brand}`,
-      "O contrato comercial foi confirmado após a evolução esportiva e pública do atleta.",
-      contract.id
+      majorDeal
+        ? `${s.person.name} anuncia novo acordo com ${p.brand}`
+        : `${s.person.name} fecha parceria com ${p.brand}`,
+      `${p.brand} passa a integrar o portfolio de patrocinadores de ${s.person.name}. O acordo de ${p.durationDays} dias foi fechado por R$ ${Number(p.amount||0).toLocaleString("pt-BR")} e reforca o crescimento comercial do atleta.${majorDeal?" A parceria ganha destaque nacional pela relevancia da marca e pelo momento da carreira.":""}`,
+      `commercial:contract:article:${contract.id}`
     );
 
     c.popularity=clamp(c.popularity+2,0,100);
@@ -1100,6 +1129,7 @@
       if(
         remaining>=0 &&
         remaining<=renewalWindow &&
+        c.proposals.filter(p=>p.status==="PROPOSTA").length<2 &&
         !c.proposals.some(p=>
           p.renewalOf===x.id &&
           p.status==="PROPOSTA"
