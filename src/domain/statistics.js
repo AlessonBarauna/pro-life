@@ -341,12 +341,85 @@
   function careerInsights(s) {
     const stats=init(s).root, dash=heroDashboard(s), hero=normalize(stats.players.hero), current=heroSnapshotFromMatches(s,s.season);
     const archived=(stats.seasons||[]).map(x=>({season:x.season,...(x.player||{})}));
-    const seasons=[{season:s.season,club:dash.currentClub,appearances:dash.season.appearances,goals:dash.season.goals,assists:dash.season.assists,averageRating:dash.season.averageRating,overallEnd:root.ProLife?.overall?root.ProLife.overall(s.person):null,marketValueEnd:s.extras?.playerCareer?.marketValue||0},...archived.filter(x=>x.season!==s.season)].sort((a,b)=>b.season-a.season);
+    const seasonTotals=[
+      {season:s.season,club:dash.currentClub,appearances:dash.season.appearances,goals:dash.season.goals,assists:dash.season.assists,averageRating:dash.season.averageRating,overallEnd:root.ProLife?.overall?root.ProLife.overall(s.person):null,marketValueEnd:s.extras?.playerCareer?.marketValue||0},
+      ...archived.filter(x=>x.season!==s.season)
+    ].sort((a,b)=>b.season-a.season);
+
+    const seasonMeta=new Map(seasonTotals.map(x=>[x.season,x]));
+    const stintGroups=new Map();
+
+    for(const stint of dash.stints||[]){
+      if(!stint?.clubId || !Number.isFinite(Number(stint.season))) continue;
+
+      const key=`${stint.season}:${stint.clubId}`;
+
+      if(!stintGroups.has(key)){
+        stintGroups.set(key,{
+          season:Number(stint.season),
+          clubId:stint.clubId,
+          club:stint.club || s.clubs.find(c=>c.id===stint.clubId)?.name || stint.clubId,
+          appearances:0,
+          starts:0,
+          minutes:0,
+          goals:0,
+          assists:0,
+          ratingTotal:0,
+          startDay:Number(stint.startDay||0),
+          endDay:stint.endDay==null ? null : Number(stint.endDay),
+          transferType:stint.transferType||"club"
+        });
+      }
+
+      const row=stintGroups.get(key);
+
+      row.appearances+=Number(stint.appearances||0);
+      row.starts+=Number(stint.starts||0);
+      row.minutes+=Number(stint.minutes||0);
+      row.goals+=Number(stint.goals||0);
+      row.assists+=Number(stint.assists||0);
+      row.ratingTotal+=Number(stint.ratingTotal||0);
+      row.startDay=Math.min(row.startDay,Number(stint.startDay||0));
+
+      if(stint.endDay!=null)
+        row.endDay=row.endDay==null
+          ? Number(stint.endDay)
+          : Math.max(row.endDay,Number(stint.endDay));
+    }
+
+    const stintSeasons=[...stintGroups.values()]
+      .map(row=>{
+        const meta=seasonMeta.get(row.season)||{};
+
+        return {
+          ...row,
+          averageRating:row.appearances
+            ? +(row.ratingTotal/row.appearances).toFixed(2)
+            : 0,
+          overallEnd:meta.overallEnd??null,
+          marketValueEnd:meta.marketValueEnd||0
+        };
+      })
+      .sort((a,b)=>
+        b.season-a.season ||
+        a.startDay-b.startDay ||
+        String(a.club).localeCompare(String(b.club))
+      );
+
+    const seasonsWithStints=new Set(stintSeasons.map(x=>x.season));
+
+    const seasons=[
+      ...stintSeasons,
+      ...seasonTotals.filter(x=>!seasonsWithStints.has(x.season))
+    ].sort((a,b)=>
+      b.season-a.season ||
+      Number(a.startDay||0)-Number(b.startDay||0)
+    );
     const recent=(s.matches||[]).filter(m=>Number(m.ratings?.hero)>0).slice(0,5).map(m=>({season:m.season,day:m.date,competition:m.competitionName||competitionName(s,m.competitionId||m.leagueId),rating:Number(m.ratings.hero),goals:(m.events||[]).filter(e=>e.type==="goal"&&e.playerId==="hero").length,assists:(m.events||[]).filter(e=>e.assistPlayerId==="hero").length,opponent:s.clubs.find(c=>c.id===(m.home===s.clubId?m.away:m.home))?.name||"Adversário"}));
     const recentAverage=recent.length?+(recent.reduce((n,x)=>n+x.rating,0)/recent.length).toFixed(2):0;
     const clubs=(dash.byClub||[]).map(x=>({...x,seasons:[...new Set((dash.stints||[]).filter(t=>t.clubId===x.id).map(t=>t.season))].sort()}));
     const seasonScore=x=>Number(x.goals||0)*4+Number(x.assists||0)*3+Number(x.averageRating||0)*5+Number(x.appearances||0)*0.2;
-    const bestSeason=seasons.filter(x=>Number(x.appearances||0)>0).sort((a,b)=>seasonScore(b)-seasonScore(a))[0]||null;
+    const bestSeason=seasonTotals.filter(x=>Number(x.appearances||0)>0).sort((a,b)=>seasonScore(b)-seasonScore(a))[0]||null;
     const timeline=[];
     for(const t of (dash.stints||[]).slice().sort((a,b)=>a.season-b.season||Number(a.startDay||0)-Number(b.startDay||0))) timeline.push({season:t.season,day:t.startDay||0,type:"club",label:t.transferType==="current"?"Passagem pelo clube":"Transferência / passagem",detail:t.club});
     for(const m of stats.milestones||[]) timeline.push({season:m.season,day:m.day,type:"milestone",label:m.label,detail:m.value});
