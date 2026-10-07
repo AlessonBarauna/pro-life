@@ -116,6 +116,110 @@
     }
     const pos=s.person.pos; return squad.filter(x=>x.pos===pos).sort((a,b)=>b.score-a.score||b.overall-a.overall||a.id.localeCompare(b.id)).map((x,i)=>({...x,rank:i+1}));
   }
+  function matchLineup(s,api){
+    const n=init(s);
+
+    const squad=n.calledUp && Array.isArray(n.squad) && n.squad.length
+      ? n.squad.slice()
+      : buildSquad(s,api);
+
+    const scoreOf=(p)=>
+      Number.isFinite(Number(p.score))
+        ? Number(p.score)
+        : candidateScore(p,p.overall);
+
+    const sorted=squad
+      .slice()
+      .sort((a,b)=>
+        scoreOf(b)-scoreOf(a) ||
+        Number(b.overall||0)-Number(a.overall||0) ||
+        String(a.id).localeCompare(String(b.id))
+      );
+
+    const take=(pos,count)=>
+      sorted.filter(p=>p.pos===pos).slice(0,count);
+
+    let starters=[
+      ...take("GOL",1),
+      ...take("DEF",4),
+      ...take("MEI",3),
+      ...take("ATA",3)
+    ];
+
+    const used=new Set(starters.map(p=>p.id));
+
+    if(starters.length<11){
+      for(const p of sorted){
+        if(starters.length>=11) break;
+
+        if(!used.has(p.id)){
+          starters.push(p);
+          used.add(p.id);
+        }
+      }
+    }
+
+    const hero=squad.find(p=>p.id==="hero");
+    const status=n.calledUp ? role(s,api) : n.status;
+
+    if(hero && n.calledUp){
+
+      if(status==="Titular" && !starters.some(p=>p.id==="hero")){
+        const samePosition=starters
+          .filter(p=>p.pos===hero.pos && p.id!=="hero")
+          .sort((a,b)=>scoreOf(a)-scoreOf(b))[0];
+
+        if(samePosition){
+          starters=starters.filter(p=>p.id!==samePosition.id);
+          starters.push(hero);
+        }else{
+          starters=starters.slice(0,10);
+          starters.push(hero);
+        }
+      }
+
+      if(status!=="Titular"){
+        starters=starters.filter(p=>p.id!=="hero");
+
+        for(const p of sorted){
+          if(starters.length>=11) break;
+
+          if(
+            p.id!=="hero" &&
+            !starters.some(x=>x.id===p.id)
+          ){
+            starters.push(p);
+          }
+        }
+      }
+    }
+
+    const starterIds=new Set(starters.map(p=>p.id));
+
+    let bench=sorted
+      .filter(p=>!starterIds.has(p.id))
+      .slice(0,9);
+
+    if(hero && n.calledUp && status!=="Titular"){
+      bench=bench.filter(p=>p.id!=="hero");
+
+      if(status==="Rota\u00e7\u00e3o" || status==="Reserva"){
+        bench.unshift(hero);
+      }
+
+      bench=bench.slice(0,9);
+    }
+
+    return {
+      formation:"4-3-3",
+      starters,
+      bench,
+      status,
+      calledUp:!!n.calledUp,
+      heroInSquad:!!hero
+    };
+  }
+
   function windowDecision(n, windowDay){ return n.callupDecisions?.[String(windowDay)] || null; }
   function fixtureCallupStatus(n, match){
     const d=windowDecision(n,match.windowDay);
@@ -177,7 +281,7 @@
     if (windows.some((day) => relative === day + 4)) { n.calledUp = false; n.currentCallupWindow=null; n.status = "Aguardando próxima convocação"; }
     n.nextWindow = n.schedule.find((match) => !match.played && match.day >= s.day)?.day ?? nextWindowDay(s);
   }
-  const api={windows,nations,init,score,threshold,radar,role,upcoming,nextWindowDay,protectedDay,protectClubCalendar,callup,play,daily,competition,buildSquad,positionCompetition,onDuty,ensureQualifiers,tournamentStatus,normalizedNationality,windowDecision,fixtureCallupStatus};
+  const api={windows,nations,init,score,threshold,radar,role,upcoming,nextWindowDay,protectedDay,protectClubCalendar,callup,play,daily,competition,buildSquad,positionCompetition,onDuty,ensureQualifiers,tournamentStatus,normalizedNationality,windowDecision,matchLineup,fixtureCallupStatus};
   root.ProLifeNationalTeam = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

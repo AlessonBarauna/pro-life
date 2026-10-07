@@ -340,7 +340,7 @@
         ? [
             ["home", "Início", [["home", "Central"], ["lineup", "Escalação do próximo jogo"]]],
             ["inbox", "Caixa", [["inbox", "Mensagens"]]],
-            ["profile", "Meu jogador", [["profile", "Perfil e carreira"], ["training", "Treinamento"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["agency", "Empresário e Agência"], ["legacy", "Evolução e legado"]]],
+            ["profile", "Meu jogador", [["profile", "Perfil e carreira"], ["training", "Treinamento"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["agency", "Empresário e Agência"], ["legacy", "Evolução e legado"], ["story", "Objetivos e História"]]],
             ["market", "Mercado", [["market", "Central do mercado"], ["proposals", "Minhas propostas"]]],
             ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["panorama", "Panorama"], ["squad", "Elenco"]]],
             ["national", "Seleção", [["national", "Seleção Brasileira"]]],
@@ -933,7 +933,109 @@
       const H=window.ProLifeHomeDashboard.snapshot(state,D,Calendar), L=H.lineup, next=H.next, pc=Career.init(state).playerCareer;
       if(state.mode!=="player") return `<section class="card"><h2>Escalação</h2><p class="muted">Disponível na carreira de jogador.</p></section>`;
       if(!state.clubId) return `<section class="card"><h2>Sem clube</h2><p class="muted">Assine com um clube para disputar uma vaga.</p></section>`;
-      if(next?.national) return `<section class="card"><h2>Próximo compromisso: Seleção</h2><p class="muted">A escalação desta aba acompanha o seu clube. Consulte Seleção para compromissos internacionais.</p></section>`;
+      if(next?.national) {
+        const n=D.NationalTeam?.init?.(state);
+        const nationalLineup=D.NationalTeam?.matchLineup?.(state,D);
+
+        if(!n || !nationalLineup){
+          return `<section class="card">
+            <h2>Escala\u00e7\u00e3o da Sele\u00e7\u00e3o</h2>
+            <p class="muted">A rela\u00e7\u00e3o da Sele\u00e7\u00e3o Brasileira ainda n\u00e3o est\u00e1 dispon\u00edvel.</p>
+          </section>`;
+        }
+
+        const nationalPlayerCard=(p)=>`
+          <div class="fc-lineup-player ${p.id==="hero"?"hero":""}">
+            <span class="fc-shirt">${esc(p.pos||"-")}</span>
+            <span>
+              <b>${esc(p.name)}${p.id==="hero"?" \u00b7 VOC\u00ca":""}</b>
+              <small>${Number(p.overall||0)} GER \u00b7 ${esc(p.club||"Sele\u00e7\u00e3o Brasileira")}</small>
+            </span>
+          </div>`;
+
+        const starters=nationalLineup.starters
+          .map(nationalPlayerCard)
+          .join("");
+
+        const bench=nationalLineup.bench
+          .map(nationalPlayerCard)
+          .join("");
+
+        const status=nationalLineup.calledUp
+          ? nationalLineup.status
+          : (n.status||"N\u00e3o convocado");
+
+        const roleClass=status==="Titular"
+          ? "starter"
+          : ["Rota\u00e7\u00e3o","Reserva"].includes(status)
+            ? "bench"
+            : "out";
+
+        return `<div class="lineup-page fc-career-lineup national-lineup-stage23">
+
+          <section class="card fc-match-header">
+            <div>
+              <div class="tag">SELE\u00c7\u00c3O BRASILEIRA \u00b7 PR\u00d3XIMO JOGO</div>
+              <h2>${esc(next.home)} \u00d7 ${esc(next.away)}</h2>
+              <p>
+                ${dayDate(next.date)}
+                \u00b7
+                ${esc(next.stage||next.competitionName||"Amistoso internacional")}
+              </p>
+            </div>
+
+            <span class="pill">4-3-3</span>
+          </section>
+
+          <section class="card section">
+            <div class="split">
+              <div>
+                <div class="tag">SUA SITUA\u00c7\u00c3O</div>
+                <h2>${esc(status)}</h2>
+              </div>
+
+              <span class="pill ${roleClass}">
+                ${nationalLineup.calledUp
+                  ? "CONVOCADO"
+                  : "FORA DA CONVOCA\u00c7\u00c3O"}
+              </span>
+            </div>
+
+            <p class="muted">
+              Esta escala\u00e7\u00e3o usa o elenco e a hierarquia atuais da Sele\u00e7\u00e3o Brasileira.
+            </p>
+          </section>
+
+          <div class="grid section">
+
+            <section class="card">
+              <div class="tag">TITULARES</div>
+              <h2>Brasil \u00b7 XI inicial</h2>
+
+              <div class="fc-lineup-list">
+                ${starters}
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="tag">BANCO</div>
+              <h2>Relacionados</h2>
+
+              <div class="fc-lineup-list">
+                ${bench || '<p class="muted">Banco ainda n\u00e3o definido.</p>'}
+              </div>
+            </section>
+
+          </div>
+
+          <section class="card section">
+            <button data-page="national">
+              Abrir Central da Sele\u00e7\u00e3o Brasileira
+            </button>
+          </section>
+
+        </div>`;
+      }
       if(!L) return `<section class="card"><h2>Escalação ainda não disponível</h2><p class="muted">Não há uma relação de jogo do clube para exibir agora.</p></section>`;
       const actualRole=D.Squad.roleForHero(state,L.selection), roleClass=actualRole==="Titular"?"starter":actualRole==="Banco"?"bench":"out", plan=actualRole==="Banco"?H.subPlan:null;
       const leadership=H.leadership||D.captaincy?.(state,D.club(state)), capId=D.club(state)?.captainId||leadership?.captain?.id, viceId=D.club(state)?.viceCaptainId||leadership?.vice?.id;
@@ -954,6 +1056,152 @@
         <section class="card section"><div class="tag">DISPUTA POR POSIÇÃO</div><h2>Seu caminho no time</h2><p>Treinos e objetivos de partida alimentam sua avaliação do manager; a relação acima mostra a seleção efetiva usada pelo jogo.</p></section>
       </div>`;
     },
+    story() {
+      if(state.mode!=="player"){
+        return '<section class="card"><h2>Objetivos e História</h2><p class="muted">Disponível apenas na carreira de jogador.</p></section>';
+      }
+
+      const hub=window.ProLifeStoryHub?.snapshot?.(state);
+
+      if(!hub?.available){
+        return '<section class="card"><h2>Objetivos e História</h2><p class="muted">Central indisponível nesta carreira.</p></section>';
+      }
+
+      const days=(deadline)=>{
+        if(!Number.isFinite(deadline)) return "";
+        const value=Math.max(0,deadline-state.day);
+        return value===0 ? "vence hoje" : value===1 ? "1 dia restante" : value+" dias restantes";
+      };
+
+      const statusClass=(item)=>
+        item.priority==="URGENTE" ? "bad" :
+        item.status==="CONCLUÍDO" || item.status==="CONCLUIDO" ? "good" :
+        "";
+
+      const objectiveCard=(item)=>{
+        const progress=Number.isFinite(item.progress)
+          ? `<div class="fc-manager-bar"><i style="width:${Math.max(0,Math.min(100,item.progress))}%"></i></div>`
+          : "";
+
+        const values=
+          Number.isFinite(item.current)&&Number.isFinite(item.target)
+            ? `<small>Progresso: ${item.current} / ${item.target}</small>`
+            : Number.isFinite(item.target)
+              ? `<small>Meta: ${item.target}</small>`
+              : "";
+
+        const deadline=Number.isFinite(item.deadline)
+          ? `<small>${days(item.deadline)}</small>`
+          : "";
+
+        const action=item.actionable&&item.page
+          ? `<button data-page="${esc(item.page)}"${item.anchor?` data-target="${esc(item.anchor)}"`:""}>Responder agora</button>`
+          : item.page
+            ? `<button data-page="${esc(item.page)}"${item.anchor?` data-target="${esc(item.anchor)}"`:""}>Ver detalhes</button>`
+            : "";
+
+        return `<article class="card story-objective">
+          <div class="split">
+            <div>
+              <div class="tag">${esc(item.category)}</div>
+              <h3>${esc(item.title)}</h3>
+            </div>
+            <span class="pill ${statusClass(item)}">${esc(item.status)}</span>
+          </div>
+          ${item.description?`<p class="muted">${esc(item.description)}</p>`:""}
+          ${progress}
+          <div class="split story-objective-meta">
+            <span>${values}</span>
+            <span>${deadline}</span>
+          </div>
+          ${action}
+        </article>`;
+      };
+
+      const urgent=hub.urgent||[];
+      const active=(hub.active||[]).filter(x=>x.priority!=="URGENTE");
+      const history=hub.timeline||[];
+      const milestones=hub.milestones;
+
+      const milestoneHtml=milestones
+        ? `<section class="card section story-milestones">
+            <div class="split">
+              <div>
+                <div class="tag">LEGADO</div>
+                <h2>${esc(milestones.tier||"Em construção")}</h2>
+              </div>
+              <span class="pill">${Math.round(milestones.score||0)} pts</span>
+            </div>
+            <div class="profile-data">
+              ${(milestones.items||[]).map(x=>`<span>${esc(x.label)} <b>${x.value}</b></span>`).join("")}
+            </div>
+            ${milestones.clubs?.length
+              ? `<p class="muted">Clubes na carreira: ${milestones.clubs.map(esc).join(" • ")}</p>`
+              : ""}
+          </section>`
+        : "";
+
+      const timelineHtml=history.length
+        ? history.slice(0,30).map(row=>`
+            <article class="news story-timeline-row">
+              <time>Dia ${row.day} · ${esc(row.category)}</time>
+              <h3>${esc(row.title)}</h3>
+              ${row.detail?`<p>${esc(row.detail)}</p>`:""}
+            </article>
+          `).join("")
+        : '<p class="muted">A história da carreira ainda não possui registros suficientes.</p>';
+
+      return `<div class="story-hub-stage23">
+        <section class="card player-hero">
+          <div class="player-hero-copy">
+            <div class="tag">CENTRAL DA CARREIRA</div>
+            <h1>Objetivos e História</h1>
+            <p>Acompanhe o que exige sua atenção agora e como suas escolhas estão formando sua carreira.</p>
+          </div>
+          <div class="player-ovr">
+            <strong>${urgent.length}</strong>
+            <small>URGENTES</small>
+            <span>${active.length}</span>
+            <small>OBJETIVOS</small>
+          </div>
+        </section>
+
+        <nav class="player-tabs">
+          <a href="#story-priorities">Prioridades</a>
+          <a href="#story-objectives">Objetivos</a>
+          <a href="#story-milestones">Marcos</a>
+          <a href="#story-timeline">História</a>
+        </nav>
+
+        <section id="story-priorities" class="section">
+          <div class="tag">PRIORIDADES</div>
+          <h2>O que precisa da sua atenção</h2>
+          ${urgent.length
+            ? `<div class="grid">${urgent.map(objectiveCard).join("")}</div>`
+            : '<section class="card"><p class="muted">Nenhuma pendência urgente no momento.</p></section>'}
+        </section>
+
+        <section id="story-objectives" class="section">
+          <div class="tag">OBJETIVOS ATIVOS</div>
+          <h2>Seu caminho na carreira</h2>
+          ${active.length
+            ? `<div class="grid">${active.map(objectiveCard).join("")}</div>`
+            : '<section class="card"><p class="muted">Nenhum objetivo ativo no momento.</p></section>'}
+        </section>
+
+        <div id="story-milestones">
+          ${milestoneHtml}
+        </div>
+
+        <section id="story-timeline" class="card section story-timeline">
+          <div class="tag">HISTÓRIA DA CARREIRA</div>
+          <h2>Sua trajetória</h2>
+          <p class="muted">Partidas marcantes, transferências, decisões, personalidade e acontecimentos importantes aparecem aqui em ordem cronológica.</p>
+          ${timelineHtml}
+        </section>
+      </div>`;
+    },
+
     agency() {
       if(state.mode!=="player"){
         return '<section class="card"><h2>Empres?rio e Ag?ncia</h2><p class="muted">Dispon?vel apenas na carreira de jogador.</p></section>';

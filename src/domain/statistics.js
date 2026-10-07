@@ -1,6 +1,6 @@
 (function (root) {
   "use strict";
-  const fields = ["appearances", "starts", "minutes", "goals", "assists", "motm", "ratingTotal", "saves", "tackles", "shots", "onTarget", "xg", "yellowCards", "redCards"];
+  const fields = ["appearances", "starts", "minutes", "goals", "assists", "motm", "ratingTotal", "saves", "tackles", "shots", "onTarget", "xg", "yellowCards", "redCards", "wins", "draws", "losses", "hatTricks", "cleanSheets"];
   const blank = () => ({ appearances: 0, starts: 0, minutes: 0, goals: 0, assists: 0, motm: 0, ratingTotal: 0, saves: 0, tackles: 0, shots: 0, onTarget: 0, xg: 0, yellowCards: 0, redCards: 0, byCompetition: {}, byClub: {} });
   const checked = new WeakMap();
   function normalize(row) {
@@ -318,8 +318,12 @@
     const hero=normalize(init(s).root.players.hero), currentClub=s.clubs.find(c=>c.id===s.clubId), seasonRows=Object.values(hero.byCompetition||{});
     const sum=(rows,f)=>rows.reduce((n,r)=>n+Number(r?.[f]||0),0), pack=(row)=>{ row=row||{}; const apps=Number(row.appearances||0), mins=Number(row.minutes||0), goals=Number(row.goals||0), assists=Number(row.assists||0), shots=Number(row.shots||0), on=Number(row.onTarget||0); return { appearances:apps, starts:Number(row.starts||apps), minutes:mins, goals, assists, motm:Number(row.motm||0), averageRating:apps ? +(Number(row.ratingTotal||0)/apps).toFixed(2):0, goals90:mins ? +(goals*90/mins).toFixed(2):0, assists90:mins ? +(assists*90/mins).toFixed(2):0, shots, onTarget:on, xg:+Number(row.xg||0).toFixed(2), conversion:shots ? +(goals*100/shots).toFixed(1):0, yellowCards:Number(row.yellowCards||0), redCards:Number(row.redCards||0), tackles:Number(row.tackles||0), saves:Number(row.saves||0), wins:Number(row.wins||0), draws:Number(row.draws||0), losses:Number(row.losses||0), hatTricks:Number(row.hatTricks||0), cleanSheets:Number(row.cleanSheets||0) }; };
     const season={}; for(const f of fields) season[f]=sum(seasonRows,f);
-    const currentStints=heroStintHistory(s).filter(x=>x.season===s.season && x.clubId===s.clubId);
-    const currentClubSeason={}; for(const f of fields) currentClubSeason[f]=sum(currentStints,f);
+    const seasonStints=heroStintHistory(s).filter(x=>x.season===s.season);
+    const currentStints=seasonStints.filter(x=>x.clubId===s.clubId);
+    const seasonClubIds=[...new Set(seasonStints.map(x=>x.clubId).filter(Boolean))];
+    const fullSeasonAtCurrentClub=seasonClubIds.length===1 && seasonClubIds[0]===s.clubId;
+    const currentClubSeason={};
+    for(const f of fields) currentClubSeason[f]=fullSeasonAtCurrentClub ? Number(season[f]||0) : sum(currentStints,f);
     return { season:pack(season), currentClubSeason:pack(currentClubSeason), career:pack(hero), byCompetition:Object.entries(hero.byCompetition||{}).map(([id,row])=>({id,name:competitionName(s,id),...pack(row)})), byClub:Object.entries(hero.byClub||{}).map(([id,row])=>({id,name:s.clubs.find(c=>c.id===id)?.name||id,...pack(row)})), currentClub:currentClub?.name||"Sem clube", national:s.nationalTeam||{}, stints:heroStintHistory(s), seasons:(s.statistics?.seasons||[]).map(x=>({season:x.season,...x.player,stints:x.player?.stints||[]})) };
   }
   function updateCareerMeta(s,m,heroGoals=0) {
