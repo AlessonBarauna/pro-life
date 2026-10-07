@@ -607,3 +607,276 @@ test("Patrocinios: renovacao assinada repercute nas noticias",()=>{
     "renovacao assinada deve gerar noticia"
   );
 });
+
+
+// === REGRESSAO FREQUENCIA DE COMPROMISSOS COMERCIAIS ===
+
+function activeSponsorForEventTest(s,id,brandId,brand){
+  const c=E.Commercial.init(s,E);
+
+  const contract={
+    id,
+    proposalId:"proposal:"+id,
+    brandId,
+    brand,
+    category:"TEST",
+    tier:"REGIONAL",
+    status:"ATIVO",
+    signedDay:s.day,
+    startDay:s.day,
+    endDay:s.day+365,
+    durationDays:365,
+    nextPaymentDay:s.day+9999,
+    amount:10000,
+    bonus:{
+      kind:"callup",
+      amount:0
+    },
+    relationship:70,
+    warnings:0,
+    paidBonuses:[]
+  };
+
+  c.contracts.push(contract);
+  c.relations[brandId]=70;
+
+  return contract;
+}
+
+test("Compromissos: nunca mantem mais de um evento comercial pendente",()=>{
+  const s=career(901);
+
+  const a=activeSponsorForEventTest(
+    s,
+    "contract:event:a",
+    "event_brand_a",
+    "Marca A"
+  );
+
+  const b=activeSponsorForEventTest(
+    s,
+    "contract:event:b",
+    "event_brand_b",
+    "Marca B"
+  );
+
+  const first=E.Commercial.scheduleEvent(s,a,E);
+  const second=E.Commercial.scheduleEvent(s,b,E);
+
+  assert(first);
+  assert.equal(second,null);
+
+  const pending=s.commercial.events.filter(e=>
+    ["AGENDADO","REAGENDADO","CONFIRMADO"].includes(e.status)
+  );
+
+  assert.equal(
+    pending.length,
+    1,
+    "deve existir apenas um compromisso comercial pendente"
+  );
+});
+
+test("Compromissos: recusar nao cria substituto imediatamente",()=>{
+  const s=career(902);
+
+  const contract=activeSponsorForEventTest(
+    s,
+    "contract:event:decline",
+    "event_brand_decline",
+    "Marca Recusada"
+  );
+
+  const event=E.Commercial.scheduleEvent(
+    s,
+    contract,
+    E
+  );
+
+  assert(event);
+
+  E.Commercial.eventAction(
+    s,
+    event.id,
+    "decline",
+    E.Career,
+    E
+  );
+
+  assert.equal(event.status,"RECUSADO");
+
+  E.Commercial.daily(
+    s,
+    new E.Random(902),
+    E.Career,
+    E
+  );
+
+  let pending=s.commercial.events.filter(e=>
+    ["AGENDADO","REAGENDADO","CONFIRMADO"].includes(e.status)
+  );
+
+  assert.equal(
+    pending.length,
+    0,
+    "recusa nao pode gerar outro compromisso no mesmo dia"
+  );
+
+  assert.equal(
+    contract.relationship,
+    65,
+    "recusa comum deve reduzir relacionamento em 5 pontos"
+  );
+});
+
+test("Compromissos: mesma marca respeita 21 dias apos recusa",()=>{
+  const s=career(903);
+
+  const contract=activeSponsorForEventTest(
+    s,
+    "contract:event:cooldown",
+    "event_brand_cooldown",
+    "Marca Cooldown"
+  );
+
+  const event=E.Commercial.scheduleEvent(
+    s,
+    contract,
+    E
+  );
+
+  E.Commercial.eventAction(
+    s,
+    event.id,
+    "decline",
+    E.Career,
+    E
+  );
+
+  const declinedDay=s.day;
+
+  s.day=declinedDay+14;
+
+  E.Commercial.daily(
+    s,
+    new E.Random(903),
+    E.Career,
+    E
+  );
+
+  let pending=s.commercial.events.filter(e=>
+    ["AGENDADO","REAGENDADO","CONFIRMADO"].includes(e.status)
+  );
+
+  assert.equal(
+    pending.length,
+    0,
+    "14 dias ainda nao bastam para a mesma marca recusada"
+  );
+
+  s.day=declinedDay+20;
+
+  E.Commercial.daily(
+    s,
+    new E.Random(904),
+    E.Career,
+    E
+  );
+
+  pending=s.commercial.events.filter(e=>
+    ["AGENDADO","REAGENDADO","CONFIRMADO"].includes(e.status)
+  );
+
+  assert.equal(
+    pending.length,
+    0,
+    "antes de 21 dias a marca ainda deve estar em cooldown"
+  );
+
+  s.day=declinedDay+21;
+
+  E.Commercial.daily(
+    s,
+    new E.Random(905),
+    E.Career,
+    E
+  );
+
+  pending=s.commercial.events.filter(e=>
+    ["AGENDADO","REAGENDADO","CONFIRMADO"].includes(e.status)
+  );
+
+  assert.equal(
+    pending.length,
+    1,
+    "apos 21 dias a mesma marca pode voltar a agendar compromisso"
+  );
+
+  assert.equal(
+    pending[0].brandId,
+    contract.brandId
+  );
+});
+
+test("Compromissos: save antigo com varios pendentes e normalizado para um",()=>{
+  const s=career(904);
+
+  const a=activeSponsorForEventTest(
+    s,
+    "contract:event:old:a",
+    "old_brand_a",
+    "Marca Antiga A"
+  );
+
+  const b=activeSponsorForEventTest(
+    s,
+    "contract:event:old:b",
+    "old_brand_b",
+    "Marca Antiga B"
+  );
+
+  s.commercial.events.push(
+    {
+      id:"old-event-a",
+      contractId:a.id,
+      brandId:a.brandId,
+      brand:a.brand,
+      day:s.day+5,
+      type:"CAMPANHA",
+      status:"AGENDADO",
+      mandatory:false,
+      reschedules:0
+    },
+    {
+      id:"old-event-b",
+      contractId:b.id,
+      brandId:b.brandId,
+      brand:b.brand,
+      day:s.day+7,
+      type:"EVENTO DA MARCA",
+      status:"AGENDADO",
+      mandatory:false,
+      reschedules:0
+    }
+  );
+
+  E.Commercial.daily(
+    s,
+    new E.Random(906),
+    E.Career,
+    E
+  );
+
+  const pending=s.commercial.events.filter(e=>
+    ["AGENDADO","REAGENDADO","CONFIRMADO"].includes(e.status)
+  );
+
+  const cancelled=s.commercial.events.filter(e=>
+    e.status==="CANCELADO" &&
+    e.cancelReason==="FREQUENCY_LIMIT"
+  );
+
+  assert.equal(pending.length,1);
+  assert.equal(cancelled.length,1);
+  assert.equal(pending[0].id,"old-event-a");
+});

@@ -978,9 +978,302 @@
     if((sch.cup?.rounds||[]).some(r=>r.date===day&&(r.pairs||[]).some(x=>!x.played&&[x.home,x.away].includes(s.clubId))))return true;
     if((s.nationalTeam?.schedule||[]).some(x=>!x.played&&x.day===day&&(x.calledUp||s.nationalTeam?.calledUp)))return true;return false;
   }
-  function scheduleEvent(s,contract,api,baseDay){const c=init(s,api),types=["SESSÃO DE FOTOS","EVENTO DA MARCA","CAMPANHA","ENTREVISTA PROMOCIONAL"],count=c.events.filter(x=>x.contractId===contract.id).length;let day=Math.max(Number(baseDay||s.day+5),contract.startDay+4);while(officialOnDay(s,day))day++;const id=`commercial-event:${contract.id}:${day}`;if(!c.events.some(x=>x.id===id))c.events.push({id,contractId:contract.id,brandId:contract.brandId,brand:contract.brand,day,type:types[count%types.length],status:"AGENDADO",mandatory:count%3===2,reschedules:0});}
+  function pendingCommercialEvents(c){
+    return c.events
+      .filter(e=>["AGENDADO","REAGENDADO","CONFIRMADO"].includes(e.status))
+      .sort((a,b)=>Number(a.day||0)-Number(b.day||0));
+  }
+
+  function normalizePendingEvents(s,c){
+    const pending=pendingCommercialEvents(c);
+
+    if(pending.length<=1)
+      return pending[0]||null;
+
+    const keep=pending[0];
+
+    for(const e of pending.slice(1)){
+      e.status="CANCELADO";
+      e.completedDay=s.day;
+      e.cancelReason="FREQUENCY_LIMIT";
+    }
+
+    return keep;
+  }
+
+  function lastResolvedCommercialDay(c){
+    return c.events.reduce((latest,e)=>{
+      if(!["CONCLU\u00cdDO","RECUSADO"].includes(e.status))
+        return latest;
+
+      const day=Number(e.completedDay);
+
+      return Number.isFinite(day)
+        ? Math.max(latest,day)
+        : latest;
+    },-9999);
+  }
+
+  function lastBrandDeclineDay(c,brandId){
+    return c.events.reduce((latest,e)=>{
+      if(
+        e.brandId!==brandId ||
+        e.status!=="RECUSADO"
+      )return latest;
+
+      const day=Number(e.completedDay);
+
+      return Number.isFinite(day)
+        ? Math.max(latest,day)
+        : latest;
+    },-9999);
+  }
+
+  function scheduleEvent(s,contract,api,baseDay){
+    const c=init(s,api);
+
+    if(
+      !contract ||
+      contract.status!=="ATIVO" ||
+      Number(contract.endDay||0)<=s.day
+    )return null;
+
+    const pending=normalizePendingEvents(s,c);
+
+    if(pending)
+      return pending.contractId===contract.id
+        ? pending
+        : null;
+
+    const types=[
+      "SESS\u00c3O DE FOTOS",
+      "EVENTO DA MARCA",
+      "CAMPANHA",
+      "ENTREVISTA PROMOCIONAL"
+    ];
+
+    const count=c.events.filter(
+      x=>x.contractId===contract.id
+    ).length;
+
+    let day=Math.max(
+      Number(baseDay||s.day+5),
+      Number(contract.startDay||s.day)+4
+    );
+
+    while(officialOnDay(s,day))
+      day++;
+
+    if(day>Number(contract.endDay||0))
+      return null;
+
+    const id=`commercial-event:${contract.id}:${day}`;
+
+    if(c.events.some(x=>x.id===id))
+      return c.events.find(x=>x.id===id);
+
+    const event={
+      id,
+      contractId:contract.id,
+      brandId:contract.brandId,
+      brand:contract.brand,
+      day,
+      type:types[count%types.length],
+      status:"AGENDADO",
+      mandatory:count%3===2,
+      reschedules:0
+    };
+
+    c.events.push(event);
+
+    return event;
+  }
+
+  function ensureNextEvent(s,api){
+    const c=init(s,api);
+
+    const pending=normalizePendingEvents(s,c);
+
+    if(pending)
+      return pending;
+
+    const lastResolved=lastResolvedCommercialDay(c);
+
+    /* intervalo global: 14 dias apos concluir/recusar */
+    if(s.day-lastResolved<14)
+      return null;
+
+    const activeContracts=c.contracts
+      .filter(x=>
+        x.status==="ATIVO" &&
+        Number(x.startDay||0)<=s.day &&
+        Number(x.endDay||0)>s.day+5
+      )
+      .sort((a,b)=>{
+        const lastA=c.events
+          .filter(e=>e.contractId===a.id)
+          .reduce(
+            (m,e)=>Math.max(m,Number(e.completedDay||e.day||-9999)),
+            -9999
+          );
+
+        const lastB=c.events
+          .filter(e=>e.contractId===b.id)
+          .reduce(
+            (m,e)=>Math.max(m,Number(e.completedDay||e.day||-9999)),
+            -9999
+          );
+
+        return lastA-lastB;
+      });
+
+    for(const contract of activeContracts){
+      /*
+       * Se recusou compromisso desta marca,
+       * ela espera pelo menos 21 dias para tentar novamente.
+       */
+      const lastDecline=lastBrandDeclineDay(
+        c,
+        contract.brandId
+      );
+
+      if(s.day-lastDecline<21)
+        continue;
+
+      const event=scheduleEvent(
+        s,
+        contract,
+        api,
+        s.day+5
+      );
+
+      if(event)
+        return event;
+    }
+
+    return null;
+  }
+
   function endForWarnings(s,contract,c,helpers){if(contract.warnings<3||contract.relationship>=40)return false;contract.status="ENCERRADO";contract.endDay=s.day;const h=c.history.find(h=>h.brandId===contract.brandId&&h.startDay===contract.startDay);if(h){h.status="ENCERRADO";h.endDay=s.day;}message(s,helpers,"Contrato comercial encerrado",`${contract.brand} encerrou o acordo após obrigações comerciais ignoradas.`,"IMPORTANTE",`commercial:breach:${contract.id}`);return true;}
-  function eventAction(s,id,choice,helpers,api){const c=init(s,api),e=c.events.find(x=>x.id===id&&["AGENDADO","REAGENDADO","CONFIRMADO"].includes(x.status));if(!e)throw Error("Evento comercial indisponível.");const x=c.contracts.find(x=>x.id===e.contractId&&x.status==="ATIVO");if(!x)throw Error("Contrato comercial não está ativo.");if(e.status==="CONFIRMADO")throw Error("Evento comercial já confirmado e aguardando realização.");if(choice==="participate"){e.status="CONFIRMADO";message(s,helpers,"Presença confirmada",`Você confirmou participação em ${e.type.toLowerCase()} da ${e.brand}.`,"NORMAL",`commercial:event:confirm:${e.id}`);return e;}if(choice==="reschedule"){if((e.reschedules||0)>=2)throw Error("Limite de reagendamentos atingido.");let day=Math.max(s.day+1,e.day+1);while(officialOnDay(s,day))day++;e.day=day;e.status="REAGENDADO";e.reschedules=(e.reschedules||0)+1;x.relationship=clamp(x.relationship-1,0,100);c.relations[x.brandId]=x.relationship;message(s,helpers,"Evento reagendado",`${e.brand} aceitou uma nova data para ${e.type.toLowerCase()}.`,"NORMAL",`commercial:event:reschedule:${e.id}:${e.reschedules}`);return e;}if(choice==="decline"){e.status="RECUSADO";e.completedDay=s.day;x.warnings=(x.warnings||0)+1;x.relationship=clamp(x.relationship-(e.mandatory?12:5),0,100);c.relations[x.brandId]=x.relationship;message(s,helpers,"Evento recusado",`${e.brand} registrou sua ausência${e.mandatory?" em uma obrigação importante":""}.`,e.mandatory?"IMPORTANTE":"NORMAL",`commercial:event:decline:${e.id}`);if(!endForWarnings(s,x,c,helpers)&&x.endDay>s.day+60)scheduleEvent(s,x,api,s.day+90);return e;}throw Error("Decisão comercial inválida.");}
+  function eventAction(s,id,choice,helpers,api){
+    const c=init(s,api);
+
+    const e=c.events.find(x=>
+      x.id===id &&
+      ["AGENDADO","REAGENDADO","CONFIRMADO"].includes(x.status)
+    );
+
+    if(!e)
+      throw Error("Evento comercial indispon\u00edvel.");
+
+    const x=c.contracts.find(x=>
+      x.id===e.contractId &&
+      x.status==="ATIVO"
+    );
+
+    if(!x)
+      throw Error("Contrato comercial n\u00e3o est\u00e1 ativo.");
+
+    if(e.status==="CONFIRMADO")
+      throw Error(
+        "Evento comercial j\u00e1 confirmado e aguardando realiza\u00e7\u00e3o."
+      );
+
+    if(choice==="participate"){
+      e.status="CONFIRMADO";
+
+      message(
+        s,helpers,
+        "Presen\u00e7a confirmada",
+        `Voc\u00ea confirmou participa\u00e7\u00e3o em ${e.type.toLowerCase()} da ${e.brand}.`,
+        "NORMAL",
+        `commercial:event:confirm:${e.id}`
+      );
+
+      return e;
+    }
+
+    if(choice==="reschedule"){
+      if((e.reschedules||0)>=2)
+        throw Error(
+          "Limite de reagendamentos atingido."
+        );
+
+      let day=Math.max(
+        s.day+1,
+        e.day+1
+      );
+
+      while(officialOnDay(s,day))
+        day++;
+
+      e.day=day;
+      e.status="REAGENDADO";
+      e.reschedules=(e.reschedules||0)+1;
+
+      x.relationship=clamp(
+        x.relationship-1,
+        0,
+        100
+      );
+
+      c.relations[x.brandId]=x.relationship;
+
+      message(
+        s,helpers,
+        "Evento reagendado",
+        `${e.brand} aceitou uma nova data para ${e.type.toLowerCase()}.`,
+        "NORMAL",
+        `commercial:event:reschedule:${e.id}:${e.reschedules}`
+      );
+
+      return e;
+    }
+
+    if(choice==="decline"){
+      e.status="RECUSADO";
+      e.completedDay=s.day;
+
+      x.warnings=(x.warnings||0)+1;
+
+      x.relationship=clamp(
+        x.relationship-(e.mandatory?12:5),
+        0,
+        100
+      );
+
+      c.relations[x.brandId]=x.relationship;
+
+      message(
+        s,helpers,
+        "Evento recusado",
+        `${e.brand} registrou sua aus\u00eancia${e.mandatory?" em uma obriga\u00e7\u00e3o importante":""}.`,
+        e.mandatory
+          ? "IMPORTANTE"
+          : "NORMAL",
+        `commercial:event:decline:${e.id}`
+      );
+
+      /*
+       * Nao agenda substituto imediatamente.
+       * ensureNextEvent cuidara do proximo ciclo:
+       * 14 dias global / 21 dias mesma marca.
+       */
+      endForWarnings(
+        s,
+        x,
+        c,
+        helpers
+      );
+
+      return e;
+    }
+
+    throw Error(
+      "Decis\u00e3o comercial inv\u00e1lida."
+    );
+  }
+
   function pay(s,contract,amount,label,key,helpers){
     const c=init(s);
 
@@ -1243,8 +1536,11 @@
         x.relationship=clamp(x.relationship+relGain,0,100);
         c.relations[x.brandId]=x.relationship;
 
-        if(x.status==="ATIVO"&&x.endDay>s.day+60)
-          scheduleEvent(s,x,api,s.day+90);
+        /*
+         * O proximo compromisso sera escolhido pelo
+         * controle global de frequencia.
+         */
+
       }
 
       c.popularity=clamp(c.popularity+popGain,0,100);
@@ -1286,7 +1582,33 @@
   }
   function syncAudience(s,api){const c=init(s,api),raw=Number(s.fans||0),delta=raw-c.lastFansSnapshot;if(delta){c.followers=Math.max(0,c.followers+delta);c.popularity=clamp(c.popularity+clamp(delta/1000,-.5,1.2),0,100);c.exposure=clamp(c.exposure+clamp(delta/800,-1,2),0,100);}c.lastFansSnapshot=raw;if(s.day%30===0&&performance(s)<25){c.popularity=clamp(c.popularity-.35,0,100);c.exposure=clamp(c.exposure-.5,0,100);}for(const mark of [100000,1000000,5000000,10000000])if(c.followers>=mark&&!c.milestones.some(x=>x.value===mark))c.milestones.push({day:s.day,season:s.season,value:mark,label:`${mark.toLocaleString("pt-BR")} seguidores`});updateValue(s,api);}
   function onMatch(s,m,helpers,api){if(s.mode!=="player"||!m.ratings?.hero)return;const c=init(s,api),rating=Number(m.ratings.hero||0),goals=(m.events||[]).filter(e=>e.type==="goal"&&e.playerId==="hero").length,boost=rating>=8?2:rating>=7?.7:rating<6?-.4:0;c.popularity=clamp(c.popularity+boost+goals*.8,0,100);c.exposure=clamp(c.exposure+Math.max(0,boost)+goals,0,100);c.followers=Math.max(0,c.followers+Math.round(Math.max(-80,boost*350+goals*700)));updateValue(s,api);}
-  function daily(s,rng,helpers,api){if(s.mode!=="player")return;init(s,api);syncAudience(s,api);processContracts(s,helpers,api);if(s.day%14===0)progressInterests(s,rng,helpers,api);const c=s.commercial;for(const p of c.proposals)if(p.status==="PROPOSTA"&&p.expires<s.day)p.status="EXPIRADA";}
+  function daily(s,rng,helpers,api){
+    if(s.mode!=="player")
+      return;
+
+    init(s,api);
+    syncAudience(s,api);
+    processContracts(s,helpers,api);
+
+    if(s.day%14===0)
+      progressInterests(s,rng,helpers,api);
+
+    const c=s.commercial;
+
+    for(const p of c.proposals)
+      if(
+        p.status==="PROPOSTA" &&
+        p.expires<s.day
+      )
+        p.status="EXPIRADA";
+
+    /*
+     * Mantem no maximo um compromisso pendente
+     * e cria o proximo apenas quando o cooldown permitir.
+     */
+    ensureNextEvent(s,api);
+  }
+
   function summary(s,api){const c=init(s,api);return {popularity:c.popularity,followers:c.followers,commercialValue:updateValue(s,api),active:active(s),revenue:c.revenue,bonusRevenue:c.bonusRevenue,nextEvent:c.events.filter(e=>["AGENDADO","REAGENDADO","CONFIRMADO"].includes(e.status)&&e.day>=s.day).sort((a,b)=>a.day-b.day)[0]||null};}
   const api={brands,stages,categoryLabel,sportingValue,init,summary,quality,updateValue,scoreBrand,eligible,progressInterests,active,accept,reject,hold,negotiate,eventAction,daily,onMatch,officialOnDay,scheduleEvent,processContracts};
   root.ProLifeCommercial=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;
