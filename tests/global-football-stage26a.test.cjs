@@ -6,35 +6,35 @@ function state(seed=2601){return D.create({mode:"player",clubId:"c0"},seed);}
 function officialCup(s,year=2030){const n=D.NationalTeam.init(s),t=WC.createTournament(year);s.day=(year-2026)*365+154;s.season=year;n.tournaments.push(t);D.NationalTeam.ensureWorldCupOfficialSquads(s,n,D,()=>{});return {n,t};}
 
 test("26A: jogador global persiste com ID e modelo completo após reload",()=>{
-  const s=state(),player=GF.playerById(s,"gf_esp_1");
-  assert.ok(player);assert.equal(player.shortName,"I. Salas");assert.equal(player.birthYear,2003);assert.equal(player.clubId,"gf_madrid_capital");assert.equal(player.leagueId,"gf_la_liga");assert.equal(player.status,"active");
+  const s=state(),player=GF.playerById(s,"gf_p_lamine_yamal_2007");
+  assert.ok(player);assert.equal(player.shortName,"L. Yamal");assert.equal(player.birthYear,2007);assert.equal(player.clubId,"gf_barcelona");assert.equal(player.leagueId,"gf_la_liga");assert.equal(player.status,"active");
   const restored=Save.parse(JSON.stringify(s)),same=GF.playerById(restored,player.id);
   assert.equal(same.id,player.id);assert.equal(same.name,player.name);assert.equal(same.clubId,player.clubId);
 });
 
 test("26A: idade global deriva da temporada sem incremento inconsistente",()=>{
-  const s=state(2602),player=GF.playerById(s,"gf_esp_1");assert.equal(player.age,23);
-  s.season=2030;GF.init(s);assert.equal(GF.playerById(s,player.id).age,27);
-  GF.init(s);assert.equal(GF.playerById(s,player.id).age,27);
+  const s=state(2602),player=GF.playerById(s,"gf_p_lamine_yamal_2007");assert.equal(player.age,19);
+  s.season=2030;GF.init(s);assert.equal(GF.playerById(s,player.id).age,23);
+  GF.init(s);assert.equal(GF.playerById(s,player.id).age,23);
 });
 
 test("26A: transferência muda clube e liga sem duplicar jogador",()=>{
-  const s=state(2603),id="gf_por_4",before=GF.allPlayers(s).filter(player=>player.id===id).length;
-  const moved=GF.transferPlayer(s,id,"gf_paris_etoile");
-  assert.equal(moved.clubId,"gf_paris_etoile");assert.equal(moved.leagueId,"gf_ligue_1");assert.equal(moved.clubHistory.length,1);
-  assert.equal(GF.allPlayers(s).filter(player=>player.id===id).length,before);assert.ok(GF.playersByClub(s,"gf_paris_etoile").some(player=>player.id===id));
-  const restored=Save.parse(JSON.stringify(s));assert.equal(GF.playerById(restored,id).clubId,"gf_paris_etoile");
+  const s=state(2603),id="gf_p_rui_silva_1994",before=GF.allPlayers(s).filter(player=>player.id===id).length;
+  const moved=GF.transferPlayer(s,id,"gf_psg");
+  assert.equal(moved.clubId,"gf_psg");assert.equal(moved.leagueId,"gf_ligue_1");assert.equal(moved.clubHistory.length,1);
+  assert.equal(GF.allPlayers(s).filter(player=>player.id===id).length,before);assert.ok(GF.playersByClub(s,"gf_psg").some(player=>player.id===id));
+  const restored=Save.parse(JSON.stringify(s));assert.equal(GF.playerById(restored,id).clubId,"gf_psg");
 });
 
 test("26A: clubes, ligas e filtros globais usam a API única",()=>{
   const s=state(2604);
-  assert.equal(GF.clubById(s,"gf_munich_athletic").country,"Alemanha");assert.equal(GF.leagueById(s,"gf_bundesliga").confederation,"UEFA");
-  assert.equal(GF.playersByNationality(s,"França").length,4);assert.equal(GF.playersByClub(s,"gf_amsterdam_union").length,4);assert.equal(GF.playersByLeague(s,"gf_eredivisie").length,4);
+  assert.equal(GF.clubById(s,"gf_bayern").country,"Alemanha");assert.equal(GF.leagueById(s,"gf_bundesliga").confederation,"UEFA");
+  assert.ok(GF.playersByNationality(s,"França").length>50);assert.ok(GF.playersByClub(s,"gf_psg").length>=15);assert.ok(GF.playersByLeague(s,"gf_eredivisie").length>=40);
   assert.equal(GF.playerById(s,"hero"),s.person);assert.equal(new Set(GF.allPlayers(s).map(player=>player.id)).size,GF.allPlayers(s).length);
 });
 
 test("26A: aposentadoria determinística retira jogador da elegibilidade e preserva histórico",()=>{
-  const s=state(2605),player=GF.playerById(s,"gf_fra_1");player.birthYear=1980;s.season=2026;
+  const s=state(2605),player=GF.playerById(s,"gf_p_lucas_chevalier_2001");player.birthYear=1980;s.season=2026;
   const retired=GF.rollSeason(s);assert.ok(retired.includes(player.id));assert.equal(player.status,"retired");assert.ok(s.globalFootball.retirements.some(item=>item.playerId===player.id));
   assert.equal(GF.eligibleNationalTeamPlayers(s,"Franca").some(candidate=>candidate.id===player.id),false);
   assert.deepEqual(GF.rollSeason(s),[]);
@@ -42,7 +42,7 @@ test("26A: aposentadoria determinística retira jogador da elegibilidade e prese
 
 test("26A: Seleção e Copa Mundial consultam jogadores globais antes do fallback",()=>{
   const s=state(2606),{t}=officialCup(s),france=t.squads.find(team=>team.id==="FRA");
-  assert.ok(france);assert.ok(france.squad.some(player=>player.id.startsWith("gf_fra_")));
+  assert.ok(france);assert.ok(france.squad.some(player=>player.id.startsWith("gf_p_")));
   assert.equal(france.squad.some(player=>player.club==="Universo internacional"),false);assert.equal(france.squad.length,26);
 });
 
@@ -56,7 +56,7 @@ test("26A: save antigo migra sem apagar dados existentes",()=>{
   const s=state(2608),oldId=s.clubs[0].roster[0].id;s.clubs[0].roster[0].legacyMarker="preservar";delete s.globalFootball;
   for(const player of s.internationalPlayers||[]){delete player.birthYear;delete player.shortName;delete player.status;delete player.active;}
   const restored=Save.parse(JSON.stringify(s));
-  assert.equal(restored.clubs[0].roster.find(player=>player.id===oldId).legacyMarker,"preservar");assert.equal(restored.globalFootball.version,1);assert.ok(GF.playerById(restored,"gf_ger_1"));
+  assert.equal(restored.clubs[0].roster.find(player=>player.id===oldId).legacyMarker,"preservar");assert.equal(restored.globalFootball.version,1);assert.ok(GF.playerById(restored,"gf_p_manuel_neuer_1986"));
 });
 
 test("26A: GER e potencial permanecem limitados a 100",()=>{

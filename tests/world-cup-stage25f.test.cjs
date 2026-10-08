@@ -42,7 +42,7 @@ test("25F: GER tem dispersão e força acompanha a reputação da seleção",()=
 });
 
 test("25F: Copa seguinte reutiliza internacionais elegíveis e atualiza idade",()=>{
-  const s=state(2552),{n,t}=createOfficialCup(s),france2030=t.squads.find(team=>team.id==="FRA").squad.filter(player=>player.source==="generated-persistent");
+  const s=state(2552),{n,t}=createOfficialCup(s),france2030=t.squads.find(team=>team.id==="FRA").squad;
   const ages=new Map(france2030.map(player=>[player.id,player.age])),next=WC.createTournament(2034);
   n.tournaments.push(next);s.day=8*365+154;s.season=2034;
   D.NationalTeam.ensureWorldCupOfficialSquads(s,n,D,()=>{});
