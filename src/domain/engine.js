@@ -43,6 +43,12 @@
   const SimulationTactics =
     root.ProLifeSimulationTactics ||
     (typeof require === "function" ? require("./simulation-tactics.js") : null);
+  const GlobalFootball =
+    root.ProLifeGlobalFootball ||
+    (typeof require === "function" ? require("./global-football.js") : null);
+  const InternationalPool =
+    root.ProLifeInternationalPool ||
+    (typeof require === "function" ? require("./international-pool.js") : null);
   const NationalTeam =
     root.ProLifeNationalTeam ||
     (typeof require === "function" ? require("./national-team.js") : null);
@@ -399,6 +405,9 @@
     Life?.init(s);
     Commercial?.init(s, { overall, club });
     UnexpectedEvents?.init(s);
+    GlobalFootball?.init(s);
+    InternationalPool?.init(s);
+    GlobalFootball?.init(s);
     NationalTeam?.init(s);
     World2?.init(s, API, seed);
     if (plan) Creation.applyContext(s, plan);
@@ -694,11 +703,10 @@
         const heroSide=home.id===context.clubId?0:1, heroSquad=squads[heroSide], ownClub=clubs[heroSide];
         const hero=ownClub.roster.find(p=>p.id==="hero"), pc=Career.init(context).playerCareer;
         if(hero && !hero.injury && !(hero.suspension>0)){
-          const on=heroSquad.some(p=>p.id==="hero"), subPlan=Squad?.substitutePlan?.(context,hero)||{minute:65,chance:clamp(.35+(pc.coachTrust-50)/120+(hero.morale-50)/180,.15,.9)};
+          const on=heroSquad.some(p=>p.id==="hero"), ownGoals=heroSide===0?m.hg:m.ag, opponentGoals=heroSide===0?m.ag:m.hg, subPlan=Squad?.substitutePlan?.(context,hero,{ownGoals,opponentGoals})||{minute:65,chance:clamp(.35+(pc.coachTrust-50)/120+(hero.morale-50)/180,.15,.9)};
           if(!on && minute===subPlan.minute){
             const eligible=pc.matchSelection?.bench?.includes("hero");
-            // Se foi relacionado no banco, recebe minutos para ganhar experiencia.
-            if(eligible){
+            if(eligible&&rng.next()<subPlan.chance){
               let idx=heroSquad.findIndex(p=>p.pos===hero.pos); if(idx<0)idx=heroSquad.length-1;
               const out=heroSquad[idx]; heroSquad[idx]=hero;
               if(m.participation[out.id]){m.participation[out.id].exitMinute=minute;m.participation[out.id].minutes=minute-m.participation[out.id].entryMinute;}
@@ -914,6 +922,7 @@
       competitionId: meta.competitionId,
       competitionName: meta.competitionName,
     });
+    m.importance=matchImportance(s,{...meta,home:homeId,away:awayId});
     processDiscipline(s,m,disciplineMeta,hc,ac);
     serveDisciplineSuspensions(hc,disciplineKey);
     serveDisciplineSuspensions(ac,disciplineKey);
@@ -933,9 +942,12 @@
     });
     if ([homeId, awayId].includes(s.clubId)) {
       const trustBefore = s.mode === "player" ? Number(Career.init(s).playerCareer?.coachTrust || 0) : 0;
+      const reputationBefore = Number(s.reputation || 0), roleBefore=s.mode === "player" ? Career.init(s).playerCareer?.squadRole : null;
       Career.match(s, m);
       if (s.mode === "player") {
         const pc = Career.init(s).playerCareer, perf = m.playerStats?.hero, played = !!m.ratings?.hero;
+        const importanceFactor=Number(m.importance?.factor||1), rawTrust=Number(pc.coachTrust||0)-trustBefore;
+        pc.coachTrust=clamp(trustBefore+rawTrust*importanceFactor,0,100);Career.updatePlayerRole?.(s);
         const goals = m.events.filter((e) => e.type === "goal" && e.playerId === "hero").length;
         const assists = m.events.filter((e) => e.type === "goal" && e.assistPlayerId === "hero").length;
         const yellowCards=m.events.filter(e=>e.type==="yellow"&&e.playerId==="hero").length, redCard=m.events.some(e=>e.type==="red"&&e.playerId==="hero");
@@ -945,7 +957,8 @@
           day:s.day, season:s.season, competition:m.competitionName || "Partida", opponent:(homeId===s.clubId?ac:hc)?.name || "Adversário",
           status, entryMinute:played && perf?.starter === false ? Number(perf.entryMinute || 0) : null, minutes:played ? Number(perf?.minutes || 0) : 0,
           rating:played ? Number(m.ratings.hero || 0) : null, goals, assists, yellowCards, redCard, xp:played ? +(heroDevelopment?.xp || 0).toFixed(2) : 0,
-          levelBefore:heroDevelopment?.levelBefore ?? null, levelAfter:heroDevelopment?.levelAfter ?? null, coachTrustBefore:trustBefore, coachTrustAfter:Number(pc.coachTrust || 0),
+          levelBefore:heroDevelopment?.levelBefore ?? null, levelAfter:heroDevelopment?.levelAfter ?? null, attributeChanges:heroDevelopment?.changes||[], coachTrustBefore:trustBefore, coachTrustAfter:Number(pc.coachTrust || 0),
+          squadRoleBefore:roleBefore, squadRoleAfter:pc.squadRole, reputationBefore, reputationAfter:null, importance:m.importance,
           objectivesMet:played ? Number(pc.lastEvaluation?.met || 0) : 0, objectivesTotal:played ? Number(pc.lastEvaluation?.total || 0) : 0
         };
         pc.lastMatchReport = report;
@@ -970,7 +983,13 @@
       Commercial?.onMatch?.(s, m, Career, API);
       const own = homeId === s.clubId ? m.hg : m.ag, other = homeId === s.clubId ? m.ag : m.hg;
       s.board = clamp(s.board + (own > other ? 5 : own < other ? -5 : 0), 0, 100);
-      s.reputation = clamp(s.reputation + (own > other ? 1 : own < other ? -0.4 : 0.2), 0, 100);
+      s.reputation = clamp(s.reputation + (own > other ? 1 : own < other ? -0.4 : 0.2)*Number(m.importance?.factor||1), 0, 100);
+      if(s.mode==="player"){
+        const report=Career.init(s).playerCareer.lastMatchReport;
+        if(report&&report.day===s.day){report.reputationAfter=Number(s.reputation||0);report.reputationDelta=+(report.reputationAfter-Number(report.reputationBefore||0)).toFixed(2);}
+        const rating=Number(m.ratings?.hero||0),extraPressure=(Number(m.importance?.factor||1)-1)*(rating>=8?-4:rating<6?8:2);
+        if(extraPressure)Career.updateMediaProfile?.(s,{pressure:+extraPressure.toFixed(2)});
+      }
       s.fans += own > other ? 60 : 10;
       log(s, (m.competitionName || "Partida") + " · " + hc.name + " " + m.hg + " × " + m.ag + " " + ac.name, m.summary);
       if (s.mode === "player" && !m.participants.flat().includes("hero")) log(s, "Fora da escalação", "O treinador priorizou outros jogadores. Treino, moral, atributos e concorrência influenciam a escolha.");
@@ -1006,12 +1025,25 @@
       (s.season - 2026) * 365 + (s.calendarDays?.[s.round] ?? 7 + s.round * 21)
     );
   }
+  function matchImportance(s, fixture = {}, options = {}) {
+    const stageText=String(fixture.stage || fixture.phase || fixture.roundName || "").trim().toLowerCase();
+    const text = `${fixture.competitionName || fixture.competition || ""} ${stageText}`.toLowerCase();
+    const national = options.national || fixture.competitionId === "nationalTeam";
+    let factor = national ? 1.1 : 1, label = national ? "Jogo de Seleção" : "Jogo oficial";
+    if (/copa do mundo|copa mundial|world cup|finalissima/.test(text)) { factor = Math.max(factor, 1.18); label = "Competição internacional importante"; }
+    if (/mata-mata|oitavas|quartas|knockout|round_of_16|quarterfinal/.test(text)) { factor = Math.max(factor, 1.1); label = "Mata-mata"; }
+    if (/semi/.test(text)) { factor = Math.max(factor, 1.15); label = "Semifinal"; }
+    if (/^(grande )?final$/.test(stageText)) { factor = Math.max(factor, 1.22); label = "Final"; }
+    const home = fixture.home && club(s, fixture.home), away = fixture.away && club(s, fixture.away);
+    if (home && away && home.city && home.city === away.city) { factor = Math.max(factor, 1.08); label = "Clássico"; }
+    return { factor:+Math.min(1.25, factor).toFixed(2), label };
+  }
   function nextCommitment(s) {
     const pair = s.fixtures[s.round]?.find((fixture) => fixture.includes(s.clubId));
     const league = pair && { home: pair[0], away: pair[1], date: nextFixtureDay(s), round: s.round + 1, competitionId: club(s)?.leagueId, competitionName: s.leagues.find((l) => l.id === club(s)?.leagueId)?.name };
     const extra = Competitions?.nextFixture(s);
     const nationalMatch = s.mode === "player" && NationalTeam?.init(s).calledUp ? NationalTeam.upcoming(s)[0] : null;
-    const national = nationalMatch && { date: nationalMatch.day, competitionId: "nationalTeam", competitionName: nationalMatch.competition, stage: "Seleção Brasileira", opponent: nationalMatch.opponent, homeName: "Brasil", awayName: nationalMatch.opponent };
+    const national = nationalMatch && { national:true, date: nationalMatch.day, competitionId: "nationalTeam", competitionName: nationalMatch.competition, stage: nationalMatch.stage || "Seleção Brasileira", opponent: nationalMatch.opponent, homeName: "Brasil", awayName: nationalMatch.opponent };
     return [league, extra, national].filter(Boolean).sort((a, b) => a.date - b.date)[0] || null;
   }
   function newSeason(s, rng) {
@@ -1073,6 +1105,7 @@
       log(s, "Acesso e rebaixamento", movement.map((m) => m.club.name + " " + (m.type === "promovido" ? "subiu para " : "caiu para ") + (Competitions?.leagueNames[m.to] || m.to)).join("; ") + ".");
     }
     s.season++;
+    GlobalFootball?.rollSeason(s);
     if (s.mode === "player") Statistics?.ensureHeroStint?.(s, s.clubId);
     s.round = 0;
     s.person.age++;
@@ -1646,6 +1679,8 @@
     Commercial,
     UnexpectedEvents,
     Physical,
+    GlobalFootball,
+    InternationalPool,
     NationalTeam,
     schedule,
     migrateWorld,
@@ -1680,6 +1715,7 @@
     labels,
     clamp,
     nextFixtureDay,
+    matchImportance,
     nextCommitment,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;

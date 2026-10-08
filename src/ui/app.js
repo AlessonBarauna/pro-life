@@ -229,7 +229,7 @@
           const status =
             isActive ? "ATIVO" :
             unlocked ? "DESBLOQUEADO" :
-            eligible ? "DISPONÃVEL" :
+            eligible ? "DISPONÍVEL" :
             "BLOQUEADO";
 
           let action = "";
@@ -1457,7 +1457,8 @@
       if (!D.NationalTeam?.init) return `<section class="card"><h2>Seleção Brasileira</h2><p class="muted">O módulo da Seleção não foi carregado. Recarregue a aplicação.</p></section>`;
       const n=D.NationalTeam.init(state), avg=n.caps?(n.ratingTotal/n.caps).toFixed(1):"—", radar=D.NationalTeam.radar(state,D), upcoming=D.NationalTeam.upcoming(state);
       if(n.calledUp) D.NationalTeam.role(state,D);
-      const squad=n.calledUp&&n.squad?.length?n.squad:D.NationalTeam.buildSquad(state,D);
+      const officialCupSquad=n.competition==="Copa Mundial"&&n.squad?.length>0;
+      const squad=(n.calledUp||officialCupSquad)&&n.squad?.length?n.squad:D.NationalTeam.buildSquad(state,D);
       const competition=D.NationalTeam.positionCompetition(state,D);
       const groups=["GOL","DEF","MEI","ATA"];
       const squadHtml=groups.map(pos=>`<section class="section"><h3>${pos}</h3><div class="tablewrap"><table><thead><tr><th>Jogador</th><th>Clube</th><th>GER</th><th>Idade</th></tr></thead><tbody>${squad.filter(x=>x.pos===pos).map(x=>`<tr ${x.id==="hero"?'class="hero-row"':""}><td><b>${esc(x.name)}</b>${x.id==="hero"?" · VOCÊ":""}</td><td>${esc(x.club||"—")}</td><td>${x.overall}</td><td>${x.age}</td></tr>`).join("")}</tbody></table></div></section>`).join("");
@@ -7265,7 +7266,7 @@
       return `<nav class="subnav national-tabs"><a href="#national-overview">Visão geral</a><a href="#national-squad">Convocados</a><a href="#national-dispute">Disputa</a><a href="#national-calendar">Calendário</a><a href="#national-competitions">Competições</a><a href="#national-stats">Estatísticas</a><a href="#national-history">Histórico</a></nav>
       <div id="national-overview" class="grid national-dashboard"><section class="card"><div class="tag">SELEÇÃO BRASILEIRA</div><h2>${esc(n.calledUp?n.status:radar.label)}</h2><p>${n.calledUp?`Você faz parte da convocação atual para <b>${esc(n.competition)}</b>. Papel previsto: <b>${esc(n.status)}</b>.`:radar.gap?`Você está a aproximadamente <b>${radar.gap} ponto(s)</b> do nível atual de disputa. Continue atuando bem pelo clube.`:"Seu desempenho já coloca você na disputa pela próxima convocação."}</p>${bar("Momento para convocação",radar.score)}<div class="profile-data"><span>GER <b>${D.overall(state.person)}</b></span><span>Reputação <b>${Math.round(state.reputation)}</b></span><span>Moral <b>${Math.round(state.person.morale)}</b></span><span>Posição <b>${esc(state.person.pos)}</b></span><span>Nacionalidade <b>${esc(n.nationality||state.person.nationality||"Brasil")}</b></span><span>Camisa <b>${n.shirtNumber||"—"}</b></span></div></section>
       <section id="national-calendar" class="card"><div class="tag">PRÓXIMA DATA FIFA</div><h2>${dayDate(n.nextWindow)}</h2><p>Em aproximadamente <b>${Math.max(0,n.nextWindow-state.day)} dias</b> · ${esc(upcoming[0]?.competition||"Agenda internacional")}</p><div class="national-fixtures">${upcoming.map(match=>`<div><time>${dayDate(match.day)}</time><b>Brasil × ${esc(match.opponent)}</b><small>${esc(match.callupStatus||"Convocação ainda não definida")}</small></div>`).join("")}</div><button data-page="calendar">Ver no calendário</button></section></div>
-      <section id="national-squad" class="card section"><div class="tag">${n.calledUp?"CONVOCADOS":"PROJEÇÃO DA PRÓXIMA LISTA"}</div><h2>Elenco da Seleção</h2><p class="muted">${n.calledUp?"Esta é a lista usada pelo motor na convocação atual.":"A lista abaixo é uma projeção por mérito; a convocação oficial ainda pode mudar."}</p>${squadHtml}</section>
+      <section id="national-squad" class="card section"><div class="tag">${officialCupSquad?"CONVOCAÇÃO OFICIAL · COPA MUNDIAL":n.calledUp?"CONVOCADOS":"PROJEÇÃO DA PRÓXIMA LISTA"}</div><h2>Elenco da Seleção</h2><p class="muted">${officialCupSquad?`Lista congelada de 26 jogadores desta edição. ${n.calledUp?"Você foi convocado.":"Você não foi convocado."}`:n.calledUp?"Esta é a lista usada pelo motor na convocação atual.":"A lista abaixo é uma projeção por mérito; a convocação oficial ainda pode mudar."}</p>${squadHtml}</section>
       <section id="national-dispute" class="card section"><div class="tag">DISPUTA POR POSIÇÃO</div><h2>${esc(state.person.pos)}${heroRank?` · você está em ${heroRank}º`:''}</h2><div class="tablewrap"><table><thead><tr><th>#</th><th>Jogador</th><th>Clube</th><th>GER</th><th>Ãndice</th></tr></thead><tbody>${competition.map(x=>`<tr ${x.id==="hero"?'class="hero-row"':""}><td>${x.rank}</td><td><b>${esc(x.name)}</b>${x.id==="hero"?" · VOCÊ":""}</td><td>${esc(x.club||"—")}</td><td>${x.overall}</td><td>${Math.round(x.score)}</td></tr>`).join("")}</tbody></table></div><p class="muted">GER, desempenho, experiência, disponibilidade e concorrência do setor influenciam convocação e papel.</p></section>
       <section id="national-competitions" class="card section">
         <div class="tag">COMPETIÇÕES</div>
@@ -7343,9 +7344,13 @@
         ),
         list = own.length ? own : state.matches;
       const m = list[0];
+      const report = state.mode === "player" ? Career.init(state).playerCareer?.lastMatchReport : null;
+      const signed = (value) => `${Number(value || 0) >= 0 ? "+" : ""}${Number(value || 0).toFixed(1)}`;
+      const changes = report?.attributeChanges || [];
+      const postMatch = report ? `<section class="card section" id="post-match-stage25"><div class="tag">PÓS-JOGO · ${esc(report.competition || "Partida")} · ${esc(report.importance?.label || "Jogo oficial")}</div><h2>${report.national ? "Seleção Brasileira" : "Relatório do jogador"} · ${esc(report.opponent || "Adversário")}</h2><p class="muted">${esc(String(report.status || "PARTICIPAÇÃO").replaceAll("_", " "))}${report.entryMinute != null ? ` · entrou aos ${report.entryMinute}'` : ""} · peso ${Number(report.importance?.factor || 1).toFixed(2)}x</p><div class="kpis"><div><b>${report.minutes || 0}</b><small>MINUTOS</small></div><div><b>${report.goals || 0}</b><small>GOLS</small></div><div><b>${report.assists || 0}</b><small>ASSIST.</small></div><div><b>${report.rating == null ? "—" : Number(report.rating).toFixed(1)}</b><small>NOTA</small></div><div><b>+${Number(report.xp || 0).toFixed(1)}</b><small>XP</small></div></div><div class="grid3"><div class="notice"><b>Evolução</b><p>${changes.length ? changes.map(x => `${esc(x.label || x.key)}: ${x.before} → ${x.after}`).join("<br>") : "Nenhum atributo subiu nesta partida."}</p></div><div class="notice"><b>Confiança e papel</b><p>${report.national ? "Sem alteração na confiança do clube." : `${signed(Number(report.coachTrustAfter || 0) - Number(report.coachTrustBefore || 0))} de confiança`}<br>${esc(report.squadRoleBefore || "—")} → ${esc(report.squadRoleAfter || report.squadRoleBefore || "—")}</p></div><div class="notice"><b>Reputação${report.national ? " e Seleção" : ""}</b><p>${signed(report.reputationDelta)} de reputação${report.nationalImpact ? `<br>${esc(report.nationalImpact)}` : ""}</p></div></div></section>` : "";
       if (!m)
-        return empty("Avance até a primeira rodada para ver os relatórios.");
-      return `<div class="grid"><section class="card"><div class="tag">${esc(m.competitionName || leagueName(m.leagueId))} · Etapa ${m.round} · Temporada ${m.season}</div><h2 class="section">${esc(D.club(state, m.home).name)}<br>${esc(D.club(state, m.away).name)}</h2><div class="score">${m.hg} × ${m.ag}</div>${m.penalties ? `<p class="good">Pênaltis: ${m.penalties[0]} × ${m.penalties[1]}</p>` : ""}<p>${esc(m.summary)}</p><table><thead><tr><th>Indicador</th><th>Casa</th><th>Fora</th></tr></thead><tbody><tr><td>Posse</td><td>${m.possession}%</td><td>${100 - m.possession}%</td></tr>${[
+        return `${postMatch}${empty("Avance até a primeira rodada para ver os relatórios.")}`;
+      return `${postMatch}<div class="grid"><section class="card"><div class="tag">${esc(m.competitionName || leagueName(m.leagueId))} · Etapa ${m.round} · Temporada ${m.season}</div><h2 class="section">${esc(D.club(state, m.home).name)}<br>${esc(D.club(state, m.away).name)}</h2><div class="score">${m.hg} × ${m.ag}</div>${m.penalties ? `<p class="good">Pênaltis: ${m.penalties[0]} × ${m.penalties[1]}</p>` : ""}<p>${esc(m.summary)}</p><table><thead><tr><th>Indicador</th><th>Casa</th><th>Fora</th></tr></thead><tbody><tr><td>Posse</td><td>${m.possession}%</td><td>${100 - m.possession}%</td></tr>${[
         ["shots", "Finalizações"],
         ["target", "No alvo"],
         ["xg", "xG estimado"],
@@ -7611,15 +7616,18 @@
     if (b.hasAttribute("data-live-match")) {
       const next = D.nextCommitment(state);
       if (!next) { toast("Não há próximo jogo agendado."); return; }
-      if (next.national) { toast("Acompanhamento ao vivo da Seleção será integrado em uma próxima evolução."); return; }
       if (next.date !== state.day + 1) { toast("Use Simular até o jogo primeiro. O acompanhamento abre na véspera da partida."); return; }
-      const before = new Set(state.matches.map((m) => `${m.season}:${m.date}:${m.home}:${m.away}:${m.competitionId||m.leagueId||""}`));
+      const before = next.national ? null : new Set(state.matches.map((m) => `${m.season}:${m.date}:${m.home}:${m.away}:${m.competitionId||m.leagueId||""}`));
       D.advance(state, 1);
-      const played = state.matches.find((m) => [m.home,m.away].includes(state.clubId) && m.date === state.day && !before.has(`${m.season}:${m.date}:${m.home}:${m.away}:${m.competitionId||m.leagueId||""}`));
+      const played = next.national
+        ? D.NationalTeam.init(state).lastMatchday
+        : state.matches.find((m) => [m.home,m.away].includes(state.clubId) && m.date === state.day && !before.has(`${m.season}:${m.date}:${m.home}:${m.away}:${m.competitionId||m.leagueId||""}`));
       persist();
       render();
-      if (!played) { toast("A partida não pôde ser localizada no calendário deste dia."); return; }
-      window.ProLifeLiveMatch.start({ match: played, home: D.club(state, played.home), away: D.club(state, played.away) });
+      if (!played || played.date !== state.day) { toast("A partida não pôde ser localizada no calendário deste dia."); return; }
+      const home = next.national ? { name:played.homeName || "Brasil" } : D.club(state, played.home);
+      const away = next.national ? { name:played.awayName || next.opponent } : D.club(state, played.away);
+      window.ProLifeLiveMatch.start({ match: played, home, away });
       return;
     }
     if (b.dataset.stopClose !== undefined) { closeSimulationStop(); return; }

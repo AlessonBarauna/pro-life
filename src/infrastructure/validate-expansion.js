@@ -2,6 +2,12 @@
   "use strict";
   function validate(s, fail) {
     const finite = (v, a, b) => Number.isFinite(v) && v >= a && v <= b;
+    const globalFootball=root.ProLifeGlobalFootball||root.ProLife?.GlobalFootball;
+    globalFootball?.init?.(s);
+    if(s.globalFootball!==undefined){
+      const g=s.globalFootball;
+      if(!g||g.version!==1||!finite(g.baseYear,1900,2300)||!Array.isArray(g.leagues)||g.leagues.length>500||!Array.isArray(g.clubs)||g.clubs.length>2000||!Array.isArray(g.retirements)||g.retirements.length>500||!g.processedSeasons||typeof g.processedSeasons!=="object")fail();
+    }
     if (s.universe !== undefined) {
       const u = s.universe;
       if (!u || typeof u !== "object" || !finite(u.seed, 0, 4294967295) || !u.done || typeof u.done !== "object" || !Array.isArray(u.transfers) || u.transfers.length > 500 || !Array.isArray(u.retirements) || u.retirements.length > 500 || !Array.isArray(u.free) || u.free.length > 300 || (u.seasons !== undefined && (!Array.isArray(u.seasons) || u.seasons.length > 60))) fail();

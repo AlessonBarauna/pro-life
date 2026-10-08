@@ -139,6 +139,8 @@
   }
 
   function init(s){
+    const globalFootball=root.ProLifeGlobalFootball||(typeof require==="function"?require("./global-football.js"):null);
+    if(!s.globalFootball)globalFootball?.init?.(s);
     if(!Array.isArray(s.internationalPlayers)){
       s.internationalPlayers=defaults();
     }

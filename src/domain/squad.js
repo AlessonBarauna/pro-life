@@ -644,14 +644,16 @@
     }
     return q.manager;
   }
-  function substitutePlan(s,p){
+  function substitutePlan(s,p,context={}){
     const pc=root.ProLifeCareer.init(s).playerCareer,q=init(s),physical=Physical?.init?.(p,s.day);
     const trust=clamp(Number(pc.coachTrust??50),0,100), morale=clamp(Number(p.morale??50),0,100);
     const fitness=clamp(Number(physical?.fitness??p.condition??100),0,100), fatigue=clamp(Number(physical?.fatigue??0),0,100);
     const form=clamp((formValue(s,p)-6)*18,0,40), training=clamp(q.trainingTrend,-5,5);
     const readiness=trust*.52+morale*.12+fitness*.12+form+training*1.6-fatigue*.08;
-    const minute=readiness>=78?58:readiness>=66?64:readiness>=54?70:readiness>=42?76:82;
-    const chance=clamp(.18+(trust/100)*.46+(morale/100)*.10+(fitness/100)*.10+Math.max(0,training)*.025-fatigue*.0025,.12,.92);
+    const minute=readiness>=78?60:readiness>=66?64:readiness>=54?69:readiness>=42?73:75;
+    const scoreDelta=Number(context.ownGoals||0)-Number(context.opponentGoals||0);
+    const matchNeed=scoreDelta<0?.12:scoreDelta===0?.04:-.05;
+    const chance=clamp(.18+(trust/100)*.46+(morale/100)*.10+(fitness/100)*.10+Math.max(0,training)*.025-fatigue*.0025+matchNeed,.1,.92);
     return {minute,chance:+chance.toFixed(3),readiness:+readiness.toFixed(2)};
   }
   const api={init,slots,tacticalStyles,managerArchetypes,createManager,managerProfile,managerValueLabel,managerTopCriteria,adjustTrustDeltaForManager,recentRatings,formValue,score,formationFor,choose,competition,roleForHero,recordDecision,recordTrustChange,trustSummary,coachConversationStatus,coachConversationChoices,startCoachConversation,respondCoachConversation,coachPromisePlan,coachPromiseStatus,requestCoachPromise,resolveCoachPromise,evaluateCoachPromise,handleManagerChange,handlePlayerTransfer,trainingResult,substitutePlan};

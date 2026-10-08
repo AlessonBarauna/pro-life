@@ -5010,6 +5010,10 @@
     const worldCupWindow=
       yearStart+161;
 
+    for(const group of tournament.groups||[])
+      for(const match of group.matches||[])
+        match.day=worldCupWindow+[0,6,12][Math.max(0,Number(match.round||1)-1)];
+
     const brazilMatches=
       brazilGroup.matches.filter(
         m=>
@@ -5279,6 +5283,49 @@
     }
   }
 
+  function worldCupStableRng(tournament,match){
+    const source=`${tournament.year}:${match.id}`;
+    let state=2166136261;
+    for(let i=0;i<source.length;i++) state=Math.imul(state^source.charCodeAt(i),16777619)>>>0;
+    return {next(){state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;}};
+  }
+
+  function progressWorldCupBackground(s,n){
+    const tournament=ensureWorldCup(s,n),WC=worldCupApi();
+    if(!tournament||!WC||tournament.status==="COMPLETED") return tournament;
+    const yearStart=(Number(tournament.year)-2026)*365,groupDays=[161,167,173].map(x=>yearStart+x);
+    for(const group of tournament.groups||[]){
+      for(const match of group.matches||[]){
+        match.day??=groupDays[Math.max(0,Number(match.round||1)-1)];
+        if(match.played||match.day>s.day||match.homeId==="BRA"||match.awayId==="BRA") continue;
+        WC.simulateGroupMatch(match,worldCupStableRng(tournament,match),tournament);
+      }
+    }
+    if(!WC.groupStageComplete(tournament)) return tournament;
+    if(!Array.isArray(tournament.qualified32)||tournament.qualified32.length!==32) WC.qualifyRoundOf32(tournament);
+    if(!WC.phaseMatches(tournament,"ROUND_OF_32").length) WC.buildRoundOf32(tournament);
+    const phases=["ROUND_OF_32","ROUND_OF_16","QUARTERFINAL","SEMIFINAL","THIRD_PLACE","FINAL"];
+    for(const phase of phases){
+      const matches=WC.phaseMatches(tournament,phase);
+      if(!matches.length) continue;
+      const due=worldCupPhaseDay(tournament,phase);
+      for(const match of matches){
+        match.day??=due;
+        if(match.played||due>s.day||match.homeId==="BRA"||match.awayId==="BRA") continue;
+        WC.simulateKnockoutMatch(tournament,match,worldCupStableRng(tournament,match));
+      }
+      const brazilMatch=matches.find(m=>m.homeId==="BRA"||m.awayId==="BRA");
+      if(brazilMatch&&!brazilMatch.played) addBrazilKnockoutFixture(s,n,tournament,brazilMatch);
+      if(!WC.phaseComplete(tournament,phase)) break;
+      if(phase==="ROUND_OF_32"&&!WC.phaseMatches(tournament,"ROUND_OF_16").length) WC.createNextPhase(tournament,phase,"ROUND_OF_16");
+      else if(phase==="ROUND_OF_16"&&!WC.phaseMatches(tournament,"QUARTERFINAL").length) WC.createNextPhase(tournament,phase,"QUARTERFINAL");
+      else if(phase==="QUARTERFINAL"&&!WC.phaseMatches(tournament,"SEMIFINAL").length) WC.createNextPhase(tournament,phase,"SEMIFINAL");
+      else if(phase==="SEMIFINAL"&&!WC.phaseMatches(tournament,"FINAL").length) WC.createFinals(tournament);
+      else if(phase==="FINAL") WC.finalizeTournament(tournament);
+    }
+    return tournament;
+  }
+
   function syncBrazilWorldCupKnockout(
     s,
     n,
@@ -5291,11 +5338,9 @@
     if(!WC || !tournament || !phase)
       return null;
 
-    simulateOtherKnockoutMatches(
-      tournament,
-      phase,
-      rng
-    );
+    // Compatibility for callers that manually register a future fixture.
+    // Normal daily progression never enters this branch.
+    if(s.day<worldCupPhaseDay(tournament,phase)) simulateOtherKnockoutMatches(tournament,phase,rng);
 
     const match=
       brazilKnockoutMatch(
@@ -5317,17 +5362,18 @@
   function finishWorldCupWithoutBrazil(
     n,
     tournament,
-    rng
+    rng,
+    forceComplete=false
   ){
     const WC=worldCupApi();
 
-    if(!WC?.simulateTournament)
+    if(!WC)
       return;
 
-    WC.simulateTournament(
-      tournament,
-      rng
-    );
+    if(forceComplete&&WC.simulateTournament) WC.simulateTournament(tournament,rng);
+
+    if(tournament.eliminationRecorded) return;
+    tournament.eliminationRecorded=true;
 
     n.history.unshift({
       day:null,
@@ -5405,8 +5451,12 @@
       finishWorldCupWithoutBrazil(
         n,
         tournament,
-        rng
+        rng,
+        s.day<(Number(tournament.year)-2026)*365+173
       );
+
+      n.calledUp=false;
+      n.currentCallupWindow=null;
 
       return null;
     }
@@ -5499,6 +5549,36 @@
       penaltyWinnerId
     );
 
+    if(match.phase==="FINAL"){
+      WC.finalizeTournament(tournament);
+      tournament.brazilStatus=match.winnerId==="BRA"?"CHAMPION":"RUNNER_UP";
+      n.calledUp=false;
+      n.currentCallupWindow=null;
+      if(match.winnerId!=="BRA") return true;
+      const title="Copa Mundial "+tournament.year;
+      if(!Array.isArray(n.titles)) n.titles=[];
+      if(!n.titles.includes(title)) n.titles.push(title);
+      if(!n.history.some(x=>x.type==="world_cup_title"&&Number(x.year)===Number(tournament.year))) n.history.unshift({day:s.day,type:"world_cup_title",year:tournament.year,title});
+      n.history=n.history.slice(0,80);
+      return true;
+    }
+
+    if(match.phase==="SEMIFINAL"&&match.winnerId!=="BRA"){
+      tournament.brazilStatus="THIRD_PLACE";
+      if(WC.phaseComplete(tournament,"SEMIFINAL")){
+        if(!WC.phaseMatches(tournament,"FINAL").length) WC.createFinals(tournament);
+        syncBrazilWorldCupKnockout(s,n,tournament,"THIRD_PLACE",rng);
+      }
+      return true;
+    }
+
+    if(match.phase==="THIRD_PLACE"){
+      tournament.brazilStatus=match.winnerId==="BRA"?"THIRD_PLACE":"FOURTH_PLACE";
+      n.calledUp=false;
+      n.currentCallupWindow=null;
+      return true;
+    }
+
     if(match.winnerId!=="BRA"){
       tournament.brazilStatus=
         "ELIMINATED";
@@ -5509,38 +5589,12 @@
       finishWorldCupWithoutBrazil(
         n,
         tournament,
-        rng
+        rng,
+        s.day<worldCupPhaseDay(tournament,match.phase)
       );
 
-      return true;
-    }
-
-    if(match.phase==="FINAL"){
-      WC.finalizeTournament(
-        tournament
-      );
-
-      tournament.brazilStatus=
-        "CHAMPION";
-
-      const title=
-        "Copa Mundial "+
-        tournament.year;
-
-      if(!Array.isArray(n.titles))
-        n.titles=[];
-
-      if(!n.titles.includes(title))
-        n.titles.push(title);
-
-      n.history.unshift({
-        day:s.day,
-        type:"world_cup_title",
-        year:tournament.year,
-        title
-      });
-
-      n.history=n.history.slice(0,80);
+      n.calledUp=false;
+      n.currentCallupWindow=null;
 
       return true;
     }
@@ -5779,6 +5833,8 @@
     const recordedMinutes = s.nationalTeam.matches.reduce((sum, match) => sum + Math.max(0, Number(match.minutes) || 0), 0);
     s.nationalTeam.minutes = Math.max(Number(s.nationalTeam.minutes) || 0, recordedMinutes);
     ensureSchedule(s, s.nationalTeam);
+    progressWorldCupBackground(s,s.nationalTeam);
+    ensureWorldCupOfficialSquads(s,s.nationalTeam,root.ProLife||null,null);
     protectClubCalendar(s);
     s.nationalTeam.nextWindow = s.nationalTeam.schedule.find((match) => !match.played && match.day >= s.day)?.day ?? nextWindowDay(s);
     return s.nationalTeam;
@@ -5836,6 +5892,18 @@
         : [];
   }
 
+  function globalFootballApi(){
+    return root.ProLifeGlobalFootball||(typeof require==="function"?require("./global-football.js"):null);
+  }
+  function globalNationalPlayers(s){
+    const globalFootball=globalFootballApi();
+    return globalFootball?.activePlayers?globalFootball.activePlayers(s).filter(player=>player.id!=="hero"):[];
+  }
+  function globalPlayerClub(s,player){
+    const club=globalFootballApi()?.clubById?.(s,player?.clubId);
+    return club?.name||player?.externalClub||player?.club||"Exterior";
+  }
+
   function buildSquad(s,api){
     const nationality=normalizedNationality(s);
     if(nationality!=="Brasil") return [];
@@ -5882,12 +5950,15 @@
       if(normalizedName) seenNames.add(normalizedName);
     }
 
-    for(const c of s.clubs||[])
-      for(const p of c.roster||[])
-        addCandidate(p,c.name);
+    for(const p of globalNationalPlayers(s))
+      addCandidate(p,globalPlayerClub(s,p));
 
     for(const p of internationalPool(s))
       addCandidate(p,p.externalClub||"Exterior");
+
+    for(const c of s.clubs||[])
+      for(const p of c.roster||[])
+        addCandidate(p,c.name);
 
     const hero={
       id:"hero",
@@ -5918,9 +5989,188 @@
 
     return out;
   }
+
+  function worldCupLineup(squad){
+    const sorted=(squad||[]).slice().sort((a,b)=>Number(b.score??b.overall??0)-Number(a.score??a.overall??0)||String(a.id).localeCompare(String(b.id)));
+    const starters=[...sorted.filter(x=>x.pos==="GOL").slice(0,1),...sorted.filter(x=>x.pos==="DEF").slice(0,4),...sorted.filter(x=>x.pos==="MEI").slice(0,3),...sorted.filter(x=>x.pos==="ATA").slice(0,3)];
+    const ids=new Set(starters.map(x=>x.id));
+    for(const player of sorted) if(starters.length<11&&!ids.has(player.id)){starters.push(player);ids.add(player.id);}
+    return {formation:"4-3-3",starters,bench:sorted.filter(x=>!ids.has(x.id)).slice(0,15)};
+  }
+
+  const worldCupNameRegions={
+    brazil:{first:["Caio","Davi","Gabriel","Gustavo","Joao","Lucas","Matheus","Pedro"],last:["Almeida","Barbosa","Costa","Ferreira","Lima","Oliveira","Ribeiro","Santos"],clubs:["Belo Horizonte EC","Curitiba Athletic","Porto Alegre FC","Recife Nacional","Rio Metropolitano","Santos Litoral","Sao Paulo União"]},
+    french:{first:["Adrien","Bastien","Enzo","Hugo","Ilyes","Lucas","Mathis","Theo"],last:["Bernard","Diallo","Dubois","Fofana","Laurent","Lefevre","Moreau","Traore"],clubs:["Bordeaux Girondins","Lille Métropole","Lyon Olympique","Marseille Athletic","Monaco Sporting","Paris Étoile","Rennes Union"]},
+    hispanic:{first:["Alejandro","Diego","Emiliano","Facundo","Javier","Mateo","Nicolas","Santiago"],last:["Acosta","Benitez","Fernandez","Garcia","Gimenez","Martinez","Navarro","Romero"],clubs:["Capital Deportivo","Cordillera FC","Puerto Athletic","Real Central","Racing del Norte","Sporting Nacional","Union del Sur"]},
+    latin:{first:["Andrea","Diogo","Lorenzo","Marco","Miguel","Nuno","Rafael","Tiago"],last:["Almeida","Bianchi","Cardoso","Conti","Moretti","Pereira","Ricci","Silva"],clubs:["Academia Calcio","Atletico Riviera","Lisboa Sporting","Lusitania FC","Milano Calcio","Porto Clube","Torino Athletic"]},
+    germanic:{first:["Alexander","Emil","Felix","Florian","Jonas","Lars","Noah","Oliver"],last:["Bauer","Becker","Hoffmann","Jansen","Keller","Muller","Schmidt","Wagner"],clubs:["Berlin 04","Danube Athletic","Nordstadt FC","Rheinland 05","Royal Flanders","Rotterdam Sport","Zurich United"]},
+    british:{first:["Callum","Ethan","Harry","Jack","James","Liam","Oliver","Ryan"],last:["Campbell","Davies","Evans","Foster","Hughes","Morgan","Taylor","Wilson"],clubs:["Birmingham Athletic","Edinburgh City","London Borough","Manchester Union","Northcastle FC","Seaside Rovers","Yorkshire Town"]},
+    eastern:{first:["Aleksandar","Ivan","Jakub","Luka","Marek","Milan","Nikola","Tomas"],last:["Horvat","Kovac","Markovic","Novak","Petrovic","Popovic","Stojanovic","Vukovic"],clubs:["Adriatic Split","Balkan United","Bohemia Praha","Danube Bratislava","Sarajevo Athletic","Slavia Central","Zagreb 1912"]},
+    westAfrica:{first:["Abdoulaye","Amadou","Emmanuel","Ibrahim","Issa","Kofi","Mamadou","Samuel"],last:["Ba","Diop","Kamara","Mensah","Ndiaye","Owusu","Sarr","Toure"],clubs:["Abidjan Athletic","Accra Stars","Dakar Olympique","Island Sporting","Kinshasa Union","Lagos Continental","Sahel FC"]},
+    northAfrica:{first:["Adel","Amine","Hassan","Karim","Mehdi","Omar","Rayan","Youssef"],last:["Amrani","Bennani","Haddad","Mansouri","Rahmani","Saidi","Trabelsi","Ziani"],clubs:["Atlas Marrakesh","Cairo National","Casablanca Union","Oran Sporting","Rabat Athletic","Tunis Olympique","Zamalek City"]},
+    asia:{first:["Haruto","Hiroki","Jihoon","Kaito","Minjun","Ren","Takumi","Yuto"],last:["Hayashi","Ito","Kim","Lee","Nakamura","Sato","Suzuki","Tanaka"],clubs:["Busan Athletic","Kansai United","Osaka Sakura","Seoul Metropolitan","Tokyo Phoenix","Ulsan Sporting","Yokohama Harbour"]},
+    middleEast:{first:["Ali","Fahad","Hamza","Hussein","Khalid","Omar","Sami","Yasin"],last:["Abbas","Al-Hassan","Farouk","Hakimi","Kareem","Nasser","Rahman","Saleh"],clubs:["Amman Union","Ankara Sporting","Baghdad Athletic","Doha Stars","Jeddah National","Riyadh Crescent","Tehran United"]},
+    northAmerica:{first:["Adrian","Daniel","Ethan","Julian","Kevin","Luis","Marcus","Noah"],last:["Brown","Campbell","Johnson","Lewis","Lopez","Martinez","Robinson","Williams"],clubs:["Atlantic City FC","California Athletic","Caribbean Stars","Great Lakes United","Mexico Capital","Pacific Rovers","Toronto Sporting"]},
+    oceania:{first:["Aiden","Callum","Cooper","Jack","Lachlan","Noah","Oliver","William"],last:["Clarke","Harris","Martin","Mitchell","Smith","Taylor","Walker","Wilson"],clubs:["Auckland Harbour","Brisbane Athletic","Melbourne Cityside","Pacific United","Sydney Coast","Tasman Rovers","Wellington Sporting"]}
+  };
+  const worldCupRegionIds={
+    brazil:["BRA"],french:["FRA"],latin:["ITA","POR"],british:["ENG","SCO"],
+    hispanic:["ARG","CHI","COL","CRC","ECU","ESP","GUA","HON","MEX","PAN","PAR","URU"],
+    germanic:["AUT","BEL","CAN","DEN","GER","NED","NOR","SUI","SWE"],
+    eastern:["BIH","CRO","CZE","HUN","POL","SRB","UKR","UZB"],westAfrica:["BFA","CIV","CMR","COD","CPV","GHA","NGA","SEN"],
+    northAfrica:["ALG","EGY","MAR","RSA","TUN"],asia:["JPN","KOR"],
+    middleEast:["IRN","IRQ","JOR","KSA","QAT","TUR"],
+    northAmerica:["CUW","HAI","USA"],oceania:["AUS","NZL"]
+  };
+  function worldCupHash(value){let h=2166136261;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
+  function worldCupUnit(value){return worldCupHash(value)/4294967296;}
+  function worldCupRegion(teamId){for(const [region,ids] of Object.entries(worldCupRegionIds))if(ids.includes(teamId))return worldCupNameRegions[region];return worldCupNameRegions.hispanic;}
+  function worldCupNormalize(value){return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();}
+  function worldCupTeamNames(team){const names=new Set([worldCupNormalize(team.id),worldCupNormalize(team.name)]);if(team.id==="BRA")for(const value of ["brasil","brazil"])names.add(value);return names;}
+  function worldCupPlayerSnapshot(player,clubName,tournament,api){
+    if(player.generatedInternational&&Number.isFinite(player.birthYear))player.age=Math.max(16,Number(tournament.year)-Number(player.birthYear));
+    const overall=player.generatedInternational?Number(player.overall||player.ovr||70):(api.overall?api.overall(player):Number(player.overall||player.ovr||70));
+    return {id:player.id,name:player.name,pos:player.pos,club:clubName||player.externalClub||player.club||"Exterior",age:Number(player.age||25),overall,score:candidateScore(player,overall),condition:Number(player.condition??100),morale:Number(player.morale??50),source:player.generatedInternational?"generated-persistent":"career"};
+  }
+  function worldCupAvailablePlayers(s,tournament,team,api){
+    const teamNames=worldCupTeamNames(team),all=[];
+    for(const player of globalNationalPlayers(s))all.push({player,club:null,resolveGlobalClub:true});
+    for(const club of s.clubs||[])for(const player of club.roster||[])all.push({player,club:club.name});
+    for(const player of internationalPool(s))all.push({player,club:player.externalClub||player.club||"Exterior"});
+    if(team.id==="BRA")all.push({player:{...s.person,id:"hero",nationality:"Brasil"},club:(s.clubs||[]).find(c=>c.id===s.clubId)?.name||"Sem clube"});
+    const seen=new Set();
+    return all.filter(({player})=>{
+      if(!player?.id||seen.has(player.id)||!teamNames.has(worldCupNormalize(player.nationality||(team.id==="BRA"?"Brasil":""))))return false;
+      seen.add(player.id);return true;
+    }).map(({player,club,resolveGlobalClub})=>worldCupPlayerSnapshot(player,resolveGlobalClub?globalPlayerClub(s,player):club,tournament,api)).filter(player=>player.age<=40);
+  }
+  function generatedWorldCupOverall(team,pos,slot,age,key,targetOverall){
+    if(targetOverall!==null&&targetOverall!==undefined&&Number.isFinite(Number(targetOverall)))return Math.max(55,Math.min(94,Math.round(Number(targetOverall)+(worldCupUnit(`${key}|migration`)-.5)*2)));
+    const offsets={GOL:[-2,-7,-11],DEF:[0,-2,-4,-5,-7,-8,-10,-12],MEI:[1,-1,-3,-5,-6,-8,-10,-12],ATA:[1,-1,-3,-5,-7,-9,-11]}[pos]||[-5];
+    const ageEffect=age<=22?1:age>=34?-2:age>=31?-1:0,posEffect=pos==="GOL"?0:pos==="ATA"?1:0,jitter=Math.floor(worldCupUnit(`${key}|overall`)*3)-1;
+    return Math.max(55,Math.min(94,Math.round(Number(team.reputation||70)+(offsets[slot%offsets.length]??-8)+ageEffect+posEffect+jitter)));
+  }
+  const worldCupPoolIndexes=new WeakMap();
+  function worldCupPoolIndex(pool){
+    let index=worldCupPoolIndexes.get(pool);
+    if(!index||index.size!==pool.length||index.last!==pool[pool.length-1]){
+      index={size:pool.length,last:pool[pool.length-1],names:new Set(),ids:new Set()};
+      for(const p of pool){index.names.add(worldCupNormalize(p?.name));if(p?.id)index.ids.add(p.id);}
+      worldCupPoolIndexes.set(pool,index);
+    }
+    return index;
+  }
+  function worldCupPoolIndexAdd(index,pool,player){index.names.add(worldCupNormalize(player.name));if(player.id)index.ids.add(player.id);index.size=pool.length;index.last=pool[pool.length-1];}
+  function createPersistentWorldCupPlayer(s,tournament,team,pos,slot,targetOverall=null){
+    const pool=Array.isArray(s.internationalPlayers)?s.internationalPlayers:internationalPool(s),region=worldCupRegion(team.id),poolIndex=worldCupPoolIndex(pool),usedNames=poolIndex.names;
+    const key=`${team.id}|${tournament.year}|${pos}|${slot}`,base=worldCupHash(key);
+    let name="";
+    for(let attempt=0;attempt<region.first.length*region.last.length;attempt++){
+      const first=region.first[(base+attempt)%region.first.length],last=region.last[(Math.floor(base/region.first.length)+Math.floor(attempt/region.first.length))%region.last.length];
+      const candidate=`${first} ${last}`;if(!usedNames.has(worldCupNormalize(candidate))){name=candidate;break;}
+    }
+    if(!name){
+      for(let attempt=0;attempt<region.first.length*region.last.length*region.last.length;attempt++){
+        const first=region.first[(base+attempt)%region.first.length],lastA=region.last[(Math.floor(base/7)+attempt)%region.last.length],lastB=region.last[(Math.floor(base/13)+Math.floor(attempt/region.last.length))%region.last.length];
+        const candidate=`${first} ${lastA} ${lastB}`;if(!usedNames.has(worldCupNormalize(candidate))){name=candidate;break;}
+      }
+    }
+    const id=`intlgen_${team.id.toLowerCase()}_${worldCupHash(`${key}|${name}`).toString(36)}`;
+    const existing=poolIndex.ids.has(id)?pool.find(player=>player.id===id):null;if(existing)return existing;
+    const age=19+Math.floor(worldCupUnit(`${key}|age`)*16),overall=generatedWorldCupOverall(team,pos,slot,age,key,targetOverall),club=region.clubs[Math.floor(worldCupUnit(`${key}|club`)*region.clubs.length)];
+    const potential=Math.max(overall,Math.min(96,overall+(age<=21?5:age<=24?3:age<=27?2:1)));
+    const player={id,name,age,birthYear:Number(tournament.year)-age,pos,nationality:team.name,ovr:overall,overall,potential,external:true,externalClub:club,club,marketStatus:"external",generatedInternational:true,generatedYear:Number(tournament.year),condition:100,morale:50+Math.floor(worldCupUnit(`${key}|morale`)*21),injury:0,suspension:0,discipline:70,appearances:0,goals:0,minutes:0,attrs:{pace:overall,finish:overall,pass:overall,defense:overall,strength:overall,stamina:overall}};
+    pool.push(player);worldCupPoolIndexAdd(poolIndex,pool,player);globalFootballApi()?.registerPlayer?.(s,player);return player;
+  }
+  function legacyWorldCupPlaceholder(player,team){return !!player&&(player.club==="Universo internacional"||String(player.id||"").startsWith("wc_")||new RegExp(`^${String(team.name).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")} (GOL|DEF|MEI|ATA) \\d+$`,"i").test(String(player.name||"")));}
+
+  function worldCupDynamicSquad(s,tournament,team,api){
+    const limits={GOL:3,DEF:8,MEI:8,ATA:7},available=worldCupAvailablePlayers(s,tournament,team,api);
+    const squad=[];
+    for(const [pos,count] of Object.entries(limits)){
+      const selected=available.filter(x=>x.pos===pos).sort((a,b)=>b.score-a.score||b.overall-a.overall||String(a.id).localeCompare(String(b.id))).slice(0,count);
+      squad.push(...selected);
+      for(let i=selected.length;i<count;i++){
+        const player=createPersistentWorldCupPlayer(s,tournament,team,pos,i),snapshot=worldCupPlayerSnapshot(player,player.externalClub,tournament,api);
+        squad.push(snapshot);
+      }
+    }
+    return squad;
+  }
+
+  function migrateWorldCupPlaceholders(s,tournament,api){
+    if(Number(tournament.year)<=2026||!Array.isArray(tournament.squads))return false;
+    let changed=false;
+    for(const entry of tournament.squads){
+      const team=(tournament.participants||[]).find(x=>x.id===entry.id)||entry;
+      if(!Array.isArray(entry.squad)||!entry.squad.some(player=>legacyWorldCupPlaceholder(player,team)))continue;
+      const keptIds=new Set(entry.squad.filter(player=>!legacyWorldCupPlaceholder(player,team)).map(player=>player.id));
+      const available=worldCupAvailablePlayers(s,tournament,team,api).filter(player=>!keptIds.has(player.id));
+      const positionSlots={GOL:0,DEF:0,MEI:0,ATA:0};
+      entry.squad=entry.squad.map((old,index)=>{
+        const pos=old.pos||"MEI";if(!legacyWorldCupPlaceholder(old,team)){positionSlots[pos]=(positionSlots[pos]||0)+1;return old;}
+        const target=Number(old.overall||old.ovr||team.reputation||70);
+        const existing=available.filter(player=>player.pos===pos&&!keptIds.has(player.id)).sort((a,b)=>Math.abs(a.overall-target)-Math.abs(b.overall-target)||b.score-a.score)[0];
+        const player=existing||worldCupPlayerSnapshot(createPersistentWorldCupPlayer(s,tournament,team,pos,positionSlots[pos]||index,target),null,tournament,api);
+        keptIds.add(player.id);positionSlots[pos]=(positionSlots[pos]||0)+1;changed=true;return player;
+      });
+      entry.lineup=worldCupLineup(entry.squad);
+    }
+    if(changed)tournament.squadMigrationVersion=2;
+    return changed;
+  }
+
+  function ensureWorldCupOfficialSquads(s,n,api,log){
+    const tournament=ensureWorldCup(s,n);
+    if(!tournament||s.day<(Number(tournament.year)-2026)*365+154) return tournament;
+    const safeApi=api&&typeof api.overall==="function"?api:{overall:p=>Number(p?.overall||p?.ovr||70)};
+    if(!Array.isArray(tournament.squads)||tournament.squads.length!==48){
+      tournament.squads=(tournament.participants||[]).map(team=>{
+        const squad=worldCupDynamicSquad(s,tournament,team,safeApi);
+        return {id:team.id,name:team.name,reputation:team.reputation,squad,lineup:worldCupLineup(squad)};
+      });
+      tournament.squadsFrozenDay=s.day;
+    }
+    migrateWorldCupPlaceholders(s,tournament,safeApi);
+    const brazil=tournament.squads.find(x=>x.id==="BRA"),selected=!!brazil?.squad?.some(x=>x.id==="hero");
+    if(!tournament.brazilCallup){
+      const posRank=(brazil?.squad||[]).filter(x=>x.pos===s.person.pos).sort((a,b)=>Number(b.score||0)-Number(a.score||0)).findIndex(x=>x.id==="hero")+1;
+      const status=selected?(posRank>0&&posRank<=2?"Titular":posRank<=4?"Rotação":"Reserva"):"Não convocado";
+      tournament.brazilCallup={day:s.day,windowDay:(Number(tournament.year)-2026)*365+161,calledUp:selected,status,squadIds:(brazil?.squad||[]).map(x=>x.id)};
+      if(selected){n.callups=(n.callups||0)+1;n.firstCallupDay??=s.day;n.lastCallupDay=s.day;n.history.unshift({day:s.day,type:"callup",status,competition:"Copa Mundial",year:tournament.year});n.history=n.history.slice(0,80);log?.(s,"Convocação para a Copa Mundial",`${s.person.name} está entre os 26 jogadores do Brasil.`);}
+    }
+    if(s.day>(Number(tournament.year)-2026)*365+199||tournament.status==="COMPLETED") return tournament;
+    const active=!tournament.brazilEliminationPhase&&tournament.status!=="COMPLETED";
+    n.squad=(brazil?.squad||[]).map(x=>({...x}));
+    n.competition="Copa Mundial";
+    n.currentCallupWindow=tournament.brazilCallup.windowDay;
+    n.callupDecisions[String(tournament.brazilCallup.windowDay)]={...tournament.brazilCallup};
+    n.calledUp=active&&tournament.brazilCallup.calledUp;
+    n.status=n.calledUp?tournament.brazilCallup.status:"Não convocado";
+    n.radarStatus=n.calledUp?"CONVOCADO":n.radarStatus;
+    return tournament;
+  }
+
+  function activeWorldCupSquad(s,n){
+    const year=worldCupYearFromDay(s.day),tournament=(n.tournaments||[]).find(t=>t?.type==="WORLD_CUP"&&Number(t.year)===year);
+    if(!tournament||tournament.status==="COMPLETED"||tournament.brazilEliminationPhase||s.day>(year-2026)*365+199) return null;
+    return tournament.squads?.find(x=>x.id==="BRA")?.squad||null;
+  }
+
+  function hydrateWorldCupSquad(s,squad,api){
+    const current=new Map();
+    for(const club of s.clubs||[]) for(const player of club.roster||[]) current.set(player.id,player);
+    for(const player of internationalPool(s)) if(!current.has(player.id)) current.set(player.id,player);
+    current.set("hero",s.person);
+    return (squad||[]).map(snapshot=>{
+      const player=current.get(snapshot.id);if(!player)return {...snapshot};
+      const overall=api.overall?api.overall(player):Number(player.overall||player.ovr||snapshot.overall||70);
+      return {...snapshot,overall,condition:Number(player.condition??snapshot.condition??100),morale:Number(player.morale??snapshot.morale??50),score:candidateScore(player,overall)};
+    });
+  }
   function positionCompetition(s,api){
-    const stored=s.nationalTeam?.calledUp && s.nationalTeam?.squad?.length ? s.nationalTeam.squad : null;
-    let squad=stored||buildSquad(s,api);
+    const frozen=activeWorldCupSquad(s,s.nationalTeam||{}),stored=frozen||(s.nationalTeam?.calledUp&&s.nationalTeam?.squad?.length?s.nationalTeam.squad:null);
+    let squad=frozen?hydrateWorldCupSquad(s,frozen,api):(stored||buildSquad(s,api));
     if(stored){
       const players=new Map();
 
@@ -5957,14 +6207,17 @@
         return {...x,club:found.club,age:found.p.age||x.age,overall,score:candidateScore(found.p,overall)};
       });
       squad=squad.filter(x=>!x.unavailable);
-      s.nationalTeam.squad=squad;
+      if(!frozen)s.nationalTeam.squad=squad;
     }
     const pos=s.person.pos; return squad.filter(x=>x.pos===pos).sort((a,b)=>b.score-a.score||b.overall-a.overall||a.id.localeCompare(b.id)).map((x,i)=>({...x,rank:i+1}));
   }
   function matchLineup(s,api){
     const n=init(s);
 
-    const squad=n.calledUp && Array.isArray(n.squad) && n.squad.length
+    const frozen=activeWorldCupSquad(s,n);
+    const squad=frozen
+      ? hydrateWorldCupSquad(s,frozen,api)
+      : n.calledUp && Array.isArray(n.squad) && n.squad.length
       ? n.squad.slice()
       : buildSquad(s,api);
 
@@ -6818,8 +7071,9 @@
       );
 
     const worldCupSquads=
-      Number(tournament.year)===2026 &&
-      squads2026
+      Array.isArray(tournament.squads) && tournament.squads.length
+        ? tournament.squads.map(team=>({...team,squad:(team.squad||[]).map(player=>({...player})),lineup:team.id==="BRA"?brazilLineup:(team.lineup||worldCupLineup(team.squad||[]))}))
+        : Number(tournament.year)===2026 && squads2026
         ? participants.map(
             team=>({
               ...team,
@@ -7753,12 +8007,29 @@
     return true;
   }
 
+  function nationalLiveMatch(s,api,fixture,{opponent,brazil,other,participated,starter,entryMinute,minutes,rating,goals,assists}){
+    const importance=api?.matchImportance?.(s,fixture||{competition:"Seleção Brasileira"},{national:true})||{factor:1.1,label:"Jogo de Seleção"};
+    const events=[];
+    for(let i=0;i<brazil;i++){
+      const heroGoal=participated&&i<goals,heroAssist=participated&&!heroGoal&&i<goals+assists;
+      const minute=8+((Number(s.day||0)*13+i*19)%80);
+      const event={minute,type:"goal",side:0,player:heroGoal?s.person.name:`Brasil ${i+1}`,playerId:heroGoal?"hero":`bra_goal_${i}`,text:`Gol do Brasil${heroGoal?` com ${s.person.name}`:""}.`};
+      if(heroAssist)event.assistPlayerId="hero";
+      events.push(event);
+    }
+    for(let i=0;i<other;i++){const minute=11+((Number(s.day||0)*17+i*23)%78);events.push({minute,type:"goal",side:1,player:`${opponent} ${i+1}`,playerId:`opp_goal_${i}`,text:`Gol de ${opponent}.`});}
+    events.sort((a,b)=>a.minute-b.minute);
+    return {national:true,home:"BRA",away:String(fixture?.opponentId||opponent),homeName:"Brasil",awayName:opponent,opponent,date:s.day,season:s.season,competitionId:"nationalTeam",competitionName:fixture?.competition||"Seleção Brasileira",stage:fixture?.stage||fixture?.phase||"Seleção Brasileira",hg:brazil,ag:other,events,shots:[Math.max(4,brazil*3+4),Math.max(4,other*3+3)],target:[Math.max(brazil,brazil*2+2),Math.max(other,other*2+1)],xg:[+(brazil*.72+.8).toFixed(2),+(other*.72+.65).toFixed(2)],possession:52,participants:participated?[["hero"],[]]:[[],[]],participation:participated?{hero:{side:0,starter,entryMinute,exitMinute:entryMinute+minutes,minutes}}:{},playerStats:participated?{hero:{minutes,starter,entryMinute,exitMinute:entryMinute+minutes,assists}}:{},ratings:participated?{hero:+rating.toFixed(1)}:{},offensiveStats:participated?{hero:{shots:Math.max(goals+1,2),onTarget:Math.max(goals,1),xg:+(goals*.55+.15).toFixed(2),goals}}:{},importance,summary:`Brasil ${brazil} × ${other} ${opponent}.`};
+  }
   function play(s, rng, api, log, fixture = null) {
-    const n = init(s); if (!n.calledUp) return;
-    const opponent = fixture?.opponent || opponents[rng.int(0, opponents.length - 1)], starter = n.status === "Titular" || (n.status === "Rotação" && rng.next() < 0.55), participated = starter || rng.next() < 0.7;
-    const minutes = participated ? (starter ? rng.int(65, 90) : rng.int(12, 35)) : 0, quality = score(s, api), rating = participated ? clamp(5.7 + (quality - 65) / 18 + (rng.next() - 0.5) * 1.8, 5.5, 9.8) : 0;
+    const n = init(s); if (!n.calledUp) return null;
+    const opponent = fixture?.opponent || opponents[rng.int(0, opponents.length - 1)], subPlan=api?.Squad?.substitutePlan?.(s,s.person)||{minute:68,chance:.65};
+    const starter = n.status === "Titular" || (n.status === "Rotação" && rng.next() < 0.55), benchEligible=["Rotação","Reserva"].includes(n.status), participated = starter || (benchEligible&&rng.next()<subPlan.chance);
+    const entryMinute=participated?(starter?0:Math.max(60,Math.min(75,Number(subPlan.minute||68)))):null;
+    const minutes = participated ? (starter ? rng.int(65, 90) : 94-entryMinute) : 0, quality = score(s, api), rating = participated ? clamp(5.7 + (quality - 65) / 18 + (rng.next() - 0.5) * 1.8, 5.5, 9.8) : 0;
     const goals = participated && rng.next() < clamp((quality - 55) / 100, 0.05, 0.42) ? 1 : 0, assists = participated && rng.next() < clamp((quality - 58) / 120, 0.04, 0.3) ? 1 : 0;
-    const brazil = Math.max(0, Math.round(1.4 + (quality - 68) / 22 + (rng.next() - 0.5) * 2)), other = Math.max(0, Math.round(1.1 + (rng.next() - 0.5) * 2));
+    const brazil = Math.max(goals+assists, Math.round(1.4 + (quality - 68) / 22 + (rng.next() - 0.5) * 2),0), other = Math.max(0, Math.round(1.1 + (rng.next() - 0.5) * 2));
+    const liveMatch=nationalLiveMatch(s,api,fixture,{opponent,brazil,other,participated,starter,entryMinute,minutes,rating,goals,assists});
     if (fixture) {
       Object.assign(
         fixture,
@@ -7797,20 +8068,27 @@
         rng
       );
     }
+    const reputationBefore=Number(s.reputation||0);
+    const development=participated?api?.Training?.matchDevelopment?.(s,liveMatch,{overall:api.overall,clamp:api.clamp}):null;
     if (participated) {
       const beforeGoals=n.goals; n.caps++; if(starter)n.starts++; n.goals+=goals; n.assists+=assists; n.ratingTotal+=rating; n.minutes=(n.minutes||0)+minutes; if(rating>=8.6)n.motm++; n.debutDay??=s.day; if(goals&&beforeGoals===0)n.firstGoalDay??=s.day; s.person.condition=clamp((s.person.condition||100)-Math.round(minutes/10),0,100);
-      const match = { day: s.day, season: s.season, competition: n.competition, opponent, brazil, other, starter, minutes, rating: +rating.toFixed(1), goals, assists };
+      const match = { day: s.day, season: s.season, competition: n.competition, opponent, brazil, other, starter, entryMinute, minutes, rating: +rating.toFixed(1), goals, assists };
       n.matches.unshift(match); n.matches = n.matches.slice(0, 100);
-      s.reputation = clamp(s.reputation + (rating >= 8 ? 2 : rating >= 7 ? 1 : 0), 0, 100); s.fans += Math.round(500 + rating * 120 + goals * 1000);
+      s.reputation = clamp(s.reputation + (rating >= 8 ? 2 : rating >= 7 ? 1 : 0)*Number(liveMatch.importance.factor||1), 0, 100); s.fans += Math.round(500 + rating * 120 + goals * 1000);
     }
+    n.lastMatchday=liveMatch;
+    const pc=api?.Career?.init?.(s)?.playerCareer;
+    if(pc){pc.lastMatchReport={day:s.day,season:s.season,national:true,competition:liveMatch.competitionName,opponent,status:participated?(starter?"TITULAR":"ENTROU_DO_BANCO"):"NAO_UTILIZADO",entryMinute:participated&&!starter?entryMinute:null,minutes,rating:participated?+rating.toFixed(1):null,goals,assists,xp:+Number(development?.xp||0).toFixed(2),attributeChanges:development?.changes||[],coachTrustBefore:Number(pc.coachTrust||0),coachTrustAfter:Number(pc.coachTrust||0),squadRoleBefore:pc.squadRole,squadRoleAfter:pc.squadRole,reputationBefore,reputationAfter:Number(s.reputation||0),reputationDelta:+(Number(s.reputation||0)-reputationBefore).toFixed(2),importance:liveMatch.importance,nationalImpact:participated?`+1 jogo${starter?" e +1 titularidade":" pela Seleção"}`:"Permaneceu no banco da Seleção"};}
+    if(participated){const extraPressure=(Number(liveMatch.importance?.factor||1)-1)*(rating>=8?-4:rating<6?8:2);if(extraPressure)api?.Career?.updateMediaProfile?.(s,{pressure:+extraPressure.toFixed(2)});}
     log(s, `Brasil ${brazil} × ${other} ${opponent}`, participated ? `${s.person.name}: ${minutes} min · nota ${rating.toFixed(1)}${goals ? ` · ${goals} gol(s)` : ""}${assists ? ` · ${assists} assistência(s)` : ""}.` : `${s.person.name} permaneceu no banco nesta partida.`);
+    return liveMatch;
   }
   function daily(s, rng, api, log) {
     const n = init(s);
 
     archiveInternationalHistory(
       n
-    ); if (s.mode !== "player") return; ensureQualifiers(s,n,rng);
+    ); if (s.mode !== "player") return; ensureQualifiers(s,n,rng);ensureWorldCupOfficialSquads(s,n,api,log);
     const relative = s.day % 365;
     const callWindow = windows.find((day) => relative === day - 7);
     if (callWindow !== undefined) callup(s, api, log);
@@ -7927,10 +8205,12 @@
       rng
     );
 
-    if (windows.some((day) => relative === day + 4)) { n.calledUp = false; n.currentCallupWindow=null; n.status = "Aguardando próxima convocação"; }
+    progressWorldCupBackground(s,n);
+    const cup=(n.tournaments||[]).find(t=>t?.type==="WORLD_CUP"&&Number(t.year)===worldCupYearFromDay(s.day)),activeCup=cup&&cup.brazilCallup?.calledUp&&!cup.brazilEliminationPhase&&cup.status!=="COMPLETED";
+    if (!activeCup&&windows.some((day) => relative === day + 4)) { n.calledUp = false; n.currentCallupWindow=null; n.status = "Aguardando próxima convocação"; }
     n.nextWindow = n.schedule.find((match) => !match.played && match.day >= s.day)?.day ?? nextWindowDay(s);
   }
-  const api={windows,nations,init,score,threshold,radar,role,upcoming,nextWindowDay,protectedDay,protectClubCalendar,callup,play,daily,competition,buildSquad,positionCompetition,onDuty,ensureQualifiers,tournamentStatus,normalizedNationality,windowDecision,matchLineup,fixtureCallupStatus,ensureWorldCup,ensureWorldCupGroupSchedule,recordWorldCupFixture,qualifyWorldCupGroups,syncBrazilWorldCupKnockout,worldCupSummary,worldCupPhaseLabel,copaAmericaSummary,ensureCopaAmerica,isCopaAmericaYear,recordCopaAmericaFixture,progressCopaAmericaBackground,scheduleBrazilCopaAmericaKnockout,ensureEuro,isEuroYear,progressEuroBackground,euroSummary,ensureFinalissima,isFinalissimaYear,ensureFinalissimaSchedule,recordFinalissimaFixture,progressFinalissimaBackground,finalissimaSummary,ensureNationsLeague,isNationsLeagueYear,progressNationsLeagueBackground,nationsLeagueSummary,ensureAfcon,isAfconYear,progressAfconBackground,afconSummary,ensureAsianCup,isAsianCupYear,progressAsianCupBackground,asianCupSummary,ensureGoldCup,isGoldCupYear,progressGoldCupBackground,goldCupSummary,ensureConcacafNationsLeague,isConcacafNationsLeagueYear,progressConcacafNationsLeagueBackground,concacafNationsLeagueSummary,ensureOfcNationsCup,isOfcNationsCupYear,progressOfcNationsCupBackground,ofcNationsCupSummary,ensureFifaArabCup,isFifaArabCupYear,progressFifaArabCupBackground,fifaArabCupSummary,ensureFifaSeries,isFifaSeriesYear,progressFifaSeriesBackground,fifaSeriesSummary,archiveInternationalHistory,internationalHistorySummary};
+  const api={windows,nations,init,score,threshold,radar,role,upcoming,nextWindowDay,protectedDay,protectClubCalendar,callup,play,daily,competition,buildSquad,positionCompetition,onDuty,ensureQualifiers,tournamentStatus,normalizedNationality,windowDecision,matchLineup,fixtureCallupStatus,ensureWorldCup,ensureWorldCupGroupSchedule,ensureWorldCupOfficialSquads,progressWorldCupBackground,recordWorldCupFixture,qualifyWorldCupGroups,syncBrazilWorldCupKnockout,worldCupSummary,worldCupPhaseLabel,copaAmericaSummary,ensureCopaAmerica,isCopaAmericaYear,recordCopaAmericaFixture,progressCopaAmericaBackground,scheduleBrazilCopaAmericaKnockout,ensureEuro,isEuroYear,progressEuroBackground,euroSummary,ensureFinalissima,isFinalissimaYear,ensureFinalissimaSchedule,recordFinalissimaFixture,progressFinalissimaBackground,finalissimaSummary,ensureNationsLeague,isNationsLeagueYear,progressNationsLeagueBackground,nationsLeagueSummary,ensureAfcon,isAfconYear,progressAfconBackground,afconSummary,ensureAsianCup,isAsianCupYear,progressAsianCupBackground,asianCupSummary,ensureGoldCup,isGoldCupYear,progressGoldCupBackground,goldCupSummary,ensureConcacafNationsLeague,isConcacafNationsLeagueYear,progressConcacafNationsLeagueBackground,concacafNationsLeagueSummary,ensureOfcNationsCup,isOfcNationsCupYear,progressOfcNationsCupBackground,ofcNationsCupSummary,ensureFifaArabCup,isFifaArabCupYear,progressFifaArabCupBackground,fifaArabCupSummary,ensureFifaSeries,isFifaSeriesYear,progressFifaSeriesBackground,fifaSeriesSummary,archiveInternationalHistory,internationalHistorySummary};
   root.ProLifeNationalTeam = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

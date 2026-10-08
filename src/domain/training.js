@@ -920,7 +920,8 @@
     xp=Math.max(.35,xp);
     const perkMatchBonus=archetypePerkMatchBonus(s,metrics,xp);
     xp+=perkMatchBonus;
-    const matchXp = xp * 1.35;
+    const importanceFactor=Math.max(1,Math.min(1.25,Number(match.importance?.factor||1)));
+    const matchXp = xp * 1.35 * importanceFactor;
     const archetypeFocus = plan.archetype?.focus || [];
     const archetypeActionBonus = archetypeFocus.length ? 1.12 : 1;
     const archetypeXp = matchXp * archetypeActionBonus;

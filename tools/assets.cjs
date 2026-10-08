@@ -22,6 +22,8 @@ const files = [
   "src/domain/squad.js",
   "src/domain/unexpected-events.js",
   "src/domain/simulation-tactics.js",
+  "src/data/global-football-seed.js",
+  "src/domain/global-football.js",
   "src/domain/international-pool.js",
   "src/domain/world-qualifiers.js",
   "src/domain/international-competitions.js",
