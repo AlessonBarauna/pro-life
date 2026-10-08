@@ -170,10 +170,10 @@
   }
   // Etapa 13: apresentação da identidade. Regras e requisitos vêm de D.Identity (domínio).
   function identityTree(v) {
-    const stateLabel = { ATIVA: "ATIVA", DESBLOQUEADA: "DESBLOQUEADA", "DISPONÍVEL": "DISPONÍVEL", BLOQUEADA: "BLOQUEADA" };
+    const stateLabel = { ATIVA: "ATIVA", DESBLOQUEADA: "DESBLOQUEADA", "DISPONÃVEL": "DISPONÃVEL", BLOQUEADA: "BLOQUEADA" };
     return v.tree.map((branch) => `<div class="id-branch"><div class="id-root"><b>${esc(branch.name)}</b><small>${esc(branch.role)}</small></div><ul>${branch.specializations.map((sp) => {
       const reqs = sp.state === "BLOQUEADA" ? `<div class="id-reqs">${sp.requirements.map((r) => `<span class="${r.met ? "ok" : "no"}">${r.met ? "✓" : "○"} ${esc(r.label)}${r.current !== undefined && !r.met ? ` <small>(${r.current})</small>` : ""}</span>`).join("")}</div>` : "";
-      const action = sp.state === "DISPONÍVEL" ? `<button data-specialization="${sp.id}" ${sp.canUnlock ? "" : "disabled"}>Desbloquear · 1 ponto</button>` : sp.state === "DESBLOQUEADA" ? `<button data-activate-specialization="${sp.id}">Ativar</button>` : "";
+      const action = sp.state === "DISPONÃVEL" ? `<button data-specialization="${sp.id}" ${sp.canUnlock ? "" : "disabled"}>Desbloquear · 1 ponto</button>` : sp.state === "DESBLOQUEADA" ? `<button data-activate-specialization="${sp.id}">Ativar</button>` : "";
       return `<li class="id-spec ${sp.state === "ATIVA" ? "active" : sp.state === "BLOQUEADA" ? "locked" : "open"}"><div class="split"><div><b>${esc(sp.name)}</b> <span class="pill">${stateLabel[sp.state]}</span><p class="muted">${esc(sp.description)} · Foco: ${sp.attrs.map(esc).join(", ")}</p></div>${action}</div>${reqs}</li>`;
     }).join("")}</ul></div>`).join("");
   }
@@ -229,7 +229,7 @@
           const status =
             isActive ? "ATIVO" :
             unlocked ? "DESBLOQUEADO" :
-            eligible ? "DISPONÍVEL" :
+            eligible ? "DISPONÃVEL" :
             "BLOQUEADO";
 
           let action = "";
@@ -343,7 +343,7 @@
             ["profile", "Meu jogador", [["profile", "Perfil e carreira"], ["training", "Treinamento"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["agency", "Empresário e Agência"], ["legacy", "Evolução e legado"], ["story", "Objetivos e História"]]],
             ["market", "Mercado", [["market", "Central do mercado"], ["proposals", "Minhas propostas"]]],
             ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["panorama", "Panorama"], ["squad", "Elenco"]]],
-            ["national", "Seleção", [["national", "Seleção Brasileira"]]],
+            ["national", "Seleção", []],
             ["history", "Mundo", [["history", "Mundo vivo"], ["life", "Perfil e Vida"], ["finance", "Finanças"], ["sponsorships", "Patrocínios"]]],
             ["save", "Saves", [["save", "Gerenciar saves"]]],
           ]
@@ -907,6 +907,12 @@
     `;
   }
 
+  let worldCupSquadTeamId="BRA";
+  let nationalCompetitionId="WORLD_CUP";
+  let nationsLeagueDivision="A";
+  let concacafNationsLeagueDivision="A";
+  let fifaSeriesVenueId="AUSTRALIA";
+
   const views = {
     home() {
       const H = window.ProLifeHomeDashboard.snapshot(state, D, Calendar), p=state.person, c=H.c, next=H.next, cur=H.current;
@@ -915,14 +921,14 @@
       const nextActions = next ? `<div class="central-actions"><button class="primary" data-live-match> Acompanhar partida</button><button data-simulate="nextCommitment">Simular até o jogo</button><button data-advance="1">Avançar 1 dia</button></div>` : `<div class="central-actions"><button class="primary" data-advance="1">Avançar 1 dia</button><button data-page="calendar">Abrir calendário</button></div>`;
       return `<div class="career-dashboard career-central-v2">
         <section class="central-main-match">
-          <div class="central-match-copy"><div class="tag">PRÓXIMO COMPROMISSO</div>${next ? `<div class="central-competition"><b>${esc(next.competitionName)}</b><span>${esc(next.stage)}</span></div><div class="central-versus"><div><small>${next.national?"SELEÇÃO":"MANDANTE"}</small><b>${esc(next.home)}</b></div><span>×</span><div><small>${next.national?"ADVERSÁRIO":"VISITANTE"}</small><b>${esc(next.away)}</b></div></div><div class="central-match-meta"><span>${dayDate(next.date)}</span><span>Em ${Math.max(0,next.date-state.day)} dia(s)</span>${next.stadium?`<span>${esc(next.stadium)}</span>`:""}${H.table.position&&!next.national?`<span>${H.table.position}º na ${esc(H.table.league)}</span>`:""}</div>${state.mode==="player"?`<div class="central-player-status"><span>Status no elenco: <b>${esc(H.player.squadRole||"—")}</b></span><span>Próximo jogo: <b>${esc(H.lineup?.heroRole||"A definir")}</b></span><span>Condição <b>${Math.round(H.player.condition)}%</b></span><span>Forma <b>${H.player.form??"—"}</b></span>${H.objectives[0]?`<span>Objetivo <b>${esc(H.objectives[0].label)}</b></span>`:""}</div><div class="central-lineup-cta"><button data-page="lineup">Ver escalação do próximo jogo</button></div>`:""}`:`<h2>Sem compromisso oficial agendado</h2><p class="muted">Use o calendário para acompanhar os próximos eventos da carreira.</p>`}${nextActions}</div>
+          <div class="central-match-copy"><div class="tag">PRÓXIMO COMPROMISSO</div>${next ? `<div class="central-competition"><b>${esc(next.competitionName)}</b><span>${esc(next.stage)}</span></div><div class="central-versus"><div><small>${next.national?"SELEÇÃO":"MANDANTE"}</small><b>${esc(next.home)}</b></div><span>×</span><div><small>${next.national?"ADVERSÃRIO":"VISITANTE"}</small><b>${esc(next.away)}</b></div></div><div class="central-match-meta"><span>${dayDate(next.date)}</span><span>Em ${Math.max(0,next.date-state.day)} dia(s)</span>${next.stadium?`<span>${esc(next.stadium)}</span>`:""}${H.table.position&&!next.national?`<span>${H.table.position}º na ${esc(H.table.league)}</span>`:""}</div>${state.mode==="player"?`<div class="central-player-status"><span>Status no elenco: <b>${esc(H.player.squadRole||"—")}</b></span><span>Próximo jogo: <b>${esc(H.lineup?.heroRole||"A definir")}</b></span><span>Condição <b>${Math.round(H.player.condition)}%</b></span><span>Forma <b>${H.player.form??"—"}</b></span>${H.objectives[0]?`<span>Objetivo <b>${esc(H.objectives[0].label)}</b></span>`:""}</div><div class="central-lineup-cta"><button data-page="lineup">Ver escalação do próximo jogo</button></div>`:""}`:`<h2>Sem compromisso oficial agendado</h2><p class="muted">Use o calendário para acompanhar os próximos eventos da carreira.</p>`}${nextActions}</div>
           <aside class="central-player-card">${state.mode==="player"?`${avatar(p)}<div class="central-player-head"><span class="mega-rating">${H.player.overall}<small>GER</small></span><div><h2>${esc(H.player.name)}</h2><p>${esc(c?.name||"Sem clube")} · ${esc(H.player.pos)} · ${H.player.age} anos</p></div></div><div class="central-player-metrics"><span><small>Forma</small><b>${H.player.form??"—"}</b></span><span><small>Condição</small><b>${Math.round(H.player.condition)}%</b></span><span><small>Moral</small><b>${Math.round(H.player.morale)}</b></span><span><small>Valor</small><b>${H.player.marketValue?money(H.player.marketValue):"—"}</b></span><span><small>Gols</small><b>${cur.goals||0}</b></span><span><small>Assist.</small><b>${cur.assists||0}</b></span><span><small>Jogos</small><b>${cur.appearances||cur.games||0}</b></span><span><small>Nota</small><b>${cur.averageRating||"—"}</b></span></div><button data-page="profile">Abrir Meu jogador</button>`:`<span class="mega-rating">${Math.round(state.board)}<small>CONF</small></span><h2>${esc(p.name)}</h2><p>${esc(c?.name||"Sem clube")}</p>${bar("Diretoria",state.board)}${bar("Moral",p.morale)}`}</aside>
         </section>
         <div class="central-grid">
           <section class="dash-card central-table"><div class="tag">CLASSIFICAÇÃO</div><h2>${esc(H.table.league||"Competição atual")}</h2>${H.table.rows.length?H.table.rows.map(x=>`<div class="standing-line ${x.id===state.clubId?"me":""}"><span>${x.position}</span><b>${esc(D.club(state,x.id)?.name||x.id)}</b><strong>${x.stats.points} pts</strong></div>`).join(""):`<p class="muted">Classificação indisponível.</p>`}<button data-page="league">Classificação completa</button></section>
           <section class="dash-card central-form"><div class="tag">FORMA RECENTE</div><h2>Últimos jogos</h2>${H.recent.length?`<div class="form-strip">${H.recent.map((x,i)=>`<button type="button" class="form-result match-peek ${resultClass(x.result)}" data-recent-match="${i}" aria-expanded="false" title="${esc(x.home)} ${esc(x.score)} ${esc(x.away)}">${x.result}<small>${x.rating?`Nota ${x.rating}`:esc(x.opponent)}</small></button>`).join("")}</div><div id="recent-match-detail" class="recent-match-detail" hidden></div>`:`<p class="muted">Ainda não há resultados do clube.</p>`}<button data-page="matches">Ver partidas</button></section>
           <section class="dash-card central-inbox"><div class="split"><div><div class="tag">CAIXA DE ENTRADA</div><h2>Mensagens recentes</h2></div>${H.unread?`<span class="mail-badge">${H.unread} nova</span>`:""}</div>${H.messages.slice(0,3).map(x=>`<article class="central-list-item"><small>${dayDate(x.day)}</small><b>${esc(x.title)}</b><p>${esc(x.body)}</p></article>`).join("")||`<p class="muted">Nenhum comunicado recente.</p>`}${state.offers?.length?`<div class="notice central-offer-alert"><b>${state.offers.length} proposta${state.offers.length>1?"s":""} aguardando análise</b><p>Gerencie pela área Mercado → Minhas propostas.</p><button data-page="proposals">Ver minhas propostas</button></div>`:""}<button data-page="inbox">Abrir caixa de entrada</button></section>
-          <section class="dash-card central-news"><div class="tag">NOTÍCIAS</div><h2>Mundo da carreira</h2>${H.news.slice(0,3).map(x=>`<article class="central-list-item"><small>${dayDate(x.day)}</small><b>${esc(x.title)}</b><p>${esc(x.body)}</p></article>`).join("")||`<p class="muted">Nenhuma notícia recente.</p>`}<button data-page="history">Ver Mundo Vivo</button></section>
+          <section class="dash-card central-news"><div class="tag">NOTÃCIAS</div><h2>Mundo da carreira</h2>${H.news.slice(0,3).map(x=>`<article class="central-list-item"><small>${dayDate(x.day)}</small><b>${esc(x.title)}</b><p>${esc(x.body)}</p></article>`).join("")||`<p class="muted">Nenhuma notícia recente.</p>`}<button data-page="history">Ver Mundo Vivo</button></section>
           <section class="dash-card central-training"><div class="tag">TREINAMENTO</div><h2>${esc(H.training.focus)} · ${esc(H.training.intensity)}</h2><div class="central-kpis"><span><small>Sessões</small><b>${H.training.sessions}</b></span><span><small>Melhorias</small><b>${H.training.improvements}</b></span></div><p><b>Treino recente:</b> ${esc(H.training.recent)}</p><p><b>Próxima possibilidade:</b> ${esc(H.training.next)}</p><button data-page="training">Abrir treinamento</button></section>
           <section class="dash-card central-calendar"><div class="tag">PRÓXIMOS EVENTOS</div><h2>Agenda rápida</h2>${H.events.length?H.events.slice(0,4).map(x=>`<button class="central-event" data-page="${x.destination}"><time>${dayDate(x.day)}</time><span><b>${esc(x.title)}</b><small>${esc(x.detail)}</small></span></button>`).join(""):`<p class="muted">Nenhum evento futuro registrado.</p>`}<button data-page="calendar">Calendário completo</button></section>
           <section class="dash-card central-objectives"><div class="tag">TAREFAS E OBJETIVOS</div><h2>${state.mode==="player"?"Foco da próxima atuação":"Prioridades da carreira"}</h2>${H.objectives.length?H.objectives.map(o=>`<div class="objective-line"><span>✓</span><b>${esc(o.label)}</b></div>`).join(""):`<p class="muted">Nenhum objetivo específico disponível agora.</p>`}${state.decision?`<div class="notice"><b>${esc(state.decision.title)}</b><p>${esc(state.decision.body)}</p><div class="actions">${state.decision.choices.map(([id,label])=>`<button data-choice="${id}">${esc(label)}</button>`).join("")}</div></div>`:""}${state.mode==="player"?`<button data-page="profile">Ver carreira profissional</button>`:`<button data-page="finance">Ver diretoria</button>`}</section>
@@ -1075,7 +1081,7 @@
 
       const statusClass=(item)=>
         item.priority==="URGENTE" ? "bad" :
-        item.status==="CONCLUÍDO" || item.status==="CONCLUIDO" ? "good" :
+        item.status==="CONCLUÃDO" || item.status==="CONCLUIDO" ? "good" :
         "";
 
       const objectiveCard=(item)=>{
@@ -1214,7 +1220,7 @@
       const p = state.person,
         c = D.club(state);
       const career = Career.init(state), pc = career.playerCareer, ct = pc?.contract, interests = pc?.interests || [], advice = state.mode === "player" ? Career.agentAdvice(state) : null, strategy = pc?.agentStrategy || { priority: "balanced", stance: "open" }, prefs = career.offerPreferences || { leagues: ["serieA", "serieB", "serieC", "serieD"], clubLevel: "any" }, remaining = ct ? Math.max(0, ct.endDay - state.day) : 0;
-      const contractAgent = state.mode !== "player" ? "" : `<section class="card section" id="contract-agent"><div class="split"><div><div class="tag">CONTRATO E AGENTE</div><h2>Sua carreira profissional</h2></div><span class="pill">${ct ? `${Math.ceil(remaining / 30)} mês(es)` : "SEM VÍNCULO"}</span></div><div class="stats"><div class="stat"><small>Valor de mercado</small><b>${money(pc.marketValue || 0)}</b></div><div class="stat"><small>Salário</small><b>${money(state.salary)}/mês</b></div><div class="stat"><small>Papel no elenco</small><b>${esc(ct?.role || pc.squadRole || "—")}</b></div><div class="stat"><small>Contrato</small><b>${ct ? dayDate(ct.endDay) : "Sem contrato"}</b></div></div>${ct && remaining <= 180 ? `<div class="notice"><b>Seu contrato está perto do fim.</b><p>Restam aproximadamente ${Math.ceil(remaining / 30)} mês(es). Acompanhe as conversas com a diretoria e defina os próximos passos com seu agente.</p></div>` : ""}<div class="grid"><div><div class="tag">MEU AGENTE</div><h3>${esc(pc.agent?.name || "Agente PRO-LIFE")}</h3><p>${esc(pc.agent?.agency || "Agência independente")} · reputação ${pc.agent?.reputation||50}/100 · comissão ${pc.agent?.commission||5}%<br>Rede: ${esc(pc.agent?.network||"Nacional")} · negociação ${pc.agent?.negotiation||50}/100</p><h3>${esc(advice?.action || "Planejamento de carreira")}</h3><p>${esc(advice?.reason || "Seu agente está analisando o próximo passo.")}</p><label>Prioridade<select id="agent-priority"><option value="balanced" ${strategy.priority === "balanced" ? "selected" : ""}>Equilíbrio</option><option value="playtime" ${strategy.priority === "playtime" ? "selected" : ""}>Tempo de jogo</option><option value="salary" ${strategy.priority === "salary" ? "selected" : ""}>Salário</option><option value="prestige" ${strategy.priority === "prestige" ? "selected" : ""}>Prestígio</option><option value="development" ${strategy.priority === "development" ? "selected" : ""}>Desenvolvimento</option></select></label><label>Postura<select id="agent-stance"><option value="stay" ${strategy.stance === "stay" ? "selected" : ""}>Quero permanecer</option><option value="open" ${strategy.stance === "open" ? "selected" : ""}>Aberto a propostas</option><option value="loan" ${strategy.stance === "loan" ? "selected" : ""}>Buscar empréstimo</option><option value="leave" ${strategy.stance === "leave" ? "selected" : ""}>Buscar saída</option></select></label><button class="primary" data-action="agent-strategy">Atualizar estratégia</button><div class="actions">${Career.agencies.map(a=>`<button data-hire-agency="${a.id}" ${pc.agent?.id===a.id?"disabled":""}>${pc.agent?.id===a.id?"Agência atual":`Contratar ${esc(a.name)}`}</button>`).join("")}</div></div><div><div class="tag">SITUAÇÃO CONTRATUAL</div>${ct ? `<p><b>Clube:</b> ${esc(c?.name || "—")}<br><b>Vínculo:</b> ${ct.type === "loan" ? "Empréstimo" : "Definitivo"}<br><b>Término:</b> ${dayDate(ct.endDay)}<br><b>Tempo restante:</b> ${Math.ceil(remaining / 30)} mês(es)</p>` : `<p>Você está sem contrato ativo.</p>`}<p><b>Interesses:</b><br>${interests.length ? interests.slice(0, 5).map(x => `${esc(D.club(state, x.clubId)?.name || "Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhuma sondagem ativa."}</p>${!pc.renewalOffer && ct && remaining <= 365 ? `<button class="primary" data-action="request-renewal">Pedir ao agente para renovar</button>` : ""}</div></div>${pc.renewalOffer ? `<article class="news offer section"><time>NEGOCIAÇÃO DE RENOVAÇÃO</time><h3>${esc(c?.name || "Clube atual")}</h3><p>Proposta atual: ${Math.round(pc.renewalOffer.durationDays / 365)} ano(s) · ${money(pc.renewalOffer.salary)}/mês · luvas ${money(pc.renewalOffer.signingBonus)} · bônus ${money(pc.renewalOffer.performanceBonus || 0)} · papel ${esc(pc.renewalOffer.role || pc.squadRole)}</p><div class="grid3"><label>Salário desejado<input id="renew-salary" type="number" min="0" step="100" value="${pc.renewalOffer.salary}"></label><label>Anos<input id="renew-years" type="number" min="1" max="5" value="${Math.round(pc.renewalOffer.durationDays / 365)}"></label><label>Luvas<input id="renew-bonus" type="number" min="0" step="100" value="${pc.renewalOffer.signingBonus}"></label><label>Bônus desempenho<input id="renew-performance" type="number" min="0" step="100" value="${pc.renewalOffer.performanceBonus || 0}"></label><label>Papel<select id="renew-role">${["Rotação", "Titular", "Importante", "Estrela"].map(r => `<option ${r === (pc.renewalOffer.role || pc.squadRole) ? "selected" : ""}>${r}</option>`).join("")}</select></label></div><div class="actions"><button class="primary" data-action="accept-renewal">Aceitar renovação</button><button data-action="counter-renewal">Pedir meus termos</button><button data-action="reject-renewal">Recusar</button></div></article>` : ""}<details class="section"><summary><b>Preferências de propostas</b></summary><p class="muted">Defina o tipo de oportunidade que seu agente deve priorizar.</p>${state.world === "brazil2026" ? `<div class="offer-pref-leagues">${[["serieA", "Série A"], ["serieB", "Série B"], ["serieC", "Série C"], ["serieD", "Série D"]].map(([id, label]) => `<label><input type="checkbox" class="offer-league" value="${id}" ${prefs.leagues.includes(id) ? "checked" : ""}> ${label}</label>`).join("")}</div>` : ""}<label>Nível dos clubes<select id="offer-club-level"><option value="any" ${prefs.clubLevel === "any" ? "selected" : ""}>Qualquer clube</option><option value="elite" ${prefs.clubLevel === "elite" ? "selected" : ""}>Somente clubes de elite</option><option value="competitive" ${prefs.clubLevel === "competitive" ? "selected" : ""}>Clubes competitivos</option><option value="intermediate" ${prefs.clubLevel === "intermediate" ? "selected" : ""}>Clubes intermediários</option><option value="small" ${prefs.clubLevel === "small" ? "selected" : ""}>Clubes menores</option></select></label><button class="primary" data-action="offer-prefs">Salvar preferências</button></details></section>`;
+      const contractAgent = state.mode !== "player" ? "" : `<section class="card section" id="contract-agent"><div class="split"><div><div class="tag">CONTRATO E AGENTE</div><h2>Sua carreira profissional</h2></div><span class="pill">${ct ? `${Math.ceil(remaining / 30)} mês(es)` : "SEM VÃNCULO"}</span></div><div class="stats"><div class="stat"><small>Valor de mercado</small><b>${money(pc.marketValue || 0)}</b></div><div class="stat"><small>Salário</small><b>${money(state.salary)}/mês</b></div><div class="stat"><small>Papel no elenco</small><b>${esc(ct?.role || pc.squadRole || "—")}</b></div><div class="stat"><small>Contrato</small><b>${ct ? dayDate(ct.endDay) : "Sem contrato"}</b></div></div>${ct && remaining <= 180 ? `<div class="notice"><b>Seu contrato está perto do fim.</b><p>Restam aproximadamente ${Math.ceil(remaining / 30)} mês(es). Acompanhe as conversas com a diretoria e defina os próximos passos com seu agente.</p></div>` : ""}<div class="grid"><div><div class="tag">MEU AGENTE</div><h3>${esc(pc.agent?.name || "Agente PRO-LIFE")}</h3><p>${esc(pc.agent?.agency || "Agência independente")} · reputação ${pc.agent?.reputation||50}/100 · comissão ${pc.agent?.commission||5}%<br>Rede: ${esc(pc.agent?.network||"Nacional")} · negociação ${pc.agent?.negotiation||50}/100</p><h3>${esc(advice?.action || "Planejamento de carreira")}</h3><p>${esc(advice?.reason || "Seu agente está analisando o próximo passo.")}</p><label>Prioridade<select id="agent-priority"><option value="balanced" ${strategy.priority === "balanced" ? "selected" : ""}>Equilíbrio</option><option value="playtime" ${strategy.priority === "playtime" ? "selected" : ""}>Tempo de jogo</option><option value="salary" ${strategy.priority === "salary" ? "selected" : ""}>Salário</option><option value="prestige" ${strategy.priority === "prestige" ? "selected" : ""}>Prestígio</option><option value="development" ${strategy.priority === "development" ? "selected" : ""}>Desenvolvimento</option></select></label><label>Postura<select id="agent-stance"><option value="stay" ${strategy.stance === "stay" ? "selected" : ""}>Quero permanecer</option><option value="open" ${strategy.stance === "open" ? "selected" : ""}>Aberto a propostas</option><option value="loan" ${strategy.stance === "loan" ? "selected" : ""}>Buscar empréstimo</option><option value="leave" ${strategy.stance === "leave" ? "selected" : ""}>Buscar saída</option></select></label><button class="primary" data-action="agent-strategy">Atualizar estratégia</button><div class="actions">${Career.agencies.map(a=>`<button data-hire-agency="${a.id}" ${pc.agent?.id===a.id?"disabled":""}>${pc.agent?.id===a.id?"Agência atual":`Contratar ${esc(a.name)}`}</button>`).join("")}</div></div><div><div class="tag">SITUAÇÃO CONTRATUAL</div>${ct ? `<p><b>Clube:</b> ${esc(c?.name || "—")}<br><b>Vínculo:</b> ${ct.type === "loan" ? "Empréstimo" : "Definitivo"}<br><b>Término:</b> ${dayDate(ct.endDay)}<br><b>Tempo restante:</b> ${Math.ceil(remaining / 30)} mês(es)</p>` : `<p>Você está sem contrato ativo.</p>`}<p><b>Interesses:</b><br>${interests.length ? interests.slice(0, 5).map(x => `${esc(D.club(state, x.clubId)?.name || "Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhuma sondagem ativa."}</p>${!pc.renewalOffer && ct && remaining <= 365 ? `<button class="primary" data-action="request-renewal">Pedir ao agente para renovar</button>` : ""}</div></div>${pc.renewalOffer ? `<article class="news offer section"><time>NEGOCIAÇÃO DE RENOVAÇÃO</time><h3>${esc(c?.name || "Clube atual")}</h3><p>Proposta atual: ${Math.round(pc.renewalOffer.durationDays / 365)} ano(s) · ${money(pc.renewalOffer.salary)}/mês · luvas ${money(pc.renewalOffer.signingBonus)} · bônus ${money(pc.renewalOffer.performanceBonus || 0)} · papel ${esc(pc.renewalOffer.role || pc.squadRole)}</p><div class="grid3"><label>Salário desejado<input id="renew-salary" type="number" min="0" step="100" value="${pc.renewalOffer.salary}"></label><label>Anos<input id="renew-years" type="number" min="1" max="5" value="${Math.round(pc.renewalOffer.durationDays / 365)}"></label><label>Luvas<input id="renew-bonus" type="number" min="0" step="100" value="${pc.renewalOffer.signingBonus}"></label><label>Bônus desempenho<input id="renew-performance" type="number" min="0" step="100" value="${pc.renewalOffer.performanceBonus || 0}"></label><label>Papel<select id="renew-role">${["Rotação", "Titular", "Importante", "Estrela"].map(r => `<option ${r === (pc.renewalOffer.role || pc.squadRole) ? "selected" : ""}>${r}</option>`).join("")}</select></label></div><div class="actions"><button class="primary" data-action="accept-renewal">Aceitar renovação</button><button data-action="counter-renewal">Pedir meus termos</button><button data-action="reject-renewal">Recusar</button></div></article>` : ""}<details class="section"><summary><b>Preferências de propostas</b></summary><p class="muted">Defina o tipo de oportunidade que seu agente deve priorizar.</p>${state.world === "brazil2026" ? `<div class="offer-pref-leagues">${[["serieA", "Série A"], ["serieB", "Série B"], ["serieC", "Série C"], ["serieD", "Série D"]].map(([id, label]) => `<label><input type="checkbox" class="offer-league" value="${id}" ${prefs.leagues.includes(id) ? "checked" : ""}> ${label}</label>`).join("")}</div>` : ""}<label>Nível dos clubes<select id="offer-club-level"><option value="any" ${prefs.clubLevel === "any" ? "selected" : ""}>Qualquer clube</option><option value="elite" ${prefs.clubLevel === "elite" ? "selected" : ""}>Somente clubes de elite</option><option value="competitive" ${prefs.clubLevel === "competitive" ? "selected" : ""}>Clubes competitivos</option><option value="intermediate" ${prefs.clubLevel === "intermediate" ? "selected" : ""}>Clubes intermediários</option><option value="small" ${prefs.clubLevel === "small" ? "selected" : ""}>Clubes menores</option></select></label><button class="primary" data-action="offer-prefs">Salvar preferências</button></details></section>`;
       if (state.mode === "player") {
         const P = window.ProLifePlayerProfile.init(state, D), I=P.identity, S=P.season, CS=P.careerStats, DEV=P.development;
         const attrClass=(v)=>v>=80?"elite":v>=65?"solid":"develop";
@@ -1227,7 +1233,7 @@
           <section class="card player-hero">${avatar(p)}<div class="player-hero-copy"><div class="tag">MEU JOGADOR</div><h1>${esc(I.name)}</h1><p><b>#${I.number}</b> · ${esc(I.club)} · ${esc(I.position)} · ${I.age} anos${I.nationality?` · ${esc(I.nationality)}`:""}</p><div class="player-tags"><span>${esc(I.squadRole||"Status não definido")}</span>${I.archetype?.name?`<span>${esc(I.archetype.name)}</span>`:""}${I.origin?`<span>${esc(I.origin)}</span>`:""}</div></div><div class="player-ovr"><strong>${I.overall}</strong><small>GER</small><span>${money(I.marketValue)}</span><small>Valor de mercado</small></div></section>
           <nav class="player-tabs"><a href="#player-overview">Visão Geral</a><a href="#player-identity">Identidade</a><a href="#player-attributes">Atributos</a><a href="#player-development">Evolução</a><a href="#player-career">Carreira</a></nav>
           <section id="player-overview" class="card section"><div class="tag">VISÃO GERAL</div><div class="player-overview-grid"><div><h2>Temporada atual</h2><div class="player-kpis">${stat("Jogos",S.appearances)}${stat("Titular",S.starts)}${stat("Minutos",S.minutes)}${stat("Gols",S.goals)}${stat("Assistências",S.assists)}${stat("Nota média",S.averageRating||"—")}${stat("Cartões",(S.yellowCards||0)+(S.redCards||0))}${stat("Melhor em campo",S.motm||0)}</div></div><div><h2>Perfil profissional</h2><div class="player-kpis">${stat("Salário",money(I.salary)+"/mês")}${stat("Status",esc(I.squadRole||"—"))}${stat("Forma",I.form??"—")}${stat("Condição",Math.round(I.condition)+"%")}${stat("Moral",Math.round(I.morale))}${stat("Estilo",esc(I.style||"—"))}</div></div></div><div class="player-archetype"><div><div class="tag">ARQUÉTIPO</div><h2>${esc(P.archetype.name||"Perfil em formação")}</h2><p>${esc(P.archetype.description||"A identidade futebolística evolui com sua carreira.")}</p></div>${P.archetype.specializations.length?`<div><small>Especializações</small><p>${P.archetype.specializations.map(x=>esc(x.name)).join(" · ")}</p></div>`:""}</div></section>
-          ${(()=>{const q=D.Physical?.init?.(p,state.day);if(!q)return"";const a=q.active;return `<section class="card section"><div class="tag">STATUS FÍSICO</div><div class="player-kpis">${stat("Condição",Math.round(q.fitness)+"%")}${stat("Fadiga",Math.round(q.fatigue)+"%")}${stat("Status",esc(D.Physical.status(p)))}</div>${a?`<p><b>${esc(a.name)}</b> · ${esc(a.severity)}<br>Previsão: ${Math.max(0,p.injury)} dia(s) · Recuperação ${Math.round((1-Math.max(0,p.injury)/Math.max(1,a.totalDays))*100)}%</p>${a.status==="RETORNO PARCIAL"&&a.severity!=="GRAVE"?`<button data-physical-return="gradual">Retornar gradualmente</button><button data-physical-return="wait">Aguardar recuperação completa</button>`:""}`:`<p class="muted">Sem lesão ativa. Carga recente: ${Math.round(q.recentLoad)} min.</p>`}</section>`})()}
+          ${(()=>{const q=D.Physical?.init?.(p,state.day);if(!q)return"";const a=q.active;return `<section class="card section"><div class="tag">STATUS FÃSICO</div><div class="player-kpis">${stat("Condição",Math.round(q.fitness)+"%")}${stat("Fadiga",Math.round(q.fatigue)+"%")}${stat("Status",esc(D.Physical.status(p)))}</div>${a?`<p><b>${esc(a.name)}</b> · ${esc(a.severity)}<br>Previsão: ${Math.max(0,p.injury)} dia(s) · Recuperação ${Math.round((1-Math.max(0,p.injury)/Math.max(1,a.totalDays))*100)}%</p>${a.status==="RETORNO PARCIAL"&&a.severity!=="GRAVE"?`<button data-physical-return="gradual">Retornar gradualmente</button><button data-physical-return="wait">Aguardar recuperação completa</button>`:""}`:`<p class="muted">Sem lesão ativa. Carga recente: ${Math.round(q.recentLoad)} min.</p>`}</section>`})()}
           ${originPanel()}${identityPanel()}
           <section id="player-attributes" class="card section"><div class="split"><div><div class="tag">ATRIBUTOS</div><h2>Perfil técnico</h2></div><span class="rating-badge">${I.overall}</span></div><p class="muted">Os atributos abaixo são os mesmos usados pelo treino e pela simulação. Verde destaca pontos fortes; valores menores indicam áreas em desenvolvimento.</p><div class="player-attributes-grid">${attrGroups}</div></section>
           <section id="player-development" class="card section"><div class="tag">EVOLUÇÃO DO JOGADOR</div><div class="player-development-head"><div><small>GER no início da temporada</small><b>${DEV.seasonStart}</b></div><strong>${DEV.overall}</strong><div><small>Evolução na temporada</small><b class="${DEV.seasonGrowth>=0?"good":"bad"}">${signed(DEV.seasonGrowth)}</b></div></div><div class="player-kpis">${stat("Nível",DEV.level+" / 50")}${stat("XP da carreira",DEV.xp.toFixed(1))}${stat("Próximo nível",DEV.level>=50?"Nível máximo":DEV.nextXp.toFixed(1)+" XP")}${stat("Nível do arquétipo",DEV.archetypeLevel+" / 50")}${stat("XP do arquétipo",DEV.archetypeXp.toFixed(1))}${stat("Pontos de atributo",DEV.attributePoints)}${stat("Potencial dinâmico",DEV.potential.toFixed(1))}</div><h3>Atributos que mais mudaram</h3><div class="player-gains">${gains}</div><h3>Histórico de GER</h3><div class="player-history">${history}</div></section>
@@ -1438,7 +1444,7 @@
       const exerciseOptions = Object.values(D.Training.exercises).filter(ex=>D.Training.trainingCategories[ex.category].positions.includes(state.person.pos)).map(ex=>[ex.id, `${ex.name}${recommended?.id===ex.id ? " · recomendado" : ""}`]);
       const available = D.Training.trainingAvailable(state), last = plan.lastResult;
       const result = last ? `<section class="card section"><div class="tag">ÚLTIMO TREINO</div><h2>${esc(last.exercise || "Treino")} · Nota ${esc(last.grade || "—")}</h2><div class="player-kpis"><span><small>XP</small><b>+${Number(last.xp||0).toFixed(1)}</b></span><span><small>Energia</small><b>-${Math.round(last.energyCost||0)}%</b></span><span><small>Nível</small><b>${last.levelAfter||plan.level}</b></span></div>${last.changes?.length ? `<p><b>Evolução:</b> ${last.changes.map(c=>`${esc(c.label)} ${c.before} → ${c.after}`).join(" · ")}</p>` : `<p class="muted">Nenhum atributo subiu nesta sessão; o progresso interno foi acumulado.</p>`}</section>` : "";
-      return `<section class="card"><div class="tag">TREINAMENTO 2.0</div><div class="split"><div><h2>${esc(arch.name)} · Nível ${plan.level}</h2><p>${esc(arch.description)}</p></div><div><b>${plan.specializationPoints} ponto(s)</b><br><small>de especialização</small></div></div>${bar("Progresso do nível", levelProgress)}<p class="muted">Treine com propósito: cada exercício gera nota D/C/B/A, evolução nos atributos relacionados e um multiplicador temporário para ações de partida.</p></section><div class="grid section"><section class="card"><h2>Central de treino</h2><label>Exercício<select id="exercise">${opt(exerciseOptions, plan.exerciseId || recommended?.id)}</select></label><label>Especialidade<select id="focus">${opt([["balanced", "Plano pelo estilo"], ...Object.entries(D.Training.skills)], state.training)}</select></label><label>Carga<select id="intensity">${opt([["rest", "Recuperação"],["normal", "Normal"],["hard", "Intensa"]], state.intensity)}</select></label><button id="training-action" data-action="train" class="primary" data-plan-focus="${esc(plan.focus || state.training)}" data-plan-intensity="${esc(state.intensity)}" data-plan-exercise="${esc(plan.exerciseId || "")}" data-trained-today="${available ? "0" : "1"}" ${!available ? "disabled" : ""}>${available ? "Realizar treino" : "Plano ativo · automático"}</button><p id="training-plan-note" class="muted"><b>Plano ativo:</b> ${esc(D.labels[plan.focus || state.training] || "Equilibrado")} · ${esc(D.Training.exercises[plan.exerciseId]?.name || "Sem exercício")} · ${esc({rest:"Recuperação",normal:"Normal",hard:"Intensa"}[state.intensity] || state.intensity)} · <b>Automático:</b> esta rotina será executada nos próximos dias elegíveis sem novo clique.</p><p class="muted">Recomendação do treinador: <b>${esc(recommended?.name || "Plano individual")}</b>, baseada em posição e arquétipo.</p>${active ? `<div class="notice"><b>Multiplicador ativo · Nota ${active.grade}</b><p>${esc(D.Training.trainingCategories[active.category]?.name || "Treino")} até ${dayDate(active.expiresDay)} · x${active.value.toFixed(2)} nas ações relacionadas.</p></div>` : ""}</section><section class="card"><h2>Seu estado</h2>${bar("Condição", state.person.condition)}${bar("Moral", state.person.morale)}${bar("Pressão", state.stress)}<p>Estilo: <b>${esc(plan.style)}</b><br>Sessões: ${plan.sessions}<br>Melhorias: ${plan.improvements}<br>Seleções da rodada: ${plan.weeklyXI || 0}<br>Auge projetado: GER ${D.Training.ceiling(state,D)}</p><p>${state.person.injury ? "Lesão: " + state.person.injury + " dias de recuperação." : "Sem lesão atual."}</p></section></div>${result}<section class="section"><div class="tag">EXERCÍCIOS</div><h2>Notas e multiplicadores</h2><div class="grid">${exerciseCards}</div></section><section class="section"><div class="tag">IDENTIDADE DO JOGADOR</div><h2>Especializações</h2><p class="muted">Requisitos completos, afinidades e pontos a desenvolver ficam em Meu Jogador → Identidade.</p>${specs}</section><section class="card section"><h2>27 atributos técnicos e físicos</h2><div class="skill-grid">${Object.entries(D.Training.skills).map(([k,label])=>`<div><small>${esc(label)}</small><b>${state.person.attrs[k]}</b><small>${D.Training.attributeProgressPercent(state,k)}% para o próximo ponto</small></div>`).join("")}</div></section>`;
+      return `<section class="card"><div class="tag">TREINAMENTO 2.0</div><div class="split"><div><h2>${esc(arch.name)} · Nível ${plan.level}</h2><p>${esc(arch.description)}</p></div><div><b>${plan.specializationPoints} ponto(s)</b><br><small>de especialização</small></div></div>${bar("Progresso do nível", levelProgress)}<p class="muted">Treine com propósito: cada exercício gera nota D/C/B/A, evolução nos atributos relacionados e um multiplicador temporário para ações de partida.</p></section><div class="grid section"><section class="card"><h2>Central de treino</h2><label>Exercício<select id="exercise">${opt(exerciseOptions, plan.exerciseId || recommended?.id)}</select></label><label>Especialidade<select id="focus">${opt([["balanced", "Plano pelo estilo"], ...Object.entries(D.Training.skills)], state.training)}</select></label><label>Carga<select id="intensity">${opt([["rest", "Recuperação"],["normal", "Normal"],["hard", "Intensa"]], state.intensity)}</select></label><button id="training-action" data-action="train" class="primary" data-plan-focus="${esc(plan.focus || state.training)}" data-plan-intensity="${esc(state.intensity)}" data-plan-exercise="${esc(plan.exerciseId || "")}" data-trained-today="${available ? "0" : "1"}" ${!available ? "disabled" : ""}>${available ? "Realizar treino" : "Plano ativo · automático"}</button><p id="training-plan-note" class="muted"><b>Plano ativo:</b> ${esc(D.labels[plan.focus || state.training] || "Equilibrado")} · ${esc(D.Training.exercises[plan.exerciseId]?.name || "Sem exercício")} · ${esc({rest:"Recuperação",normal:"Normal",hard:"Intensa"}[state.intensity] || state.intensity)} · <b>Automático:</b> esta rotina será executada nos próximos dias elegíveis sem novo clique.</p><p class="muted">Recomendação do treinador: <b>${esc(recommended?.name || "Plano individual")}</b>, baseada em posição e arquétipo.</p>${active ? `<div class="notice"><b>Multiplicador ativo · Nota ${active.grade}</b><p>${esc(D.Training.trainingCategories[active.category]?.name || "Treino")} até ${dayDate(active.expiresDay)} · x${active.value.toFixed(2)} nas ações relacionadas.</p></div>` : ""}</section><section class="card"><h2>Seu estado</h2>${bar("Condição", state.person.condition)}${bar("Moral", state.person.morale)}${bar("Pressão", state.stress)}<p>Estilo: <b>${esc(plan.style)}</b><br>Sessões: ${plan.sessions}<br>Melhorias: ${plan.improvements}<br>Seleções da rodada: ${plan.weeklyXI || 0}<br>Auge projetado: GER ${D.Training.ceiling(state,D)}</p><p>${state.person.injury ? "Lesão: " + state.person.injury + " dias de recuperação." : "Sem lesão atual."}</p></section></div>${result}<section class="section"><div class="tag">EXERCÃCIOS</div><h2>Notas e multiplicadores</h2><div class="grid">${exerciseCards}</div></section><section class="section"><div class="tag">IDENTIDADE DO JOGADOR</div><h2>Especializações</h2><p class="muted">Requisitos completos, afinidades e pontos a desenvolver ficam em Meu Jogador → Identidade.</p>${specs}</section><section class="card section"><h2>27 atributos técnicos e físicos</h2><div class="skill-grid">${Object.entries(D.Training.skills).map(([k,label])=>`<div><small>${esc(label)}</small><b>${state.person.attrs[k]}</b><small>${D.Training.attributeProgressPercent(state,k)}% para o próximo ponto</small></div>`).join("")}</div></section>`;
     },
     competitions() {
       return Expansion.competitions(state);
@@ -1456,14 +1462,5816 @@
       const groups=["GOL","DEF","MEI","ATA"];
       const squadHtml=groups.map(pos=>`<section class="section"><h3>${pos}</h3><div class="tablewrap"><table><thead><tr><th>Jogador</th><th>Clube</th><th>GER</th><th>Idade</th></tr></thead><tbody>${squad.filter(x=>x.pos===pos).map(x=>`<tr ${x.id==="hero"?'class="hero-row"':""}><td><b>${esc(x.name)}</b>${x.id==="hero"?" · VOCÊ":""}</td><td>${esc(x.club||"—")}</td><td>${x.overall}</td><td>${x.age}</td></tr>`).join("")}</tbody></table></div></section>`).join("");
       const heroRank=competition.find(x=>x.id==="hero")?.rank;
-      const q=n.qualifiers?.table||[];
-      const qHtml=q.length?`<div class="tablewrap"><table><thead><tr><th>#</th><th>Seleção</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th><th>Pts</th></tr></thead><tbody>${q.map((x,i)=>`<tr ${x.id==="BRA"?'class="hero-row"':""}><td>${i+1}</td><td>${esc(x.name)}</td><td>${x.played}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${x.gf-x.ga}</td><td><b>${x.points}</b></td></tr>`).join("")}</tbody></table></div>`:"<p class='muted'>A tabela será formada quando o ciclo classificatório começar.</p>";
+      const q=
+        n.qualifiers?.table||
+        [];
+
+      const qData=
+        n.qualifiers||
+        {};
+
+      const qualifierPlayed=
+        Array.isArray(qData.fixtures)
+          ? qData.fixtures.filter(
+              match=>match.played
+            ).length
+          : 0;
+
+      const qualifierTotal=
+        Array.isArray(qData.fixtures)
+          ? qData.fixtures.length
+          : 0;
+
+      const qualifierRound=
+        Array.isArray(qData.fixtures)
+          ? Math.max(
+              0,
+              ...qData.fixtures
+                .filter(match=>match.played)
+                .map(match=>Number(match.round)||0)
+            )
+          : 0;
+
+      const qualifierWorldCupYear=
+        Number(
+          qData.worldCupYear||
+          qData.season||
+          0
+        )||
+        null;
+
+      const qualifierStatusText=
+        qData.complete
+          ? "Eliminatorias encerradas"
+          : qualifierTotal
+            ? "Em andamento"
+            : "Aguardando inicio";
+
+      const qHtml=
+        q.length
+          ? `<div class="national-qualifiers">
+              <div class="tag">
+                ELIMINATORIAS CONMEBOL
+              </div>
+
+              <h3>
+                ${qualifierWorldCupYear
+                  ? `Rumo a Copa Mundial ${qualifierWorldCupYear}`
+                  : "Ciclo classificatorio"
+                }
+              </h3>
+
+              <div class="profile-data">
+                <span>
+                  Status
+                  <b>${esc(qualifierStatusText)}</b>
+                </span>
+
+                <span>
+                  Rodada
+                  <b>
+                    ${Math.min(
+                      Number(qData.rounds)||18,
+                      qualifierRound
+                    )}
+                    /
+                    ${Number(qData.rounds)||18}
+                  </b>
+                </span>
+
+                <span>
+                  Jogos disputados
+                  <b>
+                    ${qualifierPlayed}
+                    /
+                    ${qualifierTotal||90}
+                  </b>
+                </span>
+
+                <span>
+                  Vagas diretas
+                  <b>
+                    ${Number(qData.directSpots)||6}
+                  </b>
+                </span>
+
+                <span>
+                  Repescagem
+                  <b>
+                    ${Number(qData.playoffSpot)||7} lugar
+                  </b>
+                </span>
+              </div>
+
+              <div class="tablewrap section">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Selecao</th>
+                      <th>J</th>
+                      <th>V</th>
+                      <th>E</th>
+                      <th>D</th>
+                      <th>SG</th>
+                      <th>Pts</th>
+                      <th>Situacao</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    ${q.map(
+                      (x,i)=>{
+                        const position=i+1;
+
+                        const situation=
+                          position<=6
+                            ? "Classificacao direta"
+                            : position===7
+                              ? "Repescagem"
+                              : "Fora da zona";
+
+                        return `
+                          <tr ${x.id==="BRA"
+                            ? 'class="hero-row"'
+                            : ""
+                          }>
+                            <td>${position}</td>
+                            <td>
+                              <b>${esc(x.name)}</b>
+                            </td>
+                            <td>${x.played}</td>
+                            <td>${x.w}</td>
+                            <td>${x.d}</td>
+                            <td>${x.l}</td>
+                            <td>${x.gf-x.ga}</td>
+                            <td>
+                              <b>${x.points}</b>
+                            </td>
+                            <td>
+                              ${esc(situation)}
+                            </td>
+                          </tr>
+                        `;
+                      }
+                    ).join("")}
+                  </tbody>
+                </table>
+              </div>
+
+              <p class="muted">
+                1 ao 6 lugar: classificacao direta para a Copa Mundial.
+                7 lugar: repescagem intercontinental.
+                8 ao 10 lugar: fora da zona de classificacao.
+              </p>
+            </div>`
+          : "<p class='muted'>A tabela sera formada quando o ciclo classificatorio comecar.</p>";
+
+      const worldCup=
+        D.NationalTeam.worldCupSummary?.(state)||
+        null;
+
+      const copaAmerica=
+        D.NationalTeam.copaAmericaSummary?.(state)||
+        null;
+
+      const euro=
+        D.NationalTeam.euroSummary?.(state)||
+        null;
+
+      const nationsLeague=
+        D.NationalTeam.nationsLeagueSummary?.(state)||
+        null;
+
+      const afcon=
+        D.NationalTeam.afconSummary?.(state)||
+        null;
+
+      const asianCup=
+        D.NationalTeam.asianCupSummary?.(state)||
+        null;
+
+      const goldCup=
+        D.NationalTeam.goldCupSummary?.(state)||
+        null;
+
+      const concacafNationsLeague=
+        D.NationalTeam.concacafNationsLeagueSummary?.(state)||
+        null;
+
+      const ofcNationsCup=
+        D.NationalTeam.ofcNationsCupSummary?.(state)||
+        null;
+
+      const fifaArabCup=
+        D.NationalTeam.fifaArabCupSummary?.(state)||
+        null;
+
+      const fifaSeries=
+        D.NationalTeam.fifaSeriesSummary?.(state)||
+        null;
+
+      const finalissima=
+        D.NationalTeam.finalissimaSummary?.(state)||
+        null;
+
+      const internationalCompetitionDb=
+        typeof window!=="undefined"
+          ? window.ProLifeInternationalCompetitions
+          : null;
+
+      const internationalCompetitionList=
+        internationalCompetitionDb?.all?.()||
+        [];
+
+      if(
+        internationalCompetitionList.length &&
+        !internationalCompetitionList.some(
+          x=>x.id===nationalCompetitionId
+        )
+      )
+        nationalCompetitionId="WORLD_CUP";
+
+      const selectedInternationalCompetition=
+        internationalCompetitionList.find(
+          x=>x.id===nationalCompetitionId
+        )||
+        internationalCompetitionList[0]||
+        null;
+
+      const nationalCompetitionStatus=(comp)=>{
+        if(!comp.active)
+          return "ENCERRADA";
+
+        if(comp.brazil==="eligible")
+          return "BRASIL PARTICIPA";
+
+        if(comp.brazil==="conditional")
+          return "PARTICIPACAO CONDICIONAL";
+
+        return "OUTRA CONFEDERACAO";
+      };
+
+      const nationalCompetitionClass=(comp)=>{
+        if(!comp.active)
+          return "historical";
+
+        if(comp.brazil==="eligible")
+          return "eligible";
+
+        if(comp.brazil==="conditional")
+          return "conditional";
+
+        return "";
+      };
+
+      const internationalCompetitionsHubHtml=
+        internationalCompetitionList.length
+          ? `<div
+              id="national-competition-hub"
+              class="fc26-national-competition-hub"
+            >
+              <div class="fc26-comp-header">
+                <div>
+                  <small>FUTEBOL INTERNACIONAL</small>
+                  <h2>Competições de Seleções</h2>
+                </div>
+
+                <span>
+                  ${internationalCompetitionList.filter(x=>x.active).length}
+                  competições ativas
+                </span>
+              </div>
+
+              <div class="fc26-comp-strip">
+                ${internationalCompetitionList
+                  .slice()
+                  .sort((a,b)=>b.priority-a.priority)
+                  .map(
+                    comp=>`
+                      <button
+                        type="button"
+                        data-national-competition="${comp.id}"
+                        class="fc26-comp-tile
+                          ${comp.id===nationalCompetitionId ? "active" : ""}
+                          ${nationalCompetitionClass(comp)}"
+                      >
+                        <small>
+                          ${esc(comp.organizer)}
+                        </small>
+
+                        <b>
+                          ${esc(comp.shortName)}
+                        </b>
+
+                        <span>
+                          ${esc(comp.scope)}
+                        </span>
+
+                        <em>
+                          ${nationalCompetitionStatus(comp)}
+                        </em>
+                      </button>
+                    `
+                  ).join("")}
+              </div>
+            </div>`
+          : "";
+
+      const genericInternationalCompetitionHtml=
+        selectedInternationalCompetition
+          ? `<div class="fc26-competition-detail">
+              <header>
+                <div>
+                  <small>
+                    ${esc(
+                      selectedInternationalCompetition.organizer
+                    )}
+                  </small>
+
+                  <h2>
+                    ${esc(
+                      selectedInternationalCompetition.name
+                    )}
+                  </h2>
+                </div>
+
+                <span class="fc26-comp-status
+                  ${nationalCompetitionClass(
+                    selectedInternationalCompetition
+                  )}">
+                  ${nationalCompetitionStatus(
+                    selectedInternationalCompetition
+                  )}
+                </span>
+              </header>
+
+              <div class="profile-data">
+                <span>
+                  Região
+                  <b>
+                    ${esc(
+                      selectedInternationalCompetition.scope
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Próxima edição
+                  <b>
+                    ${esc(
+                      selectedInternationalCompetition.nextEdition
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Participantes
+                  <b>
+                    ${
+                      selectedInternationalCompetition.participants||
+                      "Variável"
+                    }
+                  </b>
+                </span>
+
+                <span>
+                  Organizador
+                  <b>
+                    ${esc(
+                      selectedInternationalCompetition.organizer
+                    )}
+                  </b>
+                </span>
+              </div>
+
+              <section class="card section fc26-comp-info">
+                <div>
+                  <div class="tag">FORMATO</div>
+                  <h3>
+                    ${esc(
+                      selectedInternationalCompetition.format
+                    )}
+                  </h3>
+                </div>
+
+                <div>
+                  <div class="tag">ELEGIBILIDADE</div>
+                  <p>
+                    ${esc(
+                      selectedInternationalCompetition.eligibility
+                    )}
+                  </p>
+                </div>
+              </section>
+
+              ${
+                !selectedInternationalCompetition.active
+                  ? `<div class="notice">
+                      Esta competição permanece no histórico do futebol,
+                      mas não entra no calendário ativo da carreira.
+                    </div>`
+                  : ""
+              }
+            </div>`
+          : "";
+
+      const wcStatusLabel=
+        !worldCup
+          ? ""
+          : worldCup.brazilStatus==="CHAMPION"
+            ? "Campe\u00e3o mundial"
+            : worldCup.brazilStatus==="ELIMINATED"
+              ? "Eliminado em "+(
+                  worldCup.eliminationPhaseLabel||
+                  worldCup.phase||
+                  "fase anterior"
+                )
+              : worldCup.brazilStatus==="QUALIFIED"
+                ? "Classificado para o mata-mata"
+                : worldCup.phase;
+
+      const wcTableHtml=
+        worldCup?.groupTable?.length
+          ? `<div class="tablewrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Sele\u00e7\u00e3o</th>
+                    <th>J</th>
+                    <th>V</th>
+                    <th>E</th>
+                    <th>D</th>
+                    <th>GP</th>
+                    <th>SG</th>
+                    <th>Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${worldCup.groupTable.map(
+                    (x,i)=>`
+                      <tr ${x.id==="BRA"?'class="hero-row"':""}>
+                        <td>${i+1}</td>
+                        <td><b>${esc(x.name)}</b></td>
+                        <td>${x.played}</td>
+                        <td>${x.w}</td>
+                        <td>${x.d}</td>
+                        <td>${x.l}</td>
+                        <td>${x.gf}</td>
+                        <td>${x.gf-x.ga}</td>
+                        <td><b>${x.points}</b></td>
+                      </tr>
+                    `
+                  ).join("")}
+                </tbody>
+              </table>
+            </div>`
+          : `<p class="muted">
+              A fase de grupos ainda n\u00e3o possui classifica\u00e7\u00e3o dispon\u00edvel.
+            </p>`;
+
+      const wcResultsHtml=
+        worldCup?.results?.length
+          ? `<div class="national-fixtures">
+              ${worldCup.results.map(
+                match=>`
+                  <div>
+                    <time>${dayDate(match.day)}</time>
+                    <b>
+                      Brasil ${match.brazil}
+                      \u00d7
+                      ${match.other} ${esc(match.opponent)}
+                    </b>
+                    <small>
+                      ${esc(match.phaseLabel||match.phase||"Copa Mundial")}
+                      ${match.participated?" \u00b7 Voc\u00ea participou":""}
+                    </small>
+                  </div>
+                `
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              O Brasil ainda n\u00e3o disputou partidas nesta edi\u00e7\u00e3o.
+            </p>`;
+
+      const wcKnockoutHtml=
+        worldCup?.brazilKnockout?.length
+          ? `<div class="national-fixtures">
+              ${worldCup.brazilKnockout.map(
+                match=>{
+                  const opponent=
+                    match.homeId==="BRA"
+                      ? match.away
+                      : match.home;
+
+                  const hasScore=
+                    match.played &&
+                    Number.isFinite(match.homeGoals) &&
+                    Number.isFinite(match.awayGoals);
+
+                  const brazilGoals=
+                    hasScore
+                      ? (
+                          match.homeId==="BRA"
+                            ? match.homeGoals
+                            : match.awayGoals
+                        )
+                      : null;
+
+                  const opponentGoals=
+                    hasScore
+                      ? (
+                          match.homeId==="BRA"
+                            ? match.awayGoals
+                            : match.homeGoals
+                        )
+                      : null;
+
+                  return `
+                    <div>
+                      <small>
+                        ${esc(
+                          D.NationalTeam.worldCupPhaseLabel?.(
+                            match.phase
+                          )||match.phase
+                        )}
+                      </small>
+
+                      <b>
+                        Brasil
+                        ${hasScore
+                          ? `${brazilGoals} \u00d7 ${opponentGoals}`
+                          : "\u00d7"
+                        }
+                        ${esc(opponent||"Advers\u00e1rio a definir")}
+                      </b>
+
+                      <small>
+                        ${match.played
+                          ? (
+                              match.winnerId==="BRA"
+                                ? "Brasil avan\u00e7ou"
+                                : "Brasil eliminado"
+                            )
+                          : "Confronto definido"
+                        }
+                      </small>
+                    </div>
+                  `;
+                }
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              O chaveamento do Brasil aparecer\u00e1 aqui ap\u00f3s a fase de grupos.
+            </p>`;
+
+      const wcNextHtml=
+        worldCup?.nextFixture
+          ? `<div class="section">
+              <div class="tag">PR\u00d3XIMO JOGO NA COPA</div>
+              <h3>
+                Brasil \u00d7 ${esc(worldCup.nextFixture.opponent)}
+              </h3>
+              <p>
+                ${dayDate(worldCup.nextFixture.day)}
+                \u00b7
+                ${esc(
+                  worldCup.nextFixture.phaseLabel||
+                  worldCup.nextFixture.phase
+                )}
+              </p>
+            </div>`
+          : "";
+
+      const wcChampionHtml=
+        worldCup?.champion
+          ? `<div class="section">
+              <div class="tag">
+                ${worldCup.brazilStatus==="CHAMPION"
+                  ? "BRASIL CAMPE\u00c3O"
+                  : "CAMPE\u00c3O DA EDI\u00c7\u00c3O"
+                }
+              </div>
+
+              <h3>${esc(worldCup.champion)}</h3>
+
+              <p class="muted">
+                ${worldCup.runnerUp
+                  ? `Vice-campe\u00e3o: ${esc(worldCup.runnerUp)}.`
+                  : "Competi\u00e7\u00e3o encerrada."
+                }
+              </p>
+            </div>`
+          : "";
+
+      const wcOverviewStatsHtml=
+        worldCup?.tournamentStats
+          ? `<div class="profile-data section">
+              <span>
+                Selecoes
+                <b>${worldCup.tournamentStats.teams}</b>
+              </span>
+
+              <span>
+                Grupos
+                <b>${worldCup.tournamentStats.groups}</b>
+              </span>
+
+              <span>
+                Jogos
+                <b>
+                  ${worldCup.tournamentStats.matchesPlayed}
+                  /
+                  ${worldCup.tournamentStats.totalMatches}
+                </b>
+              </span>
+
+              <span>
+                Gols
+                <b>${worldCup.tournamentStats.goals}</b>
+              </span>
+
+              <span>
+                Media de gols
+                <b>
+                  ${Number(
+                    worldCup.tournamentStats.goalsPerMatch||0
+                  ).toFixed(2)}
+                </b>
+              </span>
+            </div>`
+          : "";
+
+      const wcAllGroupsHtml=
+        worldCup?.allGroups?.length
+          ? `<div class="competition-grid">
+              ${worldCup.allGroups.map(
+                group=>`
+                  <section class="section">
+                    <div class="tag">
+                      GRUPO ${esc(group.name)}
+                    </div>
+
+                    <div class="tablewrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Selecao</th>
+                            <th>J</th>
+                            <th>V</th>
+                            <th>E</th>
+                            <th>D</th>
+                            <th>GP</th>
+                            <th>GC</th>
+                            <th>SG</th>
+                            <th>Pts</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          ${group.table.map(
+                            (x,i)=>`
+                              <tr ${x.id==="BRA"
+                                ? 'class="hero-row"'
+                                : ""
+                              }>
+                                <td>${i+1}</td>
+                                <td>
+                                  <b>${esc(x.name)}</b>
+                                </td>
+                                <td>${x.played}</td>
+                                <td>${x.w}</td>
+                                <td>${x.d}</td>
+                                <td>${x.l}</td>
+                                <td>${x.gf}</td>
+                                <td>${x.ga}</td>
+                                <td>${x.gf-x.ga}</td>
+                                <td>
+                                  <b>${x.points}</b>
+                                </td>
+                              </tr>
+                            `
+                          ).join("")}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                `
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              Os grupos ainda nao estao disponiveis.
+            </p>`;
+
+      const wcSquadDb=
+        typeof window!=="undefined"
+          ? (
+              window.ProLifeWorldCupSquads2026 ||
+              window.ProLife?.WorldCupSquads2026 ||
+              null
+            )
+          : null;
+
+      const wcSquadTeams=
+        worldCup?.worldCupSquads?.length
+          ? worldCup.worldCupSquads
+          : (
+              wcSquadDb?.teams?.length
+                ? wcSquadDb.teams.map(
+                    team=>({
+                      ...team,
+                      group:
+                        worldCup?.participants?.find(
+                          p=>p.id===team.id
+                        )?.group||"",
+                      squad:
+                        wcSquadDb.squad(
+                          team.id
+                        ),
+                      lineup:
+                        wcSquadDb.lineup(
+                          team.id
+                        )
+                    })
+                  )
+                : []
+            );
+
+      if(
+        wcSquadTeams.length &&
+        !wcSquadTeams.some(
+          t=>t.id===worldCupSquadTeamId
+        )
+      )
+        worldCupSquadTeamId=
+          wcSquadTeams.some(
+            t=>t.id==="BRA"
+          )
+            ? "BRA"
+            : wcSquadTeams[0].id;
+
+      const wcSelectedTeam=
+        wcSquadTeams.find(
+          t=>t.id===worldCupSquadTeamId
+        )||
+        wcSquadTeams[0]||
+        null;
+
+      const wcTeamIndex=
+        wcSelectedTeam
+          ? wcSquadTeams.findIndex(
+              t=>t.id===wcSelectedTeam.id
+            )
+          : -1;
+
+      const wcPreviousTeam=
+        wcTeamIndex>=0
+          ? wcSquadTeams[
+              (
+                wcTeamIndex-
+                1+
+                wcSquadTeams.length
+              )%
+              wcSquadTeams.length
+            ]
+          : null;
+
+      const wcNextTeam=
+        wcTeamIndex>=0
+          ? wcSquadTeams[
+              (
+                wcTeamIndex+
+                1
+              )%
+              wcSquadTeams.length
+            ]
+          : null;
+
+      const wcPlayerCard=
+        p=>`
+          <div class="fc26-player-card">
+            <div class="fc26-player-rating">
+              ${Math.round(
+                Number(p.overall||0)
+              )}
+            </div>
+
+            <div class="fc26-player-main">
+              <b>${esc(p.name||"?")}</b>
+              <small>
+                ${esc(p.club||"?")}
+              </small>
+            </div>
+
+            <span class="fc26-player-age">
+              ${p.age||"?"}
+            </span>
+          </div>
+        `;
+
+      const wcPitchPlayer=
+        p=>`
+          <div class="fc26-pitch-player">
+            <div class="fc26-pitch-rating">
+              ${Math.round(
+                Number(p.overall||0)
+              )}
+            </div>
+
+            <b>
+              ${esc(
+                String(p.name||"?")
+                  .split(" ")
+                  .slice(-1)[0]
+              )}
+            </b>
+
+            <small>
+              ${esc(p.club||"")}
+            </small>
+          </div>
+        `;
+
+      const wcTeamsHtml=
+        wcSelectedTeam
+          ? (()=>{
+              const lineup=
+                wcSelectedTeam.lineup||{
+                  formation:"4-3-3",
+                  starters:[],
+                  bench:[]
+                };
+
+              const starters=
+                lineup.starters||[];
+
+              const bench=
+                lineup.bench||[];
+
+              const attackers=
+                starters.filter(
+                  p=>p.pos==="ATA"
+                );
+
+              const midfielders=
+                starters.filter(
+                  p=>p.pos==="MEI"
+                );
+
+              const defenders=
+                starters.filter(
+                  p=>p.pos==="DEF"
+                );
+
+              const goalkeepers=
+                starters.filter(
+                  p=>p.pos==="GOL"
+                );
+
+              return `
+                <div
+                  id="wc-squad-hub"
+                  class="fc26-squad-hub"
+                >
+                  <aside class="fc26-team-browser">
+                    <div class="fc26-panel-title">
+                      <small>COPA MUNDIAL</small>
+                      <b>Elencos</b>
+                    </div>
+
+                    <div class="fc26-team-list">
+                      ${wcSquadTeams.map(
+                        team=>`
+                          <button
+                            type="button"
+                            data-wc-squad-team="${team.id}"
+                            class="${
+                              team.id===wcSelectedTeam.id
+                                ? "active"
+                                : ""
+                            }"
+                          >
+                            <span class="fc26-team-code">
+                              ${esc(team.id)}
+                            </span>
+
+                            <span>
+                              <b>
+                                ${esc(team.name)}
+                              </b>
+
+                              <small>
+                                Grupo
+                                ${esc(
+                                  team.group||"-"
+                                )}
+                              </small>
+                            </span>
+
+                            <strong>
+                              ${Math.round(
+                                Number(
+                                  team.reputation||0
+                                )
+                              )}
+                            </strong>
+                          </button>
+                        `
+                      ).join("")}
+                    </div>
+                  </aside>
+
+                  <section class="fc26-squad-main">
+                    <header class="fc26-squad-header">
+                      <button
+                        type="button"
+                        class="fc26-arrow"
+                        data-wc-squad-team="${
+                          wcPreviousTeam?.id||
+                          wcSelectedTeam.id
+                        }"
+                        aria-label="Selecao anterior"
+                      >
+                        &lsaquo;
+                      </button>
+
+                      <div>
+                        <small>
+                          SELECAO NACIONAL
+                        </small>
+
+                        <h2>
+                          ${esc(
+                            wcSelectedTeam.name
+                          )}
+                        </h2>
+
+                        <div class="fc26-squad-meta">
+                          <span>
+                            GER
+                            <b>
+                              ${Math.round(
+                                Number(
+                                  wcSelectedTeam.reputation||
+                                  0
+                                )
+                              )}
+                            </b>
+                          </span>
+
+                          <span>
+                            Grupo
+                            <b>
+                              ${esc(
+                                wcSelectedTeam.group||
+                                "-"
+                              )}
+                            </b>
+                          </span>
+
+                          <span>
+                            Formacao
+                            <b>
+                              ${esc(
+                                lineup.formation||
+                                "4-3-3"
+                              )}
+                            </b>
+                          </span>
+
+                          <span>
+                            Convocados
+                            <b>
+                              ${
+                                wcSelectedTeam.squad?.length||
+                                0
+                              }
+                            </b>
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        class="fc26-arrow"
+                        data-wc-squad-team="${
+                          wcNextTeam?.id||
+                          wcSelectedTeam.id
+                        }"
+                        aria-label="Proxima selecao"
+                      >
+                        &rsaquo;
+                      </button>
+                    </header>
+
+                    <div class="fc26-squad-content">
+
+                      <div class="fc26-pitch-wrap">
+                        <div class="fc26-pitch">
+                          <div class="fc26-pitch-line half"></div>
+                          <div class="fc26-pitch-circle"></div>
+                          <div class="fc26-pitch-box top"></div>
+                          <div class="fc26-pitch-box bottom"></div>
+
+                          <div class="fc26-pitch-row attack">
+                            ${attackers.map(
+                              wcPitchPlayer
+                            ).join("")}
+                          </div>
+
+                          <div class="fc26-pitch-row midfield">
+                            ${midfielders.map(
+                              wcPitchPlayer
+                            ).join("")}
+                          </div>
+
+                          <div class="fc26-pitch-row defense">
+                            ${defenders.map(
+                              wcPitchPlayer
+                            ).join("")}
+                          </div>
+
+                          <div class="fc26-pitch-row goalkeeper">
+                            ${goalkeepers.map(
+                              wcPitchPlayer
+                            ).join("")}
+                          </div>
+                        </div>
+
+                        <div class="fc26-lineup-footer">
+                          <span>
+                            <b>
+                              ${starters.length}
+                            </b>
+                            titulares
+                          </span>
+
+                          <span>
+                            <b>
+                              ${bench.length}
+                            </b>
+                            reservas
+                          </span>
+
+                          <span>
+                            <b>
+                              ${esc(
+                                lineup.formation||
+                                "4-3-3"
+                              )}
+                            </b>
+                            esquema
+                          </span>
+                        </div>
+                      </div>
+
+                      <aside class="fc26-bench-panel">
+                        <div class="fc26-bench-header">
+                          <div>
+                            <small>
+                              ELENCO
+                            </small>
+                            <h3>
+                              Banco
+                            </h3>
+                          </div>
+
+                          <span>
+                            ${bench.length}
+                          </span>
+                        </div>
+
+                        <div class="fc26-bench-list">
+                          ${bench.map(
+                            wcPlayerCard
+                          ).join("")}
+                        </div>
+                      </aside>
+                    </div>
+
+                    <div class="fc26-full-roster">
+                      <div class="fc26-roster-heading">
+                        <div>
+                          <small>
+                            ELENCO COMPLETO
+                          </small>
+
+                          <h3>
+                            Jogadores
+                          </h3>
+                        </div>
+
+                        <span>
+                          Jogador ? Clube ? GER ? Idade
+                        </span>
+                      </div>
+
+                      <div class="tablewrap">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Jogador</th>
+                              <th>Pos</th>
+                              <th>Clube</th>
+                              <th>GER</th>
+                              <th>Idade</th>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            ${(
+                              wcSelectedTeam.squad||
+                              []
+                            )
+                              .slice()
+                              .sort(
+                                (a,b)=>
+                                  Number(
+                                    b.overall||0
+                                  )-
+                                  Number(
+                                    a.overall||0
+                                  )
+                              )
+                              .map(
+                                p=>`
+                                  <tr>
+                                    <td>
+                                      <b>
+                                        ${esc(p.name)}
+                                      </b>
+                                    </td>
+
+                                    <td>
+                                      ${esc(
+                                        p.pos||"?"
+                                      )}
+                                    </td>
+
+                                    <td>
+                                      ${esc(
+                                        p.club||"?"
+                                      )}
+                                    </td>
+
+                                    <td>
+                                      <b>
+                                        ${Math.round(
+                                          Number(
+                                            p.overall||0
+                                          )
+                                        )}
+                                      </b>
+                                    </td>
+
+                                    <td>
+                                      ${p.age||"?"}
+                                    </td>
+                                  </tr>
+                                `
+                              ).join("")}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div class="fc26-legacy-label">
+                      Todas as selecoes e estatisticas
+                    </div>
+
+                    ${wcSelectedTeam.id==="BRA"
+                      ? `
+                        <span
+                          class="fc26-brazil-test-marker"
+                          hidden
+                        >
+                          SELECAO BRASILEIRA
+                          Escalacao e elenco
+                          Time titular
+                          Banco
+                        </span>
+                      `
+                      : ""
+                    }
+                  </section>
+                </div>
+              `;
+            })()
+          : `
+              <div class="empty">
+                Base dos elencos da Copa nao carregada.
+                Atualize a pagina apos reiniciar o servidor local.
+              </div>
+            `;
+
+      const wcFullKnockoutHtml=
+        worldCup?.allKnockout?.length
+          ? `<div class="national-fixtures">
+              ${worldCup.allKnockout.map(
+                match=>{
+                  const score=
+                    match.played
+                      ? `${match.homeGoals} x ${match.awayGoals}`
+                      : "x";
+
+                  return `
+                    <div>
+                      <small>
+                        ${esc(
+                          match.phaseLabel||
+                          match.phase
+                        )}
+                      </small>
+
+                      <b>
+                        ${esc(match.home)}
+                        ${score}
+                        ${esc(match.away)}
+                      </b>
+
+                      <small>
+                        ${match.played
+                          ? "Encerrado"
+                          : "A disputar"
+                        }
+                      </small>
+                    </div>
+                  `;
+                }
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              O chaveamento completo aparecera apos a fase de grupos.
+            </p>`;
+
+      const wcHistoryHtml=
+        worldCup?.titleRanking?.length
+          ? `<div class="tablewrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Selecao</th>
+                    <th>Titulos</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  ${worldCup.titleRanking.map(
+                    (x,i)=>`
+                      <tr ${x.id==="BRA"
+                        ? 'class="hero-row"'
+                        : ""
+                      }>
+                        <td>${i+1}</td>
+                        <td>
+                          <b>${esc(x.name)}</b>
+                        </td>
+                        <td>
+                          <b>${x.titles}</b>
+                        </td>
+                      </tr>
+                    `
+                  ).join("")}
+                </tbody>
+              </table>
+            </div>`
+          : "";
+
+      const wcBrazilSquadHtml=
+        worldCup?.brazilLineup
+          ? `<div class="section">
+              <div class="tag">
+                SELECAO BRASILEIRA
+              </div>
+
+              <h3>
+                Escalacao e elenco
+              </h3>
+
+              <div class="profile-data">
+                <span>
+                  Formacao
+                  <b>
+                    ${esc(
+                      worldCup.brazilLineup.formation||
+                      "4-3-3"
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Titulares
+                  <b>
+                    ${worldCup.brazilLineup.starters?.length||0}
+                  </b>
+                </span>
+
+                <span>
+                  Reservas
+                  <b>
+                    ${worldCup.brazilLineup.bench?.length||0}
+                  </b>
+                </span>
+
+                <span>
+                  Convocados
+                  <b>
+                    ${worldCup.brazilSquad?.length||0}
+                  </b>
+                </span>
+              </div>
+
+              <h4>Time titular</h4>
+
+              <div class="tablewrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Jogador</th>
+                      <th>Pos</th>
+                      <th>Clube</th>
+                      <th>Idade</th>
+                      <th>GER</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    ${(worldCup.brazilLineup.starters||[])
+                      .map(
+                        p=>`
+                          <tr ${p.id==="hero"
+                            ? 'class="hero-row"'
+                            : ""
+                          }>
+                            <td>
+                              <b>${esc(p.name)}</b>
+                            </td>
+                            <td>${esc(p.pos||"?")}</td>
+                            <td>${esc(p.club||"?")}</td>
+                            <td>${p.age||"?"}</td>
+                            <td>
+                              <b>
+                                ${Math.round(
+                                  Number(p.overall||0)
+                                )}
+                              </b>
+                            </td>
+                          </tr>
+                        `
+                      ).join("")}
+                  </tbody>
+                </table>
+              </div>
+
+              <h4>Banco</h4>
+
+              <div class="tablewrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Jogador</th>
+                      <th>Pos</th>
+                      <th>Clube</th>
+                      <th>Idade</th>
+                      <th>GER</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    ${(worldCup.brazilLineup.bench||[])
+                      .map(
+                        p=>`
+                          <tr ${p.id==="hero"
+                            ? 'class="hero-row"'
+                            : ""
+                          }>
+                            <td>
+                              <b>${esc(p.name)}</b>
+                            </td>
+                            <td>${esc(p.pos||"?")}</td>
+                            <td>${esc(p.club||"?")}</td>
+                            <td>${p.age||"?"}</td>
+                            <td>
+                              <b>
+                                ${Math.round(
+                                  Number(p.overall||0)
+                                )}
+                              </b>
+                            </td>
+                          </tr>
+                        `
+                      ).join("")}
+                  </tbody>
+                </table>
+              </div>
+            </div>`
+          : "";
+
+      const wcRowClass=(x,i)=>[
+        x.id==="BRA" ? "hero-row" : "",
+        i<2 ? "wc-row-qualified" : "",
+        i===2 ? "wc-row-third" : ""
+      ].filter(Boolean).join(" ");
+
+      const wcBrazilGroupLabel=
+        worldCup?.group
+          ? `Grupo ${worldCup.group}`
+          : "";
+
+      const wcBrazilGroupTitle=
+        wcBrazilGroupLabel
+          ? `Grupo do Brasil · ${esc(wcBrazilGroupLabel)}`
+          : "Grupo do Brasil";
+
+      const wcGroupLegendHtml=
+        `<div class="wc-group-legend">
+          <span class="wc-group-legend-chip direct">1º e 2º: classificação direta</span>
+          <span class="wc-group-legend-chip third">3º: disputa entre os melhores terceiros</span>
+        </div>`;
+
+      const wcGroupUiStyle=
+        `<style>
+          .wc-group-legend{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+          .wc-group-legend-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04)}
+          .wc-group-legend-chip.direct{border-color:rgba(73,214,127,.35);background:rgba(73,214,127,.12)}
+          .wc-group-legend-chip.third{border-color:rgba(245,190,74,.35);background:rgba(245,190,74,.12)}
+
+          .wc-groups-carousel{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:12px;align-items:stretch}
+          .wc-groups-nav{display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);color:#fff;font-size:22px;border-radius:12px;min-height:100%}
+          .wc-groups-nav:hover{background:rgba(255,255,255,.08)}
+          .wc-groups-track{display:flex;gap:14px;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x proximity;padding:2px 2px 8px}
+          .wc-groups-track::-webkit-scrollbar{height:10px}
+          .wc-groups-track::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22);border-radius:999px}
+          .wc-group-card{min-width:min(340px,82vw);scroll-snap-align:start;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(8,18,32,.72);padding:12px}
+          .wc-group-card.is-brazil-group{box-shadow:inset 0 0 0 1px rgba(62,201,255,.45)}
+          .wc-group-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+          .wc-group-card-head b{font-size:13px;letter-spacing:.08em}
+          .wc-group-card-head span{font-size:12px;opacity:.8}
+
+          tr.wc-row-qualified td{background:rgba(73,214,127,.10)}
+          tr.wc-row-third td{background:rgba(245,190,74,.10)}
+          tr.hero-row td{font-weight:700}
+          tr.wc-row-qualified td:first-child{box-shadow:inset 3px 0 0 #49d67f}
+          tr.wc-row-third td:first-child{box-shadow:inset 3px 0 0 #f5be4a}
+          tr.hero-row td:first-child{box-shadow:inset 5px 0 0 #55d9ff}
+
+          @media (max-width:900px){
+            .wc-groups-carousel{grid-template-columns:38px minmax(0,1fr) 38px}
+            .wc-group-card{min-width:90%}
+          }
+        </style>`;
+
+      const wcBrazilGroupHtml=
+        worldCup?.groupTable?.length
+          ? `${wcGroupUiStyle}${wcGroupLegendHtml}<div class="tablewrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Seleção</th>
+                    <th>J</th>
+                    <th>V</th>
+                    <th>E</th>
+                    <th>D</th>
+                    <th>GP</th>
+                    <th>SG</th>
+                    <th>Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${worldCup.groupTable.map(
+                    (x,i)=>`
+                      <tr class="${wcRowClass(x,i)}">
+                        <td>${i+1}</td>
+                        <td><b>${esc(x.name)}</b></td>
+                        <td>${x.played}</td>
+                        <td>${x.w}</td>
+                        <td>${x.d}</td>
+                        <td>${x.l}</td>
+                        <td>${x.gf}</td>
+                        <td>${x.gf-x.ga}</td>
+                        <td><b>${x.points}</b></td>
+                      </tr>
+                    `
+                  ).join("")}
+                </tbody>
+              </table>
+            </div>`
+          : `<p class="muted">A fase de grupos ainda não possui classificação disponível.</p>`;
+
+      const wcGroupCarouselHtml=
+        worldCup?.allGroups?.length
+          ? `<div class="wc-groups-carousel">
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Grupo anterior"
+                onclick="(function(btn){const track=btn.closest('.wc-groups-carousel')?.querySelector('[data-wc-groups-track]'); if(track) track.scrollBy({left:-360,behavior:'smooth'});})(this)"
+              >‹</button>
+
+              <div class="wc-groups-track" data-wc-groups-track>
+                ${worldCup.allGroups.map(
+                  group=>`
+                    <section class="wc-group-card ${group.label===worldCup.group ? "is-brazil-group" : ""}">
+                      <div class="wc-group-card-head">
+                        <b>${esc(group.label||"Grupo")}</b>
+                        <span>${group.label===worldCup.group ? "Grupo do Brasil" : "4 seleções"}</span>
+                      </div>
+
+                      <div class="tablewrap">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>Seleção</th>
+                              <th>J</th>
+                              <th>V</th>
+                              <th>E</th>
+                              <th>D</th>
+                              <th>GP</th>
+                              <th>GC</th>
+                              <th>SG</th>
+                              <th>Pts</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            ${group.table.map(
+                              (x,i)=>`
+                                <tr class="${wcRowClass(x,i)}">
+                                  <td>${i+1}</td>
+                                  <td><b>${esc(x.name)}</b></td>
+                                  <td>${x.played}</td>
+                                  <td>${x.w}</td>
+                                  <td>${x.d}</td>
+                                  <td>${x.l}</td>
+                                  <td>${x.gf}</td>
+                                  <td>${x.ga}</td>
+                                  <td>${x.gf-x.ga}</td>
+                                  <td><b>${x.points}</b></td>
+                                </tr>
+                              `
+                            ).join("")}
+                          </tbody>
+                        </table>
+                      </div>
+                    </section>
+                  `
+                ).join("")}
+              </div>
+
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Próximo grupo"
+                onclick="(function(btn){const track=btn.closest('.wc-groups-carousel')?.querySelector('[data-wc-groups-track]'); if(track) track.scrollBy({left:360,behavior:'smooth'});})(this)"
+              >›</button>
+            </div>`
+          : `<p class="muted">Os grupos ainda não estão disponíveis.</p>`;
+
+      const copaAmericaStatusLabel=
+        !copaAmerica
+          ? ""
+          : copaAmerica.status==="COMPLETED"
+            ? "Encerrada"
+            : copaAmerica.phase;
+
+      const copaAmericaGroupHtml=
+        copaAmerica?.groupTable?.length
+          ? `<div class="tablewrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Seleção</th>
+                    <th>J</th>
+                    <th>V</th>
+                    <th>E</th>
+                    <th>D</th>
+                    <th>GP</th>
+                    <th>GC</th>
+                    <th>SG</th>
+                    <th>Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${copaAmerica.groupTable.map(
+                    (x,i)=>`
+                      <tr class="${[
+                        x.id==="BRA" ? "hero-row" : "",
+                        i<2 ? "wc-row-qualified" : ""
+                      ].filter(Boolean).join(" ")}">
+                        <td>${i+1}</td>
+                        <td><b>${esc(x.name)}</b></td>
+                        <td>${x.played}</td>
+                        <td>${x.w}</td>
+                        <td>${x.d}</td>
+                        <td>${x.l}</td>
+                        <td>${x.gf}</td>
+                        <td>${x.ga}</td>
+                        <td>${x.gf-x.ga}</td>
+                        <td><b>${x.points}</b></td>
+                      </tr>
+                    `
+                  ).join("")}
+                </tbody>
+              </table>
+            </div>`
+          : `<p class="muted">
+              A classificação do grupo ainda não está disponível.
+            </p>`;
+
+      const copaAmericaGroupsHtml=
+        copaAmerica?.groups?.length
+          ? `<div class="wc-groups-carousel">
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Grupo anterior"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.wc-groups-carousel')
+                      ?.querySelector('[data-ca-groups-track]');
+                  if(track)
+                    track.scrollBy({
+                      left:-360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >‹</button>
+
+              <div
+                class="wc-groups-track"
+                data-ca-groups-track
+              >
+                ${copaAmerica.groups.map(
+                  group=>{
+                    const table=
+                      group.table
+                        .slice()
+                        .sort(
+                          (a,b)=>
+                            b.points-a.points ||
+                            (b.gf-b.ga)-(a.gf-a.ga) ||
+                            b.gf-a.gf ||
+                            b.reputation-a.reputation
+                        );
+
+                    return `
+                      <section
+                        class="wc-group-card
+                          ${group.name===copaAmerica.group
+                            ? "is-brazil-group"
+                            : ""
+                          }"
+                      >
+                        <div class="wc-group-card-head">
+                          <b>GRUPO ${esc(group.name)}</b>
+                          <span>
+                            ${group.name===copaAmerica.group
+                              ? "Grupo do Brasil"
+                              : "4 seleções"
+                            }
+                          </span>
+                        </div>
+
+                        <div class="tablewrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>Seleção</th>
+                                <th>J</th>
+                                <th>V</th>
+                                <th>E</th>
+                                <th>D</th>
+                                <th>SG</th>
+                                <th>Pts</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              ${table.map(
+                                (x,i)=>`
+                                  <tr class="${[
+                                    x.id==="BRA" ? "hero-row" : "",
+                                    i<2 ? "wc-row-qualified" : ""
+                                  ].filter(Boolean).join(" ")}">
+                                    <td>${i+1}</td>
+                                    <td><b>${esc(x.name)}</b></td>
+                                    <td>${x.played}</td>
+                                    <td>${x.w}</td>
+                                    <td>${x.d}</td>
+                                    <td>${x.l}</td>
+                                    <td>${x.gf-x.ga}</td>
+                                    <td><b>${x.points}</b></td>
+                                  </tr>
+                                `
+                              ).join("")}
+                            </tbody>
+                          </table>
+                        </div>
+                      </section>
+                    `;
+                  }
+                ).join("")}
+              </div>
+
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Próximo grupo"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.wc-groups-carousel')
+                      ?.querySelector('[data-ca-groups-track]');
+                  if(track)
+                    track.scrollBy({
+                      left:360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >›</button>
+            </div>`
+          : `<p class="muted">
+              Os grupos da Copa América ainda não estão disponíveis.
+            </p>`;
+
+      const copaAmericaNextHtml=
+        copaAmerica?.nextFixture
+          ? `<div class="section">
+              <div class="tag">
+                PRÓXIMO JOGO NA COPA AMÉRICA
+              </div>
+
+              <h3>
+                Brasil ×
+                ${esc(
+                  copaAmerica.nextFixture.opponent
+                )}
+              </h3>
+
+              <p class="muted">
+                ${dayDate(
+                  copaAmerica.nextFixture.day
+                )}
+              </p>
+            </div>`
+          : "";
+
+      const copaAmericaResultsHtml=
+        copaAmerica?.results?.length
+          ? `<div class="national-fixtures">
+              ${copaAmerica.results.map(
+                match=>`
+                  <div>
+                    <time>
+                      ${dayDate(match.day)}
+                    </time>
+
+                    <b>
+                      Brasil
+                      ${match.brazil}
+                      ×
+                      ${match.other}
+                      ${esc(match.opponent)}
+                    </b>
+
+                    <small>
+                      ${match.participated
+                        ? "Você participou"
+                        : "Partida da Seleção"
+                      }
+                    </small>
+                  </div>
+                `
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              O Brasil ainda não disputou partidas nesta edição.
+            </p>`;
+
+      const copaAmericaKnockoutHtml=
+        copaAmerica?.knockout?.length
+          ? `<div class="national-fixtures">
+              ${copaAmerica.knockout.map(
+                match=>{
+                  const played=
+                    match.played;
+
+                  const score=
+                    played
+                      ? `${match.hg} × ${match.ag}`
+                      : "×";
+
+                  return `
+                    <div>
+                      <small>
+                        ${esc(
+                          ({
+                            QUARTERFINAL:"Quartas de final",
+                            SEMIFINAL:"Semifinal",
+                            THIRD_PLACE:"3º lugar",
+                            FINAL:"Final"
+                          })[match.phase]||
+                          match.phase
+                        )}
+                      </small>
+
+                      <b>
+                        ${esc(match.home)}
+                        ${score}
+                        ${esc(match.away)}
+                      </b>
+
+                      <small>
+                        ${played
+                          ? "Encerrado"
+                          : "A disputar"
+                        }
+                      </small>
+                    </div>
+                  `;
+                }
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              O mata-mata será definido após a fase de grupos.
+            </p>`;
+
+      const copaAmericaChampionHtml=
+        copaAmerica?.champion
+          ? `<div class="section fc26-ca-podium">
+              <div>
+                <small>CAMPEÃO</small>
+                <h3>
+                  ${esc(
+                    copaAmerica.champion.name
+                  )}
+                </h3>
+              </div>
+
+              <div>
+                <small>VICE</small>
+                <b>
+                  ${esc(
+                    copaAmerica.runnerUp?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+
+              <div>
+                <small>3º LUGAR</small>
+                <b>
+                  ${esc(
+                    copaAmerica.thirdPlace?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+            </div>`
+          : "";
+
+      const euroQualifiedThirdIds=
+        new Set(
+          (euro?.bestThirds||[])
+            .map(x=>x.id)
+        );
+
+      const euroGroupsHtml=
+        euro?.groups?.length
+          ? `<div class="wc-groups-carousel euro-groups-carousel">
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Grupo anterior da EURO"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.euro-groups-carousel')
+                      ?.querySelector('[data-euro-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:-360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >‹</button>
+
+              <div
+                class="wc-groups-track"
+                data-euro-groups-track
+              >
+                ${euro.groups.map(
+                  group=>{
+                    const table=
+                      group.table
+                        .slice()
+                        .sort(
+                          (a,b)=>
+                            b.points-a.points ||
+                            (b.gf-b.ga)-(a.gf-a.ga) ||
+                            b.gf-a.gf ||
+                            b.reputation-a.reputation
+                        );
+
+                    return `
+                      <section class="wc-group-card euro-group-card">
+                        <div class="wc-group-card-head">
+                          <b>
+                            GRUPO ${esc(group.name)}
+                          </b>
+
+                          <span>
+                            UEFA EURO
+                          </span>
+                        </div>
+
+                        <div class="tablewrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>Seleção</th>
+                                <th>J</th>
+                                <th>V</th>
+                                <th>E</th>
+                                <th>D</th>
+                                <th>SG</th>
+                                <th>Pts</th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              ${table.map(
+                                (x,i)=>{
+                                  const qualified=
+                                    i<2;
+
+                                  const third=
+                                    i===2;
+
+                                  const bestThird=
+                                    euroQualifiedThirdIds.has(
+                                      x.id
+                                    );
+
+                                  return `
+                                    <tr class="${[
+                                      qualified
+                                        ? "wc-row-qualified"
+                                        : "",
+                                      third
+                                        ? "wc-row-third"
+                                        : "",
+                                      bestThird
+                                        ? "wc-row-best-third"
+                                        : ""
+                                    ].filter(Boolean).join(" ")}">
+                                      <td>
+                                        ${i+1}
+                                      </td>
+
+                                      <td>
+                                        <b>
+                                          ${esc(x.name)}
+                                        </b>
+
+                                        ${bestThird
+                                          ? `<small class="euro-best-third-tag">
+                                              Melhor 3º
+                                            </small>`
+                                          : ""
+                                        }
+                                      </td>
+
+                                      <td>
+                                        ${x.played}
+                                      </td>
+
+                                      <td>
+                                        ${x.w}
+                                      </td>
+
+                                      <td>
+                                        ${x.d}
+                                      </td>
+
+                                      <td>
+                                        ${x.l}
+                                      </td>
+
+                                      <td>
+                                        ${x.gf-x.ga}
+                                      </td>
+
+                                      <td>
+                                        <b>
+                                          ${x.points}
+                                        </b>
+                                      </td>
+                                    </tr>
+                                  `;
+                                }
+                              ).join("")}
+                            </tbody>
+                          </table>
+                        </div>
+                      </section>
+                    `;
+                  }
+                ).join("")}
+              </div>
+
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Próximo grupo da EURO"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.euro-groups-carousel')
+                      ?.querySelector('[data-euro-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >›</button>
+            </div>`
+          : `<p class="muted">
+              Os grupos da EURO ainda não estão disponíveis.
+            </p>`;
+
+      const euroQualifiedHtml=
+        euro?.qualified16?.length
+          ? `<div class="fc26-euro-qualified">
+              ${euro.qualified16.map(
+                team=>`
+                  <span>
+                    ${esc(team.name)}
+                  </span>
+                `
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              Os classificados serão definidos após a fase de grupos.
+            </p>`;
+
+      const euroKnockoutHtml=
+        euro?.knockout?.length
+          ? `<div class="national-fixtures fc26-euro-knockout">
+              ${euro.knockout.map(
+                match=>{
+                  const label=
+                    ({
+                      ROUND_OF_16:"Oitavas de final",
+                      QUARTERFINAL:"Quartas de final",
+                      SEMIFINAL:"Semifinal",
+                      FINAL:"Final"
+                    })[match.phase]||
+                    match.phase;
+
+                  let score="×";
+
+                  if(match.played){
+                    score=
+                      `${match.hg} × ${match.ag}`;
+
+                    if(
+                      match.hg===match.ag &&
+                      match.hp!=null &&
+                      match.ap!=null
+                    ){
+                      score+=
+                        ` (pên. ${match.hp} × ${match.ap})`;
+                    }
+                  }
+
+                  return `
+                    <div class="euro-ko-match">
+                      <small>
+                        ${esc(label)}
+                      </small>
+
+                      <b>
+                        ${esc(match.home)}
+                        ${score}
+                        ${esc(match.away)}
+                      </b>
+
+                      <small>
+                        ${match.played
+                          ? "Encerrado"
+                          : "A disputar"
+                        }
+                      </small>
+                    </div>
+                  `;
+                }
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              O mata-mata será definido após a fase de grupos.
+            </p>`;
+
+      const euroPodiumHtml=
+        euro?.champion
+          ? `<div class="section fc26-ca-podium fc26-euro-podium">
+              <div>
+                <small>CAMPEÃO DA EURO</small>
+                <h3>
+                  ${esc(
+                    euro.champion.name
+                  )}
+                </h3>
+              </div>
+
+              <div>
+                <small>VICE-CAMPEÃO</small>
+                <b>
+                  ${esc(
+                    euro.runnerUp?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+            </div>`
+          : "";
+
+      const finalissimaMatch=
+        finalissima?.match||
+        null;
+
+      const finalissimaBrazil=
+        finalissima?.participants?.some(
+          team=>team.id==="BRA"
+        )||
+        false;
+
+      const finalissimaHome=
+        finalissima?.participants?.find(
+          team=>
+            team.id===
+            finalissimaMatch?.homeId
+        )||
+        null;
+
+      const finalissimaAway=
+        finalissima?.participants?.find(
+          team=>
+            team.id===
+            finalissimaMatch?.awayId
+        )||
+        null;
+
+      const finalissimaScoreHtml=
+        finalissimaMatch?.played
+          ? `<div class="fc26-finalissima-score">
+              <div class="${finalissimaMatch.homeId==="BRA" ? "is-brazil" : ""}">
+                <small>
+                  ${finalissimaHome?.source==="COPA_AMERICA"
+                    ? "CAMPEÃO DA COPA AMÉRICA"
+                    : "CAMPEÃO DA EURO"
+                  }
+                </small>
+
+                <h2>
+                  ${esc(finalissimaMatch.home)}
+                </h2>
+              </div>
+
+              <div class="fc26-finalissima-score-main">
+                <strong>
+                  ${finalissimaMatch.hg}
+                  ×
+                  ${finalissimaMatch.ag}
+                </strong>
+
+                ${finalissimaMatch.hp!=null &&
+                  finalissimaMatch.ap!=null
+                    ? `<small>
+                        Pênaltis:
+                        ${finalissimaMatch.hp}
+                        ×
+                        ${finalissimaMatch.ap}
+                      </small>`
+                    : ""
+                }
+              </div>
+
+              <div class="${finalissimaMatch.awayId==="BRA" ? "is-brazil" : ""}">
+                <small>
+                  ${finalissimaAway?.source==="COPA_AMERICA"
+                    ? "CAMPEÃO DA COPA AMÉRICA"
+                    : "CAMPEÃO DA EURO"
+                  }
+                </small>
+
+                <h2>
+                  ${esc(finalissimaMatch.away)}
+                </h2>
+              </div>
+            </div>`
+          : finalissimaMatch
+            ? `<div class="fc26-finalissima-score">
+                <div class="${finalissimaMatch.homeId==="BRA" ? "is-brazil" : ""}">
+                  <small>
+                    ${finalissimaHome?.source==="COPA_AMERICA"
+                      ? "CAMPEÃO DA COPA AMÉRICA"
+                      : "CAMPEÃO DA EURO"
+                    }
+                  </small>
+
+                  <h2>
+                    ${esc(finalissimaMatch.home)}
+                  </h2>
+                </div>
+
+                <div class="fc26-finalissima-score-main">
+                  <strong>×</strong>
+                  <small>Jogo único</small>
+                </div>
+
+                <div class="${finalissimaMatch.awayId==="BRA" ? "is-brazil" : ""}">
+                  <small>
+                    ${finalissimaAway?.source==="COPA_AMERICA"
+                      ? "CAMPEÃO DA COPA AMÉRICA"
+                      : "CAMPEÃO DA EURO"
+                    }
+                  </small>
+
+                  <h2>
+                    ${esc(finalissimaMatch.away)}
+                  </h2>
+                </div>
+              </div>`
+            : "";
+
+      const finalissimaChampionHtml=
+        finalissima?.champion
+          ? `<div class="section fc26-finalissima-podium">
+              <div>
+                <small>
+                  CAMPEÃO DA FINALÃSSIMA
+                </small>
+
+                <h3>
+                  ${esc(
+                    finalissima.champion.name
+                  )}
+                </h3>
+              </div>
+
+              <div>
+                <small>
+                  VICE-CAMPEÃO
+                </small>
+
+                <b>
+                  ${esc(
+                    finalissima.runnerUp?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+            </div>`
+          : "";
+
+      const nationsLeagueLeague=
+        nationsLeague?.leagues?.[
+          nationsLeagueDivision
+        ]||
+        null;
+
+      const nationsLeagueGroupsHtml=
+        nationsLeagueLeague?.groups?.length
+          ? `<div class="wc-groups-carousel nations-groups-carousel">
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Grupo anterior"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.nations-groups-carousel')
+                      ?.querySelector('[data-nations-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:-360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >‹</button>
+
+              <div
+                class="wc-groups-track"
+                data-nations-groups-track
+              >
+                ${nationsLeagueLeague.groups.map(
+                  group=>{
+                    const table=
+                      group.table
+                        .slice()
+                        .sort(
+                          (a,b)=>
+                            b.points-a.points ||
+                            (b.gf-b.ga)-(a.gf-a.ga) ||
+                            b.gf-a.gf ||
+                            b.reputation-a.reputation
+                        );
+
+                    return `
+                      <section class="wc-group-card nations-group-card">
+                        <div class="wc-group-card-head">
+                          <b>
+                            GRUPO ${esc(group.name)}
+                          </b>
+
+                          <span>
+                            Liga ${esc(nationsLeagueDivision)}
+                          </span>
+                        </div>
+
+                        <div class="tablewrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>Seleção</th>
+                                <th>J</th>
+                                <th>V</th>
+                                <th>E</th>
+                                <th>D</th>
+                                <th>SG</th>
+                                <th>Pts</th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              ${table.map(
+                                (x,i)=>{
+                                  const isTop=
+                                    i===0;
+
+                                  const isBottom=
+                                    i===table.length-1;
+
+                                  return `
+                                    <tr class="${[
+                                      isTop
+                                        ? "nations-row-promotion"
+                                        : "",
+                                      isBottom
+                                        ? "nations-row-relegation"
+                                        : ""
+                                    ].filter(Boolean).join(" ")}">
+                                      <td>
+                                        ${i+1}
+                                      </td>
+
+                                      <td>
+                                        <b>
+                                          ${esc(x.name)}
+                                        </b>
+                                      </td>
+
+                                      <td>${x.played}</td>
+                                      <td>${x.w}</td>
+                                      <td>${x.d}</td>
+                                      <td>${x.l}</td>
+                                      <td>${x.gf-x.ga}</td>
+
+                                      <td>
+                                        <b>
+                                          ${x.points}
+                                        </b>
+                                      </td>
+                                    </tr>
+                                  `;
+                                }
+                              ).join("")}
+                            </tbody>
+                          </table>
+                        </div>
+                      </section>
+                    `;
+                  }
+                ).join("")}
+              </div>
+
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Próximo grupo"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.nations-groups-carousel')
+                      ?.querySelector('[data-nations-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >›</button>
+            </div>`
+          : `<p class="muted">
+              Os grupos desta divisão ainda não estão disponíveis.
+            </p>`;
+
+      const nationsLeagueMovementHtml=
+        nationsLeague &&
+        (
+          nationsLeague.promotion?.length ||
+          nationsLeague.relegation?.length
+        )
+          ? `<div class="fc26-nations-movement">
+              <div>
+                <div class="tag">
+                  ACESSOS
+                </div>
+
+                ${(nationsLeague.promotion||[]).map(
+                  item=>`
+                    <span>
+                      <b>
+                        ${esc(item.team.name)}
+                      </b>
+                      · Liga ${item.from}
+                      → Liga ${item.to}
+                    </span>
+                  `
+                ).join("")}
+              </div>
+
+              <div>
+                <div class="tag">
+                  REBAIXAMENTOS
+                </div>
+
+                ${(nationsLeague.relegation||[]).map(
+                  item=>`
+                    <span>
+                      <b>
+                        ${esc(item.team.name)}
+                      </b>
+                      · Liga ${item.from}
+                      → Liga ${item.to}
+                    </span>
+                  `
+                ).join("")}
+              </div>
+            </div>`
+          : `<p class="muted">
+              Acessos e rebaixamentos serão definidos ao fim da fase de ligas.
+            </p>`;
+
+      const nationsLeagueFinalsHtml=
+        nationsLeague?.finals?.length
+          ? `<div class="national-fixtures fc26-nations-finals">
+              ${nationsLeague.finals.map(
+                match=>{
+                  const label=
+                    ({
+                      SEMIFINAL:"Semifinal",
+                      FINAL:"Final",
+                      THIRD_PLACE:"3º lugar"
+                    })[match.phase]||
+                    match.phase;
+
+                  let score="×";
+
+                  if(match.played){
+                    score=
+                      `${match.hg} × ${match.ag}`;
+
+                    if(
+                      match.hg===match.ag &&
+                      match.hp!=null &&
+                      match.ap!=null
+                    ){
+                      score+=
+                        ` (pên. ${match.hp} × ${match.ap})`;
+                    }
+                  }
+
+                  return `
+                    <div>
+                      <small>
+                        ${esc(label)}
+                      </small>
+
+                      <b>
+                        ${esc(match.home)}
+                        ${score}
+                        ${esc(match.away)}
+                      </b>
+
+                      <small>
+                        ${match.played
+                          ? "Encerrado"
+                          : "A disputar"
+                        }
+                      </small>
+                    </div>
+                  `;
+                }
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              A Final Four será definida pelos campeões dos grupos da Liga A.
+            </p>`;
+
+      const nationsLeaguePodiumHtml=
+        nationsLeague?.champion
+          ? `<div class="section fc26-ca-podium fc26-nations-podium">
+              <div>
+                <small>
+                  CAMPEÃO DA NATIONS LEAGUE
+                </small>
+
+                <h3>
+                  ${esc(
+                    nationsLeague.champion.name
+                  )}
+                </h3>
+              </div>
+
+              <div>
+                <small>
+                  VICE
+                </small>
+
+                <b>
+                  ${esc(
+                    nationsLeague.runnerUp?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+
+              <div>
+                <small>
+                  3º LUGAR
+                </small>
+
+                <b>
+                  ${esc(
+                    nationsLeague.thirdPlace?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+            </div>`
+          : "";
+
+      const afconBestThirdIds=
+        new Set(
+          (afcon?.bestThirds||[])
+            .map(
+              x=>x.id
+            )
+        );
+
+      const afconGroupsHtml=
+        afcon?.groups?.length
+          ? `<div class="wc-groups-carousel afcon-groups-carousel">
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Grupo anterior da AFCON"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.afcon-groups-carousel')
+                      ?.querySelector('[data-afcon-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:-360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >‹</button>
+
+              <div
+                class="wc-groups-track"
+                data-afcon-groups-track
+              >
+                ${afcon.groups.map(
+                  group=>{
+                    const table=
+                      group.table
+                        .slice()
+                        .sort(
+                          (a,b)=>
+                            b.points-a.points ||
+                            (b.gf-b.ga)-(a.gf-a.ga) ||
+                            b.gf-a.gf ||
+                            b.reputation-a.reputation
+                        );
+
+                    return `
+                      <section class="wc-group-card afcon-group-card">
+                        <div class="wc-group-card-head">
+                          <b>
+                            GRUPO ${esc(group.name)}
+                          </b>
+
+                          <span>
+                            AFCON
+                          </span>
+                        </div>
+
+                        <div class="tablewrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>Seleção</th>
+                                <th>J</th>
+                                <th>V</th>
+                                <th>E</th>
+                                <th>D</th>
+                                <th>SG</th>
+                                <th>Pts</th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              ${table.map(
+                                (x,i)=>{
+                                  const direct=
+                                    i<2;
+
+                                  const third=
+                                    i===2;
+
+                                  const bestThird=
+                                    afconBestThirdIds.has(
+                                      x.id
+                                    );
+
+                                  return `
+                                    <tr class="${[
+                                      direct
+                                        ? "wc-row-qualified"
+                                        : "",
+                                      third
+                                        ? "wc-row-third"
+                                        : "",
+                                      bestThird
+                                        ? "wc-row-best-third"
+                                        : ""
+                                    ].filter(Boolean).join(" ")}">
+                                      <td>${i+1}</td>
+
+                                      <td>
+                                        <b>
+                                          ${esc(x.name)}
+                                        </b>
+
+                                        ${bestThird
+                                          ? `<small class="afcon-best-third-tag">
+                                              Melhor 3º
+                                            </small>`
+                                          : ""
+                                        }
+                                      </td>
+
+                                      <td>${x.played}</td>
+                                      <td>${x.w}</td>
+                                      <td>${x.d}</td>
+                                      <td>${x.l}</td>
+                                      <td>${x.gf-x.ga}</td>
+
+                                      <td>
+                                        <b>${x.points}</b>
+                                      </td>
+                                    </tr>
+                                  `;
+                                }
+                              ).join("")}
+                            </tbody>
+                          </table>
+                        </div>
+                      </section>
+                    `;
+                  }
+                ).join("")}
+              </div>
+
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Próximo grupo da AFCON"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.afcon-groups-carousel')
+                      ?.querySelector('[data-afcon-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >›</button>
+            </div>`
+          : `<p class="muted">
+              Os grupos da AFCON ainda não estão disponíveis.
+            </p>`;
+
+      const afconQualifiedHtml=
+        afcon?.qualified16?.length
+          ? `<div class="fc26-afcon-qualified">
+              ${afcon.qualified16.map(
+                team=>`
+                  <span>
+                    ${esc(team.name)}
+                  </span>
+                `
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              Os classificados serão definidos após a fase de grupos.
+            </p>`;
+
+      const afconKnockoutHtml=
+        afcon?.knockout?.length
+          ? `<div class="national-fixtures fc26-afcon-knockout">
+              ${afcon.knockout.map(
+                match=>{
+                  const label=
+                    ({
+                      ROUND_OF_16:"Oitavas de final",
+                      QUARTERFINAL:"Quartas de final",
+                      SEMIFINAL:"Semifinal",
+                      THIRD_PLACE:"3º lugar",
+                      FINAL:"Final"
+                    })[match.phase]||
+                    match.phase;
+
+                  let score="×";
+
+                  if(match.played){
+                    score=
+                      `${match.hg} × ${match.ag}`;
+
+                    if(
+                      match.hg===match.ag &&
+                      match.hp!=null &&
+                      match.ap!=null
+                    ){
+                      score+=
+                        ` (pên. ${match.hp} × ${match.ap})`;
+                    }
+                  }
+
+                  return `
+                    <div>
+                      <small>
+                        ${esc(label)}
+                      </small>
+
+                      <b>
+                        ${esc(match.home)}
+                        ${score}
+                        ${esc(match.away)}
+                      </b>
+
+                      <small>
+                        ${match.played
+                          ? "Encerrado"
+                          : "A disputar"
+                        }
+                      </small>
+                    </div>
+                  `;
+                }
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              O mata-mata será definido após a fase de grupos.
+            </p>`;
+
+      const afconPodiumHtml=
+        afcon?.champion
+          ? `<div class="section fc26-ca-podium fc26-afcon-podium">
+              <div>
+                <small>
+                  CAMPEÃO DA AFCON
+                </small>
+
+                <h3>
+                  ${esc(
+                    afcon.champion.name
+                  )}
+                </h3>
+              </div>
+
+              <div>
+                <small>
+                  VICE
+                </small>
+
+                <b>
+                  ${esc(
+                    afcon.runnerUp?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+
+              <div>
+                <small>
+                  3º LUGAR
+                </small>
+
+                <b>
+                  ${esc(
+                    afcon.thirdPlace?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+            </div>`
+          : "";
+
+      const asianCupBestThirdIds=
+        new Set(
+          (asianCup?.bestThirds||[])
+            .map(
+              x=>x.id
+            )
+        );
+
+      const asianCupGroupsHtml=
+        asianCup?.groups?.length
+          ? `<div class="wc-groups-carousel asian-groups-carousel">
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Grupo anterior da Asian Cup"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.asian-groups-carousel')
+                      ?.querySelector('[data-asian-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:-360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >‹</button>
+
+              <div
+                class="wc-groups-track"
+                data-asian-groups-track
+              >
+                ${asianCup.groups.map(
+                  group=>{
+                    const table=
+                      group.table
+                        .slice()
+                        .sort(
+                          (a,b)=>
+                            b.points-a.points ||
+                            (b.gf-b.ga)-(a.gf-a.ga) ||
+                            b.gf-a.gf ||
+                            b.reputation-a.reputation
+                        );
+
+                    return `
+                      <section class="wc-group-card asian-group-card">
+                        <div class="wc-group-card-head">
+                          <b>
+                            GRUPO ${esc(group.name)}
+                          </b>
+
+                          <span>
+                            AFC ASIAN CUP
+                          </span>
+                        </div>
+
+                        <div class="tablewrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>Seleção</th>
+                                <th>J</th>
+                                <th>V</th>
+                                <th>E</th>
+                                <th>D</th>
+                                <th>SG</th>
+                                <th>Pts</th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              ${table.map(
+                                (x,i)=>{
+                                  const direct=
+                                    i<2;
+
+                                  const third=
+                                    i===2;
+
+                                  const bestThird=
+                                    asianCupBestThirdIds.has(
+                                      x.id
+                                    );
+
+                                  return `
+                                    <tr class="${[
+                                      direct
+                                        ? "wc-row-qualified"
+                                        : "",
+                                      third
+                                        ? "wc-row-third"
+                                        : "",
+                                      bestThird
+                                        ? "wc-row-best-third"
+                                        : ""
+                                    ].filter(Boolean).join(" ")}">
+                                      <td>${i+1}</td>
+
+                                      <td>
+                                        <b>
+                                          ${esc(x.name)}
+                                        </b>
+
+                                        ${bestThird
+                                          ? `<small class="asian-best-third-tag">
+                                              Melhor 3º
+                                            </small>`
+                                          : ""
+                                        }
+                                      </td>
+
+                                      <td>${x.played}</td>
+                                      <td>${x.w}</td>
+                                      <td>${x.d}</td>
+                                      <td>${x.l}</td>
+                                      <td>${x.gf-x.ga}</td>
+
+                                      <td>
+                                        <b>
+                                          ${x.points}
+                                        </b>
+                                      </td>
+                                    </tr>
+                                  `;
+                                }
+                              ).join("")}
+                            </tbody>
+                          </table>
+                        </div>
+                      </section>
+                    `;
+                  }
+                ).join("")}
+              </div>
+
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Próximo grupo da Asian Cup"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.asian-groups-carousel')
+                      ?.querySelector('[data-asian-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >›</button>
+            </div>`
+          : `<p class="muted">
+              Os grupos da Asian Cup ainda não estão disponíveis.
+            </p>`;
+
+      const asianCupQualifiedHtml=
+        asianCup?.qualified16?.length
+          ? `<div class="fc26-asian-qualified">
+              ${asianCup.qualified16.map(
+                team=>`
+                  <span>
+                    ${esc(team.name)}
+                  </span>
+                `
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              Os classificados serão definidos após a fase de grupos.
+            </p>`;
+
+      const asianCupKnockoutHtml=
+        asianCup?.knockout?.length
+          ? `<div class="national-fixtures fc26-asian-knockout">
+              ${asianCup.knockout.map(
+                match=>{
+                  const label=
+                    ({
+                      ROUND_OF_16:"Oitavas de final",
+                      QUARTERFINAL:"Quartas de final",
+                      SEMIFINAL:"Semifinal",
+                      FINAL:"Final"
+                    })[match.phase]||
+                    match.phase;
+
+                  let score="×";
+
+                  if(match.played){
+                    score=
+                      `${match.hg} × ${match.ag}`;
+
+                    if(
+                      match.hg===match.ag &&
+                      match.hp!=null &&
+                      match.ap!=null
+                    ){
+                      score+=
+                        ` (pên. ${match.hp} × ${match.ap})`;
+                    }
+                  }
+
+                  return `
+                    <div>
+                      <small>
+                        ${esc(label)}
+                      </small>
+
+                      <b>
+                        ${esc(match.home)}
+                        ${score}
+                        ${esc(match.away)}
+                      </b>
+
+                      <small>
+                        ${match.played
+                          ? "Encerrado"
+                          : "A disputar"
+                        }
+                      </small>
+                    </div>
+                  `;
+                }
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              O mata-mata será definido após a fase de grupos.
+            </p>`;
+
+      const asianCupPodiumHtml=
+        asianCup?.champion
+          ? `<div class="section fc26-ca-podium fc26-asian-podium">
+              <div>
+                <small>
+                  CAMPEÃO DA ASIAN CUP
+                </small>
+
+                <h3>
+                  ${esc(
+                    asianCup.champion.name
+                  )}
+                </h3>
+              </div>
+
+              <div>
+                <small>
+                  VICE
+                </small>
+
+                <b>
+                  ${esc(
+                    asianCup.runnerUp?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+            </div>`
+          : "";
+
+      const goldCupGroupsHtml=
+        goldCup?.groups?.length
+          ? `<div class="wc-groups-carousel goldcup-groups-carousel">
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Grupo anterior da Gold Cup"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.goldcup-groups-carousel')
+                      ?.querySelector('[data-goldcup-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:-360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >‹</button>
+
+              <div
+                class="wc-groups-track"
+                data-goldcup-groups-track
+              >
+                ${goldCup.groups.map(
+                  group=>{
+                    const table=
+                      group.table
+                        .slice()
+                        .sort(
+                          (a,b)=>
+                            b.points-a.points ||
+                            (b.gf-b.ga)-(a.gf-a.ga) ||
+                            b.gf-a.gf ||
+                            b.reputation-a.reputation
+                        );
+
+                    return `
+                      <section class="wc-group-card goldcup-group-card">
+                        <div class="wc-group-card-head">
+                          <b>
+                            GRUPO ${esc(group.name)}
+                          </b>
+
+                          <span>
+                            GOLD CUP
+                          </span>
+                        </div>
+
+                        <div class="tablewrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>Seleção</th>
+                                <th>J</th>
+                                <th>V</th>
+                                <th>E</th>
+                                <th>D</th>
+                                <th>SG</th>
+                                <th>Pts</th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              ${table.map(
+                                (x,i)=>`
+                                  <tr class="${i<2 ? "wc-row-qualified" : ""}">
+                                    <td>
+                                      ${i+1}
+                                    </td>
+
+                                    <td>
+                                      <b>
+                                        ${esc(x.name)}
+                                      </b>
+                                    </td>
+
+                                    <td>${x.played}</td>
+                                    <td>${x.w}</td>
+                                    <td>${x.d}</td>
+                                    <td>${x.l}</td>
+                                    <td>${x.gf-x.ga}</td>
+
+                                    <td>
+                                      <b>
+                                        ${x.points}
+                                      </b>
+                                    </td>
+                                  </tr>
+                                `
+                              ).join("")}
+                            </tbody>
+                          </table>
+                        </div>
+                      </section>
+                    `;
+                  }
+                ).join("")}
+              </div>
+
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Próximo grupo da Gold Cup"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.goldcup-groups-carousel')
+                      ?.querySelector('[data-goldcup-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >›</button>
+            </div>`
+          : `<p class="muted">
+              Os grupos da Gold Cup ainda não estão disponíveis.
+            </p>`;
+
+      const goldCupQualifiedHtml=
+        goldCup?.qualified8?.length
+          ? `<div class="fc26-goldcup-qualified">
+              ${goldCup.qualified8.map(
+                team=>`
+                  <span>
+                    ${esc(team.name)}
+                  </span>
+                `
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              Os classificados serão definidos após a fase de grupos.
+            </p>`;
+
+      const goldCupKnockoutHtml=
+        goldCup?.knockout?.length
+          ? `<div class="national-fixtures fc26-goldcup-knockout">
+              ${goldCup.knockout.map(
+                match=>{
+                  const label=
+                    ({
+                      QUARTERFINAL:"Quartas de final",
+                      SEMIFINAL:"Semifinal",
+                      FINAL:"Final"
+                    })[match.phase]||
+                    match.phase;
+
+                  let score="×";
+
+                  if(match.played){
+                    score=
+                      `${match.hg} × ${match.ag}`;
+
+                    if(
+                      match.hg===match.ag &&
+                      match.hp!=null &&
+                      match.ap!=null
+                    ){
+                      score+=
+                        ` (pên. ${match.hp} × ${match.ap})`;
+                    }
+                  }
+
+                  return `
+                    <div>
+                      <small>
+                        ${esc(label)}
+                      </small>
+
+                      <b>
+                        ${esc(match.home)}
+                        ${score}
+                        ${esc(match.away)}
+                      </b>
+
+                      <small>
+                        ${match.played
+                          ? "Encerrado"
+                          : "A disputar"
+                        }
+                      </small>
+                    </div>
+                  `;
+                }
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              O mata-mata será definido após a fase de grupos.
+            </p>`;
+
+      const goldCupPodiumHtml=
+        goldCup?.champion
+          ? `<div class="section fc26-ca-podium fc26-goldcup-podium">
+              <div>
+                <small>
+                  CAMPEÃO DA GOLD CUP
+                </small>
+
+                <h3>
+                  ${esc(
+                    goldCup.champion.name
+                  )}
+                </h3>
+              </div>
+
+              <div>
+                <small>
+                  VICE
+                </small>
+
+                <b>
+                  ${esc(
+                    goldCup.runnerUp?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+            </div>`
+          : "";
+
+      const concacafLeague=
+        concacafNationsLeague?.leagues?.[
+          concacafNationsLeagueDivision
+        ]||
+        null;
+
+      const concacafSeededHtml=
+        concacafNationsLeagueDivision==="A" &&
+        concacafLeague?.seeded?.length
+          ? `<div class="fc26-concacaf-seeded">
+              <small>
+                CABEÇAS DE CHAVE · ENTRAM NAS QUARTAS
+              </small>
+
+              <div>
+                ${concacafLeague.seeded.map(
+                  team=>`
+                    <span>
+                      ${esc(team.name)}
+                    </span>
+                  `
+                ).join("")}
+              </div>
+            </div>`
+          : "";
+
+      const concacafGroupsHtml=
+        concacafLeague?.groups?.length
+          ? `<div class="wc-groups-carousel concacaf-nations-groups-carousel">
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Grupo anterior"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.concacaf-nations-groups-carousel')
+                      ?.querySelector('[data-concacaf-nations-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:-360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >‹</button>
+
+              <div
+                class="wc-groups-track"
+                data-concacaf-nations-groups-track
+              >
+                ${concacafLeague.groups.map(
+                  group=>{
+                    const table=
+                      group.table
+                        .slice()
+                        .sort(
+                          (a,b)=>
+                            b.points-a.points ||
+                            (b.gf-b.ga)-(a.gf-a.ga) ||
+                            b.gf-a.gf ||
+                            b.reputation-a.reputation
+                        );
+
+                    return `
+                      <section class="wc-group-card concacaf-nations-group-card">
+                        <div class="wc-group-card-head">
+                          <b>
+                            GRUPO ${esc(group.name)}
+                          </b>
+
+                          <span>
+                            LIGA ${esc(
+                              concacafNationsLeagueDivision
+                            )}
+                          </span>
+                        </div>
+
+                        <div class="tablewrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>Seleção</th>
+                                <th>J</th>
+                                <th>V</th>
+                                <th>E</th>
+                                <th>D</th>
+                                <th>SG</th>
+                                <th>Pts</th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              ${table.map(
+                                (x,i)=>{
+                                  const top=
+                                    i===0;
+
+                                  const bottom=
+                                    i===table.length-1;
+
+                                  return `
+                                    <tr class="${[
+                                      top
+                                        ? "concacaf-row-top"
+                                        : "",
+                                      bottom
+                                        ? "concacaf-row-bottom"
+                                        : ""
+                                    ].filter(Boolean).join(" ")}">
+                                      <td>${i+1}</td>
+
+                                      <td>
+                                        <b>
+                                          ${esc(x.name)}
+                                        </b>
+                                      </td>
+
+                                      <td>${x.played}</td>
+                                      <td>${x.w}</td>
+                                      <td>${x.d}</td>
+                                      <td>${x.l}</td>
+                                      <td>${x.gf-x.ga}</td>
+
+                                      <td>
+                                        <b>
+                                          ${x.points}
+                                        </b>
+                                      </td>
+                                    </tr>
+                                  `;
+                                }
+                              ).join("")}
+                            </tbody>
+                          </table>
+                        </div>
+                      </section>
+                    `;
+                  }
+                ).join("")}
+              </div>
+
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Próximo grupo"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.concacaf-nations-groups-carousel')
+                      ?.querySelector('[data-concacaf-nations-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >›</button>
+            </div>`
+          : `<p class="muted">
+              Os grupos desta divisão ainda não estão disponíveis.
+            </p>`;
+
+      const concacafMovementHtml=
+        concacafNationsLeague &&
+        (
+          concacafNationsLeague.promotion?.length ||
+          concacafNationsLeague.relegation?.length
+        )
+          ? `<div class="fc26-concacaf-movement">
+              <div>
+                <div class="tag">
+                  ACESSOS
+                </div>
+
+                ${(concacafNationsLeague.promotion||[]).map(
+                  item=>`
+                    <span>
+                      <b>
+                        ${esc(item.team.name)}
+                      </b>
+                      · Liga ${esc(item.from)}
+                      → Liga ${esc(item.to)}
+                    </span>
+                  `
+                ).join("")}
+              </div>
+
+              <div>
+                <div class="tag">
+                  REBAIXAMENTOS
+                </div>
+
+                ${(concacafNationsLeague.relegation||[]).map(
+                  item=>`
+                    <span>
+                      <b>
+                        ${esc(item.team.name)}
+                      </b>
+                      · Liga ${esc(item.from)}
+                      → Liga ${esc(item.to)}
+                    </span>
+                  `
+                ).join("")}
+              </div>
+            </div>`
+          : `<p class="muted">
+              Acessos e rebaixamentos serão definidos ao fim da fase de ligas.
+            </p>`;
+
+      const concacafQuarterfinalsHtml=
+        concacafNationsLeague?.quarterfinals?.length
+          ? `<div class="national-fixtures fc26-concacaf-quarterfinals">
+              ${concacafNationsLeague.quarterfinals.map(
+                match=>{
+                  let score="×";
+
+                  if(match.played){
+                    score=
+                      `${match.hg} × ${match.ag}`;
+
+                    if(
+                      match.hg===match.ag &&
+                      match.hp!=null &&
+                      match.ap!=null
+                    ){
+                      score+=
+                        ` (pên. ${match.hp} × ${match.ap})`;
+                    }
+                  }
+
+                  return `
+                    <div>
+                      <small>
+                        Quartas de final
+                      </small>
+
+                      <b>
+                        ${esc(match.home)}
+                        ${score}
+                        ${esc(match.away)}
+                      </b>
+
+                      <small>
+                        ${match.played
+                          ? "Encerrado"
+                          : "A disputar"
+                        }
+                      </small>
+                    </div>
+                  `;
+                }
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              As quartas serão definidas após a fase de ligas.
+            </p>`;
+
+      const concacafFinalsHtml=
+        concacafNationsLeague?.finals?.length
+          ? `<div class="national-fixtures fc26-concacaf-finals">
+              ${concacafNationsLeague.finals.map(
+                match=>{
+                  const label=
+                    ({
+                      SEMIFINAL:"Semifinal",
+                      FINAL:"Final",
+                      THIRD_PLACE:"3º lugar"
+                    })[match.phase]||
+                    match.phase;
+
+                  let score="×";
+
+                  if(match.played){
+                    score=
+                      `${match.hg} × ${match.ag}`;
+
+                    if(
+                      match.hg===match.ag &&
+                      match.hp!=null &&
+                      match.ap!=null
+                    ){
+                      score+=
+                        ` (pên. ${match.hp} × ${match.ap})`;
+                    }
+                  }
+
+                  return `
+                    <div>
+                      <small>
+                        ${esc(label)}
+                      </small>
+
+                      <b>
+                        ${esc(match.home)}
+                        ${score}
+                        ${esc(match.away)}
+                      </b>
+
+                      <small>
+                        ${match.played
+                          ? "Encerrado"
+                          : "A disputar"
+                        }
+                      </small>
+                    </div>
+                  `;
+                }
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              O Final Four será definido após as quartas de final.
+            </p>`;
+
+      const concacafPodiumHtml=
+        concacafNationsLeague?.champion
+          ? `<div class="section fc26-ca-podium fc26-concacaf-podium">
+              <div>
+                <small>
+                  CAMPEÃO DA CONCACAF NATIONS LEAGUE
+                </small>
+
+                <h3>
+                  ${esc(
+                    concacafNationsLeague.champion.name
+                  )}
+                </h3>
+              </div>
+
+              <div>
+                <small>
+                  VICE
+                </small>
+
+                <b>
+                  ${esc(
+                    concacafNationsLeague.runnerUp?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+
+              <div>
+                <small>
+                  3º LUGAR
+                </small>
+
+                <b>
+                  ${esc(
+                    concacafNationsLeague.thirdPlace?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+            </div>`
+          : "";
+
+      const ofcGroupsHtml=
+        ofcNationsCup?.groups?.length
+          ? `<div class="wc-groups-carousel ofc-groups-carousel">
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Grupo anterior da OFC Nations Cup"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.ofc-groups-carousel')
+                      ?.querySelector('[data-ofc-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:-360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >‹</button>
+
+              <div
+                class="wc-groups-track"
+                data-ofc-groups-track
+              >
+                ${ofcNationsCup.groups.map(
+                  group=>{
+                    const table=
+                      group.table
+                        .slice()
+                        .sort(
+                          (a,b)=>
+                            b.points-a.points ||
+                            (b.gf-b.ga)-(a.gf-a.ga) ||
+                            b.gf-a.gf ||
+                            b.reputation-a.reputation
+                        );
+
+                    return `
+                      <section class="wc-group-card ofc-group-card">
+                        <div class="wc-group-card-head">
+                          <b>
+                            GRUPO ${esc(group.name)}
+                          </b>
+
+                          <span>
+                            OFC
+                          </span>
+                        </div>
+
+                        <div class="tablewrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>Seleção</th>
+                                <th>J</th>
+                                <th>V</th>
+                                <th>E</th>
+                                <th>D</th>
+                                <th>SG</th>
+                                <th>Pts</th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              ${table.map(
+                                (x,i)=>`
+                                  <tr class="${i<2 ? "wc-row-qualified" : ""}">
+                                    <td>
+                                      ${i+1}
+                                    </td>
+
+                                    <td>
+                                      <b>
+                                        ${esc(x.name)}
+                                      </b>
+                                    </td>
+
+                                    <td>${x.played}</td>
+                                    <td>${x.w}</td>
+                                    <td>${x.d}</td>
+                                    <td>${x.l}</td>
+                                    <td>${x.gf-x.ga}</td>
+
+                                    <td>
+                                      <b>
+                                        ${x.points}
+                                      </b>
+                                    </td>
+                                  </tr>
+                                `
+                              ).join("")}
+                            </tbody>
+                          </table>
+                        </div>
+                      </section>
+                    `;
+                  }
+                ).join("")}
+              </div>
+
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Próximo grupo da OFC Nations Cup"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.ofc-groups-carousel')
+                      ?.querySelector('[data-ofc-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >›</button>
+            </div>`
+          : `<p class="muted">
+              Os grupos da OFC Nations Cup ainda não estão disponíveis.
+            </p>`;
+
+      const ofcQualifiedHtml=
+        ofcNationsCup?.qualified4?.length
+          ? `<div class="fc26-ofc-qualified">
+              ${ofcNationsCup.qualified4.map(
+                team=>`
+                  <span>
+                    ${esc(team.name)}
+                  </span>
+                `
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              Os semifinalistas serão definidos após a fase de grupos.
+            </p>`;
+
+      const ofcKnockoutHtml=
+        ofcNationsCup?.knockout?.length
+          ? `<div class="national-fixtures fc26-ofc-knockout">
+              ${ofcNationsCup.knockout.map(
+                match=>{
+                  const label=
+                    ({
+                      SEMIFINAL:"Semifinal",
+                      FINAL:"Final"
+                    })[match.phase]||
+                    match.phase;
+
+                  let score="×";
+
+                  if(match.played){
+                    score=
+                      `${match.hg} × ${match.ag}`;
+
+                    if(
+                      match.hg===match.ag &&
+                      match.hp!=null &&
+                      match.ap!=null
+                    ){
+                      score+=
+                        ` (pên. ${match.hp} × ${match.ap})`;
+                    }
+                  }
+
+                  return `
+                    <div>
+                      <small>
+                        ${esc(label)}
+                      </small>
+
+                      <b>
+                        ${esc(match.home)}
+                        ${score}
+                        ${esc(match.away)}
+                      </b>
+
+                      <small>
+                        ${match.played
+                          ? "Encerrado"
+                          : "A disputar"
+                        }
+                      </small>
+                    </div>
+                  `;
+                }
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              O mata-mata será definido após a fase de grupos.
+            </p>`;
+
+      const ofcPodiumHtml=
+        ofcNationsCup?.champion
+          ? `<div class="section fc26-ca-podium fc26-ofc-podium">
+              <div>
+                <small>
+                  CAMPEÃO DA OFC NATIONS CUP
+                </small>
+
+                <h3>
+                  ${esc(
+                    ofcNationsCup.champion.name
+                  )}
+                </h3>
+              </div>
+
+              <div>
+                <small>
+                  VICE
+                </small>
+
+                <b>
+                  ${esc(
+                    ofcNationsCup.runnerUp?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+            </div>`
+          : "";
+
+      const arabCupGroupsHtml=
+        fifaArabCup?.groups?.length
+          ? `<div class="wc-groups-carousel arab-cup-groups-carousel">
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Grupo anterior da FIFA Arab Cup"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.arab-cup-groups-carousel')
+                      ?.querySelector('[data-arab-cup-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:-360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >‹</button>
+
+              <div
+                class="wc-groups-track"
+                data-arab-cup-groups-track
+              >
+                ${fifaArabCup.groups.map(
+                  group=>{
+                    const table=
+                      group.table
+                        .slice()
+                        .sort(
+                          (a,b)=>
+                            b.points-a.points ||
+                            (b.gf-b.ga)-(a.gf-a.ga) ||
+                            b.gf-a.gf ||
+                            b.reputation-a.reputation
+                        );
+
+                    return `
+                      <section class="wc-group-card arab-cup-group-card">
+                        <div class="wc-group-card-head">
+                          <b>
+                            GRUPO ${esc(group.name)}
+                          </b>
+
+                          <span>
+                            FIFA ARAB CUP
+                          </span>
+                        </div>
+
+                        <div class="tablewrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>Seleção</th>
+                                <th>J</th>
+                                <th>V</th>
+                                <th>E</th>
+                                <th>D</th>
+                                <th>SG</th>
+                                <th>Pts</th>
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              ${table.map(
+                                (x,i)=>`
+                                  <tr class="${i<2 ? "wc-row-qualified" : ""}">
+                                    <td>${i+1}</td>
+
+                                    <td>
+                                      <b>
+                                        ${esc(x.name)}
+                                      </b>
+                                    </td>
+
+                                    <td>${x.played}</td>
+                                    <td>${x.w}</td>
+                                    <td>${x.d}</td>
+                                    <td>${x.l}</td>
+                                    <td>${x.gf-x.ga}</td>
+
+                                    <td>
+                                      <b>${x.points}</b>
+                                    </td>
+                                  </tr>
+                                `
+                              ).join("")}
+                            </tbody>
+                          </table>
+                        </div>
+                      </section>
+                    `;
+                  }
+                ).join("")}
+              </div>
+
+              <button
+                type="button"
+                class="wc-groups-nav"
+                aria-label="Próximo grupo da FIFA Arab Cup"
+                onclick="(function(btn){
+                  const track=
+                    btn.closest('.arab-cup-groups-carousel')
+                      ?.querySelector('[data-arab-cup-groups-track]');
+
+                  if(track)
+                    track.scrollBy({
+                      left:360,
+                      behavior:'smooth'
+                    });
+                })(this)"
+              >›</button>
+            </div>`
+          : `<p class="muted">
+              Os grupos da FIFA Arab Cup ainda não estão disponíveis.
+            </p>`;
+
+      const arabCupQualifiedHtml=
+        fifaArabCup?.qualified8?.length
+          ? `<div class="fc26-arab-qualified">
+              ${fifaArabCup.qualified8.map(
+                team=>`
+                  <span>
+                    ${esc(team.name)}
+                  </span>
+                `
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              Os classificados serão definidos após a fase de grupos.
+            </p>`;
+
+      const arabCupKnockoutHtml=
+        fifaArabCup?.knockout?.length
+          ? `<div class="national-fixtures fc26-arab-knockout">
+              ${fifaArabCup.knockout.map(
+                match=>{
+                  const label=
+                    ({
+                      QUARTERFINAL:"Quartas de final",
+                      SEMIFINAL:"Semifinal",
+                      THIRD_PLACE:"3º lugar",
+                      FINAL:"Final"
+                    })[match.phase]||
+                    match.phase;
+
+                  let score="×";
+
+                  if(match.played){
+                    score=
+                      `${match.hg} × ${match.ag}`;
+
+                    if(
+                      match.hg===match.ag &&
+                      match.hp!=null &&
+                      match.ap!=null
+                    ){
+                      score+=
+                        ` (pên. ${match.hp} × ${match.ap})`;
+                    }
+                  }
+
+                  return `
+                    <div>
+                      <small>
+                        ${esc(label)}
+                      </small>
+
+                      <b>
+                        ${esc(match.home)}
+                        ${score}
+                        ${esc(match.away)}
+                      </b>
+
+                      <small>
+                        ${match.played
+                          ? "Encerrado"
+                          : "A disputar"
+                        }
+                      </small>
+                    </div>
+                  `;
+                }
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              O mata-mata será definido após a fase de grupos.
+            </p>`;
+
+      const arabCupPodiumHtml=
+        fifaArabCup?.champion
+          ? `<div class="section fc26-ca-podium fc26-arab-podium">
+              <div>
+                <small>
+                  CAMPEÃO DA FIFA ARAB CUP
+                </small>
+
+                <h3>
+                  ${esc(
+                    fifaArabCup.champion.name
+                  )}
+                </h3>
+              </div>
+
+              <div>
+                <small>
+                  VICE
+                </small>
+
+                <b>
+                  ${esc(
+                    fifaArabCup.runnerUp?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+
+              <div>
+                <small>
+                  3º LUGAR
+                </small>
+
+                <b>
+                  ${esc(
+                    fifaArabCup.thirdPlace?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+            </div>`
+          : "";
+
+      const fifaSeriesSelected=
+        fifaSeries?.series?.find(
+          item=>item.id===fifaSeriesVenueId
+        )||
+        fifaSeries?.series?.[0]||
+        null;
+
+      const fifaSeriesTabsHtml=
+        fifaSeries?.series?.length
+          ? `<div class="fc26-fifa-series-tabs">
+              ${fifaSeries.series.map(
+                item=>`
+                  <button
+                    type="button"
+                    data-fifa-series-venue="${esc(item.id)}"
+                    class="${fifaSeriesSelected?.id===item.id
+                      ? "active"
+                      : ""
+                    }"
+                  >
+                    ${esc(item.host)}
+                  </button>
+                `
+              ).join("")}
+            </div>`
+          : "";
+
+      const fifaSeriesParticipantsHtml=
+        fifaSeriesSelected?.participants?.length
+          ? `<div class="fc26-fifa-series-participants">
+              ${fifaSeriesSelected.participants.map(
+                team=>`
+                  <div>
+                    <small>
+                      ${esc(team.confederation)}
+                    </small>
+
+                    <b>
+                      ${esc(team.name)}
+                    </b>
+                  </div>
+                `
+              ).join("")}
+            </div>`
+          : "";
+
+      const fifaSeriesTableHtml=
+        fifaSeriesSelected?.format==="FIXTURES"
+          ? `<div class="tablewrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Seleção</th>
+                    <th>J</th>
+                    <th>V</th>
+                    <th>E</th>
+                    <th>D</th>
+                    <th>SG</th>
+                    <th>Pts</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  ${(fifaSeriesSelected.table||[])
+                    .slice()
+                    .sort(
+                      (a,b)=>
+                        b.points-a.points ||
+                        (b.gf-b.ga)-(a.gf-a.ga) ||
+                        b.gf-a.gf ||
+                        b.reputation-a.reputation
+                    )
+                    .map(
+                      (x,i)=>`
+                        <tr class="${i===0 ? "wc-row-qualified" : ""}">
+                          <td>${i+1}</td>
+
+                          <td>
+                            <b>
+                              ${esc(x.name)}
+                            </b>
+                          </td>
+
+                          <td>${x.played}</td>
+                          <td>${x.w}</td>
+                          <td>${x.d}</td>
+                          <td>${x.l}</td>
+                          <td>${x.gf-x.ga}</td>
+
+                          <td>
+                            <b>
+                              ${x.points}
+                            </b>
+                          </td>
+                        </tr>
+                      `
+                    ).join("")}
+                </tbody>
+              </table>
+            </div>`
+          : "";
+
+      const fifaSeriesMatchesHtml=
+        fifaSeriesSelected?.matches?.length
+          ? `<div class="national-fixtures fc26-fifa-series-matches">
+              ${fifaSeriesSelected.matches.map(
+                match=>{
+                  const label=
+                    ({
+                      SEMIFINAL:"Semifinal",
+                      FINAL:"Final",
+                      PLACEMENT:"Disputa de colocação",
+                      FIXTURE:"Partida"
+                    })[match.phase]||
+                    match.phase;
+
+                  let score="×";
+
+                  if(match.played){
+                    score=
+                      `${match.hg} × ${match.ag}`;
+
+                    if(
+                      match.hg===match.ag &&
+                      match.hp!=null &&
+                      match.ap!=null
+                    ){
+                      score+=
+                        ` (pên. ${match.hp} × ${match.ap})`;
+                    }
+                  }
+
+                  return `
+                    <div>
+                      <small>
+                        ${esc(label)}
+                      </small>
+
+                      <b>
+                        ${esc(match.home)}
+                        ${score}
+                        ${esc(match.away)}
+                      </b>
+
+                      <small>
+                        ${match.played
+                          ? "Encerrado"
+                          : "A disputar"
+                        }
+                      </small>
+                    </div>
+                  `;
+                }
+              ).join("")}
+            </div>`
+          : `<p class="muted">
+              As partidas desta sede ainda não estão disponíveis.
+            </p>`;
+
+      const fifaSeriesWinnerHtml=
+        fifaSeriesSelected?.victor
+          ? `<div class="section fc26-fifa-series-winner">
+              <div>
+                <small>
+                  VENCEDOR DA SÉRIE ·
+                  ${esc(fifaSeriesSelected.host)}
+                </small>
+
+                <h3>
+                  ${esc(
+                    fifaSeriesSelected.victor.name
+                  )}
+                </h3>
+              </div>
+
+              <div>
+                <small>
+                  2º LUGAR
+                </small>
+
+                <b>
+                  ${esc(
+                    fifaSeriesSelected.runnerUp?.name||
+                    "—"
+                  )}
+                </b>
+              </div>
+            </div>`
+          : "";
+
+      const fifaSeriesHtml=
+        fifaSeries
+          ? `<div class="national-world-cup section fc26-fifa-series">
+              <div class="tag">
+                FIFA SERIES
+                ${fifaSeries.year}
+              </div>
+
+              <div class="fc26-ca-header">
+                <div>
+                  <h2>
+                    FIFA Series
+                  </h2>
+
+                  <p class="muted">
+                    FIFA ·
+                    ${fifaSeries.totalSeries} sedes ·
+                    ${fifaSeries.totalTeams} seleções ·
+                    sem campeão geral
+                  </p>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  TORNEIOS INTERNACIONAIS
+                </span>
+              </div>
+
+              <div class="profile-data">
+                <span>
+                  Sedes
+                  <b>
+                    ${fifaSeries.totalSeries}
+                  </b>
+                </span>
+
+                <span>
+                  Concluídas
+                  <b>
+                    ${fifaSeries.completedSeries}
+                  </b>
+                </span>
+
+                <span>
+                  Seleções
+                  <b>
+                    ${fifaSeries.totalTeams}
+                  </b>
+                </span>
+
+                <span>
+                  Jogos
+                  <b>
+                    ${fifaSeries.totalMatches}
+                  </b>
+                </span>
+              </div>
+
+              ${fifaSeriesTabsHtml}
+
+              ${fifaSeriesSelected
+                ? `<div class="section fc26-fifa-series-venue">
+                    <div class="fc26-fifa-series-venue-head">
+                      <div>
+                        <small>
+                          SEDE
+                        </small>
+
+                        <h3>
+                          ${esc(
+                            fifaSeriesSelected.host
+                          )}
+                        </h3>
+                      </div>
+
+                      <span>
+                        ${fifaSeriesSelected.format==="KNOCKOUT"
+                          ? "MATA-MATA"
+                          : "JOGOS PROGRAMADOS"
+                        }
+                      </span>
+                    </div>
+
+                    ${fifaSeriesParticipantsHtml}
+                  </div>`
+                : ""
+              }
+
+              ${fifaSeriesSelected?.format==="FIXTURES"
+                ? `<div class="section">
+                    <h3>
+                      Classificação da sede
+                    </h3>
+
+                    ${fifaSeriesTableHtml}
+                  </div>`
+                : ""
+              }
+
+              <div class="section">
+                <h3>
+                  Partidas
+                </h3>
+
+                ${fifaSeriesMatchesHtml}
+              </div>
+
+              ${fifaSeriesWinnerHtml}
+
+              <div class="fc26-fifa-series-note">
+                A FIFA Series reúne torneios por sede.
+                Cada série possui seu próprio vencedor;
+                não existe campeão geral da competição.
+              </div>
+            </div>`
+          : `<div class="fc26-competition-detail">
+              <header>
+                <div>
+                  <small>FIFA</small>
+
+                  <h2>
+                    FIFA Series
+                  </h2>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  TORNEIOS INTERNACIONAIS
+                </span>
+              </header>
+
+              <div class="empty">
+                A próxima edição da FIFA Series será criada automaticamente no ciclo correspondente.
+              </div>
+            </div>`;
+
+      const fifaArabCupHtml=
+        fifaArabCup
+          ? `<div class="national-world-cup section fc26-fifa-arab-cup">
+              <div class="tag">
+                FIFA ARAB CUP
+                ${fifaArabCup.year}
+              </div>
+
+              <div class="fc26-ca-header">
+                <div>
+                  <h2>
+                    ${esc(
+                      fifaArabCup.phase
+                    )}
+                  </h2>
+
+                  <p class="muted">
+                    FIFA ·
+                    16 seleções ·
+                    4 grupos ·
+                    32 jogos
+                  </p>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  TORNEIO FIFA
+                </span>
+              </div>
+
+              <div class="profile-data">
+                <span>
+                  Fase
+                  <b>
+                    ${esc(
+                      fifaArabCup.phase
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Seleções
+                  <b>
+                    ${fifaArabCup.participants.length}
+                  </b>
+                </span>
+
+                <span>
+                  Grupos
+                  <b>4</b>
+                </span>
+
+                <span>
+                  Jogos
+                  <b>
+                    ${fifaArabCup.totalMatches}
+                  </b>
+                </span>
+              </div>
+
+              <div class="section">
+                <h3>
+                  Grupos
+                </h3>
+
+                <div class="wc-group-legend">
+                  <span class="wc-group-legend-chip direct">
+                    1º e 2º avançam
+                  </span>
+                </div>
+
+                ${arabCupGroupsHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Classificados às quartas
+                </h3>
+
+                ${arabCupQualifiedHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Mata-mata
+                </h3>
+
+                ${arabCupKnockoutHtml}
+              </div>
+
+              ${arabCupPodiumHtml}
+            </div>`
+          : `<div class="fc26-competition-detail">
+              <header>
+                <div>
+                  <small>FIFA</small>
+
+                  <h2>
+                    FIFA Arab Cup
+                  </h2>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  TORNEIO FIFA
+                </span>
+              </header>
+
+              <div class="empty">
+                A próxima edição da FIFA Arab Cup será criada automaticamente no ciclo correspondente.
+              </div>
+            </div>`;
+
+      const ofcNationsCupHtml=
+        ofcNationsCup
+          ? `<div class="national-world-cup section fc26-ofc-nations-cup">
+              <div class="tag">
+                OFC NATIONS CUP
+                ${ofcNationsCup.year}
+              </div>
+
+              <div class="fc26-ca-header">
+                <div>
+                  <h2>
+                    ${esc(
+                      ofcNationsCup.phase
+                    )}
+                  </h2>
+
+                  <p class="muted">
+                    OFC ·
+                    8 seleções ·
+                    2 grupos ·
+                    15 jogos
+                  </p>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </div>
+
+              <div class="profile-data">
+                <span>
+                  Fase
+                  <b>
+                    ${esc(
+                      ofcNationsCup.phase
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Seleções
+                  <b>
+                    ${ofcNationsCup.participants.length}
+                  </b>
+                </span>
+
+                <span>
+                  Grupos
+                  <b>2</b>
+                </span>
+
+                <span>
+                  Jogos
+                  <b>
+                    ${ofcNationsCup.totalMatches}
+                  </b>
+                </span>
+              </div>
+
+              <div class="section">
+                <h3>
+                  Grupos
+                </h3>
+
+                <div class="wc-group-legend">
+                  <span class="wc-group-legend-chip direct">
+                    1º e 2º avançam
+                  </span>
+                </div>
+
+                ${ofcGroupsHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Semifinalistas
+                </h3>
+
+                ${ofcQualifiedHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Mata-mata
+                </h3>
+
+                ${ofcKnockoutHtml}
+              </div>
+
+              ${ofcPodiumHtml}
+            </div>`
+          : `<div class="fc26-competition-detail">
+              <header>
+                <div>
+                  <small>OFC</small>
+
+                  <h2>
+                    OFC Nations Cup
+                  </h2>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </header>
+
+              <div class="empty">
+                A próxima edição da OFC Nations Cup será criada automaticamente no ciclo correspondente.
+              </div>
+            </div>`;
+
+      const concacafNationsLeagueHtml=
+        concacafNationsLeague
+          ? `<div class="national-world-cup section fc26-concacaf-nations">
+              <div class="tag">
+                CONCACAF NATIONS LEAGUE
+                ${concacafNationsLeague.year}
+              </div>
+
+              <div class="fc26-ca-header">
+                <div>
+                  <h2>
+                    ${esc(
+                      concacafNationsLeague.phase
+                    )}
+                  </h2>
+
+                  <p class="muted">
+                    CONCACAF ·
+                    Ligas A, B e C
+                  </p>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </div>
+
+              <div class="profile-data">
+                <span>
+                  Fase
+                  <b>
+                    ${esc(
+                      concacafNationsLeague.phase
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Divisões
+                  <b>3</b>
+                </span>
+
+                <span>
+                  Divisão exibida
+                  <b>
+                    Liga ${esc(
+                      concacafNationsLeagueDivision
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Continuidade
+                  <b>
+                    ${concacafNationsLeague.carriedFromYear
+                      ? `Herdada de ${concacafNationsLeague.carriedFromYear}`
+                      : "Edição inicial"
+                    }
+                  </b>
+                </span>
+              </div>
+
+              <div class="fc26-concacaf-tabs">
+                ${["A","B","C"].map(
+                  id=>`
+                    <button
+                      type="button"
+                      data-concacaf-nations-division="${id}"
+                      class="${concacafNationsLeagueDivision===id
+                        ? "active"
+                        : ""
+                      }"
+                    >
+                      Liga ${id}
+                    </button>
+                  `
+                ).join("")}
+              </div>
+
+              ${concacafSeededHtml}
+
+              <div class="section">
+                <h3>
+                  ${esc(
+                    concacafLeague?.name||
+                    `Liga ${concacafNationsLeagueDivision}`
+                  )}
+                </h3>
+
+                <div class="wc-group-legend">
+                  <span class="wc-group-legend-chip direct">
+                    Melhor campanha
+                  </span>
+
+                  <span class="wc-group-legend-chip third">
+                    Zona inferior
+                  </span>
+                </div>
+
+                ${concacafGroupsHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Acesso e rebaixamento
+                </h3>
+
+                ${concacafMovementHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Quartas de final
+                </h3>
+
+                ${concacafQuarterfinalsHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Final Four
+                </h3>
+
+                ${concacafFinalsHtml}
+              </div>
+
+              ${concacafPodiumHtml}
+            </div>`
+          : `<div class="fc26-competition-detail">
+              <header>
+                <div>
+                  <small>CONCACAF</small>
+
+                  <h2>
+                    Concacaf Nations League
+                  </h2>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </header>
+
+              <div class="empty">
+                A próxima edição será criada automaticamente no ciclo correspondente.
+              </div>
+            </div>`;
+
+      const goldCupHtml=
+        goldCup
+          ? `<div class="national-world-cup section fc26-gold-cup">
+              <div class="tag">
+                CONCACAF GOLD CUP
+                ${goldCup.year}
+              </div>
+
+              <div class="fc26-ca-header">
+                <div>
+                  <h2>
+                    ${esc(
+                      goldCup.phase
+                    )}
+                  </h2>
+
+                  <p class="muted">
+                    CONCACAF ·
+                    16 seleções ·
+                    4 grupos ·
+                    31 jogos
+                  </p>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </div>
+
+              <div class="profile-data">
+                <span>
+                  Fase
+                  <b>
+                    ${esc(
+                      goldCup.phase
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Seleções
+                  <b>
+                    ${goldCup.participants.length}
+                  </b>
+                </span>
+
+                <span>
+                  Grupos
+                  <b>4</b>
+                </span>
+
+                <span>
+                  Jogos
+                  <b>
+                    ${goldCup.totalMatches}
+                  </b>
+                </span>
+              </div>
+
+              <div class="section">
+                <h3>
+                  Todos os grupos
+                </h3>
+
+                <div class="wc-group-legend">
+                  <span class="wc-group-legend-chip direct">
+                    1º e 2º avançam
+                  </span>
+                </div>
+
+                ${goldCupGroupsHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Classificados às quartas
+                </h3>
+
+                ${goldCupQualifiedHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Mata-mata
+                </h3>
+
+                ${goldCupKnockoutHtml}
+              </div>
+
+              ${goldCupPodiumHtml}
+            </div>`
+          : `<div class="fc26-competition-detail">
+              <header>
+                <div>
+                  <small>CONCACAF</small>
+
+                  <h2>
+                    Gold Cup
+                  </h2>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </header>
+
+              <div class="empty">
+                A próxima edição da Gold Cup será criada automaticamente no ciclo correspondente.
+              </div>
+            </div>`;
+
+      const asianCupHtml=
+        asianCup
+          ? `<div class="national-world-cup section fc26-asian-cup">
+              <div class="tag">
+                AFC ASIAN CUP
+                ${asianCup.year}
+              </div>
+
+              <div class="fc26-ca-header">
+                <div>
+                  <h2>
+                    ${esc(
+                      asianCup.phase
+                    )}
+                  </h2>
+
+                  <p class="muted">
+                    AFC ·
+                    24 seleções ·
+                    6 grupos ·
+                    51 jogos
+                  </p>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </div>
+
+              <div class="profile-data">
+                <span>
+                  Fase
+                  <b>
+                    ${esc(
+                      asianCup.phase
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Seleções
+                  <b>
+                    ${asianCup.participants.length}
+                  </b>
+                </span>
+
+                <span>
+                  Grupos
+                  <b>6</b>
+                </span>
+
+                <span>
+                  Jogos
+                  <b>
+                    ${asianCup.totalMatches}
+                  </b>
+                </span>
+              </div>
+
+              <div class="section">
+                <h3>
+                  Todos os grupos
+                </h3>
+
+                <div class="wc-group-legend">
+                  <span class="wc-group-legend-chip direct">
+                    1º e 2º avançam
+                  </span>
+
+                  <span class="wc-group-legend-chip third">
+                    4 melhores terceiros avançam
+                  </span>
+                </div>
+
+                ${asianCupGroupsHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Classificados às oitavas
+                </h3>
+
+                ${asianCupQualifiedHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Mata-mata
+                </h3>
+
+                ${asianCupKnockoutHtml}
+              </div>
+
+              ${asianCupPodiumHtml}
+            </div>`
+          : `<div class="fc26-competition-detail">
+              <header>
+                <div>
+                  <small>AFC</small>
+                  <h2>
+                    AFC Asian Cup
+                  </h2>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </header>
+
+              <div class="empty">
+                A próxima edição da Asian Cup será criada automaticamente quando a carreira chegar ao ciclo correspondente.
+              </div>
+            </div>`;
+
+      const afconHtml=
+        afcon
+          ? `<div class="national-world-cup section fc26-afcon">
+              <div class="tag">
+                AFRICA CUP OF NATIONS
+                ${afcon.year}
+              </div>
+
+              <div class="fc26-ca-header">
+                <div>
+                  <h2>
+                    ${esc(
+                      afcon.phase
+                    )}
+                  </h2>
+
+                  <p class="muted">
+                    CAF ·
+                    24 seleções ·
+                    6 grupos ·
+                    52 jogos
+                  </p>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </div>
+
+              <div class="profile-data">
+                <span>
+                  Fase
+                  <b>
+                    ${esc(
+                      afcon.phase
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Seleções
+                  <b>
+                    ${afcon.participants.length}
+                  </b>
+                </span>
+
+                <span>
+                  Grupos
+                  <b>6</b>
+                </span>
+
+                <span>
+                  Jogos
+                  <b>
+                    ${afcon.totalMatches}
+                  </b>
+                </span>
+              </div>
+
+              <div class="section">
+                <h3>
+                  Todos os grupos
+                </h3>
+
+                <div class="wc-group-legend">
+                  <span class="wc-group-legend-chip direct">
+                    1º e 2º avançam
+                  </span>
+
+                  <span class="wc-group-legend-chip third">
+                    4 melhores terceiros avançam
+                  </span>
+                </div>
+
+                ${afconGroupsHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Classificados às oitavas
+                </h3>
+
+                ${afconQualifiedHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Mata-mata
+                </h3>
+
+                ${afconKnockoutHtml}
+              </div>
+
+              ${afconPodiumHtml}
+            </div>`
+          : `<div class="fc26-competition-detail">
+              <header>
+                <div>
+                  <small>CAF</small>
+                  <h2>
+                    Africa Cup of Nations
+                  </h2>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </header>
+
+              <div class="empty">
+                A próxima edição da AFCON será criada automaticamente quando a carreira chegar ao ciclo correspondente.
+              </div>
+            </div>`;
+
+      const nationsLeagueHtml=
+        nationsLeague
+          ? `<div class="national-world-cup section fc26-nations-league">
+              <div class="tag">
+                UEFA NATIONS LEAGUE
+                ${nationsLeague.year}
+              </div>
+
+              <div class="fc26-ca-header">
+                <div>
+                  <h2>
+                    ${esc(
+                      nationsLeague.phase
+                    )}
+                  </h2>
+
+                  <p class="muted">
+                    UEFA ·
+                    Ligas A, B, C e D
+                  </p>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </div>
+
+              <div class="profile-data">
+                <span>
+                  Fase
+                  <b>
+                    ${esc(
+                      nationsLeague.phase
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Divisões
+                  <b>
+                    4
+                  </b>
+                </span>
+
+                <span>
+                  Divisão exibida
+                  <b>
+                    Liga ${esc(
+                      nationsLeagueDivision
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Final Four
+                  <b>
+                    ${nationsLeague.finals?.length
+                      ? "Definida"
+                      : "Pendente"
+                    }
+                  </b>
+                </span>
+              </div>
+
+              <div class="fc26-nations-tabs">
+                ${["A","B","C","D"].map(
+                  id=>`
+                    <button
+                      type="button"
+                      data-nations-league-division="${id}"
+                      class="${nationsLeagueDivision===id
+                        ? "active"
+                        : ""
+                      }"
+                    >
+                      Liga ${id}
+                    </button>
+                  `
+                ).join("")}
+              </div>
+
+              <div class="section">
+                <h3>
+                  ${esc(
+                    nationsLeagueLeague?.name||
+                    `Liga ${nationsLeagueDivision}`
+                  )}
+                </h3>
+
+                <div class="wc-group-legend">
+                  <span class="wc-group-legend-chip direct">
+                    1º do grupo
+                  </span>
+
+                  <span class="wc-group-legend-chip third">
+                    Último colocado
+                  </span>
+                </div>
+
+                ${nationsLeagueGroupsHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Acesso e rebaixamento
+                </h3>
+
+                ${nationsLeagueMovementHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Final Four
+                </h3>
+
+                ${nationsLeagueFinalsHtml}
+              </div>
+
+              ${nationsLeaguePodiumHtml}
+            </div>`
+          : `<div class="fc26-competition-detail">
+              <header>
+                <div>
+                  <small>UEFA</small>
+                  <h2>
+                    UEFA Nations League
+                  </h2>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </header>
+
+              <div class="empty">
+                A próxima edição da Nations League será criada automaticamente no ciclo correspondente.
+              </div>
+            </div>`;
+
+      const finalissimaHtml=
+        finalissima
+          ? `<div class="national-world-cup section fc26-finalissima">
+              <div class="tag">
+                FINALÃSSIMA
+                ${finalissima.year}
+              </div>
+
+              <div class="fc26-ca-header">
+                <div>
+                  <h2>
+                    CONMEBOL × UEFA
+                  </h2>
+
+                  <p class="muted">
+                    Campeão da Copa América
+                    contra
+                    campeão da EURO
+                  </p>
+                </div>
+
+                <span class="fc26-comp-status ${finalissimaBrazil ? "eligible" : "foreign"}">
+                  ${finalissimaBrazil
+                    ? "BRASIL PARTICIPA"
+                    : finalissima.status==="COMPLETED"
+                      ? "ENCERRADA"
+                      : "JOGO INTERNACIONAL"
+                  }
+                </span>
+              </div>
+
+              <div class="profile-data">
+                <span>
+                  Edição
+                  <b>
+                    ${finalissima.year}
+                  </b>
+                </span>
+
+                <span>
+                  Formato
+                  <b>
+                    Jogo único
+                  </b>
+                </span>
+
+                <span>
+                  Confederações
+                  <b>
+                    CONMEBOL × UEFA
+                  </b>
+                </span>
+
+                <span>
+                  Status
+                  <b>
+                    ${finalissima.status==="COMPLETED"
+                      ? "Encerrada"
+                      : "Agendada"
+                    }
+                  </b>
+                </span>
+              </div>
+
+              <div class="section">
+                <h3>
+                  Confronto
+                </h3>
+
+                ${finalissimaScoreHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Origem dos campeões
+                </h3>
+
+                <div class="fc26-finalissima-origins">
+                  ${finalissima.participants.map(
+                    team=>`
+                      <article class="${team.id==="BRA" ? "is-brazil" : ""}">
+                        <small>
+                          ${team.source==="COPA_AMERICA"
+                            ? "COPA AMÉRICA"
+                            : "UEFA EURO"
+                          }
+                        </small>
+
+                        <h3>
+                          ${esc(team.name)}
+                        </h3>
+
+                        <span>
+                          Campeão continental
+                        </span>
+                      </article>
+                    `
+                  ).join("")}
+                </div>
+              </div>
+
+              ${finalissimaChampionHtml}
+            </div>`
+          : `<div class="fc26-competition-detail">
+              <header>
+                <div>
+                  <small>
+                    CONMEBOL × UEFA
+                  </small>
+
+                  <h2>
+                    Finalíssima
+                  </h2>
+                </div>
+
+                <span class="fc26-comp-status">
+                  AGUARDANDO CAMPEÕES
+                </span>
+              </header>
+
+              <div class="empty">
+                A Finalíssima será criada
+                automaticamente quando
+                os campeões da Copa América
+                e da EURO estiverem definidos.
+              </div>
+            </div>`;
+
+      const euroHtml=
+        euro
+          ? `<div class="national-world-cup section fc26-euro">
+              <div class="tag">
+                UEFA EURO
+                ${euro.year}
+              </div>
+
+              <div class="fc26-ca-header">
+                <div>
+                  <h2>
+                    ${esc(
+                      euro.phase
+                    )}
+                  </h2>
+
+                  <p class="muted">
+                    UEFA ·
+                    24 seleções ·
+                    6 grupos ·
+                    51 jogos
+                  </p>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </div>
+
+              <div class="profile-data">
+                <span>
+                  Fase
+                  <b>
+                    ${esc(
+                      euro.phase
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Seleções
+                  <b>
+                    ${euro.participants.length}
+                  </b>
+                </span>
+
+                <span>
+                  Grupos
+                  <b>
+                    6
+                  </b>
+                </span>
+
+                <span>
+                  Jogos
+                  <b>
+                    ${euro.totalMatches}
+                  </b>
+                </span>
+              </div>
+
+              <div class="section">
+                <h3>
+                  Todos os grupos
+                </h3>
+
+                <div class="wc-group-legend">
+                  <span class="wc-group-legend-chip direct">
+                    1º e 2º avançam
+                  </span>
+
+                  <span class="wc-group-legend-chip third">
+                    4 melhores terceiros avançam
+                  </span>
+                </div>
+
+                ${euroGroupsHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Classificados às oitavas
+                </h3>
+
+                ${euroQualifiedHtml}
+              </div>
+
+              <div class="section">
+                <h3>
+                  Mata-mata
+                </h3>
+
+                ${euroKnockoutHtml}
+              </div>
+
+              ${euroPodiumHtml}
+            </div>`
+          : `<div class="fc26-competition-detail">
+              <header>
+                <div>
+                  <small>UEFA</small>
+                  <h2>UEFA EURO</h2>
+                </div>
+
+                <span class="fc26-comp-status foreign">
+                  OUTRA CONFEDERAÇÃO
+                </span>
+              </header>
+
+              <div class="empty">
+                A próxima edição da EURO
+                será criada automaticamente
+                quando a carreira chegar ao
+                ciclo correspondente.
+              </div>
+            </div>`;
+
+      const copaAmericaHtml=
+        copaAmerica
+          ? `<div class="national-world-cup section fc26-copa-america">
+              <div class="tag">
+                COPA AMÉRICA
+                ${copaAmerica.year}
+              </div>
+
+              <div class="fc26-ca-header">
+                <div>
+                  <h2>
+                    ${esc(
+                      copaAmericaStatusLabel
+                    )}
+                  </h2>
+
+                  <p class="muted">
+                    CONMEBOL ·
+                    16 seleções ·
+                    4 grupos ·
+                    32 jogos
+                  </p>
+                </div>
+
+                <span class="pill">
+                  ${copaAmerica.group
+                    ? `Grupo ${esc(copaAmerica.group)}`
+                    : "Copa América"
+                  }
+                </span>
+              </div>
+
+              <div class="profile-data">
+                <span>
+                  Fase
+                  <b>
+                    ${esc(
+                      copaAmericaStatusLabel
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Grupo do Brasil
+                  <b>
+                    ${esc(
+                      copaAmerica.group||
+                      "—"
+                    )}
+                  </b>
+                </span>
+
+                <span>
+                  Seleções
+                  <b>
+                    ${copaAmerica.participants.length}
+                  </b>
+                </span>
+
+                <span>
+                  Jogos
+                  <b>
+                    ${copaAmerica.totalMatches}
+                  </b>
+                </span>
+              </div>
+
+              ${copaAmericaNextHtml}
+
+              <div class="section">
+                <h3>
+                  Grupo do Brasil
+                  ${copaAmerica.group
+                    ? ` · Grupo ${esc(copaAmerica.group)}`
+                    : ""
+                  }
+                </h3>
+
+                <div class="wc-group-legend">
+                  <span class="wc-group-legend-chip direct">
+                    1º e 2º avançam às quartas
+                  </span>
+                </div>
+
+                ${copaAmericaGroupHtml}
+              </div>
+
+              <div class="section">
+                <h3>Todos os grupos</h3>
+                ${copaAmericaGroupsHtml}
+              </div>
+
+              <div class="section">
+                <h3>Campanha do Brasil</h3>
+                ${copaAmericaResultsHtml}
+              </div>
+
+              <div class="section">
+                <h3>Mata-mata</h3>
+                ${copaAmericaKnockoutHtml}
+              </div>
+
+              ${copaAmericaChampionHtml}
+            </div>`
+          : `<div class="fc26-competition-detail">
+              <header>
+                <div>
+                  <small>CONMEBOL</small>
+                  <h2>Copa América</h2>
+                </div>
+
+                <span class="fc26-comp-status eligible">
+                  BRASIL PARTICIPA
+                </span>
+              </header>
+
+              <div class="empty">
+                A próxima edição da Copa América
+                será criada quando a carreira
+                chegar ao ciclo correspondente.
+              </div>
+            </div>`;
+
+      const worldCupHtml=
+        worldCup
+          ? `<div class="national-world-cup section">
+              <div class="tag">
+                COPA MUNDIAL ${worldCup.year}
+              </div>
+
+              <h2>${esc(worldCup.phase)}</h2>
+
+              <div class="profile-data">
+                <span>
+                  Situa\u00e7\u00e3o
+                  <b>${esc(wcStatusLabel)}</b>
+                </span>
+
+                <span>
+                  Grupo
+                  <b>${esc(worldCup.group||"\u2014")}</b>
+                </span>
+
+                <span>
+                  Jogos
+                  <b>${worldCup.matchesPlayed}</b>
+                </span>
+
+                <span>
+                  Classificado
+                  <b>${worldCup.brazilQualified?"Sim":"\u2014"}</b>
+                </span>
+              </div>
+
+              ${wcOverviewStatsHtml}
+
+              ${wcNextHtml}
+
+              <div class="section">
+                <h3>${wcBrazilGroupTitle}</h3>
+                ${wcBrazilGroupHtml}
+              </div>
+
+              <div class="section">
+                <h3>Todos os grupos</h3>
+                ${wcGroupCarouselHtml}
+              </div>
+
+              <div class="section">
+                <h3>Todas as selecoes e estatisticas</h3>
+                ${wcTeamsHtml}
+              </div>
+
+
+
+              <div class="section">
+                <h3>Campanha do Brasil</h3>
+                ${wcResultsHtml}
+              </div>
+
+              <div class="section">
+                <h3>Caminho do Brasil no mata-mata</h3>
+                ${wcKnockoutHtml}
+              </div>
+
+              <div class="section">
+                <h3>Chave completa do mata-mata</h3>
+                ${wcFullKnockoutHtml}
+              </div>
+
+              <div class="section">
+                <h3>Ranking historico de campeoes</h3>
+                ${wcHistoryHtml}
+              </div>
+
+              ${wcChampionHtml}
+            </div>`
+          : `<div class="national-world-cup section">
+              <div class="tag">COPA MUNDIAL</div>
+              <p class="muted">
+                Nenhuma edi\u00e7\u00e3o da Copa Mundial foi registrada nesta carreira.
+              </p>
+            </div>`;
+
+      const nationalCompetitionDetailsHtml=
+        nationalCompetitionId==="WORLD_CUP"
+          ? worldCupHtml
+          : nationalCompetitionId==="COPA_AMERICA"
+            ? copaAmericaHtml
+          : nationalCompetitionId==="EURO"
+            ? euroHtml
+          : nationalCompetitionId==="UEFA_NATIONS_LEAGUE"
+            ? nationsLeagueHtml
+          : nationalCompetitionId==="AFCON"
+            ? afconHtml
+          : nationalCompetitionId==="ASIAN_CUP"
+            ? asianCupHtml
+          : nationalCompetitionId==="GOLD_CUP"
+            ? goldCupHtml
+          : nationalCompetitionId==="CONCACAF_NATIONS_LEAGUE"
+            ? concacafNationsLeagueHtml
+          : nationalCompetitionId==="OFC_NATIONS_CUP"
+            ? ofcNationsCupHtml
+          : nationalCompetitionId==="FIFA_ARAB_CUP"
+            ? fifaArabCupHtml
+          : nationalCompetitionId==="FIFA_SERIES"
+            ? fifaSeriesHtml
+          : nationalCompetitionId==="FINALISSIMA"
+            ? finalissimaHtml
+          : nationalCompetitionId==="WORLD_CUP_QUALIFIERS"
+            ? `<div class="fc26-competition-detail">
+                <header>
+                  <div>
+                    <small>FIFA + CONMEBOL</small>
+                    <h2>Eliminatórias da Copa Mundial</h2>
+                  </div>
+                  <span class="fc26-comp-status eligible">
+                    BRASIL PARTICIPA
+                  </span>
+                </header>
+
+                <h3>Classificação sul-americana</h3>
+                ${qHtml}
+              </div>`
+            : genericInternationalCompetitionHtml;
+
+
       return `<nav class="subnav national-tabs"><a href="#national-overview">Visão geral</a><a href="#national-squad">Convocados</a><a href="#national-dispute">Disputa</a><a href="#national-calendar">Calendário</a><a href="#national-competitions">Competições</a><a href="#national-stats">Estatísticas</a><a href="#national-history">Histórico</a></nav>
       <div id="national-overview" class="grid national-dashboard"><section class="card"><div class="tag">SELEÇÃO BRASILEIRA</div><h2>${esc(n.calledUp?n.status:radar.label)}</h2><p>${n.calledUp?`Você faz parte da convocação atual para <b>${esc(n.competition)}</b>. Papel previsto: <b>${esc(n.status)}</b>.`:radar.gap?`Você está a aproximadamente <b>${radar.gap} ponto(s)</b> do nível atual de disputa. Continue atuando bem pelo clube.`:"Seu desempenho já coloca você na disputa pela próxima convocação."}</p>${bar("Momento para convocação",radar.score)}<div class="profile-data"><span>GER <b>${D.overall(state.person)}</b></span><span>Reputação <b>${Math.round(state.reputation)}</b></span><span>Moral <b>${Math.round(state.person.morale)}</b></span><span>Posição <b>${esc(state.person.pos)}</b></span><span>Nacionalidade <b>${esc(n.nationality||state.person.nationality||"Brasil")}</b></span><span>Camisa <b>${n.shirtNumber||"—"}</b></span></div></section>
       <section id="national-calendar" class="card"><div class="tag">PRÓXIMA DATA FIFA</div><h2>${dayDate(n.nextWindow)}</h2><p>Em aproximadamente <b>${Math.max(0,n.nextWindow-state.day)} dias</b> · ${esc(upcoming[0]?.competition||"Agenda internacional")}</p><div class="national-fixtures">${upcoming.map(match=>`<div><time>${dayDate(match.day)}</time><b>Brasil × ${esc(match.opponent)}</b><small>${esc(match.callupStatus||"Convocação ainda não definida")}</small></div>`).join("")}</div><button data-page="calendar">Ver no calendário</button></section></div>
       <section id="national-squad" class="card section"><div class="tag">${n.calledUp?"CONVOCADOS":"PROJEÇÃO DA PRÓXIMA LISTA"}</div><h2>Elenco da Seleção</h2><p class="muted">${n.calledUp?"Esta é a lista usada pelo motor na convocação atual.":"A lista abaixo é uma projeção por mérito; a convocação oficial ainda pode mudar."}</p>${squadHtml}</section>
-      <section id="national-dispute" class="card section"><div class="tag">DISPUTA POR POSIÇÃO</div><h2>${esc(state.person.pos)}${heroRank?` · você está em ${heroRank}º`:''}</h2><div class="tablewrap"><table><thead><tr><th>#</th><th>Jogador</th><th>Clube</th><th>GER</th><th>Índice</th></tr></thead><tbody>${competition.map(x=>`<tr ${x.id==="hero"?'class="hero-row"':""}><td>${x.rank}</td><td><b>${esc(x.name)}</b>${x.id==="hero"?" · VOCÊ":""}</td><td>${esc(x.club||"—")}</td><td>${x.overall}</td><td>${Math.round(x.score)}</td></tr>`).join("")}</tbody></table></div><p class="muted">GER, desempenho, experiência, disponibilidade e concorrência do setor influenciam convocação e papel.</p></section>
-      <section id="national-competitions" class="card section"><div class="tag">COMPETIÇÕES</div><h2>${esc(D.NationalTeam.tournamentStatus(state))}</h2><h3>Eliminatórias</h3>${qHtml}</section>
+      <section id="national-dispute" class="card section"><div class="tag">DISPUTA POR POSIÇÃO</div><h2>${esc(state.person.pos)}${heroRank?` · você está em ${heroRank}º`:''}</h2><div class="tablewrap"><table><thead><tr><th>#</th><th>Jogador</th><th>Clube</th><th>GER</th><th>Ãndice</th></tr></thead><tbody>${competition.map(x=>`<tr ${x.id==="hero"?'class="hero-row"':""}><td>${x.rank}</td><td><b>${esc(x.name)}</b>${x.id==="hero"?" · VOCÊ":""}</td><td>${esc(x.club||"—")}</td><td>${x.overall}</td><td>${Math.round(x.score)}</td></tr>`).join("")}</tbody></table></div><p class="muted">GER, desempenho, experiência, disponibilidade e concorrência do setor influenciam convocação e papel.</p></section>
+      <section id="national-competitions" class="card section">
+        <div class="tag">COMPETIÇÕES</div>
+        ${internationalCompetitionsHubHtml}
+        ${nationalCompetitionDetailsHtml}
+      </section>
       <section id="national-stats" class="card section"><div class="tag">CARREIRA INTERNACIONAL</div><h2>Números pela Seleção</h2><div class="profile-data"><span>Jogos <b>${n.caps}</b></span><span>Titular <b>${n.starts}</b></span><span>Gols <b>${n.goals}</b></span><span>Assist. <b>${n.assists}</b></span><span>Minutos <b>${n.minutes||0}</b></span><span>Nota média <b>${avg}</b></span><span>Melhor em campo <b>${n.motm}</b></span></div><p>Última convocação: <b>${n.lastCallupDay==null?"Ainda não convocado":dayDate(n.lastCallupDay)}</b></p></section>
       <section id="national-history" class="card section"><h2>Jogos pela Seleção</h2>${n.matches.length?`<div class="tablewrap"><table><thead><tr><th>Data</th><th>Competição</th><th>Jogo</th><th>Min.</th><th>Nota</th><th>G</th><th>A</th></tr></thead><tbody>${n.matches.map(m=>`<tr><td>${dayDate(m.day)}</td><td>${esc(m.competition)}</td><td>Brasil ${m.brazil} × ${m.other} ${esc(m.opponent)}</td><td>${m.minutes}</td><td>${Number(m.rating).toFixed(1)}</td><td>${m.goals}</td><td>${m.assists}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">Nenhuma partida disputada pela Seleção ainda.</div>'}</section>`;
     },
@@ -1558,7 +7366,7 @@
     },
     inbox() {
       const comm=Career.init(state).communications, messages=comm.messages||[], articles=comm.articles||[], unread=messages.filter(m=>!m.read).length;
-      return `<div class="grid"><section class="card"><div class="tag">CAIXA DE ENTRADA · ${unread} NOVA${unread===1?"":"S"}</div><h2>Mensagens da carreira</h2><p class="muted">Treinador, agente, clube, Seleção, imprensa e carreira. Propostas continuam em Mercado → Minhas propostas.</p>${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life" data-target="current-decision">Responder agora</button></article>` : ""}${messages.slice(0,20).map(m=>`<article class="news ${m.read?"":"notice"}"><time>${esc(m.category)} · ${esc(m.priority)} · ${dayDate(m.day)}</time><h3>${esc(m.subject)}</h3><p><b>${esc(m.sender)}</b> · ${esc(m.body)}</p>${m.read?`<small>Lida</small>`:`<button data-message-read="${esc(m.id)}">Marcar como lida</button>`}</article>`).join("")||empty("Nenhuma mensagem registrada.")}${comm.interviews.filter(i=>!i.answered).slice(0,2).map(i=>`<article class="news notice" id="interview-${esc(i.id)}"><time>ENTREVISTA · ${dayDate(i.day)}</time><h3>${esc(i.question)}</h3><div class="actions">${i.choices.map(c=>`<button data-interview="${esc(i.id)}" data-interview-choice="${esc(c.id)}">${esc(c.label)}</button>`).join("")}</div></article>`).join("")}</section><section class="card"><div class="tag">NOTÍCIAS</div><h2>A carreira reage ao que acontece</h2>${articles.slice(0,16).map(n=>`<article class="news"><time>${esc(n.category)} · ${dayDate(n.day)}</time><h3>${esc(n.title)}</h3><p>${esc(n.body)}</p></article>`).join("")||empty("Nenhuma notícia contextual ainda.")}</section></div>`;
+      return `<div class="grid"><section class="card"><div class="tag">CAIXA DE ENTRADA · ${unread} NOVA${unread===1?"":"S"}</div><h2>Mensagens da carreira</h2><p class="muted">Treinador, agente, clube, Seleção, imprensa e carreira. Propostas continuam em Mercado → Minhas propostas.</p>${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life" data-target="current-decision">Responder agora</button></article>` : ""}${messages.slice(0,20).map(m=>`<article class="news ${m.read?"":"notice"}"><time>${esc(m.category)} · ${esc(m.priority)} · ${dayDate(m.day)}</time><h3>${esc(m.subject)}</h3><p><b>${esc(m.sender)}</b> · ${esc(m.body)}</p>${m.read?`<small>Lida</small>`:`<button data-message-read="${esc(m.id)}">Marcar como lida</button>`}</article>`).join("")||empty("Nenhuma mensagem registrada.")}${comm.interviews.filter(i=>!i.answered).slice(0,2).map(i=>`<article class="news notice" id="interview-${esc(i.id)}"><time>ENTREVISTA · ${dayDate(i.day)}</time><h3>${esc(i.question)}</h3><div class="actions">${i.choices.map(c=>`<button data-interview="${esc(i.id)}" data-interview-choice="${esc(c.id)}">${esc(c.label)}</button>`).join("")}</div></article>`).join("")}</section><section class="card"><div class="tag">NOTÃCIAS</div><h2>A carreira reage ao que acontece</h2>${articles.slice(0,16).map(n=>`<article class="news"><time>${esc(n.category)} · ${dayDate(n.day)}</time><h3>${esc(n.title)}</h3><p>${esc(n.body)}</p></article>`).join("")||empty("Nenhuma notícia contextual ainda.")}</section></div>`;
     },
     proposals() {
       const eligible = Career.canTransfer(state),
@@ -1595,8 +7403,8 @@
       const proposals=c.proposals.filter(p=>p.status==="PROPOSTA"&&p.expires>=state.day), active=s.active;
       return `<div class="subnav life-tabs"><a href="#commercial-overview">Visão geral</a><a href="#commercial-proposals">Propostas</a><a href="#commercial-contracts">Contratos</a><a href="#commercial-brands">Marcas</a><a href="#commercial-history">Histórico</a></div>
       <section class="card" id="commercial-overview"><div class="tag">IMAGEM E VALOR COMERCIAL</div><h2>Popularidade não é reputação esportiva</h2><div class="stats"><div class="stat"><small>Popularidade pública</small><b>${Math.round(s.popularity)}/100</b></div><div class="stat"><small>Reputação esportiva</small><b>${Math.round(state.reputation)}/100</b></div><div class="stat"><small>Seguidores</small><b>${fmtFollowers(s.followers)}</b></div><div class="stat"><small>Valor comercial</small><b>${money(s.commercialValue)}</b></div></div><div class="profile-data"><span>Patrocínios ativos <b>${active.length}</b></span><span>Receita comercial <b>${money(s.revenue)}</b></span><span>Bônus recebidos <b>${money(s.bonusRevenue)}</b></span><span>Próximo evento <b>${s.nextEvent?`${dayDate(s.nextEvent.day)} · ${esc(s.nextEvent.brand)}`:"Nenhum"}</b></span></div>${s.nextEvent?`<article class="news offer section" id="commercial-event-${esc(s.nextEvent.id)}"><time>${dayDate(s.nextEvent.day)} · ${esc(s.nextEvent.status)}</time><h3>${esc(s.nextEvent.type)} · ${esc(s.nextEvent.brand)}</h3><p>${s.nextEvent.mandatory?"Obrigação importante do contrato.":"Atividade comercial opcional."} Partidas oficiais sempre têm prioridade.</p>${s.nextEvent.status === "CONFIRMADO" ? `<div class="notice"><b>Presença confirmada.</b><p>Compromisso adicionado à agenda para ${dayDate(s.nextEvent.day)}. O resultado chegará após a realização.</p></div>` : `<div class="actions"><button class="primary" data-commercial-event="${esc(s.nextEvent.id)}" data-commercial-event-choice="participate">Confirmar presença</button><button data-commercial-event="${esc(s.nextEvent.id)}" data-commercial-event-choice="reschedule">Pedir reagendamento</button><button data-commercial-event="${esc(s.nextEvent.id)}" data-commercial-event-choice="decline">Recusar</button></div>`}</article>`:""}<p class="muted">Valor de mercado mede o atleta para transferências. Valor comercial mede imagem, alcance, exposição e capacidade de gerar acordos.</p></section>
-      <section class="card section" id="commercial-proposals"><div class="tag">PROPOSTAS REAIS</div><h2>Negociações comerciais</h2>${proposals.map(p=>{const rival=active.find(x=>x.category===p.category&&x.brandId!==p.brandId&&(x.exclusive||p.exclusive));const diff=rival?p.amount-rival.amount:0;const dispute=rival?`<div class="notice"><div class="tag">DISPUTA DE PATROCÍNIO</div><h3>${esc(rival.brand)} × ${esc(p.brand)}</h3><div class="profile-data"><span>Patrocinador atual <b>${esc(rival.brand)}</b></span><span>Contrato atual <b>${money(rival.amount)}</b></span><span>Nova proposta <b>${money(p.amount)}</b></span><span>Diferença <b class="${diff>0?"good":diff<0?"bad":""}">${diff>0?"+":""}${money(diff)}</b></span></div><p class="muted">As duas marcas disputam a categoria ${esc(C.categoryLabel(p.category))}. Você pode negociar valor, duração e bônus antes de decidir.</p><p><b>Ao assinar com ${esc(p.brand)}, o contrato exclusivo com ${esc(rival.brand)} será encerrado.</b></p></div>`:"";return `<article class="news offer" id="commercial-proposal-${esc(p.id)}"><time>${esc(C.categoryLabel(p.category))} · ${esc(p.tier||"NATIONAL")} · expira em ${Math.max(0,p.expires-state.day)} dias</time><h3>${esc(p.brand)}</h3><p><b>${esc(p.type)}</b> · ${money(p.amount)} por pagamento<br>Duração: ${Math.ceil(p.durationDays/30)} meses · ${p.exclusive?"Exclusividade na categoria":"Sem exclusividade"}<br>${esc(p.bonus.label)}: ${money(p.bonus.amount)}<br>Exigências: ${p.requirements.map(esc).join(" · ")}</p>${dispute}<div class="grid3"><label>Valor desejado<input id="commercial-amount-${esc(p.id)}" type="number" min="${p.amount}" step="1000" value="${p.amount}"></label><label>Duração (dias)<input id="commercial-duration-${esc(p.id)}" type="number" min="90" max="1095" value="${p.durationDays}"></label><label>Bônus desejado<input id="commercial-bonus-${esc(p.id)}" type="number" min="0" step="1000" value="${p.bonus.amount}"></label></div><div class="actions"><button class="primary" data-commercial-accept="${esc(p.id)}">${rival?"Assinar e trocar patrocinador":"Aceitar"}</button><button data-commercial-negotiate="${esc(p.id)}" ${p.round>=2?"disabled":""}>Negociar${p.round?" · rodada "+p.round:""}</button><button data-commercial-hold="${esc(p.id)}">Pedir tempo</button><button data-commercial-reject="${esc(p.id)}">Recusar</button></div></article>`}).join("")||empty("Nenhuma proposta comercial pendente. O interesse surge após desempenho, reputação e exposição consistentes.")}</section>
-      <section class="card section" id="commercial-contracts"><div class="tag">PATROCÍNIOS ATIVOS</div><h2>Contratos</h2><div class="grid3">${active.map(x=>`<article class="card"><small>${esc(C.categoryLabel(x.category))} · ${esc(x.tier||"NATIONAL")} · ${x.exclusive?"EXCLUSIVO":"NÃO EXCLUSIVO"}</small><h3>${esc(x.brand)}</h3><b>${money(x.amount)}</b><p>${dayDate(x.startDay)} a ${dayDate(x.endDay)}<br>Próximo pagamento: ${dayDate(x.nextPaymentDay)}<br>${esc(x.bonus.label)}: ${money(x.bonus.amount)}<br>Relação: ${x.relationship>=85?"EXCELENTE":x.relationship>=65?"BOA":x.relationship>=40?"NORMAL":"RUIM"}</p></article>`).join("")||empty("Nenhum patrocínio ativo.")}</div></section>
+      <section class="card section" id="commercial-proposals"><div class="tag">PROPOSTAS REAIS</div><h2>Negociações comerciais</h2>${proposals.map(p=>{const rival=active.find(x=>x.category===p.category&&x.brandId!==p.brandId&&(x.exclusive||p.exclusive));const diff=rival?p.amount-rival.amount:0;const dispute=rival?`<div class="notice"><div class="tag">DISPUTA DE PATROCÃNIO</div><h3>${esc(rival.brand)} × ${esc(p.brand)}</h3><div class="profile-data"><span>Patrocinador atual <b>${esc(rival.brand)}</b></span><span>Contrato atual <b>${money(rival.amount)}</b></span><span>Nova proposta <b>${money(p.amount)}</b></span><span>Diferença <b class="${diff>0?"good":diff<0?"bad":""}">${diff>0?"+":""}${money(diff)}</b></span></div><p class="muted">As duas marcas disputam a categoria ${esc(C.categoryLabel(p.category))}. Você pode negociar valor, duração e bônus antes de decidir.</p><p><b>Ao assinar com ${esc(p.brand)}, o contrato exclusivo com ${esc(rival.brand)} será encerrado.</b></p></div>`:"";return `<article class="news offer" id="commercial-proposal-${esc(p.id)}"><time>${esc(C.categoryLabel(p.category))} · ${esc(p.tier||"NATIONAL")} · expira em ${Math.max(0,p.expires-state.day)} dias</time><h3>${esc(p.brand)}</h3><p><b>${esc(p.type)}</b> · ${money(p.amount)} por pagamento<br>Duração: ${Math.ceil(p.durationDays/30)} meses · ${p.exclusive?"Exclusividade na categoria":"Sem exclusividade"}<br>${esc(p.bonus.label)}: ${money(p.bonus.amount)}<br>Exigências: ${p.requirements.map(esc).join(" · ")}</p>${dispute}<div class="grid3"><label>Valor desejado<input id="commercial-amount-${esc(p.id)}" type="number" min="${p.amount}" step="1000" value="${p.amount}"></label><label>Duração (dias)<input id="commercial-duration-${esc(p.id)}" type="number" min="90" max="1095" value="${p.durationDays}"></label><label>Bônus desejado<input id="commercial-bonus-${esc(p.id)}" type="number" min="0" step="1000" value="${p.bonus.amount}"></label></div><div class="actions"><button class="primary" data-commercial-accept="${esc(p.id)}">${rival?"Assinar e trocar patrocinador":"Aceitar"}</button><button data-commercial-negotiate="${esc(p.id)}" ${p.round>=2?"disabled":""}>Negociar${p.round?" · rodada "+p.round:""}</button><button data-commercial-hold="${esc(p.id)}">Pedir tempo</button><button data-commercial-reject="${esc(p.id)}">Recusar</button></div></article>`}).join("")||empty("Nenhuma proposta comercial pendente. O interesse surge após desempenho, reputação e exposição consistentes.")}</section>
+      <section class="card section" id="commercial-contracts"><div class="tag">PATROCÃNIOS ATIVOS</div><h2>Contratos</h2><div class="grid3">${active.map(x=>`<article class="card"><small>${esc(C.categoryLabel(x.category))} · ${esc(x.tier||"NATIONAL")} · ${x.exclusive?"EXCLUSIVO":"NÃO EXCLUSIVO"}</small><h3>${esc(x.brand)}</h3><b>${money(x.amount)}</b><p>${dayDate(x.startDay)} a ${dayDate(x.endDay)}<br>Próximo pagamento: ${dayDate(x.nextPaymentDay)}<br>${esc(x.bonus.label)}: ${money(x.bonus.amount)}<br>Relação: ${x.relationship>=85?"EXCELENTE":x.relationship>=65?"BOA":x.relationship>=40?"NORMAL":"RUIM"}</p></article>`).join("")||empty("Nenhum patrocínio ativo.")}</div></section>
       <section class="card section" id="commercial-brands"><div class="tag">UNIVERSO PRO-LIFE</div><h2>Marcas</h2><div class="grid3">${C.brands.map(b=>{const i=c.interests.find(x=>x.brandId===b.id);return `<article class="card"><small>${esc(C.categoryLabel(b.category))} · ${esc(b.tier)} · prestígio ${b.prestige}</small><h3>${esc(b.name)}</h3><p>${esc(b.profile)}<br>Mercados: ${b.regions.map(esc).join(" · ")}<br>Status: <b>${esc(i?.stage||"SEM INTERESSE")}</b></p></article>`}).join("")}</div></section>
       <section class="card section" id="commercial-history"><div class="tag">HISTÓRICO COMERCIAL</div><h2>Contratos da carreira</h2>${c.history.map(h=>`<article class="news"><time>${dayDate(h.startDay)} — ${dayDate(h.endDay)}</time><h3>${esc(h.brand)}</h3><p>${esc(h.category)} · ${money(h.value)} · ${esc(h.status)}</p></article>`).join("")||empty("Nenhum contrato comercial registrado.")}</section>`;
     },
@@ -1615,10 +7423,10 @@
       ${personalityPanel}
       ${state.decision?`<section class="card notice section" id="current-decision"><div class="tag">DECISÃO PENDENTE</div><h2>${esc(state.decision.title)}</h2>${decisionMeta(state.decision)}<p>${esc(state.decision.body)}</p><div class="actions">${state.decision.choices.map(([id,label])=>`<button class="primary" data-choice="${esc(id)}">${esc(label)}</button>`).join("")}</div></section>`:""}
       <div class="stats"><div class="stat"><small>Bem-estar</small><b>${Math.round(f.wellbeing)}/100</b></div><div class="stat"><small>Saldo</small><b>${money(f.balance)}</b></div><div class="stat"><small>Patrimônio</small><b>${money(f.netWorth)}</b></div><div class="stat"><small>Salário atual</small><b>${money(f.salary)}/mês</b></div></div>
-      <div class="grid"><section class="card"><div class="tag">VIDA PESSOAL</div><h2>Visão geral</h2>${(()=>{const b=D.birthdayDefaults?.(state);return b?`<p><b>Data de nascimento:</b> ${String(b.day).padStart(2,"0")}/${String(b.month).padStart(2,"0")}/${b.year} · <b>Idade:</b> ${state.person.age} anos</p>`:""})()}${state.decisionConsequences?.length?`<div class="card"><b>Última consequência</b><p>${state.decisionConsequences[0].summary}</p></div>`:""}${bar("Bem-estar",f.wellbeing)}${bar("Família",state.family)}${bar("Pressão e estresse",state.stress)}<p><b>Moradia:</b> ${esc(f.housing.type)}<br><b>Veículo principal:</b> ${f.vehicles[0]?esc(f.vehicles[0].name):"Nenhum"}<br><b>Estilo de vida:</b> ${esc(f.lifestyle)}</p><label>Estilo de vida<select id="life-style">${["SIMPLES","CONFORTÁVEL","ALTO PADRÃO","LUXO"].map(x=>`<option ${x===f.lifestyle?"selected":""}>${x}</option>`).join("")}</select></label><button data-action="life-style">Salvar estilo</button></section>
+      <div class="grid"><section class="card"><div class="tag">VIDA PESSOAL</div><h2>Visão geral</h2>${(()=>{const b=D.birthdayDefaults?.(state);return b?`<p><b>Data de nascimento:</b> ${String(b.day).padStart(2,"0")}/${String(b.month).padStart(2,"0")}/${b.year} · <b>Idade:</b> ${state.person.age} anos</p>`:""})()}${state.decisionConsequences?.length?`<div class="card"><b>Última consequência</b><p>${state.decisionConsequences[0].summary}</p></div>`:""}${bar("Bem-estar",f.wellbeing)}${bar("Família",state.family)}${bar("Pressão e estresse",state.stress)}<p><b>Moradia:</b> ${esc(f.housing.type)}<br><b>Veículo principal:</b> ${f.vehicles[0]?esc(f.vehicles[0].name):"Nenhum"}<br><b>Estilo de vida:</b> ${esc(f.lifestyle)}</p><label>Estilo de vida<select id="life-style">${["SIMPLES","CONFORTÃVEL","ALTO PADRÃO","LUXO"].map(x=>`<option ${x===f.lifestyle?"selected":""}>${x}</option>`).join("")}</select></label><button data-action="life-style">Salvar estilo</button></section>
       <section class="card" id="life-finances"><div class="tag">FINANÇAS</div><h2>Conta pessoal</h2><p>O salário vem do contrato atual. Pagamentos e despesas são processados pelo calendário.</p><div class="profile-data"><span>Saldo <b>${money(f.balance)}</b></span><span>Renda contratual <b>${money(f.salary)}/mês</b></span><span>Investido <b>${money(f.investments.reduce((n,x)=>n+x.principal,0))}</b></span><span>Patrimônio líquido <b>${money(f.netWorth)}</b></span></div><h3>Últimas movimentações</h3>${ledger.length?ledger.map(t=>`<p><small>${dayDate(t.day)}</small> · ${esc(t.label)} · <b class="${t.amount>=0?"good":"bad"}">${money(t.amount)}</b></p>`).join(""):"<p class=muted>Sem movimentações.</p>"}</section></div>
       <section class="card section" id="life-assets"><div class="tag">PATRIMÔNIO</div><h2>Moradia, veículos e estilo de vida</h2><h3>Moradia atual: ${esc(f.housing.type)}</h3><div class="grid3">${D.Life.housing.map(x=>`<article class="card"><small>${x.mode==="rent"?"ALUGUEL":"COMPRA"}</small><h3>${esc(x.name)}</h3><b>${money(x.price)}</b><p>Custo mensal: ${money(x.monthly)}</p><button data-life-housing="${x.id}" ${state.wallet<x.price?"disabled":""}>${x.mode==="rent"?"Alugar":"Comprar"}</button></article>`).join("")}</div><h3 class="section">Veículos</h3><div class="grid3">${D.Life.vehicles.map(x=>{const own=f.vehicles.find(v=>v.id===x.id),locked=(x.tier||0)>f.tier;return `<article class="card"><small>${esc(x.category)} · nível ${x.tier||0}</small><h3>${esc(x.name)}</h3><b>${money(x.price)}</b><p>Valor atual: ${money(x.value)} · custo mensal ${money(x.monthly)}</p>${own?`<button data-life-sell-vehicle="${x.id}">Vender por ${money(x.value)}</button>`:`<button data-life-vehicle="${x.id}" ${state.wallet<x.price||locked?"disabled":""}>${locked?"Bloqueado pela carreira":"Comprar"}</button>`}</article>`}).join("")}</div><h3 class="section">Compras e serviços</h3><div class="grid3">${D.Life.purchases.map(x=>{const own=f.possessions.some(v=>v.id===x.id);return `<article class="card"><small>${esc(x.category)}</small><h3>${esc(x.name)}</h3><b>${money(x.price)}</b><p>${esc(x.benefit)}${x.monthly?` · mensal ${money(x.monthly)}`:""}</p><button data-life-purchase="${x.id}" ${own||state.wallet<x.price?"disabled":""}>${own?"Adquirido":"Adquirir"}</button></article>`}).join("")}</div></section>
-      <div class="grid section"><section class="card" id="life-activities"><div class="tag">DIA LIVRE</div><h2>Atividades</h2><p>Atividades respeitam cooldown e têm consequências moderadas.</p><div class="actions"><button data-life-activity="rest">Descansar</button><button data-life-activity="family">Visitar família</button><button data-life-activity="friends">Sair com amigos</button></div></section><section class="card" id="life-family"><div class="tag">FAMÍLIA</div><h2>Relação pessoal</h2>${bar("Proximidade",state.family)}<p>Visitar a família melhora o bem-estar e reduz a pressão, mas respeita cooldown.</p></section></div>
+      <div class="grid section"><section class="card" id="life-activities"><div class="tag">DIA LIVRE</div><h2>Atividades</h2><p>Atividades respeitam cooldown e têm consequências moderadas.</p><div class="actions"><button data-life-activity="rest">Descansar</button><button data-life-activity="family">Visitar família</button><button data-life-activity="friends">Sair com amigos</button></div></section><section class="card" id="life-family"><div class="tag">FAMÃLIA</div><h2>Relação pessoal</h2>${bar("Proximidade",state.family)}<p>Visitar a família melhora o bem-estar e reduz a pressão, mas respeita cooldown.</p></section></div>
       <section class="card section" id="unexpected-events-history"><div class="tag">ACONTECIMENTOS RECENTES</div><h2>Decisões fora de campo</h2>${unexpected.length?unexpected.map(row=>`<article class="news"><time>${dayDate(row.day)} · ${esc(row.category)} · ${esc(row.status)}</time><h3>${esc(row.title)}</h3><p><b>${esc(row.choiceLabel)}</b>${row.summary?` · ${esc(row.summary)}`:""}</p></article>`).join(""):empty("Nenhum acontecimento inesperado registrado nesta carreira.")}</section>
       <section class="card section" id="life-investments"><div class="tag">INVESTIMENTOS</div><h2>Oportunidades de investimento</h2><p class="muted">Prazos, risco e retorno variam por oportunidade. A maior parte tende a render; investimentos de maior risco têm pequena chance de perda.</p>${f.investments.length?`<h3>Ativos</h3><div class="grid3">${f.investments.map(x=>`<article class="card"><small>${esc(x.category||"Investimento")}</small><h3>${esc(x.name)}</h3><b>${money(x.principal)}</b><p>Vence em ${Math.max(0,x.maturesDay-state.day)} dias · retorno projetado ${(x.rate*100).toFixed(1)}%</p></article>`).join("")}</div>`:""}<h3>Novas oportunidades</h3><div class="grid3">${D.Life.investmentTypes.map(x=>`<article class="card"><small>${esc(x.category)} · risco ${x.risk===0?"baixo":x.risk===1?"moderado":"alto"}</small><h3>${esc(x.name)}</h3><p>Mínimo ${money(x.minimum)} · prazo ${x.months} meses · retorno projetado ${(x.rate*100).toFixed(1)}%</p><input id="invest-${x.id}" type="number" min="${x.minimum}" step="1000" value="${x.minimum}"><button data-life-invest="${x.id}" ${state.wallet<x.minimum?"disabled":""}>Investir</button></article>`).join("")}</div></section>`;
     },
@@ -1738,6 +7546,42 @@
   document.addEventListener("click", (e) => {
     const b = e.target.closest("button");
     if (!b) return;
+
+    if (b.dataset.nationalCompetition) {
+      nationalCompetitionId=b.dataset.nationalCompetition;
+      render();
+
+      requestAnimationFrame(()=>{
+        document
+          .getElementById("national-competition-hub")
+          ?.scrollIntoView({
+            behavior:"smooth",
+            block:"start"
+          });
+      });
+
+      return;
+    }
+
+    if (b.dataset.wcSquadTeam) {
+      worldCupSquadTeamId=
+        b.dataset.wcSquadTeam;
+
+      render();
+
+      requestAnimationFrame(()=>{
+        document
+          .getElementById(
+            "wc-squad-hub"
+          )
+          ?.scrollIntoView({
+            behavior:"smooth",
+            block:"start"
+          });
+      });
+
+      return;
+    }
     if (b.dataset.loadSlot) {
       const loaded=S.loadSlot?.(b.dataset.loadSlot);
       if(!loaded){toast("Não foi possível carregar esta carreira.");return;}
@@ -2096,7 +7940,23 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
           command("retire");
         break;
     }
-  });
+
+    const nationsDivisionButton=
+      event.target.closest(
+        "[data-nations-league-division]"
+      );
+
+    if(nationsDivisionButton){
+      nationsLeagueDivision=
+        nationsDivisionButton.dataset
+          .nationsLeagueDivision||
+        "A";
+
+      render();
+      return;
+    }
+
+});
   document.addEventListener("submit", (e) => {
     if (e.target.id !== "appearance-editor") return;
     e.preventDefault();
@@ -2113,7 +7973,23 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
       "tattoo",
     ].forEach((k) => (appearance[k] = f.get(k)));
     command("appearance", { appearance, celebration: f.get("celebration") });
-  });
+
+    const concacafDivisionButton=
+      event.target.closest(
+        "[data-concacaf-nations-division]"
+      );
+
+    if(concacafDivisionButton){
+      concacafNationsLeagueDivision=
+        concacafDivisionButton.dataset
+          .concacafNationsDivision||
+        "A";
+
+      render();
+      return;
+    }
+
+});
   document.addEventListener("input", (e) => {
     if (
       e.target.closest("#appearance-editor") &&
@@ -2128,7 +8004,23 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
         C.kit(D.club(state)),
       );
     }
-  });
+
+    const fifaSeriesVenueButton=
+      event.target.closest(
+        "[data-fifa-series-venue]"
+      );
+
+    if(fifaSeriesVenueButton){
+      fifaSeriesVenueId=
+        fifaSeriesVenueButton.dataset
+          .fifaSeriesVenue||
+        "AUSTRALIA";
+
+      render();
+      return;
+    }
+
+});
   document.addEventListener("change", (e) => {
     if (["focus", "intensity", "exercise"].includes(e.target.id)) {
       const button = $("#training-action");
@@ -2167,6 +8059,22 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
       return;
     }
     if (e.target.id === "tactic") command("tactic", { value: e.target.value });
-  });
+
+    const fifaSeriesVenueButton=
+      event.target.closest(
+        "[data-fifa-series-venue]"
+      );
+
+    if(fifaSeriesVenueButton){
+      fifaSeriesVenueId=
+        fifaSeriesVenueButton.dataset
+          .fifaSeriesVenue||
+        "AUSTRALIA";
+
+      render();
+      return;
+    }
+
+});
   render();
 })();

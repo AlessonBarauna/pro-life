@@ -91,11 +91,36 @@ test("Brazil Cup selects 32 ranked clubs with top four from every division", () 
   assert.equal(new Set(cup.entrants.map((e) => e.clubId)).size, 32);
   assert.equal(cup.entrants.filter((e) => e.qualifiedBy.startsWith("Top 4")).length, 16);
   assert.ok(cup.entrants.every((e) => Number.isInteger(e.rank) && e.rank >= 1 && e.rank <= 80));
-  for (const date of [50, 100, 170, 240, 340]) {
-    s.day = date - 1;
-    D.advance(s, 1);
+  let guard=0;
+
+  while(!cup.champion && guard<10){
+    const next=cup.rounds.find(
+      round=>round.pairs.some(pair=>!pair.played)
+    );
+
+    assert.ok(
+      next,
+      "deve existir uma rodada pendente ate a final"
+    );
+
+    s.day=next.date-1;
+    D.advance(s,1);
+
+    guard++;
   }
-  assert.equal(cup.rounds.reduce((total, round) => total + round.pairs.length, 0), 31);
+
+  assert.ok(
+    guard<10,
+    "Copa do Brasil deve terminar em ate 5 fases"
+  );
+
+  assert.equal(
+    cup.rounds.reduce(
+      (total,round)=>total+round.pairs.length,
+      0
+    ),
+    31
+  );
   assert.ok(cup.rounds.every((round) => round.pairs.every((pair) => pair.played && pair.winnerId)));
   assert.ok(cup.champion);
 });

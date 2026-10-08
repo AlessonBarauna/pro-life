@@ -1637,7 +1637,9 @@
       fee,
       pos: p.pos || "—",
       marketValue: p.id === "hero" ? marketValue(s) : undefined,
-      transferType: p.id === "hero" ? (init(s).playerCareer.contract?.type || (source ? "permanent" : "free")) : "permanent",
+      transferType: p.id === "hero"
+        ? (init(s).playerCareer.contract?.type || (source ? "permanent" : "free"))
+        : (source ? "permanent" : "free"),
       salary: p.id === "hero" ? s.salary : Math.max(2500, Math.round((fee ? fee / 180 : 2500) / 1000) * 1000),
     });
     e.transfers = e.transfers.slice(0, 100);
@@ -1670,6 +1672,48 @@
           " com " + leader.stats.points + " pontos após " + leader.stats.played + " jogos.",
       );
     // Etapa 15: transferências da IA agora são decididas por World (necessidade → alvo → negociação), uma vez por janela.
+
+    // Etapa 24: mercado internacional.
+    // No maximo uma contratacao internacional por janela.
+    const marketWindow=windowStatus(s);
+
+    if(marketWindow.open){
+      const relative=((s.day%365)+365)%365;
+
+      const windowIndex=windows.findIndex(w=>
+        relative>=w.start &&
+        relative<=w.end
+      );
+
+      if(windowIndex>=0){
+        const InternationalPool=
+          root.ProLifeInternationalPool ||
+          (
+            typeof require==="function"
+              ? require("./international-pool.js")
+              : null
+          );
+
+        const deal=
+          InternationalPool?.processTransferWindow?.(
+            s,
+            {
+              open:true,
+              windowKey:String(s.season)+":"+windowIndex
+            }
+          );
+
+        if(deal){
+          transfer(
+            s,
+            deal.player,
+            null,
+            deal.club,
+            0
+          );
+        }
+      }
+    }
   }
 
   function livingWorld(s, rng, D) {

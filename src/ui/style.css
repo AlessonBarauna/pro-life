@@ -1350,3 +1350,1740 @@ button,a,select,input,label,summary{touch-action:manipulation}
   .career-slot-actions .primary{grid-column:1/-1;min-height:48px}
   .career-slot-actions button:not(.primary){min-height:44px}
 }
+
+
+/* FC26 WORLD CUP SQUAD HUB */
+
+.fc26-squad-hub{
+  display:grid;
+  grid-template-columns:250px minmax(0,1fr);
+  min-height:720px;
+  margin-top:18px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;
+  overflow:hidden;
+  background:
+    radial-gradient(
+      circle at 70% 10%,
+      rgba(86,255,170,.08),
+      transparent 30%
+    ),
+    #101312;
+}
+
+.fc26-team-browser{
+  background:#0b0d0c;
+  border-right:1px solid rgba(255,255,255,.08);
+  min-width:0;
+}
+
+.fc26-panel-title{
+  padding:20px 18px 14px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+
+.fc26-panel-title small,
+.fc26-squad-header small,
+.fc26-bench-header small,
+.fc26-roster-heading small{
+  display:block;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.16em;
+  opacity:.55;
+}
+
+.fc26-panel-title b{
+  display:block;
+  margin-top:4px;
+  font-size:22px;
+}
+
+.fc26-team-list{
+  max-height:720px;
+  overflow:auto;
+  padding:8px;
+}
+
+.fc26-team-list button{
+  width:100%;
+  display:grid;
+  grid-template-columns:38px 1fr 34px;
+  gap:10px;
+  align-items:center;
+  padding:10px 9px;
+  margin:2px 0;
+  text-align:left;
+  border:0;
+  border-radius:11px;
+  background:transparent;
+  color:inherit;
+}
+
+.fc26-team-list button:hover{
+  background:rgba(255,255,255,.05);
+}
+
+.fc26-team-list button.active{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(67,255,145,.2),
+      rgba(67,255,145,.04)
+    );
+  box-shadow:
+    inset 3px 0 0 #43ff91;
+}
+
+.fc26-team-code{
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+  background:rgba(255,255,255,.06);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.05em;
+}
+
+.fc26-team-list b{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:12px;
+}
+
+.fc26-team-list small{
+  font-size:10px;
+  opacity:.48;
+}
+
+.fc26-team-list strong{
+  font-size:13px;
+  text-align:center;
+}
+
+.fc26-squad-main{
+  min-width:0;
+  padding:20px;
+}
+
+.fc26-squad-header{
+  display:grid;
+  grid-template-columns:42px 1fr 42px;
+  gap:14px;
+  align-items:center;
+  margin-bottom:18px;
+}
+
+.fc26-squad-header h2{
+  margin:2px 0 10px;
+  font-size:30px;
+  line-height:1;
+}
+
+.fc26-arrow{
+  width:42px;
+  height:42px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  font-size:28px;
+}
+
+.fc26-squad-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.fc26-squad-meta span{
+  min-width:82px;
+  padding:7px 10px;
+  border-radius:8px;
+  background:rgba(255,255,255,.05);
+  font-size:10px;
+  opacity:.72;
+}
+
+.fc26-squad-meta b{
+  display:block;
+  margin-top:2px;
+  font-size:14px;
+  opacity:1;
+}
+
+.fc26-squad-content{
+  display:grid;
+  grid-template-columns:minmax(430px,1.55fr) minmax(250px,.75fr);
+  gap:14px;
+}
+
+.fc26-pitch-wrap,
+.fc26-bench-panel,
+.fc26-full-roster{
+  border:1px solid rgba(255,255,255,.075);
+  border-radius:16px;
+  overflow:hidden;
+  background:rgba(255,255,255,.025);
+}
+
+.fc26-pitch{
+  position:relative;
+  min-height:540px;
+  padding:32px 24px;
+  display:grid;
+  grid-template-rows:1fr 1fr 1fr .75fr;
+  align-items:center;
+  background:
+    linear-gradient(
+      rgba(5,30,19,.22),
+      rgba(5,30,19,.22)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      #163d2a 0,
+      #163d2a 12.5%,
+      #194630 12.5%,
+      #194630 25%
+    );
+}
+
+.fc26-pitch:before{
+  content:"";
+  position:absolute;
+  inset:18px;
+  border:2px solid rgba(255,255,255,.32);
+  pointer-events:none;
+}
+
+.fc26-pitch-line.half{
+  position:absolute;
+  left:18px;
+  right:18px;
+  top:50%;
+  border-top:2px solid rgba(255,255,255,.27);
+}
+
+.fc26-pitch-circle{
+  position:absolute;
+  width:100px;
+  height:100px;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  border:2px solid rgba(255,255,255,.27);
+  border-radius:50%;
+}
+
+.fc26-pitch-box{
+  position:absolute;
+  left:50%;
+  width:190px;
+  height:78px;
+  transform:translateX(-50%);
+  border:2px solid rgba(255,255,255,.25);
+}
+
+.fc26-pitch-box.top{
+  top:18px;
+  border-top:0;
+}
+
+.fc26-pitch-box.bottom{
+  bottom:18px;
+  border-bottom:0;
+}
+
+.fc26-pitch-row{
+  position:relative;
+  z-index:2;
+  display:flex;
+  justify-content:space-evenly;
+  align-items:center;
+  gap:8px;
+}
+
+.fc26-pitch-player{
+  width:94px;
+  min-height:70px;
+  padding:8px 6px 7px;
+  text-align:center;
+  border-radius:12px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(20,24,22,.96),
+      rgba(10,12,11,.94)
+    );
+  box-shadow:
+    0 8px 22px rgba(0,0,0,.28),
+    inset 0 0 0 1px rgba(255,255,255,.08);
+}
+
+.fc26-pitch-rating{
+  width:27px;
+  height:27px;
+  margin:-18px auto 4px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#d6ff43;
+  color:#101410;
+  font-size:11px;
+  font-weight:900;
+}
+
+.fc26-pitch-player b{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:11px;
+}
+
+.fc26-pitch-player small{
+  display:block;
+  margin-top:3px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:8px;
+  opacity:.52;
+}
+
+.fc26-lineup-footer{
+  display:flex;
+  justify-content:space-around;
+  padding:11px;
+  background:rgba(0,0,0,.22);
+  font-size:10px;
+  opacity:.65;
+}
+
+.fc26-lineup-footer b{
+  margin-right:4px;
+  color:#d6ff43;
+}
+
+.fc26-bench-panel{
+  min-height:540px;
+}
+
+.fc26-bench-header,
+.fc26-roster-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 16px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+
+.fc26-bench-header h3,
+.fc26-roster-heading h3{
+  margin:2px 0 0;
+}
+
+.fc26-bench-header > span{
+  min-width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border-radius:10px;
+  background:#d6ff43;
+  color:#101410;
+  font-weight:900;
+}
+
+.fc26-bench-list{
+  max-height:545px;
+  overflow:auto;
+  padding:8px;
+}
+
+.fc26-player-card{
+  display:grid;
+  grid-template-columns:38px minmax(0,1fr) 30px;
+  gap:9px;
+  align-items:center;
+  padding:8px;
+  border-radius:10px;
+}
+
+.fc26-player-card:hover{
+  background:rgba(255,255,255,.045);
+}
+
+.fc26-player-rating{
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+  background:rgba(214,255,67,.12);
+  color:#d6ff43;
+  font-size:12px;
+  font-weight:900;
+}
+
+.fc26-player-main{
+  min-width:0;
+}
+
+.fc26-player-main b,
+.fc26-player-main small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.fc26-player-main b{
+  font-size:11px;
+}
+
+.fc26-player-main small{
+  margin-top:2px;
+  font-size:9px;
+  opacity:.48;
+}
+
+.fc26-player-age{
+  text-align:center;
+  font-size:10px;
+  opacity:.5;
+}
+
+.fc26-full-roster{
+  margin-top:14px;
+}
+
+.fc26-roster-heading > span{
+  font-size:10px;
+  opacity:.48;
+}
+
+.fc26-full-roster table{
+  margin:0;
+}
+
+.fc26-full-roster tbody tr:hover{
+  background:rgba(214,255,67,.045);
+}
+
+.fc26-legacy-label,
+.fc26-brazil-test-marker{
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+}
+
+@media(max-width:1100px){
+  .fc26-squad-hub{
+    grid-template-columns:190px minmax(0,1fr);
+  }
+
+  .fc26-squad-content{
+    grid-template-columns:1fr;
+  }
+
+  .fc26-bench-panel{
+    min-height:0;
+  }
+
+  .fc26-bench-list{
+    max-height:330px;
+  }
+}
+
+@media(max-width:760px){
+  .fc26-squad-hub{
+    display:block;
+  }
+
+  .fc26-team-browser{
+    border-right:0;
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+
+  .fc26-team-list{
+    display:flex;
+    gap:6px;
+    max-height:none;
+    overflow:auto;
+  }
+
+  .fc26-team-list button{
+    min-width:170px;
+  }
+
+  .fc26-squad-main{
+    padding:12px;
+  }
+
+  .fc26-squad-header{
+    grid-template-columns:34px 1fr 34px;
+  }
+
+  .fc26-arrow{
+    width:34px;
+    height:34px;
+  }
+
+  .fc26-squad-header h2{
+    font-size:22px;
+  }
+
+  .fc26-pitch{
+    min-height:470px;
+    padding-left:12px;
+    padding-right:12px;
+  }
+
+  .fc26-pitch-player{
+    width:72px;
+  }
+
+  .fc26-pitch-player small{
+    display:none;
+  }
+}
+
+
+/* FC26 INTERNATIONAL COMPETITIONS HUB */
+
+.fc26-national-competition-hub{
+  margin-bottom:24px;
+}
+
+.fc26-comp-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:18px;
+  margin-bottom:14px;
+}
+
+.fc26-comp-header small,
+.fc26-competition-detail header small{
+  display:block;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.16em;
+  opacity:.5;
+}
+
+.fc26-comp-header h2,
+.fc26-competition-detail header h2{
+  margin:3px 0 0;
+}
+
+.fc26-comp-header>span{
+  font-size:11px;
+  opacity:.55;
+}
+
+.fc26-comp-strip{
+  display:grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(165px,1fr));
+  gap:8px;
+}
+
+.fc26-comp-tile{
+  min-height:126px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:flex-end;
+  text-align:left;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:13px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.045),
+      rgba(255,255,255,.015)
+    );
+  position:relative;
+  overflow:hidden;
+}
+
+.fc26-comp-tile:before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:3px;
+  background:transparent;
+}
+
+.fc26-comp-tile:hover{
+  transform:translateY(-1px);
+  background:rgba(255,255,255,.065);
+}
+
+.fc26-comp-tile.active{
+  background:
+    linear-gradient(
+      135deg,
+      rgba(214,255,67,.18),
+      rgba(214,255,67,.035)
+    );
+  border-color:rgba(214,255,67,.34);
+}
+
+.fc26-comp-tile.active:before{
+  background:#d6ff43;
+}
+
+.fc26-comp-tile.eligible:after{
+  content:"";
+  position:absolute;
+  top:10px;
+  right:10px;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#4bd884;
+}
+
+.fc26-comp-tile.conditional:after{
+  content:"";
+  position:absolute;
+  top:10px;
+  right:10px;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#f2c14e;
+}
+
+.fc26-comp-tile.historical{
+  opacity:.5;
+}
+
+.fc26-comp-tile small{
+  font-size:9px;
+  letter-spacing:.12em;
+  opacity:.48;
+}
+
+.fc26-comp-tile b{
+  margin-top:5px;
+  font-size:15px;
+}
+
+.fc26-comp-tile span{
+  margin-top:2px;
+  font-size:10px;
+  opacity:.55;
+}
+
+.fc26-comp-tile em{
+  margin-top:12px;
+  font-size:8px;
+  font-style:normal;
+  font-weight:800;
+  letter-spacing:.08em;
+  opacity:.55;
+}
+
+.fc26-competition-detail{
+  margin-top:22px;
+  padding-top:20px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+
+.fc26-competition-detail>header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:16px;
+  margin-bottom:16px;
+}
+
+.fc26-comp-status{
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.1);
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+
+.fc26-comp-status.eligible{
+  background:rgba(73,214,127,.12);
+  border-color:rgba(73,214,127,.35);
+}
+
+.fc26-comp-status.conditional{
+  background:rgba(245,190,74,.12);
+  border-color:rgba(245,190,74,.35);
+}
+
+.fc26-comp-status.historical{
+  opacity:.5;
+}
+
+.fc26-comp-info{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:22px;
+}
+
+@media(max-width:760px){
+  .fc26-comp-strip{
+    display:flex;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    padding-bottom:8px;
+  }
+
+  .fc26-comp-tile{
+    min-width:180px;
+    scroll-snap-align:start;
+  }
+
+  .fc26-comp-info{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* FC26 COPA AMERICA DETAIL */
+
+.fc26-ca-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:18px;
+  margin-bottom:16px;
+}
+
+.fc26-ca-header h2{
+  margin-bottom:3px;
+}
+
+.fc26-copa-america{
+  position:relative;
+}
+
+.fc26-copa-america:before{
+  content:"";
+  display:block;
+  height:2px;
+  margin-bottom:18px;
+  background:
+    linear-gradient(
+      90deg,
+      #43d37b,
+      rgba(67,211,123,0)
+    );
+}
+
+.fc26-ca-podium{
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr;
+  gap:10px;
+}
+
+.fc26-ca-podium>div{
+  padding:16px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  background:rgba(255,255,255,.03);
+}
+
+.fc26-ca-podium small{
+  display:block;
+  margin-bottom:4px;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.12em;
+  opacity:.5;
+}
+
+@media(max-width:760px){
+  .fc26-ca-header{
+    flex-direction:column;
+  }
+
+  .fc26-ca-podium{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* FC26 EURO DETAIL */
+
+.fc26-euro{
+  position:relative;
+}
+
+.fc26-euro:before{
+  content:"";
+  display:block;
+  height:2px;
+  margin-bottom:18px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(110,135,255,.9),
+      rgba(110,135,255,0)
+    );
+}
+
+.fc26-euro-qualified{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(150px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-euro-qualified span{
+  padding:10px 12px;
+  border-radius:9px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  background:
+    rgba(255,255,255,.035);
+  font-weight:700;
+}
+
+.euro-best-third-tag{
+  display:block;
+  margin-top:2px;
+  font-size:8px;
+  letter-spacing:.08em;
+  opacity:.65;
+}
+
+.wc-row-best-third{
+  box-shadow:
+    inset 3px 0 0
+    rgba(245,190,65,.8);
+}
+
+.fc26-euro-knockout{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(230px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-euro-knockout>div{
+  min-height:76px;
+}
+
+.fc26-euro-podium{
+  grid-template-columns:2fr 1fr;
+}
+
+@media(max-width:760px){
+  .fc26-euro-podium{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* FC26 FINALISSIMA DETAIL */
+
+.fc26-finalissima{
+  position:relative;
+}
+
+.fc26-finalissima:before{
+  content:"";
+  display:block;
+  height:2px;
+  margin-bottom:18px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(91,214,158,.95),
+      rgba(100,120,255,.85),
+      rgba(255,255,255,0)
+    );
+}
+
+.fc26-finalissima-score{
+  display:grid;
+  grid-template-columns:
+    minmax(0,1fr)
+    auto
+    minmax(0,1fr);
+  align-items:center;
+  gap:18px;
+  padding:22px;
+  border-radius:14px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  background:
+    rgba(255,255,255,.025);
+}
+
+.fc26-finalissima-score>div:first-child{
+  text-align:right;
+}
+
+.fc26-finalissima-score>div:last-child{
+  text-align:left;
+}
+
+.fc26-finalissima-score .is-brazil h2{
+  text-decoration:
+    underline;
+  text-decoration-thickness:
+    2px;
+  text-underline-offset:
+    5px;
+}
+
+.fc26-finalissima-score small{
+  display:block;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.09em;
+  opacity:.55;
+  margin-bottom:5px;
+}
+
+.fc26-finalissima-score h2{
+  margin:0;
+}
+
+.fc26-finalissima-score-main{
+  min-width:110px;
+  text-align:center !important;
+}
+
+.fc26-finalissima-score-main strong{
+  display:block;
+  font-size:32px;
+  line-height:1;
+  letter-spacing:.04em;
+}
+
+.fc26-finalissima-score-main small{
+  margin-top:7px;
+  margin-bottom:0;
+}
+
+.fc26-finalissima-origins{
+  display:grid;
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.fc26-finalissima-origins article{
+  padding:18px;
+  border-radius:12px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  background:
+    rgba(255,255,255,.025);
+}
+
+.fc26-finalissima-origins article.is-brazil{
+  box-shadow:
+    inset 3px 0 0
+    rgba(80,215,120,.9);
+}
+
+.fc26-finalissima-origins small,
+.fc26-finalissima-podium small{
+  display:block;
+  margin-bottom:5px;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.1em;
+  opacity:.55;
+}
+
+.fc26-finalissima-origins h3{
+  margin:0 0 4px;
+}
+
+.fc26-finalissima-origins span{
+  font-size:12px;
+  opacity:.7;
+}
+
+.fc26-finalissima-podium{
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:10px;
+}
+
+.fc26-finalissima-podium>div{
+  padding:16px;
+  border-radius:12px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  background:
+    rgba(255,255,255,.03);
+}
+
+@media(max-width:760px){
+
+  .fc26-finalissima-score{
+    grid-template-columns:1fr;
+    text-align:center;
+  }
+
+  .fc26-finalissima-score>div:first-child,
+  .fc26-finalissima-score>div:last-child{
+    text-align:center;
+  }
+
+  .fc26-finalissima-origins,
+  .fc26-finalissima-podium{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* FC26 NATIONS LEAGUE DETAIL */
+
+.fc26-nations-league{
+  position:relative;
+}
+
+.fc26-nations-league:before{
+  content:"";
+  display:block;
+  height:2px;
+  margin-bottom:18px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(80,135,255,.95),
+      rgba(145,90,255,.75),
+      rgba(255,255,255,0)
+    );
+}
+
+.fc26-nations-tabs{
+  display:flex;
+  gap:8px;
+  margin:16px 0;
+  flex-wrap:wrap;
+}
+
+.fc26-nations-tabs button{
+  border:
+    1px solid
+    rgba(255,255,255,.09);
+  background:
+    rgba(255,255,255,.035);
+  color:inherit;
+  padding:9px 15px;
+  border-radius:9px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.fc26-nations-tabs button.active{
+  background:
+    rgba(255,255,255,.11);
+  border-color:
+    rgba(255,255,255,.22);
+}
+
+.nations-row-promotion{
+  box-shadow:
+    inset 3px 0 0
+    rgba(70,210,125,.9);
+}
+
+.nations-row-relegation{
+  box-shadow:
+    inset 3px 0 0
+    rgba(230,90,90,.85);
+}
+
+.fc26-nations-movement{
+  display:grid;
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.fc26-nations-movement>div{
+  padding:14px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  border-radius:11px;
+  background:
+    rgba(255,255,255,.025);
+}
+
+.fc26-nations-movement span{
+  display:block;
+  margin-top:7px;
+  font-size:12px;
+}
+
+.fc26-nations-finals{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(220px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-nations-podium{
+  grid-template-columns:
+    2fr 1fr 1fr;
+}
+
+@media(max-width:760px){
+
+  .fc26-nations-movement,
+  .fc26-nations-podium{
+    grid-template-columns:1fr;
+  }
+
+  .fc26-nations-tabs{
+    display:grid;
+    grid-template-columns:
+      repeat(2,1fr);
+  }
+}
+
+
+/* FC26 AFCON DETAIL */
+
+.fc26-afcon{
+  position:relative;
+}
+
+.fc26-afcon:before{
+  content:"";
+  display:block;
+  height:2px;
+  margin-bottom:18px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(235,180,70,.95),
+      rgba(80,195,115,.85),
+      rgba(255,255,255,0)
+    );
+}
+
+.fc26-afcon-qualified{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(150px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-afcon-qualified span{
+  padding:10px 12px;
+  border-radius:9px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  background:
+    rgba(255,255,255,.035);
+  font-weight:700;
+}
+
+.afcon-best-third-tag{
+  display:block;
+  margin-top:2px;
+  font-size:8px;
+  letter-spacing:.08em;
+  opacity:.65;
+}
+
+.fc26-afcon-knockout{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(230px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-afcon-podium{
+  grid-template-columns:
+    2fr 1fr 1fr;
+}
+
+@media(max-width:760px){
+  .fc26-afcon-podium{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* FC26 ASIAN CUP DETAIL */
+
+.fc26-asian-cup{
+  position:relative;
+}
+
+.fc26-asian-cup:before{
+  content:"";
+  display:block;
+  height:2px;
+  margin-bottom:18px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(220,75,75,.95),
+      rgba(245,195,75,.85),
+      rgba(255,255,255,0)
+    );
+}
+
+.fc26-asian-qualified{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(150px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-asian-qualified span{
+  padding:10px 12px;
+  border-radius:9px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  background:
+    rgba(255,255,255,.035);
+  font-weight:700;
+}
+
+.asian-best-third-tag{
+  display:block;
+  margin-top:2px;
+  font-size:8px;
+  letter-spacing:.08em;
+  opacity:.65;
+}
+
+.fc26-asian-knockout{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(230px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-asian-podium{
+  grid-template-columns:
+    2fr 1fr;
+}
+
+@media(max-width:760px){
+  .fc26-asian-podium{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* FC26 GOLD CUP DETAIL */
+
+.fc26-gold-cup{
+  position:relative;
+}
+
+.fc26-gold-cup:before{
+  content:"";
+  display:block;
+  height:2px;
+  margin-bottom:18px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(245,190,55,.95),
+      rgba(40,125,215,.85),
+      rgba(255,255,255,0)
+    );
+}
+
+.fc26-goldcup-qualified{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(150px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-goldcup-qualified span{
+  padding:10px 12px;
+  border-radius:9px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  background:
+    rgba(255,255,255,.035);
+  font-weight:700;
+}
+
+.fc26-goldcup-knockout{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(230px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-goldcup-podium{
+  grid-template-columns:
+    2fr 1fr;
+}
+
+@media(max-width:760px){
+  .fc26-goldcup-podium{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* FC26 CONCACAF NATIONS LEAGUE DETAIL */
+
+.fc26-concacaf-nations{
+  position:relative;
+}
+
+.fc26-concacaf-nations:before{
+  content:"";
+  display:block;
+  height:2px;
+  margin-bottom:18px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(35,145,220,.95),
+      rgba(245,190,55,.9),
+      rgba(255,255,255,0)
+    );
+}
+
+.fc26-concacaf-tabs{
+  display:flex;
+  gap:8px;
+  margin:16px 0;
+  flex-wrap:wrap;
+}
+
+.fc26-concacaf-tabs button{
+  border:
+    1px solid
+    rgba(255,255,255,.09);
+  background:
+    rgba(255,255,255,.035);
+  color:inherit;
+  padding:9px 16px;
+  border-radius:9px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.fc26-concacaf-tabs button.active{
+  background:
+    rgba(255,255,255,.12);
+  border-color:
+    rgba(255,255,255,.22);
+}
+
+.fc26-concacaf-seeded{
+  padding:14px;
+  margin:10px 0 16px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  border-radius:11px;
+  background:
+    rgba(255,255,255,.025);
+}
+
+.fc26-concacaf-seeded>small{
+  display:block;
+  margin-bottom:8px;
+  opacity:.65;
+  letter-spacing:.08em;
+}
+
+.fc26-concacaf-seeded>div{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(150px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-concacaf-seeded span{
+  display:block;
+  padding:9px 11px;
+  border-radius:8px;
+  background:
+    rgba(255,255,255,.045);
+  font-weight:700;
+}
+
+.concacaf-row-top{
+  box-shadow:
+    inset 3px 0 0
+    rgba(70,210,125,.9);
+}
+
+.concacaf-row-bottom{
+  box-shadow:
+    inset 3px 0 0
+    rgba(230,90,90,.85);
+}
+
+.fc26-concacaf-movement{
+  display:grid;
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.fc26-concacaf-movement>div{
+  padding:14px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  border-radius:11px;
+  background:
+    rgba(255,255,255,.025);
+}
+
+.fc26-concacaf-movement span{
+  display:block;
+  margin-top:7px;
+  font-size:12px;
+}
+
+.fc26-concacaf-quarterfinals,
+.fc26-concacaf-finals{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(220px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-concacaf-podium{
+  grid-template-columns:
+    2fr 1fr 1fr;
+}
+
+@media(max-width:760px){
+
+  .fc26-concacaf-movement,
+  .fc26-concacaf-podium{
+    grid-template-columns:1fr;
+  }
+
+  .fc26-concacaf-tabs{
+    display:grid;
+    grid-template-columns:
+      repeat(3,1fr);
+  }
+}
+
+
+/* FC26 OFC NATIONS CUP DETAIL */
+
+.fc26-ofc-nations-cup{
+  position:relative;
+}
+
+.fc26-ofc-nations-cup:before{
+  content:"";
+  display:block;
+  height:2px;
+  margin-bottom:18px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(80,175,220,.95),
+      rgba(70,210,165,.85),
+      rgba(255,255,255,0)
+    );
+}
+
+.fc26-ofc-qualified{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(160px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-ofc-qualified span{
+  padding:10px 12px;
+  border-radius:9px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  background:
+    rgba(255,255,255,.035);
+  font-weight:700;
+}
+
+.fc26-ofc-knockout{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(230px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-ofc-podium{
+  grid-template-columns:
+    2fr 1fr;
+}
+
+@media(max-width:760px){
+  .fc26-ofc-podium{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* FC26 FIFA ARAB CUP DETAIL */
+
+.fc26-fifa-arab-cup{
+  position:relative;
+}
+
+.fc26-fifa-arab-cup:before{
+  content:"";
+  display:block;
+  height:2px;
+  margin-bottom:18px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(160,80,210,.95),
+      rgba(235,190,65,.9),
+      rgba(255,255,255,0)
+    );
+}
+
+.fc26-arab-qualified{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(150px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-arab-qualified span{
+  padding:10px 12px;
+  border-radius:9px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  background:
+    rgba(255,255,255,.035);
+  font-weight:700;
+}
+
+.fc26-arab-knockout{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(230px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-arab-podium{
+  grid-template-columns:
+    2fr 1fr 1fr;
+}
+
+@media(max-width:760px){
+  .fc26-arab-podium{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* FC26 FIFA SERIES DETAIL */
+
+.fc26-fifa-series{
+  position:relative;
+}
+
+.fc26-fifa-series:before{
+  content:"";
+  display:block;
+  height:2px;
+  margin-bottom:18px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(75,155,245,.95),
+      rgba(125,95,225,.9),
+      rgba(255,255,255,0)
+    );
+}
+
+.fc26-fifa-series-tabs{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding:4px 0 12px;
+  margin:14px 0;
+}
+
+.fc26-fifa-series-tabs button{
+  flex:0 0 auto;
+  border:
+    1px solid
+    rgba(255,255,255,.09);
+  background:
+    rgba(255,255,255,.035);
+  color:inherit;
+  padding:9px 14px;
+  border-radius:9px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.fc26-fifa-series-tabs button.active{
+  background:
+    rgba(255,255,255,.13);
+  border-color:
+    rgba(255,255,255,.24);
+}
+
+.fc26-fifa-series-venue-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+}
+
+.fc26-fifa-series-venue-head span{
+  padding:7px 10px;
+  border-radius:8px;
+  background:
+    rgba(255,255,255,.06);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.06em;
+}
+
+.fc26-fifa-series-participants{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(170px,1fr)
+    );
+  gap:8px;
+  margin-top:14px;
+}
+
+.fc26-fifa-series-participants>div{
+  padding:11px 12px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  border-radius:9px;
+  background:
+    rgba(255,255,255,.035);
+}
+
+.fc26-fifa-series-participants small{
+  display:block;
+  margin-bottom:4px;
+  opacity:.62;
+}
+
+.fc26-fifa-series-matches{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(225px,1fr)
+    );
+  gap:8px;
+}
+
+.fc26-fifa-series-winner{
+  display:grid;
+  grid-template-columns:
+    2fr 1fr;
+}
+
+.fc26-fifa-series-note{
+  margin-top:14px;
+  padding:12px 14px;
+  border:
+    1px solid
+    rgba(255,255,255,.08);
+  border-radius:10px;
+  background:
+    rgba(255,255,255,.025);
+  opacity:.78;
+  font-size:12px;
+}
+
+@media(max-width:760px){
+
+  .fc26-fifa-series-winner{
+    grid-template-columns:1fr;
+  }
+
+  .fc26-fifa-series-venue-head{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}
