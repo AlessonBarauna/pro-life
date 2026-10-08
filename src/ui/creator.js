@@ -97,7 +97,28 @@
   function stepOffers(ctx) {
     const { D, esc } = ctx, d = draft(ctx);
     const cards = d.offers.map((o) => {
-      const c = d.clubs.find((x) => x.id === o.clubId), on = W.clubId === o.clubId, comp = o.competition;
+      const c =
+        d.clubs.find(
+          (x) => x.id === o.clubId
+        ) || {
+          id:o.clubId,
+          name:"Clube indisponivel",
+          leagueId:"",
+          structure:"?"
+        };
+
+      const on =
+        W.clubId === o.clubId;
+
+      const comp =
+        o.competition || {
+          rank:"?",
+          count:"?",
+          topOvr:0,
+          need:0,
+          structure:0,
+          leagueId:c.leagueId
+        };
       return `<button type="button" class="offer-card ${on ? "on" : ""}" data-w-club="${o.clubId}"><span class="tag">${esc(kindLabel[o.pitch.kind])}</span><b>${esc(c.name)}</b><small>${esc(D.leagues?.find?.((l) => l.id === c.leagueId)?.name || ({ serieA: "Série A", serieB: "Série B", serieC: "Série C", serieD: "Série D" })[c.leagueId])} · estrutura ${c.structure}</small><p>${esc(o.pitch.text)}</p><div class="story-meta"><i>${money(o.salary)}/mês</i><i>${Math.round(o.durationDays / 365 * 10) / 10} ano(s)</i><i>${comp.rank}º de ${comp.count} na posição</i><i>Luvas ${money(o.signingBonus)}</i></div><small class="muted">Nenhuma vaga de titular é prometida: o treinador decide por desempenho.</small></button>`;
     }).join("");
     return `<h2>Primeiras oportunidades</h2><p class="muted">Propostas geradas a partir de elencos reais, da sua posição e do seu nível. Escolha com calma — voltar às etapas anteriores recalcula só o necessário.</p><div class="offer-grid">${cards || '<div class="empty">Nenhuma proposta disponível.</div>'}</div>`;
@@ -177,10 +198,52 @@
     else if ("wCoach" in d) { ctx.classic(); return; }
     else if ("wNext" in d) {
       const msg = valid(ctx);
-      if (msg) { ctx.toast(msg); return; }
-      if (W.step === 5) { finish(ctx); return; }
-      W.step++;
-    } else return;
+
+      if (msg) {
+        ctx.toast(msg);
+        return;
+      }
+
+      if (W.step === 5) {
+        finish(ctx);
+        return;
+      }
+
+      const previousStep=
+        W.step;
+
+      W.step=
+        Math.min(
+          5,
+          W.step+1
+        );
+
+      try {
+        render(ctx);
+        window.scrollTo(0,0);
+      }
+      catch(err) {
+        W.step=
+          previousStep;
+
+        console.error(
+          "Falha ao abrir etapa do criador:",
+          err
+        );
+
+        ctx.toast(
+          "Nao foi possivel abrir a proxima etapa: "+
+          (
+            err?.message ||
+            "erro desconhecido"
+          )
+        );
+      }
+
+      return;
+    }
+    else return;
+
     render(ctx);
     window.scrollTo(0, 0);
   }
