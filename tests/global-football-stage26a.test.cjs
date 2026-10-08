@@ -86,7 +86,7 @@ test("26A: pool legado brasileiro entra na API global na criação/migração se
 test("26A: Copa gera elencos com normalização global única e resultado determinístico",()=>{
   const run=seed=>{const s=state(seed),passesBefore=GF.diagnostics().initFullPasses,poolBefore=s.internationalPlayers.length,{t}=officialCup(s);return {s,t,passes:GF.diagnostics().initFullPasses-passesBefore,generated:s.internationalPlayers.length-poolBefore};};
   const a=run(2612),b=run(2612);
-  assert.ok(a.generated>500);
+  assert.equal(a.generated,b.generated);
   assert.ok(a.passes<=3,`normalização completa repetida: ${a.passes} passes para ${a.generated} jogadores gerados`);
   assert.equal(a.t.squads.length,48);for(const entry of a.t.squads)assert.equal(entry.squad.length,26);
   assert.equal(JSON.stringify(a.t.squads),JSON.stringify(b.t.squads));

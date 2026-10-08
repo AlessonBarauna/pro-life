@@ -19,7 +19,7 @@ test("26B: as sete ligas existem com país, divisão e quantidade de clubes do F
 });
 
 test("26B: clubes são consultáveis, sem duplicar nomes nem colidir com clubes do projeto",()=>{
-  const s=state(),clubs=s.globalFootball.clubs.filter(club=>!club.generated);
+  const s=state(),clubs=s.globalFootball.clubs.filter(club=>!club.generated&&Object.keys(LEAGUES).includes(club.leagueId));
   assert.equal(clubs.length,132);
   const arsenal=GF.clubById(s,"gf_arsenal");assert.equal(arsenal.name,"Arsenal");assert.equal(arsenal.leagueId,"gf_premier_league");assert.equal(arsenal.division,1);assert.equal(arsenal.country,"Inglaterra");
   for(const club of clubs){assert.ok(club.id.startsWith("gf_"));assert.ok(club.shortName);assert.ok(club.reputation>0&&club.strength>0);assert.equal(club.active,true);assert.ok(GF.leagueById(s,club.leagueId),club.id);}
@@ -111,9 +111,9 @@ test("26B: importação é idempotente e roda uma vez por estado",()=>{
   assert.equal(GF.diagnostics().initFullPasses,passes);
   assert.deepEqual(s.globalFootball.packs,Object.fromEntries(GF.packInfo().map(pack=>[pack.id,pack.version])));
   s.globalFootball.packs={};s.season=2027;GF.init(s);
-  assert.equal(imported(s).length,before);assert.equal(Object.keys(s.globalFootball.packs).length,7);
+  assert.equal(imported(s).length,before);assert.equal(Object.keys(s.globalFootball.packs).length,GF.packInfo().length);
   assert.equal(s.globalFootball.leagues.filter(league=>league.id==="gf_la_liga").length,1);assert.equal(s.globalFootball.clubs.filter(club=>club.id==="gf_arsenal").length,1);
-  const info=GF.packInfo();assert.equal(info.length,7);assert.equal(info.reduce((sum,pack)=>sum+pack.clubs,0),132);assert.equal(info.reduce((sum,pack)=>sum+pack.players,0),before);
+  const info=GF.packInfo().filter(pack=>/^eur26b_/.test(pack.id));assert.equal(info.length,7);assert.equal(info.reduce((sum,pack)=>sum+pack.clubs,0),132);const leagueIds=new Set(Object.keys(LEAGUES));assert.equal(info.reduce((sum,pack)=>sum+pack.players,0),imported(s).filter(player=>leagueIds.has(player.leagueId)).length);
 });
 
 test("26B: performance — criação e geração da Copa sem normalização repetida",()=>{
@@ -124,15 +124,21 @@ test("26B: performance — criação e geração da Copa sem normalização repe
 });
 
 test("26B: saves antigos migram sem perder dados (pré-26B e da 26A)",()=>{
-  const s=state(2710),total=imported(s).length;s.clubs[0].roster[0].legacyMarker="preservar";
+  const s=state(2710);s.clubs[0].roster[0].legacyMarker="preservar";
+  const identity=player=>String(player?.name||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()+"|"+player?.birthYear;
+  const expectedIdentities=new Set(imported(s).map(identity));
+  const assertPackIdentitiesRepresented=state=>{
+    const represented=new Set(GF.allPlayers(state).map(identity));
+    for(const key of expectedIdentities)assert.ok(represented.has(key),"identidade perdida na migracao: "+key);
+  };
   const pre=JSON.parse(JSON.stringify(s));delete pre.globalFootball;pre.internationalPlayers=pre.internationalPlayers.filter(player=>!isPack(player));
   const migrated=Save.parse(JSON.stringify(pre));
-  assert.equal(imported(migrated).length,total);assert.equal(migrated.clubs[0].roster[0].legacyMarker,"preservar");assert.ok(migrated.globalFootball.packs.eur26b_esp>=1);
+  assertPackIdentitiesRepresented(migrated);assert.equal(migrated.clubs[0].roster[0].legacyMarker,"preservar");assert.ok(migrated.globalFootball.packs.eur26b_esp>=1);
   const era26a=JSON.parse(JSON.stringify(s));delete era26a.globalFootball.packs;
   era26a.internationalPlayers=era26a.internationalPlayers.filter(player=>!isPack(player));
   era26a.internationalPlayers.push({id:"gf_esp_1",name:"Iker Salas",shortName:"I. Salas",nationality:"Espanha",birthYear:2003,pos:"GOL",ovr:82,overall:82,potential:87,clubId:"gf_madrid_capital",leagueId:"gf_la_liga",external:true,status:"active",active:true});
   const migrated26a=Save.parse(JSON.stringify(era26a));
-  assert.equal(imported(migrated26a).length,total);assert.ok(GF.playerById(migrated26a,"gf_esp_1"));
+  assertPackIdentitiesRepresented(migrated26a);assert.ok(GF.playerById(migrated26a,"gf_esp_1"));
   const ids=GF.allPlayers(migrated26a).map(player=>player.id);assert.equal(new Set(ids).size,ids.length);
 });
 

@@ -18,7 +18,25 @@
     ["newcastle","Newcastle United","Newcastle",84,80,[
       "Nick Pope|1992|ENG|GOL|79|79","Aaron Ramsdale|1998|ENG|GOL|77|79","Sven Botman|2000|NED|DEF|80|82","Fabian Schar|1991|SUI|DEF|79|79","Dan Burn|1992|ENG|DEF|78|78","Tino Livramento|2002|ENG|DEF|80|84","Lewis Hall|2004|ENG|DEF|78|85","Kieran Trippier|1990|ENG|DEF|78|78","Sandro Tonali|2000|ITA|MEI|84|86","Anthony Gordon|2001|ENG|ATA|82|84","Harvey Barnes|1997|ENG|ATA|79|79","Jacob Murphy|1995|ENG|ATA|76|76","Anthony Elanga|2002|SWE|ATA|77|79","Nick Woltemade|2002|GER|ATA|80|86","Yoane Wissa|1996|COD|ATA|79|79","Jacob Ramsey|2001|ENG|MEI|77|80","Odysseas Vlachodimos|1994|GRE|GOL|76|76","Mark Gillespie|1992|ENG|GOL|66|66","Joe Willock|1999|ENG|MEI|76|77","Jorgen Strand Larsen|2000|NOR|ATA|77|80"]],
     ["aston_villa","Aston Villa","Aston Villa",80,78,[
-      "Emiliano Martinez|1992|ARG|GOL|84|84","Ezri Konsa|1997|ENG|DEF|81|81","Pau Torres|1997|ESP|DEF|80|80","Matty Cash|1997|POL|DEF|79|79","Lucas Digne|1993|FRA|DEF|78|78","Ian Maatsen|2002|NED|DEF|77|80","Amadou Onana|2001|BEL|MEI|81|83","Youri Tielemans|1997|BEL|MEI|82|82","John McGinn|1994|SCO|MEI|79|79","Morgan Rogers|2002|ENG|MEI|83|86","Boubacar Kamara|1999|FRA|MEI|81|81","Leon Bailey|1997|JAM|ATA|78|78","Ollie Watkins|1995|ENG|ATA|82|82","Donyell Malen|1999|NED|ATA|79|79","Jadon Sancho|2000|ENG|ATA|77|79","Robin Olsen|1990|SWE|GOL|73|73","Andres Garcia|2003|ESP|DEF|74|78","Lamare Bogarde|2003|NED|MEI|72|78","Samuel Iling-Junior|2003|ENG|DEF|71|76"]],
+      "Emiliano Martinez|1992|ARG|GOL|84|84",
+      "Ezri Konsa|1997|ENG|DEF|81|81",
+      "Pau Torres|1997|ESP|DEF|80|80",
+      "Matty Cash|1997|POL|DEF|79|79",
+      "Lucas Digne|1993|FRA|DEF|78|78",
+      "Ian Maatsen|2002|NED|DEF|77|80",
+      "Amadou Onana|2001|BEL|MEI|81|83",
+      "Youri Tielemans|1997|BEL|MEI|82|82",
+      "John McGinn|1994|SCO|MEI|79|79",
+      "Morgan Rogers|2002|ENG|MEI|83|86",
+      "Boubacar Kamara|1999|FRA|MEI|81|81",
+      "Leon Bailey|1997|JAM|ATA|78|78",
+      "Ollie Watkins|1995|ENG|ATA|82|82",
+      "Donyell Malen|1999|NED|ATA|79|79",
+      "Jadon Sancho|2000|ENG|ATA|77|79",
+      "Andres Garcia|2003|ESP|DEF|74|78",
+      "Lamare Bogarde|2003|NED|MEI|72|78",
+      "Samuel Iling-Junior|2003|ENG|DEF|71|76"
+    ]],
     ["west_ham","West Ham United","West Ham",74,74,[
       "Alphonse Areola|1993|FRA|GOL|77|77","Max Kilman|1997|ENG|DEF|78|78","Jean-Clair Todibo|1999|FRA|DEF|79|80","Aaron Wan-Bissaka|1997|ENG|DEF|78|78","Konstantinos Mavropanos|1997|GRE|DEF|77|77","Tomas Soucek|1995|CZE|MEI|77|77","Mateus Fernandes|2004|POR|MEI|74|82","Jarrod Bowen|1996|ENG|ATA|81|81","Crysencio Summerville|2001|NED|ATA|77|79","Niclas Fullkrug|1993|GER|ATA|76|76","Callum Wilson|1992|ENG|ATA|75|75","Mads Hermansen|2000|DEN|GOL|75|78","Kyle Walker-Peters|1997|ENG|DEF|76|76","El Hadji Malick Diouf|2004|SEN|DEF|75|80","Guido Rodriguez|1994|ARG|MEI|77|77","Soungoutou Magassa|2003|FRA|MEI|72|77","Oliver Scarles|2005|ENG|DEF|66|76","Luis Guilherme|2006|POR|MEI|68|80","Pablo Felipe|2003|ESP|ATA|72|76","Andy Irving|2000|AUT|MEI|71|73"]],
     ["brighton","Brighton & Hove Albion","Brighton",74,76,[
@@ -32,7 +50,25 @@
     ["wolves","Wolverhampton Wanderers","Wolverhampton",68,70,[
       "Sam Johnstone|1993|ENG|GOL|76|76","Toti Gomes|1999|POR|DEF|75|75","Yerson Mosquera|2001|COL|DEF|74|78","Hee-chan Hwang|1996|KOR|ATA|77|77","Matt Doherty|1992|IRL|DEF|74|74","Emmanuel Agbadou|1997|CIV|DEF|75|75","Marshall Munetsi|1996|ZIM|MEI|75|75","Jose Sa|1993|POR|GOL|79|79","Jackson Tchatchoua|2001|CMR|DEF|73|75","Santiago Bueno|1998|URU|DEF|75|76","Jean-Ricner Bellegarde|1998|FRA|MEI|75|75","Mateus Mane|2007|POR|MEI|68|82","Tommy Doyle|2001|ENG|MEI|73|75","Rodrigo Gomes|2003|POR|ATA|74|79","Tolu Arokodare|2000|NGA|ATA|75|76","Fer Lopez|2004|ESP|MEI|71|77","Angel Gomes|2000|ENG|MEI|77|78","David Moller Wolfe|2001|NOR|DEF|75|77"]],
     ["bournemouth","AFC Bournemouth","Bournemouth",68,73,[
-      "Djordje Petrovic|1999|SRB|GOL|77|80","Marcos Senesi|1997|ARG|DEF|77|77","Adrien Truffert|2001|FRA|DEF|75|78","Alex Scott|2003|ENG|MEI|77|83","Tyler Adams|1999|USA|MEI|77|77","Ryan Christie|1995|SCO|MEI|76|76","Antoine Semenyo|2000|GHA|ATA|81|83","Justin Kluivert|1999|NED|ATA|78|78","Amine Adli|2000|MAR|ATA|76|78","Fraser Forster|1988|ENG|GOL|72|72","Julio Soler|2005|ARG|DEF|67|78","Veljko Milosavljevic|2005|SRB|DEF|67|78","Adam Smith|1991|ENG|DEF|73|73","James Hill|2002|ENG|DEF|73|75","Lewis Cook|1997|ENG|MEI|75|75","Marcus Tavernier|1999|ENG|ATA|77|78","Daniel Jebbison|2003|ENG|ATA|68|74","Eli Junior Kroupi|2006|FRA|ATA|72|85","Philip Billing|1996|DEN|MEI|74|74"]],
+      "Djordje Petrovic|1999|SRB|GOL|77|80",
+      "Marcos Senesi|1997|ARG|DEF|77|77",
+      "Adrien Truffert|2001|FRA|DEF|75|78",
+      "Alex Scott|2003|ENG|MEI|77|83",
+      "Tyler Adams|1999|USA|MEI|77|77",
+      "Ryan Christie|1995|SCO|MEI|76|76",
+      "Antoine Semenyo|2000|GHA|ATA|81|83",
+      "Justin Kluivert|1999|NED|ATA|78|78",
+      "Amine Adli|2000|MAR|ATA|76|78",
+      "Fraser Forster|1988|ENG|GOL|72|72",
+      "Julio Soler|2005|ARG|DEF|67|78",
+      "Veljko Milosavljevic|2005|SRB|DEF|67|78",
+      "Adam Smith|1991|ENG|DEF|73|73",
+      "James Hill|2002|ENG|DEF|73|75",
+      "Lewis Cook|1997|ENG|MEI|75|75",
+      "Marcus Tavernier|1999|ENG|ATA|77|78",
+      "Daniel Jebbison|2003|ENG|ATA|68|74",
+      "Eli Junior Kroupi|2006|FRA|ATA|72|85"
+    ]],
     ["brentford","Brentford","Brentford",68,73,[
       "Caoimhin Kelleher|1998|IRL|GOL|79|80","Nathan Collins|2001|IRL|DEF|77|79","Sepp van den Berg|2001|NED|DEF|76|79","Rico Henry|1997|ENG|DEF|76|76","Christian Norgaard|1994|DEN|MEI|77|77","Mikkel Damsgaard|2000|DEN|MEI|78|80","Kevin Schade|2001|GER|ATA|77|80","Dango Ouattara|2002|BFA|ATA|76|80","Keane Lewis-Potter|2001|ENG|ATA|75|78","Hakon Valdimarsson|2001|ISL|GOL|68|72","Kristoffer Ajer|1998|NOR|DEF|77|77","Aaron Hickey|2002|SCO|DEF|76|78","Jair Cunningham|2000|JAM|DEF|68|70","Yehor Yarmolyuk|2004|UKR|MEI|76|81","Vitaly Janelt|1998|GER|MEI|76|76","Mathias Jensen|1996|DEN|MEI|76|76","Jordan Henderson|1990|ENG|MEI|75|75","Frank Onyeka|1998|NGA|MEI|74|75"]],
     ["nottingham_forest","Nottingham Forest","Nottm Forest",70,73,[

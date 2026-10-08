@@ -57,6 +57,97 @@
     const club={id,name,shortName:name.slice(0,24),country:player.nationality||"Exterior",leagueId:player.leagueId||null,division:1,reputation:clamp(Number(player.ovr||player.overall||70),20,100),strength:clamp(Number(player.ovr||player.overall||70),20,100),budget:0,active:true,generated:true};
     g.clubs.push(club);player.clubId=id;return club;
   }
+  // Jogadores vindos dos packs globais mantem o objeto completo em runtime,
+  // mas omitem do JSON somente campos default que normalizePlayer reconstr?i.
+  // Campos alterados durante a carreira continuam sendo serializados normalmente.
+  function installCompactExternalSerialization(player){
+    if(
+      !player ||
+      player.external!==true ||
+      !String(player.id||"").startsWith("gf_p_")
+    ) return player;
+
+    Object.defineProperty(player,"toJSON",{
+      configurable:true,
+      writable:true,
+      enumerable:false,
+      value:function(){
+        const out={};
+
+        for(const [key,value] of Object.entries(this)){
+          out[key]=value;
+        }
+
+        const overall=Number(
+          this.ovr ?? this.overall
+        );
+
+        // overall e apenas espelho de ovr.
+        if(
+          Number.isFinite(overall) &&
+          Number(out.overall)===Number(out.ovr)
+        ){
+          delete out.overall;
+        }
+
+        // Arrays vazios sao defaults reconstruidos no load.
+        if(
+          Array.isArray(out.secondaryPositions) &&
+          out.secondaryPositions.length===0
+        ){
+          delete out.secondaryPositions;
+        }
+
+        if(
+          Array.isArray(out.clubHistory) &&
+          out.clubHistory.length===0
+        ){
+          delete out.clubHistory;
+        }
+
+        // Estado ativo e o default.
+        if(out.status==="active"){
+          delete out.status;
+        }
+
+        if(out.active===true){
+          delete out.active;
+        }
+
+        // peakOvr igual ao GER atual nao carrega informacao nova.
+        if(
+          Number.isFinite(overall) &&
+          Number(out.peakOvr)===overall
+        ){
+          delete out.peakOvr;
+        }
+
+        // O nome do clube e recuperado por clubId no normalize.
+        if(out.clubId && out.externalClub){
+          delete out.externalClub;
+        }
+
+        // Os seis atributos criados automaticamente com o mesmo GER
+        // podem ser reconstruidos. Se qualquer atributo evoluiu,
+        // o objeto inteiro e preservado.
+        if(
+          out.attrs &&
+          typeof out.attrs==="object" &&
+          CORE.every(
+            key =>
+              Number(out.attrs[key])===overall
+          )
+        ){
+          delete out.attrs;
+        }
+
+        return out;
+      }
+    });
+
+    return player;
+  }
+
   function normalizePlayer(s,player,context={}){
     if(!player||typeof player!=="object")return player;
     const season=seasonOf(s),attributeValues=CORE.map(key=>Number(player.attrs?.[key])).filter(Number.isFinite),derivedOverall=attributeValues.length?attributeValues.reduce((sum,value)=>sum+value,0)/attributeValues.length:70,overall=clamp(Number(player.ovr??player.overall??derivedOverall),20,100);
@@ -69,9 +160,9 @@
     if(!player.attrs||typeof player.attrs!=="object")player.attrs={};for(const key of CORE)player.attrs[key]=clamp(Number(player.attrs[key]??overall),0,100);
     if(context.club){player.clubId=context.club.id;player.leagueId=context.club.leagueId||null;}
     const club=catalogClub(s,player.clubId)||ensureExternalClub(s,player);if(club){player.clubId=club.id;player.leagueId=club.leagueId||player.leagueId||null;player.externalClub=club.name;}
-    if(!Array.isArray(player.clubHistory))player.clubHistory=[];player.peakOvr=Math.max(Number(player.peakOvr||0),overall);return player;
+    if(!Array.isArray(player.clubHistory))player.clubHistory=[];player.peakOvr=Math.max(Number(player.peakOvr||0),overall);installCompactExternalSerialization(player);return player;
   }
-  const PACK_CODES=["eng","esp","ita","ger","fra","por","ned"],expandedPacks=new Map();
+  const PACK_CODES=["eng","esp","ita","ger","fra","por","ned","bel","aut","sui","sco","den","swe","nor","pol","rou","irl","ger3"],expandedPacks=new Map();
   function loadedPacks(){
     if(typeof require==="function")for(const code of PACK_CODES){try{require(`../data/global-football-eur-${code}.js`);}catch(error){if(error?.code!=="MODULE_NOT_FOUND")throw error;}}
     return root.ProLifeGlobalFootballPacks||[];

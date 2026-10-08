@@ -20,7 +20,26 @@
     ["fiorentina","ACF Fiorentina","Fiorentina",76,77,[
       "David de Gea|1990|ESP|GOL|80|80","Pietro Comuzzo|2005|ITA|DEF|76|84","Luca Ranieri|1999|ITA|DEF|77|78","Marin Pongracic|1997|CRO|DEF|77|77","Robin Gosens|1994|GER|DEF|77|77","Michael Kayode|2004|ITA|DEF|74|81","Rolando Mandragora|1997|ITA|MEI|78|78","Nicolo Fagioli|2001|ITA|MEI|77|80","Jacopo Fazzini|2003|ITA|MEI|74|79","Moise Kean|2000|ITA|ATA|82|83","Albert Gudmundsson|1997|ISL|ATA|79|79","Roberto Piccoli|2001|ITA|ATA|75|77","Riccardo Sottil|1999|ITA|ATA|74|74","Tommaso Martinelli|2002|ITA|GOL|68|74","Fabiano Parisi|2000|ITA|DEF|75|77","Cher Ndour|2004|ITA|MEI|75|80","Pablo Mari|1993|ESP|DEF|75|75","Eddy Kouadio|2005|ITA|DEF|66|76","Edoardo Bove|2002|ITA|MEI|77|80","Nicolas Valentini|2000|ARG|DEF|74|75","Lucas Beltran|2001|ARG|ATA|77|79"]],
     ["bologna","Bologna FC","Bologna",72,75,[
-      "Lukasz Skorupski|1991|POL|GOL|79|79","Jhon Lucumi|1998|COL|DEF|79|80","Stefan Posch|1997|AUT|DEF|77|77","Juan Miranda|2000|ESP|DEF|75|76","Lewis Ferguson|1999|SCO|MEI|80|81","Remo Freuler|1992|SUI|MEI|78|78","Nikola Moro|1998|CRO|MEI|77|78","Riccardo Orsolini|1997|ITA|ATA|79|79","Santiago Castro|2004|ARG|ATA|76|82","Jonathan Rowe|2003|ENG|ATA|76|80","Thijs Dallinga|2000|NED|ATA|74|75","Federico Bernardeschi|1994|ITA|ATA|76|76","Federico Ravaglia|1999|ITA|GOL|70|72","Torbjorn Heggem|1999|NOR|DEF|75|77","Emil Holm|2000|SWE|DEF|75|77","Eivind Helland|2002|NOR|DEF|70|74","Jens Odgaard|1999|DEN|ATA|76|77","Ciro Immobile|1990|ITA|ATA|75|75","Dan Ndoye|2000|SUI|ATA|77|79","Benjamin Dominguez|2001|CHI|MEI|73|76"]],
+      "Lukasz Skorupski|1991|POL|GOL|79|79",
+      "Jhon Lucumi|1998|COL|DEF|79|80",
+      "Juan Miranda|2000|ESP|DEF|75|76",
+      "Lewis Ferguson|1999|SCO|MEI|80|81",
+      "Remo Freuler|1992|SUI|MEI|78|78",
+      "Nikola Moro|1998|CRO|MEI|77|78",
+      "Riccardo Orsolini|1997|ITA|ATA|79|79",
+      "Santiago Castro|2004|ARG|ATA|76|82",
+      "Jonathan Rowe|2003|ENG|ATA|76|80",
+      "Thijs Dallinga|2000|NED|ATA|74|75",
+      "Federico Bernardeschi|1994|ITA|ATA|76|76",
+      "Federico Ravaglia|1999|ITA|GOL|70|72",
+      "Torbjorn Heggem|1999|NOR|DEF|75|77",
+      "Emil Holm|2000|SWE|DEF|75|77",
+      "Eivind Helland|2002|NOR|DEF|70|74",
+      "Jens Odgaard|1999|DEN|ATA|76|77",
+      "Ciro Immobile|1990|ITA|ATA|75|75",
+      "Dan Ndoye|2000|SUI|ATA|77|79",
+      "Benjamin Dominguez|2001|CHI|MEI|73|76"
+    ]],
     ["torino","Torino FC","Torino",66,71,[
       "Franco Israel|2000|URU|GOL|75|78","Saul Coco|1999|EQG|DEF|75|76","Perr Schuurs|1999|NED|DEF|77|78","Valentino Lazaro|1996|AUT|DEF|75|75","Nikola Vlasic|1997|CRO|MEI|77|77","Ivan Ilic|2001|SRB|MEI|76|78","Cesare Casadei|2003|ITA|MEI|73|79","Che Adams|1996|SCO|ATA|77|77","Duvan Zapata|1991|COL|ATA|75|75","Giovanni Simeone|1995|ARG|ATA|77|77","Adam Masina|1994|MAR|DEF|75|75","Ardian Ismajli|1996|ALB|DEF|74|74","Marcus Pedersen|2000|NOR|DEF|73|75","Cristian Ansaldi|1986|ARG|DEF|71|71","Gvidas Gineitis|2004|LTU|MEI|74|79","Zanos Savva|2002|CYP|ATA|73|76","Alberto Paleari|1992|ITA|GOL|72|72","Emirhan Ilkhan|2004|TUR|MEI|73|79"]],
     ["udinese","Udinese","Udinese",64,70,[
@@ -30,7 +49,26 @@
     ["como","Como 1907","Como",64,70,[
       "Jean Butez|1995|FRA|GOL|74|74","Marc-Oliver Kempf|1995|GER|DEF|75|75","Jacobo Ramon|2005|ESP|DEF|71|80","Alberto Moreno|1992|ESP|DEF|74|74","Mergim Vojvoda|1995|KOS|DEF|75|75","Nico Paz|2004|ARG|MEI|80|88","Lucas Da Cunha|2001|FRA|MEI|76|78","Maximo Perrone|2003|ARG|MEI|75|80","Sergi Roberto|1992|ESP|MEI|75|75","Assane Diao|2005|ESP|ATA|76|84","Anastasios Douvikas|1999|GRE|ATA|76|77","Alvaro Morata|1992|ESP|ATA|78|78","Mauro Vigorito|1998|ITA|GOL|68|70","Edoardo Goldaniga|1993|ITA|DEF|74|74","Alex Valle|2004|ESP|DEF|75|80","Ignace Van der Brempt|2002|BEL|DEF|74|76","Maxence Caqueret|2000|FRA|MEI|78|80","Jayden Addai|2005|NED|ATA|69|78","Andrea Belotti|1993|ITA|ATA|74|74"]],
     ["parma","Parma Calcio 1913","Parma",58,67,[
-      "Zion Suzuki|2002|JPN|GOL|77|81","Enrico Delprato|1999|ITA|DEF|74|75","Lautaro Valenti|1998|ARG|DEF|74|75","Matteo Cancellieri|2002|ITA|ATA|74|77","Mandela Keita|2002|BEL|MEI|74|78","Adrian Bernabe|2001|ESP|MEI|76|79","Mateo Pellegrino|2001|ARG|ATA|74|77","Gabriel Strefezza|1997|ITA|ATA|74|74","Edoardo Corvi|2001|ITA|GOL|71|74","Alessandro Circati|2003|AUS|DEF|75|80","Botond Balogh|2001|HUN|DEF|74|77","Emanuele Valeri|1998|ITA|DEF|74|75","Nicolo Cambiaghi|2000|ITA|ATA|74|76","Gabriel Charpentier|2000|FRA|ATA|74|75","Oliver Sorensen|2004|DEN|MEI|73|78","Matija Frigan|2003|CRO|ATA|71|74","Christian Ordonez|2004|ECU|MEI|70|76","Pontus Almqvist|1999|SWE|ATA|75|76","Franco Carboni|2003|ARG|DEF|74|77","Mariano Troilo|2002|ITA|DEF|70|74"]],
+      "Zion Suzuki|2002|JPN|GOL|77|81",
+      "Enrico Delprato|1999|ITA|DEF|74|75",
+      "Lautaro Valenti|1998|ARG|DEF|74|75",
+      "Matteo Cancellieri|2002|ITA|ATA|74|77",
+      "Mandela Keita|2002|BEL|MEI|74|78",
+      "Adrian Bernabe|2001|ESP|MEI|76|79",
+      "Mateo Pellegrino|2001|ARG|ATA|74|77",
+      "Gabriel Strefezza|1997|ITA|ATA|74|74",
+      "Edoardo Corvi|2001|ITA|GOL|71|74",
+      "Alessandro Circati|2003|AUS|DEF|75|80",
+      "Botond Balogh|2001|HUN|DEF|74|77",
+      "Emanuele Valeri|1998|ITA|DEF|74|75",
+      "Nicolo Cambiaghi|2000|ITA|ATA|74|76",
+      "Oliver Sorensen|2004|DEN|MEI|73|78",
+      "Matija Frigan|2003|CRO|ATA|71|74",
+      "Christian Ordonez|2004|ECU|MEI|70|76",
+      "Pontus Almqvist|1999|SWE|ATA|75|76",
+      "Franco Carboni|2003|ARG|DEF|74|77",
+      "Mariano Troilo|2002|ITA|DEF|70|74"
+    ]],
     ["cagliari","Cagliari Calcio","Cagliari",58,66,[
       "Elia Caprile|2001|ITA|GOL|76|80","Yerry Mina|1994|COL|DEF|75|75","Marco Palestra|2005|ITA|DEF|74|83","Gianluca Gaetano|2000|ITA|MEI|75|76","Michel Adopo|2000|FRA|MEI|74|76","Sebastiano Esposito|2002|ITA|ATA|74|78","Zito Luvumbo|2002|ANG|ATA|74|78","Michael Folorunsho|1998|ITA|MEI|75|76","Alessandro Deiola|1995|ITA|MEI|73|73","Sebastiano Luperto|1996|ITA|DEF|74|74","Zé Pedro|2004|POR|DEF|72|78","Juan Rodriguez|1998|ITA|DEF|72|73","Gabriele Zappa|1999|ITA|DEF|73|74","Mattia Felici|2002|ITA|MEI|72|75","Matteo Prati|2003|ITA|MEI|75|79","Razvan Marin|1996|ROU|MEI|75|75","Leonardo Pavoletti|1988|ITA|ATA|72|72","Mattia Aramu|1995|ITA|ATA|72|72","Boris Radunovic|1996|SRB|GOL|71|71","Tommaso Augello|1994|ITA|DEF|72|72"]],
     ["lecce","US Lecce","Lecce",56,65,[
@@ -42,7 +80,27 @@
     ["cremonese","US Cremonese","Cremonese",52,63,[
       "Jamie Vardy|1987|ENG|ATA|75|75","Federico Bonazzoli|1997|ITA|ATA|74|74","Franco Vazquez|1989|ARG|MEI|74|74","Leonardo Sernicola|1997|ITA|DEF|72|72","Emil Audero|1997|IDN|GOL|75|76","Marco Silvestri|1991|ITA|GOL|72|72","Matteo Bianchetti|1993|ITA|DEF|73|73","Luka Lochoshvili|1998|GEO|DEF|72|74","Matteo Lovato|2000|ITA|DEF|73|75","Giuseppe Pezzella|1997|ITA|DEF|73|74","Alberto Grassi|1995|ITA|MEI|75|75","Alessio Zerbin|1999|ITA|ATA|74|75","Michele Castagnetti|1990|ITA|MEI|71|71","Dennis Johnsen|1998|NOR|ATA|72|74","Jari Vandeputte|1996|BEL|ATA|73|74","Faris Moumbagna|2000|CMR|ATA|72|74","Warren Bondo|2003|FRA|MEI|74|79","Martin Payero|1998|ARG|MEI|75|75","Romano Floriani Mussolini|2003|ITA|MEI|71|75","Jeremy Sarmiento|2002|ECU|ATA|72|75","Giovanni Bonfanti|2002|ITA|DEF|70|73","Filippo Terracciano|2003|ITA|DEF|70|74"]],
     ["pisa","Pisa SC","Pisa",52,63,[
-      "Adrian Semper|1998|CRO|GOL|73|74","Simone Canestrelli|1998|ITA|DEF|73|74","Idrissa Toure|1998|GER|DEF|72|74","Marius Marin|1998|ROU|MEI|74|75","Mattia Tramoni|2000|ITA|MEI|72|73","Stefano Moreo|1993|ITA|ATA|73|73","Henrik Meister|2002|DEN|ATA|72|76","M'Bala Nzola|1996|ANG|ATA|75|75","Nicolas Scuffet|1996|ITA|GOL|73|73","Antonio Caracciolo|1990|ITA|DEF|72|72","Daniel Denoon|2003|NED|DEF|71|75","Raul Albiol|1985|ESP|DEF|75|75","Samuele Angori|2004|ITA|DEF|70|75","Matteo Tramoni|2000|FRA|ATA|74|76","Michel Aebischer|1997|SUI|MEI|77|77","Mattia Valoti|1994|ITA|MEI|72|72","Ebrima Colley|2000|GAM|ATA|71|73","Mehdi Leris|1998|FRA|ATA|72|73","Gabriele Piccinini|1996|ITA|MEI|72|72","Isak Vural|2001|TUR|MEI|71|73","Stefano Sernicola|1999|ITA|DEF|70|72"]]
+      "Adrian Semper|1998|CRO|GOL|73|74",
+      "Simone Canestrelli|1998|ITA|DEF|73|74",
+      "Idrissa Toure|1998|GER|DEF|72|74",
+      "Marius Marin|1998|ROU|MEI|74|75",
+      "Mattia Tramoni|2000|ITA|MEI|72|73",
+      "Stefano Moreo|1993|ITA|ATA|73|73",
+      "Henrik Meister|2002|DEN|ATA|72|76",
+      "M'Bala Nzola|1996|ANG|ATA|75|75",
+      "Nicolas Scuffet|1996|ITA|GOL|73|73",
+      "Antonio Caracciolo|1990|ITA|DEF|72|72",
+      "Daniel Denoon|2003|NED|DEF|71|75",
+      "Raul Albiol|1985|ESP|DEF|75|75",
+      "Samuele Angori|2004|ITA|DEF|70|75",
+      "Matteo Tramoni|2000|FRA|ATA|74|76",
+      "Michel Aebischer|1997|SUI|MEI|77|77",
+      "Mattia Valoti|1994|ITA|MEI|72|72",
+      "Mehdi Leris|1998|FRA|ATA|72|73",
+      "Gabriele Piccinini|1996|ITA|MEI|72|72",
+      "Isak Vural|2001|TUR|MEI|71|73",
+      "Stefano Sernicola|1999|ITA|DEF|70|72"
+    ]]
   ]};
   const registry=root.ProLifeGlobalFootballPacks=root.ProLifeGlobalFootballPacks||[];
   if(!registry.some(item=>item.id===pack.id))registry.push(pack);
