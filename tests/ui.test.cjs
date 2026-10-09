@@ -95,6 +95,13 @@ for (const mode of ["player", "coach"]) {
   assert.equal(get(w).mode, mode);
   assert.ok(w.document.querySelector(".game-nav"));
   assert.ok(w.document.querySelector(".career-dashboard"));
+  assert.ok(w.document.querySelector(".career-central-v3"));
+  assert.ok(w.document.querySelector(".central-v3-header"));
+  assert.ok(w.document.querySelector(".central-v3-hero"));
+  assert.ok(w.document.querySelector(".central-v3-matchup, .central-v3-empty"));
+  assert.ok(w.document.querySelector(".central-v3-grid"));
+  assert.ok(w.document.querySelectorAll(".central-v3-task").length<=4);
+  assert.doesNotMatch(w.document.querySelector(".career-central-v3").textContent,/\b(?:undefined|null|NaN)\b/);
   assert.ok(w.document.querySelector(".central-main-match"));
   assert.ok(w.document.querySelector(".central-player-card"));
   assert.ok(w.document.querySelector(".central-grid"));
