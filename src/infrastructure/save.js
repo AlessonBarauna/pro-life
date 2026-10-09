@@ -7,6 +7,9 @@
   const ExpansionValidator =
     root.ProLifeValidateExpansion ||
     (typeof require === "function" ? require("./validate-expansion.js") : null);
+  const GlobalFootball =
+    root.ProLifeGlobalFootball ||
+    (typeof require === "function" ? require("../domain/global-football.js") : null);
   function validate(s) {
     const fail = () => {
       throw Error("Arquivo de save inválido ou incompatível.");
@@ -130,9 +133,29 @@
         fail();
       allIds.push(...c.roster.map((p) => p.id));
     }
+    GlobalFootball?.init?.(s);
+    const globalClubs = s.globalFootball?.clubs || [];
+    const globalIds = globalClubs.map((c) => c?.id);
+    if (
+      !Array.isArray(globalClubs) ||
+      !globalClubs.every(
+        (c) => c && str(c.id, 80) && /^gf_[a-z0-9_]+$/.test(c.id),
+      ) ||
+      new Set(globalIds).size !== globalIds.length
+    )
+      fail();
+    const localClub = (id) => s.clubs.find((c) => c.id === id) || null;
+    const globalClub = (id) => {
+      if (!str(id, 80) || !/^gf_[a-z0-9_]+$/.test(id)) return null;
+      const listed = globalClubs.find((c) => c.id === id);
+      if (!listed || listed.generated === true || listed.active === false)
+        return null;
+      return GlobalFootball?.clubById?.(s, id) || null;
+    };
+    const knownClub = (id) => localClub(id) || globalClub(id);
     if (
       new Set(allIds).size !== allIds.length ||
-      (s.clubId !== null && !s.clubs.some((c) => c.id === s.clubId))
+      (s.clubId !== null && !knownClub(s.clubId))
     )
       fail();
     if (
@@ -188,7 +211,7 @@
       s.offers.length > 8 ||
       !s.offers.every(
         (o) =>
-          s.clubs.some((c) => c.id === o.clubId) &&
+          knownClub(o.clubId) &&
           num(o.salary, 0, 1e9) &&
           num(o.expires, 0, 100000) &&
           str(o.role),
@@ -279,10 +302,23 @@
     )
       fail();
     if (s.mode === "player" && s.clubId) {
-      const c = s.clubs.find((c) => c.id === s.clubId),
-        p = c.roster.find((p) => p.id === "hero");
-      if (!p || JSON.stringify(p) !== JSON.stringify(s.person)) fail();
-      c.roster[c.roster.indexOf(p)] = s.person;
+      const c = localClub(s.clubId);
+      if (c) {
+        const p = c.roster.find((p) => p.id === "hero");
+        if (!p || JSON.stringify(p) !== JSON.stringify(s.person)) fail();
+        c.roster[c.roster.indexOf(p)] = s.person;
+      } else {
+        const pooledHeroes = [
+          ...s.clubs.flatMap((club) => club.roster || []),
+          ...(s.internationalPlayers || []),
+        ].filter((p) => p?.id === "hero");
+        if (
+          pooledHeroes.length !== 0 ||
+          s.person.id !== "hero" ||
+          s.person.clubId !== s.clubId
+        )
+          fail();
+      }
     }
     if (s.development !== undefined) {
       if (

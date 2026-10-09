@@ -1,6 +1,8 @@
 /* PRO LIFE — pure domain. No DOM, network or storage. */
 (function (root) {
   "use strict";
+  const WorldClubCompetitions=root.ProLifeWorldClubCompetitions||(typeof require==="function"?require("./world-club-competitions.js"):null);
+  const WorldLiveMarket=root.ProLifeWorldLiveMarket||(typeof require==="function"?require("./world-live-market.js"):null);
   const Character =
     root.ProLifeCharacter ||
     (typeof require === "function" ? require("./character.js") : null);
@@ -176,15 +178,50 @@
     return rounds.concat(rounds.map((ps) => ps.map(([a, b]) => [b, a])));
   }
 
-  function positionNeed(c, pos) {
-    const targets = { GOL: 2, DEF: 8, MEI: 8, ATA: 5 };
-    const count = c.roster.filter((p) => p.pos === pos && p.id !== "hero").length;
-    return Math.max(0, (targets[pos] || 5) - count);
+  function positionNeed(c, pos, s) {
+    const targets = {
+      GOL: 2,
+      DEF: 8,
+      MEI: 8,
+      ATA: 5
+    };
+
+    let roster =
+      Array.isArray(c?.roster)
+        ? c.roster
+        : [];
+
+    if (
+      !roster.length &&
+      s &&
+      c?.id &&
+      GlobalFootball?.playersByClub
+    ) {
+      roster =
+        GlobalFootball.playersByClub(
+          s,
+          c.id
+        ) || [];
+    }
+
+    const count =
+      roster.filter(
+        p =>
+          p &&
+          p.pos === pos &&
+          p.id !== "hero"
+      ).length;
+
+    return Math.max(
+      0,
+      (targets[pos] || 5) - count
+    );
   }
   function weightedCareerOffers(s, rng, count = 3) {
     const heroLevel = overall(s.person);
     const preferences = Career.init(s).offerPreferences || { leagues: ["serieA", "serieB", "serieC", "serieD"], clubLevel: "any" };
     const allowedLeagues = new Set(preferences.leagues || []);
+    const allowInternational = preferences.international !== false;
     const levelAllowed = (c) => {
       if (preferences.clubLevel === "elite") return c.structure >= 75;
       if (preferences.clubLevel === "competitive") return c.structure >= 60 && c.structure < 75;
@@ -192,22 +229,36 @@
       if (preferences.clubLevel === "small") return c.structure < 45;
       return true;
     };
-    const pool = s.clubs
+    const pool = careerClubPool(s)
       .filter((c) => c.id !== s.clubId)
-      .filter((c) => (s.world === "brazil2026" ? allowedLeagues.has(c.leagueId) : true))
+      .filter((c) => {
+        const local =
+          (s.clubs || [])
+            .some(
+              item => item.id === c.id
+            );
+
+        if(local) return s.world !== "brazil2026" || allowedLeagues.has(c.leagueId);
+        return allowInternational;
+      })
       .filter(levelAllowed)
       .filter((c) => !(Career.init(s).playerCareer?.marketState?.rejectionCooldowns?.[c.id] > s.day))
       .map((c) => {
         const assessment = s.mode === "player" ? Career.interestAssessment(s,c.id) : null;
-        const need = s.mode === "player" ? positionNeed(c, s.person.pos) : 1;
-        const fit = Math.max(0, 24 - Math.abs(c.structure - (heroLevel + s.reputation / 3)));
-        const budgetFit = Math.max(1, Math.min(10, c.budget / 1000000));
+        const need = s.mode === "player" ? positionNeed(c, s.person.pos, s) : 1;
+        const marketStructure = Number.isFinite(Number(c.structure)) ? Number(c.structure) : Number(c.strength || c.reputation || 60); const fit = Math.max(0, 24 - Math.abs(marketStructure - (heroLevel + s.reputation / 3)));
+        const marketBudget = Number.isFinite(Number(c.budget)) ? Number(c.budget) : Math.max(3000000, marketStructure * marketStructure * 12000); const budgetFit = Math.max(1, Math.min(10, marketBudget / 1000000));
         const weight = s.mode === "coach"
           ? 2 + fit / 6 + budgetFit / 3
           : Math.max(0, (assessment?.score || 0) - 34) / 8 + need * 1.5 + budgetFit / 6 + (Identity?.styleFit?.(s, c) || 0) * 0.8;
         return { c, need, weight, assessment };
       })
-      .filter((x) => x.weight > 0);
+      .filter((x) =>
+        Number.isFinite(x.weight) &&
+        x.weight > 0 &&
+        (s.mode !== "player" ||
+         x.assessment?.eligible === true)
+      );
     const picked = [];
     while (pool.length && picked.length < count) {
       const total = pool.reduce((n, x) => n + x.weight, 0);
@@ -218,7 +269,11 @@
       }
       picked.push(pool.splice(index, 1)[0]);
     }
-    return picked.map(({ c, need, assessment }, i) => ({
+    return picked.map(({ c, need, assessment }, i) => {
+      const marketStructure = Number.isFinite(Number(c.structure))
+        ? Number(c.structure)
+        : Number(c.strength || c.reputation || 60);
+      return ({
       clubId: c.id,
       salary: s.mode === "coach" ? Math.round(
         6500 + s.reputation * 70 + c.structure * 45 + heroLevel * 10 + rng.int(0, 1800)
@@ -226,16 +281,17 @@
       role: s.mode === "coach"
         ? (need >= 2 ? "Projeto com necessidade imediata" : "Projeto de reconstrução")
         : (need >= 2 ? "Necessidade imediata na sua posição" : need === 1 ? "Disputa aberta por posição" : "Concorrência forte por posição"),
-      squadRole: s.mode === "player" ? (need >= 2 ? "Titular" : c.structure < heroLevel ? "Importante" : "Rotação") : "Treinador",
-      durationDays: (s.mode === "player" ? (s.person.age <= 22 && need >= 2 && c.structure + 10 < heroLevel ? 365 : rng.pick([365, 730, 1095, 1460])) : 730),
-      signingBonus: s.mode === "player" ? Math.round((1200 + s.reputation * 140 + heroLevel * 90 + c.structure * 60) / 100) * 100 : 0,
-      transferType: s.mode === "player" && s.person.age <= 22 && need >= 2 && c.structure + 10 < heroLevel ? "loan" : "permanent",
+      squadRole: s.mode === "player" ? (need >= 2 ? "Titular" : marketStructure < heroLevel ? "Importante" : "Rotação") : "Treinador",
+      durationDays: (s.mode === "player" ? (s.person.age <= 22 && need >= 2 && marketStructure + 10 < heroLevel ? 365 : rng.pick([365, 730, 1095, 1460])) : 730),
+      signingBonus: s.mode === "player" ? Math.round((1200 + s.reputation * 140 + heroLevel * 90 + marketStructure * 60) / 100) * 100 : 0,
+      transferType: s.mode === "player" && s.person.age <= 22 && need >= 2 && marketStructure + 10 < heroLevel ? "loan" : "permanent",
       expires: s.day + 14 + rng.int(0, 8),
       interestScore: assessment?.score,
       interestLabel: assessment?.label,
       responseDeadline: s.day + 14 + rng.int(0, 8),
       round: 0,
-    }));
+    });
+    });
   }
 
   function create(config, seed = Date.now()) {
@@ -416,12 +472,14 @@
     Identity?.init(s);
     Statistics?.init(s);
     Competitions?.init(s);
+    WorldClubCompetitions?.init(s);
     Life?.init(s);
     Commercial?.init(s, { overall, club });
     UnexpectedEvents?.init(s);
     GlobalFootball?.init(s);
     InternationalPool?.init(s);
     GlobalFootball?.init(s);
+    WorldLiveMarket?.init?.(s);
     NationalTeam?.init(s);
     World2?.init(s, API, seed);
     if (plan) Creation.applyContext(s, plan);
@@ -458,7 +516,193 @@
     return s;
   }
   function club(s, id = s.clubId) {
-    return s.clubs.find((c) => c.id === id);
+    return s.clubs.find((c) => c.id === id) ||
+      GlobalFootball?.clubById?.(s, id) ||
+      null;
+  }
+  function careerClubPool(s) {
+    GlobalFootball?.init?.(s);
+
+    const local = s.clubs || [];
+
+    const global =
+      (s.globalFootball?.clubs || [])
+        .filter(
+          c =>
+            c &&
+            c.generated !== true &&
+            c.active !== false
+        );
+
+    const seen = new Set();
+    const out = [];
+
+    for (const c of local) {
+
+      if (!c?.id || seen.has(c.id))
+        continue;
+
+      seen.add(c.id);
+      out.push(c);
+    }
+
+    for (const c of global) {
+
+      if (!c?.id || seen.has(c.id))
+        continue;
+
+      seen.add(c.id);
+
+      const strength =
+        Number.isFinite(Number(c.strength))
+          ? Number(c.strength)
+          : Number.isFinite(Number(c.reputation))
+            ? Number(c.reputation)
+            : 60;
+
+      const structure =
+        Number.isFinite(Number(c.structure))
+          ? Number(c.structure)
+          : Math.max(
+              35,
+              Math.min(
+                95,
+                Math.round(strength)
+              )
+            );
+
+      const budget =
+        Number.isFinite(Number(c.budget))
+          ? Number(c.budget)
+          : Math.max(
+              3000000,
+              Math.round(
+                structure *
+                structure *
+                12000
+              )
+            );
+
+      const roster =
+        GlobalFootball?.playersByClub
+          ? GlobalFootball.playersByClub(
+              s,
+              c.id
+            )
+          : [];
+
+      /*
+        Clone de mercado.
+        Nao altera/pesa o save global.
+      */
+      out.push({
+        ...c,
+        structure,
+        budget,
+        roster
+      });
+    }
+
+    return out;
+  }
+  function worldMarketClubStrength(c) {
+    for (const value of [c?.structure, c?.strength, c?.reputation]) {
+      if (Number.isFinite(Number(value))) return clamp(Number(value), 20, 100);
+    }
+    return 60;
+  }
+  function worldMarketPlayerLevel(p) {
+    const value = Number(p?.ovr ?? p?.overall);
+    return Number.isFinite(value) ? clamp(value, 20, 100) : overall(p);
+  }
+  function worldMarketTerms(player, destination) {
+    const level = worldMarketPlayerLevel(player);
+    const potential = clamp(Number(player.potential ?? level), level, 100);
+    const age = clamp(Number(player.age || 25), 15, 45);
+    const growth = 1 + Math.max(0, potential - level) / 35;
+    const ageFactor = age <= 23 ? 1.25 : age >= 32 ? 0.68 : 1;
+    const clubFactor = 0.8 + worldMarketClubStrength(destination) / 250;
+    const value = Math.round(
+      Math.max(100000, Math.pow(Math.max(8, level - 38), 2) * 10500 * growth * ageFactor * clubFactor) / 10000,
+    ) * 10000;
+    const salary = Math.round(Math.max(2500, value / 520) / 100) * 100;
+    return { value, salary };
+  }
+  function generateWorldMarket(s, rng) {
+    const market = WorldLiveMarket?.init?.(s);
+    if (!market || s.day % 14 !== 0 || market.lastGenerationDay === s.day)
+      return [];
+    market.lastGenerationDay = s.day;
+    GlobalFootball?.init?.(s);
+    const activeStates = new Set(["rumor", "scouting", "negotiating", "offer"]);
+    const busy = new Set(
+      WorldLiveMarket.getDeals(s)
+        .filter((deal) => activeStates.has(deal.state))
+        .map((deal) => deal.playerId),
+    );
+    const players = (GlobalFootball?.activePlayers?.(s) || []).filter(
+      (player) =>
+        player?.id &&
+        player.id !== "hero" &&
+        player.clubId &&
+        !busy.has(player.id) &&
+        GlobalFootball.clubById(s, player.clubId)?.active !== false,
+    );
+    const seen = new Set();
+    const clubs = [...(s.clubs || []), ...(s.globalFootball?.clubs || [])].filter(
+      (club) => {
+        if (!club?.id || seen.has(club.id) || club.active === false || club.generated === true)
+          return false;
+        seen.add(club.id);
+        return true;
+      },
+    );
+    const counts = new Map();
+    for (const player of GlobalFootball?.activePlayers?.(s) || []) {
+      const key = `${player.clubId}|${player.pos}`;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    const wanted = Career.windowStatus(s).open ? 2 : 1;
+    const created = [];
+    for (let slot = 0; slot < wanted && players.length; slot++) {
+      const player = players.splice(rng.int(0, players.length - 1), 1)[0];
+      const level = worldMarketPlayerLevel(player);
+      const potential = Number(player.potential ?? level);
+      const age = Number(player.age || 25);
+      const projected = level + (age <= 23 ? clamp((potential - level) * 0.2, 0, 6) : 0);
+      const weighted = clubs
+        .filter((candidate) => candidate.id !== player.clubId)
+        .map((candidate) => {
+          const strength = worldMarketClubStrength(candidate);
+          const gap = Math.abs(strength - projected);
+          const target = { GOL: 2, DEF: 8, MEI: 8, ATA: 5 }[player.pos] || 5;
+          const need = Math.max(0, target - (counts.get(`${candidate.id}|${player.pos}`) || 0));
+          const ageFit = age <= 22 && potential > level ? 4 : age >= 33 ? -2 : 0;
+          return { candidate, weight: Math.max(0, 26 - gap * 1.15 + need * 2.8 + ageFit) };
+        })
+        .filter((entry) => entry.weight > 0);
+      const total = weighted.reduce((sum, entry) => sum + entry.weight, 0);
+      if (!total) continue;
+      let roll = rng.next() * total;
+      let selected = weighted.at(-1);
+      for (const entry of weighted) {
+        roll -= entry.weight;
+        if (roll <= 0) { selected = entry; break; }
+      }
+      try {
+        const terms = worldMarketTerms(player, selected.candidate);
+        created.push(WorldLiveMarket.createDeal(s, {
+          playerId: player.id,
+          fromClubId: player.clubId,
+          toClubId: selected.candidate.id,
+          value: terms.value,
+          salary: terms.salary,
+          state: "rumor",
+          startDay: s.day,
+        }));
+      } catch (_) {}
+    }
+    return created;
   }
   function log(s, title, body) {
     s.news.unshift({ day: s.day, season: s.season, title, body });
@@ -467,15 +711,67 @@
   }
   function movePlayerToClub(s, id) {
     const next = club(s, id);
-    if (!next) throw Error("Clube inválido.");
+
+    if (!next)
+      throw Error("Clube inv?lido.");
+
     if (s.mode === "player") {
-      for (const c of s.clubs) {
-        c.roster = c.roster.filter((p) => p.id !== "hero");
-        c.lineup = c.lineup.filter((pid) => pid !== "hero");
+
+      /*
+        Hero sai de qualquer elenco local.
+        Clubes globais usam identidade por clubId,
+        portanto nao exigem roster embutido no clube.
+      */
+      for (const c of s.clubs || []) {
+        c.roster = (c.roster || [])
+          .filter((p) => p.id !== "hero");
+
+        c.lineup = (c.lineup || [])
+          .filter((pid) => pid !== "hero");
       }
-      next.roster.push(s.person);
+
+      /*
+        Atualiza a identidade mundial compartilhada.
+        Isso funciona tanto para clube global quanto local.
+      */
+      if (GlobalFootball?.transferPlayer) {
+        GlobalFootball.transferPlayer(
+          s,
+          "hero",
+          id
+        );
+      } else {
+        s.person.clubId = id;
+        s.person.leagueId = next.leagueId;
+      }
+
+      /*
+        Somente clubes do universo brasileiro possuem
+        roster/lineup embutidos em s.clubs.
+      */
+      const local =
+        (s.clubs || [])
+          .find(c => c.id === id);
+
+      if (local) {
+
+        local.roster ||= [];
+        local.lineup ||= [];
+
+        if (
+          !local.roster.some(
+            p => p.id === "hero"
+          )
+        ) {
+          local.roster.push(
+            s.person
+          );
+        }
+      }
     }
+
     s.clubId = id;
+
     return next;
   }
   function join(s, id, salary) {
@@ -1061,6 +1357,7 @@
     return [league, extra, national].filter(Boolean).sort((a, b) => a.date - b.date)[0] || null;
   }
   function newSeason(s, rng) {
+    WorldClubCompetitions?.closeSeason(s);
     World2?.init(s, API);
     World2?.snapshotPerformance(s);
     const orders = Object.fromEntries((s.leagues || []).map((league) => [league.id, table(s, league.id)]));
@@ -1120,6 +1417,7 @@
     }
     s.season++;
     GlobalFootball?.rollSeason(s);
+    WorldClubCompetitions?.nextSeason(s);
     if (s.mode === "player") Statistics?.ensureHeroStint?.(s, s.clubId);
     s.round = 0;
     s.person.age++;
@@ -1230,12 +1528,17 @@
     Life?.init(s);
     Commercial?.init(s, API);
     UnexpectedEvents?.init(s);
+    WorldLiveMarket?.init?.(s);
     const rng = new Random(s.rng);
     for (let d = 0; d < clamp(days, 1, 30); d++) {
       s.day++;
+      generateWorldMarket(s, rng);
+      WorldLiveMarket?.tick?.(s, rng);
+      WorldLiveMarket?.executeCompleted?.(s);
       Career.daily(s);
       birthdayTick(s);
       World2?.daily(s, API);
+      WorldClubCompetitions?.daily(s);
       NationalTeam?.daily(s, rng, API, log);
       Commercial?.daily?.(s, rng, Career, API);
       s.contract = Math.max(0, s.contract - 1);
@@ -1246,7 +1549,7 @@
         if (s.contract > 0 && s.contract <= 180 && !pc.renewalOffer && s.day % 30 === 0) Career.createRenewalOffer(s);
         if (s.contract === 0) {
           const old = club(s);
-          if (old) { old.roster = old.roster.filter((p) => p.id !== "hero"); old.lineup = old.lineup.filter((id) => id !== "hero"); }
+          if (old) { if (Array.isArray(old.roster)) old.roster = old.roster.filter((p) => p.id !== "hero"); old.lineup = Array.isArray(old.lineup) ? old.lineup.filter((id) => id !== "hero") : []; }
           if (pc.contract?.type === "loan" && pc.contract.parentClubId) {
             const parent=club(s,pc.contract.parentClubId);
             if(parent){ parent.roster.push(s.person); s.clubId=parent.id; s.salary=pc.contract.parentSalary||s.salary; s.contract=Math.max(30,(pc.contract.parentContractRemaining||395)-pc.contract.durationDays); pc.contract={clubId:parent.id,signedDay:s.day,endDay:s.day+s.contract,durationDays:s.contract,salary:s.salary,signingBonus:0,role:pc.squadRole,type:"permanent"}; log(s,"Fim do empréstimo",`Você retornou ao ${parent.name} após o período de empréstimo.`); }
@@ -1686,6 +1989,8 @@
     Identity,
     Creation,
     World2,
+    WorldClubCompetitions,
+    WorldLiveMarket,
     log,
     Statistics,
     Squad,
@@ -1702,6 +2007,7 @@
     Random,
     positionNeed,
     weightedCareerOffers,
+    careerClubPool,
     create,
     advance,
     simulateAdvance,

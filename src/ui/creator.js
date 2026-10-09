@@ -24,7 +24,31 @@
     const D = ctx.D, id = "blank", story = D.Training.origins[id].story;
     W = {
       step: 0, seed: keepSeed || freshSeed(), storyId: id, difficulty: "normal", personality: "balanced",
-      cfg: { name: "Alesson Rodrigues", city: "Mogi das Cruzes", age: story.age, birthDate: birthDateForAge(story.age), pos: "ATA", foot: "right", height: 178, weight: 72, style: "Técnico", celebration: "Braços abertos", archetypeId: null, appearance: { ...ctx.C.normalize({}) } },
+      cfg: {
+        name: "Alesson Baraúna",
+        city: "Mogi das Cruzes",
+        age: story.age,
+        birthDate: birthDateForAge(story.age),
+        pos: "ATA",
+        foot: "right",
+        height: 185,
+        weight: 72,
+        style: "Técnico",
+        celebration: "Braços abertos",
+        archetypeId: null,
+        appearance: {
+          ...ctx.C.normalize({
+            skin:COLORS.skin,
+            hairColor:COLORS.hairColor,
+            eyeColor:COLORS.eyeColor,
+            hair:"highfade",
+            beard:"goatee",
+            body:"normal",
+            accessory:"none",
+            tattoo:"both"
+          })
+        }
+      },
       points: {}, custom: { age: 18, overall: 64, reputation: 12, popularity: 5, wallet: 5000 },
       clubId: null, cache: null,
     };

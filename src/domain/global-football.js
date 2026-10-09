@@ -60,7 +60,7 @@
   // Jogadores vindos dos packs globais mantem o objeto completo em runtime,
   // mas omitem do JSON somente campos default que normalizePlayer reconstr?i.
   // Campos alterados durante a carreira continuam sendo serializados normalmente.
-  function installCompactExternalSerialization(player){
+  function installCompactExternalSerialization(player,s){
     if(
       !player ||
       player.external!==true ||
@@ -81,6 +81,8 @@
         const overall=Number(
           this.ovr ?? this.overall
         );
+        const isLocalRosterPlayer =
+          /^c(?:[0-9]|[1-7][0-9])$/.test(String(out.clubId || ""));
 
         // overall e apenas espelho de ovr.
         if(
@@ -114,6 +116,26 @@
           delete out.active;
         }
 
+        // O pool internacional restaura estes defaults no carregamento.
+        // Jogadores em elencos brasileiros mantêm o formato completo exigido
+        // pela validação rígida do save.
+        if(!isLocalRosterPlayer){
+          if(Number(out.appearances)===0) delete out.appearances;
+          if(Number(out.condition)===100) delete out.condition;
+          if(Number(out.suspension)===0) delete out.suspension;
+          if(Number(out.injury)===0) delete out.injury;
+          if(Number(out.morale)===50) delete out.morale;
+          if(Number(out.discipline)===70) delete out.discipline;
+          if(Number(out.goals)===0) delete out.goals;
+          if(Number(out.minutes)===0) delete out.minutes;
+          if(out.external===true) delete out.external;
+          if(out.marketStatus==="external") delete out.marketStatus;
+          if(Number(out.reputation)===Math.max(40,overall-12)) delete out.reputation;
+          if(Number(out.age)===seasonOf(s)-Number(out.birthYear)) delete out.age;
+          if(out.clubId&&out.leagueId) delete out.leagueId;
+          if(out.shortName===shortNameOf(out.name)) delete out.shortName;
+        }
+
         // peakOvr igual ao GER atual nao carrega informacao nova.
         if(
           Number.isFinite(overall) &&
@@ -130,13 +152,12 @@
         // Os seis atributos criados automaticamente com o mesmo GER
         // podem ser reconstruidos. Se qualquer atributo evoluiu,
         // o objeto inteiro e preservado.
+        // Brazilian club rosters require complete player attributes.
         if(
+          !isLocalRosterPlayer &&
           out.attrs &&
           typeof out.attrs==="object" &&
-          CORE.every(
-            key =>
-              Number(out.attrs[key])===overall
-          )
+          CORE.every(key => Number(out.attrs[key])===overall)
         ){
           delete out.attrs;
         }
@@ -151,20 +172,22 @@
   function normalizePlayer(s,player,context={}){
     if(!player||typeof player!=="object")return player;
     const season=seasonOf(s),attributeValues=CORE.map(key=>Number(player.attrs?.[key])).filter(Number.isFinite),derivedOverall=attributeValues.length?attributeValues.reduce((sum,value)=>sum+value,0)/attributeValues.length:70,overall=clamp(Number(player.ovr??player.overall??derivedOverall),20,100);
-    player.id=String(player.id||context.id||"");player.name=String(player.name||"Jogador sem nome");player.shortName=String(player.shortName||player.name);
+    player.id=String(player.id||context.id||"");player.name=String(player.name||"Jogador sem nome");player.shortName=String(player.shortName||shortNameOf(player.name));
     player.nationality=String(player.nationality||"Brasil");player.pos=["GOL","DEF","MEI","ATA"].includes(player.pos)?player.pos:"MEI";
     if(!Array.isArray(player.secondaryPositions))player.secondaryPositions=[];
     if(!Number.isFinite(Number(player.birthYear)))player.birthYear=Number(player.birthDate?.year)||season-Math.max(14,Number(player.age||25));
     player.age=context.preserveAge?Math.max(14,Number(player.age||season-Number(player.birthYear))):Math.max(15,season-Number(player.birthYear));player.ovr=overall;player.overall=overall;player.potential=clamp(Number(player.potential??overall+2),overall,100);
-    player.status=player.status==="retired"||player.retired?"retired":"active";player.active=player.status==="active";player.reputation=clamp(Number(player.reputation??overall-15),0,100);
+    player.status=player.status==="retired"||player.retired?"retired":"active";player.active=player.status==="active";player.reputation=clamp(Number(player.reputation??(String(player.id).startsWith("gf_p_")?Math.max(40,overall-12):overall-15)),0,100);
+    if(String(player.id).startsWith("gf_p_")){if(player.external===undefined)player.external=true;if(player.marketStatus===undefined)player.marketStatus="external";}
     if(!player.attrs||typeof player.attrs!=="object")player.attrs={};for(const key of CORE)player.attrs[key]=clamp(Number(player.attrs[key]??overall),0,100);
     if(context.club){player.clubId=context.club.id;player.leagueId=context.club.leagueId||null;}
     const club=catalogClub(s,player.clubId)||ensureExternalClub(s,player);if(club){player.clubId=club.id;player.leagueId=club.leagueId||player.leagueId||null;player.externalClub=club.name;}
-    if(!Array.isArray(player.clubHistory))player.clubHistory=[];player.peakOvr=Math.max(Number(player.peakOvr||0),overall);installCompactExternalSerialization(player);return player;
+    if(!Array.isArray(player.clubHistory))player.clubHistory=[];player.peakOvr=Math.max(Number(player.peakOvr||0),overall);installCompactExternalSerialization(player,s);return player;
   }
   const PACK_CODES=["eng","esp","ita","ger","fra","por","ned","bel","aut","sui","sco","den","swe","nor","pol","rou","irl","ger3"],expandedPacks=new Map();
   function loadedPacks(){
     if(typeof require==="function")for(const code of PACK_CODES){try{require(`../data/global-football-eur-${code}.js`);}catch(error){if(error?.code!=="MODULE_NOT_FOUND")throw error;}}
+    if(typeof require==="function"){try{require("../data/global-football-fc27-world.js");}catch(error){if(error?.code!=="MODULE_NOT_FOUND")throw error;}}
     return root.ProLifeGlobalFootballPacks||[];
   }
   function shortNameOf(name){const parts=String(name).trim().split(/\s+/);return parts.length<2?String(name).trim():`${parts[0][0]}. ${parts.slice(1).join(" ")}`;}
@@ -180,7 +203,7 @@
         players.push({id,name,shortName:short||shortNameOf(name),nationality:NATION_NAMES[code]||code,birthYear,pos,ovr:Number(ovr),potential:Number(pot),clubId,leagueId});
       }
     }
-    const expanded={id:pack.id,version:pack.version,leagues:[{id:leagueId,name:leagueName,shortName:leagueShort,country,level:1,clubCount:clubs.length,reputation:leagueReputation,continent:"Europa",confederation:"UEFA",active:true}],clubs,players};
+    const meta=pack.meta||{},expanded={id:pack.id,version:pack.version,leagues:[{id:leagueId,name:leagueName,shortName:leagueShort,country:meta.country||country,level:Number(meta.level||1),clubCount:clubs.length,reputation:leagueReputation,continent:meta.continent||"Europa",confederation:meta.confederation||"UEFA",active:meta.active!==false,competitionEligible:meta.competitionEligible!==false,source:meta.source||"PRO-LIFE"}],clubs,players};
     expandedPacks.set(cacheKeyOfPack,expanded);return expanded;
   }
   function packInfo(){return loadedPacks().map(expandPack).map(pack=>({id:pack.id,version:pack.version,leagues:pack.leagues.length,clubs:pack.clubs.length,players:pack.players.length}));}

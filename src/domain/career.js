@@ -1,6 +1,28 @@
 /* Career rules: windows, personal assets, press and the simulated news feed. */
 (function (root) {
   "use strict";
+  function marketClub(s, clubId) {
+    return root.ProLife?.club?.(s, clubId) ||
+      root.ProLifeGlobalFootball?.clubById?.(s, clubId) ||
+      null;
+  }
+
+  function marketClubs(s) {
+    const local = s.clubs || [];
+    const global = (s.globalFootball?.clubs || [])
+      .filter(c => c && c.generated !== true && c.active !== false);
+
+    const seen = new Set();
+    const out = [];
+
+    for (const c of [...local, ...global]) {
+      if (!c?.id || seen.has(c.id)) continue;
+      seen.add(c.id);
+      out.push(c);
+    }
+
+    return out;
+  }
   const PlayerPersonality=root.ProLifePlayerPersonality||(typeof require==="function"?require("./player-personality.js"):null);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const windows = [
@@ -289,7 +311,7 @@
     return pc.agentStrategy;
   }
   function targetClubAssessment(s, clubId) {
-    const pc=init(s).playerCareer, c=root.ProLife?.club(s,clubId);
+    const pc=init(s).playerCareer, c=marketClub(s,clubId);
     if(s.mode!=="player" || !c || clubId===s.clubId) return null;
     const ov=playerOverall(s), required=Math.round(54+(c.structure||50)*.34);
     const perf=(pc.lastEvaluation?.rating||6.5)*7 + (s.reputation||0)*.22 + (pc.coachTrust||50)*.12;
@@ -300,7 +322,7 @@
     const pc=init(s).playerCareer, a=targetClubAssessment(s,clubId);
     if(!a) throw Error("Clube-alvo inválido.");
     pc.targetClub={clubId,selectedDay:s.day,assessment:a}; registerInterest(s,clubId,a.gap<=4?"Sondagem":"Rumor");
-    const c=root.ProLife?.club(s,clubId); post(s,"Carreira","Agente","Novo clube-alvo",`${c.name} virou seu objetivo de carreira. Avaliação do agente: ${a.label}.`); return pc.targetClub;
+    const c=marketClub(s,clubId); post(s,"Carreira","Agente","Novo clube-alvo",`${c.name} virou seu objetivo de carreira. Avaliação do agente: ${a.label}.`); return pc.targetClub;
   }
   function clearTargetClub(s) { const pc=init(s).playerCareer; pc.targetClub=null; return null; }
   function progressInterest(s, rng, createOffers) {
@@ -310,7 +332,10 @@
     if (strategy.stance === "stay" && s.clubId && s.contract > 120) return;
     const active = pc.interests.filter(x => x.expires >= s.day);
     if (!active.length && canTransfer(s)) {
-      const candidates = s.clubs.filter(c => c.id !== s.clubId);
+      const candidates = marketClubs(s).filter(c =>
+    c.id !== s.clubId &&
+    interestAssessment(s,c.id)?.eligible === true
+  );
       if (candidates.length) {
         const c = (pc.targetClub && candidates.find(x=>x.id===pc.targetClub.clubId)) || rng.pick(candidates); registerInterest(s,c.id,"Rumor");
         post(s,"Rumores","Agente","Rumor de mercado",`${c.name} acompanha sua situação. Ainda não houve contato oficial.`,"rumor");
@@ -318,8 +343,10 @@
       return;
     }
     for (const interest of active.slice(0,3)) {
-      const c = root.ProLife?.club(s, interest.clubId);
+      const c = marketClub(s, interest.clubId);
       if (!c) continue;
+      if (interestAssessment(s,c.id)?.eligible !== true)
+        continue;
       if (interest.stage === "Rumor") { interest.stage="Sondagem"; interest.expires=s.day+45; post(s,"Carreira","Agente","Sondagem recebida",`${c.name} procurou seu agente para entender sua situação.`); }
       else if (interest.stage === "Sondagem") { interest.stage="Negociação"; interest.expires=s.day+35; pc.negotiations++; post(s,"Carreira","Agente","Negociação iniciada",`${c.name} avançou as conversas e discute um possível projeto para você.`); }
       else if (interest.stage === "Negociação" && canTransfer(s) && typeof createOffers === "function") {
@@ -1297,13 +1324,87 @@
       checkAgencyOffers(s);
   }
 
-  function clubLevel(c) { return Math.round((c?.structure || 50) * .7 + Math.min(30, ((c?.roster || []).reduce((a,p)=>a+(root.ProLife?.overall?root.ProLife.overall(p):60),0)/Math.max(1,(c?.roster||[]).length)-55)*2)); }
-  function positionCompetition(s,c){ const peers=(c?.roster||[]).filter(p=>p.id!=="hero"&&p.pos===s.person.pos).map(p=>root.ProLife?.overall?root.ProLife.overall(p):60).sort((a,b)=>b-a); return {best:peers[0]||55, depth:peers.length}; }
+  function careerMarketRoster(s, c) {
+    if (Array.isArray(c?.roster)) return c.roster;
+    const players = root.ProLifeGlobalFootball?.playersByClub?.(s, c?.id);
+    return Array.isArray(players) ? players : [];
+  }
+  function careerMarketStrength(c) {
+    for (const v of [c?.structure, c?.strength, c?.reputation]) {
+      if (v !== null && v !== undefined &&
+          v !== '' && Number.isFinite(Number(v)))
+        return clamp(Number(v),1,100);
+    }
+    return 50;
+  }
+  function clubLevel(c, s) {
+    if (!Array.isArray(c?.roster))
+      return Math.round(careerMarketStrength(c));
+    const roster = careerMarketRoster(s, c);
+    const average = roster.reduce(
+      (n,p) => n + (
+        root.ProLife?.overall ? root.ProLife.overall(p) : 60
+      ),0
+    ) / Math.max(1,roster.length);
+    return Math.round(
+      (c?.structure || 50) * .7 +
+      Math.min(30,(average - 55)*2)
+    );
+  }
+  function positionCompetition(s,c) {
+    const peers = careerMarketRoster(s,c)
+      .filter(p => p && p.id !== 'hero' && p.pos === s.person.pos)
+      .map(p => Number(p.ovr ?? p.overall ?? 60))
+      .filter(Number.isFinite)
+      .sort((a,b) => b-a);
+    return {best:peers[0] || 55,depth:peers.length};
+  }
   function sportingReputation(s){ const pc=init(s).playerCareer, st=s.statistics?.players?.hero||{}; return clamp(Math.round(playerOverall(s)*.48+(s.reputation||0)*.22+(pc.coachTrust||50)*.12+Math.min(18,(st.goals||0)*.7+(st.assists||0)*.5)),0,100); }
-  function interestAssessment(s,clubId){ const c=root.ProLife?.club(s,clubId); if(!c||clubId===s.clubId) return null; const pc=init(s).playerCareer, ov=playerOverall(s), comp=positionCompetition(s,c), level=clubLevel(c), rep=sportingReputation(s), age=s.person.age; const ageBonus=age<=21?6:age<=25?3:age>=32?-5:0; const form=((pc.lastEvaluation?.rating||6.5)-6.5)*7; const need=Math.max(-18,Math.min(18,(ov-comp.best)*2.4 + (5-comp.depth)*1.5)); const levelGap=Math.abs(level-(ov+rep*.18)); const fit=Math.max(-20,18-levelGap*.8); const personality=PlayerPersonality?.marketModifier?.(s)||0; const score=clamp(Math.round(28+rep*.28+form+ageBonus+need+fit+personality),0,100); return {clubId,score,label:score>=72?"ALTO":score>=48?"MÉDIO":"BAIXO",clubLevel:level,bestRival:comp.best,competition:comp.best>=ov+5?"Alta":comp.best>=ov-2?"Média":"Favorável",recommendedOverall:Math.max(55,comp.best-1),sportingReputation:rep,personalityModifier:personality}; }
+
+  function careerMarketEligibility(s, c) {
+    const level = careerMarketStrength(c);
+    const ov = playerOverall(s);
+    const age = Number(s.person?.age || 25);
+    const potential = Number(s.person?.potential);
+    const rating = Number(
+      s.extras?.playerCareer?.lastEvaluation?.rating
+    );
+
+    const upside = age <= 23 && Number.isFinite(potential)
+      ? clamp((potential - ov) * .22, 0, 4)
+      : 0;
+
+    const form = Number.isFinite(rating) && rating > 0
+      ? clamp((rating - 6.5) * 1.8, -3, 3)
+      : 0;
+
+    const reputation = clamp(
+      (Number(s.reputation || 0) - 35) / 25,
+      0,
+      2
+    );
+
+    const effective = ov + upside + form + reputation;
+
+    const required = level >= 85
+      ? level - 8
+      : level >= 75
+        ? level - 11
+        : level >= 60
+          ? level - 14
+          : level - 19;
+
+    return {
+      eligible: effective >= required,
+      required: Math.round(required),
+      marketScore: Math.round(effective)
+    };
+  }
+
+  function interestAssessment(s,clubId){ const c=marketClub(s,clubId); if(!c||clubId===s.clubId) return null; const pc=init(s).playerCareer, ov=playerOverall(s), comp=positionCompetition(s,c), level=clubLevel(c,s), rep=sportingReputation(s), age=s.person.age; const ageBonus=age<=21?6:age<=25?3:age>=32?-5:0; const form=((pc.lastEvaluation?.rating||6.5)-6.5)*7; const need=Math.max(-18,Math.min(18,(ov-comp.best)*2.4 + (5-comp.depth)*1.5)); const levelGap=Math.abs(level-(ov+rep*.18)); const fit=Math.max(-20,18-levelGap*.8); const personality=PlayerPersonality?.marketModifier?.(s)||0; const score=clamp(Math.round(28+rep*.28+form+ageBonus+need+fit+personality),0,100); return {clubId,score,...careerMarketEligibility(s,c),label:score>=72?"ALTO":score>=48?"MÉDIO":"BAIXO",clubLevel:level,bestRival:comp.best,competition:comp.best>=ov+5?"Alta":comp.best>=ov-2?"Média":"Favorável",recommendedOverall:Math.max(55,comp.best-1),sportingReputation:rep,personalityModifier:personality}; }
   function nextWindowStart(day){ const year=Math.floor(day/365)*365,current=day%365; const w=windows.find(x=>x.start>current); return w?year+w.start:year+365+windows[0].start; }
   function holdOffer(s,clubId){ const o=s.offers.find(x=>x.clubId===clubId&&x.expires>=s.day); if(!o) throw Error("Esta proposta não está disponível."); o.expires=Math.max(o.expires,s.day+7); o.onHold=true; post(s,"Carreira","Agente","Mais tempo para decidir",`Seu agente conseguiu prazo até o dia ${o.expires} para responder.`); return o; }
-  function rejectOffer(s,clubId){ const i=s.offers.findIndex(x=>x.clubId===clubId&&x.expires>=s.day); if(i<0) throw Error("Esta proposta não está disponível."); const o=s.offers.splice(i,1)[0],pc=init(s).playerCareer; pc.marketState.rejectionCooldowns[clubId]=s.day+60; const it=pc.interests.find(x=>x.clubId===clubId); if(it){it.stage="Recusado";it.expires=s.day+60;} post(s,"Carreira","Agente","Proposta recusada",`A proposta de ${root.ProLife?.club(s,clubId)?.name||"clube"} foi recusada. Um novo contato não é esperado no curto prazo.`); return o; }
+  function rejectOffer(s,clubId){ const i=s.offers.findIndex(x=>x.clubId===clubId&&x.expires>=s.day); if(i<0) throw Error("Esta proposta não está disponível."); const o=s.offers.splice(i,1)[0],pc=init(s).playerCareer; pc.marketState.rejectionCooldowns[clubId]=s.day+60; const it=pc.interests.find(x=>x.clubId===clubId); if(it){it.stage="Recusado";it.expires=s.day+60;} post(s,"Carreira","Agente","Proposta recusada",`A proposta de ${marketClub(s,clubId)?.name||"clube"} foi recusada. Um novo contato não é esperado no curto prazo.`); return o; }
   function signAgreement(s,offer){ const pc=init(s).playerCareer; if(pc.marketState.signedAgreement) throw Error("Você já possui um acordo assinado pendente."); const startDay=windowStatus(s).open?s.day:nextWindowStart(s.day); pc.marketState.signedAgreement={...offer,agreedDay:s.day,startDay,status:startDay===s.day?"ready":"scheduled"}; pc.marketState.futureTransfer=startDay>s.day?{clubId:offer.clubId,startDay,agreedDay:s.day}:null; s.offers=s.offers.filter(x=>x.clubId===offer.clubId); post(s,"Transferências","Agente",startDay>s.day?"Transferência acordada":"Acordo assinado",`${root.ProLife?.club(s,offer.clubId)?.name||"Clube"} e jogador chegaram a um acordo. ${startDay>s.day?`A mudança será efetivada no dia ${startDay}.`:"A transferência pode ser efetivada agora."}`); return pc.marketState.signedAgreement; }
   function clearAgreement(s){ const pc=init(s).playerCareer; pc.marketState.signedAgreement=null; pc.marketState.futureTransfer=null; }
   function marketTick(s){ const pc=init(s).playerCareer; for(const o of s.offers||[]) if(o.expires<s.day){ const it=pc.interests.find(x=>x.clubId===o.clubId); if(it&&it.stage==="Oferta oficial") it.stage="Encerrado"; } s.offers=(s.offers||[]).filter(o=>o.expires>=s.day); const a=pc.marketState.signedAgreement; return a&&a.startDay<=s.day?a:null; }

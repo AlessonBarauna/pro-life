@@ -44,13 +44,25 @@ test("same seed/actions yield identical seasons; save restores hero reference", 
   S.validate(restored);
 });
 test("coach survives multiple seasons and world remains coherent", () => {
-  const s = D.create({ world: "legacy", mode: "coach", clubId: "c3" }, 71);
+  let s = D.create({ world: "legacy", mode: "coach", clubId: "c3" }, 71);
+  let reloads = 0,
+    seasonReloads = 0;
   for (let i = 0; i < 2190; i++) {
     D.advance(s, 1);
-    S.parse(JSON.stringify(s));
+    const elapsed = i + 1,
+      seasonEnd = elapsed % 365 === 0;
+    if (elapsed % 30 === 0 || seasonEnd) {
+      s = S.parse(JSON.stringify(s));
+      reloads++;
+      if (seasonEnd) seasonReloads++;
+    }
     for (const c of s.clubs)
       assert.equal(c.stats.played, c.stats.w + c.stats.d + c.stats.l);
   }
+  assert.equal(s.day, 2190);
+  assert.equal(s.season, 2032);
+  assert.equal(reloads, 78);
+  assert.equal(seasonReloads, 6);
   assert.equal(s.history.length, 6);
   assert.equal(s.person.age, 41);
 });
