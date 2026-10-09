@@ -246,7 +246,21 @@
     const clubs = definitions.map((t, i) => {
       let roster = real
         ? t.players.map((r) => ({
-            ...player(rng, r.id, t.level, r.pos),
+            ...player(
+          rng,
+          r.id,
+          Number.isFinite(Number(r.ovr ?? r.overall))
+            ? Number(r.ovr ?? r.overall)
+            : t.level,
+          r.pos
+        ),
+        ...(r.attrs && Number.isFinite(Number(r.ovr ?? r.overall))
+          ? {
+              attrs: { ...r.attrs },
+              ovr: Number(r.ovr ?? r.overall),
+              overall: Number(r.ovr ?? r.overall),
+            }
+          : {}),
             name: r.name,
             age: r.age,
             number: r.number,

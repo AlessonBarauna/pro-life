@@ -75,6 +75,7 @@ const files = [
   "src/ui/home-dashboard.js",
   "src/ui/live-match.js",
   "src/ui/creator.js",
+  "src/ui/club-browser.js",
   "src/ui/app.js",
   "src/ui/style.css",
   "src/ui/update.js",

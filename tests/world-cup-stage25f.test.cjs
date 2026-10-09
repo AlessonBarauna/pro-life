@@ -72,8 +72,75 @@ test("25F: migração troca só placeholders sem alterar resultados da Copa",()=
   assert.equal(t.squadMigrationVersion,2);
 });
 
-test("25F: baseline de 2026 permanece disponível antes da convocação oficial",()=>{
-  const s=state(2555),summary=D.NationalTeam.worldCupSummary(s,D.NationalTeam.init(s));
-  assert.equal(summary.year,2026);assert.equal(summary.worldCupSquads.length,48);
-  assert.equal(summary.worldCupSquads.find(team=>team.id==="FRA").squad[0].id,Squads2026.squad("FRA")[0].id);
+test("25F: 2026 usa projecao dinamica antes da convocacao oficial",()=>{
+  const s=state(2555);
+
+  const summary=
+    D.NationalTeam.worldCupSummary(
+      s,
+      D.NationalTeam.init(s)
+    );
+
+  assert.equal(
+    summary.year,
+    2026
+  );
+
+  assert.equal(
+    summary.worldCupSquads.length,
+    48
+  );
+
+  assert.ok(
+    summary.worldCupSquads.every(
+      team=>
+        team.squad.length===26
+    )
+  );
+
+  const france=
+    summary.worldCupSquads.find(
+      team=>team.id==="FRA"
+    );
+
+  assert.ok(france);
+
+  assert.equal(
+    france.projected,
+    true
+  );
+
+  assert.ok(
+    france.squad.filter(
+      player=>
+        String(player.id||"")
+          .startsWith("gf_p_")
+    ).length>=22
+  );
+
+  const staticIds=
+    new Set(
+      Squads2026
+        .squad("FRA")
+        .map(player=>player.id)
+    );
+
+  assert.ok(
+    france.squad.some(
+      player=>
+        !staticIds.has(player.id)
+    )
+  );
+
+  assert.equal(
+    s.nationalTeam.tournaments
+      .find(
+        tournament=>
+          tournament.type==="WORLD_CUP" &&
+          Number(tournament.year)===2026
+      )
+      ?.squads?.length||0,
+    0,
+    "projecao nao pode congelar elenco antes da data oficial"
+  );
 });

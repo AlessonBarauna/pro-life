@@ -67,13 +67,98 @@ test("Etapa 15: virada de temporada envelhece uma vez, aposenta, gera jovens e �
 
 test("Etapa 15: cenário H — aposentado também não aparece na Seleção nem nos jogadores livres", () => {
   const s = D.create({ mode: "player", pos: "ATA", origin: "academy", creation: {} }, 8);
-  const pick = D.NationalTeam.buildSquad(s, D).find((x) => x.id !== "hero" && x.pos === "MEI");
-  const star = s.clubs.flatMap((c) => c.roster).find((p) => p.id === pick.id);
-  assert.ok(D.NationalTeam.buildSquad(s, D).some((x) => x.id === star.id));
-  star.age = 44; s.season++; U.rollSeason(s, D);
-  assert.ok(!D.NationalTeam.buildSquad(s, D).some((x) => x.id === star.id));
-  s.nationalTeam = { calledUp: true, squad: [{ id: star.id, pos: star.pos, name: star.name, overall: 80, score: 80, club: "x", age: 44 }, { id: "hero", pos: "ATA", name: "H", overall: 60, score: 60 }] };
-  assert.ok(!D.NationalTeam.positionCompetition(s, D).some((x) => x.id === star.id));
+
+  /*
+    O universo global agora pode ocupar vagas da Seleção.
+    Este teste precisa controlar explicitamente o jogador
+    local que será aposentado, sem assumir que qualquer
+    convocado pertence a s.clubs.
+  */
+  const star =
+    s.clubs
+      .flatMap((c) => c.roster)
+      .find(
+        (p) =>
+          p.id !== "hero" &&
+          p.pos === "MEI" &&
+          ["brasil", "brazil"].includes(
+            String(p.nationality || "Brasil").toLowerCase()
+          )
+      );
+
+  assert.ok(star, "jogador local brasileiro MEI para o cenario H");
+
+  star.nationality = "Brasil";
+  star.condition = 100;
+  star.morale = 100;
+  star.injury = 0;
+  star.suspension = 0;
+
+  for (const key of [
+    "pace",
+    "finish",
+    "pass",
+    "defense",
+    "strength",
+    "stamina"
+  ]) {
+    star.attrs[key] = 100;
+  }
+
+  assert.ok(
+    D.NationalTeam
+      .buildSquad(s, D)
+      .some((x) => x.id === star.id),
+    "jogador local forte deve entrar na Selecao antes de aposentar"
+  );
+
+  star.age = 44;
+
+  s.season++;
+
+  U.rollSeason(s, D);
+
+  assert.ok(
+    !D.NationalTeam
+      .buildSquad(s, D)
+      .some((x) => x.id === star.id),
+    "aposentado nao pode continuar na Selecao"
+  );
+
+  assert.ok(
+    !(s.universe?.free || [])
+      .some((x) => x.id === star.id),
+    "aposentado nao pode aparecer entre jogadores livres"
+  );
+
+  s.nationalTeam = {
+    calledUp: true,
+    squad: [
+      {
+        id: star.id,
+        pos: star.pos,
+        name: star.name,
+        overall: 80,
+        score: 80,
+        club: "x",
+        age: 44
+      },
+      {
+        id: "hero",
+        pos: "ATA",
+        name: "H",
+        overall: 60,
+        score: 60
+      }
+    ]
+  };
+
+  assert.ok(
+    !D.NationalTeam
+      .positionCompetition(s, D)
+      .some((x) => x.id === star.id),
+    "aposentado persistido em elenco legado deve ser ignorado"
+  );
 });
 
 test("Etapa 15: geração de jovens — IDs únicos, idades de entrada, distribuição de talento e nomes variados", () => {

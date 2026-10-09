@@ -214,3 +214,294 @@ test("26B.2/26B.3: auditoria das 7 ligas â€” sem duplicatas de pessoa, transferÃ
   assert.equal(reloadIds.length,before);assert.equal(new Set(reloadIds).size,reloadIds.length);
   const dup=new Set();for(const player of players){assert.ok(!dup.has(player.id),player.id);dup.add(player.id);}
 });
+
+
+test("26C: elenco 2030 antigo gerado migra para jogadores reais antes da Copa",()=>{
+  const s=state(2798),{t}=officialCup(s,2030);
+
+  for(const code of ["ENG","FRA"]){
+    const team=t.squads.find(entry=>entry.id===code);
+    assert.ok(team);
+
+    team.squad=team.squad.map((player,index)=>({
+      ...player,
+      id:"legacy_generated_"+code+"_"+index,
+      name:"Legacy Generated "+code+" "+index,
+      club:code==="ENG"?"Manchester Union":"Paris Etoile",
+      source:"generated-persistent"
+    }));
+
+    team.lineup={
+      formation:"4-3-3",
+      starters:team.squad.slice(0,11),
+      bench:team.squad.slice(11)
+    };
+  }
+
+  t.realUniversePackRevision=0;
+
+  D.NationalTeam.ensureWorldCupOfficialSquads(
+    s,
+    s.nationalTeam,
+    D,
+    ()=>{}
+  );
+
+  for(const code of ["ENG","FRA"]){
+    const squad=
+      t.squads.find(entry=>entry.id===code).squad;
+
+    assert.equal(squad.length,26,code);
+
+    assert.ok(
+      squad.filter(
+        player=>String(player.id).startsWith("gf_p_")
+      ).length>=22,
+      code+" nao recuperou jogadores reais"
+    );
+
+    assert.equal(
+      squad.some(
+        player=>
+          player.club==="Manchester Union" ||
+          player.club==="Paris Etoile"
+      ),
+      false,
+      code+" manteve clube ficticio"
+    );
+
+    assert.equal(
+      squad.some(
+        player=>
+          player.source==="generated-persistent"
+      ),
+      false,
+      code+" ainda usa jogador gerado apesar de possuir base real"
+    );
+  }
+});
+
+
+test("26C: save legado com Copa 2030 em andamento migra ficticios uma unica vez",()=>{
+  const s=state(2799),{t}=officialCup(s,2030);
+
+  const france=
+    t.squads.find(entry=>entry.id==="FRA");
+
+  assert.ok(france);
+
+  france.squad=
+    france.squad.map((player,index)=>({
+      ...player,
+      id:"legacy_france_"+index,
+      name:"Legacy France "+index,
+      club:"Paris Etoile",
+      source:"generated-persistent"
+    }));
+
+  france.lineup={
+    formation:"4-3-3",
+    starters:france.squad.slice(0,11),
+    bench:france.squad.slice(11)
+  };
+
+  t.realUniversePackRevision=0;
+  delete t.realUniverseMigrationVersion;
+
+  const played=
+    t.groups
+      .flatMap(group=>group.matches||[])
+      .find(match=>match);
+
+  assert.ok(played);
+
+  played.played=true;
+  played.hg=2;
+  played.ag=1;
+
+  const beforeResult={
+    id:played.id,
+    hg:played.hg,
+    ag:played.ag,
+    played:played.played
+  };
+
+  D.NationalTeam.ensureWorldCupOfficialSquads(
+    s,
+    s.nationalTeam,
+    D,
+    ()=>{}
+  );
+
+  const migrated=
+    t.squads.find(entry=>entry.id==="FRA").squad;
+
+  assert.equal(migrated.length,26);
+
+  assert.equal(
+    migrated.filter(
+      player=>
+        String(player.id).startsWith("gf_p_")
+    ).length,
+    26
+  );
+
+  assert.equal(
+    migrated.some(
+      player=>
+        player.source==="generated-persistent"
+    ),
+    false
+  );
+
+  assert.deepEqual(
+    {
+      id:played.id,
+      hg:played.hg,
+      ag:played.ag,
+      played:played.played
+    },
+    beforeResult
+  );
+
+  const ids=
+    migrated.map(player=>player.id);
+
+  D.NationalTeam.ensureWorldCupOfficialSquads(
+    s,
+    s.nationalTeam,
+    D,
+    ()=>{}
+  );
+
+  assert.deepEqual(
+    t.squads
+      .find(entry=>entry.id==="FRA")
+      .squad
+      .map(player=>player.id),
+    ids
+  );
+});
+
+
+test("26C: Copa iniciada com packRevision antigo ainda migra elenco ficticio",()=>{
+  const s=state(2800),{t}=officialCup(s,2030);
+
+  const france=
+    t.squads.find(entry=>entry.id==="FRA");
+
+  assert.ok(france);
+
+  france.squad=
+    france.squad.map((player,index)=>({
+      ...player,
+      id:"old_generated_fra_"+index,
+      name:"Generated France "+index,
+      club:
+        index%2
+          ?"Paris ?toile"
+          :"Monaco Sporting",
+      source:"generated-persistent"
+    }));
+
+  france.lineup={
+    formation:"4-3-3",
+    starters:france.squad.slice(0,11),
+    bench:france.squad.slice(11)
+  };
+
+  // Simula exatamente o bug anterior:
+  // revisao ja marcada mesmo sem migracao real.
+  t.realUniversePackRevision=
+    D.GlobalFootball.packInfo().length;
+
+  delete t.realUniverseMigrationVersion;
+
+  const match=
+    t.groups
+      .flatMap(group=>group.matches||[])
+      .find(Boolean);
+
+  assert.ok(match);
+
+  match.played=true;
+  match.hg=2;
+  match.ag=1;
+
+  const resultBefore=[
+    match.id,
+    match.played,
+    match.hg,
+    match.ag
+  ];
+
+  D.NationalTeam.ensureWorldCupOfficialSquads(
+    s,
+    s.nationalTeam,
+    D,
+    ()=>{}
+  );
+
+  const migrated=
+    t.squads.find(entry=>entry.id==="FRA").squad;
+
+  assert.equal(migrated.length,26);
+
+  assert.equal(
+    migrated.filter(
+      player=>
+        String(player.id).startsWith("gf_p_")
+    ).length,
+    26
+  );
+
+  assert.equal(
+    migrated.some(
+      player=>
+        player.source==="generated-persistent"
+    ),
+    false
+  );
+
+  assert.equal(
+    migrated.some(
+      player=>
+        player.club==="Paris ?toile" ||
+        player.club==="Monaco Sporting"
+    ),
+    false
+  );
+
+  assert.equal(
+    t.realUniverseMigrationVersion,
+    4
+  );
+
+  assert.deepEqual(
+    [
+      match.id,
+      match.played,
+      match.hg,
+      match.ag
+    ],
+    resultBefore
+  );
+
+  const ids=
+    migrated.map(player=>player.id);
+
+  D.NationalTeam.ensureWorldCupOfficialSquads(
+    s,
+    s.nationalTeam,
+    D,
+    ()=>{}
+  );
+
+  assert.deepEqual(
+    t.squads
+      .find(entry=>entry.id==="FRA")
+      .squad
+      .map(player=>player.id),
+    ids
+  );
+});

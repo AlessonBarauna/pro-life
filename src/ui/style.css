@@ -3087,3 +3087,569 @@ button,a,select,input,label,summary{touch-action:manipulation}
     flex-direction:column;
   }
 }
+
+/* =========================================================
+   FC27 CLUB BROWSER
+   ========================================================= */
+
+.club-browser-root{
+  display:grid;
+  gap:16px;
+}
+
+.club-browser-toolbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:18px;
+  padding:20px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  background:
+    radial-gradient(circle at 90% 10%,rgba(75,255,155,.08),transparent 30%),
+    rgba(12,15,14,.92);
+}
+
+.club-browser-toolbar h2{
+  margin:3px 0 4px;
+  font-size:30px;
+}
+
+.club-browser-toolbar p{
+  margin:0;
+  opacity:.65;
+}
+
+.club-browser-filters{
+  display:grid;
+  grid-template-columns:170px 210px minmax(220px,300px);
+  gap:10px;
+  align-items:end;
+}
+
+.club-browser-filters label{
+  display:grid;
+  gap:6px;
+}
+
+.club-browser-filters label>span{
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.12em;
+  opacity:.6;
+}
+
+.club-browser-filters select,
+.club-browser-filters input{
+  width:100%;
+  min-height:42px;
+  padding:0 12px;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;
+  background:#101412;
+  color:inherit;
+}
+
+.club-browser-layout{
+  display:grid;
+  grid-template-columns:270px minmax(0,1fr);
+  min-height:760px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;
+  background:#0d100f;
+}
+
+.club-browser-sidebar{
+  min-width:0;
+  border-right:1px solid rgba(255,255,255,.08);
+  background:#090b0a;
+}
+
+.club-browser-side-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px 18px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+
+.club-browser-side-title b{
+  display:grid;
+  place-items:center;
+  min-width:30px;
+  height:26px;
+  padding:0 8px;
+  border-radius:999px;
+  background:rgba(255,255,255,.07);
+}
+
+.club-browser-team-list{
+  max-height:900px;
+  overflow:auto;
+  padding:8px;
+}
+
+.club-browser-team-list>button{
+  width:100%;
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) 38px;
+  gap:10px;
+  align-items:center;
+  padding:10px 9px;
+  margin:2px 0;
+  border:0;
+  border-radius:11px;
+  text-align:left;
+  background:transparent;
+  color:inherit;
+}
+
+.club-browser-team-list>button:hover{
+  background:rgba(255,255,255,.05);
+}
+
+.club-browser-team-list>button.active{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(67,255,145,.18),
+      rgba(67,255,145,.04)
+    );
+  box-shadow:
+    inset 3px 0 0 rgba(67,255,145,.9);
+}
+
+.club-browser-team-list>button>span:nth-child(2){
+  min-width:0;
+}
+
+.club-browser-team-list b,
+.club-browser-team-list small{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.club-browser-team-list small{
+  margin-top:2px;
+  font-size:10px;
+  opacity:.55;
+}
+
+.club-browser-team-list>button>strong{
+  font-size:16px;
+  text-align:center;
+}
+
+.club-browser-badge{
+  display:grid;
+  place-items:center;
+  width:38px;
+  height:38px;
+  border-radius:10px;
+  background:rgba(255,255,255,.075);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.04em;
+}
+
+.club-browser-detail{
+  min-width:0;
+  padding:20px;
+}
+
+.club-browser-hero{
+  display:grid;
+  grid-template-columns:76px minmax(0,1fr) 100px;
+  gap:18px;
+  align-items:center;
+  padding:20px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  background:
+    radial-gradient(circle at 85% 15%,rgba(72,255,148,.1),transparent 34%),
+    rgba(255,255,255,.025);
+}
+
+.club-browser-hero h2{
+  margin:4px 0;
+  font-size:30px;
+}
+
+.club-browser-hero p{
+  margin:0;
+  opacity:.6;
+}
+
+.club-browser-crest{
+  display:grid;
+  place-items:center;
+  width:72px;
+  height:72px;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:18px;
+  background:rgba(255,255,255,.06);
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:.05em;
+}
+
+.club-browser-overall{
+  text-align:center;
+}
+
+.club-browser-overall strong{
+  display:block;
+  font-size:46px;
+  line-height:1;
+}
+
+.club-browser-overall span{
+  display:block;
+  margin-top:5px;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.18em;
+  opacity:.6;
+}
+
+.club-browser-kpis{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin:12px 0;
+}
+
+.club-browser-kpis>div{
+  padding:15px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:13px;
+  background:rgba(255,255,255,.025);
+}
+
+.club-browser-kpis small,
+.club-browser-kpis b,
+.club-browser-kpis span{
+  display:block;
+}
+
+.club-browser-kpis small{
+  font-size:9px;
+  letter-spacing:.12em;
+  opacity:.55;
+}
+
+.club-browser-kpis b{
+  margin-top:5px;
+  font-size:22px;
+}
+
+.club-browser-kpis span{
+  margin-top:2px;
+  font-size:11px;
+  opacity:.55;
+}
+
+.club-browser-main-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.5fr) minmax(260px,.7fr);
+  gap:12px;
+}
+
+.club-lineup-card,
+.club-bench-card,
+.club-roster-card{
+  min-width:0;
+  padding:16px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  background:rgba(255,255,255,.025);
+}
+
+.club-section-heading{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  margin-bottom:14px;
+}
+
+.club-section-heading small{
+  display:block;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.14em;
+  opacity:.55;
+}
+
+.club-section-heading h3{
+  margin:3px 0 0;
+}
+
+.club-section-heading>span{
+  font-size:11px;
+  opacity:.55;
+}
+
+.club-pitch{
+  display:grid;
+  gap:14px;
+  min-height:500px;
+  padding:24px 16px;
+  border-radius:18px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 49.8%,
+      rgba(255,255,255,.11) 50%,
+      transparent 50.2%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,.022) 0,
+      rgba(255,255,255,.022) 60px,
+      rgba(255,255,255,.04) 61px,
+      rgba(255,255,255,.04) 120px
+    ),
+    rgba(23,74,48,.35);
+  border:1px solid rgba(255,255,255,.09);
+}
+
+.club-pitch-row{
+  display:grid;
+  align-content:center;
+  gap:7px;
+  min-height:90px;
+}
+
+.club-pitch-row>small{
+  text-align:center;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.18em;
+  opacity:.35;
+}
+
+.club-pitch-row>div{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.club-pitch-player{
+  width:92px;
+  padding:8px 6px;
+  border-radius:12px;
+  text-align:center;
+  background:rgba(8,12,10,.9);
+  border:1px solid rgba(255,255,255,.1);
+  box-shadow:0 8px 18px rgba(0,0,0,.18);
+}
+
+.club-pitch-player strong{
+  display:block;
+  font-size:20px;
+}
+
+.club-pitch-player span{
+  display:block;
+  margin-top:3px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:10px;
+  font-weight:700;
+}
+
+.club-pitch-player small{
+  display:block;
+  margin-top:2px;
+  font-size:8px;
+  opacity:.5;
+}
+
+.club-bench-list{
+  display:grid;
+  gap:6px;
+}
+
+.club-bench-list>div{
+  display:grid;
+  grid-template-columns:42px 1fr;
+  gap:10px;
+  align-items:center;
+  padding:8px;
+  border-radius:10px;
+  background:rgba(255,255,255,.035);
+}
+
+.club-bench-list strong{
+  display:grid;
+  place-items:center;
+  width:38px;
+  height:38px;
+  border-radius:9px;
+  background:rgba(255,255,255,.055);
+}
+
+.club-bench-list b,
+.club-bench-list small{
+  display:block;
+}
+
+.club-bench-list small{
+  margin-top:2px;
+  font-size:10px;
+  opacity:.55;
+}
+
+.club-roster-card{
+  margin-top:12px;
+}
+
+.club-roster-table-wrap{
+  overflow:auto;
+}
+
+.club-roster-table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:680px;
+}
+
+.club-roster-table th{
+  padding:10px 9px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  text-align:left;
+  font-size:9px;
+  letter-spacing:.11em;
+  opacity:.5;
+}
+
+.club-roster-table td{
+  padding:10px 9px;
+  border-bottom:1px solid rgba(255,255,255,.055);
+  font-size:12px;
+}
+
+.club-roster-table tbody tr:hover{
+  background:rgba(255,255,255,.025);
+}
+
+.club-player-name b,
+.club-player-name small{
+  display:block;
+}
+
+.club-player-name small{
+  margin-top:2px;
+  font-size:9px;
+  opacity:.5;
+}
+
+.club-browser-empty{
+  padding:20px 10px;
+  text-align:center;
+  opacity:.55;
+}
+
+.club-browser-empty-main{
+  display:grid;
+  place-items:center;
+  align-content:center;
+  min-height:500px;
+  padding:30px;
+  text-align:center;
+}
+
+@media(max-width:1050px){
+
+  .club-browser-toolbar{
+    align-items:stretch;
+    flex-direction:column;
+  }
+
+  .club-browser-filters{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .club-browser-search{
+    grid-column:1/-1;
+  }
+
+  .club-browser-main-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:760px){
+
+  .club-browser-layout{
+    grid-template-columns:1fr;
+  }
+
+  .club-browser-sidebar{
+    border-right:0;
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+
+  .club-browser-team-list{
+    display:flex;
+    gap:5px;
+    max-height:none;
+    overflow-x:auto;
+    padding:8px;
+  }
+
+  .club-browser-team-list>button{
+    flex:0 0 220px;
+  }
+
+  .club-browser-filters{
+    grid-template-columns:1fr;
+  }
+
+  .club-browser-search{
+    grid-column:auto;
+  }
+
+  .club-browser-kpis{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .club-browser-detail{
+    padding:10px;
+  }
+
+  .club-browser-hero{
+    grid-template-columns:58px minmax(0,1fr) 70px;
+    padding:14px;
+  }
+
+  .club-browser-crest{
+    width:54px;
+    height:54px;
+  }
+
+  .club-browser-hero h2{
+    font-size:21px;
+  }
+
+  .club-browser-overall strong{
+    font-size:34px;
+  }
+
+  .club-pitch{
+    padding:18px 8px;
+  }
+
+  .club-pitch-player{
+    width:78px;
+  }
+}

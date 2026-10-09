@@ -344,7 +344,7 @@
             ["market", "Mercado", [["market", "Central do mercado"], ["proposals", "Minhas propostas"]]],
             ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["panorama", "Panorama"], ["squad", "Elenco"]]],
             ["national", "Seleção", []],
-            ["history", "Mundo", [["history", "Mundo vivo"], ["life", "Perfil e Vida"], ["finance", "Finanças"], ["sponsorships", "Patrocínios"]]],
+            ["history", "Mundo", [["history", "Mundo vivo"], ["clubs", "Clubes"], ["life", "Perfil e Vida"], ["finance", "Finanças"], ["sponsorships", "Patrocínios"]]],
             ["save", "Saves", [["save", "Gerenciar saves"]]],
           ]
         : [
@@ -353,7 +353,7 @@
             ["profile", "Treinador", [["profile", "Perfil"], ["training", "Desenvolvimento"], ["finance", "Diretoria"]]],
             ["market", "Transferências", [["market", "Mercado"], ["proposals", "Propostas"]]],
             ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["panorama", "Panorama"], ["squad", "Elenco e tática"], ["statistics", "Estatísticas"], ["awards", "Prêmios"]]],
-            ["history", "Mundo", [["history", "Mundo vivo"], ["life", "Decisões"]]],
+            ["history", "Mundo", [["history", "Mundo vivo"], ["clubs", "Clubes"], ["life", "Decisões"]]],
             ["save", "Saves", [["save", "Gerenciar saves"]]],
           ],
       allPages = groups.flatMap((g) => g[2]),
@@ -914,6 +914,15 @@
   let fifaSeriesVenueId="AUSTRALIA";
 
   const views = {
+    clubs() {
+      return window.ProLifeClubBrowser?.render
+        ? window.ProLifeClubBrowser.render(
+            state,
+            D
+          )
+        : '<section class="card"><h2>Central de Clubes</h2><p class="muted">Modulo de clubes indisponivel.</p></section>';
+    },
+
     home() {
       const H = window.ProLifeHomeDashboard.snapshot(state, D, Calendar), p=state.person, c=H.c, next=H.next, cur=H.current;
       const resultClass=(r)=>r==="V"?"win":r==="D"?"loss":"draw";

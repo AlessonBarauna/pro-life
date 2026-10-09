@@ -6088,7 +6088,12 @@
     const limits={GOL:3,DEF:8,MEI:8,ATA:7},available=worldCupAvailablePlayers(s,tournament,team,api);
     const squad=[];
     for(const [pos,count] of Object.entries(limits)){
-      const selected=available.filter(x=>x.pos===pos).sort((a,b)=>b.score-a.score||b.overall-a.overall||String(a.id).localeCompare(String(b.id))).slice(0,count);
+      const byMerit=(a,b)=>b.score-a.score||b.overall-a.overall||String(a.id).localeCompare(String(b.id));
+      // Jogadores reais sempre ocupam as vagas antes dos gerados.
+      const real=available.filter(x=>x.pos===pos&&x.source!=="generated-persistent").sort(byMerit);
+      const generated=available.filter(x=>x.pos===pos&&x.source==="generated-persistent").sort(byMerit);
+      const selected=real.slice(0,count);
+      if(selected.length<count)selected.push(...generated.slice(0,count-selected.length));
       squad.push(...selected);
       for(let i=selected.length;i<count;i++){
         const player=createPersistentWorldCupPlayer(s,tournament,team,pos,i),snapshot=worldCupPlayerSnapshot(player,player.externalClub,tournament,api);
@@ -6120,6 +6125,148 @@
     return changed;
   }
 
+  function worldCupPlayedAnyMatch(tournament){
+    return [
+      ...(tournament.groups||[]).flatMap(group=>group.matches||[]),
+      ...(tournament.knockout||[])
+    ].some(match=>match?.played);
+  }
+
+  function migrateGeneratedWorldCupPlayers(s,tournament,api){
+    if(
+      Number(tournament?.year)<=2026 ||
+      !Array.isArray(tournament?.squads)
+    ) return false;
+
+    const revision=
+      Number(globalFootballApi()?.packInfo?.().length||0);
+
+    const cupAlreadyStarted=
+      worldCupPlayedAnyMatch(tournament);
+
+    const hasLegacyGeneratedSquad=
+      (tournament.squads||[]).some(
+        entry=>
+          Array.isArray(entry?.squad) &&
+          entry.squad.some(
+            player=>
+              player?.source==="generated-persistent"
+          )
+      );
+
+    const migrationVersion=
+      Number(tournament.realUniverseMigrationVersion||0);
+
+    const needsLegacyMigration=
+      hasLegacyGeneratedSquad &&
+      migrationVersion<4;
+
+    // Se o universo nao mudou e nao existe legado ficticio pendente,
+    // nao ha nada para fazer.
+    if(
+      Number(tournament.realUniversePackRevision||0)>=revision &&
+      !needsLegacyMigration
+    ) return false;
+
+    // Depois que a Copa comecou, o elenco fica congelado.
+    // A unica excecao e um save legado ainda contendo jogadores
+    // generated-persistent de antes da integracao do universo real.
+    const legacyOngoingMigration=
+      cupAlreadyStarted &&
+      needsLegacyMigration;
+
+    if(
+      cupAlreadyStarted &&
+      !legacyOngoingMigration
+    ){
+      tournament.realUniversePackRevision=revision;
+      return false;
+    }
+
+    let changed=false;
+
+    for(const entry of tournament.squads){
+      const team=
+        (tournament.participants||[]).find(
+          item=>item.id===entry.id
+        )||entry;
+
+      if(!Array.isArray(entry.squad))continue;
+
+      const generatedIndexes=
+        entry.squad
+          .map((player,index)=>
+            player?.source==="generated-persistent"
+              ? index
+              : -1
+          )
+          .filter(index=>index>=0);
+
+      if(!generatedIndexes.length)continue;
+
+      const keptIds=new Set(
+        entry.squad
+          .filter(
+            player=>
+              player?.source!=="generated-persistent"
+          )
+          .map(player=>player.id)
+      );
+
+      const available=
+        worldCupAvailablePlayers(
+          s,
+          tournament,
+          team,
+          api
+        )
+        .filter(
+          player=>
+            player.source!=="generated-persistent" &&
+            !keptIds.has(player.id)
+        )
+        .sort(
+          (a,b)=>
+            b.score-a.score ||
+            b.overall-a.overall ||
+            String(a.id).localeCompare(String(b.id))
+        );
+
+      for(const index of generatedIndexes){
+        const old=entry.squad[index];
+        const candidateIndex=
+          available.findIndex(
+            player=>
+              player.pos===old.pos &&
+              !keptIds.has(player.id)
+          );
+
+        if(candidateIndex<0)continue;
+
+        const replacement=
+          available.splice(candidateIndex,1)[0];
+
+        entry.squad[index]=replacement;
+        keptIds.add(replacement.id);
+        changed=true;
+      }
+
+      if(changed)
+        entry.lineup=worldCupLineup(entry.squad);
+    }
+
+    tournament.realUniversePackRevision=revision;
+
+    if(
+      legacyOngoingMigration ||
+      !worldCupPlayedAnyMatch(tournament)
+    ){
+      tournament.realUniverseMigrationVersion=4;
+    }
+
+    return changed;
+  }
+
   function ensureWorldCupOfficialSquads(s,n,api,log){
     const tournament=ensureWorldCup(s,n);
     if(!tournament||s.day<(Number(tournament.year)-2026)*365+154) return tournament;
@@ -6132,6 +6279,7 @@
       tournament.squadsFrozenDay=s.day;
     }
     migrateWorldCupPlaceholders(s,tournament,safeApi);
+    migrateGeneratedWorldCupPlayers(s,tournament,safeApi);
     const brazil=tournament.squads.find(x=>x.id==="BRA"),selected=!!brazil?.squad?.some(x=>x.id==="hero");
     if(!tournament.brazilCallup){
       const posRank=(brazil?.squad||[]).filter(x=>x.pos===s.person.pos).sort((a,b)=>Number(b.score||0)-Number(a.score||0)).findIndex(x=>x.id==="hero")+1;
@@ -7062,34 +7210,132 @@
       ...(brazilLineup.bench||[])
     ];
 
-    const squads2026=
-      root.ProLifeWorldCupSquads2026 ||
-      (
-        typeof require==="function"
-          ? require("./world-cup-squads-2026.js")
-          : null
-      );
+    /*
+      Antes da convocacao oficial a tela da Copa
+      mostra uma PROJECAO do universo atual.
+
+      O elenco so se torna persistente/congelado
+      em ensureWorldCupOfficialSquads(), na data
+      oficial da convocacao.
+    */
+    const projectionApi={
+      overall(player){
+        const explicit=
+          Number(
+            player?.overall ??
+            player?.ovr
+          );
+
+        if(Number.isFinite(explicit))
+          return explicit;
+
+        const a=
+          player?.attrs||{};
+
+        const weights={
+          GOL:{
+            pace:.08,
+            finish:.03,
+            pass:.12,
+            defense:.32,
+            strength:.20,
+            stamina:.25
+          },
+          DEF:{
+            pace:.13,
+            finish:.04,
+            pass:.12,
+            defense:.34,
+            strength:.22,
+            stamina:.15
+          },
+          MEI:{
+            pace:.14,
+            finish:.13,
+            pass:.32,
+            defense:.10,
+            strength:.09,
+            stamina:.22
+          },
+          ATA:{
+            pace:.23,
+            finish:.32,
+            pass:.13,
+            defense:.03,
+            strength:.12,
+            stamina:.17
+          }
+        }[player?.pos];
+
+        if(!weights)
+          return 70;
+
+        const keys=[
+          "pace",
+          "finish",
+          "pass",
+          "defense",
+          "strength",
+          "stamina"
+        ];
+
+        return Math.round(
+          keys.reduce(
+            (sum,key)=>
+              sum+
+              Number(a[key]||0)*
+              weights[key],
+            0
+          )
+        );
+      }
+    };
 
     const worldCupSquads=
-      Array.isArray(tournament.squads) && tournament.squads.length
-        ? tournament.squads.map(team=>({...team,squad:(team.squad||[]).map(player=>({...player})),lineup:team.id==="BRA"?brazilLineup:(team.lineup||worldCupLineup(team.squad||[]))}))
-        : Number(tournament.year)===2026 && squads2026
-        ? participants.map(
+      Array.isArray(tournament.squads) &&
+      tournament.squads.length
+        ? tournament.squads.map(
             team=>({
               ...team,
-
               squad:
-                squads2026.squad(
-                  team.id
-                ),
-
+                (team.squad||[])
+                  .map(
+                    player=>({
+                      ...player
+                    })
+                  ),
               lineup:
-                squads2026.lineup(
-                  team.id
-                )
+                team.id==="BRA"
+                  ? brazilLineup
+                  : (
+                      team.lineup ||
+                      worldCupLineup(
+                        team.squad||[]
+                      )
+                    )
             })
           )
-        : [];
+        : participants.map(
+            team=>{
+              const squad=
+                worldCupDynamicSquad(
+                  s,
+                  tournament,
+                  team,
+                  projectionApi
+                );
+
+              return {
+                ...team,
+                projected:true,
+                squad,
+                lineup:
+                  worldCupLineup(
+                    squad
+                  )
+              };
+            }
+          );
 
     return {
       worldCupSquads,
