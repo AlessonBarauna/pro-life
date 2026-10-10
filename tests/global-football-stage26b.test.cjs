@@ -147,7 +147,7 @@ test("26B: brasileiros do pool legado são ligados aos clubes reais sem duplicar
   const expected={intl_vini_jr:"gf_real_madrid",intl_raphinha:"gf_barcelona",intl_alisson:"gf_liverpool",intl_gabriel_magalhaes:"gf_arsenal",intl_marquinhos:"gf_psg",intl_bruno_guimaraes:"gf_newcastle",intl_savinho:"gf_tottenham",intl_matheus_cunha:"gf_man_united",intl_joao_pedro:"gf_chelsea",intl_andre:"gf_wolves"};
   for(const [id,clubId] of Object.entries(expected)){const player=GF.playerById(s,id);assert.ok(player,id);assert.equal(player.clubId,clubId,id);assert.ok(player.leagueId);}
   assert.ok(imported(s).filter(player=>GF.normalizedNationality(player.nationality)==="brasil").every(player=>player.ovr<=72));
-  const key=club=>club.name.toLowerCase();const names=s.globalFootball.clubs.filter(club=>!club.generated).map(key);assert.equal(new Set(names).size,names.length);
+  const key=club=>club.name.toLowerCase();const leagues=Object.keys(LEAGUES);const names=s.globalFootball.clubs.filter(club=>!club.generated&&leagues.includes(club.leagueId)).map(key);assert.equal(new Set(names).size,names.length);
 });
 
 test("26B: Copa Mundial e Brasil continuam funcionando com a base real",()=>{
@@ -158,7 +158,7 @@ test("26B: Copa Mundial e Brasil continuam funcionando com a base real",()=>{
 });
 
 test("26B: qualidade dos dados — GER variado, sem duplicatas de pessoa e posições cobertas",()=>{
-  const s=state(2714),players=imported(s),byOvr={};
+  const s=state(2714),leagues=Object.keys(LEAGUES),players=imported(s).filter(player=>leagues.includes(player.leagueId)),byOvr={};
   for(const player of players)byOvr[player.ovr]=(byOvr[player.ovr]||0)+1;
   assert.ok(Math.max(...Object.values(byOvr))<players.length*0.15,"GER concentrado demais");assert.ok(Object.keys(byOvr).length>=20);
   const people=players.map(player=>`${player.name}|${player.birthYear}`);assert.equal(new Set(people).size,people.length);

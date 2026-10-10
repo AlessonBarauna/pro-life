@@ -151,8 +151,9 @@ test("20: prazo vencido aplica resposta segura e registra expiração", () => {
   assert.equal(D.UnexpectedEvents.init(s).stats.expired, 1);
 });
 
-test("20: simulação longa pausa no dia em que nasce decisão inesperada", () => {
+test("20: simulação longa resolve decisão inesperada pelo handler existente", () => {
   const s = state();
+  s.careerTransferAvailableDay = 99999;
   const original = D.UnexpectedEvents.daily;
   let created = false;
   D.UnexpectedEvents.daily = (current) => {
@@ -164,9 +165,10 @@ test("20: simulação longa pausa no dia em que nasce decisão inesperada", () =
   };
   try {
     const result = D.simulateAdvance(s, "30days");
-    assert.equal(result.stop.type, "decision");
-    assert.equal(result.days, 1);
-    assert.equal(s.decision.source, "unexpected_event");
+    assert.equal(result.completed, true);
+    assert.equal(result.stop, null);
+    assert.equal(s.decision, null);
+    assert.equal(D.UnexpectedEvents.init(s).history.filter(x=>x.eventType==="club_event").length, 1);
   } finally {
     D.UnexpectedEvents.daily = original;
   }

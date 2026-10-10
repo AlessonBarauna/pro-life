@@ -5867,7 +5867,7 @@
     )
       return "Copa Mundial";
 
-    return "Eliminat?rias";
+    return "Eliminatórias";
   }
   function normalizedNationality(s){ const raw=String(s.person?.nationality||"Brasil").toLowerCase(); return raw==="brazil"?"Brasil":s.person?.nationality||"Brasil"; }
   function candidateScore(p, overall){
@@ -6817,7 +6817,7 @@
 
     return isWorldCupYear(year)
       ? "Copa Mundial"
-      : "Ciclo de Eliminat?rias";
+      : "Ciclo de Eliminatórias";
   }
   function worldCupPhaseLabel(phase){
     return {
@@ -8253,19 +8253,143 @@
     return true;
   }
 
+  function matchEventRecords(live,heroName){
+    return (live?.events||[]).filter(e=>e.type==="goal").map(e=>{
+      const scorerId=e.playerId||null,assistId=e.assistPlayerId||null;
+      return {minute:Number(e.minute),side:e.side===1?1:0,scorerId,scorer:scorerId==="hero"?(heroName||e.player||null):(scorerId?(e.player||null):null),assistId,assist:assistId==="hero"?(heroName||null):(assistId?(e.assistPlayer||null):null)};
+    });
+  }
+  // --- Stage 31.3.4: jogadores, assistencias e melhor da partida (deterministico por hash, sem consumir o RNG da simulacao) ---
+  function liveUnit(key){return worldCupUnit(key);}
+  function livePick(items,weight,key){
+    let total=0;const w=items.map(x=>{const v=Math.max(0,Number(weight(x))||0);total+=v;return v;});
+    if(total<=0)return null;
+    let r=liveUnit(key)*total;
+    for(let i=0;i<items.length;i++){r-=w[i];if(r<0)return items[i];}
+    return items[items.length-1];
+  }
+  function livePlayerLookup(s){
+    const map=new Map();
+    for(const p of globalNationalPlayers(s))map.set(p.id,p);
+    for(const club of s.clubs||[])for(const p of club.roster||[])map.set(p.id,p);
+    for(const p of internationalPool(s))if(!map.has(p.id))map.set(p.id,p);
+    return map;
+  }
+  function opponentLineup(s,api,fixture,opponent){
+    const n=init(s),wanted=worldCupNormalize(opponent);
+    if(fixture?.tournamentType==="WORLD_CUP"){
+      const tournament=(n.tournaments||[]).find(x=>x?.type==="WORLD_CUP"&&Number(x.year)===Number(fixture.tournamentYear));
+      const entry=(tournament?.squads||[]).find(x=>worldCupNormalize(x.name)===wanted||worldCupNormalize(x.id)===wanted);
+      if(entry?.squad?.length)return entry.lineup||worldCupLineup(entry.squad);
+    }
+    const team=nations.find(x=>worldCupNormalize(x.name)===wanted)||{id:wanted,name:opponent,reputation:75};
+    const year=Number(fixture?.tournamentYear)||2026+Math.floor(Number(s.day||0)/365);
+    const available=worldCupAvailablePlayers(s,{year},team,api),limits={GOL:2,DEF:7,MEI:7,ATA:6},squad=[];
+    for(const [pos,count] of Object.entries(limits))squad.push(...available.filter(x=>x.pos===pos).sort((a,b)=>b.score-a.score||b.overall-a.overall||String(a.id).localeCompare(String(b.id))).slice(0,count));
+    return worldCupLineup(squad);
+  }
+  function liveSideRows(lineup,unavailable,key,side,hero){
+    const mk=p=>({id:p.id,name:p.name,pos:p.pos,overall:Number(p.overall||p.ovr||70),score:Number(p.score??p.overall??70),side,start:0,end:90,starter:true});
+    const ok=p=>p&&p.id!==undefined&&p.id!==null&&p.id!=="hero"&&!unavailable(p.id);
+    const starters=(lineup?.starters||[]).filter(ok).map(mk),bench=(lineup?.bench||[]).filter(ok).map(mk);
+    const take=(pos)=>{let i=bench.findIndex(b=>b.pos===pos);if(i<0)i=bench.findIndex(b=>b.pos!=="GOL");if(i<0)i=0;return i<bench.length?bench.splice(i,1)[0]:null;};
+    const heroRow=hero?.participated?{id:"hero",name:hero.name,pos:hero.pos,overall:hero.overall,score:hero.overall,side,start:0,end:90,starter:true,hero:true}:null;
+    const lowest=(list)=>list.slice().sort((a,b)=>a.score-b.score||String(a.id).localeCompare(String(b.id)))[0];
+    if(heroRow&&hero.starter){
+      const victim=lowest(starters.filter(x=>x.pos===heroRow.pos))||lowest(starters.filter(x=>x.pos!=="GOL"));
+      if(victim)starters.splice(starters.indexOf(victim),1);
+      starters.push(heroRow);
+    }
+    if(!starters.some(x=>x.pos==="GOL")){const g=take("GOL");if(g&&g.pos==="GOL")starters.push(g);else if(g)bench.unshift(g);}
+    while(starters.length<11&&bench.length){const x=take(null);if(!x)break;starters.push(x);}
+    const rows=starters.slice(),used=new Set();
+    const swap=(out,minute,incoming)=>{out.end=minute;incoming.start=minute;incoming.end=90;incoming.starter=false;rows.push(incoming);used.add(out.id);};
+    if(heroRow&&hero.starter){
+      heroRow.end=Math.min(90,Math.max(1,Number(hero.minutes)||90));
+      if(heroRow.end<90){const incoming=take(heroRow.pos);if(incoming){incoming.start=heroRow.end;incoming.end=90;incoming.starter=false;rows.push(incoming);}}
+      used.add("hero");
+    }else if(heroRow){
+      const entry=Math.max(1,Number(hero.entryMinute)||60);
+      const out=lowest(starters.filter(x=>x.pos===heroRow.pos&&!x.hero))||lowest(starters.filter(x=>x.pos!=="GOL"&&!x.hero));
+      heroRow.start=entry;heroRow.end=Math.min(90,entry+Math.max(1,Number(hero.minutes)||1));heroRow.starter=false;
+      if(out){out.end=entry;used.add(out.id);}
+      rows.push(heroRow);
+    }
+    const count=1+Math.floor(liveUnit(`${key}|subs|${side}`)*3);
+    for(let i=0;i<count;i++){
+      const candidates=starters.filter(x=>!used.has(x.id)&&x.pos!=="GOL"&&!x.hero);
+      if(!candidates.length||!bench.length)break;
+      const out=candidates[Math.floor(liveUnit(`${key}|out|${side}|${i}`)*candidates.length)],incoming=take(out.pos);
+      if(!incoming)break;
+      swap(out,55+Math.floor(liveUnit(`${key}|min|${side}|${i}`)*33),incoming);
+    }
+    return rows;
+  }
+  function liveRatings(rows,sideGoals,conceded,importance,key){
+    const factor=Number(importance?.factor)||1;
+    for(const r of rows){
+      if(r.hero)continue;
+      const minutes=Math.max(0,r.end-r.start),goalsFor=sideGoals[r.side],against=conceded[r.side];
+      let raw=6.4+(r.overall-70)/25*.9+Math.min(3,r.goals)*1+Math.min(2,r.assists)*.6+(goalsFor>against?.25:goalsFor<against?-.25:0);
+      if(r.pos==="GOL"||r.pos==="DEF")raw+=against===0?(r.pos==="GOL"?.7:.5):against>=3?-.4:0;
+      raw+=(liveUnit(`${key}|rate|${r.id}`)-.5)*.9;
+      raw=6.4+(raw-6.4)*factor;
+      if(minutes<45)raw=6.2+(raw-6.2)*(minutes/45);
+      r.rating=+Math.max(4,Math.min(9.8,raw)).toFixed(1);
+    }
+  }
+  function identifyMatchPlayers(s,api,fixture,ctx){
+    const {opponent,participated,starter,entryMinute,minutes,rating,brazil,other,events,importance}=ctx;
+    const key=`${s.season}|${s.day}|${fixture?.competition||"Seleção Brasileira"}|${opponent}`,lookup=livePlayerLookup(s);
+    const unavailable=id=>{const p=lookup.get(id);return !!p&&(Number(p.injury)>0||Number(p.suspension)>0);};
+    const heroInfo={participated,starter,entryMinute,minutes,name:s.person.name,pos:s.person.pos,overall:Number(api?.overall?api.overall(s.person):s.person.overall||70)};
+    const rows=[...liveSideRows(matchLineup(s,api),unavailable,key,0,heroInfo),...liveSideRows(opponentLineup(s,api,fixture,opponent),unavailable,key,1,null)];
+    const nameOf=new Map(rows.map(r=>[r.id,r.name]));
+    for(const r of rows){r.goals=0;r.assists=0;}
+    const onPitch=(side,minute,exclude)=>rows.filter(r=>r.side===side&&r.id!=="hero"&&r.id!==exclude&&r.start<=minute&&minute<=r.end);
+    const scorerWeight=r=>({ATA:6,MEI:3,DEF:1.2,GOL:.02}[r.pos]||1)*Math.pow(r.overall/70,3);
+    const assistWeight=r=>({MEI:5,ATA:4,DEF:2,GOL:.05}[r.pos]||1)*Math.pow(r.overall/70,3);
+    events.forEach((e,i)=>{
+      if(e.type!=="goal")return;
+      const side=e.side===1?1:0;
+      if(e.playerId!=="hero"){
+        const scorer=livePick(onPitch(side,e.minute,null),scorerWeight,`${key}|scorer|${i}`);
+        if(scorer){e.playerId=scorer.id;e.player=scorer.name;e.text=`Gol de ${scorer.name}${side===0?" pelo Brasil":` pela seleção de ${ctx.opponent}`}.`;}
+      }
+      if(!e.assistPlayerId&&e.playerId&&liveUnit(`${key}|hasassist|${i}`)<(e.playerId==="hero"?.55:.7)){
+        const assistant=livePick(onPitch(side,e.minute,e.playerId),assistWeight,`${key}|assist|${i}`);
+        if(assistant){e.assistPlayerId=assistant.id;e.assistPlayer=assistant.name;}
+      }
+      if(e.assistPlayerId==="hero")e.assistPlayer=s.person.name;
+      const scorerRow=rows.find(r=>r.id===e.playerId&&r.side===side),assistRow=rows.find(r=>r.id===e.assistPlayerId&&r.side===side);
+      if(scorerRow)scorerRow.goals++;
+      if(assistRow)assistRow.assists++;
+    });
+    liveRatings(rows,[brazil,other],[other,brazil],importance,key);
+    const hr=rows.find(r=>r.id==="hero");
+    if(hr)hr.rating=+Number(rating).toFixed(1);
+    const rated=rows.filter(r=>r.end>r.start&&Number.isFinite(r.rating)&&r.rating>=1&&r.rating<=10);
+    const best=rated.slice().sort((a,b)=>b.rating-a.rating||(b.goals+b.assists)-(a.goals+a.assists)||String(a.id).localeCompare(String(b.id)))[0]||null;
+    return {players:rated.map(r=>[r.id,r.name,r.side,r.pos,r.end-r.start,r.rating]),motm:best?{id:best.id,name:best.name,rating:best.rating,side:best.side}:null};
+  }
   function nationalLiveMatch(s,api,fixture,{opponent,brazil,other,participated,starter,entryMinute,minutes,rating,goals,assists}){
     const importance=api?.matchImportance?.(s,fixture||{competition:"Seleção Brasileira"},{national:true})||{factor:1.1,label:"Jogo de Seleção"};
-    const events=[];
+    const events=[],used=new Set(),unknown="Autor não identificado";
+    const winStart=participated?Math.max(1,Number(entryMinute)||1):1,winEnd=participated?Math.min(90,Math.max(winStart,(Number(entryMinute)||0)+Number(minutes||0))):90;
+    const pick=(base,start,end)=>{const span=Math.max(1,end-start+1);let m=start+(base%span),guard=0;while(used.has(m)&&guard++<span)m=m<end?m+1:start;used.add(m);return m;};
+    const heroGoals=participated?Math.min(goals,brazil):0,heroAssists=participated?Math.min(assists,Math.max(0,brazil-heroGoals)):0;
     for(let i=0;i<brazil;i++){
-      const heroGoal=participated&&i<goals,heroAssist=participated&&!heroGoal&&i<goals+assists;
-      const minute=8+((Number(s.day||0)*13+i*19)%80);
-      const event={minute,type:"goal",side:0,player:heroGoal?s.person.name:`Brasil ${i+1}`,playerId:heroGoal?"hero":`bra_goal_${i}`,text:`Gol do Brasil${heroGoal?` com ${s.person.name}`:""}.`};
+      const heroGoal=i<heroGoals,heroAssist=!heroGoal&&i<heroGoals+heroAssists;
+      const minute=heroGoal||heroAssist?pick(Number(s.day||0)*13+i*19,winStart,winEnd):pick(Number(s.day||0)*13+i*19,8,88);
+      const event={minute,type:"goal",side:0,player:heroGoal?s.person.name:unknown,playerId:heroGoal?"hero":null,text:heroGoal?`Gol do Brasil com ${s.person.name}.`:`Gol do Brasil${heroAssist?` com assistência de ${s.person.name}`:""}.`};
       if(heroAssist)event.assistPlayerId="hero";
       events.push(event);
     }
-    for(let i=0;i<other;i++){const minute=11+((Number(s.day||0)*17+i*23)%78);events.push({minute,type:"goal",side:1,player:`${opponent} ${i+1}`,playerId:`opp_goal_${i}`,text:`Gol de ${opponent}.`});}
+    for(let i=0;i<other;i++){const minute=pick(Number(s.day||0)*17+i*23,11,88);events.push({minute,type:"goal",side:1,player:unknown,playerId:null,text:`Gol de ${opponent}.`});}
     events.sort((a,b)=>a.minute-b.minute);
-    return {national:true,home:"BRA",away:String(fixture?.opponentId||opponent),homeName:"Brasil",awayName:opponent,opponent,date:s.day,season:s.season,competitionId:"nationalTeam",competitionName:fixture?.competition||"Seleção Brasileira",stage:fixture?.stage||fixture?.phase||"Seleção Brasileira",hg:brazil,ag:other,events,shots:[Math.max(4,brazil*3+4),Math.max(4,other*3+3)],target:[Math.max(brazil,brazil*2+2),Math.max(other,other*2+1)],xg:[+(brazil*.72+.8).toFixed(2),+(other*.72+.65).toFixed(2)],possession:52,participants:participated?[["hero"],[]]:[[],[]],participation:participated?{hero:{side:0,starter,entryMinute,exitMinute:entryMinute+minutes,minutes}}:{},playerStats:participated?{hero:{minutes,starter,entryMinute,exitMinute:entryMinute+minutes,assists}}:{},ratings:participated?{hero:+rating.toFixed(1)}:{},offensiveStats:participated?{hero:{shots:Math.max(goals+1,2),onTarget:Math.max(goals,1),xg:+(goals*.55+.15).toFixed(2),goals}}:{},importance,summary:`Brasil ${brazil} × ${other} ${opponent}.`};
+    let identified={players:[],motm:null};
+    try{identified=identifyMatchPlayers(s,api,fixture,{opponent,participated,starter,entryMinute,minutes,rating,brazil,other,events,importance});}catch(error){identified={players:[],motm:null};}
+    return {national:true,home:"BRA",away:String(fixture?.opponentId||opponent),homeName:"Brasil",awayName:opponent,opponent,date:s.day,season:s.season,competitionId:"nationalTeam",competitionName:fixture?.competition||"Seleção Brasileira",stage:fixture?.stage||fixture?.phase||"Seleção Brasileira",hg:brazil,ag:other,events,shots:[Math.max(4,brazil*3+4),Math.max(4,other*3+3)],target:[Math.max(brazil,brazil*2+2),Math.max(other,other*2+1)],xg:[+(brazil*.72+.8).toFixed(2),+(other*.72+.65).toFixed(2)],possession:52,participants:participated?[["hero"],[]]:[[],[]],participation:participated?{hero:{side:0,starter,entryMinute,exitMinute:entryMinute+minutes,minutes}}:{},playerStats:participated?{hero:{minutes,starter,entryMinute,exitMinute:entryMinute+minutes,assists}}:{},ratings:participated?{hero:+rating.toFixed(1)}:{},offensiveStats:participated?{hero:{shots:Math.max(goals+1,2),onTarget:Math.max(goals,1),xg:+(goals*.55+.15).toFixed(2),goals}}:{},importance,players:identified.players,motm:identified.motm,summary:`Brasil ${brazil} × ${other} ${opponent}.`};
   }
   function play(s, rng, api, log, fixture = null) {
     const n = init(s); if (!n.calledUp) return null;
@@ -8318,8 +8442,8 @@
     const development=participated?api?.Training?.matchDevelopment?.(s,liveMatch,{overall:api.overall,clamp:api.clamp}):null;
     if (participated) {
       const beforeGoals=n.goals; n.caps++; if(starter)n.starts++; n.goals+=goals; n.assists+=assists; n.ratingTotal+=rating; n.minutes=(n.minutes||0)+minutes; if(rating>=8.6)n.motm++; n.debutDay??=s.day; if(goals&&beforeGoals===0)n.firstGoalDay??=s.day; s.person.condition=clamp((s.person.condition||100)-Math.round(minutes/10),0,100);
-      const match = { day: s.day, season: s.season, competition: n.competition, opponent, brazil, other, starter, entryMinute, minutes, rating: +rating.toFixed(1), goals, assists };
-      n.matches.unshift(match); n.matches = n.matches.slice(0, 100);
+      const match = { day: s.day, season: s.season, competition: n.competition, opponent, brazil, other, starter, entryMinute, minutes, rating: +rating.toFixed(1), goals, assists, events: matchEventRecords(liveMatch, s.person.name), players: liveMatch.players, motm: liveMatch.motm };
+      n.matches.unshift(match); n.matches = n.matches.slice(0, 100); for(let i=20;i<n.matches.length;i++)if(n.matches[i]?.players)delete n.matches[i].players;
       s.reputation = clamp(s.reputation + (rating >= 8 ? 2 : rating >= 7 ? 1 : 0)*Number(liveMatch.importance.factor||1), 0, 100); s.fans += Math.round(500 + rating * 120 + goals * 1000);
     }
     n.lastMatchday=liveMatch;

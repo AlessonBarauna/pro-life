@@ -121,7 +121,7 @@
       difficulty, personality, age, pos, archetypeId, style, points, target, attrs,
       potential: clamp(potentialBase + traits.potential, 55, 100), reputation, popularity, wallet,
       discipline: clamp(70 + traits.discipline, 30, 100), morale: clamp(70 + traits.morale, 30, 100),
-      overall: api.overall({ pos, attrs }),
+      overall: api.overall({ pos, attrs }), startMode: input.startMode === "club" ? "club" : "offers",
     };
   }
   // Prévia leve para a UI (não gera mundo/clubes).
@@ -156,40 +156,62 @@
       archetypeId: plan.archetypeId, style: plan.style, points: { ...plan.points }, custom: plan.custom ? { age: plan.custom.age, overall: plan.custom.overall, reputation: plan.custom.reputation, popularity: plan.custom.popularity, wallet: plan.custom.wallet } : null,
       notes: plan.notes.slice(0, 6),
       initial: { age: plan.age, pos: plan.pos, overall: plan.overall, reputation: plan.reputation, popularity: s.commercial ? s.commercial.popularity : plan.popularity, wallet: plan.wallet, potential: plan.potential, core: Object.fromEntries(CORE.map((k) => [k, plan.attrs[k]])) },
-      clubId: null, contract: null, expectation: null, objectives: [], startedDay: null, started: false,
+      clubId: null, contract: null, expectation: null, objectives: [], startedDay: null, started: false, startMode: plan.startMode,
     };
   }
 
   // Oportunidades iniciais: clubes coerentes com origem, nível, posição e necessidade real do elenco.
-  function competitionAt(api, club, pos, heroOvr) {
-    const group = club.roster.filter((p) => p.pos === pos && p.id !== "hero").map((p) => api.overall(p)).sort((a, b) => b - a);
+  function competitionAt(api, club, pos, heroOvr, s = null) {
+    const embedded=Array.isArray(club?.roster)?club.roster:[];
+    const globalPlayers=!embedded.length&&s&&api.GlobalFootball?.playersByClub?api.GlobalFootball.playersByClub(s,club?.id):[];
+    const group=(Array.isArray(globalPlayers)?globalPlayers:embedded).filter((p) => p?.pos === pos && p.id !== "hero").map((p) => {
+      const stored=Number(p.ovr ?? p.overall);
+      return Number.isFinite(stored)?stored:(p.attrs?api.overall(p):60);
+    }).filter(Number.isFinite).sort((a, b) => b - a);
     const top = group.slice(0, 3), topAvg = top.length ? top.reduce((n, x) => n + x, 0) / top.length : heroOvr;
-    return { rank: 1 + group.filter((o) => o > heroOvr).length, count: group.length + 1, topOvr: group[0] || 0, topAvg, need: api.positionNeed(club, pos), gap: topAvg - heroOvr };
+    return { rank: 1 + group.filter((o) => o > heroOvr).length, count: group.length + 1, topOvr: group[0] || 0, topAvg, need: api.positionNeed(club, pos, s), gap: topAvg - heroOvr };
   }
   const roleByRank = (rank) => (rank <= 2 ? "Importante" : rank <= 4 ? "Rotação" : "Reserva");
   const pitches = {
     showcase: { label: "Vitrine", text: "Clube de maior estrutura e melhor salário, com disputa forte por posição." },
     playing: { label: "Espaço para jogar", text: "Menos concorrência na sua posição: minutos serão decididos por mérito." },
     development: { label: "Projeto de desenvolvimento", text: "Contrato longo e acompanhamento de evolução, com salário mais contido." },
+    direct: { label: "Escolha direta", text: "Você escolheu este projeto. A titularidade continuará dependendo de mérito e concorrência." },
   };
+  function countryOf(s,api,club){return club?.country||api.GlobalFootball?.leagueById?.(s,club?.leagueId)?.country||(String(club?.id||"").match(/^c\d+$/)?"Brasil":"");}
+  function sameCountry(api,a,b){const normalize=api.GlobalFootball?.normalizedNationality||(value=>String(value||"").toLowerCase());return !!a&&!!b&&normalize(a)===normalize(b);}
+  function offerFor(s,api,plan,c,comp,kind){
+    const heroOvr=api.overall(s.person),diff=difficulties[plan.difficulty]||difficulties.normal,young=s.person.age<=20;
+    const assessment=api.Career.interestAssessment(s,c.id),kindMult={showcase:1.12,playing:.94,development:.88,direct:1}[kind]||1;
+    const base=api.Career.realisticSalary(s,c.id)*plan.story.salaryMult*diff.salary*kindMult;
+    const structure=Number(c.structure??c.strength??c.reputation??60),bonusBase=(600+s.reputation*70+heroOvr*40+structure*30)/100,expires=s.day+45;
+    return {clubId:c.id,salary:Math.max(1500,Math.round(base/100)*100),role:pitches[kind].label,squadRole:roleByRank(comp.rank),durationDays:kind==="development"?(young?1095:730):kind==="showcase"?(young?730:1095):730,signingBonus:Math.round(bonusBase*({showcase:1,playing:.6,development:.5,direct:.6}[kind]||.6))*100,transferType:"permanent",expires,interestScore:assessment?.score,interestLabel:assessment?.label,responseDeadline:expires,round:0,pitch:{kind,...pitches[kind]},competition:{rank:comp.rank,count:comp.count,topOvr:comp.topOvr,need:comp.need,structure,leagueId:c.leagueId}};
+  }
   function opportunities(s, rng, api, plan) {
-    const heroOvr = api.overall(s.person), story = plan.story, diff = difficulties[plan.difficulty];
+    const heroOvr = api.overall(s.person), story = plan.story;
     const rows = [];
-    for (const c of s.clubs) {
-      const tier = story.tiers[c.leagueId] || 0;
+    const clubs=(api.careerClubPool?.(s)||s.clubs||[]).filter((c)=>c?.id&&c.active!==false&&c.generated!==true);
+    const seen=new Set(),nationality=s.person?.nationality||"Brasil";
+    for (const c of clubs) {
+      if(seen.has(c.id)){continue;} seen.add(c.id);
+      const structure=Number(c.structure??c.strength??c.reputation??60),tier=story.tiers[c.leagueId]||Math.max(.2,1.5-Math.max(0,structure-heroOvr-4)/18);
       if (tier <= 0 || c.id === s.clubId) continue;
-      const comp = competitionAt(api, c, s.person.pos, heroOvr);
+      const comp = competitionAt(api, c, s.person.pos, heroOvr, s),assessment=api.Career.interestAssessment(s,c.id);
+      if(assessment?.eligible===false)continue;
       const plausible = Math.exp(-Math.max(0, comp.gap - 6) / 8);
       const weight = tier * plausible * (1 + 0.35 * comp.need);
-      if (weight > 0.02) rows.push({ c, comp, weight });
+      if (weight > 0.02) rows.push({ c:{...c,structure}, comp, weight, preferred:sameCountry(api,nationality,countryOf(s,api,c)) });
     }
     const pool = [];
-    for (let guard = 0; guard < 9 && rows.length; guard++) {
-      const total = rows.reduce((n, r) => n + r.weight, 0);
+    const wantedCount=Math.min(story.offers,3),preferred=rows.filter(r=>r.preferred),fallback=rows.filter(r=>!r.preferred);
+    const sample=(source,limit)=>{for(let guard=0;guard<limit&&source.length;guard++){
+      const total = source.reduce((n, r) => n + r.weight, 0);
       let roll = rng.next() * total, i = 0;
-      for (; i < rows.length - 1; i++) { roll -= rows[i].weight; if (roll <= 0) break; }
-      pool.push(rows.splice(i, 1)[0]);
-    }
+      for (; i < source.length - 1; i++) { roll -= source[i].weight; if (roll <= 0) break; }
+      pool.push(source.splice(i, 1)[0]);
+    }};
+    sample(preferred,9);
+    if(pool.length<wantedCount)sample(fallback,9-pool.length);
     const wanted = story.offers >= 3 ? ["showcase", "playing", "development"] : ["playing", "development"];
     const chosen = [], take = (row, kind) => { if (row) { pool.splice(pool.indexOf(row), 1); chosen.push({ ...row, kind }); } };
     for (const kind of wanted) {
@@ -205,21 +227,7 @@
       take(row, kind);
     }
     while (chosen.length < Math.min(story.offers, 3) && pool.length) take(pool.slice().sort((a, b) => b.weight - a.weight || a.c.id.localeCompare(b.c.id))[0], "playing");
-    const young = s.person.age <= 20;
-    return chosen.map(({ c, comp, kind }) => {
-      const assessment = api.Career.interestAssessment(s, c.id);
-      const kindMult = { showcase: 1.12, playing: 0.94, development: 0.88 }[kind];
-      const base = api.Career.realisticSalary(s, c.id) * story.salaryMult * diff.salary * kindMult;
-      const bonusBase = (600 + s.reputation * 70 + heroOvr * 40 + c.structure * 30) / 100;
-      const expires = s.day + 45;
-      return {
-        clubId: c.id, salary: Math.max(1500, Math.round(base / 100) * 100), role: pitches[kind].label,
-        squadRole: roleByRank(comp.rank), durationDays: kind === "development" ? (young ? 1095 : 730) : kind === "showcase" ? (young ? 730 : 1095) : 730,
-        signingBonus: Math.round(bonusBase * { showcase: 1, playing: 0.6, development: 0.5 }[kind]) * 100, transferType: "permanent",
-        expires, interestScore: assessment?.score, interestLabel: assessment?.label, responseDeadline: expires, round: 0,
-        pitch: { kind, ...pitches[kind] }, competition: { rank: comp.rank, count: comp.count, topOvr: comp.topOvr, need: comp.need, structure: c.structure, leagueId: c.leagueId },
-      };
-    });
+    return chosen.map(({ c, comp, kind }) => offerFor(s,api,plan,c,comp,kind));
   }
 
   // Expectativa inicial e objetivos (progresso derivado das estatísticas reais; nada é garantido ao jogador).
@@ -274,7 +282,11 @@
   function accept(s, clubId, api) {
     const c = s?.creation;
     if (!c || c.started) throw Error("A carreira já começou.");
-    const offer = (s.offers || []).find((o) => o.clubId === clubId);
+    let offer = (s.offers || []).find((o) => o.clubId === clubId);
+    if(!offer&&c.startMode==="club"){
+      const club=(api.careerClubPool?.(s)||s.clubs||[]).find((candidate)=>candidate?.id===clubId&&candidate.active!==false&&candidate.generated!==true);
+      if(club){const story=Training.origins[c.storyId].story,plan={story,difficulty:c.difficulty,personality:c.personality};offer=offerFor(s,api,plan,club,competitionAt(api,club,s.person.pos,api.overall(s.person),s),"direct");}
+    }
     if (!offer) throw Error("Escolha uma das oportunidades iniciais.");
     api.movePlayerToClub(s, clubId);
     s.salary = offer.salary;
@@ -296,7 +308,7 @@
     return { storyId: c.storyId, title: story?.title || "Carreira", level: story?.level, hint: story?.hint, difficulty: { id: c.difficulty, ...difficulties[c.difficulty] }, personality: { id: c.personality, ...personalities[c.personality] }, initial: c.initial, expectation: c.expectation, objectives: objectives(s), started: c.started, status: c.status, seed: c.seed, notes: c.notes || [] };
   }
 
-  const api = { VERSION, POINT_BUDGET, POINT_MAX, CORE, difficulties, personalities, posOffsets, posLabels, storyOf, compatibleArchetypes, sanitizeCustom, maxOverallForAge, resolve, preview, progressionMultiplier, applyContext, opportunities, expectationOf, objectives, registerStart, accept, summary };
+  const api = { VERSION, POINT_BUDGET, POINT_MAX, CORE, difficulties, personalities, posOffsets, posLabels, storyOf, compatibleArchetypes, sanitizeCustom, maxOverallForAge, resolve, preview, progressionMultiplier, applyContext, competitionAt, opportunities, expectationOf, objectives, registerStart, accept, summary };
   root.ProLifeCreation = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

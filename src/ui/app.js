@@ -185,7 +185,7 @@
     const rets = u.retirements.filter((r) => r.peak >= 74).slice(0, 5);
     const free = u.free.slice().sort((a, b) => D.overall(b) - D.overall(a)).slice(0, 5);
     const row = (m) => `<tr><td>${m.season}</td><td>${esc(m.name)}</td><td>${esc(m.pos)}</td><td>${m.age}</td><td>${m.ovr}</td><td>${esc(m.from)} → ${esc(m.to)}</td><td>${m.fee ? money(m.fee) : "Livre"}</td></tr>`;
-    return `<section class="card section"><h2>Movimentações do mundo</h2><p class="muted">Somente as mais relevantes (GER 70+). O mercado da IA acontece uma vez por janela.</p>${moves.length ? `<div class="tablewrap"><table><thead><tr><th>Ano</th><th>Jogador</th><th>Pos</th><th>Idade</th><th>GER</th><th>Clubes</th><th>Valor</th></tr></thead><tbody>${moves.map(row).join("")}</tbody></table></div>` : `<p class="muted">Nenhuma movimentação relevante registrada ainda.</p>`}<details><summary>Aposentadorias e jogadores livres</summary><p><b>Aposentados recentes:</b> ${rets.length ? rets.map((r) => `${esc(r.name)} (${r.age}, ${esc(r.club)})`).join(" · ") : "—"}</p><p><b>Melhores jogadores livres:</b> ${free.length ? free.map((p) => `${esc(p.name)} (${p.pos}, ${p.age}, GER ${D.overall(p)})`).join(" · ") : "—"}</p></details></section>`;
+    return `<section class="card section" data-world-market-legacy><div class="tag">HISTÓRICO LEGADO</div><h2>Movimentações do mundo</h2><p class="muted">Somente as mais relevantes (GER 70+). O mercado da IA acontece uma vez por janela.</p>${moves.length ? `<div class="tablewrap"><table><thead><tr><th>Ano</th><th>Jogador</th><th>Pos</th><th>Idade</th><th>GER</th><th>Clubes</th><th>Valor</th></tr></thead><tbody>${moves.map(row).join("")}</tbody></table></div>` : `<p class="muted">Nenhuma movimentação relevante registrada ainda.</p>`}<details><summary>Aposentadorias e jogadores livres</summary><p><b>Aposentados recentes:</b> ${rets.length ? rets.map((r) => `${esc(r.name)} (${r.age}, ${esc(r.club)})`).join(" · ") : "—"}</p><p><b>Melhores jogadores livres:</b> ${free.length ? free.map((p) => `${esc(p.name)} (${p.pos}, ${p.age}, GER ${D.overall(p)})`).join(" · ") : "—"}</p></details></section>`;
   }
   // Etapa 14: história de origem e início de carreira (somente apresentação; dados vêm de D.Creation.summary).
   function originPanel() {
@@ -344,7 +344,7 @@
             ["market", "Mercado", [["market", "Central do mercado"], ["proposals", "Minhas propostas"]]],
             ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["panorama", "Panorama"], ["squad", "Elenco"]]],
             ["national", "Seleção", []],
-            ["history", "Mundo", [["history", "Mundo vivo"], ["clubs", "Clubes"], ["life", "Perfil e Vida"], ["finance", "Finanças"], ["sponsorships", "Patrocínios"]]],
+            ["history", "Mundo", [["history", "Mundo vivo"], ["worldCompetitions", "Competições Mundiais"], ["clubs", "Clubes"], ["life", "Perfil e Vida"], ["finance", "Finanças"], ["sponsorships", "Patrocínios"]]],
             ["save", "Saves", [["save", "Gerenciar saves"]]],
           ]
         : [
@@ -353,7 +353,7 @@
             ["profile", "Treinador", [["profile", "Perfil"], ["training", "Desenvolvimento"], ["finance", "Diretoria"]]],
             ["market", "Transferências", [["market", "Mercado"], ["proposals", "Propostas"]]],
             ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["panorama", "Panorama"], ["squad", "Elenco e tática"], ["statistics", "Estatísticas"], ["awards", "Prêmios"]]],
-            ["history", "Mundo", [["history", "Mundo vivo"], ["clubs", "Clubes"], ["life", "Decisões"]]],
+            ["history", "Mundo", [["history", "Mundo vivo"], ["worldCompetitions", "Competições Mundiais"], ["clubs", "Clubes"], ["life", "Decisões"]]],
             ["save", "Saves", [["save", "Gerenciar saves"]]],
           ],
       allPages = groups.flatMap((g) => g[2]),
@@ -361,12 +361,24 @@
       nav = groups.map(([id, label]) => [id, label]),
       subnav = activeGroup[2];
     const unread = Career.unreadCount(state) + (state.decision ? 1 : 0),
-      offerCount = Career.canTransfer(state) ? state.offers.length : 0;
+      offerCount = (state.offers||[]).filter((o) => o.expires >= state.day).length;
     $("#app").innerHTML =
       `<div class="game-shell"><header class="game-nav"><div class="brand">PRO<span>LIFE</span></div><nav>${groups.map(([id, label, pages]) => `<button data-page="${id}" class="${pages.some(([pid])=>pid===page) ? "active" : ""}">${label}${id === "inbox" && unread ? `<i>${unread}</i>` : id === "market" && offerCount ? `<i>${offerCount}</i>` : ""}</button>`).join("")}</nav><div class="club-chip"><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b></div></header><div class="game-subnav">${subnav.map(([id,label])=>`<button data-page="${id}" class="${page===id?"active":""}">${esc(label)}${id==="proposals" && offerCount ? ` <i>${offerCount}</i>`:""}</button>`).join("")}</div><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado"}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
+    mountInternationalOfferPreference();
+    window.ProLifeTargetClubSelector?.mount?.(state,D,Career);
     mountAvatar();
     revealActiveTab();
     ensurePendingDecisionPopup();
+  }
+  function mountInternationalOfferPreference(){
+    const levelSelect=$("#offer-club-level");
+    if(!levelSelect||$("#offer-international")) return;
+    const enabled=Career.init(state).offerPreferences?.international!==false;
+    const label=document.createElement("label"),note=document.createElement("p");
+    label.innerHTML=`<input id="offer-international" type="checkbox" ${enabled?"checked":""}> Clubes internacionais`;
+    note.className="chart-note";
+    note.textContent=`Mercado internacional ${enabled?"habilitado":"desabilitado"}.`;
+    levelSelect.closest("label")?.before(label,note);
   }
   // Celular: a barra de abas rola na horizontal e é recriada a cada render; mantém a aba atual visível.
   function revealActiveTab() {
@@ -912,8 +924,208 @@
   let nationsLeagueDivision="A";
   let concacafNationsLeagueDivision="A";
   let fifaSeriesVenueId="AUSTRALIA";
+  let worldCompetitionLeagueId=null;
+  let worldCompetitionRound=null;
+  let worldMarketTab="rumors";
+  let worldMarketFilters={country:"ALL",league:"ALL",club:"ALL",period:"ALL"};
 
+  // ===== Stage 31.7A/C — Central de Temporada e Calendário V2 (UI; dados reais da API do domínio) =====
+  let seasonUi = { comp: null, q: "", country: "", kind: "", tab: "table", view: "", club: null };
+  let calSel = null, calHidden = new Set(), advancePending = null, calCache = { key: "", list: [] };
+  const CAL_KINDS = [["mine", "Meus jogos"], ["state", "Estadual"], ["national", "Nacional"], ["world", "Mundo"], ["selecao", "Seleções"], ["market", "Mercado"], ["events", "Eventos"]];
+  const normText = (v) => String(v ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const COMP_KIND = (c) => c.type === "state" ? "state" : (c.type === "league" || c.type === "cup") ? "national" : c.type === "world-league" ? "world" : String(c.type || "").startsWith("national") ? "selecao" : "other";
+  const KIND_LABEL = { national: "Nacional (Brasil)", state: "Estadual", world: "Ligas do mundo", selecao: "Seleções", other: "Outras" };
+  const FORMAT_LABEL = { "double-round-robin": "Pontos corridos", "single-leg-knockout": "Mata-mata", "groups-and-knockout": "Grupos e mata-mata", "scheduled-matches": "Jogos marcados" };
+  const REGION_ORDER = ["Brasil", "Europa", "Américas", "Demais regiões", "Seleções"];
+  const hasVal = (v) => v !== undefined && v !== null && v !== "" && Number.isFinite(Number(v));
+  const cell = (v) => (hasVal(v) ? Number(v) : "—");
+  function seasonCatalog() {
+    try { const c = D.seasonCompetitionCatalog?.(state); return Array.isArray(c) ? c.filter((x) => x && x.id && x.available !== false) : null; } catch { return null; }
+  }
+  function seasonRegion(c) {
+    const kind = COMP_KIND(c);
+    if (kind === "selecao") return "Seleções";
+    if (c.country === "Brasil") return "Brasil";
+    let cont = "";
+    try { const l = D.GlobalFootball?.leagueById?.(state, c.id); cont = normText(l?.continent || ""); } catch { cont = ""; }
+    if (cont === "europa") return "Europa";
+    if (cont.startsWith("america")) return "Américas";
+    return "Demais regiões";
+  }
+  function seasonFiltered(cat) {
+    const q = normText(seasonUi.q).trim();
+    return cat.filter((c) => (!seasonUi.country || c.country === seasonUi.country) && (!seasonUi.kind || COMP_KIND(c) === seasonUi.kind) && (!q || normText(`${c.name} ${c.country || ""}`).includes(q)));
+  }
+  function seasonListHtml(cat) {
+    const rows = seasonFiltered(cat);
+    if (!rows.length) return `<div class="empty">Nenhuma competição encontrada. Ajuste a busca ou os filtros.</div>`;
+    const groups = new Map();
+    for (const c of rows) { const g = seasonRegion(c); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(c); }
+    return REGION_ORDER.filter((g) => groups.has(g)).map((g) => `<div class="season-group"><div class="tag">${esc(g)} · ${groups.get(g).length}</div>${groups.get(g).map((c) => `<button type="button" class="season-comp ${c.id === seasonUi.comp ? "on" : ""}" data-season-comp="${esc(c.id)}" aria-pressed="${c.id === seasonUi.comp}"><b>${esc(c.name)}</b><small>${esc([c.country, KIND_LABEL[COMP_KIND(c)]].filter(Boolean).join(" · "))}</small></button>`).join("")}</div>`).join("");
+  }
+  function stRow(r, i) {
+    const gf = r.goalsFor, ga = r.goalsAgainst;
+    return { pos: r.rank ?? i + 1, id: r.clubId ?? null, name: r.clubName || r.clubId || "—", pts: r.points, j: r.played, v: r.wins, e: r.draws, d: r.losses, gp: gf, gc: ga, sg: hasVal(r.goalDifference) ? r.goalDifference : (hasVal(gf) && hasVal(ga) ? gf - ga : undefined), form: Array.isArray(r.recentForm) ? r.recentForm.slice(-5).map((x) => String(x).toUpperCase()) : [] };
+  }
+  const sgText = (v) => (hasVal(v) ? signed(Number(v)) : "—");
+  const gameLine = (g) => {
+    const played = g.played === true || g.status === "PLAYED", score = played ? (g.score || `${g.homeScore} x ${g.awayScore}`).replace(" x ", " × ") : "×";
+    const mine = [g.homeId, g.awayId].includes(state.clubId);
+    return `<div class="season-game ${mine ? "mine" : ""} ${played ? "played" : ""}"><time>${hasVal(g.day) ? esc(dayDate(g.day)) : "—"}</time><span>${esc(g.home ?? g.homeId ?? "—")}</span><b>${esc(score)}</b><span>${esc(g.away ?? g.awayId ?? "—")}</span>${g.stage ? `<small>${esc(g.stage)}${g.penalties ? " · pên. " + esc(typeof g.penalties === "object" ? Object.values(g.penalties).join("-") : g.penalties) : ""}</small>` : ""}</div>`;
+  };
+  function seasonTableHtml(ov) {
+    const rows = ov.standings.map(stRow), hasForm = rows.some((x) => x.form.length), sel = rows.find((r) => r.id && r.id === seasonUi.club);
+    const body = rows.map((r) => `<tr tabindex="0" data-season-club="${esc(r.id ?? "")}" class="${r.id === state.clubId ? "highlight" : ""} ${r.id && r.id === seasonUi.club ? "selected" : ""}" aria-selected="${r.id === seasonUi.club}"><td class="num">${cell(r.pos)}</td><td class="club">${esc(r.name)}${r.id === state.clubId ? ' <span class="pill">VOCÊ</span>' : ""}</td><td class="num pts">${cell(r.pts)}</td><td class="num">${cell(r.j)}</td><td class="num">${cell(r.v)}</td><td class="num">${cell(r.e)}</td><td class="num">${cell(r.d)}</td><td class="num">${cell(r.gp)}</td><td class="num">${cell(r.gc)}</td><td class="num">${sgText(r.sg)}</td>${hasForm ? `<td class="form">${r.form.map((f) => `<i class="f-${esc(f)}">${esc(f)}</i>`).join("")}</td>` : ""}</tr>`).join("");
+    const detail = sel ? (() => {
+      const involves = (g) => [g.homeId, g.awayId].includes(sel.id);
+      const last = (ov.fixtures || []).filter((g) => involves(g) && (g.played || g.status === "PLAYED")).slice(-5).reverse(), next = (ov.fixtures || []).filter((g) => involves(g) && !(g.played || g.status === "PLAYED")).slice(0, 3);
+      return `<aside class="card season-club-detail"><div class="tag">CLUBE SELECIONADO</div><h3>${esc(sel.name)}</h3><div class="stats"><div class="stat"><small>Posição</small><b>${cell(sel.pos)}º</b></div><div class="stat"><small>Pontos</small><b>${cell(sel.pts)}</b></div><div class="stat"><small>Saldo</small><b>${sgText(sel.sg)}</b></div></div>${sel.form.length ? `<p class="muted">Forma: ${sel.form.map((f) => esc(f)).join(" ")}</p>` : ""}${last.length ? `<h3>Últimos resultados</h3>${last.map(gameLine).join("")}` : ""}${next.length ? `<h3>Próximos jogos</h3>${next.map(gameLine).join("")}` : ""}${!last.length && !next.length ? '<p class="muted">Sem mais detalhes disponíveis para este clube nesta competição.</p>' : ""}<button type="button" data-season-club="">Fechar detalhes</button></aside>`;
+    })() : "";
+    return `<div class="season-table-wrap ${sel ? "with-detail" : ""}"><div><div class="tablewrap season-scroll" tabindex="0" aria-label="Classificação completa"><table class="season-table"><thead><tr><th class="num">#</th><th class="club">Clube</th><th class="num">PTS</th><th class="num">J</th><th class="num">V</th><th class="num">E</th><th class="num">D</th><th class="num">GP</th><th class="num">GC</th><th class="num">SG</th>${hasForm ? "<th>Forma</th>" : ""}</tr></thead><tbody>${body}</tbody></table></div><p class="muted">Selecione um clube para consultar os detalhes disponíveis.</p></div>${detail}</div>`;
+  }
+  const koRounds = (ov) => (ov.rounds || []).filter((r) => r.kind === "knockout" || (!r.kind && /mata|knockout/.test(ov.competition?.format || ""))).filter((r) => (r.fixtures || []).length);
+  function seasonBracketHtml(ov) {
+    return `<div class="season-bracket">${koRounds(ov).map((r) => `<section class="season-round"><div class="tag">${esc(r.name || "Fase")}</div>${(r.fixtures || []).map((p) => { const played = p.played === true || p.status === "PLAYED", win = p.winnerId ?? p.qualifiedId ?? null; return `<article class="season-tie ${[p.homeId, p.awayId].includes(state.clubId) ? "mine" : ""}"><div class="${win && win === p.homeId ? "win" : ""}"><span>${esc(p.home ?? p.homeId)}</span><b>${played ? esc(p.homeScore) : "–"}</b></div><div class="${win && win === p.awayId ? "win" : ""}"><span>${esc(p.away ?? p.awayId)}</span><b>${played ? esc(p.awayScore) : "–"}</b></div>${hasVal(p.day) ? `<small>${esc(dayDate(p.day))}</small>` : ""}</article>`; }).join("")}</section>`).join("")}</div>`;
+  }
+  function seasonOverviewHtml() {
+    let ov = null;
+    try { ov = D.seasonCompetitionOverview?.(state, seasonUi.comp) || null; } catch { ov = null; }
+    if (!ov?.competition) return `<section class="card"><div class="empty">Os dados desta competição ainda não estão disponíveis.</div></section>`;
+    const comp = ov.competition, hasTable = Array.isArray(ov.standings) && ov.standings.length > 0, hasKo = koRounds(ov).length > 0;
+    const view = seasonUi.view === "bracket" && hasKo ? "bracket" : seasonUi.view === "table" && hasTable ? "table" : (!hasTable && hasKo) || (hasKo && /single-leg/.test(comp.format || "")) ? "bracket" : "table";
+    const phase = ov.currentRound?.name || "";
+    const tabs = [["table", view === "bracket" ? "Chave" : "Classificação"], ["games", "Jogos"], ["calendar", "Calendário"]];
+    let tab = tabs.some(([id]) => id === seasonUi.tab) ? seasonUi.tab : "table";
+    if (tab === "table" && !hasTable && !hasKo) tab = "games";
+    const mine = (ov.fixtures || []).some((g) => [g.homeId, g.awayId].includes(state.clubId)) || (ov.standings || []).some((r) => r.clubId === state.clubId);
+    let body;
+    if (tab === "table") body = `${hasTable && hasKo ? `<div class="season-toggle" role="group" aria-label="Formato"><button type="button" class="${view === "table" ? "on" : ""}" data-season-view="table">Liga / grupos</button><button type="button" class="${view === "bracket" ? "on" : ""}" data-season-view="bracket">Mata-mata</button></div>` : ""}${view === "bracket" ? seasonBracketHtml(ov) : seasonTableHtml(ov)}`;
+    else if (tab === "games") {
+      const res = (ov.recentResults || []).slice(0, 10), nxt = (ov.nextFixtures || []).slice(0, 10);
+      body = `<div class="grid"><section class="card"><div class="tag">ÚLTIMOS RESULTADOS</div>${res.length ? res.map(gameLine).join("") : '<div class="empty">Nenhum resultado disputado ainda.</div>'}</section><section class="card"><div class="tag">PRÓXIMOS JOGOS</div>${nxt.length ? nxt.map(gameLine).join("") : '<div class="empty">Sem jogos agendados.</div>'}</section></div>`;
+    } else {
+      const rounds = (ov.rounds || []).filter((r) => (r.fixtures || []).length), cur = ov.currentRound?.id;
+      body = rounds.length ? `<div class="season-calendar">${rounds.map((r) => `<details ${r.id === cur ? "open" : ""}><summary>${esc(r.name)}${hasVal(r.day) ? ` · ${esc(dayDate(r.day))}` : ""} <small>${r.fixtures.length} jogo(s)</small></summary>${r.fixtures.map(gameLine).join("")}</details>`).join("")}</div>` : ((ov.fixtures || []).length ? `<div class="season-calendar">${ov.fixtures.map(gameLine).join("")}</div>` : '<div class="empty">O calendário completo desta competição ainda não está disponível.</div>');
+    }
+    return `<section class="card season-head"><div class="tag">${esc([comp.country, `Temporada ${comp.season ?? state.season}`].filter(Boolean).join(" · "))}</div><h2>${esc(comp.name)}</h2><div class="season-pills">${comp.format ? `<span class="pill">${esc(FORMAT_LABEL[comp.format] || comp.format)}</span>` : ""}${phase ? `<span class="pill">${esc(phase)}</span>` : ""}${comp.status ? `<span class="pill">${esc(comp.status)}</span>` : ""}${mine ? '<span class="pill">Você participa</span>' : ""}</div><div class="season-tabs" role="tablist">${tabs.map(([id, label]) => `<button type="button" role="tab" class="${id === tab ? "on" : ""}" aria-selected="${id === tab}" data-season-tab="${id}">${label}</button>`).join("")}</div></section><section class="card season-body">${body}</section>`;
+  }
+  function advanceBanner() {
+    if (!advancePending || advancePending.target <= state.day) return "";
+    const isMatch = advancePending.type === "match";
+    return `<section class="card pl-card--action advance-banner" role="status"><div><div class="tag">AVANÇO PAUSADO</div><b>${esc(advancePending.reason || "A simulação foi pausada.")}</b><p class="muted">Dia alcançado: ${esc(dayDate(state.day))} · Destino pendente: ${esc(dayDate(advancePending.target))} · ${advancePending.target - state.day} dia(s) restantes.</p></div><div class="actions"><button class="primary" type="button" data-adv-resume>${isMatch ? "Simular o jogo e continuar até a data" : "Continuar até a data escolhida"}</button><button type="button" data-adv-drop>Cancelar destino</button></div></section>`;
+  }
+  function seasonCenterView() {
+    const cat = seasonCatalog();
+    if (!cat || !cat.length) return null;
+    const leagueId = D.club(state)?.leagueId;
+    const mine = cat.find((c) => c.id === leagueId) || null;
+    if (!seasonUi.comp || !cat.some((c) => c.id === seasonUi.comp)) seasonUi.comp = (mine || cat[0]).id;
+    const countries = [...new Set(cat.map((c) => c.country).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")), kinds = [...new Set(cat.map(COMP_KIND))];
+    return `${advanceBanner()}<div class="season-center"><aside class="card season-nav"><div class="tag">COMPETIÇÕES · ${cat.length}</div><label>Buscar<input id="season-q" type="search" placeholder="Nome ou país" value="${esc(seasonUi.q)}" autocomplete="off"></label><div class="season-filters"><label>País<select id="season-country"><option value="">Todos</option>${countries.map((c) => `<option ${c === seasonUi.country ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></label><label>Tipo<select id="season-type"><option value="">Todos</option>${kinds.map((k) => `<option value="${esc(k)}" ${k === seasonUi.kind ? "selected" : ""}>${esc(KIND_LABEL[k])}</option>`).join("")}</select></label></div>${mine ? `<button type="button" class="primary" data-season-mine="${esc(mine.id)}">Minha competição</button>` : ""}<div id="season-comp-list" class="season-list">${seasonListHtml(cat)}</div></aside><div class="season-main">${seasonOverviewHtml()}</div></div>`;
+  }
+  // — Calendário V2: eventos reais agregados, seleção de data e filtros (sem avançar o estado) —
+  const CAL_EPOCH = Date.UTC(2026, 0, 1);
+  const calDate = (day) => new Date(CAL_EPOCH + day * 86400000);
+  const calMonthOf = (day) => calDate(day).toISOString().slice(0, 7);
+  function apiEvents(from, to) {
+    if (typeof D.seasonCalendarEvents !== "function") return null;
+    const key = `${state.season}|${state.day}|${from}|${to}|${(state.offers || []).length}|${(state.matches || []).length}`;
+    if (calCache.key === key) return calCache.list;
+    try { calCache = { key, list: D.seasonCalendarEvents(state, from, to, {}) || [] }; } catch { return null; }
+    return calCache.list;
+  }
+  function compKinds() { const m = new Map(); for (const c of seasonCatalog() || []) m.set(c.id, c); return m; }
+  function eventKind(e, kinds) {
+    if (e.category === "match") { if (e.isHeroEvent) return "mine"; const c = kinds.get(e.competitionId); const k = c ? COMP_KIND(c) : "world"; return k === "other" ? "world" : k; }
+    if (e.category === "market") return "market";
+    return "events";
+  }
+  function calGridRange(month) {
+    const [y, m] = month.split("-").map(Number), first = Date.UTC(y, m - 1, 1), offset = (new Date(first).getUTCDay() + 6) % 7, start = Math.round((first - CAL_EPOCH) / 86400000) - offset;
+    return [Math.max(0, start), start + 41];
+  }
+  const evTitle = (e) => `${e.title}${e.score ? " " + String(e.score).replace(" x ", " × ") : ""}`;
+  function calDayPanel(evs, kinds) {
+    if (calSel === null) return `<section class="card cal-day-panel"><div class="tag">DATA SELECIONADA</div><h2>Selecione uma data</h2><div class="empty">Clique em um dia para ver os acontecimentos. Selecionar não avança o tempo.</div></section>`;
+    const day = apiEvents(calSel, calSel);
+    const list = (day || Calendar.events(state, D).filter((e) => e.day === calSel).map((e) => ({ ...e, category: e.type === "window" ? "market" : "career", isHeroEvent: false, _old: true }))).filter((e) => !calHidden.has(eventKind(e, kinds)));
+    const rel = calSel === state.day ? "Hoje" : calSel < state.day ? "Passado" : `Em ${calSel - state.day} dia(s)`;
+    const label = calDate(calSel).toLocaleDateString("pt-BR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const hero = list.filter((e) => e.category === "match" && e.isHeroEvent), others = list.filter((e) => e.category === "match" && !e.isHeroEvent), misc = list.filter((e) => e.category !== "match");
+    const byComp = new Map(); for (const e of others) { const k = e.competitionId || "?"; if (!byComp.has(k)) byComp.set(k, []); byComp.get(k).push(e); }
+    const line = (e) => `<div class="cal-line"><span>${esc(e.home ?? e.title)}</span><b>${e.score ? esc(String(e.score).replace(" x ", " × ")) : "×"}</b><span>${esc(e.away ?? "")}</span></div>`;
+    const html = `${hero.length ? `<div class="tag">SEUS JOGOS</div><div class="cal-items">${hero.map((e) => `<article class="cal-item hero ${e.score ? "played" : "club"}"><div><b>${esc(e.title)}</b><small>${esc(kinds.get(e.competitionId)?.name || "Partida")}${e.score ? ` · Resultado ${esc(String(e.score).replace(" x ", " × "))}` : " · Agendado"}</small></div><button type="button" data-page="matches">Abrir</button></article>`).join("")}</div>` : ""}${misc.length ? `<div class="tag">MERCADO E CARREIRA</div><div class="cal-items">${misc.map((e) => `<article class="cal-item ${esc(e.category)}"><div><b>${esc(e.title)}</b><small>${esc(e.category === "market" ? "Mercado" : e.category === "career" ? "Carreira" : e.category === "commercial" ? "Comercial" : e.category === "personal" ? "Pessoal" : e.detail || "")}${e.status === "RECORDED" ? " · Registrado" : ""}</small></div>${e.destination ? `<button type="button" data-page="${esc(e.destination)}">Abrir</button>` : ""}</article>`).join("")}</div>` : ""}${byComp.size ? `<div class="tag">OUTROS JOGOS · ${others.length}</div>${[...byComp].map(([id, es]) => `<details class="cal-group"><summary>${esc(kinds.get(id)?.name || id)} <small>${es.length} jogo(s)</small></summary>${es.map(line).join("")}</details>`).join("")}` : ""}`;
+    const canAdv = calSel > state.day, hasApi = typeof D.advanceToDay === "function";
+    return `<section class="card cal-day-panel" aria-live="polite"><div class="tag">DATA SELECIONADA · ${esc(rel.toUpperCase())}</div><h2>${esc(label)}</h2>${html || '<div class="empty">Nenhum acontecimento registrado nesta data.</div>'}<div class="actions">${canAdv ? `<button class="primary" type="button" data-cal-advance="${calSel}" ${hasApi ? "" : "disabled"}>Avançar até esta data</button>` : ""}${canAdv && !hasApi ? '<small class="muted">Indisponível: o motor não oferece avanço até uma data.</small>' : ""}<button type="button" data-cal-today>Hoje</button></div></section>`;
+  }
+  function calendarView() {
+    if (!Calendar) return empty("O calendário não pôde ser carregado.");
+    calendarMonth ||= Calendar.monthId(state);
+    let html = Calendar.render(state, D, { month: calendarMonth, esc, dayDate });
+    const next = D.nextCommitment?.(state), nextDay = next && Number.isInteger(next.date) ? next.date : null;
+    const [from, to] = calGridRange(calendarMonth), evs = apiEvents(from, to), kinds = compKinds();
+    const byDay = new Map();
+    for (const e of evs || []) { if (calHidden.has(eventKind(e, kinds))) continue; if (!byDay.has(e.day)) byDay.set(e.day, []); byDay.get(e.day).push(e); }
+    const hideTokens = CAL_KINDS.filter(([id]) => calHidden.has(id)).map(([id]) => ({ market: "window", events: "event" }[id] || id));
+    html = html.replace('class="card career-calendar"', `class="card career-calendar" data-cal-hide="${hideTokens.join(" ")}"`);
+    html = html.replace(/<div class="calendar-day ([^"]*)" data-calendar-day="(\d+)">(<span class="calendar-number">[^<]*<\/span>)([\s\S]*?)<\/div>/g, (_, cls, d, num, rest) => {
+      const day = Number(d), rel = day < state.day ? "past" : day > state.day ? "future" : "present";
+      const keep = [...rest.matchAll(/<button class="calendar-event ([^"]*)" data-page="[^"]*" title="([^"]*)">([^<]*)<\/button>/g)].filter((m) => evs ? ["window", "event"].includes(m[1].trim()) : true).map((m) => `<span class="calendar-event ${m[1]}" title="${m[2]}">${m[3]}</span>`).join("");
+      let api = "";
+      if (evs) {
+        const es = byDay.get(day) || [], hero = es.filter((e) => e.category === "match" && e.isHeroEvent), games = es.filter((e) => e.category === "match" && !e.isHeroEvent), mk = es.filter((e) => e.category === "market"), ev = es.filter((e) => !["match", "market"].includes(e.category));
+        api = hero.slice(0, 2).map((e) => `<span class="calendar-event hero ${e.score ? "played" : "club"}" title="${esc(evTitle(e))}">${esc(evTitle(e))}</span>`).join("") + (games.length ? `<span class="calendar-event agg" title="${esc(games.length + " jogo(s) no mundo")}">${games.length} jogo${games.length > 1 ? "s" : ""}</span>` : "") + (mk.length ? `<span class="calendar-event window" title="${esc(mk.map((e) => e.title).join("; "))}">Mercado ${mk.length}</span>` : "") + (ev.length ? `<span class="calendar-event event" title="${esc(ev.map((e) => e.title).join("; "))}">Eventos ${ev.length}</span>` : "");
+      }
+      return `<div class="calendar-day ${cls} ${rel} ${day === calSel ? "selected" : ""} ${day === nextDay ? "next-game" : ""}" data-calendar-day="${day}" tabindex="0" role="button" aria-pressed="${day === calSel}" aria-label="${esc(calDate(day).toLocaleDateString("pt-BR", { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" }))}${day === nextDay ? " · próximo jogo" : ""}">${num}${api}${keep}</div>`;
+    });
+    const chips = `<div class="calendar-legend cal-filters" role="group" aria-label="Filtros do calendário">${CAL_KINDS.filter(([id]) => id !== "selecao" || state.mode === "player").map(([id, label]) => `<button type="button" class="cal-chip k-${id} ${calHidden.has(id) ? "off" : ""}" data-cal-filter="${id}" aria-pressed="${!calHidden.has(id)}">${label}</button>`).join("")}</div>`;
+    html = html.replace(/<div class="calendar-legend">[\s\S]*?<\/div>/, chips);
+    html = html.replace('<button data-calendar="prev" aria-label="Mês anterior">←</button>', '<button data-calendar-year="-1" aria-label="Ano anterior">«</button><button data-calendar="prev" aria-label="Mês anterior">←</button>').replace('<button data-calendar="next" aria-label="Próximo mês">→</button>', '<button data-calendar="next" aria-label="Próximo mês">→</button><button data-calendar-year="1" aria-label="Próximo ano">»</button>');
+    html = html.replace('<button data-calendar="today">Hoje</button>', `<button data-calendar="today">Hoje</button>${nextDay !== null ? `<button data-cal-next="${nextDay}">Próximo jogo</button>` : ""}`);
+    const [first, ...rest] = html.split("</section>");
+    return `${advanceBanner()}${first}</section>${calDayPanel(evs, kinds)}${rest.join("</section>")}`;
+  }
+  function closeAdvanceDialog() { document.getElementById("advance-date-modal")?.remove(); }
+  function openAdvanceDialog(target) {
+    if (!Number.isInteger(target) || target <= state.day) { toast("Escolha uma data futura."); return; }
+    closeAdvanceDialog();
+    const hasApi = typeof D.advanceToDay === "function", days = target - state.day;
+    const el = document.createElement("div"); el.id = "advance-date-modal"; el.className = "simulation-stop-backdrop";
+    el.innerHTML = `<section class="simulation-stop-dialog advance-dialog" role="dialog" aria-modal="true" aria-labelledby="adv-title"><div class="tag">AVANÇAR NO TEMPO</div><h2 id="adv-title">Avançar até ${esc(dayDate(target))}</h2><div class="stats"><div class="stat"><small>Data atual</small><b>${esc(dayDate(state.day))}</b></div><div class="stat"><small>Destino</small><b>${esc(dayDate(target))}</b></div><div class="stat"><small>Dias</small><b>${days}</b></div></div><p>Acontecimentos cotidianos serão resolvidos automaticamente. Propostas e renovações de contrato pausam a simulação para a sua decisão.</p><label class="adv-opt"><input type="checkbox" id="adv-stop-matches" checked> Parar antes dos jogos do jogador</label><small class="muted">Desmarcado, os jogos do jogador serão simulados automaticamente.</small>${hasApi ? "" : '<div class="notice">Recurso indisponível: o motor não oferece avanço até uma data. Nada será simulado.</div>'}<div class="actions"><button class="primary" type="button" data-adv-confirm="${target}" ${hasApi ? "" : "disabled"}>Confirmar avanço</button><button type="button" data-adv-cancel>Cancelar</button></div></section>`;
+    document.body.appendChild(el);
+    el.querySelector("[data-adv-confirm]:not([disabled]), [data-adv-cancel]")?.focus();
+  }
+  // A simulação é do motor (D.advanceToDay): a UI só escolhe opções e exibe o resultado real.
+  function runAdvanceTo(target, stopBeforeMatches) {
+    closeAdvanceDialog();
+    if (typeof D.advanceToDay !== "function") { toast("Avanço até uma data indisponível no motor."); return; }
+    let res;
+    try { res = D.advanceToDay(state, target, stopBeforeMatches ? { stopBeforeNextMatch: true } : { simulateMatches: true }); } catch (err) { toast(err.message); render(); return; }
+    persist();
+    const pause = res?.pauseReason || null;
+    if (res && res.completed === false) {
+      advancePending = { target: Number.isInteger(res.pendingTargetDay) ? res.pendingTargetDay : target, stopBeforeMatches: !!stopBeforeMatches, type: pause?.type || null, reason: pause?.message || pause?.title || "A simulação foi pausada antes do destino." };
+      render();
+      const offersUi = ["renewal", "offer", "decision", "pending", "interview", "commercial", "commercial-event"];
+      if (pause && offersUi.includes(pause.type)) showSimulationStop(pause);
+      else toast(`${advancePending.reason} Dia alcançado: ${dayDate(res.reachedDay ?? state.day)}.`);
+    } else { advancePending = null; render(); toast(`Avançou até ${dayDate(res?.reachedDay ?? state.day)}.`); }
+  }
   const views = {
+    worldCompetitions() {
+      return window.ProLifeWorldCompetitionsView?.render
+        ? window.ProLifeWorldCompetitionsView.render(
+            state,
+            D,
+            {
+              leagueId:worldCompetitionLeagueId,
+              round:worldCompetitionRound
+            }
+          )
+        : '<section class="card"><h2>Competições Mundiais</h2><p class="muted">Módulo de competições mundiais indisponível.</p></section>';
+    },
+
     clubs() {
       return window.ProLifeClubBrowser?.render
         ? window.ProLifeClubBrowser.render(
@@ -925,35 +1137,44 @@
 
     home() {
       const H = window.ProLifeHomeDashboard.snapshot(state, D, Calendar), p=state.person, c=H.c, next=H.next, cur=H.current;
-      const resultClass=(r)=>r==="V"?"form-win":r==="D"?"form-loss":"form-draw";
+      const resultClass=(r)=>r==="V"?"form-win":r==="D"?"form-loss":r==="E"?"form-draw":"";
       const safe=(value,fallback="—")=>value===null||value===undefined||value===""||Number.isNaN(value)?fallback:value;
       const monogram=(name)=>String(name||"—").split(/\s+/).filter(Boolean).slice(0,3).map(part=>part[0]).join("").toUpperCase();
       const daysToMatch=next?Math.max(0,Number(next.date||state.day)-state.day):null;
+      const morale=D.clamp(Number(H.player.morale)||0,0,100),condition=D.clamp(Number(H.player.condition)||0,0,100);
       window.__proLifeRecentMatches=H.recent;
       const taskItems=[];
       if(next)taskItems.push(`<article class="central-v3-task"><small>PRÓXIMO JOGO</small><b>${esc(next.home)} × ${esc(next.away)}</b><span>${daysToMatch===0?"Hoje":`Em ${daysToMatch} dia(s)`}</span></article>`);
       if(H.objectives[0])taskItems.push(`<article class="central-v3-task"><small>OBJETIVO</small><b>${esc(H.objectives[0].label)}</b><span>Próxima atuação</span></article>`);
       if(state.mode==="player"&&H.lineup)taskItems.push(`<article class="central-v3-task"><small>ELENCO</small><b>${esc(H.lineup.heroRole||"Situação a definir")}</b><span>${esc(H.player.squadRole||"Sem papel definido")}</span><button data-page="lineup">Ver escalação</button></article>`);
-      if(state.offers?.length)taskItems.push(`<article class="central-v3-task"><small>MERCADO</small><b>${state.offers.length} proposta${state.offers.length>1?"s":""} aguardando análise</b><span>Resposta pendente</span><button data-page="proposals">Analisar</button></article>`);
+      if(state.offers?.length)taskItems.push(`<article class="central-v3-task central-v3-task-urgent"><small>MERCADO · AÇÃO NECESSÁRIA</small><b>${state.offers.length} proposta${state.offers.length>1?"s":""} aguardando análise</b><span>Resposta pendente</span><button data-page="proposals">Analisar</button></article>`);
       if(taskItems.length<4)taskItems.push(`<article class="central-v3-task"><small>TREINO</small><b>${esc(H.training.focus||"Rotina diária")}</b><span>${esc(H.training.next||"Disponível")}</span><button data-page="training">Abrir treino</button></article>`);
-      const decisionTask=state.decision?`<article class="central-v3-task central-v3-decision"><small>DECISÃO PENDENTE</small><b>${esc(state.decision.title)}</b><span>${esc(state.decision.body)}</span><div class="actions">${state.decision.choices.map(([id,label])=>`<button data-choice="${id}">${esc(label)}</button>`).join("")}</div></article>`:"";
-      const nextActions=next?`<div class="central-v3-actions"><button class="primary" data-live-match>Acompanhar partida</button><button data-simulate="nextCommitment">Simular até o jogo</button><button data-advance="1">Avançar 1 dia</button></div>`:`<div class="central-v3-actions"><button class="primary" data-page="calendar">Abrir calendário</button><button data-advance="1">Avançar 1 dia</button></div>`;
+      const decisionTask=state.decision?`<article class="central-v3-task central-v3-decision" role="status"><small>DECISÃO URGENTE</small><b>${esc(state.decision.title)}</b><span>${esc(state.decision.body)}</span><div class="actions">${state.decision.choices.map(([id,label])=>`<button data-choice="${id}">${esc(label)}</button>`).join("")}</div></article>`:"";
+      const nextActions=next?`<div class="central-v3-actions"><button class="primary central-v3-action-main" data-live-match>Acompanhar partida</button><button class="central-v3-action-secondary" data-simulate="nextCommitment">Simular até o jogo</button><button class="central-v3-action-quiet" data-advance="1">Avançar 1 dia</button></div>`:`<div class="central-v3-actions"><button class="primary central-v3-action-main" data-page="calendar">Abrir calendário</button><button class="central-v3-action-quiet" data-advance="1">Avançar 1 dia</button></div>`;
       return `<div class="career-dashboard career-central-v3">
         <header class="central-v3-header"><div><span>TEMPORADA ${safe(state.season)}</span><time>${dayDate(state.day)}</time><h1>Central</h1></div><p>${esc(next?.competitionName||H.table.league||"Temporada atual")} <b>·</b> ${esc(next?.stage||"Visão geral")}</p></header>
         <section class="central-v3-hero central-main-match">
-          <div class="central-v3-match"><div class="central-v3-eyebrow">PRÓXIMO COMPROMISSO</div>${next?`<div class="central-v3-competition"><b>${esc(next.competitionName||"Competição")}</b><span>${esc(next.stage||"Próxima rodada")}</span></div><div class="central-v3-matchup"><div class="central-v3-team"><i>${esc(monogram(next.home))}</i><small>MANDANTE</small><strong>${esc(next.home)}</strong></div><em>×</em><div class="central-v3-team away"><i>${esc(monogram(next.away))}</i><small>VISITANTE</small><strong>${esc(next.away)}</strong></div></div><div class="central-v3-match-meta"><span>${dayDate(next.date)}</span><span>${daysToMatch===0?"Hoje":`Em ${daysToMatch} dia(s)`}</span>${next.stadium?`<span>${esc(next.stadium)}</span>`:""}${H.table.position&&!next.national?`<span>${H.table.position}º · ${esc(H.table.league)}</span>`:""}</div>${state.mode==="player"?`<div class="central-v3-status-row"><span><small>PAPEL</small>${esc(H.player.squadRole||"—")}</span><span><small>PRÓXIMO JOGO</small>${esc(H.lineup?.heroRole||"A definir")}</span><span><small>META</small>${esc(H.objectives[0]?.label||"—")}</span></div><button class="central-v3-lineup" data-page="lineup">Ver escalação</button>`:""}`:`<div class="central-v3-empty"><h2>Sem compromisso oficial agendado</h2><p>Consulte o calendário para planejar os próximos passos da carreira.</p></div>`}${nextActions}</div>
-          <aside class="central-v3-player central-player-card">${state.mode==="player"?`<div class="central-v3-avatar">${avatar(p)}</div><div class="central-v3-player-id"><span class="central-v3-rating">${safe(H.player.overall)}<small>GER</small></span><div><h2>${esc(H.player.name||"Jogador")}</h2><p>${esc(c?.name||"Sem clube")} · ${esc(H.player.pos||"—")} · ${safe(H.player.age)} anos</p></div></div><div class="central-v3-player-state"><span><small>FASE</small><b>${safe(H.player.form)}</b></span><span><small>MORAL</small><b>${Number.isFinite(Number(H.player.morale))?Math.round(H.player.morale):"—"}</b></span><span><small>PREPARO</small><b>${Number.isFinite(Number(H.player.condition))?`${Math.round(H.player.condition)}%`:"—"}</b></span></div><div class="central-v3-player-stats"><span><small>Valor</small><b>${H.player.marketValue?money(H.player.marketValue):"—"}</b></span><span><small>Jogos</small><b>${safe(cur.appearances??cur.games,0)}</b></span><span><small>Gols</small><b>${safe(cur.goals,0)}</b></span><span><small>Assist.</small><b>${safe(cur.assists,0)}</b></span><span><small>Nota</small><b>${safe(cur.averageRating)}</b></span></div><button data-page="profile">Abrir Meu jogador</button>`:`<div class="central-v3-coach"><span class="central-v3-rating">${Math.round(state.board)}<small>CONF</small></span><h2>${esc(p.name||"Treinador")}</h2><p>${esc(c?.name||"Sem clube")}</p>${bar("Diretoria",state.board)}${bar("Moral",p.morale)}</div>`}</aside>
+          <div class="central-v3-match"><div class="central-v3-eyebrow">PRÓXIMO COMPROMISSO</div>${next?`<div class="central-v3-competition"><b>${esc(next.competitionName||"Competição")}</b><span>${esc(next.stage||"Próxima rodada")}</span><mark>${daysToMatch===0?"HOJE":`FALTAM ${daysToMatch} DIA${daysToMatch===1?"":"S"}`}</mark></div><div class="central-v3-matchup"><div class="central-v3-team"><i>${esc(monogram(next.home))}</i><small>MANDANTE</small><strong>${esc(next.home)}</strong></div><em><small>CONFRONTO</small>×</em><div class="central-v3-team away"><i>${esc(monogram(next.away))}</i><small>VISITANTE</small><strong>${esc(next.away)}</strong></div></div><div class="central-v3-match-meta"><span><small>DATA</small><b>${dayDate(next.date)}</b></span><span><small>RODADA / FASE</small><b>${esc(next.stage||"Próxima rodada")}</b></span><span><small>ESTÁDIO</small><b>${esc(next.stadium||"A definir")}</b></span>${H.table.position&&!next.national?`<span><small>SITUAÇÃO</small><b>${H.table.position}º · ${esc(H.table.league)}</b></span>`:""}</div>${state.mode==="player"?`<div class="central-v3-status-row"><span><small>PAPEL</small>${esc(H.player.squadRole||"—")}</span><span><small>ESCALAÇÃO</small>${esc(H.lineup?.heroRole||"A definir")}</span><span><small>OBJETIVO</small>${esc(H.objectives[0]?.label||"—")}</span></div><button class="central-v3-lineup" data-page="lineup">Ver escalação completa →</button>`:""}`:`<div class="central-v3-empty"><h2>Sem compromisso oficial agendado</h2><p>Consulte o calendário para planejar os próximos passos da carreira.</p></div>`}${nextActions}</div>
+          <aside class="central-v3-player central-player-card">${state.mode==="player"?`<div class="central-v3-avatar">${avatar(p)}</div><div class="central-v3-player-id"><span class="central-v3-rating">${safe(H.player.overall)}<small>GER</small></span><div><span class="central-v3-position">${esc(H.player.pos||"—")}</span><h2>${esc(H.player.name||"Jogador")}</h2><p>${esc(c?.name||"Sem clube")} · ${safe(H.player.age)} anos</p></div></div><div class="central-v3-player-state"><span><small>FASE</small><b>${safe(H.player.form)}</b></span><span style="--state:${morale}%"><small>MORAL</small><b>${Math.round(morale)}</b><i></i></span><span style="--state:${condition}%"><small>CONDIÇÃO</small><b>${Math.round(condition)}%</b><i></i></span></div><div class="central-v3-player-stats"><span><small>Valor</small><b>${H.player.marketValue?money(H.player.marketValue):"—"}</b></span><span><small>Jogos</small><b>${safe(cur.appearances??cur.games,0)}</b></span><span><small>Gols</small><b>${safe(cur.goals,0)}</b></span><span><small>Assist.</small><b>${safe(cur.assists,0)}</b></span><span><small>Nota</small><b>${safe(cur.averageRating)}</b></span></div><button class="central-v3-profile-link" data-page="profile">Abrir Meu jogador →</button>`:`<div class="central-v3-coach"><div class="central-v3-eyebrow">ÁREA TÉCNICA</div><span class="central-v3-rating">${Math.round(state.board)}<small>CONFIANÇA</small></span><span class="central-v3-position">TREINADOR</span><h2>${esc(p.name||"Treinador")}</h2><p>${esc(c?.name||"Sem clube")}</p><div class="central-v3-coach-state"><span><small>POSIÇÃO</small><b>${H.table.position?`${H.table.position}º`:"—"}</b></span><span><small>CAMPANHA</small><b>${safe(c?.stats?.w,0)}V · ${safe(c?.stats?.d,0)}E · ${safe(c?.stats?.l,0)}D</b></span></div>${bar("Diretoria",state.board)}${bar("Moral",p.morale)}<button data-page="squad">Abrir elenco e tática →</button></div>`}</aside>
         </section>
         <div class="central-v3-grid central-grid">
-          <section class="central-v3-tile central-v3-table central-table"><div class="central-v3-eyebrow">CLASSIFICAÇÃO</div><h2>${esc(H.table.league||"Competição atual")}</h2>${H.table.rows.length?H.table.rows.slice(0,5).map(x=>`<div class="central-v3-standing ${x.id===state.clubId?"me":""}"><span>${x.position}</span><b>${esc(D.club(state,x.id)?.name||x.id||"—")}</b><strong>${safe(x.stats?.points,0)} pts</strong></div>`).join(""):`<p class="muted">Classificação indisponível.</p>`}<button data-page="league">Ver classificação</button></section>
-          <section class="central-v3-tile central-v3-form central-form"><div class="central-v3-eyebrow">FORMA RECENTE</div><h2>Últimos jogos</h2>${H.recent.length?`<div class="central-v3-form-list">${H.recent.slice(0,5).map((x,i)=>`<button type="button" class="central-v3-form-row match-peek ${resultClass(x.result)}" data-recent-match="${i}" aria-expanded="false"><b>${esc(x.result)}</b><span>${esc(x.home)} <strong>${esc(x.score)}</strong> ${esc(x.away)}</span>${x.rating?`<small>Nota ${safe(x.rating)}</small>`:""}</button>`).join("")}</div><div id="recent-match-detail" class="recent-match-detail" hidden></div>`:`<p class="central-v3-empty-copy">Nenhuma partida disputada nesta temporada.</p>`}<button data-page="matches">Ver partidas</button></section>
-          <section class="central-v3-tile central-v3-tasks central-inbox central-training central-objectives"><div class="central-v3-eyebrow">TASK LIST</div><h2>Prioridades</h2>${decisionTask}${taskItems.slice(0,state.decision?3:4).join("")||`<p class="muted">Nenhuma prioridade pendente.</p>`}</section>
+          <section class="central-v3-tile central-v3-table central-table"><div class="central-v3-tile-head"><div><div class="central-v3-eyebrow">CLASSIFICAÇÃO</div><h2>${esc(H.table.league||"Competição atual")}</h2></div><span>${H.table.position?`${H.table.position}º LUGAR`:"—"}</span></div>${H.table.rows.length?H.table.rows.slice(0,5).map(x=>`<div class="central-v3-standing ${x.id===state.clubId?"me":""}"><span>${x.position}</span><b>${esc(D.club(state,x.id)?.name||x.id||"—")}</b><strong>${safe(x.stats?.points,0)} pts</strong></div>`).join(""):`<p class="muted">Classificação indisponível.</p>`}<button data-page="league">Ver classificação completa →</button></section>
+          <section class="central-v3-tile central-v3-form central-form"><div class="central-v3-eyebrow">FORMA RECENTE</div><h2>Últimos jogos</h2>${H.recent.length?`<div class="central-v3-form-list">${H.recent.slice(0,5).map((x,i)=>`<button type="button" class="central-v3-form-row match-peek ${resultClass(x.result)}" data-recent-match="${i}" aria-expanded="false"><b>${esc(x.result||"—")}</b><span>${esc(x.home)} <strong>${esc(x.score)}</strong> ${esc(x.away)}</span><small>${x.national?"🇧🇷 SELEÇÃO · ":""}${esc(x.competition)}${x.rating!==null?` · Nota ${safe(x.rating)}`:""}</small></button>`).join("")}</div><div id="recent-match-detail" class="recent-match-detail" hidden></div>`:`<p class="central-v3-empty-copy">Nenhuma partida disputada nesta temporada.</p>`}<button data-page="matches">Ver partidas</button></section>
+          <section class="central-v3-tile central-v3-tasks central-inbox central-training central-objectives"><div class="central-v3-eyebrow">AGENDA DA CARREIRA</div><h2>Prioridades</h2>${decisionTask}${taskItems.slice(0,state.decision?3:4).join("")||`<p class="muted">Nenhuma prioridade pendente.</p>`}</section>
         </div>
         <footer class="central-v3-context central-news central-calendar"><div><small>CONTEXTO DA CARREIRA</small><b>${esc(H.events[0]?.title||H.news[0]?.title||`Temporada ${state.season}`)}</b><span>${esc(H.events[0]?.detail||H.news[0]?.body||`${c?.name||"Carreira"} · ${H.table.league||"Calendário profissional"}`)}</span></div><nav><button data-page="inbox">Caixa de entrada</button><button data-page="calendar">Abrir calendário</button></nav></footer>
       </div>`;
     },
     lineup() {
       const H=window.ProLifeHomeDashboard.snapshot(state,D,Calendar), L=H.lineup, next=H.next, pc=Career.init(state).playerCareer;
+      const abbreviatedName=(name)=>{const parts=String(name||"Jogador").trim().split(/\s+/).filter(Boolean);return parts.length<2?parts[0]||"Jogador":`${parts[0][0]}. ${parts.at(-1)}`;};
+      const tacticalPitch=(players,formation,{captainId=null,viceId=null,overallOf=(p)=>D.overall(p)}={})=>{
+        const pools={};for(const player of players)(pools[player.pos]||(pools[player.pos]=[])).push(player);
+        const shape=formation==="4-2-3-1"?[["ATA",1],["MEI",3],["MEI",2],["DEF",4],["GOL",1]]:formation==="4-4-2"?[["ATA",2],["MEI",4],["DEF",4],["GOL",1]]:[["ATA",3],["MEI",3],["DEF",4],["GOL",1]];
+        const groups=shape.map(([pos,count],index)=>({pos,key:`${pos}-${index}`,players:(pools[pos]||[]).splice(0,count)})).filter(row=>row.players.length);
+        for(const [pos,left] of Object.entries(pools))if(left.length)groups.splice(Math.max(0,groups.length-1),0,{pos,key:`${pos}-extra`,players:left});
+        return `<div class="fc-tactical-board" style="--pitch-rows:${groups.length}" aria-label="Campo tático · formação ${esc(formation)}"><div class="fc-pitch-lines" aria-hidden="true"><i></i><i></i><i></i></div><div class="fc-pitch-formation">${esc(formation)}</div>${groups.map(row=>`<div class="fc-pitch-line fc-pitch-${esc(String(row.pos||"pos").toLowerCase())}" data-position-group="${esc(row.pos||"POS")}">${row.players.map(p=>`<article class="fc-pitch-player ${p.id==="hero"?"hero":""} ${p.id===captainId?"captain":p.id===viceId?"vice":""}" data-player-id="${esc(p.id)}" data-position="${esc(p.pos||"—")}" title="${esc(p.name)} · ${esc(p.pos||"—")} · ${Number(overallOf(p)||0)} GER"><span>${esc(p.pos||"—")}</span><strong>${esc(abbreviatedName(p.name))}</strong><small>${Number(overallOf(p)||0)} GER</small>${p.id===captainId?'<em title="Capitão">C</em>':p.id===viceId?'<em title="Vice-capitão">VC</em>':p.id==="hero"?'<em>VOCÊ</em>':""}</article>`).join("")}</div>`).join("")}</div>`;
+      };
       if(state.mode!=="player") return `<section class="card"><h2>Escalação</h2><p class="muted">Disponível na carreira de jogador.</p></section>`;
       if(!state.clubId) return `<section class="card"><h2>Sem clube</h2><p class="muted">Assine com um clube para disputar uma vaga.</p></section>`;
       if(next?.national) {
@@ -975,10 +1196,6 @@
               <small>${Number(p.overall||0)} GER \u00b7 ${esc(p.club||"Sele\u00e7\u00e3o Brasileira")}</small>
             </span>
           </div>`;
-
-        const starters=nationalLineup.starters
-          .map(nationalPlayerCard)
-          .join("");
 
         const bench=nationalLineup.bench
           .map(nationalPlayerCard)
@@ -1007,7 +1224,7 @@
               </p>
             </div>
 
-            <span class="pill">4-3-3</span>
+            <span class="pill">${esc(nationalLineup.formation||"4-3-3")}</span>
           </section>
 
           <section class="card section">
@@ -1029,18 +1246,14 @@
             </p>
           </section>
 
-          <div class="grid section">
+          <div class="fc-lineup-layout section">
 
-            <section class="card">
-              <div class="tag">TITULARES</div>
-              <h2>Brasil \u00b7 XI inicial</h2>
-
-              <div class="fc-lineup-list">
-                ${starters}
-              </div>
+            <section class="card fc-pitch-card">
+              <div class="split"><div><div class="tag">TITULARES</div><h2>Brasil \u00b7 XI inicial</h2></div><span class="pill">${esc(nationalLineup.formation||"4-3-3")}</span></div>
+              ${tacticalPitch(nationalLineup.starters,nationalLineup.formation||"4-3-3",{overallOf:(p)=>p.overall})}
             </section>
 
-            <section class="card">
+            <section class="card fc-bench-panel">
               <div class="tag">BANCO</div>
               <h2>Relacionados</h2>
 
@@ -1065,15 +1278,15 @@
       const chance=plan?Math.round(plan.chance*100):actualRole==="Titular"?100:0;
       const perspective=actualRole==="Titular"?"ESCALADO ENTRE OS 11":actualRole==="Banco"?"RELACIONADO NO BANCO":"FORA DA RELAÇÃO";
       const playerCard=p=>`<div class="fc-lineup-player ${p.id==="hero"?"hero":""}"><span class="fc-shirt">${p.pos}</span><span><b>${esc(p.name)}${p.id===capId?' <strong class="captain-mark" title="Capitão: líder da equipe em campo e principal interlocutor com a arbitragem.">C</strong>':p.id===viceId?' <strong class="captain-mark vice" title="Vice-capitão: assume a braçadeira quando o capitão não está em campo.">VC</strong>':""}</b><small>${D.overall(p)} GER · ${esc(p.pos)}</small></span>${p.id==="hero"?'<em>VOCÊ</em>':""}</div>`;
-      const starters=L.selection.starters.map(playerCard).join(""), bench=L.selection.bench.map(playerCard).join("");
+      const bench=L.selection.bench.map(playerCard).join("");
       return `<div class="lineup-page fc-career-lineup">
         <section class="card fc-match-header"><div><div class="tag">PRÓXIMO JOGO</div><h2>${next?`${esc(next.home)} × ${esc(next.away)}`:"Próxima partida"}</h2><p>${next?`${dayDate(next.date)} · ${esc(next.competitionName||"")}`:""}</p></div><div class="fc-selection-badge ${roleClass}"><small>SITUAÇÃO</small><strong>${esc(actualRole.toUpperCase())}</strong></div></section>
-        <section class="card fc-manager-panel"><div class="split"><div><div class="tag">AVALIAÇÃO DO MANAGER</div><h2>${Math.round(pc.coachTrust)}/100</h2></div><span class="pill">${esc(pc.squadRole)}</span></div>
+        <section class="card fc-manager-panel fc-player-situation"><div class="split"><div><div class="tag">SITUAÇÃO DO JOGADOR</div><h2>${esc(actualRole)}</h2><p class="muted">Avaliação do treinador · ${Math.round(pc.coachTrust)}/100</p></div><span class="fc-selection-badge ${roleClass}"><small>PRÓXIMO JOGO</small><strong>${esc(perspective)}</strong></span></div>
           <div class="fc-manager-bar"><i style="width:${Math.max(0,Math.min(100,Math.round(pc.coachTrust)))}%"></i></div>
           <div class="central-kpis"><span><small>Condição</small><b>${Math.round(state.person.condition)}%</b></span><span><small>Forma</small><b>${H.player.form??"—"}</b></span><span><small>GER</small><b>${D.overall(state.person)}</b></span><span><small>Posição</small><b>${esc(state.person.pos)}</b></span></div>
-          <div class="notice"><b>${perspective}</b><p>${actualRole==="Titular"?"Você aparece abaixo no XI inicial.":actualRole==="Banco"?`Você aparece abaixo entre os reservas${plan?` e a janela prevista de entrada começa por volta de ${plan.minute}'`:""}.`:"Você não aparece no XI nem no banco para esta partida."}</p></div>
+          <div class="notice"><b>${perspective}</b><p>${actualRole==="Titular"?"Você aparece abaixo no XI inicial.":actualRole==="Banco"?`Você aparece abaixo entre os reservas${plan?` e a janela prevista de entrada começa por volta de ${plan.minute}'`:""}.`:"Você não aparece no XI nem no banco para esta partida."}</p>${plan?`<div class="fc-sub-plan"><span><small>Chance de entrada</small><b>${chance}%</b></span><span><small>Janela prevista</small><b>${plan.minute}'–${Math.min(90,plan.minute+15)}'</b></span></div>`:""}</div>
         </section>
-        <div class="grid section"><section class="card"><div class="tag">ESCALAÇÃO</div><h2>${esc(L.formation)} · 11 iniciais</h2><div class="fc-lineup-list">${starters}</div></section><section class="card"><div class="tag">RESERVAS</div><h2>Banco</h2><div class="fc-lineup-list">${bench||'<p class="muted">Sem reservas.</p>'}</div></section></div>
+        <div class="fc-lineup-layout section"><section class="card fc-pitch-card"><div class="split"><div><div class="tag">ESCALAÇÃO</div><h2>${esc(L.formation)} · 11 iniciais</h2></div><span class="pill">${L.selection.starters.length} TITULARES</span></div>${tacticalPitch(L.selection.starters,L.formation,{captainId:capId,viceId})}</section><section class="card fc-bench-panel"><div class="tag">RESERVAS</div><h2>Banco de reservas</h2><div class="fc-lineup-list">${bench||'<p class="muted">Sem reservas.</p>'}</div></section></div>
         ${(()=>{const key=String(next?.competitionId||next?.leagueId||next?.competitionName||"geral"),d=D.disciplineCompetition?.(state.person,key)||{yellows:0,suspensions:0,yellowTotal:0,redTotal:0};return `<section class="card section"><div class="tag">DISCIPLINA</div><h2>Cartões · ${esc(next?.competitionName||"Competição")}</h2><div class="central-kpis"><span><small>Amarelos na série</small><b>${d.yellows}/3</b></span><span><small>Amarelos totais</small><b>${d.yellowTotal}</b></span><span><small>Vermelhos</small><b>${d.redTotal}</b></span><span><small>Suspensões pendentes</small><b>${d.suspensions}</b></span></div><p class="muted">A contagem é separada por competição. A cada série de 3 amarelos há suspensão automática; vermelho gera suspensão. Segundo amarelo na mesma partida resulta em expulsão e esses dois amarelos não entram na série de 3.</p></section>`})()}
         <section class="card section"><div class="tag">HIERARQUIA DE LIDERANÇA</div><h2>Capitães do elenco</h2><div class="central-kpis"><span><small>Capitão</small><b>${esc(leadership?.captain?.name||"—")}</b></span><span><small>Vice-capitão</small><b>${esc(leadership?.vice?.name||"—")}</b></span><span><small>Sua posição</small><b>${leadership?.heroRank?`${leadership.heroRank}º`:"—"}</b></span><span><small>Tempo no clube</small><b>${leadership?.heroYears!=null?`${leadership.heroYears.toFixed(1)} ano(s)`:"—"}</b></span></div><p class="muted">A hierarquia prioriza longevidade no clube e experiência; titularidade/importância, GER, forma e perfil posicional complementam a avaliação. A braçadeira da partida fica com o líder mais bem ranqueado que estiver no XI.</p></section>
         <section class="card section"><div class="tag">DISPUTA POR POSIÇÃO</div><h2>Seu caminho no time</h2><p>Treinos e objetivos de partida alimentam sua avaliação do manager; a relação acima mostra a seleção efetiva usada pelo jogo.</p></section>
@@ -1236,8 +1449,8 @@
     profile() {
       const p = state.person,
         c = D.club(state);
-      const career = Career.init(state), pc = career.playerCareer, ct = pc?.contract, interests = pc?.interests || [], advice = state.mode === "player" ? Career.agentAdvice(state) : null, strategy = pc?.agentStrategy || { priority: "balanced", stance: "open" }, prefs = career.offerPreferences || { leagues: ["serieA", "serieB", "serieC", "serieD"], clubLevel: "any" }, remaining = ct ? Math.max(0, ct.endDay - state.day) : 0;
-      const contractAgent = state.mode !== "player" ? "" : `<section class="card section" id="contract-agent"><div class="split"><div><div class="tag">CONTRATO E AGENTE</div><h2>Sua carreira profissional</h2></div><span class="pill">${ct ? `${Math.ceil(remaining / 30)} mês(es)` : "SEM VÃNCULO"}</span></div><div class="stats"><div class="stat"><small>Valor de mercado</small><b>${money(pc.marketValue || 0)}</b></div><div class="stat"><small>Salário</small><b>${money(state.salary)}/mês</b></div><div class="stat"><small>Papel no elenco</small><b>${esc(ct?.role || pc.squadRole || "—")}</b></div><div class="stat"><small>Contrato</small><b>${ct ? dayDate(ct.endDay) : "Sem contrato"}</b></div></div>${ct && remaining <= 180 ? `<div class="notice"><b>Seu contrato está perto do fim.</b><p>Restam aproximadamente ${Math.ceil(remaining / 30)} mês(es). Acompanhe as conversas com a diretoria e defina os próximos passos com seu agente.</p></div>` : ""}<div class="grid"><div><div class="tag">MEU AGENTE</div><h3>${esc(pc.agent?.name || "Agente PRO-LIFE")}</h3><p>${esc(pc.agent?.agency || "Agência independente")} · reputação ${pc.agent?.reputation||50}/100 · comissão ${pc.agent?.commission||5}%<br>Rede: ${esc(pc.agent?.network||"Nacional")} · negociação ${pc.agent?.negotiation||50}/100</p><h3>${esc(advice?.action || "Planejamento de carreira")}</h3><p>${esc(advice?.reason || "Seu agente está analisando o próximo passo.")}</p><label>Prioridade<select id="agent-priority"><option value="balanced" ${strategy.priority === "balanced" ? "selected" : ""}>Equilíbrio</option><option value="playtime" ${strategy.priority === "playtime" ? "selected" : ""}>Tempo de jogo</option><option value="salary" ${strategy.priority === "salary" ? "selected" : ""}>Salário</option><option value="prestige" ${strategy.priority === "prestige" ? "selected" : ""}>Prestígio</option><option value="development" ${strategy.priority === "development" ? "selected" : ""}>Desenvolvimento</option></select></label><label>Postura<select id="agent-stance"><option value="stay" ${strategy.stance === "stay" ? "selected" : ""}>Quero permanecer</option><option value="open" ${strategy.stance === "open" ? "selected" : ""}>Aberto a propostas</option><option value="loan" ${strategy.stance === "loan" ? "selected" : ""}>Buscar empréstimo</option><option value="leave" ${strategy.stance === "leave" ? "selected" : ""}>Buscar saída</option></select></label><button class="primary" data-action="agent-strategy">Atualizar estratégia</button><div class="actions">${Career.agencies.map(a=>`<button data-hire-agency="${a.id}" ${pc.agent?.id===a.id?"disabled":""}>${pc.agent?.id===a.id?"Agência atual":`Contratar ${esc(a.name)}`}</button>`).join("")}</div></div><div><div class="tag">SITUAÇÃO CONTRATUAL</div>${ct ? `<p><b>Clube:</b> ${esc(c?.name || "—")}<br><b>Vínculo:</b> ${ct.type === "loan" ? "Empréstimo" : "Definitivo"}<br><b>Término:</b> ${dayDate(ct.endDay)}<br><b>Tempo restante:</b> ${Math.ceil(remaining / 30)} mês(es)</p>` : `<p>Você está sem contrato ativo.</p>`}<p><b>Interesses:</b><br>${interests.length ? interests.slice(0, 5).map(x => `${esc(D.club(state, x.clubId)?.name || "Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhuma sondagem ativa."}</p>${!pc.renewalOffer && ct && remaining <= 365 ? `<button class="primary" data-action="request-renewal">Pedir ao agente para renovar</button>` : ""}</div></div>${pc.renewalOffer ? `<article class="news offer section"><time>NEGOCIAÇÃO DE RENOVAÇÃO</time><h3>${esc(c?.name || "Clube atual")}</h3><p>Proposta atual: ${Math.round(pc.renewalOffer.durationDays / 365)} ano(s) · ${money(pc.renewalOffer.salary)}/mês · luvas ${money(pc.renewalOffer.signingBonus)} · bônus ${money(pc.renewalOffer.performanceBonus || 0)} · papel ${esc(pc.renewalOffer.role || pc.squadRole)}</p><div class="grid3"><label>Salário desejado<input id="renew-salary" type="number" min="0" step="100" value="${pc.renewalOffer.salary}"></label><label>Anos<input id="renew-years" type="number" min="1" max="5" value="${Math.round(pc.renewalOffer.durationDays / 365)}"></label><label>Luvas<input id="renew-bonus" type="number" min="0" step="100" value="${pc.renewalOffer.signingBonus}"></label><label>Bônus desempenho<input id="renew-performance" type="number" min="0" step="100" value="${pc.renewalOffer.performanceBonus || 0}"></label><label>Papel<select id="renew-role">${["Rotação", "Titular", "Importante", "Estrela"].map(r => `<option ${r === (pc.renewalOffer.role || pc.squadRole) ? "selected" : ""}>${r}</option>`).join("")}</select></label></div><div class="actions"><button class="primary" data-action="accept-renewal">Aceitar renovação</button><button data-action="counter-renewal">Pedir meus termos</button><button data-action="reject-renewal">Recusar</button></div></article>` : ""}<details class="section"><summary><b>Preferências de propostas</b></summary><p class="muted">Defina o tipo de oportunidade que seu agente deve priorizar.</p>${state.world === "brazil2026" ? `<div class="offer-pref-leagues">${[["serieA", "Série A"], ["serieB", "Série B"], ["serieC", "Série C"], ["serieD", "Série D"]].map(([id, label]) => `<label><input type="checkbox" class="offer-league" value="${id}" ${prefs.leagues.includes(id) ? "checked" : ""}> ${label}</label>`).join("")}</div>` : ""}<label>Nível dos clubes<select id="offer-club-level"><option value="any" ${prefs.clubLevel === "any" ? "selected" : ""}>Qualquer clube</option><option value="elite" ${prefs.clubLevel === "elite" ? "selected" : ""}>Somente clubes de elite</option><option value="competitive" ${prefs.clubLevel === "competitive" ? "selected" : ""}>Clubes competitivos</option><option value="intermediate" ${prefs.clubLevel === "intermediate" ? "selected" : ""}>Clubes intermediários</option><option value="small" ${prefs.clubLevel === "small" ? "selected" : ""}>Clubes menores</option></select></label><button class="primary" data-action="offer-prefs">Salvar preferências</button></details></section>`;
+      const career = Career.init(state), pc = career.playerCareer, ct = pc?.contract, interests = pc?.interests || [], advice = state.mode === "player" ? Career.agentAdvice(state) : null, strategy = pc?.agentStrategy || { priority: "balanced", stance: "open" }, prefs = career.offerPreferences || { leagues: ["serieA", "serieB", "serieC", "serieD"], clubLevel: "any", international: true }, remaining = ct ? Math.max(0, ct.endDay - state.day) : 0;
+      const contractAgent = state.mode !== "player" ? "" : `<section class="card section" id="contract-agent"><div class="split"><div><div class="tag">CONTRATO E AGENTE</div><h2>Sua carreira profissional</h2></div><span class="pill">${ct ? `${Math.ceil(remaining / 30)} mês(es)` : "SEM VÃNCULO"}</span></div><div class="stats"><div class="stat"><small>Valor de mercado</small><b>${money(pc.marketValue || 0)}</b></div><div class="stat"><small>Salário</small><b>${money(state.salary)}/mês</b></div><div class="stat"><small>Papel no elenco</small><b>${esc(ct?.role || pc.squadRole || "—")}</b></div><div class="stat"><small>Contrato</small><b>${ct ? dayDate(ct.endDay) : "Sem contrato"}</b></div></div>${ct && remaining <= 180 ? `<div class="notice"><b>Seu contrato está perto do fim.</b><p>Restam aproximadamente ${Math.ceil(remaining / 30)} mês(es). Acompanhe as conversas com a diretoria e defina os próximos passos com seu agente.</p></div>` : ""}<div class="grid"><div><div class="tag">MEU AGENTE</div><h3>${esc(pc.agent?.name || "Agente PRO-LIFE")}</h3><p>${esc(pc.agent?.agency || "Agência independente")} · reputação ${pc.agent?.reputation||50}/100 · comissão ${pc.agent?.commission||5}%<br>Rede: ${esc(pc.agent?.network||"Nacional")} · negociação ${pc.agent?.negotiation||50}/100</p><h3>${esc(advice?.action || "Planejamento de carreira")}</h3><p>${esc(advice?.reason || "Seu agente está analisando o próximo passo.")}</p><label>Prioridade<select id="agent-priority"><option value="balanced" ${strategy.priority === "balanced" ? "selected" : ""}>Equilíbrio</option><option value="playtime" ${strategy.priority === "playtime" ? "selected" : ""}>Tempo de jogo</option><option value="salary" ${strategy.priority === "salary" ? "selected" : ""}>Salário</option><option value="prestige" ${strategy.priority === "prestige" ? "selected" : ""}>Prestígio</option><option value="development" ${strategy.priority === "development" ? "selected" : ""}>Desenvolvimento</option></select></label><label>Postura<select id="agent-stance"><option value="stay" ${strategy.stance === "stay" ? "selected" : ""}>Quero permanecer</option><option value="open" ${strategy.stance === "open" ? "selected" : ""}>Aberto a propostas</option><option value="loan" ${strategy.stance === "loan" ? "selected" : ""}>Buscar empréstimo</option><option value="leave" ${strategy.stance === "leave" ? "selected" : ""}>Buscar saída</option></select></label><button class="primary" data-action="agent-strategy">Atualizar estratégia</button><div class="actions">${Career.agencies.map(a=>`<button data-hire-agency="${a.id}" ${pc.agent?.id===a.id?"disabled":""}>${pc.agent?.id===a.id?"Agência atual":`Contratar ${esc(a.name)}`}</button>`).join("")}</div></div><div><div class="tag">SITUAÇÃO CONTRATUAL</div>${ct ? `<p><b>Clube:</b> ${esc(c?.name || "—")}<br><b>Vínculo:</b> ${ct.type === "loan" ? "Empréstimo" : "Definitivo"}<br><b>Término:</b> ${dayDate(ct.endDay)}<br><b>Tempo restante:</b> ${Math.ceil(remaining / 30)} mês(es)</p>` : `<p>Você está sem contrato ativo.</p>`}<p><b>Interesses:</b><br>${interests.length ? interests.slice(0, 5).map(x => `${esc(D.club(state, x.clubId)?.name || "Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhuma sondagem ativa."}</p>${!pc.renewalOffer && ct && remaining <= 365 ? `<button class="primary" data-action="request-renewal">Pedir ao agente para renovar</button>` : ""}</div></div>${pc.renewalOffer ? `<article class="news offer section"><time>NEGOCIAÇÃO DE RENOVAÇÃO</time><h3>${esc(c?.name || "Clube atual")}</h3><p>Proposta atual: ${Math.round(pc.renewalOffer.durationDays / 365)} ano(s) · ${money(pc.renewalOffer.salary)}/mês · luvas ${money(pc.renewalOffer.signingBonus)} · bônus ${money(pc.renewalOffer.performanceBonus || 0)} · papel ${esc(pc.renewalOffer.role || pc.squadRole)}</p><div class="grid3"><label>Salário desejado<input id="renew-salary" type="number" min="0" step="100" value="${pc.renewalOffer.salary}"></label><label>Anos<input id="renew-years" type="number" min="1" max="5" value="${Math.round(pc.renewalOffer.durationDays / 365)}"></label><label>Luvas<input id="renew-bonus" type="number" min="0" step="100" value="${pc.renewalOffer.signingBonus}"></label><label>Bônus desempenho<input id="renew-performance" type="number" min="0" step="100" value="${pc.renewalOffer.performanceBonus || 0}"></label><label>Papel<select id="renew-role">${["Rotação", "Titular", "Importante", "Estrela"].map(r => `<option ${r === (pc.renewalOffer.role || pc.squadRole) ? "selected" : ""}>${r}</option>`).join("")}</select></label></div><div class="actions"><button class="primary" data-action="accept-renewal">Aceitar renovação</button><button data-action="counter-renewal">Pedir meus termos</button><button data-action="reject-renewal">Recusar</button></div></article>` : ""}<details class="section"><summary><b>Preferências de propostas</b></summary><p class="muted">Defina o tipo de oportunidade que seu agente deve priorizar.</p>${state.world === "brazil2026" ? `<div class="offer-pref-leagues">${[["serieA", "Série A"], ["serieB", "Série B"], ["serieC", "Série C"], ["serieD", "Série D"]].map(([id, label]) => `<label><input type="checkbox" class="offer-league" value="${id}" ${prefs.leagues.includes(id) ? "checked" : ""}> ${label}</label>`).join("")}</div>` : ""}<label><input id="offer-international" type="checkbox" ${prefs.international!==false?"checked":""}> Clubes internacionais</label><p class="chart-note">Mercado internacional ${prefs.international!==false?"habilitado":"desabilitado"}.</p><label>Nível dos clubes<select id="offer-club-level"><option value="any" ${prefs.clubLevel === "any" ? "selected" : ""}>Qualquer clube</option><option value="elite" ${prefs.clubLevel === "elite" ? "selected" : ""}>Somente clubes de elite</option><option value="competitive" ${prefs.clubLevel === "competitive" ? "selected" : ""}>Clubes competitivos</option><option value="intermediate" ${prefs.clubLevel === "intermediate" ? "selected" : ""}>Clubes intermediários</option><option value="small" ${prefs.clubLevel === "small" ? "selected" : ""}>Clubes menores</option></select></label><button class="primary" data-action="offer-prefs">Salvar preferências</button></details></section>`;
       if (state.mode === "player") {
         const P = window.ProLifePlayerProfile.init(state, D), I=P.identity, S=P.season, CS=P.careerStats, DEV=P.development;
         const attrClass=(v)=>v>=80?"elite":v>=65?"solid":"develop";
@@ -1245,10 +1458,13 @@
         const attrGroups=P.attributes.map(g=>`<section class="player-attr-group"><h3>${esc(g.name)}</h3>${g.items.map(a=>`<div class="player-attr ${attrClass(a.value)}"><span>${esc(a.label)}</span><b>${Math.round(a.value)}</b><i><em style="width:${D.clamp(a.value,0,100)}%"></em></i></div>`).join("")}</section>`).join("");
         const history=P.development.history.map(h=>`<div class="player-history-row"><span>${h.season?`Temporada ${h.season}`:"Registro atual"}</span><b>${h.start}${h.end!==h.start?` → ${h.end}`:""}</b>${h.current?"<small>Atual</small>":""}</div>`).join("");
         const gains=DEV.gains.length?DEV.gains.map(g=>`<div class="player-gain"><span>${esc(g.label)}</span><b>${g.from} → ${g.to}</b><small class="good">${signed(g.to-g.from)}</small></div>`).join(""):`<p class="muted">Ainda não houve alteração de atributos registrada nesta temporada.</p>`;
+        const transferHistory=window.ProLifePlayerTransferHistory?.render
+          ? window.ProLifePlayerTransferHistory.render(state,p.id)
+          : `<section id="player-transfers" class="card section"><h2>Histórico de transferências</h2><p class="muted">Histórico indisponível.</p></section>`;
         const ct=P.contract;
         return `<div class="player-hub">
           <section class="card player-hero">${avatar(p)}<div class="player-hero-copy"><div class="tag">MEU JOGADOR</div><h1>${esc(I.name)}</h1><p><b>#${I.number}</b> · ${esc(I.club)} · ${esc(I.position)} · ${I.age} anos${I.nationality?` · ${esc(I.nationality)}`:""}</p><div class="player-tags"><span>${esc(I.squadRole||"Status não definido")}</span>${I.archetype?.name?`<span>${esc(I.archetype.name)}</span>`:""}${I.origin?`<span>${esc(I.origin)}</span>`:""}</div></div><div class="player-ovr"><strong>${I.overall}</strong><small>GER</small><span>${money(I.marketValue)}</span><small>Valor de mercado</small></div></section>
-          <nav class="player-tabs"><a href="#player-overview">Visão Geral</a><a href="#player-identity">Identidade</a><a href="#player-attributes">Atributos</a><a href="#player-development">Evolução</a><a href="#player-career">Carreira</a></nav>
+          <nav class="player-tabs"><a href="#player-overview">Visão Geral</a><a href="#player-identity">Identidade</a><a href="#player-attributes">Atributos</a><a href="#player-development">Evolução</a><a href="#player-career">Carreira</a><a href="#player-transfers">Transferências</a></nav>
           <section id="player-overview" class="card section"><div class="tag">VISÃO GERAL</div><div class="player-overview-grid"><div><h2>Temporada atual</h2><div class="player-kpis">${stat("Jogos",S.appearances)}${stat("Titular",S.starts)}${stat("Minutos",S.minutes)}${stat("Gols",S.goals)}${stat("Assistências",S.assists)}${stat("Nota média",S.averageRating||"—")}${stat("Cartões",(S.yellowCards||0)+(S.redCards||0))}${stat("Melhor em campo",S.motm||0)}</div></div><div><h2>Perfil profissional</h2><div class="player-kpis">${stat("Salário",money(I.salary)+"/mês")}${stat("Status",esc(I.squadRole||"—"))}${stat("Forma",I.form??"—")}${stat("Condição",Math.round(I.condition)+"%")}${stat("Moral",Math.round(I.morale))}${stat("Estilo",esc(I.style||"—"))}</div></div></div><div class="player-archetype"><div><div class="tag">ARQUÉTIPO</div><h2>${esc(P.archetype.name||"Perfil em formação")}</h2><p>${esc(P.archetype.description||"A identidade futebolística evolui com sua carreira.")}</p></div>${P.archetype.specializations.length?`<div><small>Especializações</small><p>${P.archetype.specializations.map(x=>esc(x.name)).join(" · ")}</p></div>`:""}</div></section>
           ${(()=>{const q=D.Physical?.init?.(p,state.day);if(!q)return"";const a=q.active;return `<section class="card section"><div class="tag">STATUS FÃSICO</div><div class="player-kpis">${stat("Condição",Math.round(q.fitness)+"%")}${stat("Fadiga",Math.round(q.fatigue)+"%")}${stat("Status",esc(D.Physical.status(p)))}</div>${a?`<p><b>${esc(a.name)}</b> · ${esc(a.severity)}<br>Previsão: ${Math.max(0,p.injury)} dia(s) · Recuperação ${Math.round((1-Math.max(0,p.injury)/Math.max(1,a.totalDays))*100)}%</p>${a.status==="RETORNO PARCIAL"&&a.severity!=="GRAVE"?`<button data-physical-return="gradual">Retornar gradualmente</button><button data-physical-return="wait">Aguardar recuperação completa</button>`:""}`:`<p class="muted">Sem lesão ativa. Carga recente: ${Math.round(q.recentLoad)} min.</p>`}</section>`})()}
           ${originPanel()}${identityPanel()}
@@ -1256,6 +1472,7 @@
           <section id="player-development" class="card section"><div class="tag">EVOLUÇÃO DO JOGADOR</div><div class="player-development-head"><div><small>GER no início da temporada</small><b>${DEV.seasonStart}</b></div><strong>${DEV.overall}</strong><div><small>Evolução na temporada</small><b class="${DEV.seasonGrowth>=0?"good":"bad"}">${signed(DEV.seasonGrowth)}</b></div></div><div class="player-kpis">${stat("Nível",DEV.level+" / 50")}${stat("XP da carreira",DEV.xp.toFixed(1))}${stat("Próximo nível",DEV.level>=50?"Nível máximo":DEV.nextXp.toFixed(1)+" XP")}${stat("Nível do arquétipo",DEV.archetypeLevel+" / 50")}${stat("XP do arquétipo",DEV.archetypeXp.toFixed(1))}${stat("Pontos de atributo",DEV.attributePoints)}${stat("Potencial dinâmico",DEV.potential.toFixed(1))}</div><h3>Atributos que mais mudaram</h3><div class="player-gains">${gains}</div><h3>Histórico de GER</h3><div class="player-history">${history}</div></section>
           ${evolutionPanel()}
           <section id="player-career" class="card section"><div class="tag">CARREIRA</div><div class="player-kpis">${stat("Jogos",CS.appearances)}${stat("Gols",CS.goals)}${stat("Assistências",CS.assists)}${stat("Clubes",P.career.clubs.length||1)}${stat("Temporadas",P.career.seasons)}${stat("Prêmios",P.career.awards)}</div><div class="player-career-grid"><div><h3>Clubes</h3><p>${P.career.clubs.length?P.career.clubs.map(esc).join(" · "):esc(I.club)}</p>${P.national?.caps?`<p><b>Seleção:</b> ${P.national.caps} jogos · ${P.national.goals||0} gols · ${P.national.assists||0} assistências</p>`:""}</div><div><h3>Contrato atual</h3>${ct?`<p><b>${esc(ct.club)}</b><br>${money(ct.salary)}/mês · ${esc(ct.role||"—")}<br>Início: ${dayDate(ct.signedDay)} · Fim: ${dayDate(ct.endDay)}<br>${Math.ceil(ct.remainingDays/30)} mês(es) restantes · ${ct.type==="loan"?"Empréstimo":"Definitivo"}</p>`:`<p>Sem contrato ativo.</p>`}</div></div></section>
+          ${transferHistory}
           <section class="card section"><div class="tag">IDENTIDADE E APARÊNCIA</div><div class="player-edit-grid"><div><label>Número da camisa<input id="shirt-number" type="number" min="1" max="99" value="${career.number}"></label><button data-action="number">Salvar número</button></div><form id="appearance-editor">${appearanceFields(p.appearance)}<label>Comemoração<select name="celebration">${opt(C.celebrations,p.celebration)}</select></label><button class="primary" type="submit">Salvar aparência</button></form></div>${p.age>=30?'<button class="section" data-action="retire">Aposentar e virar treinador</button>':""}</section>
           ${contractAgent}
         </div>`;
@@ -7294,9 +7511,7 @@
       <section id="national-history" class="card section"><h2>Jogos pela Seleção</h2>${n.matches.length?`<div class="tablewrap"><table><thead><tr><th>Data</th><th>Competição</th><th>Jogo</th><th>Min.</th><th>Nota</th><th>G</th><th>A</th></tr></thead><tbody>${n.matches.map(m=>`<tr><td>${dayDate(m.day)}</td><td>${esc(m.competition)}</td><td>Brasil ${m.brazil} × ${m.other} ${esc(m.opponent)}</td><td>${m.minutes}</td><td>${Number(m.rating).toFixed(1)}</td><td>${m.goals}</td><td>${m.assists}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">Nenhuma partida disputada pela Seleção ainda.</div>'}</section>`;
     },
     calendar() {
-      if (!Calendar) return empty("O calendário não pôde ser carregado.");
-      calendarMonth ||= Calendar.monthId(state);
-      return Calendar.render(state, D, { month: calendarMonth, esc, dayDate });
+      return calendarView();
     },
     awards() {
       return Expansion.awards(state);
@@ -7312,6 +7527,8 @@
       return `<div class="grid">${player}${archive}</div>${cards}`;
     },
     league() {
+      const seasonCenter = seasonCenterView();
+      if (seasonCenter) return seasonCenter;
       const id = state.leagues.some((l) => l.id === leagueKey)
           ? leagueKey
           : D.club(state)?.leagueId || state.leagues[0].id,
@@ -7395,7 +7612,7 @@
         w = Career.windowStatus(state),
         e = Career.init(state);
       const offers = state.offers.filter(o=>o.expires>=state.day),
-        prefs = e.offerPreferences || { leagues: ["serieA", "serieB", "serieC", "serieD"], clubLevel: "any" },
+        prefs = e.offerPreferences || { leagues: ["serieA", "serieB", "serieC", "serieD"], clubLevel: "any", international: true },
         leagueOptions = [["serieA", "Série A"], ["serieB", "Série B"], ["serieC", "Série C"], ["serieD", "Série D"]];
       return `<div class="grid"><section class="card"><div class="tag">CAIXA DE ENTRADA</div><h2>Mensagens da carreira</h2><p class="muted">Propostas, decisões e comunicados importantes ficam concentrados aqui.</p>${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life" data-target="current-decision">Responder agora</button></article>` : ""}${offers.map((o) => {
         const c = D.club(state, o.clubId), uf = D.Competitions.clubState(c) || "—";
@@ -7411,14 +7628,23 @@
           if(rejectedTransfers.some(r=>r.player===t.player&&r.to===t.to&&(!r.from||r.from===t.from))) return false;
           if(t.status==="CONFIRMED"||t.accepted===true) return true;
           return t.player!==state.person.name;
-        });
+        }),
+        worldMarketPanel = window.ProLifeWorldLiveMarketView?.render
+          ? window.ProLifeWorldLiveMarketView.render(state,D,{
+              tab:worldMarketTab,
+              country:worldMarketFilters.country,
+              league:worldMarketFilters.league,
+              club:worldMarketFilters.club,
+              period:worldMarketFilters.period,
+            })
+          : `<section class="card section"><div class="tag">CENTRAL DO MERCADO</div><h2>Mercado mundial indisponível</h2><p class="muted">O componente visual não foi carregado.</p></section>`;
       return `<section class="card"><h2>Janelas de transferências</h2><div class="grid3">${[
         ["Início do ano", "01/01 a 28/02"], ["Meio do ano", "01/07 a 31/08"], ["Final do ano", "15/11 a 31/12"],
-      ].map(([name, dates]) => `<div class="window-card ${w.name === name ? "open" : ""}"><small>${name}</small><h3>${dates}</h3><b>${w.name === name ? "ABERTA" : ""}</b></div>`).join("")}</div><p class="${w.open ? "good" : "bad"}">${esc(w.name)} · ${w.open ? w.remaining + " dias restantes" : "Próxima abertura em " + w.remaining + " dias"}</p><p class="chart-note">O mercado registra negociações simuladas entre os clubes conforme orçamento, nível do atleta e carências do elenco.</p></section><section class="card section"><div class="tag">CENTRAL DO MERCADO</div><h2>Transferências confirmadas</h2><div class="tablewrap"><table><thead><tr><th>Data</th><th>Jogador</th><th>Pos.</th><th>Origem</th><th>Destino</th><th>Transferência</th><th>Salário</th></tr></thead><tbody>${confirmedTransfers.slice(0, 30).map((t) => `<tr><td>${dayDate(t.day)}</td><td>${esc(t.player)}</td><td>${esc(t.pos || "—")}</td><td>${esc(t.from)}</td><td>${esc(t.to)}</td><td>${t.transferType === "loan" ? (t.fee ? `Empréstimo · ${money(t.fee)}` : "Empréstimo") : t.fee ? money(t.fee) : "Livre"}</td><td>${t.salary ? money(t.salary) + "/mês" : "—"}</td></tr>`).join("")}</tbody></table></div>${!confirmedTransfers.length ? empty("Nenhuma transferência confirmada ainda. Avance os dias durante uma janela aberta.") : ""}</section>${
+      ].map(([name, dates]) => `<div class="window-card ${w.name === name ? "open" : ""}"><small>${name}</small><h3>${dates}</h3><b>${w.name === name ? "ABERTA" : ""}</b></div>`).join("")}</div><p class="${w.open ? "good" : "bad"}">${esc(w.name)} · ${w.open ? w.remaining + " dias restantes" : "Próxima abertura em " + w.remaining + " dias"}</p><p class="chart-note">O mercado registra negociações simuladas entre os clubes conforme orçamento, nível do atleta e carências do elenco.</p></section>${worldMarketPanel}${
         state.mode === "coach" && c
           ? `<section class="card section"><h2>Scouting e contratação</h2><p>Orçamento do clube: <b>${money(c.budget)}</b></p><p class="muted">Valores estimados por nível e idade. Atletas muito acima da estrutura podem recusar; clubes preservam o elenco mínimo.</p><div class="tablewrap"><table><thead><tr><th>Atleta</th><th>Clube</th><th>Pos.</th><th>Idade</th><th>Nível</th><th>Preço</th><th></th></tr></thead><tbody>${state.clubs.filter((x) => x.id !== c.id).flatMap((x) => x.roster.filter((p) => p.pos !== "GOL").slice().sort((a, b) => D.overall(b) - D.overall(a)).slice(0, 3).map((p) => `<tr><td>${esc(p.name)}</td><td>${esc(x.name)}</td><td>${p.pos}</td><td>${p.age}</td><td>${D.overall(p)}</td><td>${money(A.valuation(p))}</td><td><button data-recruit="${p.id}" data-source="${x.id}" ${w.open ? "" : "disabled"}>Contratar</button></td></tr>`)).join("")}</tbody></table></div></section>`
           : ""
-      }${worldMovesPanel()}`;
+      }`;
     },
     sponsorships() {
       const C=D.Commercial,c=C.init(state,D),s=C.summary(state,D),fmtFollowers=(n)=>n>=1000000?(n/1000000).toLocaleString("pt-BR",{maximumFractionDigits:1})+" milhões":n>=1000?(n/1000).toLocaleString("pt-BR",{maximumFractionDigits:0})+" mil":Math.round(n).toLocaleString("pt-BR");
@@ -7569,6 +7795,30 @@
     const b = e.target.closest("button");
     if (!b) return;
 
+    if (b.dataset.targetClubSelect) {
+      command("targetClub",{clubId:b.dataset.targetClubSelect});
+      return;
+    }
+
+    if (b.dataset.worldMarketTab !== undefined) {
+      worldMarketTab=b.dataset.worldMarketTab||"rumors";
+      render();
+      return;
+    }
+
+    if (b.dataset.worldLeague !== undefined) {
+      worldCompetitionLeagueId=b.dataset.worldLeague||null;
+      worldCompetitionRound=null;
+      render();
+      return;
+    }
+
+    if (b.dataset.worldRound !== undefined) {
+      worldCompetitionRound=Number(b.dataset.worldRound)||null;
+      render();
+      return;
+    }
+
     if (b.dataset.nationalCompetition) {
       nationalCompetitionId=b.dataset.nationalCompetition;
       render();
@@ -7624,9 +7874,10 @@
       const x=(window.__proLifeRecentMatches||[])[Number(b.dataset.recentMatch)], box=document.getElementById("recent-match-detail");
       if(!x||!box) return;
       document.querySelectorAll("[data-recent-match]").forEach(el=>el.setAttribute("aria-expanded",el===b?"true":"false"));
-      const goals=x.goals?.length ? x.goals.map(g=>`<div class="match-detail-event"><b>${g.minute}' ${esc(g.scorer)}</b>${g.assist?`<small>Assistência: ${esc(g.assist)}</small>`:""}</div>`).join("") : `<p class="muted">Sem gols na partida.</p>`;
-      const hero=x.hero?.played ? `<div class="match-detail-hero"><b>Seu jogo</b><span>${x.hero.starter?"Titular":`Entrou aos ${x.hero.entryMinute}'`} · ${x.hero.minutes} min · ${x.hero.goals} gol${x.hero.goals===1?"":"s"} · ${x.hero.assists} assist. ${x.hero.rating?`· Nota ${x.hero.rating}`:""}</span></div>` : `<div class="match-detail-hero"><b>Seu jogo</b><span>Não participou desta partida.</span></div>`;
-      box.innerHTML=`<div class="match-detail-head"><div><small>${esc(x.competition)}</small><b>${esc(x.home)} ${esc(x.score)} ${esc(x.away)}</b></div><button type="button" data-close-match-detail aria-label="Fechar">×</button></div>${hero}<div class="match-detail-grid"><div><small>Gols e assistências</small>${goals}</div><div><small>Melhor da partida</small>${x.motm?`<p><b>${esc(x.motm.name)}</b><br>Nota ${x.motm.rating}</p>`:`<p class="muted">Sem avaliação registrada.</p>`}</div></div>`;
+      const goals=x.national&&!Array.isArray(x.goals)?`<p class="muted">Autores dos gols não disponíveis neste registro.</p>`:x.goals?.length ? x.goals.map(g=>`<div class="match-detail-event"><b>${g.minute}' ${esc(g.scorer||(x.national?"Autor não identificado":"Jogador"))}${x.national?` <small>(${g.side===1?esc(x.away):esc(x.home)})</small>`:""}</b>${g.assist?`<small>Assistência: ${esc(g.assist)}</small>`:""}</div>`).join("") : `<p class="muted">Sem gols na partida.</p>`;
+      const entry=x.hero?.entryMinute!==null&&x.hero?.entryMinute!==undefined?`Entrou aos ${x.hero.entryMinute}'`:"Entrou durante a partida";
+      const hero=x.hero?.played ? `<div class="match-detail-hero"><b>${x.national?"Seu jogo pela Seleção":"Seu jogo"}</b><span>${x.hero.starter?"Titular":entry} · ${x.hero.minutes} min · ${x.hero.goals} gol${x.hero.goals===1?"":"s"} · ${x.hero.assists} assist. ${x.hero.rating!==null?`· Nota ${x.hero.rating}`:""}</span></div>` : `<div class="match-detail-hero"><b>Seu jogo</b><span>Não participou desta partida.</span></div>`;
+      box.innerHTML=`<div class="match-detail-head"><div><small>${x.national?"SELEÇÃO BRASILEIRA · ":""}${esc(x.competition)}</small><b>${esc(x.home)} ${esc(x.score)} ${esc(x.away)}</b></div><button type="button" data-close-match-detail aria-label="Fechar">×</button></div>${hero}<div class="match-detail-grid"><div><small>Gols e assistências</small>${goals}</div><div><small>Melhor da partida</small>${x.motm?`<p><b>${esc(x.motm.name)}</b>${x.national?` <small>(${x.motm.side===1?esc(x.away):esc(x.home)})</small>`:""}<br>Nota ${x.motm.rating}</p>`:x.national?`<p class="muted">Informação não disponível neste registro.</p>`:`<p class="muted">Sem avaliação registrada.</p>`}</div></div>`;
       box.hidden=false; return;
     }
     if (b.hasAttribute("data-close-match-detail")) { const box=document.getElementById("recent-match-detail"); if(box) box.hidden=true; document.querySelectorAll("[data-recent-match]").forEach(el=>el.setAttribute("aria-expanded","false")); return; }
@@ -7686,7 +7937,7 @@
     }
     if (b.dataset.simulate) {
       const mode = b.dataset.simulate;
-      if (mode === "season" && !confirm("Simular até o fim da temporada? Eventos, treinamentos, propostas e negociações de contrato serão resolvidos automaticamente e registrados no histórico.")) return;
+      if (mode === "season" && !confirm("Simular até o fim da temporada? Decisões cotidianas serão resolvidas conforme o perfil do jogador. Propostas e negociações contratuais sempre interromperão a simulação para sua autorização.")) return;
       try {
         const result = A.execute(state, "simulateAdvance", { mode });
         persist();
@@ -7936,6 +8187,7 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
       case "offer-prefs":
         command("offerPrefs", {
           leagues: [...document.querySelectorAll(".offer-league:checked")].map((el) => el.value),
+          international: $("#offer-international")?.checked === true,
           clubLevel: $("#offer-club-level")?.value || "any",
         });
         break;
@@ -8047,6 +8299,19 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
 
 });
   document.addEventListener("change", (e) => {
+    const worldMarketFilter = [
+      ["worldMarketCountry","country"],
+      ["worldMarketLeague","league"],
+      ["worldMarketClub","club"],
+      ["worldMarketPeriod","period"],
+    ].find(([datasetKey])=>e.target.dataset?.[datasetKey]!==undefined);
+    if(worldMarketFilter){
+      const [,filterKey]=worldMarketFilter;
+      worldMarketFilters={...worldMarketFilters,[filterKey]:e.target.value||"ALL"};
+      if(filterKey==="country") worldMarketFilters.league="ALL";
+      render();
+      return;
+    }
     if (["focus", "intensity", "exercise"].includes(e.target.id)) {
       const button = $("#training-action");
       if (button && button.dataset.trainedToday === "1") {
@@ -8101,5 +8366,69 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
     }
 
 });
+  // ===== Stage 31.7A — eventos da Central de Temporada e do Calendário V2 =====
+  function calSelect(day, focus) {
+    calSel = day;
+    calendarMonth = calMonthOf(day);
+    const y = window.scrollY;
+    render();
+    window.scrollTo(0, y);
+    if (focus) (window.requestAnimationFrame || setTimeout)(() => document.querySelector(`[data-calendar-day="${day}"]`)?.focus());
+  }
+  document.addEventListener("click", (e) => {
+    if (!state || setup) return;
+    const t = e.target;
+    const season = t.closest?.("[data-season-comp],[data-season-tab],[data-season-view],[data-season-mine],[data-season-club]");
+    if (season) {
+      const d = season.dataset;
+      if (d.seasonComp !== undefined) { seasonUi.comp = d.seasonComp; seasonUi.club = null; seasonUi.view = ""; seasonUi.tab = "table"; }
+      else if (d.seasonMine !== undefined) { seasonUi = { ...seasonUi, comp: d.seasonMine, q: "", country: "", type: "", club: null, view: "", tab: "table" }; }
+      else if (d.seasonTab !== undefined) seasonUi.tab = d.seasonTab;
+      else if (d.seasonView !== undefined) seasonUi.view = d.seasonView;
+      else if (d.seasonClub !== undefined) seasonUi.club = d.seasonClub && d.seasonClub !== seasonUi.club ? d.seasonClub : null;
+      render();
+      return;
+    }
+    const filter = t.closest?.("[data-cal-filter]");
+    if (filter) { const id = filter.dataset.calFilter; if (calHidden.has(id)) calHidden.delete(id); else calHidden.add(id); render(); return; }
+    const year = t.closest?.("[data-calendar-year]");
+    if (year) { calendarMonth = Calendar.shift(calendarMonth || Calendar.monthId(state), Number(year.dataset.calendarYear) * 12); if (calendarMonth < "2026-01") calendarMonth = "2026-01"; render(); return; }
+    const next = t.closest?.("[data-cal-next]");
+    if (next) { calSelect(Number(next.dataset.calNext), true); return; }
+    if (t.closest?.("[data-cal-today]")) { calSelect(state.day, true); return; }
+    const adv = t.closest?.("[data-cal-advance]");
+    if (adv) { openAdvanceDialog(Number(adv.dataset.calAdvance)); return; }
+    const conf = t.closest?.("[data-adv-confirm]");
+    if (conf) { runAdvanceTo(Number(conf.dataset.advConfirm), document.getElementById("adv-stop-matches")?.checked !== false); return; }
+    if (t.closest?.("[data-adv-cancel]")) { closeAdvanceDialog(); return; }
+    if (t.closest?.("[data-adv-resume]") && advancePending) { runAdvanceTo(advancePending.target, advancePending.type === "match" ? false : advancePending.stopBeforeMatches); return; }
+    if (t.closest?.("[data-adv-drop]")) { advancePending = null; render(); return; }
+    const cell = t.closest?.(".calendar-day[data-calendar-day]");
+    if (cell && !t.closest("button")) calSelect(Number(cell.dataset.calendarDay), true);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (!state || setup) return;
+    if (e.key === "Escape" && document.getElementById("advance-date-modal")) { closeAdvanceDialog(); return; }
+    const row = e.target.closest?.("tr[data-season-club]");
+    if (row && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); row.click(); return; }
+    const cell = e.target.closest?.(".calendar-day[data-calendar-day]");
+    if (!cell) return;
+    const day = Number(cell.dataset.calendarDay), step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key];
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); calSelect(day, true); }
+    else if (step !== undefined) { e.preventDefault(); calSelect(Math.max(0, day + step), true); }
+  });
+  document.addEventListener("input", (e) => {
+    if (e.target.id !== "season-q" || !state) return;
+    seasonUi.q = e.target.value;
+    const cat = seasonCatalog(), box = document.getElementById("season-comp-list");
+    if (cat && box) box.innerHTML = seasonListHtml(cat);
+  });
+  document.addEventListener("change", (e) => {
+    if (!state || !["season-country", "season-type"].includes(e.target.id)) return;
+    if (e.target.id === "season-country") seasonUi.country = e.target.value; else seasonUi.kind = e.target.value;
+    const cat = seasonCatalog(), box = document.getElementById("season-comp-list");
+    if (cat && box) box.innerHTML = seasonListHtml(cat);
+  });
+
   render();
 })();

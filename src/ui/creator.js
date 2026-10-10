@@ -24,15 +24,40 @@
     const D = ctx.D, id = "blank", story = D.Training.origins[id].story;
     W = {
       step: 0, seed: keepSeed || freshSeed(), storyId: id, difficulty: "normal", personality: "balanced",
-      cfg: { name: "Alesson Rodrigues", city: "Mogi das Cruzes", age: story.age, birthDate: birthDateForAge(story.age), pos: "ATA", foot: "right", height: 178, weight: 72, style: "Técnico", celebration: "Braços abertos", archetypeId: null, appearance: { ...ctx.C.normalize({}) } },
+      cfg: {
+        name: "Alesson Baraúna",
+        city: "Mogi das Cruzes",
+        nationality: "Brasil",
+        age: story.age,
+        birthDate: birthDateForAge(story.age),
+        pos: "ATA",
+        foot: "right",
+        height: 185,
+        weight: 72,
+        style: "Técnico",
+        celebration: "Braços abertos",
+        archetypeId: null,
+        appearance: {
+          ...ctx.C.normalize({
+            skin:COLORS.skin,
+            hairColor:COLORS.hairColor,
+            eyeColor:COLORS.eyeColor,
+            hair:"highfade",
+            beard:"goatee",
+            body:"normal",
+            accessory:"none",
+            tattoo:"both"
+          })
+        }
+      },
       points: {}, custom: { age: 18, overall: 64, reputation: 12, popularity: 5, wallet: 5000 },
-      clubId: null, cache: null,
+      clubId: null, cache: null, startMode:"offers", filters:{country:"",league:"",query:""},
     };
     W.cfg.archetypeId = D.Training.defaultArchetypeId[W.cfg.pos];
   }
   // Configuração que alimenta o domínio. Mesma entrada + mesma seed ⇒ mesmo resultado.
   function config(withClub) {
-    const c = { mode: "player", ...W.cfg, origin: W.storyId, points: { ...W.points }, creation: { difficulty: W.difficulty, personality: W.personality, custom: W.storyId === "custom" ? { ...W.custom } : undefined } };
+    const c = { mode: "player", ...W.cfg, origin: W.storyId, points: { ...W.points }, creation: { difficulty: W.difficulty, personality: W.personality, startMode:W.startMode, custom: W.storyId === "custom" ? { ...W.custom } : undefined } };
     if (W.storyId === "custom") {
       c.age = W.custom.age;
       c.birthDate = W.cfg.birthDate || birthDateForAge(W.custom.age);
@@ -49,8 +74,12 @@
     const key = depKey();
     if (W.cache?.key !== key) {
       const s = ctx.D.create(config(false), W.seed);
-      W.cache = { key, offers: s.offers, overall: ctx.D.overall(s.person), person: s.person, reputation: s.reputation, wallet: s.wallet, popularity: s.commercial?.popularity ?? 0, clubs: s.clubs };
-      if (W.clubId && !s.offers.some((o) => o.clubId === W.clubId)) W.clubId = null;
+      const canonicalCountry=value=>ctx.D.GlobalFootball?.resolveNationality?.(value,null);
+      const clubs=(ctx.D.careerClubPool?.(s)||s.clubs||[]).filter(c=>c?.id&&c.active!==false&&c.generated!==true).filter((c,i,a)=>a.findIndex(x=>x.id===c.id)===i).map(c=>({...c,country:canonicalCountry(c.country)||(String(c.id).match(/^c\d+$/)?"Brasil":"Exterior")}));
+      const leagues=[...(s.leagues||[]),...(s.globalFootball?.leagues||[])].filter(l=>l?.id&&l.active!==false).filter((l,i,a)=>a.findIndex(x=>x.id===l.id)===i).map(l=>({...l,country:canonicalCountry(l.country)||(String(l.id).startsWith("serie")?"Brasil":"Exterior")}));
+      const countries=(ctx.D.GlobalFootball?.nationalityCatalog?.(s)||[{id:"brasil",name:"Brasil"}]).map(item=>item.name);
+      W.cache = { key, offers: s.offers, overall: ctx.D.overall(s.person), person: s.person, reputation: s.reputation, wallet: s.wallet, popularity: s.commercial?.popularity ?? 0, clubs, leagues, countries };
+      if(W.clubId){const valid=W.startMode==="club"?clubs.some(c=>c.id===W.clubId):s.offers.some(o=>o.clubId===W.clubId);if(!valid)W.clubId=null;}
     }
     return W.cache;
   }
@@ -73,11 +102,12 @@
   }
   function stepPlayer(ctx) {
     const { D, esc, opt, appearanceFields, C } = ctx, c = W.cfg, st = D.Training.origins[W.storyId].story;
+    const countries=draft(ctx).countries;
     const [minA, maxA] = W.storyId === "custom" ? [14, 32] : [14, st.ages[1]];
     const minBirthDate=`${2026-maxA-1}-01-02`, maxBirthDate=`${2026-minA}-01-01`;
     const birthValue=c.birthDate||birthDateForAge(c.age);
     const ageField = `<label>Data de nascimento<input type="date" name="birthDate" min="${minBirthDate}" max="${maxBirthDate}" value="${birthValue}" required></label><label>Idade<input type="number" name="age" value="${c.age}" readonly tabindex="-1" aria-readonly="true"></label>`;
-    return `<h2>Quem é você?</h2><div class="grid"><section class="card"><div class="formgrid"><label>Nome completo<input name="name" maxlength="60" value="${esc(c.name)}"></label><label>Cidade natal<input name="city" maxlength="60" value="${esc(c.city)}"></label>${ageField}<label>Pé dominante<select name="foot">${opt([["right", "Direito"], ["left", "Esquerdo"]], c.foot)}</select></label><label>Altura (cm)<input name="height" type="number" min="150" max="210" value="${c.height}"></label><label>Peso (kg)<input name="weight" type="number" min="45" max="120" value="${c.weight}"></label></div></section><section class="card"><div id="w-avatar"></div>${appearanceFields(c.appearance)}</section></div>`;
+    return `<h2>Quem é você?</h2><div class="grid"><section class="card"><div class="formgrid"><label>Nome completo<input name="name" maxlength="60" value="${esc(c.name)}"></label><label>Cidade natal<input name="city" maxlength="60" value="${esc(c.city)}"></label><label>Nacionalidade<select name="nationality">${countries.map(country=>`<option value="${esc(country)}" ${country===c.nationality?"selected":""}>${esc(country)}</option>`).join("")}</select></label>${ageField}<label>Pé dominante<select name="foot">${opt([["right", "Direito"], ["left", "Esquerdo"]], c.foot)}</select></label><label>Altura (cm)<input name="height" type="number" min="150" max="210" value="${c.height}"></label><label>Peso (kg)<input name="weight" type="number" min="45" max="120" value="${c.weight}"></label></div><p class="muted">A nacionalidade é independente da cidade natal e do país do primeiro clube.</p></section><section class="card"><div id="w-avatar"></div>${appearanceFields(c.appearance)}</section></div>`;
   }
   function stepPosition(ctx) {
     const { D, esc, Charts } = ctx, cr = D.Creation;
@@ -96,6 +126,7 @@
   const kindLabel = { showcase: "Vitrine", playing: "Espaço para jogar", development: "Projeto de desenvolvimento" };
   function stepOffers(ctx) {
     const { D, esc } = ctx, d = draft(ctx);
+    const leagueName=(club)=>d.leagues.find(l=>l.id===club?.leagueId)?.name||club?.leagueId||"Liga não informada";
     const cards = d.offers.map((o) => {
       const c =
         d.clubs.find(
@@ -119,14 +150,20 @@
           structure:0,
           leagueId:c.leagueId
         };
-      return `<button type="button" class="offer-card ${on ? "on" : ""}" data-w-club="${o.clubId}"><span class="tag">${esc(kindLabel[o.pitch.kind])}</span><b>${esc(c.name)}</b><small>${esc(D.leagues?.find?.((l) => l.id === c.leagueId)?.name || ({ serieA: "Série A", serieB: "Série B", serieC: "Série C", serieD: "Série D" })[c.leagueId])} · estrutura ${c.structure}</small><p>${esc(o.pitch.text)}</p><div class="story-meta"><i>${money(o.salary)}/mês</i><i>${Math.round(o.durationDays / 365 * 10) / 10} ano(s)</i><i>${comp.rank}º de ${comp.count} na posição</i><i>Luvas ${money(o.signingBonus)}</i></div><small class="muted">Nenhuma vaga de titular é prometida: o treinador decide por desempenho.</small></button>`;
+      return `<button type="button" class="offer-card ${on ? "on" : ""}" data-w-club="${o.clubId}"><span class="tag">${esc(kindLabel[o.pitch.kind])}</span><b>${esc(c.name)}</b><small>${esc(c.country||"Brasil")} · ${esc(leagueName(c))} · nível ${Math.round(Number(c.structure??c.strength??60))}</small><p>${esc(o.pitch.text)}</p><div class="story-meta"><i>${money(o.salary)}/mês</i><i>${Math.round(o.durationDays / 365 * 10) / 10} ano(s)</i><i>${comp.rank}º de ${comp.count} na posição</i><i>Luvas ${money(o.signingBonus)}</i></div><small class="muted">Nenhuma vaga de titular é prometida: o treinador decide por desempenho.</small></button>`;
     }).join("");
-    return `<h2>Primeiras oportunidades</h2><p class="muted">Propostas geradas a partir de elencos reais, da sua posição e do seu nível. Escolha com calma — voltar às etapas anteriores recalcula só o necessário.</p><div class="offer-grid">${cards || '<div class="empty">Nenhuma proposta disponível.</div>'}</div>`;
+    const plain=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+    const availableLeagues=d.leagues.filter(l=>!W.filters.country||l.country===W.filters.country);
+    const direct=d.clubs.filter(c=>(!W.filters.country||(c.country||"Brasil")===W.filters.country)&&(!W.filters.league||c.leagueId===W.filters.league)&&(!W.filters.query||plain(c.name).includes(plain(W.filters.query)))).sort((a,b)=>String(a.country||"Brasil").localeCompare(String(b.country||"Brasil"),"pt-BR")||leagueName(a).localeCompare(leagueName(b),"pt-BR")||a.name.localeCompare(b.name,"pt-BR"));
+    const directCards=direct.slice(0,120).map(c=>{const on=W.clubId===c.id,level=Math.round(Number(c.structure??c.strength??c.reputation??60)),ambitious=level>d.overall+14;return `<button type="button" class="offer-card ${on?"on":""}" data-w-direct-club="${esc(c.id)}"><span class="tag">${ambitious?"OBJETIVO AMBICIOSO":"ESCOLHA LIVRE"}</span><b>${esc(c.name)}</b><small>${esc(c.country||"Brasil")} · ${esc(leagueName(c))}</small><div class="story-meta"><i>Nível ${level}</i><i>${ambitious?"Concorrência muito alta":"Concorrência compatível"}</i></div><small class="muted">A escolha é livre; titularidade e minutos serão definidos pelo treinador.</small></button>`;}).join("");
+    const tabs=`<div class="chips"><button type="button" class="chip ${W.startMode==="offers"?"on":""}" data-w-start="offers">Receber propostas</button><button type="button" class="chip ${W.startMode==="club"?"on":""}" data-w-start="club">Escolher meu clube</button></div>`;
+    if(W.startMode==="offers")return `<h2>Primeiras oportunidades</h2>${tabs}<p class="muted">Até três propostas realistas, priorizando clubes do país da sua nacionalidade e ampliando a busca quando necessário.</p><div class="offer-grid">${cards||'<div class="empty">Nenhuma proposta compatível disponível.</div>'}</div>`;
+    return `<h2>Escolha seu primeiro clube</h2>${tabs}<p class="muted">Todos os clubes ativos das ligas habilitadas estão disponíveis. Clubes grandes não são bloqueados, mas a concorrência será real.</p><div class="formgrid"><label>Buscar clube<input data-w-filter="query" value="${esc(W.filters.query)}" placeholder="Nome do clube"></label><label>País<select data-w-filter="country"><option value="">Todos</option>${d.countries.map(x=>`<option value="${esc(x)}" ${W.filters.country===x?"selected":""}>${esc(x)}</option>`).join("")}</select></label><label>Campeonato / divisão<select data-w-filter="league"><option value="">Todos</option>${availableLeagues.map(l=>`<option value="${esc(l.id)}" ${W.filters.league===l.id?"selected":""}>${esc(l.name)}</option>`).join("")}</select></label></div><div class="offer-grid">${directCards||'<div class="empty">Nenhum clube encontrado com esses filtros.</div>'}</div>${direct.length>120?`<p class="muted">${direct.length} clubes encontrados. Refine os filtros para localizar qualquer clube.</p>`:""}`;
   }
   function stepConfirm(ctx) {
     const { D, esc } = ctx, d = draft(ctx), o = d.offers.find((x) => x.clubId === W.clubId), cr = D.Creation, st = D.Training.origins[W.storyId].story;
-    const c = o && d.clubs.find((x) => x.id === o.clubId);
-    return `<h2>Confirmar carreira</h2><div class="grid"><section class="card"><div class="tag">${esc(st.title.toUpperCase())}</div><h3>${esc(W.cfg.name)}</h3><p>${W.storyId === "custom" ? cr.sanitizeCustom(W.custom).age : W.cfg.age} anos · ${esc(cr.posLabels[W.cfg.pos])} · ${esc(D.Training.archetypeCatalog[W.cfg.archetypeId].name)} · ${esc(cr.personalities[W.personality].name)}</p><p><b>${d.overall} GER</b> · reputação ${d.reputation} · popularidade ${d.popularity} · patrimônio ${money(d.wallet)}</p><p class="muted">Dificuldade: ${esc(cr.difficulties[W.difficulty].name)} · Seed ${W.seed}</p></section><section class="card"><div class="tag">PRIMEIRO CLUBE</div>${o ? `<h3>${esc(c.name)}</h3><p>${esc(kindLabel[o.pitch.kind])} · ${money(o.salary)}/mês · ${Math.round(o.durationDays / 365 * 10) / 10} ano(s)</p><p class="muted">O contrato segue as regras de mercado do jogo. Seu papel será definido pelo treinador.</p>` : '<div class="notice">Volte e escolha uma oportunidade.</div>'}</section></div><div class="notice">Ao confirmar, a carreira é criada e salva. O processo não altera nenhuma carreira anterior até você confirmar a substituição.</div>`;
+    const c = d.clubs.find((x) => x.id === W.clubId);
+    return `<h2>Confirmar carreira</h2><div class="grid"><section class="card"><div class="tag">${esc(st.title.toUpperCase())}</div><h3>${esc(W.cfg.name)}</h3><p>${W.storyId === "custom" ? cr.sanitizeCustom(W.custom).age : W.cfg.age} anos · ${esc(W.cfg.nationality)} · ${esc(cr.posLabels[W.cfg.pos])} · ${esc(D.Training.archetypeCatalog[W.cfg.archetypeId].name)} · ${esc(cr.personalities[W.personality].name)}</p><p><b>${d.overall} GER</b> · reputação ${d.reputation} · popularidade ${d.popularity} · patrimônio ${money(d.wallet)}</p><p class="muted">Dificuldade: ${esc(cr.difficulties[W.difficulty].name)} · Seed ${W.seed}</p></section><section class="card"><div class="tag">PRIMEIRO CLUBE</div>${c?(W.startMode==="offers"&&o?`<h3>${esc(c.name)}</h3><p>${esc(kindLabel[o.pitch.kind])} · ${money(o.salary)}/mês · ${Math.round(o.durationDays / 365 * 10) / 10} ano(s)</p>`:`<h3>${esc(c.name)}</h3><p>Escolha direta · ${esc(c.country||"Brasil")} · ${esc(d.leagues.find(l=>l.id===c.leagueId)?.name||c.leagueId)}</p>`):'<div class="notice">Volte e escolha um clube.</div>'}<p class="muted">O contrato segue as regras de mercado do jogo. Seu papel será definido pelo treinador.</p></section></div><div class="notice">Ao confirmar, a carreira é criada e salva. O processo não altera nenhuma carreira anterior até você confirmar a substituição.</div>`;
   }
   function valid(ctx) {
     if (W.step === 1 && !String(W.cfg.name).trim()) return "Informe o nome do jogador.";
@@ -139,7 +176,7 @@
       W.cfg.age=age;
       if(W.storyId==="custom") W.custom.age=age;
     }
-    if (W.step === 4 && !W.clubId) return "Escolha uma das oportunidades.";
+    if (W.step === 4 && !W.clubId) return W.startMode==="club"?"Escolha o clube onde deseja começar.":"Escolha uma das oportunidades.";
     return "";
   }
   function render(ctx) {
@@ -164,8 +201,9 @@
       if(t.dataset.wCustom==="age"){W.cfg.age=W.custom.age;W.cfg.birthDate=birthDateForAge(W.custom.age);}
       return;
     }
+    if(t.dataset?.wFilter){W.filters[t.dataset.wFilter]=t.value;if(t.dataset.wFilter==="country")W.filters.league="";render(ctx);return;}
     if (!n) return;
-    if (["name", "city", "foot", "celebration"].includes(n)) c[n] = t.value;
+    if (["name", "city", "nationality", "foot", "celebration"].includes(n)) c[n] = t.value;
     else if (n === "birthDate") {
       const age=ageFromBirthDate(t.value);
       if(age!==null){
@@ -192,7 +230,9 @@
       W.points[k] = v;
     } else if (d.wArch) W.cfg.archetypeId = d.wArch;
     else if (d.wPers) W.personality = d.wPers;
+    else if (d.wStart){W.startMode=d.wStart;W.clubId=null;}
     else if (d.wClub) W.clubId = d.wClub;
+    else if (d.wDirectClub) W.clubId=d.wDirectClub;
     else if (d.wGo !== undefined) { if (Number(d.wGo) <= W.step) W.step = Number(d.wGo); }
     else if ("wBack" in d) W.step = Math.max(0, W.step - 1);
     else if ("wCoach" in d) { ctx.classic(); return; }

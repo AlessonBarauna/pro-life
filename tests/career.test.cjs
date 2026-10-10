@@ -4,6 +4,16 @@ const D = require("../src/domain/engine.js"),
   A = require("../src/application/game.js"),
   S = require("../src/infrastructure/save.js"),
   C = D.Career;
+
+function setEligiblePlayerOverall(s, overall) {
+  s.person.ovr = overall;
+  s.person.overall = overall;
+  for (const key of Object.keys(s.person.attrs || {})) {
+    if (typeof s.person.attrs[key] === "number")
+      s.person.attrs[key] = overall;
+  }
+}
+
 function until(s, day) {
   while (s.day < day) D.advance(s, Math.min(30, day - s.day));
 }
@@ -245,6 +255,7 @@ test("signing hides all offers until a different transfer window opens, includin
 
 test("offer preferences filter future proposals and rejected offers disappear", () => {
   const s = D.create({}, 77);
+  setEligiblePlayerOverall(s, 65);
   assert.equal(C.init(s).offerPreferences.clubLevel, "any");
   A.execute(s, "offerPrefs", { leagues: ["serieA"], clubLevel: "elite" });
   assert.deepEqual(C.init(s).offerPreferences, { leagues: ["serieA"], clubLevel: "elite" });
@@ -323,6 +334,7 @@ test("agent 2.0 stores strategy and produces career advice", () => {
 
 test("agent 2.0 advances interest pipeline from rumor to official offer", () => {
   const s=D.create({},721), pc=C.init(s).playerCareer, rng=new D.Random(722);
+  setEligiblePlayerOverall(s, 65);
   s.offers=[]; pc.interests=[]; s.careerTransferAvailableDay=0;
   const target=s.clubs.find(c=>c.id!==s.clubId);
   C.registerInterest(s,target.id,"Rumor");

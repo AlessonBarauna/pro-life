@@ -13,6 +13,8 @@
   function init(s) {
     if (!s.life) s.life = { agency: null, events: [], lastDecisionDay: 0 };
     const life=s.life;
+    if(!Array.isArray(life.criticismReportIds)) life.criticismReportIds=[];
+    life.criticismReportIds=life.criticismReportIds.filter(id=>typeof id==="string"&&id).slice(-100);
     if(!life.finance) life.finance={version:2,currency:"BRL",startedDay:s.day,wellbeing:65,lifestyle:"SIMPLES",housing:{type:"Casa da família",mode:"family",value:0,monthly:0,acquiredDay:s.day},vehicles:[],possessions:[],investments:[],processed:{},activityCooldowns:{},milestones:[]};
     const f=life.finance;
     if(!f.processed||typeof f.processed!=="object") f.processed={};
@@ -24,6 +26,7 @@
     if(!Array.isArray(f.milestones)) f.milestones=[];
     if(!Number.isFinite(f.wellbeing)) f.wellbeing=65;
     if(!f.lifestyle) f.lifestyle="SIMPLES";
+    sanitizeDecision(s,life);
     return life;
   }
   const housing=[
@@ -132,10 +135,54 @@
   function activity(s,id,helpers){const f=init(s).finance,last=f.activityCooldowns[id]??-9999;if(s.day-last<7) throw Error("Atividade ainda em cooldown.");if(id==="family"){if(s.wallet<150) throw Error("Saldo insuficiente.");helpers.transaction(s,-150,"Visita à família");s.family=Math.min(100,s.family+8);s.stress=Math.max(0,s.stress-6);f.wellbeing=Math.min(100,f.wellbeing+8);} else if(id==="rest"){s.person.condition=Math.min(100,s.person.condition+5);f.wellbeing=Math.min(100,f.wellbeing+4);} else if(id==="friends"){if(s.wallet<250) throw Error("Saldo insuficiente.");helpers.transaction(s,-250,"Lazer com amigos");f.wellbeing=Math.min(100,f.wellbeing+5);} else throw Error("Atividade inválida.");f.activityCooldowns[id]=s.day;}
   function snapshot(s){const f=init(s).finance;return {balance:s.wallet,salary:contractSalary(s),wellbeing:f.wellbeing,lifestyle:f.lifestyle,housing:f.housing,vehicles:f.vehicles,possessions:f.possessions,investments:f.investments,netWorth:netWorth(s),tier:lifestyleTier(s)};}
 
+  function criticismReportId(report){
+    if(!report||typeof report!=="object") return null;
+    return `match:${report.national?"national":"club"}:${Number(report.season||0)}:${Number(report.day)}:${String(report.competition||"match")}:${String(report.opponent||"opponent")}`;
+  }
+  function validCriticismReport(s,report,referenceDay=s.day){
+    if(s.mode!=="player"||!report||typeof report!=="object") return false;
+    const reportDay=Number(report.day),age=Number(referenceDay)-reportDay,rating=Number(report.rating),minutes=Number(report.minutes);
+    return Number.isFinite(reportDay)&&age>=0&&age<=5&&["TITULAR","ENTROU_DO_BANCO"].includes(report.status)&&Number.isFinite(minutes)&&minutes>0&&Number.isFinite(rating)&&rating<6;
+  }
+  function criticismCandidate(s,{referenceDay=s.day,includeHandled=false,report=null}={}){
+    const life=s.life,matchReport=report||s.extras?.playerCareer?.lastMatchReport;
+    if(!validCriticismReport(s,matchReport,referenceDay)) return null;
+    const reportId=criticismReportId(matchReport);
+    if(!reportId||(!includeHandled&&life?.criticismReportIds?.includes(reportId))) return null;
+    return {report:matchReport,reportId};
+  }
+  function rememberCriticism(life,reportId){
+    if(!reportId||life.criticismReportIds.includes(reportId)) return;
+    life.criticismReportIds.push(reportId);
+    life.criticismReportIds=life.criticismReportIds.slice(-100);
+  }
+  function sanitizeDecision(s,providedLife=null){
+    if(s.decision?.id!=="criticism") return true;
+    const life=providedLife||s.life;
+    const generated=Number.isFinite(Number(s.decision.createdDay))||!!s.decision.criticismReportId||!!s.decision.criticismReport;
+    if(!generated) return true;
+    const referenceDay=Number.isFinite(Number(s.decision.createdDay))?Number(s.decision.createdDay):s.day;
+    const candidate=criticismCandidate(s,{referenceDay,includeHandled:true,report:s.decision.criticismReport});
+    if(!candidate||(s.decision.criticismReportId&&s.decision.criticismReportId!==candidate.reportId)){
+      s.decision=null;
+      return false;
+    }
+    s.decision.criticismReportId=candidate.reportId;
+    s.decision.criticismReport ||= {day:candidate.report.day,season:candidate.report.season,national:!!candidate.report.national,competition:candidate.report.competition,opponent:candidate.report.opponent,status:candidate.report.status,minutes:candidate.report.minutes,rating:candidate.report.rating};
+    rememberCriticism(life,candidate.reportId);
+    return true;
+  }
   function next(s, rng) {
-    const life = init(s), pool = life.agency ? decisions.filter((d) => d.id !== "agent") : decisions;
+    const life = init(s), candidate=criticismCandidate(s);
+    const pool = decisions.filter((d) => !(life.agency&&d.id==="agent") && (d.id!=="criticism"||!!candidate));
     life.lastDecisionDay = s.day;
-    return JSON.parse(JSON.stringify(rng.pick(pool)));
+    const decision=JSON.parse(JSON.stringify(rng.pick(pool)));
+    if(decision.id==="criticism"){
+      decision.criticismReportId=candidate.reportId;
+      decision.criticismReport={day:candidate.report.day,season:candidate.report.season,national:!!candidate.report.national,competition:candidate.report.competition,opponent:candidate.report.opponent,status:candidate.report.status,minutes:candidate.report.minutes,rating:candidate.report.rating};
+      rememberCriticism(life,candidate.reportId);
+    }
+    return decision;
   }
   function decide(s, choice, helpers) {
     const life = init(s);
@@ -163,7 +210,7 @@
     helpers.transaction(s, -life.agency.monthlyCost, "Mensalidade da assessoria");
     s.fans += 80 * life.agency.level;
   }
-  const api = { decisions, init, next, decide, monthly, housing, vehicles, purchases, investmentTypes, monthlyFinance, dailyFinance, contractSalary, netWorth, lifestyleTier, setLifestyle, buyHousing, buyVehicle, sellVehicle, buyPurchase, invest, activity, snapshot };
+  const api = { decisions, init, next, decide, monthly, housing, vehicles, purchases, investmentTypes, monthlyFinance, dailyFinance, contractSalary, netWorth, lifestyleTier, setLifestyle, buyHousing, buyVehicle, sellVehicle, buyPurchase, invest, activity, snapshot, criticismReportId, validCriticismReport, criticismCandidate, sanitizeDecision };
   root.ProLifeLife = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

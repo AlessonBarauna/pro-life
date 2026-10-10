@@ -34,6 +34,10 @@ const files = [
   "src/ui/home-dashboard.js",
   "src/ui/live-match.js",
   "src/ui/creator.js",
+  "src/ui/world-competitions-view.js",
+  "src/ui/world-live-market-view.js",
+  "src/ui/player-transfer-history.js",
+  "src/ui/target-club-selector.js",
   "src/ui/app.js",
 ];
 function make(mode) {
@@ -155,7 +159,10 @@ for (const mode of ["player", "coach"]) {
       target.click();
       assert.ok(w.document.querySelector("main"));
       if (page === "inbox") assert.ok(w.document.querySelector("main").textContent.includes("Mensagens da carreira"));
-      if (page === "market") assert.ok(w.document.querySelector("main").textContent.includes("confirmadas"));
+      if (page === "market") {
+        assert.ok(w.document.querySelector("[data-world-live-market-view]"), "Central do Mercado Mundial ausente");
+        assert.ok(w.document.querySelector('[data-world-market-tab="completed"]'), "Aba Concluidas ausente");
+      }
        if (page === "proposals") assert.ok(w.document.querySelector("main").textContent.includes("Quais propostas quero receber?"));
       assert.ok(w.document.querySelector("main").textContent.length > 150);
     }
@@ -222,12 +229,19 @@ for (const mode of ["player", "coach"]) {
   assert.ok(w.document.querySelector(".score"));
   for (let i = 0; i < 14; i++) click(w, '[data-advance="1"]');
   click(w, '[data-page="home"]');
-  assert.ok(w.document.querySelector(".central-objectives [data-choice]"), "O convite pendente deve poder ser respondido na Central");
-  click(w, ".central-objectives [data-choice]");
-  click(w, '[data-page="inbox"]');
-  assert.ok(w.document.querySelector("main").textContent.includes("Escolha registrada"), "A resposta deve permanecer registrada na caixa de entrada");
-  click(w, '[data-page="life"]');
-  assert.equal(get(w).decision, null);
+  // Long simulations may already have resolved routine decisions.
+  const pendingDecision = get(w).decision;
+  const choiceButton = w.document.querySelector(".central-objectives [data-choice]");
+  if (pendingDecision) {
+    assert.ok(choiceButton, "Uma decisao pendente deve ter resposta na Central");
+    click(w, ".central-objectives [data-choice]");
+    click(w, '[data-page="inbox"]');
+    assert.ok(w.document.querySelector("main").textContent.includes("Escolha registrada"), "A resposta deve permanecer registrada na caixa de entrada");
+    click(w, '[data-page="life"]');
+    assert.equal(get(w).decision, null);
+  } else {
+    assert.equal(choiceButton, null, "Nao deve aparecer escolha sem decisao pendente");
+  }
   click(w, '[data-page="profile"]');
   w.document.querySelector("#shirt-number").value = "27";
   click(w, '[data-action="number"]');

@@ -20,10 +20,19 @@
     JPN:["Japao","Japan"],KOR:["Coreia do Sul","South Korea","Korea Republic"],AUS:["Australia"],IRN:["Ira","Iran"],KSA:["Arabia Saudita","Saudi Arabia"],NZL:["Nova Zelandia","New Zealand"],ISR:["Israel"],UZB:["Uzbequistao","Uzbekistan"],IRQ:["Iraque","Iraq"],QAT:["Catar","Qatar"],JOR:["Jordania","Jordan"],GAM:["Gambia"],ZIM:["Zimbabue","Zimbabwe"],MOZ:["Mocambique","Mozambique"],EQG:["Guine Equatorial","Equatorial Guinea"],ANG:["Angola"],
     BRA:["Brasil","Brazil"],GNB:["Guine-Bissau","Guinea-Bissau"],IDN:["Indonesia"],RUS:["Russia"],CYP:["Chipre","Cyprus"],EST:["Estonia"],BDI:["Burundi"],TRI:["Trinidad e Tobago","Trinidad and Tobago"],PUR:["Porto Rico","Puerto Rico"],MTN:["Mauritania"],MAD:["Madagascar"],LVA:["Letonia","Latvia"],LTU:["Lituania","Lithuania"],LBN:["Libano","Lebanon"],HON:["Honduras"],FRO:["Ilhas Faroe","Faroe Islands"],DOM:["Republica Dominicana","Dominican Republic"]
   };
+  Object.assign(NATIONS,{
+    AFG:["Afeganistao","Afghanistan"],AND:["Andorra"],ATG:["Antigua e Barbuda","Antigua and Barbuda"],AZE:["Azerbaijao","Azerbaijan"],BAN:["Bangladesh"],BRB:["Barbados"],BER:["Bermudas","Bermuda"],BLR:["Belarus"],CAF:["Republica Centro-Africana","Central African Republic"],CHA:["Chade","Chad"],CHN:["China","China PR"],TPE:["Taiwan","Chinese Taipei"],COM:["Comores","Comoros"],CGO:["Congo","Republic of the Congo"],CUB:["Cuba"],ERI:["Eritreia","Eritrea"],ESA:["El Salvador"],GLP:["Guadalupe","Guadeloupe"],GRL:["Groenlandia","Greenland"],GRN:["Granada","Grenada"],GUA:["Guatemala"],GUY:["Guiana","Guyana"],HKG:["Hong Kong"],IND:["India"],KAZ:["Cazaquistao","Kazakhstan"],KEN:["Quenia","Kenya"],PRK:["Coreia do Norte","Korea DPR","North Korea"],LBR:["Liberia"],LBY:["Libia","Libya"],LIE:["Liechtenstein"],MDA:["Moldavia","Moldova"],MLT:["Malta"],MTQ:["Martinica","Martinique"],MWI:["Malaui","Malawi"],NAM:["Namibia"],NIG:["Niger"],OMA:["Oma","Oman"],PAK:["Paquistao","Pakistan"],PHI:["Filipinas","Philippines"],PLE:["Palestina","Palestine"],RWA:["Ruanda","Rwanda"],SKN:["Sao Cristovao e Nevis","St. Kitts and Nevis"],LCA:["Santa Lucia","St. Lucia"],SLE:["Serra Leoa","Sierra Leone"],SOM:["Somalia"],SRI:["Sri Lanka"],SSD:["Sudao do Sul","South Sudan"],SYR:["Siria","Syria"],TAN:["Tanzania"],UAE:["Emirados Arabes Unidos","United Arab Emirates"],UGA:["Uganda"],VAN:["Vanuatu"],YEM:["Iemen","Yemen"]
+  });
+  NATIONS.NED.push("Holland");NATIONS.CPV.push("Cape Verde Islands");NATIONS.CUW.push("Curaçao");
+  const PT_BR_LABELS={
+    afeganistao:"Afeganistão",africa_do_sul:"África do Sul",albania:"Albânia",alemanha:"Alemanha",argelia:"Argélia",arabia_saudita:"Arábia Saudita",armenia:"Armênia",austria:"Áustria",azerbaijao:"Azerbaijão",belgica:"Bélgica",bosnia_e_herzegovina:"Bósnia e Herzegovina",brasil:"Brasil",camaroes:"Camarões",canada:"Canadá",cazaquistao:"Cazaquistão",chade:"Chade",chipre:"Chipre",colombia:"Colômbia",coreia_do_norte:"Coreia do Norte",coreia_do_sul:"Coreia do Sul",costa_do_marfim:"Costa do Marfim",croacia:"Croácia",curacao:"Curaçao",dinamarca:"Dinamarca",egito:"Egito",emirados_arabes_unidos:"Emirados Árabes Unidos",equador:"Equador",escocia:"Escócia",eslovaquia:"Eslováquia",eslovenia:"Eslovênia",espanha:"Espanha",estonia:"Estônia",etiopia:"Etiópia",finlandia:"Finlândia",franca:"França",gabao:"Gabão",gales:"País de Gales",georgia:"Geórgia",grecia:"Grécia",groenlandia:"Groenlândia",guiana:"Guiana",guine:"Guiné",guine_bissau:"Guiné-Bissau",guine_equatorial:"Guiné Equatorial",haiti:"Haiti",holanda:"Países Baixos",hungria:"Hungria",iemen:"Iêmen",india:"Índia",indonesia:"Indonésia",ira:"Irã",iraque:"Iraque",irlanda:"Irlanda",irlanda_do_norte:"Irlanda do Norte",islandia:"Islândia",italia:"Itália",japao:"Japão",jordania:"Jordânia",letonia:"Letônia",libano:"Líbano",libia:"Líbia",lituania:"Lituânia",luxemburgo:"Luxemburgo",macedonia_do_norte:"Macedônia do Norte",malaui:"Malaui",marrocos:"Marrocos",martinica:"Martinica",mexico:"México",mocambique:"Moçambique",moldavia:"Moldávia",noruega:"Noruega",nova_zelandia:"Nova Zelândia",oma:"Omã",panama:"Panamá",paquistao:"Paquistão",paraguai:"Paraguai",paises_baixos:"Países Baixos",polonia:"Polônia",porto_rico:"Porto Rico",quenia:"Quênia",republica_centro_africana:"República Centro-Africana",republica_dominicana:"República Dominicana",republica_tcheca:"Tchéquia",romenia:"Romênia",russia:"Rússia",sao_cristovao_e_nevis:"São Cristóvão e Névis",servia:"Sérvia",siria:"Síria",sri_lanka:"Sri Lanka",sudao_do_sul:"Sudão do Sul",suecia:"Suécia",suica:"Suíça",tanzania:"Tanzânia",tchequia:"Tchéquia",tunisia:"Tunísia",turquia:"Turquia",ucrania:"Ucrânia",uzbequistao:"Uzbequistão",zimbabue:"Zimbábue"
+  };
   function plain(value){return String(value||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();}
   const NATION_NAMES={},NATION_ALIASES={brazil:"brasil",brasil:"brasil"};
-  for(const [code,list] of Object.entries(NATIONS)){NATION_NAMES[code]=list[0];for(const alias of list)NATION_ALIASES[plain(alias)]=plain(list[0]);}
+  const nationalityIdentityKey=value=>plain(value).replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
+  for(const [code,list] of Object.entries(NATIONS)){const identity=plain(list[0]);NATION_NAMES[code]=PT_BR_LABELS[nationalityIdentityKey(identity)]||list[0];NATION_ALIASES[plain(code)]=identity;for(const alias of list)NATION_ALIASES[plain(alias)]=identity;}
   function normalizedNationality(value){const key=plain(value);return NATION_ALIASES[key]||key;}
+  function resolveNationality(value,fallback=null){const identity=normalizedNationality(value),code=Object.keys(NATIONS).find(key=>plain(NATIONS[key][0])===identity);if(code)return NATION_NAMES[code];return fallback===null?null:(resolveNationality(fallback,null)||"Brasil");}
   function clone(value){return JSON.parse(JSON.stringify(value));}
   function state(s){
     if(!s.globalFootball||typeof s.globalFootball!=="object")s.globalFootball={version:1,baseYear:Number(seed.baseYear||2026),leagues:[],clubs:[],retirements:[],processedSeasons:{},packs:{}};
@@ -60,7 +69,7 @@
   // Jogadores vindos dos packs globais mantem o objeto completo em runtime,
   // mas omitem do JSON somente campos default que normalizePlayer reconstr?i.
   // Campos alterados durante a carreira continuam sendo serializados normalmente.
-  function installCompactExternalSerialization(player){
+  function installCompactExternalSerialization(player,s){
     if(
       !player ||
       player.external!==true ||
@@ -81,6 +90,8 @@
         const overall=Number(
           this.ovr ?? this.overall
         );
+        const isLocalRosterPlayer =
+          /^c(?:[0-9]|[1-7][0-9])$/.test(String(out.clubId || ""));
 
         // overall e apenas espelho de ovr.
         if(
@@ -114,6 +125,26 @@
           delete out.active;
         }
 
+        // O pool internacional restaura estes defaults no carregamento.
+        // Jogadores em elencos brasileiros mantêm o formato completo exigido
+        // pela validação rígida do save.
+        if(!isLocalRosterPlayer){
+          if(Number(out.appearances)===0) delete out.appearances;
+          if(Number(out.condition)===100) delete out.condition;
+          if(Number(out.suspension)===0) delete out.suspension;
+          if(Number(out.injury)===0) delete out.injury;
+          if(Number(out.morale)===50) delete out.morale;
+          if(Number(out.discipline)===70) delete out.discipline;
+          if(Number(out.goals)===0) delete out.goals;
+          if(Number(out.minutes)===0) delete out.minutes;
+          if(out.external===true) delete out.external;
+          if(out.marketStatus==="external") delete out.marketStatus;
+          if(Number(out.reputation)===Math.max(40,overall-12)) delete out.reputation;
+          if(Number(out.age)===seasonOf(s)-Number(out.birthYear)) delete out.age;
+          if(out.clubId&&out.leagueId) delete out.leagueId;
+          if(out.shortName===shortNameOf(out.name)) delete out.shortName;
+        }
+
         // peakOvr igual ao GER atual nao carrega informacao nova.
         if(
           Number.isFinite(overall) &&
@@ -130,13 +161,12 @@
         // Os seis atributos criados automaticamente com o mesmo GER
         // podem ser reconstruidos. Se qualquer atributo evoluiu,
         // o objeto inteiro e preservado.
+        // Brazilian club rosters require complete player attributes.
         if(
+          !isLocalRosterPlayer &&
           out.attrs &&
           typeof out.attrs==="object" &&
-          CORE.every(
-            key =>
-              Number(out.attrs[key])===overall
-          )
+          CORE.every(key => Number(out.attrs[key])===overall)
         ){
           delete out.attrs;
         }
@@ -151,20 +181,22 @@
   function normalizePlayer(s,player,context={}){
     if(!player||typeof player!=="object")return player;
     const season=seasonOf(s),attributeValues=CORE.map(key=>Number(player.attrs?.[key])).filter(Number.isFinite),derivedOverall=attributeValues.length?attributeValues.reduce((sum,value)=>sum+value,0)/attributeValues.length:70,overall=clamp(Number(player.ovr??player.overall??derivedOverall),20,100);
-    player.id=String(player.id||context.id||"");player.name=String(player.name||"Jogador sem nome");player.shortName=String(player.shortName||player.name);
+    player.id=String(player.id||context.id||"");player.name=String(player.name||"Jogador sem nome");player.shortName=String(player.shortName||shortNameOf(player.name));
     player.nationality=String(player.nationality||"Brasil");player.pos=["GOL","DEF","MEI","ATA"].includes(player.pos)?player.pos:"MEI";
     if(!Array.isArray(player.secondaryPositions))player.secondaryPositions=[];
     if(!Number.isFinite(Number(player.birthYear)))player.birthYear=Number(player.birthDate?.year)||season-Math.max(14,Number(player.age||25));
     player.age=context.preserveAge?Math.max(14,Number(player.age||season-Number(player.birthYear))):Math.max(15,season-Number(player.birthYear));player.ovr=overall;player.overall=overall;player.potential=clamp(Number(player.potential??overall+2),overall,100);
-    player.status=player.status==="retired"||player.retired?"retired":"active";player.active=player.status==="active";player.reputation=clamp(Number(player.reputation??overall-15),0,100);
+    player.status=player.status==="retired"||player.retired?"retired":"active";player.active=player.status==="active";player.reputation=clamp(Number(player.reputation??(String(player.id).startsWith("gf_p_")?Math.max(40,overall-12):overall-15)),0,100);
+    if(String(player.id).startsWith("gf_p_")){if(player.external===undefined)player.external=true;if(player.marketStatus===undefined)player.marketStatus="external";}
     if(!player.attrs||typeof player.attrs!=="object")player.attrs={};for(const key of CORE)player.attrs[key]=clamp(Number(player.attrs[key]??overall),0,100);
     if(context.club){player.clubId=context.club.id;player.leagueId=context.club.leagueId||null;}
     const club=catalogClub(s,player.clubId)||ensureExternalClub(s,player);if(club){player.clubId=club.id;player.leagueId=club.leagueId||player.leagueId||null;player.externalClub=club.name;}
-    if(!Array.isArray(player.clubHistory))player.clubHistory=[];player.peakOvr=Math.max(Number(player.peakOvr||0),overall);installCompactExternalSerialization(player);return player;
+    if(!Array.isArray(player.clubHistory))player.clubHistory=[];player.peakOvr=Math.max(Number(player.peakOvr||0),overall);installCompactExternalSerialization(player,s);return player;
   }
   const PACK_CODES=["eng","esp","ita","ger","fra","por","ned","bel","aut","sui","sco","den","swe","nor","pol","rou","irl","ger3"],expandedPacks=new Map();
   function loadedPacks(){
     if(typeof require==="function")for(const code of PACK_CODES){try{require(`../data/global-football-eur-${code}.js`);}catch(error){if(error?.code!=="MODULE_NOT_FOUND")throw error;}}
+    if(typeof require==="function"){try{require("../data/global-football-fc27-world.js");}catch(error){if(error?.code!=="MODULE_NOT_FOUND")throw error;}}
     return root.ProLifeGlobalFootballPacks||[];
   }
   function shortNameOf(name){const parts=String(name).trim().split(/\s+/);return parts.length<2?String(name).trim():`${parts[0][0]}. ${parts.slice(1).join(" ")}`;}
@@ -180,7 +212,7 @@
         players.push({id,name,shortName:short||shortNameOf(name),nationality:NATION_NAMES[code]||code,birthYear,pos,ovr:Number(ovr),potential:Number(pot),clubId,leagueId});
       }
     }
-    const expanded={id:pack.id,version:pack.version,leagues:[{id:leagueId,name:leagueName,shortName:leagueShort,country,level:1,clubCount:clubs.length,reputation:leagueReputation,continent:"Europa",confederation:"UEFA",active:true}],clubs,players};
+    const meta=pack.meta||{},expanded={id:pack.id,version:pack.version,leagues:[{id:leagueId,name:leagueName,shortName:leagueShort,country:meta.country||country,level:Number(meta.level||1),clubCount:clubs.length,reputation:leagueReputation,continent:meta.continent||"Europa",confederation:meta.confederation||"UEFA",active:meta.active!==false,competitionEligible:meta.competitionEligible!==false,source:meta.source||"PRO-LIFE"}],clubs,players};
     expandedPacks.set(cacheKeyOfPack,expanded);return expanded;
   }
   function packInfo(){return loadedPacks().map(expandPack).map(pack=>({id:pack.id,version:pack.version,leagues:pack.leagues.length,clubs:pack.clubs.length,players:pack.players.length}));}
@@ -216,6 +248,13 @@
     return g;
   }
   function allPlayers(s){init(s);const out=[],seen=new Set(),add=player=>{if(player?.id&&!seen.has(player.id)){seen.add(player.id);out.push(player);}};for(const club of s.clubs||[])for(const player of club.roster||[])add(player);for(const player of s.internationalPlayers||[])add(player);if(s.person)add(s.person);return out;}
+  function nationalityCatalog(s){
+    init(s);
+    const raw=["Brasil",...(s.globalFootball?.leagues||[]).map(item=>item?.country),...(s.globalFootball?.clubs||[]).map(item=>item?.country),...(s.clubs||[]).map(item=>item?.country),...allPlayers(s).map(player=>player?.nationality)];
+    const byIdentity=new Map();
+    for(const value of raw){const name=resolveNationality(value,null);if(!name)continue;const identity=normalizedNationality(name);if(!byIdentity.has(identity))byIdentity.set(identity,{id:identity,name});}
+    return [...byIdentity.values()].sort((a,b)=>plain(a.name).localeCompare(plain(b.name),"pt-BR"));
+  }
   function playerById(s,id){return allPlayers(s).find(player=>player.id===id)||null;}
   function clubById(s,id){init(s);return catalogClub(s,id);}
   function leagueById(s,id){init(s);const local=(s.leagues||[]).find(league=>league.id===id);if(local)return {...local,country:local.country||"Brasil",level:local.level||Number(String(local.id||"").match(/\d+/)?.[0]||1),clubCount:(s.clubs||[]).filter(club=>club.leagueId===id).length,reputation:local.reputation||75,continent:local.continent||"America do Sul",confederation:local.confederation||"CONMEBOL",active:local.active!==false};return state(s).leagues.find(league=>league.id===id)||null;}
@@ -262,6 +301,6 @@
     return {players:added.length,clubs:(data.clubs||[]).length,leagues:(data.leagues||[]).length};
   }
   function diagnostics(){return {...diagnosticsCounters};}
-  const api={VERSION:1,diagnostics,packInfo,clubByName,nationName:code=>NATION_NAMES[code]||null,init,allPlayers,playerById,clubById,leagueById,playersByNationality,playersByClub,playersByLeague,activePlayers,eligibleNationalTeamPlayers,registerPlayer,transferPlayer,retirePlayer,rollSeason,importData,normalizedNationality,seasonOf};
+  const api={VERSION:1,diagnostics,packInfo,clubByName,nationName:code=>resolveNationality(code,null),nationalityCatalog,resolveNationality,init,allPlayers,playerById,clubById,leagueById,playersByNationality,playersByClub,playersByLeague,activePlayers,eligibleNationalTeamPlayers,registerPlayer,transferPlayer,retirePlayer,rollSeason,importData,normalizedNationality,seasonOf};
   root.ProLifeGlobalFootball=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

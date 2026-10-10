@@ -85,17 +85,25 @@
       case "offerPrefs": {
         const validLeagues = ["serieA", "serieB", "serieC", "serieD"];
         const leagues = Array.isArray(data.leagues) ? data.leagues.filter((x) => validLeagues.includes(x)) : [];
-        if (s.world === "brazil2026" && !leagues.length) throw Error("Selecione pelo menos uma divisão.");
+        const hasInternational=typeof data.international==="boolean";
+        const international=hasInternational?data.international:false;
+        if (s.world === "brazil2026" && !leagues.length && !international) throw Error("Selecione pelo menos uma divisão ou clubes internacionais.");
         const clubLevel = ["any", "elite", "competitive", "intermediate", "small"].includes(data.clubLevel) ? data.clubLevel : "any";
-        D.Career.init(s).offerPreferences = { leagues, clubLevel };
+        const nextPreferences={leagues,clubLevel};
+        if(hasInternational) nextPreferences.international=international;
+        else Object.defineProperty(nextPreferences,"international",{value:false,writable:true,configurable:true,enumerable:false});
+        D.Career.init(s).offerPreferences = nextPreferences;
         s.offers = s.offers.filter((o) => {
           const c = D.club(s, o.clubId);
           if (!c) return false;
-          if (s.world === "brazil2026" && !leagues.includes(c.leagueId)) return false;
-          if (clubLevel === "elite") return c.structure >= 75;
-          if (clubLevel === "competitive") return c.structure >= 60 && c.structure < 75;
-          if (clubLevel === "intermediate") return c.structure >= 45 && c.structure < 60;
-          if (clubLevel === "small") return c.structure < 45;
+          const local=(s.clubs||[]).some(item=>item.id===c.id);
+          if(local&&s.world==="brazil2026"&&!leagues.includes(c.leagueId)) return false;
+          if(!local&&!international) return false;
+          const level=Number(c.structure??c.strength??c.reputation??50);
+          if (clubLevel === "elite") return level >= 75;
+          if (clubLevel === "competitive") return level >= 60 && level < 75;
+          if (clubLevel === "intermediate") return level >= 45 && level < 60;
+          if (clubLevel === "small") return level < 45;
           return true;
         });
         break;
