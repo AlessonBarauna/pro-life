@@ -141,8 +141,10 @@
   function init(s){
     const globalFootball=root.ProLifeGlobalFootball||(typeof require==="function"?require("./global-football.js"):null);
     if(!s.globalFootball)globalFootball?.init?.(s);
+    // 34F.12: carreiras FC 27 nao recebem o pool legado; apenas normalizam o que ja existe.
+    const fc27=s.catalogVersion==="fc27_v1";
     if(!Array.isArray(s.internationalPlayers)){
-      s.internationalPlayers=defaults();
+      s.internationalPlayers=fc27?[]:defaults();
     }
 
     for(const p of s.internationalPlayers)
@@ -154,7 +156,7 @@
         .map(p=>p.id)
     );
 
-    for(const p of players){
+    for(const p of fc27?[]:players){
       if(!known.has(p.id))
         s.internationalPlayers.push(
           clonePlayer(p)

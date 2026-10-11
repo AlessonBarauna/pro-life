@@ -46,6 +46,9 @@
   const SimulationTactics =
     root.ProLifeSimulationTactics ||
     (typeof require === "function" ? require("./simulation-tactics.js") : null);
+  const FC27 =
+    root.ProLifeFC27CatalogAdapter ||
+    (typeof require === "function" ? require("./fc27-catalog-adapter.js") : null);
   const GlobalFootball =
     root.ProLifeGlobalFootball ||
     (typeof require === "function" ? require("./global-football.js") : null);
@@ -276,6 +279,10 @@
         ? Number(c.structure)
         : Number(c.strength || c.reputation || 60);
       return ({
+      offerId:`offer:${s.season}:${s.day}:${c.id}`,
+      createdDay:s.day,
+      stage:"FORMAL_OFFER",
+      status:"formal",
       clubId: c.id,
       salary: s.mode === "coach" ? Math.round(
         6500 + s.reputation * 70 + c.structure * 45 + heroLevel * 10 + rng.int(0, 1800)
@@ -415,6 +422,7 @@
     };
     let s = {
       version: VERSION,
+      initialSeed: seed,
       rng: rng.state,
       mode,
       season: 2026,
@@ -468,6 +476,11 @@
       trainingProgress: 0,
       seasonGoals: 0,
     };
+    // 34F.12: catálogo FC 27 experimental (opt-in). Instalado ANTES de qualquer GlobalFootball.init; ausente = legado.
+    if (config.catalogVersion !== undefined && config.catalogVersion !== null && config.catalogVersion !== "legacy") {
+      if (config.catalogVersion !== "fc27_v1" || !FC27) throw Error("catalogVersion desconhecido: " + config.catalogVersion);
+      FC27.installState(s);
+    }
     Career.init(s);
     Career.updateProfessionalCareer(s);
     Training?.init(s);
@@ -865,7 +878,9 @@
     const next = movePlayerToClub(s, id);
     if (s.mode === "player") Statistics?.ensureHeroStint?.(s, id);
     s.careerTransferAvailableDay = Career.nextWindowDay(s.day);
-    const acceptedOffer = s.offers.find((o) => o.clubId === id && o.expires >= s.day) || { clubId:id, salary, durationDays:730, signingBonus:0, squadRole:"Rotação", transferType:"permanent" };
+    // 33B: acordo assinado válido para este clube é a fonte de verdade dos termos (não depende de a oferta original continuar em s.offers).
+    const agreedTerms = s.mode === "player" && pc0?.marketState?.signedAgreement?.clubId === id ? { ...pc0.marketState.signedAgreement } : null;
+    const acceptedOffer = agreedTerms || s.offers.find((o) => o.clubId === id && o.expires >= s.day) || { clubId:id, salary, durationDays:730, signingBonus:0, squadRole:"Rotação", transferType:"permanent" };
     if (acceptedOffer.transferType === "loan" && previous) { acceptedOffer.parentClubId=previous.id; acceptedOffer.parentSalary=previousSalary; acceptedOffer.parentContractRemaining=Math.max(previousContract, acceptedOffer.durationDays+30); }
     s.salary = salary;
     Career.signContract(s, acceptedOffer);
@@ -884,6 +899,8 @@
         eventId:`coach-transfer:${s.season}:${s.day}:${previous.id}:${next.id}`
       });
     }
+    // 33B: primeiro contrato (sem clube anterior) também deixa rastro de chegada efetiva, usado só pela apresentação oficial.
+    if (s.mode === "player" && !previous) Career.init(s).playerCareer.firstClubArrival = { clubId: next.id, day: s.day, promisedRole: acceptedOffer.squadRole || acceptedOffer.role || "Rotação" };
     s.offers = [];
     s.board = 65;
     Competitions?.ensureState(s);
@@ -1152,6 +1169,7 @@
     for (const [id,part] of Object.entries(m.participation)) {
       const p=clubs[part.side].roster.find(x=>x.id===id); if(!p)continue;
       const minutes=Math.max(0,Math.min(94,Number(part.exitMinute??94)-Number(part.entryMinute??0)));part.minutes=minutes;
+      Physical?.init?.(p); // materializa o estado físico (padrão) antes de a condição mudar
       p.condition=clamp(p.condition-rng.int(15,28)*(minutes/94),0,100); Physical?.matchLoad?.(p,minutes); p.minutes+=minutes;
       const groups=Training?.groupRatings?Training.groupRatings(p.attrs):p.attrs,
         saves=m.events.filter(e=>e.type==="save"&&e.playerId===p.id).length,
@@ -1196,15 +1214,20 @@
   function competitionDisciplineKey(meta={}) {
     return String(meta.competitionId || meta.leagueId || meta.competitionName || "geral");
   }
+  // Consultas disciplinares são somente-leitura: sem registro, devolvem um objeto zerado descartável
+  // (nada é gravado no jogador). Registros persistentes só nascem em ensureDisciplineCompetition (escrita).
+  const emptyDisciplineCompetition = () => ({ yellows:0, suspensions:0, yellowTotal:0, redTotal:0 });
   function disciplineState(p) {
-    p.disciplineState ||= { competitions:{} };
-    p.disciplineState.competitions ||= {};
-    return p.disciplineState;
+    const st=p?.disciplineState;
+    return st && typeof st==="object" && st.competitions && typeof st.competitions==="object" ? st : { competitions:{} };
   }
   function disciplineCompetition(p,key) {
-    const d=disciplineState(p);
-    d.competitions[key] ||= { yellows:0, suspensions:0, yellowTotal:0, redTotal:0 };
-    return d.competitions[key];
+    return disciplineState(p).competitions[key] || emptyDisciplineCompetition();
+  }
+  function ensureDisciplineCompetition(p,key) {
+    p.disciplineState ||= { competitions:{} };
+    p.disciplineState.competitions ||= {};
+    return p.disciplineState.competitions[key] ||= emptyDisciplineCompetition();
   }
   function isSuspendedFor(p,key) { return Number(disciplineCompetition(p,key).suspensions||0)>0; }
   function processDiscipline(s,m,meta,home,away) {
@@ -1219,7 +1242,7 @@
     }
     for(const [id,g] of grouped){
       const p=byId.get(id); if(!p)continue;
-      const d=disciplineCompetition(p,key);
+      const d=ensureDisciplineCompetition(p,key);
       d.yellowTotal+=g.yellows.length; d.redTotal+=(g.directRed||g.secondYellowRed)?1:0;
       if(g.secondYellowRed){
         // No Brasil, os dois amarelos que produzem o vermelho não entram na série de 3.
@@ -1235,13 +1258,13 @@
   }
   function prepareDisciplineAvailability(s,team,meta) {
     const key=competitionDisciplineKey(meta);
-    for(const p of (team?.roster||[])) p._competitionSuspended=isSuspendedFor(p,key);
+    for(const p of (team?.roster||[])){ if(isSuspendedFor(p,key)) p._competitionSuspended=true; else delete p._competitionSuspended; }
     return key;
   }
   function serveDisciplineSuspensions(team,key) {
     for(const p of (team?.roster||[])){
       if(p._competitionSuspended){
-        const d=disciplineCompetition(p,key); d.suspensions=Math.max(0,d.suspensions-1);
+        const d=ensureDisciplineCompetition(p,key); d.suspensions=Math.max(0,d.suspensions-1);
       }
       delete p._competitionSuspended;
     }
@@ -1650,7 +1673,7 @@
         for (const p of c.roster) {
           Physical?.daily?.(p, s.day, p.id === "hero" ? s.intensity : "normal");
           if (!Physical) { p.injury = Math.max(0, p.injury - 1); p.condition = clamp(p.condition + (p.id === "hero" && s.intensity === "hard" ? 2 : 5), 0, 100); }
-          p.suspension = Math.max(0, (p.suspension || 0));
+          if (p.suspension !== undefined) { const sv = Math.max(0, Number(p.suspension) || 0); if (sv > 0) p.suspension = sv; else delete p.suspension; } // ausência = 0
         }
       if (s.mode === "player" && s.clubId && s.worldMatchClubs?.[s.clubId]) {
         for (const p of club(s).roster) {
@@ -2226,6 +2249,7 @@
     seasonCompetitionCatalog,
     seasonCompetitionOverview,
     seasonCalendarEvents,
+    contractOfferOverview:(s,offerId)=>Career.contractOfferOverview(s,offerId),
     pendingActions,
     birthdayDefaults,
     birthdayTick,
@@ -2235,11 +2259,24 @@
     preparePlayerLineup,
     disciplineState,
     disciplineCompetition,
+    ensureDisciplineCompetition,
     isSuspendedFor,
     recordDevelopment,
     simulate,
     selected,
     overall,
+    playerDevelopment: root.ProLifePlayerDevelopment,
+    dynamicPotential: root.ProLifeDynamicPotential,
+    currentOverall: (state, player, context = {}) => {
+      const calculator = root.ProLifeCurrentOverall;
+      if (!calculator || typeof calculator.currentOverall !== "function") {
+        throw Error("Modulo de GER atual indisponivel.");
+      }
+      return calculator.currentOverall(state, player, {
+        ...context,
+        baseOverall: overall
+      });
+    },
     table,
     club,
     join,

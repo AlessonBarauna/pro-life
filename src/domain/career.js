@@ -164,6 +164,7 @@
     if (!pc.marketState.rejectionCooldowns) pc.marketState.rejectionCooldowns={};
     if (pc.marketState.signedAgreement === undefined) pc.marketState.signedAgreement=null;
     if (pc.marketState.futureTransfer === undefined) pc.marketState.futureTransfer=null;
+    if (!Array.isArray(pc.contractNegotiations)) pc.contractNegotiations=[];
     if (!pc.mediaProfile) pc.mediaProfile = { image: "Equilibrada", pressure: 20, fanSentiment: 55, sponsorAppeal: 45, interviews: 0, controversies: 0 };
     PlayerPersonality?.init?.(s);
     if (!s.extras.legacy) s.extras.legacy = { rivalries: {}, records: {}, milestones: [], retired: false, retirement: null };
@@ -281,6 +282,7 @@
     const old=pc.interests.find(x=>x.clubId===clubId);
     if(old){ old.stage=stage; old.expires=s.day+45; } else pc.interests.unshift({clubId,stage,day:s.day,expires:s.day+45});
     pc.interests=pc.interests.slice(0,8);
+    recordNegotiationEvent(s,{clubId},String(stage).toUpperCase().replace(/[^A-Z0-9]+/g,"_"),null,pc);
   }
   function agentAdvice(s) {
     const pc = init(s).playerCareer;
@@ -387,6 +389,8 @@
       signingBonus:offer.signingBonus||0,
       role:offer.squadRole||offer.role,
       type:offer.transferType||"permanent",
+      ...(Number.isFinite(Number(offer.performanceBonus))?{performanceBonus:Number(offer.performanceBonus)}:{}),
+      ...(Number.isFinite(Number(offer.releaseClause))?{releaseClause:Number(offer.releaseClause)}:{}),
       ...(offer.parentClubId?{
         parentClubId:offer.parentClubId,
         parentSalary:offer.parentSalary,
@@ -418,6 +422,8 @@
 
     if(pc.agent)
       agencyRelationship(s,3);
+
+    recordNegotiationEvent(s,offer,"SIGNED",{outcome:"accepted"},pc);
   }
 
   function renewalTerms(s, requested = null) {
@@ -522,19 +528,60 @@
     post(s,"Carreira","Agente","Renovação recusada","Você decidiu não aceitar a proposta de renovação neste momento.");
   }
 
-  function counterOffer(s, clubId) {
-    const o=s.offers.find(x=>
-      x.clubId===clubId &&
-      x.expires>=s.day
-    );
+  function offerIdentifier(s,offer){
+    const created=Number.isInteger(offer?.createdDay)?offer.createdDay:Math.max(0,Number(offer?.expires||s.day)-21);
+    return String(offer?.offerId||offer?.id||`offer:${s.season}:${created}:${offer?.clubId||"club"}`);
+  }
+  function offerTerms(offer){
+    if(!offer)return null;
+    const value=(key)=>Number.isFinite(Number(offer[key]))?Number(offer[key]):null;
+    return {salary:value("salary"),signingBonus:value("signingBonus"),durationDays:value("durationDays"),role:offer.squadRole||offer.role||null,performanceBonus:value("performanceBonus"),releaseClause:value("releaseClause"),transferType:offer.transferType||"permanent",transferStartDay:value("startDay")};
+  }
+  function recordNegotiationEvent(s,offer,stage,details=null,pc=null){
+    pc ||= init(s).playerCareer;pc.contractNegotiations ||= [];
+    const offerId=offerIdentifier(s,offer),round=Number(offer?.round||0),id=`${offerId}:${s.day}:${stage}:${round}`;
+    const existing=pc.contractNegotiations.find(row=>row.id===id);if(existing)return existing;
+    const row={id,offerId,clubId:offer?.clubId||null,day:s.day,stage,round,terms:offerTerms(offer),...(details&&typeof details==="object"?details:{})};
+    pc.contractNegotiations.unshift(row);pc.contractNegotiations=pc.contractNegotiations.slice(0,120);return row;
+  }
+  function ensureOfferIdentity(s,offer,pc=null){
+    if(!offer||typeof offer!=="object")return offer;
+    offer.offerId=offerIdentifier(s,offer);offer.createdDay=Number.isInteger(offer.createdDay)?offer.createdDay:s.day;
+    offer.stage ||= "FORMAL_OFFER";offer.status ||= "formal";offer.round=Number.isInteger(offer.round)?offer.round:0;
+    recordNegotiationEvent(s,offer,"FORMAL_OFFER",null,pc||s.extras?.playerCareer);return offer;
+  }
+  function findOffer(s,offerId){
+    return (s.offers||[]).find(offer=>offer&&offer.expires>=s.day&&(offer.clubId===offerId||offer.offerId===offerId||offer.id===offerId))||null;
+  }
+  function stableNegotiationRoll(s,offer,terms){
+    let h=2166136261;const text=`${s.rng}|${offerIdentifier(s,offer)}|${offer.round||0}|${JSON.stringify(terms)}`;
+    for(const ch of text){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return (h>>>0)%100;
+  }
+  function expectedMinutes(role){return ({Estrela:"Muito alta",Importante:"Alta",Titular:"Regular",Rotação:"Moderada",Reserva:"Baixa","Fora dos planos":"Muito baixa"})[role]||null;}
+  function contractOfferOverview(s,offerId){
+    const pc=init(s).playerCareer,offer=findOffer(s,offerId);if(!offer)return null;ensureOfferIdentity(s,offer,pc);
+    const identity=root.ProLifeGlobalFootball?.clubIdentity?.(s,offer.clubId)||null,current=s.clubId?root.ProLifeGlobalFootball?.clubIdentity?.(s,s.clubId):null,terms=offerTerms(offer),contract=pc.contract;
+    const assessment=interestAssessment(s,offer.clubId),clubInterest=Number.isFinite(Number(offer.interestScore))?clamp(Math.round(Number(offer.interestScore)),0,100):(assessment?.score??null);
+    const salaryDelta=terms.salary===null?null:terms.salary-Number(s.salary||0),salaryPercent=terms.salary===null||!Number(s.salary)?null:Math.round((terms.salary/Number(s.salary)-1)*100);
+    const strategy=pc.agentStrategy||{},roleValue={"Fora dos planos":0,Reserva:1,Rotação:2,Titular:3,Importante:4,Estrela:5};
+    let playerInterest=50+((identity?.prestige??50)-(current?.prestige??50))*.25+clamp(Number(salaryPercent||0)*.25,-15,15)+(roleValue[terms.role]-(roleValue[contract?.role||pc.squadRole]||2))*4;
+    if(strategy.priority==="salary")playerInterest+=clamp(Number(salaryPercent||0)*.15,-8,8);if(strategy.priority==="prestige")playerInterest+=((identity?.prestige??50)-(current?.prestige??50))*.12;if(strategy.priority==="playtime")playerInterest+=(roleValue[terms.role]||2)*2-5;
+    playerInterest=clamp(Math.round(playerInterest),0,100);
+    const tension=clamp(Math.round(Number(offer.negotiation?.tension??((offer.round||0)*22+Math.max(0,5-(offer.expires-s.day))*4))),0,100),chance=clubInterest===null?null:clamp(Math.round(clubInterest*.55+playerInterest*.25+(100-tension)*.2),0,100);
+    return {offerId:offer.offerId,stage:offer.stage,status:offer.status,club:identity,sporting:identity?{ranking:identity.ranking,recentForm:identity.recentForm,prestige:identity.prestige,reputation:identity.reputation,strength:identity.strength,structure:identity.structure,continental:identity.continental}:null,terms:{...terms,expectedMinutes:expectedMinutes(terms.role),expires:offer.expires,daysRemaining:Math.max(0,offer.expires-s.day)},currentContract:contract?{clubId:contract.clubId,salary:Number(contract.salary||s.salary||0),durationDays:Math.max(0,Number(contract.endDay||s.day)-s.day),role:contract.role||pc.squadRole||null,type:contract.type||"permanent"}:null,comparison:{salaryDelta,salaryPercent,prestigeDelta:identity&&current&&identity.prestige!==null&&current.prestige!==null?identity.prestige-current.prestige:null},indicators:{clubInterest,playerInterest,agreementChance:chance,tension,daysRemaining:Math.max(0,offer.expires-s.day)},history:pc.contractNegotiations.filter(row=>row.clubId===offer.clubId).slice().sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id))};
+  }
+
+  function counterOffer(s, clubId, terms = null) {
+    const o=findOffer(s,clubId);
 
     if(!o)
       throw Error("Esta proposta n\u00e3o est\u00e1 dispon\u00edvel.");
 
-    if(o.negotiated)
+    if(o.negotiated&&!terms)
       throw Error("Este clube j\u00e1 respondeu \u00e0 sua contraproposta.");
 
     const pc=init(s).playerCareer;
+    ensureOfferIdentity(s,o,pc);
 
     const agentNegotiation=
       Number(pc.agent?.negotiation||40);
@@ -552,6 +599,23 @@
       0,
       1
     );
+
+    if(terms&&typeof terms==="object"){
+      if((o.round||0)>=2||o.status==="agreed")throw Error("A negociação chegou à resposta final do clube.");
+      const roles=["Rotação","Titular","Importante","Estrela"],currentRole=o.squadRole||o.role||"Rotação";
+      const finite=(value,fallback,min,max)=>{const number=value===undefined||value===null||value===""?fallback:Number(value);if(!Number.isFinite(number)||number<min||number>max)throw Error("Termos de contraproposta inválidos.");return number;};
+      const requested={salary:Math.round(finite(terms.salary,o.salary,0,1e9)/100)*100,signingBonus:Math.round(finite(terms.signingBonus,o.signingBonus||0,0,1e10)/100)*100,durationDays:Math.round(finite(terms.durationDays??(terms.years?Number(terms.years)*365:undefined),o.durationDays||730,365,1825)),squadRole:roles.includes(terms.squadRole||terms.role)?(terms.squadRole||terms.role):currentRole};
+      const roleIndex=role=>Math.max(0,roles.indexOf(role)),salaryDemand=Math.max(0,requested.salary/Math.max(1,o.salary)-1)*100,bonusDemand=Math.max(0,requested.signingBonus/Math.max(1,o.signingBonus||requested.signingBonus||1)-1)*35,roleDemand=Math.max(0,roleIndex(requested.squadRole)-roleIndex(currentRole))*9,durationDemand=Math.max(0,requested.durationDays-Number(o.durationDays||730))/365*3,demand=salaryDemand*.65+bonusDemand*.35+roleDemand+durationDemand;
+      const club=marketClub(s,o.clubId),budget=Number(club?.budget||0),annualCost=requested.salary*12+requested.signingBonus,budgetPenalty=budget>0?clamp((annualCost/Math.max(1,budget)-.035)*220,0,30):0,interest=Number.isFinite(Number(o.interestScore))?Number(o.interestScore):(interestAssessment(s,o.clubId)?.score||50),chance=clamp(Math.round(30+leverage*35+interest*.35-demand-budgetPenalty),2,95),roll=stableNegotiationRoll(s,o,requested);
+      pc.negotiations++;recordNegotiationEvent(s,{...o,...requested,round:(o.round||0)+1},"COUNTER_OFFER",{demand:+demand.toFixed(2),chance,roll},pc);
+      if(demand>95||roll>=Math.min(98,chance+35)){
+        const rejected={...o,...requested,status:"rejected",stage:"REJECTED",round:(o.round||0)+1,negotiation:{chance,roll,tension:100}};recordNegotiationEvent(s,rejected,"REJECTED",{outcome:"rejected"},pc);s.offers=s.offers.filter(item=>item!==o);pc.marketState.rejectionCooldowns[o.clubId]=s.day+45;post(s,"Carreira","Diretoria","Contraproposta recusada","O clube considerou as exigências incompatíveis com o orçamento e encerrou esta negociação.");return rejected;
+      }
+      const accepted=roll<chance;
+      if(accepted){Object.assign(o,requested,{negotiated:true,status:"agreed",stage:"AGREEMENT",round:(o.round||0)+1,expires:Math.max(o.expires,s.day+10),negotiation:{chance,roll,tension:clamp(Math.round(demand),0,100)}});recordNegotiationEvent(s,o,"AGREEMENT",{outcome:"accepted"},pc);post(s,"Carreira","Agente","Contraproposta aceita","O clube aceitou os termos negociados. O acordo está pronto para sua autorização final.");return o;}
+      const alternative={salary:Math.round((o.salary+(requested.salary-o.salary)*.45)/100)*100,signingBonus:Math.round(((o.signingBonus||0)+(requested.signingBonus-(o.signingBonus||0))*.45)/100)*100,durationDays:requested.durationDays,squadRole:roleIndex(requested.squadRole)<=roleIndex(currentRole)+1?requested.squadRole:roles[Math.min(roles.length-1,roleIndex(currentRole)+1)]};
+      Object.assign(o,alternative,{status:"formal",stage:"CLUB_RESPONSE",round:(o.round||0)+1,expires:Math.max(o.expires,s.day+7),negotiation:{chance,roll,tension:clamp(Math.round(35+demand*.45),0,100)}});recordNegotiationEvent(s,o,"CLUB_RESPONSE",{outcome:"alternative"},pc);post(s,"Carreira","Diretoria","Clube responde à contraproposta","A diretoria enviou uma alternativa compatível com o orçamento. Você ainda controla a decisão final.");return o;
+    }
 
     const salaryRaise=
       1.04 + leverage*0.17;
@@ -584,6 +648,8 @@
       "Contraproposta aceita",
       "Sua equipe de representa\u00e7\u00e3o conseguiu melhorar sal\u00e1rio e luvas. A oferta continua v\u00e1lida at\u00e9 o prazo original."
     );
+
+    recordNegotiationEvent(s,o,"AGREEMENT",{outcome:"legacy-agent-improvement"},pc);
 
     return o;
   }
@@ -1414,11 +1480,11 @@
 
   function interestAssessment(s,clubId){ const c=marketClub(s,clubId); if(!c||clubId===s.clubId) return null; const pc=init(s).playerCareer, ov=playerOverall(s), comp=positionCompetition(s,c), level=clubLevel(c,s), rep=sportingReputation(s), age=s.person.age; const ageBonus=age<=21?6:age<=25?3:age>=32?-5:0; const form=((pc.lastEvaluation?.rating||6.5)-6.5)*7; const need=Math.max(-18,Math.min(18,(ov-comp.best)*2.4 + (5-comp.depth)*1.5)); const levelGap=Math.abs(level-(ov+rep*.18)); const fit=Math.max(-20,18-levelGap*.8); const personality=PlayerPersonality?.marketModifier?.(s)||0; const score=clamp(Math.round(28+rep*.28+form+ageBonus+need+fit+personality),0,100); return {clubId,score,...careerMarketEligibility(s,c),label:score>=72?"ALTO":score>=48?"MÉDIO":"BAIXO",clubLevel:level,bestRival:comp.best,competition:comp.best>=ov+5?"Alta":comp.best>=ov-2?"Média":"Favorável",recommendedOverall:Math.max(55,comp.best-1),sportingReputation:rep,personalityModifier:personality}; }
   function nextWindowStart(day){ const year=Math.floor(day/365)*365,current=day%365; const w=windows.find(x=>x.start>current); return w?year+w.start:year+365+windows[0].start; }
-  function holdOffer(s,clubId){ const o=s.offers.find(x=>x.clubId===clubId&&x.expires>=s.day); if(!o) throw Error("Esta proposta não está disponível."); o.expires=Math.max(o.expires,s.day+7); o.onHold=true; post(s,"Carreira","Agente","Mais tempo para decidir",`Seu agente conseguiu prazo até o dia ${o.expires} para responder.`); return o; }
-  function rejectOffer(s,clubId){ const i=s.offers.findIndex(x=>x.clubId===clubId&&x.expires>=s.day); if(i<0) throw Error("Esta proposta não está disponível."); const o=s.offers.splice(i,1)[0],pc=init(s).playerCareer; pc.marketState.rejectionCooldowns[clubId]=s.day+60; const it=pc.interests.find(x=>x.clubId===clubId); if(it){it.stage="Recusado";it.expires=s.day+60;} post(s,"Carreira","Agente","Proposta recusada",`A proposta de ${marketClub(s,clubId)?.name||"clube"} foi recusada. Um novo contato não é esperado no curto prazo.`); return o; }
-  function signAgreement(s,offer){ const pc=init(s).playerCareer; if(pc.marketState.signedAgreement) throw Error("Você já possui um acordo assinado pendente."); const startDay=windowStatus(s).open?s.day:nextWindowStart(s.day); pc.marketState.signedAgreement={...offer,agreedDay:s.day,startDay,status:startDay===s.day?"ready":"scheduled"}; pc.marketState.futureTransfer=startDay>s.day?{clubId:offer.clubId,startDay,agreedDay:s.day}:null; s.offers=s.offers.filter(x=>x.clubId===offer.clubId); post(s,"Transferências","Agente",startDay>s.day?"Transferência acordada":"Acordo assinado",`${root.ProLife?.club(s,offer.clubId)?.name||"Clube"} e jogador chegaram a um acordo. ${startDay>s.day?`A mudança será efetivada no dia ${startDay}.`:"A transferência pode ser efetivada agora."}`); return pc.marketState.signedAgreement; }
+  function holdOffer(s,clubId){ const o=findOffer(s,clubId); if(!o) throw Error("Esta proposta não está disponível."); const pc=init(s).playerCareer;ensureOfferIdentity(s,o,pc);o.expires=Math.max(o.expires,s.day+7);o.responseDeadline=o.expires;o.onHold=true;o.stage="ON_HOLD";recordNegotiationEvent(s,o,"ON_HOLD",null,pc);post(s,"Carreira","Agente","Mais tempo para decidir",`Seu agente conseguiu prazo até o dia ${o.expires} para responder.`);return o; }
+  function rejectOffer(s,clubId){ const o=findOffer(s,clubId);if(!o)throw Error("Esta proposta não está disponível.");const pc=init(s).playerCareer;ensureOfferIdentity(s,o,pc);s.offers=s.offers.filter(item=>item!==o);pc.marketState.rejectionCooldowns[o.clubId]=s.day+60;const it=pc.interests.find(x=>x.clubId===o.clubId);if(it){it.stage="Recusado";it.expires=s.day+60;}recordNegotiationEvent(s,{...o,status:"rejected",stage:"REJECTED"},"REJECTED",{outcome:"player-rejected"},pc);post(s,"Carreira","Agente","Proposta recusada",`A proposta de ${marketClub(s,o.clubId)?.name||"clube"} foi recusada. Um novo contato não é esperado no curto prazo.`);return o; }
+  function signAgreement(s,offer){ const pc=init(s).playerCareer;ensureOfferIdentity(s,offer,pc);if(pc.marketState.signedAgreement) throw Error("Você já possui um acordo assinado pendente."); const startDay=windowStatus(s).open?s.day:nextWindowStart(s.day); pc.marketState.signedAgreement={...offer,agreedDay:s.day,startDay,status:startDay===s.day?"ready":"scheduled",stage:"AGREEMENT"}; pc.marketState.futureTransfer=startDay>s.day?{clubId:offer.clubId,startDay,agreedDay:s.day}:null; s.offers=s.offers.filter(x=>x.clubId===offer.clubId);recordNegotiationEvent(s,pc.marketState.signedAgreement,"AGREEMENT",{outcome:"player-accepted"},pc);post(s,"Transferências","Agente",startDay>s.day?"Transferência acordada":"Acordo assinado",`${root.ProLife?.club(s,offer.clubId)?.name||"Clube"} e jogador chegaram a um acordo. ${startDay>s.day?`A mudança será efetivada no dia ${startDay}.`:"A transferência pode ser efetivada agora."}`); return pc.marketState.signedAgreement; }
   function clearAgreement(s){ const pc=init(s).playerCareer; pc.marketState.signedAgreement=null; pc.marketState.futureTransfer=null; }
-  function marketTick(s){ const pc=init(s).playerCareer; for(const o of s.offers||[]) if(o.expires<s.day){ const it=pc.interests.find(x=>x.clubId===o.clubId); if(it&&it.stage==="Oferta oficial") it.stage="Encerrado"; } s.offers=(s.offers||[]).filter(o=>o.expires>=s.day); const a=pc.marketState.signedAgreement; return a&&a.startDay<=s.day?a:null; }
+  function marketTick(s){ const pc=init(s).playerCareer; for(const o of s.offers||[]) if(o.expires<s.day){ ensureOfferIdentity(s,o,pc);const it=pc.interests.find(x=>x.clubId===o.clubId);if(it&&["Oferta oficial","Negociação"].includes(it.stage))it.stage="Encerrado";recordNegotiationEvent(s,{...o,status:"expired",stage:"EXPIRED"},"EXPIRED",{outcome:"expired"},pc); } s.offers=(s.offers||[]).filter(o=>o.expires>=s.day); const a=pc.marketState.signedAgreement; return a&&a.startDay<=s.day?a:null; }
 
   function nextWindowDay(day) {
     const year = Math.floor(day / 365) * 365,
@@ -1944,6 +2010,7 @@
     registerInterest,
     signContract,
     counterOffer,
+    contractOfferOverview,
     createRenewalOffer,
     requestRenewal,
     counterRenewal,

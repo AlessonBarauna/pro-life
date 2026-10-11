@@ -329,6 +329,8 @@
   function render() {
     window.ProLifeAvatar3D?.dispose();
     if (!state || setup) {
+      cineUi.kind = null;
+      mountCine();
       landing();
       return;
     }
@@ -340,7 +342,7 @@
         ? [
             ["home", "Início", [["home", "Central"], ["lineup", "Escalação do próximo jogo"]]],
             ["inbox", "Caixa", [["inbox", "Mensagens"]]],
-            ["profile", "Meu jogador", [["profile", "Perfil e carreira"], ["training", "Treinamento"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["agency", "Empresário e Agência"], ["legacy", "Evolução e legado"], ["story", "Objetivos e História"]]],
+            ["profile", "Meu jogador", [["profile", "Perfil e carreira"], ["contract", "Contrato"], ["training", "Treinamento"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["agency", "Empresário e Agência"], ["legacy", "Evolução e legado"], ["story", "Objetivos e História"]]],
             ["market", "Mercado", [["market", "Central do mercado"], ["proposals", "Minhas propostas"]]],
             ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["panorama", "Panorama"], ["squad", "Elenco"]]],
             ["national", "Seleção", []],
@@ -369,6 +371,8 @@
     mountAvatar();
     revealActiveTab();
     ensurePendingDecisionPopup();
+    cineAutoPresent();
+    mountCine();
   }
   function mountInternationalOfferPreference(){
     const levelSelect=$("#offer-club-level");
@@ -399,7 +403,7 @@
         hasSaved: () => !!state,
         classic: () => { classicForm = true; landing(); },
         confirmReplace: () => true,
-        onStart: (fresh) => { S.saveAsNew?.(fresh); state = fresh; setup = false; page = "home"; persist(); render(); window.scrollTo(0, 0); },
+        onStart: (fresh) => { if (!S.saveAsNew?.(fresh)) { toast("Nao foi possivel salvar a nova carreira. Nenhuma carreira foi substituida."); return; } state = fresh; setup = false; page = "home"; persist(); render(); window.scrollTo(0, 0); },
       });
       return;
     }
@@ -550,7 +554,7 @@
           config,
           config.seed ? Number(config.seed) : Date.now(),
         );
-        S.saveAsNew?.(fresh);
+        if (!S.saveAsNew?.(fresh)) throw Error("Nao foi possivel salvar a nova carreira. Verifique o armazenamento do navegador.");
         state = fresh;
         setup = false;
         page = "home";
@@ -1112,6 +1116,223 @@
       else toast(`${advancePending.reason} Dia alcançado: ${dayDate(res.reachedDay ?? state.day)}.`);
     } else { advancePending = null; render(); toast(`Avançou até ${dayDate(res?.reachedDay ?? state.day)}.`); }
   }
+  // ===== Stage 31.8B — Central de negociação e propostas (UI) =====
+  let negUi = { open: null, profile: null, confirm: null, terms: false, hist: {} };
+  const NI = "Não informado";
+  const fin = (v) => (v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
+  const txt = (v) => (v === null || v === undefined || v === "" || (typeof v === "number" && !Number.isFinite(v)) ? NI : String(v));
+  const moneyOrNI = (v) => (fin(v) === null ? NI : money(fin(v)));
+  const ordinal = (n) => `${n}º`;
+  function clubIdentityOf(id) {
+    if (!id) return null;
+    let ident = null, c = null;
+    try { ident = D.GlobalFootball?.clubIdentity?.(state, id) || null; } catch { ident = null; }
+    try { c = D.club(state, id) || null; } catch { c = null; }
+    if (!ident && !c) return null;
+    let league = ident?.league || null;
+    if (!league) { try { const l = D.GlobalFootball?.leagueById?.(state, c?.leagueId); if (l) league = { id: l.id, name: l.name, country: l.country, level: l.level }; } catch { league = null; } }
+    let region = ident?.region || null;
+    if (!region && c) { try { region = D.Competitions?.clubState?.(c) || null; } catch { region = null; } }
+    const strength = fin(ident?.strength ?? c?.strength);
+    let leagueRep = null;
+    try { leagueRep = fin(D.GlobalFootball?.leagueById?.(state, league?.id)?.reputation); } catch { leagueRep = null; }
+    return {
+      id, name: ident?.name || c?.name || null, country: ident?.country || c?.country || null,
+      city: ident?.city || c?.city || null, region, stadium: ident?.stadium || c?.stadium || null,
+      league, division: fin(ident?.division ?? c?.division), reputation: fin(ident?.reputation ?? c?.reputation),
+      strength: strength ? strength : null, structure: fin(ident?.structure ?? c?.structure), leagueRep,
+      color: /^#[0-9a-f]{3,8}$/i.test(c?.color || "") ? c.color : null,
+    };
+  }
+  function clubStanding(info) {
+    if (!info?.league?.id || typeof D.seasonCompetitionOverview !== "function") return null;
+    try {
+      const ov = D.seasonCompetitionOverview(state, info.league.id), rows = ov?.standings || [], r = rows.find((x) => x.clubId === info.id);
+      return r ? { rank: r.rank, played: r.played, points: r.points, total: rows.length } : null;
+    } catch { return null; }
+  }
+  const crest = (info) => {
+    const name = info?.name || "?", ini = name.split(/\s+/).filter(Boolean).slice(0, 2).map((x) => x[0]).join("").toUpperCase() || "?";
+    return `<span class="neg-crest" ${info?.color ? `style="--crest:${info.color}"` : ""} aria-hidden="true">${esc(ini)}</span>`;
+  };
+  const placeLine = (i) => [i?.city, i?.region, i?.country].filter(Boolean).join(" · ") || NI;
+  const leagueLine = (i) => i?.league?.name ? `${i.league.name}${fin(i.league.level) ? ` · ${i.league.level}ª divisão` : ""}` : NI;
+  const standingText = (st) => (!st ? NI : st.played > 0 ? `${ordinal(st.rank)} de ${st.total} · ${st.points} pts em ${st.played} jogo(s)` : "Temporada ainda sem jogos");
+  const dur = (d) => (fin(d) === null ? NI : `${Math.max(1, Math.round(Number(d) / 365))} ano(s)`);
+  function negStage(o) {
+    const steps = ["Proposta inicial", "Prazo estendido", "Resposta do clube"], at = o.negotiated ? 2 : o.onHold ? 1 : 0;
+    return { steps, at, label: steps[at] };
+  }
+  function offerFacts(o) {
+    const info = clubIdentityOf(o.clubId);
+    return { o, info, left: Math.max(0, Number(o.expires) - Number(state.day)), stage: negStage(o) };
+  }
+  function interestBadge(o) {
+    const sc = fin(o.interestScore);
+    return `<span class="neg-interest ${sc === null ? "" : "lv-" + String(o.interestLabel || "").toLowerCase()}">${sc === null ? "Interesse " + NI : `Interesse ${esc(txt(o.interestLabel))} · ${sc}/100`}</span>`;
+  }
+  function offerCard(o) {
+    const { info, left, stage } = offerFacts(o), loan = o.transferType === "loan";
+    const name = info?.name || NI, league = info?.league?.name ? info.league.name : NI;
+    return `<article class="news offer neg-card ${negUi.open === o.clubId ? "open" : ""}" id="transfer-offer-${esc(o.clubId)}"><header class="neg-head">${crest(info)}<div><div class="tag">${loan ? "PROPOSTA DE EMPRÉSTIMO" : "PROPOSTA DE CONTRATO"} · expira em ${left} dia(s)</div><h3>${esc(name)}</h3><p class="muted"><b>Estado:</b> ${esc(txt(info?.region))} · <b>Competição:</b> ${esc(league)}${info?.league ? ` · ${esc(info.league.country || "")}` : ""}</p></div>${interestBadge(o)}</header><div class="neg-facts"><div><small>Local</small><b>${esc(placeLine(info))}</b></div><div><small>Liga e divisão</small><b>${esc(leagueLine(info))}</b></div><div><small>Reputação</small><b>${esc(txt(info?.reputation))}</b></div><div><small>Estrutura</small><b>${esc(info?.structure === null || info?.structure === undefined ? NI : info.structure + "/100")}</b></div><div><small>Salário</small><b class="gold">${esc(fin(o.salary) === null ? NI : money(o.salary) + "/mês")}</b></div><div><small>Luvas</small><b class="gold">${esc(moneyOrNI(o.signingBonus ?? 0))}</b></div><div><small>Duração</small><b>${esc(dur(o.durationDays ?? 730))}</b></div><div><small>Papel</small><b>${esc(txt(o.squadRole || "Rotação"))}</b></div></div><div class="neg-stage" aria-label="Etapa da negociação">${stage.steps.map((s, i) => `<span class="${i < stage.at ? "done" : i === stage.at ? "now" : ""}">${esc(s)}</span>`).join("")}</div><p class="muted">Projeto: ${esc(txt(o.role))}${o.negotiated ? " · <b>Contraproposta negociada</b>" : ""}</p><div class="actions neg-actions"><button class="primary" type="button" data-neg-open="${esc(o.clubId)}">Abrir negociação</button><button type="button" data-club-profile="${esc(o.clubId)}">Conhecer clube</button></div>${negUi.profile === o.clubId ? clubProfilePanel(info, o.clubId) : ""}${negUi.open === o.clubId ? negotiationCenter(o) : ""}</article>`;
+  }
+  function clubProfilePanel(info, id) {
+    if (!info) return `<section class="neg-profile"><div class="tag">PERFIL DO CLUBE</div><p class="empty">${NI}</p><button type="button" data-club-profile-close>Fechar</button></section>`;
+    const st = clubStanding(info), mine = id === state.clubId;
+    const rows = [["Localização", placeLine(info)], ["País", info.country], ["Cidade", info.city], ["Região/estado", info.region], ["Liga", leagueLine(info)], ["Classificação atual", standingText(st)], ["Reputação", info.reputation === null ? null : `${info.reputation}/100`], ["Força", info.strength === null ? null : `${info.strength}/100`], ["Estrutura", info.structure === null ? null : `${info.structure}/100`], ["Estádio", info.stadium], ["Histórico e objetivos", null]];
+    return `<section class="neg-profile" aria-label="Perfil do clube"><div class="tag">PERFIL DO CLUBE${mine ? " · SEU CLUBE" : ""}</div><h4>${esc(txt(info.name))}</h4><dl class="neg-dl">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(txt(v))}</dd></div>`).join("")}</dl><button type="button" data-club-profile-close>Fechar perfil</button></section>`;
+  }
+  function currentTerms() {
+    let pc = null; try { pc = Career.init(state).playerCareer; } catch { pc = null; }
+    const ct = pc?.contract || {}, info = clubIdentityOf(state.clubId);
+    return { info, salary: fin(ct.salary), bonus: fin(ct.signingBonus), role: ct.role || pc?.squadRole || null, days: fin(ct.durationDays), endDay: fin(ct.endDay) };
+  }
+  function compareTable(o, info) {
+    const cur = currentTerms(), ci = cur.info, rows = [
+      ["Salário", cur.salary === null ? NI : money(cur.salary) + "/mês", fin(o.salary) === null ? NI : money(o.salary) + "/mês"],
+      ["Luvas", cur.bonus === null ? NI : money(cur.bonus), moneyOrNI(o.signingBonus ?? 0)],
+      ["Duração", cur.days === null ? NI : dur(cur.days), dur(o.durationDays ?? 730)],
+      ["Papel", txt(cur.role), txt(o.squadRole || "Rotação")],
+      ["Reputação do clube", txt(ci?.reputation), txt(info?.reputation)],
+      ["Nível da liga", ci?.leagueRep === null || ci?.leagueRep === undefined ? leagueLine(ci) : `${leagueLine(ci)} · reputação ${ci.leagueRep}`, info?.leagueRep === null || info?.leagueRep === undefined ? leagueLine(info) : `${leagueLine(info)} · reputação ${info.leagueRep}`],
+      ["Expectativa de minutos", NI, o.squadRole ? `Papel de ${o.squadRole}` : NI],
+      ["Objetivos esportivos", NI, o.role ? String(o.role) : NI],
+    ];
+    return `<table class="neg-compare"><thead><tr><th></th><th>${esc(txt(ci?.name))} <small>atual</small></th><th>${esc(txt(info?.name))} <small>interessado</small></th></tr></thead><tbody>${rows.map(([k, a, b]) => `<tr><th scope="row">${esc(k)}</th><td class="${a === NI ? "ni" : ""}">${esc(a)}</td><td class="${b === NI ? "ni" : ""}">${esc(b)}</td></tr>`).join("")}</tbody></table>`;
+  }
+  function negotiationCenter(o) {
+    const { info, left, stage } = offerFacts(o), w = Career.windowStatus(state), id = o.clubId, hist = negUi.hist[id] || [];
+    const confirm = negUi.confirm && negUi.confirm.id === id ? negUi.confirm.type : null;
+    const confirmBar = confirm === "sign" && (state.mode !== "player" || !window.ProLifeContractSigning) ? `<div class="neg-confirm" role="alertdialog" aria-label="Confirmar assinatura"><p><b>Confirmar assinatura com ${esc(txt(info?.name))}?</b> ${w.open ? "O contrato entra em vigor agora." : "A transferência será agendada para a próxima janela."}</p><div class="actions"><button class="primary" type="button" data-join="${esc(id)}">Confirmar assinatura</button><button type="button" data-neg-cancel>Voltar</button></div></div>`
+      : confirm === "reject" ? `<div class="neg-confirm danger" role="alertdialog" aria-label="Confirmar recusa"><p><b>Recusar definitivamente ${esc(txt(info?.name))}?</b> A proposta será encerrada e não poderá ser recuperada.</p><div class="actions"><button class="danger" type="button" data-reject="${esc(id)}">Confirmar recusa</button><button type="button" data-neg-cancel>Voltar</button></div></div>` : "";
+    const termsPanel = negUi.terms ? `<div class="neg-terms"><div class="tag">NEGOCIAR TERMOS</div><p class="muted">O motor aceita um único pedido de melhores termos por proposta (salário e luvas). Ele é avaliado pelo seu agente, reputação e confiança do treinador; não há campos livres de valor nesta versão.</p><button class="primary" type="button" data-counter="${esc(id)}" ${o.negotiated ? "disabled" : ""}>${o.negotiated ? "Clube já respondeu" : "Pedir melhores termos"}</button></div>` : "";
+    return `<section class="neg-center" aria-label="Central de negociação"><div class="neg-center-head">${crest(info)}<div><div class="tag">CENTRAL DE NEGOCIAÇÃO</div><h3>${esc(txt(info?.name))}</h3><p class="muted">${esc(placeLine(info))} · ${esc(leagueLine(info))}</p></div><button type="button" data-neg-close aria-label="Fechar negociação">Fechar</button></div>
+<div class="neg-grid"><div class="neg-box"><div class="tag">PERFIL ESPORTIVO</div><dl class="neg-dl"><div><dt>Reputação</dt><dd>${esc(txt(info?.reputation))}</dd></div><div><dt>Estrutura</dt><dd>${esc(info?.structure === null || info?.structure === undefined ? NI : info.structure + "/100")}</dd></div><div><dt>Classificação</dt><dd>${esc(standingText(clubStanding(info)))}</dd></div></dl></div>
+<div class="neg-box"><div class="tag">OFERTA FINANCEIRA</div><dl class="neg-dl"><div><dt>Salário</dt><dd class="gold">${esc(fin(o.salary) === null ? NI : money(o.salary) + "/mês")}</dd></div><div><dt>Luvas</dt><dd class="gold">${esc(moneyOrNI(o.signingBonus ?? 0))}</dd></div><div><dt>Duração</dt><dd>${esc(dur(o.durationDays ?? 730))}</dd></div><div><dt>Tipo</dt><dd>${o.transferType === "loan" ? "Empréstimo" : "Transferência"}</dd></div></dl></div>
+<div class="neg-box"><div class="tag">PAPEL E MINUTOS</div><dl class="neg-dl"><div><dt>Papel oferecido</dt><dd>${esc(txt(o.squadRole || "Rotação"))}</dd></div><div><dt>Projeto</dt><dd>${esc(txt(o.role))}</dd></div><div><dt>Minutos esperados</dt><dd>${NI}</dd></div></dl></div>
+<div class="neg-box"><div class="tag">ETAPA E INTERESSE</div><div class="neg-stage">${stage.steps.map((s, i) => `<span class="${i < stage.at ? "done" : i === stage.at ? "now" : ""}">${esc(s)}</span>`).join("")}</div><p>${interestBadge(o)}</p><p class="muted">Prazo para decidir: <b>${left} dia(s)</b> (até ${esc(dayDate(o.expires))}).</p></div></div>
+<div class="neg-box wide"><div class="tag">COMPARAÇÃO · CLUBE ATUAL | CLUBE INTERESSADO</div><div class="season-scroll">${compareTable(o, info)}</div></div>
+<div class="neg-box wide"><div class="tag">HISTÓRICO DE CONTRAPROPOSTAS</div>${hist.length || o.negotiated ? `<ul class="neg-hist">${hist.map((h) => `<li>Antes: ${esc(moneyOrNI(h.salary))}/mês · luvas ${esc(moneyOrNI(h.bonus))} → Depois: ${esc(moneyOrNI(h.afterSalary))}/mês · luvas ${esc(moneyOrNI(h.afterBonus))}</li>`).join("")}${o.negotiated && !hist.length ? `<li>Contraproposta já respondida${fin(o.agentNegotiationScore) !== null ? ` (força de negociação ${o.agentNegotiationScore}/100)` : ""}. Termos anteriores não foram registrados.</li>` : ""}</ul>` : '<p class="empty">Nenhuma contraproposta enviada.</p>'}</div>
+${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="primary gold" type="button" data-neg-sign="${esc(id)}">${w.open ? "Aceitar e assinar" : "Aceitar · agendar transferência"}</button><button type="button" data-neg-terms>Negociar termos</button><button type="button" data-hold-offer="${esc(id)}" ${o.onHold ? "disabled" : ""}>${o.onHold ? "Prazo já estendido" : "Pedir tempo"}</button><button class="danger" type="button" data-neg-reject="${esc(id)}">Recusar</button></div></section>`;
+  }
+  // ===== Stage 33A — assinatura de contrato e apresentação oficial =====
+  // UI pura: usa apenas ações existentes (join) e lê o estado. Abrir/fechar não altera dados da carreira.
+  let cineUi = { kind: null, step: 1, mode: null, clubId: null, skip: false, busy: false };
+  const CINE_SEEN = "prolife.cine.seen.v1", cineSeenMem = new Set();
+  function cinePc() { try { return Career.init(state).playerCareer || null; } catch { return null; } }
+  function cineAgreement() { return state && state.mode === "player" ? cinePc()?.marketState?.signedAgreement || null : null; }
+  function cineContract() {
+    const ct = state && state.mode === "player" ? cinePc()?.contract : null;
+    return ct && String(ct.clubId) === String(state.clubId) ? ct : null;
+  }
+  // Rastro confiável de troca efetiva de clube: pc.clubArrival (gravado pelo motor em join) + contrato do clube atual.
+  function cineArrival() {
+    if (!state || state.mode !== "player") return null;
+    const pc = cinePc(), a = pc?.clubArrival, slot = S.activeId?.() || "slot";
+    if (!cineContract()) return null;
+    if (a && String(a.clubId) === String(state.clubId)) return { ...a, key: `${slot}:${a.clubId}:${a.day}` };
+    const fa = pc?.firstClubArrival;
+    if (fa && String(fa.clubId) === String(state.clubId)) return { ...fa, first: true, key: `${slot}:${fa.clubId}:first:${fa.day}` };
+    // Primeiro contrato não gera clubArrival: o rastro persistido é creation (gravado só quando a chegada ao clube é efetiva).
+    const c = state.creation;
+    if (c && c.started && Number.isFinite(Number(c.startedDay)) && String(c.clubId) === String(state.clubId)) return { clubId: c.clubId, day: Number(c.startedDay), first: true, key: `${slot}:${c.clubId}:first:${c.startedDay}` };
+    return null;
+  }
+  function cineSeen(key) {
+    if (cineSeenMem.has(key)) return true;
+    try { const v = JSON.parse(localStorage.getItem(CINE_SEEN) || "[]"); return Array.isArray(v) && v.includes(key); } catch { return false; }
+  }
+  function cineMarkSeen(key) {
+    cineSeenMem.add(key);
+    try { const v = JSON.parse(localStorage.getItem(CINE_SEEN) || "[]"), a = Array.isArray(v) ? v : []; if (!a.includes(key)) { a.push(key); localStorage.setItem(CINE_SEEN, JSON.stringify(a.slice(-60))); } } catch { /* sem armazenamento: só lembra nesta sessão */ }
+  }
+  function cineCurClub() { try { return state.clubId ? D.club(state) || null : null; } catch { return null; } }
+  function cineRec(mode, clubId) {
+    if (mode === "offer") return (state.offers || []).find((o) => String(o.clubId) === String(clubId) && o.expires >= state.day) || null;
+    if (mode === "agreement") return cineAgreement();
+    return cineContract();
+  }
+  function cineModel(rec, mode) {
+    const info = clubIdentityOf(rec.clubId), w = Career.windowStatus(state), cur = cineCurClub();
+    const future = mode === "agreement" ? rec.status === "scheduled" && Number(rec.startDay) > Number(state.day) : mode === "offer" ? !w.open : false;
+    const startDay = mode === "agreement" ? fin(rec.startDay) : mode === "offer" ? (w.open ? Number(state.day) : Career.nextWindowStart(state.day)) : fin(rec.signedDay);
+    const signedDay = mode === "agreement" ? fin(rec.agreedDay) : mode === "contract" ? fin(rec.signedDay) : Number(state.day);
+    const salary = fin(rec.salary), bonus = fin(rec.signingBonus), days = fin(rec.durationDays), num = fin(state.person?.number ?? state.person?.shirtNumber);
+    const stadium = typeof info?.stadium === "string" ? info.stadium : info?.stadium?.name || null;
+    return {
+      clubName: info?.name || null, clubColor: info?.color || null, type: rec.transferType || rec.type || null,
+      salary: salary === null ? null : money(salary) + "/mês", bonus: bonus && bonus > 0 ? money(bonus) : null,
+      duration: days === null ? null : dur(days), role: (mode === "contract" ? rec.role : rec.squadRole) || null,
+      future, effective: mode === "contract", startText: startDay === null ? null : dayDate(startDay),
+      fromClub: cur && String(cur.id) !== String(rec.clubId) ? cur.name : null, athlete: state.person?.name || null,
+      signedOn: signedDay === null ? null : dayDate(signedDay),
+      place: placeLine(info) === NI ? null : placeLine(info), league: leagueLine(info) === NI ? null : leagueLine(info),
+      stadium, number: num, canReplay: mode === "contract" && !!cineArrival(),
+    };
+  }
+  function cineOpen(what, clubId) {
+    if (!state || state.mode !== "player") return;
+    const mode = what === "sign" ? "offer" : what === "agreement" ? "agreement" : "contract";
+    const id = mode === "offer" ? clubId : mode === "agreement" ? cineAgreement()?.clubId : state.clubId;
+    if (what === "present" && !cineArrival()) return;
+    if (!cineRec(mode, id)) { toast(mode === "offer" ? "Esta proposta não está disponível." : "Nenhum contrato ou acordo para exibir."); return; }
+    cineUi = { ...cineUi, kind: what === "contract" ? "agreement" : what, step: 1, mode, clubId: id, busy: false };
+    render();
+  }
+  function cineClose() {
+    const a = cineArrival();
+    if (a && cineUi.mode === "contract") cineMarkSeen(a.key);
+    cineUi.kind = null; cineUi.busy = false;
+    render();
+  }
+  // Confirmação: uma única chamada ao join existente. Sem acordo duplicado, sem reaplicar luvas/salário.
+  function cineSign() {
+    if (cineUi.busy || cineUi.kind !== "sign" || cineUi.step !== 2 || cineUi.mode !== "offer") return;
+    if (cineAgreement()) { cineOpen("agreement"); return; }
+    cineUi.busy = true;
+    try { A.execute(state, "join", { id: cineUi.clubId }); }
+    catch (e) { cineUi.busy = false; toast(e.message); return; }
+    persist();
+    if (cineAgreement()) cineUi.mode = "agreement";
+    else if (cineContract()) { cineUi.mode = "contract"; const a = cineArrival(); if (a) cineMarkSeen(a.key); }
+    else { cineUi.kind = null; cineUi.busy = false; render(); return; }
+    cineUi.step = 3; cineUi.busy = false;
+    render();
+  }
+  function cineAutoPresent() {
+    if (cineUi.kind || !state || state.mode !== "player") return;
+    const a = cineArrival();
+    if (!a || cineSeen(a.key) || Number(state.day) - Number(a.day) > 3) return;
+    cineMarkSeen(a.key);
+    cineUi = { ...cineUi, kind: "present", step: 1, mode: "contract", clubId: state.clubId, busy: false };
+  }
+  function mountCine() {
+    document.getElementById("cine-root")?.remove();
+    document.body.classList.remove("cine-open");
+    if (!state || setup || state.mode !== "player" || !cineUi.kind) { if (!state || setup || state.mode !== "player") cineUi.kind = null; return; }
+    const rec = cineRec(cineUi.mode, cineUi.clubId), api = window.ProLifeContractSigning;
+    if (!rec || !api || (cineUi.kind === "present" && !cineArrival())) { cineUi.kind = null; return; }
+    const host = document.createElement("div");
+    host.id = "cine-root";
+    host.innerHTML = api.render(cineUi.kind, cineUi.step, cineModel(rec, cineUi.mode));
+    if (cineUi.skip) host.firstElementChild?.classList.add("skip");
+    document.body.appendChild(host);
+    document.body.classList.add("cine-open");
+    host.querySelector("button.primary")?.focus?.({ preventScroll: true });
+  }
+  function cineBanner() {
+    const ag = cineAgreement();
+    if (!ag) return "";
+    const info = clubIdentityOf(ag.clubId), cur = cineCurClub();
+    return `<section class="cine-banner" aria-label="Acordo assinado pendente"><div><div class="tag">ACORDO ASSINADO</div><b>${esc(txt(info?.name))}</b><p>${cur?.name ? `Você segue no ${esc(cur.name)} até` : "Seu contrato começa em"} ${esc(fin(ag.startDay) === null ? "a próxima janela" : dayDate(ag.startDay))}. ${cur?.name ? "A transferência é concluída" : "A entrada no clube é concluída"} automaticamente nessa data.</p></div><button type="button" class="primary gold" data-cine-open="agreement">Visualizar acordo</button></section>`;
+  }
+
+  function offersSection(list) {
+    if (negUi.open && !list.some((o) => o.clubId === negUi.open)) { negUi.open = null; negUi.confirm = null; negUi.terms = false; }
+    if (negUi.profile && !list.some((o) => o.clubId === negUi.profile)) negUi.profile = null;
+    return list.map(offerCard).join("");
+  }
+
   const views = {
     worldCompetitions() {
       return window.ProLifeWorldCompetitionsView?.render
@@ -1452,16 +1673,17 @@
       const career = Career.init(state), pc = career.playerCareer, ct = pc?.contract, interests = pc?.interests || [], advice = state.mode === "player" ? Career.agentAdvice(state) : null, strategy = pc?.agentStrategy || { priority: "balanced", stance: "open" }, prefs = career.offerPreferences || { leagues: ["serieA", "serieB", "serieC", "serieD"], clubLevel: "any", international: true }, remaining = ct ? Math.max(0, ct.endDay - state.day) : 0;
       const contractAgent = state.mode !== "player" ? "" : `<section class="card section" id="contract-agent"><div class="split"><div><div class="tag">CONTRATO E AGENTE</div><h2>Sua carreira profissional</h2></div><span class="pill">${ct ? `${Math.ceil(remaining / 30)} mês(es)` : "SEM VÃNCULO"}</span></div><div class="stats"><div class="stat"><small>Valor de mercado</small><b>${money(pc.marketValue || 0)}</b></div><div class="stat"><small>Salário</small><b>${money(state.salary)}/mês</b></div><div class="stat"><small>Papel no elenco</small><b>${esc(ct?.role || pc.squadRole || "—")}</b></div><div class="stat"><small>Contrato</small><b>${ct ? dayDate(ct.endDay) : "Sem contrato"}</b></div></div>${ct && remaining <= 180 ? `<div class="notice"><b>Seu contrato está perto do fim.</b><p>Restam aproximadamente ${Math.ceil(remaining / 30)} mês(es). Acompanhe as conversas com a diretoria e defina os próximos passos com seu agente.</p></div>` : ""}<div class="grid"><div><div class="tag">MEU AGENTE</div><h3>${esc(pc.agent?.name || "Agente PRO-LIFE")}</h3><p>${esc(pc.agent?.agency || "Agência independente")} · reputação ${pc.agent?.reputation||50}/100 · comissão ${pc.agent?.commission||5}%<br>Rede: ${esc(pc.agent?.network||"Nacional")} · negociação ${pc.agent?.negotiation||50}/100</p><h3>${esc(advice?.action || "Planejamento de carreira")}</h3><p>${esc(advice?.reason || "Seu agente está analisando o próximo passo.")}</p><label>Prioridade<select id="agent-priority"><option value="balanced" ${strategy.priority === "balanced" ? "selected" : ""}>Equilíbrio</option><option value="playtime" ${strategy.priority === "playtime" ? "selected" : ""}>Tempo de jogo</option><option value="salary" ${strategy.priority === "salary" ? "selected" : ""}>Salário</option><option value="prestige" ${strategy.priority === "prestige" ? "selected" : ""}>Prestígio</option><option value="development" ${strategy.priority === "development" ? "selected" : ""}>Desenvolvimento</option></select></label><label>Postura<select id="agent-stance"><option value="stay" ${strategy.stance === "stay" ? "selected" : ""}>Quero permanecer</option><option value="open" ${strategy.stance === "open" ? "selected" : ""}>Aberto a propostas</option><option value="loan" ${strategy.stance === "loan" ? "selected" : ""}>Buscar empréstimo</option><option value="leave" ${strategy.stance === "leave" ? "selected" : ""}>Buscar saída</option></select></label><button class="primary" data-action="agent-strategy">Atualizar estratégia</button><div class="actions">${Career.agencies.map(a=>`<button data-hire-agency="${a.id}" ${pc.agent?.id===a.id?"disabled":""}>${pc.agent?.id===a.id?"Agência atual":`Contratar ${esc(a.name)}`}</button>`).join("")}</div></div><div><div class="tag">SITUAÇÃO CONTRATUAL</div>${ct ? `<p><b>Clube:</b> ${esc(c?.name || "—")}<br><b>Vínculo:</b> ${ct.type === "loan" ? "Empréstimo" : "Definitivo"}<br><b>Término:</b> ${dayDate(ct.endDay)}<br><b>Tempo restante:</b> ${Math.ceil(remaining / 30)} mês(es)</p>` : `<p>Você está sem contrato ativo.</p>`}<p><b>Interesses:</b><br>${interests.length ? interests.slice(0, 5).map(x => `${esc(D.club(state, x.clubId)?.name || "Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhuma sondagem ativa."}</p>${!pc.renewalOffer && ct && remaining <= 365 ? `<button class="primary" data-action="request-renewal">Pedir ao agente para renovar</button>` : ""}</div></div>${pc.renewalOffer ? `<article class="news offer section"><time>NEGOCIAÇÃO DE RENOVAÇÃO</time><h3>${esc(c?.name || "Clube atual")}</h3><p>Proposta atual: ${Math.round(pc.renewalOffer.durationDays / 365)} ano(s) · ${money(pc.renewalOffer.salary)}/mês · luvas ${money(pc.renewalOffer.signingBonus)} · bônus ${money(pc.renewalOffer.performanceBonus || 0)} · papel ${esc(pc.renewalOffer.role || pc.squadRole)}</p><div class="grid3"><label>Salário desejado<input id="renew-salary" type="number" min="0" step="100" value="${pc.renewalOffer.salary}"></label><label>Anos<input id="renew-years" type="number" min="1" max="5" value="${Math.round(pc.renewalOffer.durationDays / 365)}"></label><label>Luvas<input id="renew-bonus" type="number" min="0" step="100" value="${pc.renewalOffer.signingBonus}"></label><label>Bônus desempenho<input id="renew-performance" type="number" min="0" step="100" value="${pc.renewalOffer.performanceBonus || 0}"></label><label>Papel<select id="renew-role">${["Rotação", "Titular", "Importante", "Estrela"].map(r => `<option ${r === (pc.renewalOffer.role || pc.squadRole) ? "selected" : ""}>${r}</option>`).join("")}</select></label></div><div class="actions"><button class="primary" data-action="accept-renewal">Aceitar renovação</button><button data-action="counter-renewal">Pedir meus termos</button><button data-action="reject-renewal">Recusar</button></div></article>` : ""}<details class="section"><summary><b>Preferências de propostas</b></summary><p class="muted">Defina o tipo de oportunidade que seu agente deve priorizar.</p>${state.world === "brazil2026" ? `<div class="offer-pref-leagues">${[["serieA", "Série A"], ["serieB", "Série B"], ["serieC", "Série C"], ["serieD", "Série D"]].map(([id, label]) => `<label><input type="checkbox" class="offer-league" value="${id}" ${prefs.leagues.includes(id) ? "checked" : ""}> ${label}</label>`).join("")}</div>` : ""}<label><input id="offer-international" type="checkbox" ${prefs.international!==false?"checked":""}> Clubes internacionais</label><p class="chart-note">Mercado internacional ${prefs.international!==false?"habilitado":"desabilitado"}.</p><label>Nível dos clubes<select id="offer-club-level"><option value="any" ${prefs.clubLevel === "any" ? "selected" : ""}>Qualquer clube</option><option value="elite" ${prefs.clubLevel === "elite" ? "selected" : ""}>Somente clubes de elite</option><option value="competitive" ${prefs.clubLevel === "competitive" ? "selected" : ""}>Clubes competitivos</option><option value="intermediate" ${prefs.clubLevel === "intermediate" ? "selected" : ""}>Clubes intermediários</option><option value="small" ${prefs.clubLevel === "small" ? "selected" : ""}>Clubes menores</option></select></label><button class="primary" data-action="offer-prefs">Salvar preferências</button></details></section>`;
       if (state.mode === "player") {
-        const P = window.ProLifePlayerProfile.init(state, D), I=P.identity, S=P.season, CS=P.careerStats, DEV=P.development;
+        const P = window.ProLifePlayerProfile.init(state, D), I=P.identity, S=P.season, CS=P.careerStats;
         const attrClass=(v)=>v>=80?"elite":v>=65?"solid":"develop";
         const stat=(label,value)=>`<span><small>${label}</small><b>${value}</b></span>`;
         const attrGroups=P.attributes.map(g=>`<section class="player-attr-group"><h3>${esc(g.name)}</h3>${g.items.map(a=>`<div class="player-attr ${attrClass(a.value)}"><span>${esc(a.label)}</span><b>${Math.round(a.value)}</b><i><em style="width:${D.clamp(a.value,0,100)}%"></em></i></div>`).join("")}</section>`).join("");
-        const history=P.development.history.map(h=>`<div class="player-history-row"><span>${h.season?`Temporada ${h.season}`:"Registro atual"}</span><b>${h.start}${h.end!==h.start?` → ${h.end}`:""}</b>${h.current?"<small>Atual</small>":""}</div>`).join("");
-        const gains=DEV.gains.length?DEV.gains.map(g=>`<div class="player-gain"><span>${esc(g.label)}</span><b>${g.from} → ${g.to}</b><small class="good">${signed(g.to-g.from)}</small></div>`).join(""):`<p class="muted">Ainda não houve alteração de atributos registrada nesta temporada.</p>`;
         const transferHistory=window.ProLifePlayerTransferHistory?.render
           ? window.ProLifePlayerTransferHistory.render(state,p.id)
           : `<section id="player-transfers" class="card section"><h2>Histórico de transferências</h2><p class="muted">Histórico indisponível.</p></section>`;
         const ct=P.contract;
+        const developmentCenter=window.ProLifePlayerDevelopmentView?.render
+          ? window.ProLifePlayerDevelopmentView.render(state,D)
+          : `<section id="player-development" class="card section"><h2>Desenvolvimento do jogador</h2><p class="muted">Central de desenvolvimento indisponível nesta execução.</p></section>`;
         return `<div class="player-hub">
           <section class="card player-hero">${avatar(p)}<div class="player-hero-copy"><div class="tag">MEU JOGADOR</div><h1>${esc(I.name)}</h1><p><b>#${I.number}</b> · ${esc(I.club)} · ${esc(I.position)} · ${I.age} anos${I.nationality?` · ${esc(I.nationality)}`:""}</p><div class="player-tags"><span>${esc(I.squadRole||"Status não definido")}</span>${I.archetype?.name?`<span>${esc(I.archetype.name)}</span>`:""}${I.origin?`<span>${esc(I.origin)}</span>`:""}</div></div><div class="player-ovr"><strong>${I.overall}</strong><small>GER</small><span>${money(I.marketValue)}</span><small>Valor de mercado</small></div></section>
           <nav class="player-tabs"><a href="#player-overview">Visão Geral</a><a href="#player-identity">Identidade</a><a href="#player-attributes">Atributos</a><a href="#player-development">Evolução</a><a href="#player-career">Carreira</a><a href="#player-transfers">Transferências</a></nav>
@@ -1469,7 +1691,7 @@
           ${(()=>{const q=D.Physical?.init?.(p,state.day);if(!q)return"";const a=q.active;return `<section class="card section"><div class="tag">STATUS FÃSICO</div><div class="player-kpis">${stat("Condição",Math.round(q.fitness)+"%")}${stat("Fadiga",Math.round(q.fatigue)+"%")}${stat("Status",esc(D.Physical.status(p)))}</div>${a?`<p><b>${esc(a.name)}</b> · ${esc(a.severity)}<br>Previsão: ${Math.max(0,p.injury)} dia(s) · Recuperação ${Math.round((1-Math.max(0,p.injury)/Math.max(1,a.totalDays))*100)}%</p>${a.status==="RETORNO PARCIAL"&&a.severity!=="GRAVE"?`<button data-physical-return="gradual">Retornar gradualmente</button><button data-physical-return="wait">Aguardar recuperação completa</button>`:""}`:`<p class="muted">Sem lesão ativa. Carga recente: ${Math.round(q.recentLoad)} min.</p>`}</section>`})()}
           ${originPanel()}${identityPanel()}
           <section id="player-attributes" class="card section"><div class="split"><div><div class="tag">ATRIBUTOS</div><h2>Perfil técnico</h2></div><span class="rating-badge">${I.overall}</span></div><p class="muted">Os atributos abaixo são os mesmos usados pelo treino e pela simulação. Verde destaca pontos fortes; valores menores indicam áreas em desenvolvimento.</p><div class="player-attributes-grid">${attrGroups}</div></section>
-          <section id="player-development" class="card section"><div class="tag">EVOLUÇÃO DO JOGADOR</div><div class="player-development-head"><div><small>GER no início da temporada</small><b>${DEV.seasonStart}</b></div><strong>${DEV.overall}</strong><div><small>Evolução na temporada</small><b class="${DEV.seasonGrowth>=0?"good":"bad"}">${signed(DEV.seasonGrowth)}</b></div></div><div class="player-kpis">${stat("Nível",DEV.level+" / 50")}${stat("XP da carreira",DEV.xp.toFixed(1))}${stat("Próximo nível",DEV.level>=50?"Nível máximo":DEV.nextXp.toFixed(1)+" XP")}${stat("Nível do arquétipo",DEV.archetypeLevel+" / 50")}${stat("XP do arquétipo",DEV.archetypeXp.toFixed(1))}${stat("Pontos de atributo",DEV.attributePoints)}${stat("Potencial dinâmico",DEV.potential.toFixed(1))}</div><h3>Atributos que mais mudaram</h3><div class="player-gains">${gains}</div><h3>Histórico de GER</h3><div class="player-history">${history}</div></section>
+          ${developmentCenter}
           ${evolutionPanel()}
           <section id="player-career" class="card section"><div class="tag">CARREIRA</div><div class="player-kpis">${stat("Jogos",CS.appearances)}${stat("Gols",CS.goals)}${stat("Assistências",CS.assists)}${stat("Clubes",P.career.clubs.length||1)}${stat("Temporadas",P.career.seasons)}${stat("Prêmios",P.career.awards)}</div><div class="player-career-grid"><div><h3>Clubes</h3><p>${P.career.clubs.length?P.career.clubs.map(esc).join(" · "):esc(I.club)}</p>${P.national?.caps?`<p><b>Seleção:</b> ${P.national.caps} jogos · ${P.national.goals||0} gols · ${P.national.assists||0} assistências</p>`:""}</div><div><h3>Contrato atual</h3>${ct?`<p><b>${esc(ct.club)}</b><br>${money(ct.salary)}/mês · ${esc(ct.role||"—")}<br>Início: ${dayDate(ct.signedDay)} · Fim: ${dayDate(ct.endDay)}<br>${Math.ceil(ct.remainingDays/30)} mês(es) restantes · ${ct.type==="loan"?"Empréstimo":"Definitivo"}</p>`:`<p>Sem contrato ativo.</p>`}</div></div></section>
           ${transferHistory}
@@ -7605,7 +7827,13 @@
     },
     inbox() {
       const comm=Career.init(state).communications, messages=comm.messages||[], articles=comm.articles||[], unread=messages.filter(m=>!m.read).length;
-      return `<div class="grid"><section class="card"><div class="tag">CAIXA DE ENTRADA · ${unread} NOVA${unread===1?"":"S"}</div><h2>Mensagens da carreira</h2><p class="muted">Treinador, agente, clube, Seleção, imprensa e carreira. Propostas continuam em Mercado → Minhas propostas.</p>${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life" data-target="current-decision">Responder agora</button></article>` : ""}${messages.slice(0,20).map(m=>`<article class="news ${m.read?"":"notice"}"><time>${esc(m.category)} · ${esc(m.priority)} · ${dayDate(m.day)}</time><h3>${esc(m.subject)}</h3><p><b>${esc(m.sender)}</b> · ${esc(m.body)}</p>${m.read?`<small>Lida</small>`:`<button data-message-read="${esc(m.id)}">Marcar como lida</button>`}</article>`).join("")||empty("Nenhuma mensagem registrada.")}${comm.interviews.filter(i=>!i.answered).slice(0,2).map(i=>`<article class="news notice" id="interview-${esc(i.id)}"><time>ENTREVISTA · ${dayDate(i.day)}</time><h3>${esc(i.question)}</h3><div class="actions">${i.choices.map(c=>`<button data-interview="${esc(i.id)}" data-interview-choice="${esc(c.id)}">${esc(c.label)}</button>`).join("")}</div></article>`).join("")}</section><section class="card"><div class="tag">NOTÃCIAS</div><h2>A carreira reage ao que acontece</h2>${articles.slice(0,16).map(n=>`<article class="news"><time>${esc(n.category)} · ${dayDate(n.day)}</time><h3>${esc(n.title)}</h3><p>${esc(n.body)}</p></article>`).join("")||empty("Nenhuma notícia contextual ainda.")}</section></div>`;
+      return `<div class="grid"><section class="card"><div class="tag">CAIXA DE ENTRADA · ${unread} NOVA${unread===1?"":"S"}</div><h2>Mensagens da carreira</h2><p class="muted">Treinador, agente, clube, Seleção, imprensa e carreira. Propostas continuam em Mercado → Minhas propostas.</p>${(()=>{const os=(state.offers||[]).filter(o=>o.expires>=state.day);return os.length?`<article class="news neg-note"><time>PROPOSTAS PENDENTES · ${os.length}</time>${os.map(o=>{const i=clubIdentityOf(o.clubId);return `<p><b>${esc(txt(i?.name))}</b> · ${esc(leagueLine(i))} · expira em ${Math.max(0,o.expires-state.day)} dia(s)</p>`}).join("")}<button type="button" data-page="proposals">Abrir central de propostas</button></article>`:""})()}${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life" data-target="current-decision">Responder agora</button></article>` : ""}${messages.slice(0,20).map(m=>`<article class="news ${m.read?"":"notice"}"><time>${esc(m.category)} · ${esc(m.priority)} · ${dayDate(m.day)}</time><h3>${esc(m.subject)}</h3><p><b>${esc(m.sender)}</b> · ${esc(m.body)}</p>${m.read?`<small>Lida</small>`:`<button data-message-read="${esc(m.id)}">Marcar como lida</button>`}</article>`).join("")||empty("Nenhuma mensagem registrada.")}${comm.interviews.filter(i=>!i.answered).slice(0,2).map(i=>`<article class="news notice" id="interview-${esc(i.id)}"><time>ENTREVISTA · ${dayDate(i.day)}</time><h3>${esc(i.question)}</h3><div class="actions">${i.choices.map(c=>`<button data-interview="${esc(i.id)}" data-interview-choice="${esc(c.id)}">${esc(c.label)}</button>`).join("")}</div></article>`).join("")}</section><section class="card"><div class="tag">NOTÃCIAS</div><h2>A carreira reage ao que acontece</h2>${articles.slice(0,16).map(n=>`<article class="news"><time>${esc(n.category)} · ${dayDate(n.day)}</time><h3>${esc(n.title)}</h3><p>${esc(n.body)}</p></article>`).join("")||empty("Nenhuma notícia contextual ainda.")}</section></div>`;
+    },
+    contract() {
+      if (state.mode !== "player") return '<section class="card"><div class="tag">CONTRATO</div><h2>Contrato</h2><p class="muted">Disponível apenas na carreira de jogador.</p></section>';
+      const ct = cineContract(), api = window.ProLifeContractSigning;
+      const doc = ct && api ? api.documentHtml(cineModel(ct, "contract"), "signed") : '<p class="empty">Nenhum contrato registrado para o clube atual.</p>';
+      return `<div class="grid"><section class="card cine-page"><div class="tag">CONTRATO ATUAL</div><h2>Contrato assinado</h2>${cineBanner()}${doc}<div class="actions">${ct ? '<button type="button" data-cine-open="contract">Abrir documento</button>' : ""}${cineArrival() ? '<button type="button" data-cine-open="present">Rever apresentação</button>' : ""}</div></section></div>`;
     },
     proposals() {
       const eligible = Career.canTransfer(state),
@@ -7614,10 +7842,7 @@
       const offers = state.offers.filter(o=>o.expires>=state.day),
         prefs = e.offerPreferences || { leagues: ["serieA", "serieB", "serieC", "serieD"], clubLevel: "any", international: true },
         leagueOptions = [["serieA", "Série A"], ["serieB", "Série B"], ["serieC", "Série C"], ["serieD", "Série D"]];
-      return `<div class="grid"><section class="card"><div class="tag">CAIXA DE ENTRADA</div><h2>Mensagens da carreira</h2><p class="muted">Propostas, decisões e comunicados importantes ficam concentrados aqui.</p>${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life" data-target="current-decision">Responder agora</button></article>` : ""}${offers.map((o) => {
-        const c = D.club(state, o.clubId), uf = D.Competitions.clubState(c) || "—";
-        return `<article class="news offer" id="transfer-offer-${esc(o.clubId)}"><time>${o.transferType === "loan" ? "PROPOSTA DE EMPRÉSTIMO" : "PROPOSTA DE CONTRATO"} · expira em ${Math.max(0, o.expires - state.day)} dias</time><h3>${esc(c.name)}</h3><p><b>Estado:</b> ${esc(uf)}<br><b>Competição:</b> ${esc(leagueName(c.leagueId))}<br><b>Projeto:</b> ${esc(o.role)}<br><b>Papel esperado:</b> ${esc(o.squadRole || "Rotação")}<br><b>Duração:</b> ${Math.round((o.durationDays || 730)/365)} ano(s)<br><b>Salário:</b> ${money(o.salary)}/mês · <b>Luvas:</b> ${money(o.signingBonus || 0)}<br>Estrutura: ${c.structure}/100${o.negotiated ? " · <b>Contraproposta negociada</b>" : ""}</p><div class="actions"><button class="primary" data-join="${o.clubId}">${w.open ? "Aceitar e assinar" : "Aceitar · agendar transferência"}</button><button data-hold-offer="${o.clubId}">Pedir tempo</button><button data-counter="${o.clubId}" ${o.negotiated ? "disabled" : ""}>${o.negotiated ? "Negociado" : "Pedir melhores termos"}</button><button data-reject="${o.clubId}">Recusar</button></div></article>`;
-      }).join("") || empty(state.day < state.careerTransferAvailableDay ? "Você já assinou nesta janela. Novas propostas chegam na próxima janela." : "Nenhuma proposta pendente no momento.")}</section>${state.mode==="player"?(()=>{const pc=e.playerCareer,tc=pc.targetClub,ta=tc?Career.interestAssessment(state,tc.clubId):null,clubs=state.clubs.filter(x=>x.id!==state.clubId).sort((a,b)=>b.structure-a.structure);return `<section class="card section"><div class="tag">CLUBE-ALVO</div><h2>Planeje sua próxima transferência</h2><p class="muted">Escolher um alvo não garante proposta. Seu agente acompanha o clube e o interesse evolui conforme nível, desempenho, reputação e janela.</p><label>Clube desejado<select id="target-club"><option value="">Escolha um clube</option>${clubs.map(x=>`<option value="${x.id}" ${tc?.clubId===x.id?"selected":""}>${esc(x.name)} · ${esc(leagueName(x.leagueId))}</option>`).join("")}</select></label><div class="actions"><button class="primary" data-action="target-club">Definir clube-alvo</button>${tc?`<button data-action="clear-target-club">Remover alvo</button>`:""}</div>${ta?`<div class="notice"><h3>${esc(D.club(state,ta.clubId)?.name||"Clube")} · Interesse ${esc(ta.label)}</h3><p>Concorrência: <b>${esc(ta.competition)}</b> · OVR recomendado: <b>${ta.recommendedOverall}</b> · seu OVR: <b>${D.overall(state.person)}</b></p><p>Pipeline: <b>${esc((pc.interests||[]).find(x=>x.clubId===ta.clubId)?.stage||"Monitoramento")}</b></p></div>`:""}</section>`})():""}<section class="card"><div class="tag">PREFERÊNCIAS DO AGENTE</div><h2>Quais propostas quero receber?</h2><p class="muted">As preferências são usadas na geração das próximas propostas, não apenas na tela.</p>${state.mode === "player" ? (() => { const pc=e.playerCareer, ct=pc.contract, interests=pc.interests||[], advice=Career.agentAdvice(state), strategy=pc.agentStrategy||{priority:"balanced",stance:"open"}; return `<div class="notice"><div class="tag">MEU AGENTE</div><h3>${esc(pc.agent?.name || "Agente PRO-LIFE")}</h3><p>${esc(pc.agent?.agency || "Agência independente")} · reputação ${pc.agent?.reputation||50}/100 · comissão ${pc.agent?.commission||5}%<br>Rede: ${esc(pc.agent?.network||"Nacional")} · negociação ${pc.agent?.negotiation||50}/100</p><h3>${esc(advice?.action || "Planejamento de carreira")}</h3><p>${esc(advice?.reason || "Seu agente está analisando o próximo passo.")}</p><label>Prioridade<select id="agent-priority"><option value="balanced" ${strategy.priority==="balanced"?"selected":""}>Equilíbrio</option><option value="playtime" ${strategy.priority==="playtime"?"selected":""}>Tempo de jogo</option><option value="salary" ${strategy.priority==="salary"?"selected":""}>Salário</option><option value="prestige" ${strategy.priority==="prestige"?"selected":""}>Prestígio</option><option value="development" ${strategy.priority==="development"?"selected":""}>Desenvolvimento</option></select></label><label>Postura<select id="agent-stance"><option value="stay" ${strategy.stance==="stay"?"selected":""}>Quero permanecer</option><option value="open" ${strategy.stance==="open"?"selected":""}>Aberto a propostas</option><option value="loan" ${strategy.stance==="loan"?"selected":""}>Buscar empréstimo</option><option value="leave" ${strategy.stance==="leave"?"selected":""}>Buscar saída</option></select></label><button class="primary" data-action="agent-strategy">Atualizar estratégia</button><div class="actions">${Career.agencies.map(a=>`<button data-hire-agency="${a.id}" ${pc.agent?.id===a.id?"disabled":""}>${pc.agent?.id===a.id?"Agência atual":`Contratar ${esc(a.name)}`}</button>`).join("")}</div><p><b>Pipeline de mercado:</b><br>${interests.length ? interests.slice(0,5).map(x=>`${esc(D.club(state,x.clubId)?.name||"Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhum interesse ativo."}</p></div><div class="notice"><div class="tag">CARREIRA PROFISSIONAL</div><h3>Valor de mercado: ${money(pc.marketValue || 0)}</h3>${ct ? `<p><b>Contrato atual:</b> ${Math.max(0, Math.ceil((ct.endDay-state.day)/30))} mês(es) restantes<br><b>Salário:</b> ${money(state.salary)}/mês · <b>Papel:</b> ${esc(ct.role || pc.squadRole)}<br><b>Vínculo:</b> ${ct.type === "loan" ? "Empréstimo" : "Definitivo"}</p>` : `<p>Sem contrato ativo.</p>`}<p><b>Clubes interessados:</b><br>${interests.length ? interests.slice(0,5).map(x=>`${esc(D.club(state,x.clubId)?.name||"Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhuma sondagem ativa."}</p>${pc.renewalOffer ? `<div class="news" id="renewal-offer"><b>Renovação disponível</b><br>${Math.round(pc.renewalOffer.durationDays/365)} anos · ${money(pc.renewalOffer.salary)}/mês · luvas ${money(pc.renewalOffer.signingBonus)} · bônus ${money(pc.renewalOffer.performanceBonus||0)} · papel ${esc(pc.renewalOffer.role||pc.squadRole)}<div class="grid3"><label>Salário desejado<input id="renew-salary" type="number" min="0" step="100" value="${pc.renewalOffer.salary}"></label><label>Anos<input id="renew-years" type="number" min="1" max="5" value="${Math.round(pc.renewalOffer.durationDays/365)}"></label><label>Luvas<input id="renew-bonus" type="number" min="0" step="100" value="${pc.renewalOffer.signingBonus}"></label><label>Bônus desempenho<input id="renew-performance" type="number" min="0" step="100" value="${pc.renewalOffer.performanceBonus||0}"></label><label>Papel<select id="renew-role">${["Rotação","Titular","Importante","Estrela"].map(r=>`<option ${r===(pc.renewalOffer.role||pc.squadRole)?"selected":""}>${r}</option>`).join("")}</select></label></div><div class="actions"><button class="primary" data-action="accept-renewal">Aceitar renovação</button><button data-action="counter-renewal">Pedir meus termos</button><button data-action="reject-renewal">Recusar</button></div></div>` : (ct && Math.max(0,ct.endDay-state.day)<=365 ? `<button class="primary" data-action="request-renewal">Pedir ao agente para renovar</button>` : "")}</div>`; })() : ""}${state.mode === "player" && state.clubId ? (() => { const pc=e.playerCareer, objectives=Career.matchObjectives(state); return `<div class="notice"><div class="tag">RELAÇÃO COM O TÉCNICO</div><h3>${esc(pc.squadRole)} · ${Math.round(pc.coachTrust)}/100</h3>${bar("Confiança do técnico",pc.coachTrust)}<p><b>Objetivos da próxima partida:</b><br>${objectives.map(o=>"• "+esc(o.label)).join("<br>")}</p><small>Cumpridos na carreira: ${pc.objectivesMet}/${pc.objectivesTotal}${pc.lastEvaluation ? ` · última nota ${pc.lastEvaluation.rating}` : ""}</small></div>`; })() : ""}${state.world === "brazil2026" ? `<h3>Divisões</h3><div class="offer-pref-leagues">${leagueOptions.map(([id, label]) => `<label><input type="checkbox" class="offer-league" value="${id}" ${prefs.leagues.includes(id) ? "checked" : ""}> ${label}</label>`).join("")}</div>` : ""}<label>Nível dos clubes<select id="offer-club-level"><option value="any" ${prefs.clubLevel === "any" ? "selected" : ""}>Qualquer clube</option><option value="elite" ${prefs.clubLevel === "elite" ? "selected" : ""}>Somente clubes de elite</option><option value="competitive" ${prefs.clubLevel === "competitive" ? "selected" : ""}>Clubes competitivos</option><option value="intermediate" ${prefs.clubLevel === "intermediate" ? "selected" : ""}>Clubes intermediários</option><option value="small" ${prefs.clubLevel === "small" ? "selected" : ""}>Clubes menores</option></select></label><button class="primary" data-action="offer-prefs">Salvar preferências</button></section></div>`;
+      return `<div class="grid"><section class="card"><div class="tag">CAIXA DE ENTRADA</div><h2>Mensagens da carreira</h2><p class="muted">Propostas, decisões e comunicados importantes ficam concentrados aqui.</p>${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life" data-target="current-decision">Responder agora</button></article>` : ""}${cineBanner()}${offersSection(offers) || empty(state.day < state.careerTransferAvailableDay ? "Você já assinou nesta janela. Novas propostas chegam na próxima janela." : "Nenhuma proposta pendente no momento.")}</section>${state.mode==="player"?(()=>{const pc=e.playerCareer,tc=pc.targetClub,ta=tc?Career.interestAssessment(state,tc.clubId):null,clubs=state.clubs.filter(x=>x.id!==state.clubId).sort((a,b)=>b.structure-a.structure);return `<section class="card section"><div class="tag">CLUBE-ALVO</div><h2>Planeje sua próxima transferência</h2><p class="muted">Escolher um alvo não garante proposta. Seu agente acompanha o clube e o interesse evolui conforme nível, desempenho, reputação e janela.</p><label>Clube desejado<select id="target-club"><option value="">Escolha um clube</option>${clubs.map(x=>`<option value="${x.id}" ${tc?.clubId===x.id?"selected":""}>${esc(x.name)} · ${esc(leagueName(x.leagueId))}</option>`).join("")}</select></label><div class="actions"><button class="primary" data-action="target-club">Definir clube-alvo</button>${tc?`<button data-action="clear-target-club">Remover alvo</button>`:""}</div>${ta?`<div class="notice"><h3>${esc(D.club(state,ta.clubId)?.name||"Clube")} · Interesse ${esc(ta.label)}</h3><p>Concorrência: <b>${esc(ta.competition)}</b> · OVR recomendado: <b>${ta.recommendedOverall}</b> · seu OVR: <b>${D.overall(state.person)}</b></p><p>Pipeline: <b>${esc((pc.interests||[]).find(x=>x.clubId===ta.clubId)?.stage||"Monitoramento")}</b></p></div>`:""}</section>`})():""}<section class="card"><div class="tag">PREFERÊNCIAS DO AGENTE</div><h2>Quais propostas quero receber?</h2><p class="muted">As preferências são usadas na geração das próximas propostas, não apenas na tela.</p>${state.mode === "player" ? (() => { const pc=e.playerCareer, ct=pc.contract, interests=pc.interests||[], advice=Career.agentAdvice(state), strategy=pc.agentStrategy||{priority:"balanced",stance:"open"}; return `<div class="notice"><div class="tag">MEU AGENTE</div><h3>${esc(pc.agent?.name || "Agente PRO-LIFE")}</h3><p>${esc(pc.agent?.agency || "Agência independente")} · reputação ${pc.agent?.reputation||50}/100 · comissão ${pc.agent?.commission||5}%<br>Rede: ${esc(pc.agent?.network||"Nacional")} · negociação ${pc.agent?.negotiation||50}/100</p><h3>${esc(advice?.action || "Planejamento de carreira")}</h3><p>${esc(advice?.reason || "Seu agente está analisando o próximo passo.")}</p><label>Prioridade<select id="agent-priority"><option value="balanced" ${strategy.priority==="balanced"?"selected":""}>Equilíbrio</option><option value="playtime" ${strategy.priority==="playtime"?"selected":""}>Tempo de jogo</option><option value="salary" ${strategy.priority==="salary"?"selected":""}>Salário</option><option value="prestige" ${strategy.priority==="prestige"?"selected":""}>Prestígio</option><option value="development" ${strategy.priority==="development"?"selected":""}>Desenvolvimento</option></select></label><label>Postura<select id="agent-stance"><option value="stay" ${strategy.stance==="stay"?"selected":""}>Quero permanecer</option><option value="open" ${strategy.stance==="open"?"selected":""}>Aberto a propostas</option><option value="loan" ${strategy.stance==="loan"?"selected":""}>Buscar empréstimo</option><option value="leave" ${strategy.stance==="leave"?"selected":""}>Buscar saída</option></select></label><button class="primary" data-action="agent-strategy">Atualizar estratégia</button><div class="actions">${Career.agencies.map(a=>`<button data-hire-agency="${a.id}" ${pc.agent?.id===a.id?"disabled":""}>${pc.agent?.id===a.id?"Agência atual":`Contratar ${esc(a.name)}`}</button>`).join("")}</div><p><b>Pipeline de mercado:</b><br>${interests.length ? interests.slice(0,5).map(x=>`${esc(D.club(state,x.clubId)?.name||"Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhum interesse ativo."}</p></div><div class="notice"><div class="tag">CARREIRA PROFISSIONAL</div><h3>Valor de mercado: ${money(pc.marketValue || 0)}</h3>${ct ? `<p><b>Contrato atual:</b> ${Math.max(0, Math.ceil((ct.endDay-state.day)/30))} mês(es) restantes<br><b>Salário:</b> ${money(state.salary)}/mês · <b>Papel:</b> ${esc(ct.role || pc.squadRole)}<br><b>Vínculo:</b> ${ct.type === "loan" ? "Empréstimo" : "Definitivo"}</p>` : `<p>Sem contrato ativo.</p>`}<p><b>Clubes interessados:</b><br>${interests.length ? interests.slice(0,5).map(x=>`${esc(D.club(state,x.clubId)?.name||"Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhuma sondagem ativa."}</p>${pc.renewalOffer ? `<div class="news" id="renewal-offer"><b>Renovação disponível</b><br>${Math.round(pc.renewalOffer.durationDays/365)} anos · ${money(pc.renewalOffer.salary)}/mês · luvas ${money(pc.renewalOffer.signingBonus)} · bônus ${money(pc.renewalOffer.performanceBonus||0)} · papel ${esc(pc.renewalOffer.role||pc.squadRole)}<div class="grid3"><label>Salário desejado<input id="renew-salary" type="number" min="0" step="100" value="${pc.renewalOffer.salary}"></label><label>Anos<input id="renew-years" type="number" min="1" max="5" value="${Math.round(pc.renewalOffer.durationDays/365)}"></label><label>Luvas<input id="renew-bonus" type="number" min="0" step="100" value="${pc.renewalOffer.signingBonus}"></label><label>Bônus desempenho<input id="renew-performance" type="number" min="0" step="100" value="${pc.renewalOffer.performanceBonus||0}"></label><label>Papel<select id="renew-role">${["Rotação","Titular","Importante","Estrela"].map(r=>`<option ${r===(pc.renewalOffer.role||pc.squadRole)?"selected":""}>${r}</option>`).join("")}</select></label></div><div class="actions"><button class="primary" data-action="accept-renewal">Aceitar renovação</button><button data-action="counter-renewal">Pedir meus termos</button><button data-action="reject-renewal">Recusar</button></div></div>` : (ct && Math.max(0,ct.endDay-state.day)<=365 ? `<button class="primary" data-action="request-renewal">Pedir ao agente para renovar</button>` : "")}</div>`; })() : ""}${state.mode === "player" && state.clubId ? (() => { const pc=e.playerCareer, objectives=Career.matchObjectives(state); return `<div class="notice"><div class="tag">RELAÇÃO COM O TÉCNICO</div><h3>${esc(pc.squadRole)} · ${Math.round(pc.coachTrust)}/100</h3>${bar("Confiança do técnico",pc.coachTrust)}<p><b>Objetivos da próxima partida:</b><br>${objectives.map(o=>"• "+esc(o.label)).join("<br>")}</p><small>Cumpridos na carreira: ${pc.objectivesMet}/${pc.objectivesTotal}${pc.lastEvaluation ? ` · última nota ${pc.lastEvaluation.rating}` : ""}</small></div>`; })() : ""}${state.world === "brazil2026" ? `<h3>Divisões</h3><div class="offer-pref-leagues">${leagueOptions.map(([id, label]) => `<label><input type="checkbox" class="offer-league" value="${id}" ${prefs.leagues.includes(id) ? "checked" : ""}> ${label}</label>`).join("")}</div>` : ""}<label>Nível dos clubes<select id="offer-club-level"><option value="any" ${prefs.clubLevel === "any" ? "selected" : ""}>Qualquer clube</option><option value="elite" ${prefs.clubLevel === "elite" ? "selected" : ""}>Somente clubes de elite</option><option value="competitive" ${prefs.clubLevel === "competitive" ? "selected" : ""}>Clubes competitivos</option><option value="intermediate" ${prefs.clubLevel === "intermediate" ? "selected" : ""}>Clubes intermediários</option><option value="small" ${prefs.clubLevel === "small" ? "selected" : ""}>Clubes menores</option></select></label><button class="primary" data-action="offer-prefs">Salvar preferências</button></section></div>`;
     },
     market() {
       const c = D.club(state),
@@ -7778,7 +8003,7 @@
         const f = input.files[0];
         if (!f) return;
         const parsed = S.parse(await f.text());
-        S.saveAsNew?.(parsed);
+        if (!S.saveAsNew?.(parsed)) throw Error("Nao foi possivel salvar a carreira importada. O arquivo original permanece intacto.");
         state = parsed;
         setup = false;
         page = "home";
@@ -8408,6 +8633,7 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
   });
   document.addEventListener("keydown", (e) => {
     if (!state || setup) return;
+    if (e.key === "Escape" && cineUi.kind) { cineClose(); return; }
     if (e.key === "Escape" && document.getElementById("advance-date-modal")) { closeAdvanceDialog(); return; }
     const row = e.target.closest?.("tr[data-season-club]");
     if (row && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); row.click(); return; }
@@ -8428,6 +8654,42 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
     if (e.target.id === "season-country") seasonUi.country = e.target.value; else seasonUi.kind = e.target.value;
     const cat = seasonCatalog(), box = document.getElementById("season-comp-list");
     if (cat && box) box.innerHTML = seasonListHtml(cat);
+  });
+
+  // ===== Stage 31.8B — ações da central de negociação =====
+  document.addEventListener("click", (e) => {
+    const c = e.target.closest?.("[data-counter]");
+    if (!c || !state) return;
+    const o = state.offers.find((x) => x.clubId === c.dataset.counter);
+    if (o) (negUi.hist[o.clubId] ||= []).push({ salary: o.salary, bonus: o.signingBonus, _pending: true });
+  }, true);
+  document.addEventListener("click", (e) => {
+    if (!state) return;
+    const t = e.target, q = (s) => t.closest?.(s);
+    let el;
+    if (q("[data-cine-close]")) { cineClose(); return; }
+    if (q("[data-cine-skip]")) { cineUi.skip = true; if (cineUi.kind === "sign" && cineUi.step === 1) cineUi.step = 2; render(); return; }
+    if (q("[data-cine-next]")) { cineUi.step = 2; render(); return; }
+    if (q("[data-cine-back]")) { cineUi.step = 1; render(); return; }
+    if (q("[data-cine-sign]")) { cineSign(); return; }
+    if (q("[data-cine-present]")) { cineOpen("present"); return; }
+    if (q("[data-cine-agreement]")) { cineOpen("agreement"); return; }
+    if ((el = q("[data-cine-open]"))) { cineOpen(el.dataset.cineOpen); return; }
+    if ((el = q("[data-neg-open]"))) { negUi.open = negUi.open === el.dataset.negOpen ? null : el.dataset.negOpen; negUi.confirm = null; negUi.terms = false; render(); return; }
+    if (q("[data-neg-close]")) { negUi.open = null; negUi.confirm = null; negUi.terms = false; render(); return; }
+    if ((el = q("[data-club-profile]"))) { negUi.profile = negUi.profile === el.dataset.clubProfile ? null : el.dataset.clubProfile; render(); return; }
+    if (q("[data-club-profile-close]")) { negUi.profile = null; render(); return; }
+    if ((el = q("[data-neg-sign]"))) {
+      if (state.mode === "player" && window.ProLifeContractSigning) { cineOpen(cineAgreement() ? "agreement" : "sign", el.dataset.negSign); return; }
+      negUi.confirm = { type: "sign", id: el.dataset.negSign }; render(); return;
+    }
+    if ((el = q("[data-neg-reject]"))) { negUi.confirm = { type: "reject", id: el.dataset.negReject }; render(); return; }
+    if (q("[data-neg-cancel]")) { negUi.confirm = null; render(); return; }
+    if (q("[data-neg-terms]")) { negUi.terms = !negUi.terms; render(); return; }
+    if (q("[data-counter]")) {
+      for (const o of state.offers) { const h = negUi.hist[o.clubId]; const p = h && h.find((x) => x._pending); if (p) { delete p._pending; p.afterSalary = o.salary; p.afterBonus = o.signingBonus; if (!o.negotiated) h.pop(); } }
+      render();
+    }
   });
 
   render();

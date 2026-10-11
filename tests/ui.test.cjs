@@ -38,6 +38,7 @@ const files = [
   "src/ui/world-live-market-view.js",
   "src/ui/player-transfer-history.js",
   "src/ui/target-club-selector.js",
+  "src/ui/contract-signing.js",
   "src/ui/app.js",
 ];
 function make(mode) {
@@ -127,7 +128,10 @@ for (const mode of ["player", "coach"]) {
   assert.ok(offerText.includes("Compet"));
   assert.ok(offerText.includes("Dura"));
   assert.match(offerText, /S.{0,3}rie [ABCD]/);
-  click(w, "[data-join]");
+  click(w, "[data-neg-open]");
+  click(w, "[data-neg-sign]");
+  if (mode === "player") { click(w, "[data-cine-next]"); click(w, "[data-cine-sign]"); click(w, "[data-cine-close]"); }
+  else click(w, "[data-join]");
   assert.ok(get(w).clubId);
   assert.equal(w.document.querySelectorAll("[data-join]").length,0);
   assert.ok(w.document.querySelector("main").textContent.includes("Novas propostas chegam"));

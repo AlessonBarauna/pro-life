@@ -35,7 +35,7 @@
       "Monday Etim|1998|NGA|ATA|63|64",
       "Heri Tavares|2000|CPV|ATA|63|64",
       "Simon Elisor|1998|FRA|ATA|63|64"
-    ]],
+    ],{city:"Craiova",region:"Dolj"}],
     ["rapid","Rapid Bucuresti","Rapid",65,66,[
       "Alex Simonia|2008|ROU|GOL|50|65","Bogdan Ungureanu|2007|ROU|GOL|50|64","Marian Aioani|1999|ROU|GOL|62|63","Alexandru Pascanu|1998|ROU|DEF|63|63","Alin Celik|2007|ROU|DEF|56|66","Cristian Manea|1997|ROU|DEF|63|63","Denis Ciobotariu|1998|ROU|DEF|61|62","Ebenezer Annan|2002|GHA|DEF|62|64","Lars Kramer|1999|NED|DEF|62|62","Razvan Onea|1998|ROU|DEF|62|62","Robert Salceanu|2004|ROU|DEF|58|64","Sheriff Sinyan|1996|GHA|DEF|61|61","Stefan Senciuc|2007|ROU|DEF|55|65","Wedtoin Latif Ouedraogo|2007|BFA|DEF|55|66","Alexandru Dobre|1998|ROU|MEI|62|62","Andrei Niculcea|2009|ROU|MEI|52|66","Andrei Sucu|2008|ROU|MEI|52|66","Catalin Vulturar|2004|ROU|MEI|58|64","Chec Bebel Doumbia|2007|CIV|MEI|54|65","Claudiu Petrila|2000|ROU|MEI|66|67","Constantin Grameni|2002|ROU|MEI|60|63","Eric Tape|2008|CMR|MEI|53|66","Mohammed Kamara|1997|SLE|MEI|62|62","Olimpiu Morutan|1999|ROU|MEI|68|69","Rares Pop|2005|ROU|MEI|58|65","Vladan Bubanja|1999|MNE|MEI|63|63","Filip Stojilkovic|2000|SRB|ATA|67|68","Jason Kodor|2006|ROU|ATA|58|67","Timotej Jambor|2003|SVK|ATA|63|65"]],
     ["dinamo","Dinamo Bucuresti","Dinamo",64,65,[

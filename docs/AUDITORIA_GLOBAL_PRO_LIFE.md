@@ -515,3 +515,48 @@ Propostas espanholas geradas: Villarreal CF (11.100/mes, 730d), Burgos CF (9.300
 - O teste carrega os scripts a partir do `index.html` para refletir o app real.
 - Nao executados aqui: `npm test`/`npm run test:ui` completos (rodar no PowerShell).
 - Limitacao: a decisao do jogador sobre a proposta e simulada no teste limpando `offers` (o estado do app e privado); a pausa em si vem do motor real. Validacao visual e manual.
+
+## Stage 31.8A - Negociacoes realistas e identidade dos clubes
+
+### Identidade e prestigio
+- O identificador canonico da Universitatea Craiova foi confirmado como `gf_craiova`, associado a `gf_rou_sl`. O catalogo romeno agora registra Craiova/Dolj; pais e liga sao normalizados para Romênia/SuperLiga Romena. Estadio permanece `null`, pois nao existe dado cadastrado confiavel.
+- `GlobalFootball.clubIdentity(s, id)` resolve clubes locais e globais e retorna identidade, pais, cidade, regiao/UF, estadio, liga, divisao, classificacao disponivel, reputacao, forca, estrutura, prestigio, forma recente e participacao continental. Ausencias sao `null`, sem texto ou numero inventado.
+- `GlobalFootball.clubPrestige(s, id)` usa reputacao, forca, estrutura, nivel da liga, tradicao e desempenho quando cadastrados. O resultado 0-100 e deterministico e mantido em cache por estado/indicadores, sem persistir dados de exibicao no save.
+
+### Ofertas e handlers confirmados
+- `D.contractOfferOverview(s, offerId)` agrega identidade esportiva, termos realmente suportados, contrato atual, comparacoes e indicadores calculaveis de interesse, chance, tensao e prazo.
+- Os handlers existentes continuam sendo a autoridade: `Career.holdOffer`, `Career.rejectOffer`, `Career.counterOffer`, `Career.signAgreement` e `D.join`/`Career.signContract` para assinatura. Ofertas antigas continuam aceitando `clubId`; ofertas novas recebem `offerId` deterministico.
+- Contrapropostas explicitas suportam salario, luvas, duracao e papel. A resposta considera orcamento, interesse, reputacao, confianca, agente e tamanho da exigencia; pode aceitar, devolver alternativa ou recusar, com desempate deterministico sem consumir o RNG global.
+- O historico persistente registra oferta formal, contraproposta, resposta, acordo, recusa, expiracao e assinatura com IDs idempotentes. Carregar save antigo nao altera ofertas legadas; os metadados sao adicionados apenas quando a negociacao e consultada ou operada.
+- Propostas oficiais, emprestimos e renovacoes continuam bloqueando simulacoes longas; rumores/sondagens permanecem informativos. Assinatura, luvas e comissao mantem as protecoes existentes contra repeticao.
+
+### Validacao
+- `tests/contract-negotiations-stage31.test.cjs`: 9/9 aprovados (Craiova, segundo clube global, leitura segura, prazo, recusa, contrapropostas, assinatura, expiracao, save/reload e pausa longa).
+- Regressoes: agencia Stage 17 35/35; ofertas Stage 31.4.1 14/14; decisoes automaticas Stage 31.5.3 12/12; save global Stage 29B.1 7/7.
+
+### Limites reais
+- Bonus por jogos/gols/assistencias e clausula de rescisao nao ganharam controles de negociacao: o dominio ainda nao possui liquidacao/aplicacao completa desses termos. Campos ja existentes sao apenas preservados e validados.
+- Cidade, regiao e estadio de outros clubes continuam `null` quando o catalogo nao possui fonte cadastrada; nao foram inferidos pelo nome.
+
+## Stage 31.8C - Saves compactos (gravacao hibrida)
+
+### Implementado (`src/infrastructure/save.js`)
+- `encodeHybridSave()`: preserva os clubes brasileiros completos e grava so o delta de `internationalPlayers` contra a base reconstruida por `engine.create(seed)` (base em cache). Antes de gravar, restaura o delta e compara com o estado atual; se divergir, nao compacta.
+- Modo de escrita `off` (padrao) / `onQuota` / `always` (`setCompactWriteMode`). **Desligado por padrao**: a base nao e recuperavel dentro do proprio save; se o catalogo do codigo mudar numa atualizacao, o save compacto deixa de abrir (fica preservado, mas so abre com versao compativel). Por isso a compatibilidade futura nao e garantida e a escrita compacta nao foi ativada.
+- Gravacao segura (`commitSlot`): nada e removido antes de confirmar; falha no indice restaura o slot anterior; criacao que falha nao deixa slot orfao nem muda o slot ativo.
+- Autosave nunca sobrescreve slot corrompido, de formato desconhecido, compacto com catalogo incompativel (fingerprint), sem vinculo ou de outra carreira (modo, mundo, `initialSeed`, nome).
+- `parse()` aceita JSON completo ou compacto; `slotStatus(id)` diagnostica sem alterar; rotulo do slot preservado no autosave; `loadSlot` nao falha se nao conseguir marcar o slot ativo.
+- Saves antigos (sem `initialSeed`, chave unica legada) continuam abrindo e gravando no formato completo.
+
+### Medicao
+- Save inicial (seed 11): completo 3.942.299 caracteres; compacto 1.930.543 (51% menor).
+- Estado cresce ~90 KB/dia (internationalPlayers ~2,4 MB, clubs ~1,8 MB); no teste de UI o save completo passou de 5.000.000 caracteres no dia 11 e o autosave falhou na cota do jsdom (~5 MB). O compacto adia isso, mas nao resolve o crescimento.
+
+### Validacao
+- `tests/save-hybrid-stage31.test.cjs`: 9/9 (seed, determinismo, padrao completo, compacto e round-trip, catalogo incompativel, corrompido/sem vinculo/outra carreira, cota e falha de indice, multiplos slots e reinicio, importacao/exportacao, migracao legada).
+- Regressoes: `ui.test`, `season-calendar-ui-stage31` (10), `negotiation-ui-stage31` (10) aprovados; 41 arquivos de teste rodados no total, 323 aprovados e 2 reprovados (`unexpected-events-ui-stage20`, falha pre-existente: lista de scripts desatualizada no proprio teste; falha tambem com o `save.js` anterior).
+- Nao concluido neste ambiente (muito lento): `engine.test`, `career.test`, `expansion.test`, `contract-negotiations-stage31`, `player-nationality-start-stage31` e ~130 arquivos restantes; rodar `npm test` no PowerShell.
+
+### Pendencias
+- Decidir a politica de compatibilidade (ex.: versionar o catalogo ou gravar a base) antes de ligar `onQuota`/`always`.
+- Reduzir o crescimento do estado por dia (cota de ~5 MB do navegador).

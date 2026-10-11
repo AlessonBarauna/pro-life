@@ -188,9 +188,9 @@ test("31.7C (7) avanço confirmado até a data usa a API real, retoma pausas e n
 test("31.7C (8) pausa contratual real e continuação depois da decisão", () => {
   const w = world().window, D = w.ProLife, real = D.advanceToDay, st = get(w);
   const target = st.day + 6;
-  let n = 0;
+  let n = 0, live = null; // o save pode exceder a cota do localStorage do jsdom (~5 MB); verifica-se o estado vivo do app
   D.advanceToDay = function (s, t, o) {
-    n++;
+    n++; live = s;
     if (n === 1) s.offers = [{ clubId: s.clubs.find((c) => c.id !== s.clubId).id, salary: 90000, role: "x", squadRole: "Titular", durationDays: 1095, signingBonus: 0, transferType: "permanent", expires: s.day + 3 }];
     else s.offers = [];
     return real.call(this, s, t, o);
@@ -204,8 +204,8 @@ test("31.7C (8) pausa contratual real e continuação depois da decisão", () =>
     assert.ok(get(w).day < target, "parou antes do destino");
     click(w, "[data-adv-resume]");
     for (let i = 0; i < 15 && q(w, ".advance-banner"); i++) click(w, "[data-adv-resume]");
-    assert.equal(get(w).day, target);
-    noDup(get(w));
+    assert.equal(live.day, target);
+    noDup(live);
   } finally { D.advanceToDay = real; }
 });
 

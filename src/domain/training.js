@@ -429,6 +429,17 @@
     return Object.fromEntries(core.map((key) => [key, clamp(a[key])]));
   }
   function ceiling(s, helpers) {
+    const module32C = root.ProLifeDynamicPotential;
+    if (module32C && typeof module32C.effectiveCeiling === "function") {
+      const current = helpers.overall(s.person);
+      return module32C.effectiveCeiling({
+        ...s.person,
+        overall: current,
+        ovr: current
+      }, {
+        seed: s.initialSeed ?? s.rng
+      });
+    }
     const plan = init(s);
     const current = helpers.overall(s.person);
     const earned = Math.floor((plan.accoladePoints || 0) / 4);
@@ -761,18 +772,8 @@
     plan.archetypeLevel = Math.min(50, 1 + Math.floor(Math.sqrt(plan.archetypeXp / 3.2)));
     return Math.max(0, plan.archetypeLevel - before);
   }
-  function potentialReview(s, metrics) {
-    if (!s.person || !Number.isFinite(s.person.potential)) return 0;
-    const age = Number(s.person.age || 18);
-    const rating = Number(metrics.rating || 0), minutes = Number(metrics.minutes || 0);
-    const impact = Number(metrics.goals || 0) * 0.7 + Number(metrics.assists || 0) * 0.55 + Number(metrics.cleanSheet || 0) * 0.2;
-    let delta = 0;
-    if (age <= 23 && minutes >= 45 && rating >= 7.6) delta = 0.035 + Math.min(0.045, impact * 0.01);
-    else if (age <= 23 && minutes < 20) delta = -0.008;
-    else if (age >= 30 && rating < 6.2) delta = -0.012;
-    s.person.potential = Math.max(helpersPotentialFloor(s), Math.min(99, s.person.potential + delta));
-    return delta;
-  }
+  // Stage 32D.3B - o potencial nao muda mais por partida; a revisao ocorre uma vez por temporada (reviewSeasonPotential).
+  function potentialReview() { return 0; }
   function helpersPotentialFloor(s) {
     const attrs = core.map(k => Number(s.person.attrs?.[k] || 20));
     return Math.max(45, Math.round(attrs.reduce((a,b)=>a+b,0) / attrs.length));
@@ -810,15 +811,70 @@
     return Math.max(legacy, active && !active.legacy && active.attrs.includes(key) ? 0.10 : 0);
   }
   function ageFactor(age) { return age <= 20 ? 1.28 : age <= 24 ? 1.14 : age <= 29 ? 1 : 0.76; }
+  // Stage 32D.2 - fator de progressao dos seis perfis (32B). Ajusta (nao substitui) o fator de idade legado.
+  // Somente leitura: o perfil e derivado como no teto da 32D.1 e nunca gravado. Dados ausentes = neutro.
+  // Stage 32D.3A - perfil persistido do heroi. Registro minimo {id, v} gravado SOMENTE no primeiro
+  // desenvolvimento efetivo (progressAttribute com ganho > 0, modo jogador). Consultas nunca gravam.
+  // Save antigo sem perfil: o perfil e derivado de forma deterministica (seed + identidade) e, no primeiro
+  // evento de desenvolvimento, fica fixado; dai em diante idade, GER, potencial e clube nao o alteram.
+  function devModule() {
+    return root.ProLifePlayerDevelopment || (typeof require === "function" ? (() => { try { return require("./player-development.js"); } catch { return null; } })() : null);
+  }
+  function ensureDevelopmentProfile(s, helpers) {
+    if (s.mode !== "player" || !s.person) return null;
+    const Dev = devModule();
+    if (!Dev || typeof Dev.createProfileRecord !== "function") return null;
+    const cur = s.person.developmentProfile;
+    if (cur && typeof cur === "object" && Dev.PROFILE_IDS.includes(cur.id)) return cur;
+    const overall = helpers.overall(s.person);
+    s.person.developmentProfile = Dev.createProfileRecord({ ...s.person, overall, ovr: overall }, { seed: s.initialSeed ?? s.rng });
+    return s.person.developmentProfile;
+  }
+  // Reavaliacao so por eventos importantes (limite de 2 no modulo 32B). Nao e chamada automaticamente.
+  function reassessDevelopmentProfile(s, events, helpers) {
+    const Dev = devModule();
+    if (!Dev || typeof Dev.reassessProfile !== "function" || s.mode !== "player") return { changed: false };
+    ensureDevelopmentProfile(s, helpers);
+    const overall = helpers.overall(s.person);
+    const r = Dev.reassessProfile({ ...s.person, overall, ovr: overall }, events, { seed: s.initialSeed ?? s.rng });
+    if (r.changed) s.person.developmentProfile = { id: r.profile.id, v: r.profile.v, changes: r.profile.changes };
+    return r;
+  }
+  const DEV_REF = { developmentProfile: { id: "steady_rise" } };
+  function developmentAdjust(s, helpers, source) {
+    const Dev = root.ProLifePlayerDevelopment || (typeof require === "function" ? (() => { try { return require("./player-development.js"); } catch { return null; } })() : null);
+    if (!Dev || typeof Dev.expectedAnnualChange !== "function") return 1;
+    try {
+      const person = s.person, current = helpers.overall(person), age = Number(person.age) || 22;
+      const hero = s.statistics?.players?.hero, apps = Number(hero?.appearances) || 0;
+      // Nota media real so conta para o treino; nas partidas o desempenho ja gera os pontos (evita contar duas vezes).
+      const factors = source === "training" && apps >= 5 && Number(hero.ratingTotal) > 0 ? { avgRating: Number(hero.ratingTotal) / apps } : {};
+      const ctx = { seed: s.initialSeed ?? s.rng, season: s.season, factors };
+      const subject = { ...person, overall: current, ovr: current };
+      const exp = Dev.expectedAnnualChange(subject, ctx);
+      const mod = Dev.evolutionModifier(factors);
+      let adj;
+      if (exp.phase === "decline") {
+        adj = 1.08 - 0.09 * Math.max(1, age - exp.params.peakEnd) * exp.params.declineRate * mod.decline;
+      } else if (exp.phase === "growth" || age <= exp.params.peakAge) {
+        const ref = Dev.expectedAnnualChange({ ...subject, ...DEV_REF }, { ...ctx, factors: {} }).expected;
+        adj = ref > 0.05 ? exp.expected / ref : 1;
+        adj *= Math.min(1.15, Math.max(0.85, mod.growth));
+      } else adj = 1;
+      return Number.isFinite(adj) ? Math.max(0.55, Math.min(1.4, adj)) : 1;
+    } catch { return 1; }
+  }
   function gradeMultiplier(grade) { return ({D:.55,C:.78,B:1,A:1.25})[grade] || 1; }
   function difficultyCost(value) { return 62 + Math.max(0, value - 60) * 1.55 + Math.max(0, value - 80) * 1.8 + Math.max(0, value - 90) * 2.6; }
-  function progressAttribute(s, key, points, helpers) {
+  function progressAttribute(s, key, points, helpers, source) {
     const plan=init(s); expand(s.person.attrs);
+    if(points>0) ensureDevelopmentProfile(s,helpers);
     const arch=plan.archetype || {};
     const archBoost=arch.focus?.includes(key) ? 1.16 : 1;
     const styleBoost=styleFocus[s.person.style]?.includes(key) ? 1.18 : 1;
     const specBoost=1+specializationBonus(plan,key);
-    let gain=Math.max(0,points)*ageFactor(s.person.age)*archBoost*styleBoost*specBoost*(root.ProLifeCreation?.progressionMultiplier?.(s)||1);
+    const ageMult=Math.max(0.4,Math.min(1.75,ageFactor(s.person.age)*developmentAdjust(s,helpers,source)));
+    let gain=Math.max(0,points)*ageMult*archBoost*styleBoost*specBoost*(root.ProLifeCreation?.progressionMultiplier?.(s)||1);
     const changes=[];
     while(gain>0 && s.person.attrs[key] < 100 && helpers.overall(s.person) < ceiling(s,helpers)){
       const need=difficultyCost(s.person.attrs[key]);
@@ -828,7 +884,7 @@
       if(s.person.attrs[key]>before){ plan.improvements++; changes.push({key,label:skills[key],before,after:s.person.attrs[key]}); } else break;
     }
     const parent=related[key];
-    if(parent && !core.includes(key) && parent!==key) changes.push(...progressAttribute(s,parent,points*.55,helpers));
+    if(parent && !core.includes(key) && parent!==key) changes.push(...progressAttribute(s,parent,points*.55,helpers,source));
     return changes;
   }
   function attributeProgressPercent(s,key){ const plan=init(s), value=s.person.attrs[key]||20; return Math.max(0,Math.min(99,Math.round((plan.attributeProgress[key]||0)/difficultyCost(value)*100))); }
@@ -869,7 +925,7 @@
     if(gainedArchetypeXp>0) addArchetypeXp(s,gainedArchetypeXp);
     const changes=[];
     for(const key of category.attrs){
-      changes.push(...progressAttribute(s,key,(automatic?(intensity==="hard"?24:9):(intensity==="hard"?29:22))*gm/category.attrs.length,helpers));
+      changes.push(...progressAttribute(s,key,(automatic?(intensity==="hard"?24:9):(intensity==="hard"?29:22))*gm/category.attrs.length,helpers,"training"));
     }
     const previous=plan.exerciseGrades[ex.id];
     if(!previous || gradeRank[grade]>gradeRank[previous]) plan.exerciseGrades[ex.id]=grade;
@@ -931,14 +987,111 @@
     addArchetypeXp(s,archetypeXp);
     const potentialDelta=potentialReview(s,metrics);
     const changes=[]; const performancePoints=Math.max(2,((rating-6)*4+goals*4+assists*3+tackles*.35+saves*.3+cleanSheet)*4.25);
-    for(const key of pool.slice(0,4)) changes.push(...progressAttribute(s,key,performancePoints/pool.slice(0,4).length,helpers));
+    for(const key of pool.slice(0,4)) changes.push(...progressAttribute(s,key,performancePoints/pool.slice(0,4).length,helpers,"match"));
     root.ProLifeIdentity?.onMatch?.(s,metrics);
     if(rating>=8){plan.weeklyXI++;plan.accoladePoints+=1;} if(goals)plan.accoladePoints+=goals*.6;if(assists)plan.accoladePoints+=assists*.5;
     return {bonus:true,rating,goals,assists,xp:matchXp,archetypeXp,perkMatchBonus,potentialDelta,changes,levelBefore:beforeLevel,levelAfter:plan.level,archetypeLevelBefore:beforeArchetypeLevel,archetypeLevelAfter:plan.archetypeLevel};
   }
+  // Dados anuais reais do heroi (somente leitura). Retorna null quando nao ha base confiavel.
+  function seasonStatsFor(s) {
+    const snap = s.statistics?.seasons?.[0];
+    if (!snap || snap.season !== s.season || !snap.player) return null;
+    const pl = snap.player, stints = Array.isArray(pl.stints) ? pl.stints.filter((x) => x && x.season === s.season) : [];
+    if (!stints.length) return null;
+    // Jogos do(s) clube(s) do heroi enquanto ele estava neles = oportunidades reais de jogar.
+    let opportunities = 0;
+    for (const m of s.matches || []) {
+      if (m?.season !== s.season || !Number.isFinite(m.date)) continue;
+      if (stints.some((st) => (m.home === st.clubId || m.away === st.clubId) && m.date >= (st.startDay ?? -Infinity) && m.date <= (st.endDay ?? Infinity))) opportunities++;
+    }
+    if (opportunities < 8) return null;
+    const apps = Number(pl.appearances) || 0, minutes = Number(pl.minutes) || 0;
+    if (apps > 0 && minutes <= 0) return null;               // minutagem nao registrada: nao inventar
+    const out = { season: s.season, minutesShare: Math.max(0, Math.min(1, minutes / (opportunities * 90))), regularity: Math.max(0, Math.min(1, apps / opportunities)), injuries: 0, severeInjuries: 0 };
+    if (apps >= 5 && Number(pl.averageRating) > 0) out.avgRating = Number(pl.averageRating);
+    const base = (s.season - 2026) * 365, q = s.person?.physical, list = [...(Array.isArray(q?.history) ? q.history : []), ...(q?.active ? [q.active] : [])];
+    for (const h of list) if (Number.isFinite(h?.startDay) && h.startDay >= base && h.startDay < base + 365) { out.injuries++; if (String(h.severity).toUpperCase() === "GRAVE") out.severeInjuries++; }
+    return out;
+  }
+  function reviewSeasonPotential(s, helpers) {
+    const DP = root.ProLifeDynamicPotential || (typeof require === "function" ? (() => { try { return require("./dynamic-potential.js"); } catch { return null; } })() : null);
+    if (s.mode !== "player" || !s.person || !DP || typeof DP.reviewPotential !== "function" || !Number.isFinite(s.person.potential)) return { applied: false, reason: "indisponivel" };
+    const rec = s.person.potentialReview, last = Number.isFinite(rec?.lastReviewSeason) ? rec.lastReviewSeason : null;
+    if (last !== null && last >= s.season) return { applied: false, reason: "temporada ja avaliada" };
+    const st = seasonStatsFor(s);
+    if (!st) return { applied: false, reason: "dados insuficientes" };
+    const overall = helpers.overall(s.person), original = Number.isFinite(rec?.originalPotential) ? rec.originalPotential : s.person.potential;
+    const r = DP.reviewPotential({ ...s.person, overall, ovr: overall }, st, { seed: s.initialSeed ?? s.rng, originalPotential: original, lastReviewSeason: last ?? undefined });
+    if (r.repeated) return { applied: false, reason: r.reason };
+    s.person.potential = r.potential;
+    s.person.potentialReview = { originalPotential: original, lastReviewSeason: s.season };
+    return { applied: true, ...r, stats: st };
+  }
+  // Stage 32D.3C - recompensas de temporada idempotentes.
+  // Marcador minimo: trainingPlan.lastRewardSeason (ultima temporada recompensada).
+  // Politica para saves antigos (sem marcador): a recompensa so e paga quando o snapshot da temporada
+  // encerrada (Statistics.closeSeason, executado imediatamente antes na virada) corresponde a s.season,
+  // ou quando nao ha nenhum snapshot (chamada direta sem estatisticas). Depois da virada s.season avanca e o
+  // snapshot fica atras, entao reabrir/importar/avancar um save antigo nunca repete a recompensa.
+  // Stage 32D.4 - envelhecimento anual do protagonista (auge e declinio por perfil).
+  // Aplicado uma vez por virada, dentro de seasonRewards (nenhuma mudanca em engine.js). Marcador: trainingPlan.lastAgingSeason.
+  // O motor soma +1 a idade logo depois; o declinio usa a idade que o jogador tera na proxima temporada.
+  // Atributos fisicos caem mais que os tecnicos; subatributos acompanham o principal relacionado.
+  const PHYSICAL_CORE = ["pace", "strength", "stamina"], TECH_CORE = ["finish", "pass", "defense"];
+  const AGING_CAP = { physical: 4, technical: 2, overall: 3 };
+  function agingUnit(key) { let h = 2166136261; const str = String(key); for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 15; h = Math.imul(h, 2246822507); h ^= h >>> 13; return (h >>> 0) / 4294967296; }
+  function applySeasonAging(s, helpers) {
+    if (s.mode !== "player" || !s.person?.attrs) return { applied: false, reason: "indisponivel" };
+    const plan = init(s);
+    if (Number.isFinite(plan.lastAgingSeason) && plan.lastAgingSeason >= s.season) return { applied: false, reason: "temporada ja envelhecida" };
+    const seasons = s.statistics?.seasons;
+    if (Array.isArray(seasons) && seasons.length && seasons[0]?.season !== s.season) return { applied: false, reason: "fora da virada" };
+    const Dev = devModule();
+    if (!Dev || typeof Dev.expectedAnnualChange !== "function") return { applied: false, reason: "indisponivel" };
+    ensureDevelopmentProfile(s, helpers);
+    const person = s.person, before = helpers.overall(person), ageNext = (Number(person.age) || 0) + 1;
+    const st = seasonStatsFor(s);
+    const factors = st ? { ...(st.avgRating ? { avgRating: st.avgRating } : {}), minutesShare: st.minutesShare, injuries: st.injuries, severeInjury: st.severeInjuries > 0 } : {};
+    const seed = s.initialSeed ?? s.rng;
+    const exp = Dev.expectedAnnualChange({ ...person, age: ageNext, overall: before, ovr: before }, { seed, season: s.season, factors });
+    plan.lastAgingSeason = s.season;
+    if (exp.phase !== "decline") return { applied: true, declined: false, phase: exp.phase, profile: exp.profile, changes: [] };
+    expand(person.attrs);
+    const snapshot = { ...person.attrs }, changes = [];
+    const dropFor = (core, amount, cap) => {
+      const raw = Math.min(cap, Math.max(0, amount)), n = Math.floor(raw);
+      return n + (agingUnit([seed, s.season, person.id || person.name, core].join("|")) < raw - n ? 1 : 0);
+    };
+    const run = (scale) => {
+      Object.assign(person.attrs, snapshot);
+      for (const core of [...PHYSICAL_CORE, ...TECH_CORE]) {
+        const physical = PHYSICAL_CORE.includes(core), d = dropFor(core, -(physical ? exp.physical : exp.technical) * scale, physical ? AGING_CAP.physical : AGING_CAP.technical);
+        if (!d) continue;
+        const prev = person.attrs[core]; person.attrs[core] = Math.max(20, prev - d);
+        const real = prev - person.attrs[core];
+        if (!real) continue;
+        for (const sub of Object.keys(related)) if (related[sub] === core && Number.isFinite(person.attrs[sub])) person.attrs[sub] = Math.max(20, person.attrs[sub] - real);
+      }
+    };
+    run(1);
+    for (let scale = 0.75; helpers.overall(person) < before - AGING_CAP.overall && scale > 0; scale -= 0.25) run(scale);
+    if (helpers.overall(person) < before - AGING_CAP.overall) Object.assign(person.attrs, snapshot);
+    for (const k of Object.keys(person.attrs)) if (person.attrs[k] !== snapshot[k]) changes.push({ key: k, before: snapshot[k], after: person.attrs[k] });
+    return { applied: true, declined: changes.length > 0, phase: exp.phase, profile: exp.profile, overallBefore: before, overallAfter: helpers.overall(person), changes };
+  }
+  function rewardsDue(s, plan) {
+    if (Number.isFinite(plan.lastRewardSeason) && plan.lastRewardSeason >= s.season) return false;
+    const seasons = s.statistics?.seasons;
+    if (Array.isArray(seasons) && seasons.length) return seasons[0]?.season === s.season;
+    return true;
+  }
   function seasonRewards(s, awards, helpers) {
     if (s.mode !== "player") return 0;
     const plan = init(s); let points = 0;
+    // A revisao de potencial e independente: tem a propria guarda (lastReviewSeason) e nunca bloqueia a recompensa.
+    // Ordem: revisao de potencial (GER antes do envelhecimento) e depois envelhecimento; ambos com guarda propria.
+    reviewSeasonPotential(s, helpers); applySeasonAging(s, helpers);
+    if (!rewardsDue(s, plan)) return 0;
     for (const a of awards || []) if (a?.winner === s.person.name) {
       points += /Craque/.test(a.name) ? 5 : /Artilheiro|assistências/.test(a.name) ? 4 : 3;
     }
@@ -948,10 +1101,11 @@
     if (s.competitionSchedule?.cup?.champion === own?.name) points += 4;
     if (s.competitionSchedule?.state?.champion === own?.name) points += 2;
     plan.accoladePoints += points;
-    if (points) s.person.potential = Math.min(100, Math.max(s.person.potential || 0, helpers.overall(s.person) + 4 + Math.floor(points / 2)));
+    plan.lastRewardSeason = s.season;
+    // 32D.3B: titulos e premios geram pontos de conquista, mas nao elevam o potencial diretamente.
     return points;
   }
-  const api = { core, skills, groups, styleFocus, archetypes, archetypeCatalog, defaultArchetypeId, origins, specializations, archetypePerks, trainingCategories, exercises, gradeRank, expand, groupRatings, init, ceiling, xpForLevel, addDevelopmentXp, addArchetypeXp, archetypePerkSlots, availableArchetypePerks, unlockArchetypePerk, activateArchetypePerk, deactivateArchetypePerk, activeArchetypePerks, reconcileArchetypePerks, compatibleActiveArchetypePerks, archetypePerkTrainingMultiplier, archetypePerkMatchBonus, archetypeTrainingXp, unlockSpecialization, activateSpecialization, MAX_SPECIALIZATIONS, archetypeSpecializations, ageFactor, attributeProgressPercent, mandatoryCommitmentToday, trainingAvailable, performTraining, progressAttribute, daily, matchDevelopment, seasonRewards };
+  const api = { applySeasonAging, reviewSeasonPotential, reassessDevelopmentProfile, core, skills, groups, styleFocus, archetypes, archetypeCatalog, defaultArchetypeId, origins, specializations, archetypePerks, trainingCategories, exercises, gradeRank, expand, groupRatings, init, ceiling, xpForLevel, addDevelopmentXp, addArchetypeXp, archetypePerkSlots, availableArchetypePerks, unlockArchetypePerk, activateArchetypePerk, deactivateArchetypePerk, activeArchetypePerks, reconcileArchetypePerks, compatibleActiveArchetypePerks, archetypePerkTrainingMultiplier, archetypePerkMatchBonus, archetypeTrainingXp, unlockSpecialization, activateSpecialization, MAX_SPECIALIZATIONS, archetypeSpecializations, ageFactor, attributeProgressPercent, mandatoryCommitmentToday, trainingAvailable, performTraining, progressAttribute, daily, matchDevelopment, seasonRewards };
   root.ProLifeTraining = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

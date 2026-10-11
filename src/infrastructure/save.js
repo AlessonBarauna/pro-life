@@ -7,6 +7,10 @@
   const ExpansionValidator =
     root.ProLifeValidateExpansion ||
     (typeof require === "function" ? require("./validate-expansion.js") : null);
+  const StatsCompact =
+    root.ProLifeStatisticsCompact ||
+    (typeof require === "function" ? require("../domain/statistics-compact.js") : null);
+  const SPARSE_STATS = "PRO_LIFE_STATS_SPARSE_1";
   const GlobalFootball =
     root.ProLifeGlobalFootball ||
     (typeof require === "function" ? require("../domain/global-football.js") : null);
@@ -214,7 +218,14 @@
           knownClub(o.clubId) &&
           num(o.salary, 0, 1e9) &&
           num(o.expires, 0, 100000) &&
-          str(o.role),
+          str(o.role) &&
+          (o.offerId === undefined || str(o.offerId,120)) &&
+          (o.createdDay === undefined || num(o.createdDay,0,s.day)) &&
+          (o.stage === undefined || str(o.stage,40)) &&
+          (o.status === undefined || str(o.status,30)) &&
+          (o.round === undefined || (Number.isInteger(o.round) && num(o.round,0,10))) &&
+          (o.signingBonus === undefined || num(o.signingBonus,0,1e10)) &&
+          (o.durationDays === undefined || num(o.durationDays,1,5000)),
       )
     )
       fail();
@@ -455,8 +466,9 @@
         if (!pc || !num(pc.coachTrust,0,100) || !str(pc.squadRole,40) || !num(pc.marketValue,0,1e10) || !Array.isArray(pc.interests) || pc.interests.length>8 || !num(pc.negotiations,0,1000)) fail();
         if (!pc.interests.every(x=>x && str(x.clubId,20) && str(x.stage,40) && num(x.day,0,s.day) && num(x.expires,x.day,s.day+365))) fail();
         if (pc.targetClub!==undefined && pc.targetClub!==null && (!pc.targetClub || !str(pc.targetClub.clubId,20) || !num(pc.targetClub.selectedDay,0,s.day) || !pc.targetClub.assessment || !num(pc.targetClub.assessment.score,0,200) || !num(pc.targetClub.assessment.required,0,200) || !str(pc.targetClub.assessment.label,80))) fail();
-        const contractOk = c => c===null || (c && str(c.clubId,20) && num(c.signedDay,0,s.day) && num(c.endDay,c.signedDay,s.day+5000) && num(c.durationDays,1,5000) && num(c.salary,0,1e9) && num(c.signingBonus,0,1e10) && str(c.role,100) && ["permanent","loan"].includes(c.type) && (c.parentClubId===undefined || str(c.parentClubId,20)) && (c.parentSalary===undefined || num(c.parentSalary,0,1e9)) && (c.parentContractRemaining===undefined || num(c.parentContractRemaining,1,5000)));
+        const contractOk = c => c===null || (c && str(c.clubId,20) && num(c.signedDay,0,s.day) && num(c.endDay,c.signedDay,s.day+5000) && num(c.durationDays,1,5000) && num(c.salary,0,1e9) && num(c.signingBonus,0,1e10) && str(c.role,100) && ["permanent","loan"].includes(c.type) && (c.performanceBonus===undefined || num(c.performanceBonus,0,1e10)) && (c.releaseClause===undefined || num(c.releaseClause,0,1e12)) && (c.parentClubId===undefined || str(c.parentClubId,20)) && (c.parentSalary===undefined || num(c.parentSalary,0,1e9)) && (c.parentContractRemaining===undefined || num(c.parentContractRemaining,1,5000)));
         if (!contractOk(pc.contract)) fail();
+        if(pc.contractNegotiations!==undefined&&(!Array.isArray(pc.contractNegotiations)||pc.contractNegotiations.length>120||!pc.contractNegotiations.every(row=>row&&str(row.id,180)&&str(row.offerId,120)&&str(row.clubId,80)&&num(row.day,0,s.day)&&str(row.stage,40)&&Number.isInteger(row.round)&&num(row.round,0,10)&&(!row.terms||typeof row.terms==="object"))))fail();
         const r=pc.renewalOffer; if(r!==null && r!==undefined && (!r || !str(r.clubId,20) || !num(r.salary,0,1e9) || !num(r.durationDays,1,5000) || !num(r.signingBonus,0,1e10) || !num(r.expires,s.day,s.day+365))) fail();
         const mp=pc.mediaProfile; if(mp!==undefined && (!mp || !str(mp.image,40) || !num(mp.pressure,0,100) || !num(mp.fanSentiment,0,100) || !num(mp.sponsorAppeal,0,100) || !Number.isInteger(mp.interviews) || !num(mp.interviews,0,10000) || !Number.isInteger(mp.controversies) || !num(mp.controversies,0,10000))) fail();
       }
@@ -471,11 +483,177 @@
     ExpansionValidator?.validate(s, fail);
     return s;
   }
+  function detectSaveFormat(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return "invalid";
+    }
+
+    if (
+      value.format === "PRO_LIFE_HYBRID" &&
+      (value.version === 1 || value.version === 2)
+    ) {
+      return "compact";
+    }
+
+    if (
+      value.format !== undefined ||
+      value.version !== 1
+    ) {
+      return "invalid";
+    }
+
+    return "legacy";
+  }
+
+  // Cache da base reconstruida (create() e caro). Chave: mundo|modo|seed.
+  let baseCache = { key: "", base: null };
+  function baseCatalogFor(st) {
+    const engine = root.ProLife;
+    if (!engine || typeof engine.create !== "function") throw Error("Engine indisponivel para reconstruir o save.");
+    if (!Number.isSafeInteger(st?.initialSeed)) throw Error("Seed original ausente ou invalida.");
+    // 34F.12: a base depende da versao do catalogo; versao desconhecida nao compacta (o save completo continua valido).
+    const version = st.catalogVersion === undefined || st.catalogVersion === null ? "legacy" : st.catalogVersion;
+    if (version !== "legacy" && version !== "fc27_v1") throw Error("Versao de catalogo sem reconstrucao suportada.");
+    const key = [st.world, st.mode, st.initialSeed, version].join("|");
+    if (baseCache.key !== key) {
+      const fresh = engine.create({ world: st.world, mode: st.mode, name: "Reconstrucao", age: 22, pos: "ATA", clubId: "c0", ...(version === "fc27_v1" ? { catalogVersion: version } : {}) }, st.initialSeed);
+      baseCache = { key, base: fresh.internationalPlayers };
+    }
+    return baseCache.base;
+  }
+
+  // Modo de escrita compacta: "off" (padrao), "onQuota" (so se a gravacao completa falhar) ou "always".
+  // Desligado por padrao: a reconstrucao depende do catalogo do codigo; apos uma atualizacao que mude o
+  // catalogo o save compacto deixa de abrir (e preservado, mas so abre com a versao compativel).
+  const COMPACT_MODE_KEY = "prolife.v1.compactWrite";
+  let compactModeOverride = null;
+  function compactWriteMode() {
+    const v = compactModeOverride ?? (() => { try { return localStorage.getItem(COMPACT_MODE_KEY); } catch { return null; } })();
+    return v === "always" || v === "onQuota" ? v : "off";
+  }
+  function setCompactWriteMode(mode) {
+    if (!["off", "onQuota", "always"].includes(mode)) return false;
+    compactModeOverride = mode;
+    return true;
+  }
+
+  // Envelope v1: estatisticas completas. Envelope v2: igual, com `statsFormat` e estatisticas esparsas
+  // (so na serializacao; o estado em memoria continua completo).
+  function encodeHybridSave(s, opts) {
+    const sparse = !!(opts && opts.sparseStats);
+    const codec = root.ProLifeCompactSave;
+    if (!codec || typeof codec.delta !== "function") throw Error("Codec compacto indisponivel.");
+    if (!Array.isArray(s?.internationalPlayers)) throw Error("Sem catalogo internacional para compactar.");
+    const base = baseCatalogFor(s);
+    const { internationalPlayers, ...rest } = s;
+    let stateOut = rest;
+    if (sparse) {
+      if (!StatsCompact || typeof StatsCompact.compact !== "function") throw Error("Codec de estatisticas indisponivel.");
+      if (!rest.statistics || typeof rest.statistics !== "object") throw Error("Sem estatisticas para compactar.");
+      stateOut = { ...rest, statistics: StatsCompact.compact(rest.statistics) };
+      // Verificacao antes de gravar: expandir o esparso precisa equivaler a expandir o completo.
+      if (JSON.stringify(StatsCompact.expand(JSON.parse(JSON.stringify(stateOut.statistics)))) !== JSON.stringify(StatsCompact.expand(rest.statistics))) throw Error("Verificacao das estatisticas compactas falhou.");
+    }
+    const value = { format: "PRO_LIFE_HYBRID", version: sparse ? 2 : 1, ...(sparse ? { statsFormat: SPARSE_STATS } : {}), state: stateOut, delta: codec.delta(base, internationalPlayers), fingerprint: codec.fingerprint(base) };
+    // Verificacao antes de gravar: a reconstrucao precisa ser identica ao estado atual.
+    const back = codec.restore(base, value.delta);
+    if (JSON.stringify(back) !== JSON.stringify(internationalPlayers)) throw Error("Verificacao do save compacto falhou.");
+    return JSON.stringify(value);
+  }
+
+  function decodeHybridSave(value) {
+    const format = detectSaveFormat(value);
+
+    if (format === "legacy") {
+      return validate(value);
+    }
+
+    if (format !== "compact") {
+      throw Error("Formato de save desconhecido.");
+    }
+
+    const codec = root.ProLifeCompactSave;
+
+    if (!codec || typeof codec.restore !== "function" ||
+        typeof codec.fingerprint !== "function") {
+      throw Error("Codec compacto indisponivel.");
+    }
+
+    if (!value.state || !value.delta ||
+        !Array.isArray(value.delta.changes) ||
+        !Array.isArray(value.delta.removed) ||
+        !Array.isArray(value.delta.order) ||
+        typeof value.fingerprint !== "string") {
+      throw Error("Save compacto incompleto.");
+    }
+
+    const engine = root.ProLife;
+
+    if (!engine || typeof engine.create !== "function") {
+      throw Error("Engine indisponivel para reconstruir o save.");
+    }
+
+    if (!Number.isSafeInteger(value.state.initialSeed)) {
+      throw Error("Seed original ausente ou invalida.");
+    }
+
+    const base = baseCatalogFor(value.state);
+
+    if (codec.fingerprint(base) !== value.fingerprint) {
+      throw Error("Catalogo internacional incompat\u00edvel. Save preservado.");
+    }
+
+    let state = value.state;
+    if (value.version === 2) {
+      if (value.statsFormat !== SPARSE_STATS) throw Error("Formato de estatisticas desconhecido. Save preservado.");
+      if (!StatsCompact || typeof StatsCompact.expand !== "function") throw Error("Codec de estatisticas indisponivel.");
+      const st = state.statistics;
+      if (!st || typeof st !== "object" || Array.isArray(st) || !st.players || typeof st.players !== "object" || Array.isArray(st.players)) throw Error("Estatisticas compactas malformadas.");
+      const okRow = (row, maps) => {
+        if (!row || typeof row !== "object" || Array.isArray(row)) return false;
+        for (const f of StatsCompact.FIELDS) if (row[f] !== undefined && !(typeof row[f] === "number" && Number.isFinite(row[f]) && row[f] >= 0)) return false;
+        if (!maps) return true;
+        for (const k of ["byCompetition", "byClub"]) {
+          if (row[k] === undefined) continue;
+          if (!row[k] || typeof row[k] !== "object" || Array.isArray(row[k])) return false;
+          for (const sub of Object.values(row[k])) if (!okRow(sub, false)) return false;
+        }
+        return true;
+      };
+      for (const row of Object.values(st.players)) if (!okRow(row, true)) throw Error("Estatisticas compactas malformadas.");
+      state = { ...state, statistics: StatsCompact.expand(st) };
+    } else if (value.statsFormat !== undefined) throw Error("Formato de estatisticas inesperado no envelope v1.");
+
+    const restored = {
+      ...state,
+      internationalPlayers: codec.restore(base, value.delta)
+    };
+
+    return validate(restored);
+  }
+
   function parse(text) {
     if (typeof text !== "string")
       throw Error("Arquivo de save inv?lido ou incompat?vel.");
-    return validate(JSON.parse(text));
+    return decodeHybridSave(JSON.parse(text));
   }
+  const stateSlotBindings = new WeakMap();
+
+  function bindStateToSlot(state, slotId) {
+    if (!state || typeof state !== "object" ||
+        typeof slotId !== "string" || !slotId) {
+      return false;
+    }
+
+    stateSlotBindings.set(state, slotId);
+    return true;
+  }
+
+  function stateSlotId(state) {
+    if (!state || typeof state !== "object") return null;
+    return stateSlotBindings.get(state) || null;
+  }
+
   function readSlots() {
     try { return JSON.parse(localStorage.getItem(SLOTS_KEY) || "[]"); } catch { return []; }
   }
@@ -499,29 +677,85 @@
   function listSlots() { return migrateLegacy().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)); }
   function activeId() { migrateLegacy(); return localStorage.getItem(ACTIVE_KEY); }
   function loadSlot(id) {
-    try { const data=localStorage.getItem(SLOT_PREFIX+id); if(!data) return null; const s=validate(JSON.parse(data)); localStorage.setItem(ACTIVE_KEY,id); return s; } catch { return null; }
+    try { const data=localStorage.getItem(SLOT_PREFIX+id); if(!data) return null; const s=decodeHybridSave(JSON.parse(data)); trySet(ACTIVE_KEY,id); bindStateToSlot(s,id); return s; } catch { return null; }
+  }
+  const trySet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch { return false; } };
+  const tryGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+  // Grava o slot e o indice sem apagar nada antes de confirmar; em falha restaura o estado anterior.
+  function commitSlot(id, s, previousText) {
+    const mode = compactWriteMode();
+    const slotsBefore = tryGet(SLOTS_KEY);
+    const full = () => JSON.stringify(s);
+    const compact = () => { try { return encodeHybridSave(s, { sparseStats: true }); } catch { return null; } };
+    // 34F.13: o save completo FC 27 (~12,5 MB) excede a cota do localStorage; essas carreiras usam o hibrido validado
+    // (reconstrucao pelo manifesto versionado, verificada antes de gravar) e so caem no completo se ele falhar.
+    const fc27 = s && s.catalogVersion === "fc27_v1";
+    const order = fc27 || mode === "always" ? [compact, full] : mode === "onQuota" ? [full, compact] : [full];
+    let written = false;
+    for (const make of order) {
+      let text; try { text = make(); } catch { text = null; }
+      if (text && trySet(SLOT_PREFIX + id, text)) { written = true; break; }
+    }
+    if (!written) return false;
+    try {
+      const slots = readSlots(), i = slots.findIndex((x) => x.id === id), summary = slotSummary(id, s, Date.now());
+      if (i >= 0) slots[i] = { ...slots[i], ...summary, label: slots[i].label }; else slots.push(summary);
+      writeSlots(slots);
+      return true;
+    } catch {
+      if (previousText === null) { try { localStorage.removeItem(SLOT_PREFIX + id); } catch {} } else trySet(SLOT_PREFIX + id, previousText);
+      if (slotsBefore === null) { try { localStorage.removeItem(SLOTS_KEY); } catch {} } else trySet(SLOTS_KEY, slotsBefore);
+      return false;
+    }
   }
   function saveAsNew(s) {
     try {
       validate(s);
-      const id="career_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,7);
-      localStorage.setItem(SLOT_PREFIX+id,JSON.stringify(s));
-      const slots=readSlots(); slots.push(slotSummary(id,s,Date.now())); writeSlots(slots);
-      localStorage.setItem(ACTIVE_KEY,id);
+      const id = "career_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
+      const slotsBefore = tryGet(SLOTS_KEY);
+      if (!commitSlot(id, s, null)) return null;
+      if (!trySet(ACTIVE_KEY, id)) {
+        try { localStorage.removeItem(SLOT_PREFIX + id); } catch {}
+        if (slotsBefore === null) { try { localStorage.removeItem(SLOTS_KEY); } catch {} } else trySet(SLOTS_KEY, slotsBefore);
+        return null;
+      }
+      bindStateToSlot(s, id);
       return id;
     } catch { return null; }
+  }
+  // Identidade: um autosave so substitui o slot se for a mesma carreira.
+  function sameCareer(prev, s) {
+    if (!prev || !s) return false;
+    if (prev.mode !== s.mode || prev.world !== s.world) return false;
+    if (Number.isSafeInteger(prev.initialSeed) && Number.isSafeInteger(s.initialSeed) && prev.initialSeed !== s.initialSeed) return false;
+    if (prev.person?.name && s.person?.name && prev.person.name !== s.person.name) return false;
+    return true;
   }
   function save(s) {
     try {
       validate(s);
-      let id=activeId();
-      if(!id) return !!saveAsNew(s);
-      localStorage.setItem(SLOT_PREFIX+id,JSON.stringify(s));
-      
-      const slots=readSlots(), i=slots.findIndex(x=>x.id===id), summary=slotSummary(id,s,Date.now());
-      if(i>=0) slots[i]=summary; else slots.push(summary);
-      writeSlots(slots); return true;
+      let id = activeId();
+      if (!id) return !!saveAsNew(s);
+      if (stateSlotId(s) !== id) return false;
+      const existing = localStorage.getItem(SLOT_PREFIX + id);
+      if (existing === null) return false;
+      try {
+        const previous = JSON.parse(existing), fmt = detectSaveFormat(previous);
+        if (fmt === "legacy") { validate(previous); if (!sameCareer(previous, s)) return false; }
+        else if (fmt === "compact") { if (!previous.state || !sameCareer(previous.state, s)) return false; if (root.ProLifeCompactSave.fingerprint(baseCatalogFor(previous.state)) !== previous.fingerprint) return false; if (previous.version === 2 ? previous.statsFormat !== SPARSE_STATS : previous.statsFormat !== undefined) return false; }
+        else return false;
+      } catch {
+        return false;
+      }
+      return commitSlot(id, s, existing);
     } catch { return false; }
+  }
+  // Diagnostico sem alterar nada: o slot abre com este codigo?
+  function slotStatus(id) {
+    const data = tryGet(SLOT_PREFIX + id);
+    if (data === null) return { ok: false, reason: "ausente" };
+    try { const v = JSON.parse(data), fmt = detectSaveFormat(v); decodeHybridSave(v); return { ok: true, format: fmt }; }
+    catch (e) { return { ok: false, reason: String(e && e.message || e) }; }
   }
   function load() {
     const id=activeId();
@@ -538,7 +772,7 @@
     x.label=String(name||"").trim().slice(0,60); writeSlots(slots); return true;
   }
   function clearActive() { localStorage.removeItem(ACTIVE_KEY); }
-  root.ProLifeSave = { parse, validate, save, load, saveAsNew, listSlots, loadSlot, removeSlot, renameSlot, activeId, clearActive, KEY, SLOTS_KEY, ACTIVE_KEY };
+  root.ProLifeSave = { parse, validate, save, load, saveAsNew, listSlots, loadSlot, removeSlot, renameSlot, activeId, clearActive, bindStateToSlot, stateSlotId, slotStatus, encodeHybridSave, decodeHybridSave, detectSaveFormat, setCompactWriteMode, compactWriteMode, KEY, SLOTS_KEY, ACTIVE_KEY };
   if (typeof module !== "undefined" && module.exports)
     module.exports = root.ProLifeSave;
 })(typeof globalThis !== "undefined" ? globalThis : this);

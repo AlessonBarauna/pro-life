@@ -141,14 +141,40 @@
     }
     return moved;
   }
+  // Stage 32F - perfis de desenvolvimento (32B) para jogadores do universo, sem gravar nada por jogador.
+  // O perfil e derivado so da identidade (id, nome, posicao, seed) para nao oscilar com idade/GER/potencial;
+  // um developmentProfile valido ja armazenado (futuro) tem prioridade. Transferencias mantem id => mesmo perfil.
+  let devSeed = 0;
+  const DEV_END_REF = 30, DEV_DECL_REF = 1.0;
+  function devModule() { return root.ProLifePlayerDevelopment || (typeof require === "function" ? (() => { try { return require("./player-development.js"); } catch { return null; } })() : null); }
+  function devProfile(p) {
+    const Dev = devModule(); if (!Dev) return null;
+    try {
+      const subject = { id: p.id, name: p.name, pos: p.pos, birthYear: p.birthYear, developmentProfile: p.developmentProfile }, ctx = { seed: devSeed };
+      const r = Dev.resolveProfile(subject, ctx);
+      return { Dev, id: r.id, subject, ctx, params: Dev.parametersFor(r.id, subject, ctx) };
+    } catch { return null; }
+  }
+  // Razao entre o ganho esperado do perfil e o do perfil neutro (steady_rise) na mesma situacao; limitada.
+  function growthRatio(prof, p, before, season) {
+    try {
+      const base = { ...prof.subject, age: p.age, overall: before, ovr: before, potential: p.potential }, ctx = { ...prof.ctx, season, factors: {} };
+      const mine = prof.Dev.expectedAnnualChange({ ...base, developmentProfile: { id: prof.id } }, ctx).expected;
+      const ref = prof.Dev.expectedAnnualChange({ ...base, developmentProfile: { id: "steady_rise" } }, ctx).expected;
+      return ref > 0.05 ? clamp(mine / ref, 0.5, 1.5) : 1;
+    } catch { return 1; }
+  }
   function develop(p, club, perf, level, rng, season) {
     const before = ovrOf(p), w = WEIGHTS[p.pos] || WEIGHTS.MEI, maxMin = club ? Math.max(1, club.__maxMinutes || 1) : 1;
+    const prof = devProfile(p);
+    const inDecline = prof ? prof.Dev.phaseAt(prof.params, p.age) === "decline" : false;
     const share = clamp((perf?.minutes || 0) / maxMin, 0, 1), rating = perf?.apps >= 5 ? perf.rating : 0;
     const perfAdj = rating ? clamp((rating - 6.45) * 0.55, -0.35, 0.35) : 0;
-    if (p.age <= 27) {
+    if (prof ? (!inDecline && p.age <= Math.max(27, prof.params.peakAge)) : p.age <= 27) {
       const room = (p.potential + (unit(p.id, "s" + season) - 0.5) * 4) - before;
       let gain = Math.max(0, room) * growthShare(p.age);
       gain *= (0.6 + 0.45 * share) * (1 + perfAdj * 0.6) * (1 + clamp((level - 60) / 120, -0.1, 0.15));
+      if (prof) gain *= growthRatio(prof, p, before, season);
       gain += (rng.next() - 0.5) * 1.1;
       if (room <= 0) gain = Math.min(gain, 0.6);
       const shape = {}; for (const k of CORE) shape[k] = 0.5 + w[k] * 3 + (k === "pace" && p.age <= 20 ? 0.4 : 0);
@@ -157,8 +183,11 @@
       const drift = (share > 0.5 ? 0.4 : share < 0.15 ? -0.5 : 0) + perfAdj * 2;
       p.potential = clamp(Math.round(p.potential + clamp(drift, -0.9, 0.6) * (rng.next() < 0.5 ? 1 : 0.5)), Math.max(40, before), Math.min(97, Math.max(before, p.peakOvr || 0) + 12));
     } else {
-      let loss = declineRate(p.age, p.pos) * (1.15 - 0.3 * share) * (1 - perfAdj * 0.5) + (rng.next() - 0.5) * 0.7;
-      if (p.age < 30) loss = Math.max(0, loss * 0.3);
+      // Com perfil: o inicio do declinio acompanha o auge individual (goleiros e longevos mais tarde, precoces mais cedo).
+      const effAge = prof ? p.age + 0.5 * (DEV_END_REF - prof.params.peakEnd) : p.age;
+      const rate = prof ? declineRate(effAge, "MEI") * clamp(prof.params.declineRate / DEV_DECL_REF, 0.5, 1.6) : declineRate(p.age, p.pos);
+      let loss = rate * (1.15 - 0.3 * share) * (1 - perfAdj * 0.5) + (rng.next() - 0.5) * 0.7;
+      if (effAge < 30) loss = Math.max(0, loss * 0.3);
       const phys = p.pos === "GOL" ? { pace: 1.1, stamina: 1, strength: 0.9, finish: 0.5, pass: 0.5, defense: 0.6 } : { pace: 1.9, stamina: 1.5, strength: 1.0, finish: 0.55, pass: 0.4, defense: 0.5 };
       shiftAttrs(p, -loss, w, phys, rng);
       if (p.potential > ovrOf(p) + 2) p.potential = clamp(Math.round(ovrOf(p) + 2), 40, 97);
@@ -269,7 +298,7 @@
     u.done[key] = 1;
     const prevSeason = s.season - 1, perf = u.perf || {};
     const rng = rngFor(s, api, key), used = usedNames(s);
-    overallFn = api.overall;
+    overallFn = api.overall; devSeed = s.initialSeed ?? 0;
     // 1. histórico por passagem de clube (mantém a temporada anterior mesmo após transferência no meio do ano)
     for (const c of s.clubs) for (const p of c.roster) {
       if (p.id === "hero") continue;
