@@ -6074,6 +6074,14 @@
     const overall=player.generatedInternational?Number(player.overall||player.ovr||70):(api.overall?api.overall(player):Number(player.overall||player.ovr||70));
     return {id:player.id,name:player.name,pos:player.pos,club:clubName||player.externalClub||player.club||"Exterior",age:Number(player.age||25),overall,score:candidateScore(player,overall),condition:Number(player.condition??100),morale:Number(player.morale??50),source:player.generatedInternational?"generated-persistent":"career"};
   }
+  const worldCupNationCodes=new Map();
+  function worldCupNationCode(nat){
+    const key=String(nat||"");
+    if(worldCupNationCodes.has(key))return worldCupNationCodes.get(key);
+    let code=null;
+    try{let NI=root.ProLifeNationalIdentity;if(!NI&&typeof require==="function")NI=require("./national-identity.js");code=NI?.codeOf?.(key)||null;}catch(e){}
+    worldCupNationCodes.set(key,code);return code;
+  }
   function worldCupAvailablePlayers(s,tournament,team,api){
     const teamNames=worldCupTeamNames(team),all=[];
     for(const player of globalNationalPlayers(s))all.push({player,club:null,resolveGlobalClub:true});
@@ -6082,7 +6090,7 @@
     if(team.id===wcT(tournament))all.push({player:{...s.person,id:"hero",nationality:team.name},club:(root.ProLifeCareerContext?.clubName(s)||root.ProLife?.club?.(s)?.name||(s.clubs||[]).find(c=>c.id===s.clubId)?.name)||"Sem clube"});
     const seen=new Set();
     return all.filter(({player})=>{
-      if(!player?.id||seen.has(player.id))return false;const nat=player.nationality||(team.id===wcT(tournament)?team.name:"");if(!teamNames.has(worldCupNormalize(nat))){let code=null;try{let NI=root.ProLifeNationalIdentity;if(!NI&&typeof require==="function")NI=require("./national-identity.js");code=NI?.codeOf?.(nat)||null;}catch(e){}if(code!==team.id)return false;}
+      if(!player?.id||seen.has(player.id))return false;const nat=player.nationality||(team.id===wcT(tournament)?team.name:"");if(!teamNames.has(worldCupNormalize(nat))){if(worldCupNationCode(nat)!==team.id)return false;}
       seen.add(player.id);return true;
     }).map(({player,club,resolveGlobalClub})=>worldCupPlayerSnapshot(player,resolveGlobalClub?globalPlayerClub(s,player):club,tournament,api)).filter(player=>player.age<=40);
   }
