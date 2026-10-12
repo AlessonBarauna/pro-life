@@ -1,0 +1,10 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const Season=require('../src/domain/conference-season.js');
+function state(){return {season:2026,day:0,mode:'player',clubId:'c0'};}
+function edition(){return {comp:'uecl',season:2026,status:'ready',entrants:Array.from({length:36},(_,i)=>['c'+i,'N'+i]),qualificationVerified:true,qualificationSource:'official-access-and-playoffs'};}
+test('blocks adapted and unverified access',()=>{const s=state(),e=edition();delete e.qualificationVerified;assert.throws(()=>Season.prepare(s,e,{}),/Acesso oficial/);assert.equal(e.leagueSchedule,undefined);});
+test('blocks missing domestic calendar',()=>{assert.throws(()=>Season.prepare(state(),edition(),{startDay:20,reserved:[]}),/domestico/);});
+test('does not synthesize schedule for earlier days',()=>{assert.throws(()=>Season.prepare(state(),edition(),{startDay:0,reserved:[],domesticCalendarComplete:true}),/futuro/);});
+test('already persisted schedule is idempotent',()=>{const e=edition(),m=Array.from({length:108},(_,i)=>({id:'x'+i,day:25,played:false}));e.leagueSchedule={matches:m};assert.equal(Season.prepare(state(),e),e.leagueSchedule);});
+test('hero match never auto-resolved and no duplicate scores',()=>{const e=edition(),s=state();s.day=20;e.leagueSchedule={matches:Array.from({length:108},(_,i)=>({id:'m'+i,day:i?100:20,homeId:i?'c2':'c0',awayId:'c1',played:false}))};let calls=0;let r=Season.processDay(s,e,{otherFixture:()=>{calls++;return {hg:2,ag:1}}});assert.equal(r.waitingHero,1);assert.equal(calls,0);r=Season.processDay(s,e,{heroFixture:()=>({hg:1,ag:0})});assert.equal(r.played,1);assert.equal(Season.processDay(s,e,{heroFixture:()=>({hg:4,ag:0})}).played,0);assert.equal(e.leagueSchedule.matches[0].hg,1);});
+test('invalid score never persisted',()=>{const s=state(),e=edition();e.leagueSchedule={matches:Array.from({length:108},(_,i)=>({id:'m'+i,day:0,homeId:'c2',awayId:'c3',played:false}))};assert.throws(()=>Season.processDay(s,e,{otherFixture:()=>({hg:-1,ag:3})}),/invalido/);assert.equal(e.leagueSchedule.matches[0].played,false);});
