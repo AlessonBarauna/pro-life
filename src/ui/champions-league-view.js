@@ -49,6 +49,48 @@ function style(){return `<style id="pl-ucl-css">
 .pl-ucl-embedded .pl-ucl-stat,.pl-ucl-embedded .pl-ucl-card{background:#0e1e2b;border-color:#29404c}
 .pl-ucl-embedded .pl-ucl-fixture{grid-template-columns:65px minmax(0,1fr) 38px minmax(0,1fr) 64px}
 @media(max-width:800px){.pl-ucl-embedded .pl-ucl-wrap{padding:12px}.pl-ucl-embedded .pl-ucl-fixture{font-size:11px;grid-template-columns:48px minmax(0,1fr) 28px minmax(0,1fr) 48px}}
+/* PRO-LIFE Serie 27 x UEFA Champions League — visual only, scoped. */
+.pl-ucl-embedded{--ucl-star:#6c9cff;--ucl-star-light:#c2d8ff;--ucl-line:rgba(105,154,255,.25);background:radial-gradient(ellipse at 94% 0%,rgba(81,126,255,.11),transparent 40%),linear-gradient(140deg,#0b0e13,#111316 74%);color:#ebeff3;border:1px solid var(--ucl-line);border-radius:var(--pl-r-lg,5px);font-family:var(--fc-body,system-ui)}
+.pl-ucl-embedded .pl-ucl-wrap{max-width:1500px;margin:0 auto;padding:22px clamp(12px,2.5vw,32px) 54px}
+.pl-ucl-embedded .pl-ucl-header{position:relative;isolation:isolate;overflow:hidden;min-height:180px;padding:32px clamp(20px,3vw,42px);border:1px solid var(--ucl-line);border-radius:4px;background:linear-gradient(110deg,#07122c 8%,#122650 69%,#080e21);box-shadow:0 18px 55px rgba(0,0,0,.22)}
+.pl-ucl-embedded .pl-ucl-header:after{content:"";position:absolute;right:-2%;top:-80%;width:43%;height:250%;transform:skewX(-31deg);z-index:-1;background:repeating-linear-gradient(90deg,transparent 0 22px,rgba(109,160,255,.075) 22px 26px,transparent 26px 56px),linear-gradient(90deg,transparent,rgba(93,140,255,.15))}
+.pl-ucl-embedded .pl-ucl-kicker{font-family:var(--fc-display,system-ui);font-size:10px;font-weight:800;letter-spacing:.19em;color:var(--ucl-star-light)}
+.pl-ucl-embedded .pl-ucl-header h1{font-family:var(--fc-display,system-ui);font-size:clamp(28px,3.1vw,48px);font-weight:900;letter-spacing:.045em;text-transform:uppercase;color:#fff;line-height:1.07;margin:9px 0 12px}
+.pl-ucl-embedded .pl-ucl-muted{color:#aeb4be}
+.pl-ucl-embedded .pl-ucl-header .pl-ucl-muted{color:#dac5b7}
+.pl-ucl-embedded .pl-ucl-badge{background:rgba(99,151,255,.12);border:1px solid rgba(99,151,255,.35);color:var(--ucl-star-light);font-family:var(--fc-display,system-ui);font-weight:900;letter-spacing:.1em;text-transform:uppercase;padding:12px 18px;border-radius:3px}
+.pl-ucl-embedded .pl-ucl-nav{gap:0;margin:19px 0 22px;padding:0 8px;overflow-x:auto;border:1px solid rgba(255,255,255,.09);border-bottom:2px solid rgba(105,154,255,.38);background:#0d1218}
+.pl-ucl-embedded .pl-ucl-nav button{flex-shrink:0;border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;color:#b2bbc5;font-family:var(--fc-display,system-ui);text-transform:uppercase;font-size:12px;font-weight:800;letter-spacing:.045em;padding:17px 19px;margin-bottom:-2px;transition:color .16s,background .16s}
+.pl-ucl-embedded .pl-ucl-nav button:hover{color:#fff;background:rgba(105,154,255,.07)}
+.pl-ucl-embedded .pl-ucl-nav button.active{background:rgba(105,154,255,.12);color:#fff;border:0;border-bottom:3px solid var(--ucl-star)}
+.pl-ucl-embedded .pl-ucl-stats{gap:10px;margin:0 0 18px}
+.pl-ucl-embedded .pl-ucl-stat,.pl-ucl-embedded .pl-ucl-card{background:linear-gradient(155deg,#151b22,#0d1218);border:1px solid rgba(255,255,255,.09);border-radius:4px;box-shadow:none}
+.pl-ucl-embedded .pl-ucl-stat{position:relative;overflow:hidden;border-top:2px solid rgba(105,154,255,.6);padding:18px 20px}
+.pl-ucl-embedded .pl-ucl-stat strong{font-family:var(--fc-display,system-ui);font-size:30px;color:#fff}
+.pl-ucl-embedded .pl-ucl-card{padding:22px}
+.pl-ucl-embedded .pl-ucl-card h2{font-family:var(--fc-display,system-ui);text-transform:uppercase;letter-spacing:.035em;font-size:19px;margin-bottom:18px}
+.pl-ucl-embedded .pl-ucl-table th{font-family:var(--fc-display,system-ui);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ucl-star-light);border-bottom:1px solid var(--ucl-line)}
+.pl-ucl-embedded .pl-ucl-table td{border-bottom-color:rgba(255,255,255,.065)}
+.pl-ucl-embedded .pl-ucl-table tr.hero{background:rgba(105,154,255,.10)}
+.pl-ucl-embedded .pl-ucl-rank{background:#252c33;color:#eee;border-radius:2px}
+.pl-ucl-embedded .pl-ucl-rank.direct{background:#176c4c;color:#fff}
+.pl-ucl-embedded .pl-ucl-rank.playoff{background:#5c68a5;color:#fff}
+.pl-ucl-embedded .pl-ucl-fixture{border-bottom-color:rgba(255,255,255,.075);gap:10px}
+.pl-ucl-embedded .pl-ucl-hero{background:rgba(105,154,255,.11);border-left:3px solid var(--ucl-star);border-radius:2px}
+.pl-ucl-embedded .pl-ucl-fixture .score{color:var(--ucl-star-light)}
+.pl-ucl-embedded .pl-ucl-pill{color:#b7bdc6}
+.pl-ucl-embedded .pl-ucl-filter{background:#111820;color:#f7f7f7;border:1px solid var(--ucl-line);border-radius:3px}
+.pl-ucl-embedded .pl-ucl-pair{background:#141b21;border:1px solid var(--ucl-line);border-radius:3px}
+.pl-ucl-embedded .pl-ucl-stage h3{color:var(--ucl-star-light);font-family:var(--fc-display,system-ui);text-transform:uppercase}
+.pl-ucl-embedded .pl-ucl-win{color:#74e0ab}
+.pl-ucl-embedded button:focus-visible,.pl-ucl-embedded select:focus-visible{outline:3px solid var(--ucl-star);outline-offset:2px}
+@media(max-width:800px){.pl-ucl-embedded .pl-ucl-header{min-height:150px;padding:24px 18px}.pl-ucl-embedded .pl-ucl-header h1{font-size:30px}.pl-ucl-embedded .pl-ucl-badge{padding:8px}.pl-ucl-embedded .pl-ucl-nav button{font-size:11px;padding:13px 12px}.pl-ucl-embedded .pl-ucl-card{padding:14px}}
+
+/* Starball-inspired star accents, built from CSS; no external assets. */
+.pl-ucl-embedded .pl-ucl-header:before{content:"✦";position:absolute;right:7%;top:6%;color:rgba(195,218,255,.16);font-size:clamp(95px,17vw,230px);line-height:1;z-index:-1;transform:rotate(12deg);pointer-events:none}
+.pl-ucl-embedded .pl-ucl-header{background:radial-gradient(circle at 80% 25%,rgba(55,99,224,.32),transparent 45%),linear-gradient(110deg,#06142c 5%,#142c65 72%,#060d23)}
+.pl-ucl-embedded .pl-ucl-header:after{background:repeating-linear-gradient(110deg,transparent 0 36px,rgba(186,214,255,.08) 36px 37px,transparent 37px 65px)}
+
 </style>`;}
 function tieNote(s,t){if(!t)return '';const n=id=>escape(club(s,id)),a=t.aggregate||[0,0],parts=[`Agregado ${a[0]}–${a[1]}`];if(t.extraTime)parts.push(`prorrogação ${t.extraTime[0]}–${t.extraTime[1]}`);if(t.penalties)parts.push(`pênaltis ${t.penalties.score[0]}–${t.penalties.score[1]}`);return `${parts.join(' · ')} · ${n(t.winnerId)} avança${t.decidedBy==='penalties'?' nos pênaltis':t.decidedBy==='extra_time'?' na prorrogação':''}`;}
 function fixture(s,m){const hero=[m.homeId,m.awayId].includes(s.clubId);return `<div class="pl-ucl-fixture ${hero?'pl-ucl-hero':''}"><span class="pl-ucl-pill">Dia ${escape(m.day)}</span><span class="home">${escape(club(s,m.homeId))}</span><span class="score">${m.played?escape(m.hg)+' – '+escape(m.ag):'×'}</span><span class="away">${escape(club(s,m.awayId))}</span><span class="pl-ucl-pill">${m.played?'Final':'Pendente'}</span></div>`;}
@@ -69,7 +111,7 @@ function renderEmbedded(s){
  current=s;
  const m=model(s);
  const names={overview:'Visão geral',standings:'Classificação',fixtures:'Jogos',bracket:'Mata-mata',club:'Meu clube'};
- const heading=`<div class="pl-ucl-header"><div><div class="pl-ucl-kicker">TEMPORADA · COMPETIÇÕES UEFA</div><h1>UEFA CHAMPIONS LEAGUE</h1><div class="pl-ucl-muted">Temporada ${escape(m.season)} · ${m.available&&m.scheduled?`${m.played}/144 jogos da fase de liga`:'Sem jogos registrados nesta edição'}</div></div><div class="pl-ucl-badge">PRO-LIFE</div></div>`;
+ const heading=`<div class="pl-ucl-header"><div><div class="pl-ucl-kicker">TEMPORADA · COMPETIÇÕES UEFA</div><h1>UEFA CHAMPIONS LEAGUE</h1><div class="pl-ucl-muted">Temporada ${escape(m.season)} · ${m.available&&m.scheduled?`${m.played}/144 jogos da fase de liga`:'Sem jogos registrados nesta edição'}</div></div><div class="pl-ucl-badge">UCL · 2026</div></div>`;
  const navigation=`<nav class="pl-ucl-nav" aria-label="Seções da Champions">${Object.entries(names).map(([k,n])=>`<button type="button" data-pl-ucl-tab="${k}" class="${tab===k?'active':''}" aria-pressed="${tab===k}">${n}</button>`).join('')}</nav>`;
  return style()+`<section id="pl-ucl-embedded" class="pl-ucl-embedded"><div class="pl-ucl-wrap">${heading}${navigation}${body(s,m)}</div></section>`;
 }

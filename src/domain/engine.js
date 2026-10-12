@@ -6,6 +6,10 @@
   const WorldStats=root.ProLifeWorldStats||(typeof require==="function"?require("./world-stats.js"):null);
   const Continental=root.ProLifeContinental||(typeof require==="function"?require("./continental.js"):null);
   const ChampionsKnockout=root.ProLifeChampionsKnockout||(typeof require==="function"?require("./champions-knockout.js"):null);
+  const EuropaSeason=root.ProLifeEuropaSeason||(typeof require==="function"?require("./europa-season.js"):null);
+  const EuropaKnockout=root.ProLifeEuropaKnockout||(typeof require==="function"?require("./europa-knockout.js"):null);
+  const ConferenceLive=root.ProLifeConferenceLive||(typeof require==="function"?require("./conference-live.js"):null);
+  const ConferenceKnockout=root.ProLifeConferenceKnockout||(typeof require==="function"?require("./conference-knockout.js"):null);
   const ChampionsSeason=root.ProLifeChampionsSeason||(typeof require==="function"?require("./champions-season.js"):null);
   const NationalCallups=root.ProLifeNationalCallups||(typeof require==="function"?require("./national-callups.js"):null);
   const OffField=root.ProLifeOffField||(typeof require==="function"?require("./off-field.js"):null);
@@ -534,6 +538,16 @@
       if (ucl?.status === "ready" && !ucl.leagueSchedule) {
         ChampionsSeason.prepare(s, Continental, WorldClubCompetitions);
       }
+    }
+    // UEL_CREATE_DAY_ZERO_V1 - Independent Europa League edition.
+    if (s.catalogVersion === "fc27_v1" && Continental && EuropaSeason && WorldClubCompetitions) {
+      Continental.init(s);
+      const uel = Continental.edition(s, "uel");
+      if (uel?.status === "ready" && !uel.leagueSchedule) EuropaSeason.prepare(s, Continental, WorldClubCompetitions);
+    }
+    if (s.catalogVersion === "fc27_v1" && ConferenceLive && Continental) {
+      const ed=Continental.edition(s,"uecl");
+      if(ed?.status==="ready") { try{ConferenceLive.prepare(s,ed);}catch(e){ed.conferenceError=String(e?.message||e);} }
     }
     if (plan && s.creation?.started) return s;
     if (mode === "player") Career.post(s, "Carreira", "Agente", "Sua origem: " + (plan ? plan.story.title : origin.name), origin.description + " Seu arquétipo inicial é " + (Training?.init(s)?.archetype?.name || "definido pela posição") + ".");
@@ -1541,7 +1555,13 @@
     const league = pair && { home: pair[0], away: pair[1], date: nextFixtureDay(s), round: s.round + 1, competitionId: club(s)?.leagueId, competitionName: s.leagues.find((l) => l.id === club(s)?.leagueId)?.name };
     const extra = Competitions?.nextFixture(s);
     const nationalMatch = s.mode === "player" && NationalTeam?.init(s).calledUp ? NationalTeam.upcoming(s)[0] : null;
-    const national = nationalMatch && { national:true, date: nationalMatch.day, competitionId: "nationalTeam", competitionName: nationalMatch.competition, stage: nationalMatch.stage || "Seleção Brasileira", opponent: nationalMatch.opponent, homeName: "Brasil", awayName: nationalMatch.opponent };
+    const nationalIdentity = root.ProLifeNationalIdentity?.heroTeam?.(s, API);
+    const trackedCup = (s.nationalTeam?.tournaments || []).find(t => t?.type === "WORLD_CUP" && Number(t.year) === 2026 + Math.floor(s.day / 365));
+    const trackedId = trackedCup?.trackedTeamId;
+    const nationalCode = nationalIdentity?.code || (s.person?.nationality === "Brasil" ? "BRA" : null);
+    const nationalEligible = !trackedId || trackedId === nationalCode;
+    const nationalName = nationalIdentity?.name || s.person?.nationality || "Brasil";
+    const national = nationalMatch && nationalEligible && { national:true, date: nationalMatch.day, competitionId: "nationalTeam", competitionName: nationalMatch.competition, stage: nationalMatch.stage || "Seleção", opponent: nationalMatch.opponent, homeName: nationalName, awayName: nationalMatch.opponent };
     let world = null;
     const hc = s.mode === "player" && s.clubId ? club(s) : null;
     if (hc?.worldMatch && WorldClubCompetitions?.nextFixture) {
@@ -1570,7 +1590,17 @@
     };
     const koFixture = ChampionsKnockout?.nextFixture?.(s,Continental?.edition?.(s,"ucl"),s.clubId);
     const knockout = koFixture && {home:koFixture.homeId,away:koFixture.awayId,date:koFixture.day,round:koFixture.pair+1,competitionId:"ucl",competitionName:"UEFA Champions League",stage:koFixture.stage};
-    return [league, extra, national, world, continental, knockout].filter(Boolean).sort((a,b)=>a.date-b.date)[0] || null;
+    const uelEd=Continental?.edition?.(s,"uel",s.season);
+    const uelGame=uelEd?.leagueSchedule?.matches?.filter(m=>!m.played&&m.day>s.day&&[m.homeId,m.awayId].includes(s.clubId)).sort((a,b)=>a.day-b.day)[0];
+    const europa=uelGame&&{home:uelGame.homeId,away:uelGame.awayId,date:uelGame.day,round:uelGame.round,competitionId:"uel",competitionName:"UEFA Europa League",stage:"Fase de liga"};
+    const uelKo=EuropaKnockout?.nextFixture?.(s,uelEd,s.clubId);
+    const europaKo=uelKo&&{home:uelKo.homeId,away:uelKo.awayId,date:uelKo.day,round:uelKo.pair+1,competitionId:"uel",competitionName:"UEFA Europa League",stage:uelKo.stage};
+    const ueclEd=Continental?.edition?.(s,"uecl",s.season);
+    const ueclMatch=ueclEd?.leagueSchedule?.matches?.filter(m=>!m.played&&m.day>s.day&&[m.homeId,m.awayId].includes(s.clubId)).sort((a,b)=>a.day-b.day)[0];
+    const conference=ueclMatch&&{home:ueclMatch.homeId,away:ueclMatch.awayId,date:ueclMatch.day,round:ueclMatch.round,competitionId:"uecl",competitionName:"UEFA Conference League",stage:"Fase de liga"};
+    const ueclKo=ConferenceKnockout?.nextFixture?.(s,ueclEd,s.clubId);
+    const conferenceKo=ueclKo&&{home:ueclKo.homeId,away:ueclKo.awayId,date:ueclKo.day,round:ueclKo.pair+1,competitionId:"uecl",competitionName:"UEFA Conference League",stage:ueclKo.stage};
+    return [league, extra, national, world, continental, knockout, europa, europaKo,conference,conferenceKo].filter(Boolean).sort((a,b)=>a.date-b.date)[0] || null;
   }
   function newSeason(s, rng) {
     WorldClubCompetitions?.closeSeason(s);
@@ -1657,6 +1687,15 @@
           s.day < Continental.windows(s.season,"ucl")[0]) {
         ChampionsSeason.prepare(s,Continental,WorldClubCompetitions);
       }
+    }
+    if (EuropaSeason && Continental && WorldClubCompetitions && s.catalogVersion === "fc27_v1") {
+      const uel=Continental.edition(s,"uel");
+      if (uel?.status==="ready" && !uel.leagueSchedule && s.day<Continental.windows(s.season,"uel")[0])
+        EuropaSeason.prepare(s,Continental,WorldClubCompetitions);
+    }
+    if (s.catalogVersion === "fc27_v1" && ConferenceLive && Continental) {
+      const ed=Continental.edition(s,"uecl");
+      if(ed?.status==="ready") {try{ConferenceLive.prepare(s,ed);}catch(e){ed.conferenceError=String(e?.message||e);}}
     }
     ClubIntelligence?.startSeason(s);
     CoachCareer?.startSeason(s, API);
@@ -1876,6 +1915,179 @@
     }catch(e){}
     return koResult;
   }
+  function processEuropaDay(s, rng) {
+    if (!EuropaSeason || !Continental || !WorldClubCompetitions) return null;
+
+    const ed = Continental.edition(s, "uel");
+    if (!Array.isArray(ed?.leagueSchedule?.matches)) return null;
+
+    return EuropaSeason.processDay(
+      s, Continental, WorldClubCompetitions, {
+        otherFixture(match) {
+          const home = GlobalFootball?.clubById?.(s, match.homeId);
+          const away = GlobalFootball?.clubById?.(s, match.awayId);
+          const hs = Number(home?.strength ?? home?.reputation ?? 65);
+          const as = Number(away?.strength ?? away?.reputation ?? 65);
+
+          let hash = 2166136261;
+          const key = match.id + "|" + String(s.season);
+
+          for (const c of key) {
+            hash = Math.imul(hash ^ c.charCodeAt(0), 16777619);
+          }
+
+          const seed = hash >>> 0;
+          const hg = Math.max(0, Math.min(6,
+            Math.round(1.35 + (hs - as) / 28 + ((seed % 5) - 2) / 2)
+          ));
+          const ag = Math.max(0, Math.min(6,
+            Math.round(1.05 + (as - hs) / 28 +
+              ((Math.floor(seed / 17) % 5) - 2) / 2)
+          ));
+
+          return { hg, ag };
+        },
+
+        heroFixture(match) {
+          if (s.mode !== "player" || !s.clubId) return null;
+
+          const hero = worldMatchClub(s, s.clubId);
+          if (!hero || match.day < (hero.joinedDay ?? s.day)) return null;
+
+          const previousScope = worldMatchScope;
+
+          worldMatchScope = {
+            s,
+            ids: [match.homeId, match.awayId],
+            cache: {}
+          };
+
+          try {
+            const m = registerMatch(
+              s, rng, match.homeId, match.awayId,
+              {
+                round: match.round,
+                competitionId: "uel",
+                competitionName: "UEFA Europa League",
+                stage: "Fase de liga",
+                continentalMatch: true
+              },
+              false
+            );
+
+            m.continentalMatch = true;
+            return { hg: m.hg, ag: m.ag };
+          } finally {
+            worldMatchScope = previousScope;
+          }
+        }
+      }
+    );
+  }
+  // 34F.32B.6 - Knockout UCL persistente, separado da liga nacional.
+  function processEuropaKnockoutDay(s, rng) {
+    const ed=Continental?.edition?.(s,"uel");
+    if(!EuropaKnockout||!ed?.leagueSchedule?.matches)return null;
+    const score=(m)=>{
+      const hc=GlobalFootball?.clubById?.(s,m.homeId);
+      const ac=GlobalFootball?.clubById?.(s,m.awayId);
+      const hs=Number(hc?.strength??hc?.reputation??65),as=Number(ac?.strength??ac?.reputation??65);
+      const key=String(m.id)+"|"+String(s.season);
+      let h=2166136261;for(const c of key)h=Math.imul(h^c.charCodeAt(0),16777619);
+      const seed=h>>>0;
+      return {
+        hg:Math.max(0,Math.min(6,Math.round(1.35+(hs-as)/28+((seed%5)-2)/2))),
+        ag:Math.max(0,Math.min(6,Math.round(1.05+(as-hs)/28+((Math.floor(seed/17)%5)-2)/2)))
+      };
+    };
+    return EuropaKnockout.daily(s,ed,{
+      otherFixture:score,
+      heroFixture(m){
+        const hero=worldMatchClub(s,s.clubId);
+        if(!hero||m.day<(hero.joinedDay??s.day))return null;
+        const before=worldMatchScope;
+        worldMatchScope={s,ids:[m.homeId,m.awayId],cache:{}};
+        try{
+          const names={playoffs:"Playoffs",round16:"Oitavas",quarters:"Quartas",semis:"Semifinais",final:"Final"};
+          const result=registerMatch(s,rng,m.homeId,m.awayId,{
+            round:m.pair+1,competitionId:"uel",competitionName:"UEFA Europa League",
+            stage:names[m.stage]||m.stage,continentalMatch:true
+          },false);
+          result.continentalMatch=true;
+          return {hg:result.hg,ag:result.ag};
+        }finally{worldMatchScope=before}
+      }
+    });
+  }
+  function processConferenceDay(s, rng) {
+    if (!ConferenceLive || !Continental || !WorldClubCompetitions) return null;
+
+    const ed = Continental.edition(s, "uecl");
+    if (!Array.isArray(ed?.leagueSchedule?.matches)) return null;
+
+    return ConferenceLive.daily(
+      s, ed, {
+        otherFixture(match) {
+          const home = GlobalFootball?.clubById?.(s, match.homeId);
+          const away = GlobalFootball?.clubById?.(s, match.awayId);
+          const hs = Number(home?.strength ?? home?.reputation ?? 65);
+          const as = Number(away?.strength ?? away?.reputation ?? 65);
+
+          let hash = 2166136261;
+          const key = match.id + "|" + String(s.season);
+
+          for (const c of key) {
+            hash = Math.imul(hash ^ c.charCodeAt(0), 16777619);
+          }
+
+          const seed = hash >>> 0;
+          const hg = Math.max(0, Math.min(6,
+            Math.round(1.35 + (hs - as) / 28 + ((seed % 5) - 2) / 2)
+          ));
+          const ag = Math.max(0, Math.min(6,
+            Math.round(1.05 + (as - hs) / 28 +
+              ((Math.floor(seed / 17) % 5) - 2) / 2)
+          ));
+
+          return { hg, ag };
+        },
+
+        heroFixture(match) {
+          if (s.mode !== "player" || !s.clubId) return null;
+
+          const hero = worldMatchClub(s, s.clubId);
+          if (!hero || match.day < (hero.joinedDay ?? s.day)) return null;
+
+          const previousScope = worldMatchScope;
+
+          worldMatchScope = {
+            s,
+            ids: [match.homeId, match.awayId],
+            cache: {}
+          };
+
+          try {
+            const m = registerMatch(
+              s, rng, match.homeId, match.awayId,
+              {
+                round: match.round,
+                competitionId: "uecl",
+                competitionName: "UEFA Conference League",
+                stage: "Fase de liga",
+                continentalMatch: true
+              },
+              false
+            );
+
+            m.continentalMatch = true;
+            return { hg: m.hg, ag: m.ag };
+          } finally {
+            worldMatchScope = previousScope;
+          }
+        }
+      }
+    );
+  }
   function advance(s, days = 1) {
     // FC27/UCL: every advance reconciles missing continental editions.
     // Legacy careers may have skipped the seasonal rollover entirely.
@@ -1907,6 +2119,17 @@
         }
       }
     }
+    if (s.catalogVersion === "fc27_v1" && EuropaSeason && Continental && WorldClubCompetitions) {
+      Continental.init(s);
+      const uel=Continental.edition(s,"uel");
+      if (uel?.status==="ready" && !uel.leagueSchedule && s.day<Continental.windows(s.season,"uel")[0])
+        EuropaSeason.prepare(s,Continental,WorldClubCompetitions);
+    }
+    if (s.catalogVersion === "fc27_v1" && ConferenceLive && Continental) {
+      Continental.init(s);
+      const ed=Continental.edition(s,"uecl");
+      if(ed?.status==="ready"&&!ed.leagueSchedule) {try{ConferenceLive.prepare(s,ed);}catch(e){ed.conferenceError=String(e?.message||e);}}
+    }
     if (s.catalogVersion === "fc27_v1") GlobalFootball?.ensureAcademies?.(s);
     Career.init(s);
     Training?.init(s);
@@ -1928,6 +2151,9 @@
       WorldClubCompetitions?.daily(s, { heroFixture: (...a) => worldHeroFixture(s, rng, ...a) });
       processChampionsDay(s, rng);
       processChampionsKnockoutDay(s, rng);
+      processEuropaDay(s, rng);
+      processEuropaKnockoutDay(s, rng);
+      processConferenceDay(s, rng);
       ClubIntelligence?.daily(s, { log: (title, body) => log(s, title, body) });
       CoachCareer?.daily(s, API, { log: (title, body) => log(s, title, body) });
       OffField?.daily(s, API, { log: (title, body) => log(s, title, body) });

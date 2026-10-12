@@ -357,6 +357,8 @@
   }
   function render() {
     window.ProLifeChampionsUI?.sync?.(state);
+    window.ProLifeEuropaUI?.sync?.(state);
+    window.ProLifeConferenceUI?.sync?.(state);
     window.ProLifeAvatar3D?.dispose();
     queueMicrotask(syncCallupModal);
     if (!state || setup) {
@@ -375,7 +377,7 @@
             ["inbox", "Caixa", [["inbox", "Mensagens"]]],
             ["profile", "Meu jogador", [["profile", "Perfil e carreira"], ["contract", "Contrato"], ["training", "Treinamento"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["agency", "Empresário e Agência"], ["legacy", "Evolução e legado"], ["story", "Objetivos e História"]]],
             ["market", "Mercado", [["market", "Central do mercado"], ["proposals", "Minhas propostas"]]],
-            ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["champions", "Champions League"], ["panorama", "Panorama"], ["squad", "Elenco"]]],
+            ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["champions", "Champions League"], ["europa", "Europa League"], ["conference", "Conference League"], ["panorama", "Panorama"], ["squad", "Elenco"]]],
             ["national", "Seleção", []],
             ["history", "Mundo", [["history", "Mundo vivo"], ["worldCompetitions", "Competições Mundiais"], ["youth", "Base e Craques"], ["clubs", "Clubes"], ["life", "Perfil e Vida"], ["offField", "Vida profissional"], ["finance", "Finanças"], ["sponsorships", "Patrocínios"]]],
             ["save", "Saves", [["save", "Gerenciar saves"]]],
@@ -385,7 +387,7 @@
             ["inbox", "Caixa", [["inbox", "Mensagens"]]],
             ["profile", "Treinador", [["profile", "Perfil"], ["coachCareer", "Carreira e Vestiário"], ["training", "Desenvolvimento"], ["finance", "Diretoria"]]],
             ["market", "Transferências", [["market", "Mercado"], ["proposals", "Propostas"]]],
-            ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["champions", "Champions League"], ["panorama", "Panorama"], ["squad", "Elenco e tática"], ["statistics", "Estatísticas"], ["awards", "Prêmios"]]],
+            ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["champions", "Champions League"], ["europa", "Europa League"], ["conference", "Conference League"], ["panorama", "Panorama"], ["squad", "Elenco e tática"], ["statistics", "Estatísticas"], ["awards", "Prêmios"]]],
             ["history", "Mundo", [["history", "Mundo vivo"], ["worldCompetitions", "Competições Mundiais"], ["youth", "Base e Craques"], ["clubs", "Clubes"], ["life", "Decisões"], ["offField", "Vida profissional"]]],
             ["save", "Saves", [["save", "Gerenciar saves"]]],
           ],
@@ -396,7 +398,7 @@
     const unread = Career.unreadCount(state) + (state.decision ? 1 : 0),
       offerCount = (state.offers||[]).filter((o) => o.expires >= state.day).length;
     $("#app").innerHTML =
-      `<div class="game-shell"><header class="game-nav"><div class="brand">PRO<span>LIFE</span></div><nav>${groups.map(([id, label, pages]) => `<button data-page="${id}" class="${pages.some(([pid])=>pid===page) ? "active" : ""}">${label}${id === "inbox" && unread ? `<i>${unread}</i>` : id === "market" && offerCount ? `<i>${offerCount}</i>` : ""}</button>`).join("")}</nav><div class="club-chip"><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b><span class="sx-line">${esc(window.ProLifeShellExtras?.chipLine(state)||"")}</span></div>${window.ProLifeShellExtras?window.ProLifeShellExtras.bell(window.ProLifeShellExtras.pending(state,D)):""}</header><div class="game-subnav">${subnav.map(([id,label])=>`<button data-page="${id}" class="${page===id?"active":""}">${esc(label)}${id==="proposals" && offerCount ? ` <i>${offerCount}</i>`:""}</button>`).join("")}</div><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${page === "champions" ? "UEFA Champions League · classificação, rodadas e fase eliminatória" : (topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado")}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
+      `<div class="game-shell"><header class="game-nav"><div class="brand">PRO<span>LIFE</span></div><nav>${groups.map(([id, label, pages]) => `<button data-page="${id}" class="${pages.some(([pid])=>pid===page) ? "active" : ""}">${label}${id === "inbox" && unread ? `<i>${unread}</i>` : id === "market" && offerCount ? `<i>${offerCount}</i>` : ""}</button>`).join("")}</nav><div class="club-chip"><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b><span class="sx-line">${esc(window.ProLifeShellExtras?.chipLine(state)||"")}</span></div>${window.ProLifeShellExtras?window.ProLifeShellExtras.bell(window.ProLifeShellExtras.pending(state,D)):""}</header><div class="game-subnav">${subnav.map(([id,label])=>`<button data-page="${id}" class="${page===id?"active":""}">${esc(label)}${id==="proposals" && offerCount ? ` <i>${offerCount}</i>`:""}</button>`).join("")}</div><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${page === "conference" ? "UEFA Conference League · classificação, rodadas e fase eliminatória" : page === "europa" ? "UEFA Europa League · classificação, rodadas e fase eliminatória" : page === "champions" ? "UEFA Champions League · classificação, rodadas e fase eliminatória" : (topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado")}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
     mountInternationalOfferPreference();
     window.ProLifeTargetClubSelector?.mount?.(state,D,Career);
     mountAvatar();
@@ -1516,13 +1518,14 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       if(state.mode!=="player") return `<section class="card"><h2>Escalação</h2><p class="muted">Disponível na carreira de jogador.</p></section>`;
       if(!state.clubId) return `<section class="card"><h2>Sem clube</h2><p class="muted">Assine com um clube para disputar uma vaga.</p></section>`;
       if(next?.national) {
+        const nationalName=next.homeName||window.ProLifeNationalIdentity?.heroTeam?.(state,D)?.name||state.person?.nationality||"Brasil";
         const n=D.NationalTeam?.init?.(state);
         const nationalLineup=D.NationalTeam?.matchLineup?.(state,D);
 
         if(!n || !nationalLineup){
           return `<section class="card">
             <h2>Escala\u00e7\u00e3o da Sele\u00e7\u00e3o</h2>
-            <p class="muted">A rela\u00e7\u00e3o da Sele\u00e7\u00e3o Brasileira ainda n\u00e3o est\u00e1 dispon\u00edvel.</p>
+            <p class="muted">A rela\u00e7\u00e3o da sele\u00e7\u00e3o ainda n\u00e3o est\u00e1 dispon\u00edvel.</p>
           </section>`;
         }
 
@@ -1531,7 +1534,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
             <span class="fc-shirt">${esc(p.pos||"-")}</span>
             <span>
               <b>${esc(p.name)}${p.id==="hero"?" \u00b7 VOC\u00ca":""}</b>
-              <small>${Number(p.overall||0)} GER \u00b7 ${esc(p.club||"Sele\u00e7\u00e3o Brasileira")}</small>
+              <small>${Number(p.overall||0)} GER \u00b7 ${esc(p.club||nationalName)}</small>
             </span>
           </div>`;
 
@@ -1553,7 +1556,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
 
           <section class="card fc-match-header">
             <div>
-              <div class="tag">SELE\u00c7\u00c3O BRASILEIRA \u00b7 PR\u00d3XIMO JOGO</div>
+              <div class="tag">${esc(nationalName.toUpperCase())} \u00b7 PR\u00d3XIMO JOGO</div>
               <h2>${esc(next.home)} \u00d7 ${esc(next.away)}</h2>
               <p>
                 ${dayDate(next.date)}
@@ -1580,14 +1583,14 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
             </div>
 
             <p class="muted">
-              Esta escala\u00e7\u00e3o usa o elenco e a hierarquia atuais da Sele\u00e7\u00e3o Brasileira.
+              Esta escala\u00e7\u00e3o usa o elenco e a hierarquia atuais de ${esc(nationalName)}.
             </p>
           </section>
 
           <div class="fc-lineup-layout section">
 
             <section class="card fc-pitch-card">
-              <div class="split"><div><div class="tag">TITULARES</div><h2>Brasil \u00b7 XI inicial</h2></div><span class="pill">${esc(nationalLineup.formation||"4-3-3")}</span></div>
+              <div class="split"><div><div class="tag">TITULARES</div><h2>${esc(nationalName)} \u00b7 XI inicial</h2></div><span class="pill">${esc(nationalLineup.formation||"4-3-3")}</span></div>
               ${tacticalPitch(nationalLineup.starters,nationalLineup.formation||"4-3-3",{overallOf:(p)=>p.overall})}
             </section>
 
@@ -1604,7 +1607,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
 
           <section class="card section">
             <button data-page="national">
-              Abrir Central da Sele\u00e7\u00e3o Brasileira
+              Abrir Central de ${esc(nationalName)}
             </button>
           </section>
 
@@ -2024,6 +2027,12 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     },
     champions() {
       return window.ProLifeChampionsUI?.renderEmbedded?.(state) || `<section class="card"><h2>Champions League</h2><p>Interface nao carregada.</p></section>`;
+    },
+    europa() {
+      return window.ProLifeEuropaUI?.renderEmbedded?.(state) || `<section class="card"><h2>Europa League</h2><p>Interface nao carregada.</p></section>`;
+    },
+    conference() {
+      return window.ProLifeConferenceUI?.renderEmbedded?.(state) || `<section class="card"><h2>Conference League</h2><p>Interface nao carregada.</p></section>`;
     },
     statistics() {
       if (statisticsKey && statisticsKeyClub !== state.clubId) statisticsKey = "";
@@ -8127,6 +8136,29 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (el.hasAttribute("data-nh-tab")) H.setTab(el.getAttribute("data-nh-tab"));
     else H.setClassic(el.getAttribute("data-nh-classic") === "1");
     render();
+  });
+  // Europa League has an independent navigation state.
+  document.addEventListener("click", event => {
+    const el=event.target.closest?.("[data-pl-uel-tab]");
+    if(!el||!state)return;
+    window.ProLifeEuropaUI?.setTab?.(el.getAttribute("data-pl-uel-tab"));
+    page="europa";render();
+  });
+  document.addEventListener("change", event => {
+    if(event.target?.id!=="pl-uel-round"||!state)return;
+    window.ProLifeEuropaUI?.setRound?.(event.target.value);
+    page="europa";render();
+  });
+  document.addEventListener("click", event => {
+    const el=event.target.closest?.("[data-pl-uecl-tab]");
+    if(!el||!state)return;
+    window.ProLifeConferenceUI?.setTab?.(el.getAttribute("data-pl-uecl-tab"));
+    page="conference";render();
+  });
+  document.addEventListener("change", event => {
+    if(event.target?.id!=="pl-uecl-round"||!state)return;
+    window.ProLifeConferenceUI?.setRound?.(event.target.value);
+    page="conference";render();
   });
   // Champions usa a mesma navegacao da aba Temporada; sem overlay flutuante.
   document.addEventListener("click", (event) => {

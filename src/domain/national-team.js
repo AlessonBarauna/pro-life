@@ -6429,6 +6429,9 @@
     const n=init(s);
 
     const frozen=activeWorldCupSquad(s,n);
+    const edition=(n.tournaments||[]).find(t=>t?.type==="WORLD_CUP"&&Number(t.year)===worldCupYearFromDay(s.day));
+    const heroCode=root.ProLifeNationalIdentity?.heroTeam?.(s,root.ProLife)?.code || (normalizedNationality(s)==="Brasil"?"BRA":null);
+    const eligible=!edition?.trackedTeamId || edition.trackedTeamId===heroCode;
     const squad=frozen
       ? hydrateWorldCupSquad(s,frozen,api)
       : n.calledUp && Array.isArray(n.squad) && n.squad.length
@@ -6471,8 +6474,9 @@
       }
     }
 
-    const hero=squad.find(p=>p.id==="hero");
-    const status=n.calledUp ? role(s,api) : n.status;
+    const hero=eligible?squad.find(p=>p.id==="hero"):null;
+    const status=eligible&&n.calledUp ? role(s,api) : "Não convocado";
+    if(!eligible) starters=starters.filter(p=>p.id!=="hero");
 
     if(hero && n.calledUp){
 
@@ -6509,7 +6513,7 @@
     const starterIds=new Set(starters.map(p=>p.id));
 
     let bench=sorted
-      .filter(p=>!starterIds.has(p.id))
+      .filter(p=>(eligible||p.id!=="hero")&&!starterIds.has(p.id))
       .slice(0,15);
 
     if(hero && n.calledUp && status!=="Titular"){
@@ -6527,7 +6531,7 @@
       starters,
       bench,
       status,
-      calledUp:!!n.calledUp,
+      calledUp:eligible&&!!n.calledUp,
       heroInSquad:!!hero
     };
   }
