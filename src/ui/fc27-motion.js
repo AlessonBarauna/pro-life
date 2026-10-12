@@ -30,7 +30,7 @@
   var busy = false;
   function run() {
     if (busy) return; busy = true;
-    try { tag(); countUp(); } catch (e) {}
+    try { tag(); countUp(); liveWatch(); } catch (e) {}
     busy = false;
   }
   function init() {
@@ -73,6 +73,5 @@
     setTimeout(function () { b.classList.add("out"); }, reduce ? 1800 : 2300);
     setTimeout(function () { b.remove(); }, reduce ? 2200 : 2800);
   }
-  setInterval(liveWatch, 250);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();

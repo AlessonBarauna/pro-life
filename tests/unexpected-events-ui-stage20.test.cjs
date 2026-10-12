@@ -39,6 +39,7 @@ function browserWithDecision() {
 
 test("20 UI: decisão mostra categoria, contexto, prazo e escolhas", () => {
   const dom = browserWithDecision(), w = dom.window;
+  w.document.querySelector('[data-page="history"]').click(); // "Perfil e Vida" fica no submenu de Mundo
   const lifeLink = w.document.querySelector('[data-page="life"]');
   assert.ok(lifeLink);
   lifeLink.click();
@@ -52,6 +53,7 @@ test("20 UI: decisão mostra categoria, contexto, prazo e escolhas", () => {
 
 test("20 UI: acontecimentos resolvidos aparecem sem mutação direta da UI", () => {
   const dom = browserWithDecision(), w = dom.window;
+  w.document.querySelector('[data-page="history"]').click();
   w.document.querySelector('[data-page="life"]').click();
   const history = w.document.querySelector("#unexpected-events-history");
   assert.ok(history);

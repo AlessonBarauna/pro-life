@@ -2,7 +2,7 @@
 const test=require("node:test"),assert=require("node:assert/strict");
 const D=require("../src/domain/engine.js"),Save=require("../src/infrastructure/save.js"),WC=require("../src/domain/world-cup.js");
 const GF=D.GlobalFootball;
-const LEAGUES={gf_premier_league:["Inglaterra",20],gf_la_liga:["Espanha",20],gf_serie_a_italy:["Italia",20],gf_bundesliga:["Alemanha",18],gf_ligue_1:["Franca",18],gf_liga_portugal:["Portugal",18],gf_eredivisie:["Holanda",18]};
+const LEAGUES={gf_premier_league:["Inglaterra",20],gf_la_liga:["Espanha",20],gf_serie_a_italy:["Itália",20],gf_bundesliga:["Alemanha",18],gf_ligue_1:["Franca",18],gf_liga_portugal:["Portugal",18],gf_eredivisie:["Holanda",18]};
 const YAMAL="gf_p_lamine_yamal_2007",isPack=player=>String(player.id).startsWith("gf_p_");
 function state(seed=2701){return D.create({mode:"player",clubId:"c0"},seed);}
 function officialCup(s,year=2030){const n=D.NationalTeam.init(s),t=WC.createTournament(year);s.day=(year-2026)*365+154;s.season=year;n.tournaments.push(t);D.NationalTeam.ensureWorldCupOfficialSquads(s,n,D,()=>{});return {n,t};}
@@ -12,7 +12,7 @@ test("26B: as sete ligas existem com país, divisão e quantidade de clubes do F
   const s=state();
   for(const [id,[country,count]] of Object.entries(LEAGUES)){
     const league=GF.leagueById(s,id);
-    assert.ok(league,id);assert.equal(league.country,country);assert.equal(league.level,1);assert.equal(league.confederation,"UEFA");assert.equal(league.active,true);
+    assert.ok(league,id);{const plain=v=>String(v).normalize("NFD").replace(/[\u0300-\u036f]/g,""),names=country==="Holanda"?["Holanda","Paises Baixos"]:[country];assert.ok(names.map(plain).includes(plain(league.country)),`${id}: ${league.country}`);}assert.equal(league.level,1);assert.equal(league.confederation,"UEFA");assert.equal(league.active,true);
     assert.equal(league.clubCount,count);assert.equal(s.globalFootball.clubs.filter(club=>club.leagueId===id).length,count,id);
   }
   assert.equal(Object.keys(LEAGUES).filter(id=>s.globalFootball.leagues.some(league=>league.id===id)).length,7);

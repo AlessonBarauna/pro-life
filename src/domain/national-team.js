@@ -6082,7 +6082,7 @@
     if(team.id===wcT(tournament))all.push({player:{...s.person,id:"hero",nationality:team.name},club:(root.ProLifeCareerContext?.clubName(s)||root.ProLife?.club?.(s)?.name||(s.clubs||[]).find(c=>c.id===s.clubId)?.name)||"Sem clube"});
     const seen=new Set();
     return all.filter(({player})=>{
-      if(!player?.id||seen.has(player.id)||!teamNames.has(worldCupNormalize(player.nationality||(team.id===wcT(tournament)?team.name:""))))return false;
+      if(!player?.id||seen.has(player.id))return false;const nat=player.nationality||(team.id===wcT(tournament)?team.name:"");if(!teamNames.has(worldCupNormalize(nat))){let code=null;try{let NI=root.ProLifeNationalIdentity;if(!NI&&typeof require==="function")NI=require("./national-identity.js");code=NI?.codeOf?.(nat)||null;}catch(e){}if(code!==team.id)return false;}
       seen.add(player.id);return true;
     }).map(({player,club,resolveGlobalClub})=>worldCupPlayerSnapshot(player,resolveGlobalClub?globalPlayerClub(s,player):club,tournament,api)).filter(player=>player.age<=40);
   }

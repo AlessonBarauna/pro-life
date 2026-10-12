@@ -1267,17 +1267,6 @@
     const sc = fin(o.interestScore);
     return `<span class="neg-interest ${sc === null ? "" : "lv-" + String(o.interestLabel || "").toLowerCase()}">${sc === null ? "Interesse " + NI : `Interesse ${esc(txt(o.interestLabel))} · ${sc}/100`}</span>`;
   }
-  function negTension(o) {
-    const i = fin(o.interestScore);
-    if (i === null) return "";
-    const left = Math.max(0, Number(o.expires) - Number(state.day));
-    let t = 100 - i;
-    if (left <= 2) t += 15; else if (left <= 5) t += 7;
-    if (o.negotiated) t += 10;
-    t = Math.max(0, Math.min(100, Math.round(t)));
-    const [tone, label] = t < 30 ? ["calm", "Tranquila"] : t < 55 ? ["even", "Equilibrada"] : t < 75 ? ["tense", "Tensa"] : ["edge", "No limite"];
-    return `<div class="fc-tension" data-tone="${tone}" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${t}" aria-label="Tensão da negociação"><div class="fc-tension-head"><span>Tensão da negociação</span><b>${label}</b></div><div class="fc-tension-track"><i style="--t:${t}%"></i></div><div class="fc-tension-scale"><span>Tranquila</span><span>Tensa</span><span>No limite</span></div><small>Estimativa a partir do interesse do clube, do prazo e de pedidos já feitos.</small></div>`;
-  }
   function offerCard(o) {
     const { info, left, stage } = offerFacts(o), loan = o.transferType === "loan";
     const name = info?.name || NI, league = info?.league?.name ? info.league.name : NI;
@@ -1317,7 +1306,7 @@
 <div class="neg-grid"><div class="neg-box"><div class="tag">PERFIL ESPORTIVO</div><dl class="neg-dl"><div><dt>Reputação</dt><dd>${esc(txt(info?.reputation))}</dd></div><div><dt>Estrutura</dt><dd>${esc(info?.structure === null || info?.structure === undefined ? NI : info.structure + "/100")}</dd></div><div><dt>Classificação</dt><dd>${esc(standingText(clubStanding(info)))}</dd></div></dl></div>
 <div class="neg-box"><div class="tag">OFERTA FINANCEIRA</div><dl class="neg-dl"><div><dt>Salário</dt><dd class="gold">${esc(fin(o.salary) === null ? NI : money(o.salary) + "/mês")}</dd></div><div><dt>Luvas</dt><dd class="gold">${esc(moneyOrNI(o.signingBonus ?? 0))}</dd></div><div><dt>Duração</dt><dd>${esc(dur(o.durationDays ?? 730))}</dd></div><div><dt>Tipo</dt><dd>${o.transferType === "loan" ? "Empréstimo" : "Transferência"}</dd></div></dl></div>
 <div class="neg-box"><div class="tag">PAPEL E MINUTOS</div><dl class="neg-dl"><div><dt>Papel oferecido</dt><dd>${esc(txt(o.squadRole || "Rotação"))}</dd></div><div><dt>Projeto</dt><dd>${esc(txt(o.role))}</dd></div><div><dt>Minutos esperados</dt><dd>${NI}</dd></div></dl></div>
-<div class="neg-box"><div class="tag">ETAPA E INTERESSE</div><div class="neg-stage">${stage.steps.map((s, i) => `<span class="${i < stage.at ? "done" : i === stage.at ? "now" : ""}">${esc(s)}</span>`).join("")}</div><p>${interestBadge(o)}</p>${negTension(o)}<p class="muted">Prazo para decidir: <b>${left} dia(s)</b> (até ${esc(dayDate(o.expires))}).</p></div></div>
+<div class="neg-box"><div class="tag">ETAPA E INTERESSE</div><div class="neg-stage">${stage.steps.map((s, i) => `<span class="${i < stage.at ? "done" : i === stage.at ? "now" : ""}">${esc(s)}</span>`).join("")}</div><p>${interestBadge(o)}</p><p class="muted">Prazo para decidir: <b>${left} dia(s)</b> (até ${esc(dayDate(o.expires))}).</p></div></div>
 <div class="neg-box wide"><div class="tag">COMPARAÇÃO · CLUBE ATUAL | CLUBE INTERESSADO</div><div class="season-scroll">${compareTable(o, info)}</div></div>
 <div class="neg-box wide"><div class="tag">HISTÓRICO DE CONTRAPROPOSTAS</div>${hist.length || o.negotiated ? `<ul class="neg-hist">${hist.map((h) => `<li>Antes: ${esc(moneyOrNI(h.salary))}/mês · luvas ${esc(moneyOrNI(h.bonus))} → Depois: ${esc(moneyOrNI(h.afterSalary))}/mês · luvas ${esc(moneyOrNI(h.afterBonus))}</li>`).join("")}${o.negotiated && !hist.length ? `<li>Contraproposta já respondida${fin(o.agentNegotiationScore) !== null ? ` (força de negociação ${o.agentNegotiationScore}/100)` : ""}. Termos anteriores não foram registrados.</li>` : ""}</ul>` : '<p class="empty">Nenhuma contraproposta enviada.</p>'}</div>
 ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="primary gold" type="button" data-neg-sign="${esc(id)}">${w.open ? "Aceitar e assinar" : "Aceitar · agendar transferência"}</button><button type="button" data-neg-terms>Negociar termos</button><button type="button" data-hold-offer="${esc(id)}" ${o.onHold ? "disabled" : ""}>${o.onHold ? "Prazo já estendido" : "Pedir tempo"}</button><button class="danger" type="button" data-neg-reject="${esc(id)}">Recusar</button></div></section>`;
