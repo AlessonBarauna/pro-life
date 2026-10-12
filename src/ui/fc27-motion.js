@@ -41,5 +41,38 @@
       clearTimeout(timer); timer = setTimeout(run, 40);
     }).observe(document.body, { childList: true, subtree: true });
   }
+  /* ---- partida ao vivo: faixa de GOL (fora do overlay, que se repinta a cada tick) ---- */
+  var lastScore = null;
+  function liveWatch() {
+    var ov = document.getElementById("live-match-overlay");
+    if (!ov) { lastScore = null; return; }
+    var el = ov.querySelector(".lm-score strong");
+    if (!el) return;
+    var m = /(\d+)\s*-\s*(\d+)/.exec(el.textContent);
+    if (!m) return;
+    var h = +m[1], a = +m[2];
+    if (lastScore && (h > lastScore[0] || a > lastScore[1])) {
+      var side = h > lastScore[0] ? 0 : 1;
+      var names = ov.querySelectorAll(".lm-score span");
+      var who = names[side] ? names[side].textContent : "";
+      var ev = ov.querySelector(".lm-feed article.goal span");
+      goal(who, ev ? ev.textContent : "", h, a);
+    }
+    lastScore = [h, a];
+  }
+  function goal(who, text, h, a) {
+    var old = document.getElementById("fc-goal-banner");
+    if (old) old.remove();
+    var b = document.createElement("div");
+    b.id = "fc-goal-banner"; b.setAttribute("role", "status");
+    b.innerHTML = "<div class=\"fc-goal-card\"><em>GOL!</em><b></b><small></small><strong></strong></div>";
+    b.querySelector("b").textContent = who;
+    b.querySelector("small").textContent = text;
+    b.querySelector("strong").textContent = h + " - " + a;
+    document.body.appendChild(b);
+    setTimeout(function () { b.classList.add("out"); }, reduce ? 1800 : 2300);
+    setTimeout(function () { b.remove(); }, reduce ? 2200 : 2800);
+  }
+  setInterval(liveWatch, 250);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();
