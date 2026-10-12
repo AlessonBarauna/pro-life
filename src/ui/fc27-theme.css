@@ -728,3 +728,78 @@ body .lm-controls span{font-variant-numeric:tabular-nums;letter-spacing:.06em}
   body .lm-ball,#fc-goal-banner .fc-goal-card,#fc-goal-banner em{animation:none!important}
   body .lm-player,body .lm-ball{transition:none}
 }
+
+/* ============================================================
+   BLOCOS 5 e 6 — SELEÇÃO, MUNDO, BASE, FORA DE CAMPO, TREINADOR,
+   CAIXA, SAVES, FINANÇAS, CLUBES
+   ============================================================ */
+@keyframes fc-bar-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes fc-card-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* módulos escuros: o dourado de cada módulo vira o acento único */
+body .world-competitions-dark{--wc-gold:var(--fc-lime);--wc-card:#0f1a25;background:radial-gradient(circle at 8% 0,color-mix(in srgb,var(--fc-lime) 10%,transparent),transparent 30%),#080f16}
+body .nh-dark{--nh-gold:var(--fc-lime);--nh-card:#0f1a25;--nh-ok:#3ddc97}
+body .ya-dark{--ya-gold:var(--fc-lime);--ya-teal:#3ddc97;--ya-card:#0f1a25}
+body .wa-dark{--wa-gold:var(--fc-lime);--wa-teal:#3ddc97;--wa-card:#0f1a25}
+body .of-dark{--of-gold:var(--fc-lime);--of-ok:#3ddc97;--of-card:#0f1a25}
+body .cc-dark{--cc-gold:var(--fc-lime);--cc-warn:var(--fc-lime);--cc-ok:#3ddc97;--cc-card:#0f1a25}
+body .world-competitions-dark,body .nh-dark,body .ya-dark,body .wa-dark,body .of-dark,body .cc-dark{border-radius:0;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%)}
+body :is(.world-competitions-dark,.nh-dark,.ya-dark,.wa-dark,.of-dark,.cc-dark) :is(h2,h3){font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:.2px}
+body :is(.world-competitions-dark,.nh-dark,.ya-dark,.wa-dark,.of-dark,.cc-dark) :is(h2){font-size:clamp(22px,2.4vw,32px)}
+
+/* abas: sublinhado vira bloco inclinado */
+body :is(.nh-tabs,.ya-tabs,.wa-tabs,.of-tabs,.cc-tabs) button{font-family:var(--fc-display);font-style:italic;letter-spacing:.5px;text-transform:uppercase;font-size:12px}
+body :is(.nh-tabs button.on,.ya-tabs button.active,.wa-tabs button.active,.of-tabs button.active,.cc-tabs button.active){color:var(--fc-lime);border-bottom-width:3px}
+body :is(.world-league-tabs,.world-round-tabs) button{border-radius:0;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);padding:7px 16px;font-family:var(--fc-display);font-style:italic;letter-spacing:.4px;text-transform:uppercase;font-size:12px}
+body :is(.world-league-tabs,.world-round-tabs) button.active{color:var(--fc-lime-ink)}
+body :is(.ya-chips) button{border-radius:0;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%)}
+body :is(.ya-chips) button.active{color:var(--fc-lime-ink)}
+
+/* cartões, pódios, prêmios */
+body :is(.ya-pod,.wa-award,.of-card,.of-post,.cc-focus,.nh-card,.ya-card){border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);animation:fc-card-in .45s both}
+body .ya-pod:nth-child(2){animation-delay:.08s}body .ya-pod:nth-child(3){animation-delay:.16s}
+body .ya-pod-ovr b{font-family:var(--fc-display);font-style:italic;text-shadow:0 0 28px color-mix(in srgb,var(--fc-lime) 45%,transparent)}
+body .ya-head-count b{font-family:var(--fc-display);font-style:italic}
+body .wa-award.hero{background:linear-gradient(135deg,color-mix(in srgb,var(--fc-lime) 14%,transparent),transparent 70%)}
+body .world-competition-table tbody tr:first-child td:first-child{box-shadow:inset 3px 0 var(--fc-lime)}
+body .world-competition-table strong{font-family:var(--fc-display);font-style:italic}
+body .world-competition-table tbody tr{animation:fc-row-in .36s both}
+
+/* barras que “enchem” (fora de campo, estrelas, evolução) */
+body .of-bar i,body .ya-stars-fill{transform-origin:left;animation:fc-bar-grow .9s .15s cubic-bezier(.2,.8,.2,1) both}
+
+/* Seleção */
+body .nh-flag{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);font-family:var(--fc-display);font-style:italic}
+body .nh-dark tr.me td{background:linear-gradient(90deg,color-mix(in srgb,var(--fc-lime) 14%,transparent),transparent 80%)}
+body .nh-pitch span.me{box-shadow:0 0 0 3px color-mix(in srgb,var(--fc-lime) 35%,transparent)}
+
+/* Clubes (navegador de elencos) */
+body .club-browser-hero{border-radius:0;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%);border-left:4px solid var(--fc-lime)}
+body .club-browser-overall{font-family:var(--fc-display);font-style:italic}
+body .club-browser-kpis>*{border-radius:0;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+body .club-browser-team-list button.active{background:linear-gradient(90deg,color-mix(in srgb,var(--fc-lime) 18%,transparent),transparent);box-shadow:inset 3px 0 var(--fc-lime)}
+body .club-pitch-player{transition:transform .18s}body .club-pitch-player:hover{transform:translateY(-3px) scale(1.06)}
+body .club-section-heading{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:.3px}
+
+/* Finanças / Patrocínios / Perfil e vida */
+body .shop-item{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);transition:transform .16s,box-shadow .16s}
+body .shop-item:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(0,0,0,.4)}
+body .money-value{font-family:var(--fc-display);font-style:italic;font-variant-numeric:tabular-nums;color:var(--fc-lime)}
+body .life-tabs button{border-radius:0!important;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:.4px}
+body .life-tabs button.on,body .life-tabs button.active{background:var(--fc-lime)!important;color:var(--fc-lime-ink)!important;border-color:var(--fc-lime)!important}
+body .game-shell .stat strong,body .game-shell .stats .stat b{font-family:var(--fc-display);font-style:italic;font-variant-numeric:tabular-nums}
+body .game-shell .bar>i,body .game-shell .bar span{transform-origin:left;animation:fc-bar-grow .8s .1s cubic-bezier(.2,.8,.2,1) both}
+
+/* Caixa de entrada e Saves */
+body .game-shell .card .news,body .game-shell article.news{border-radius:0;border-left:3px solid var(--fc-lime);clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+body .game-shell .danger{border-radius:0;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);letter-spacing:.1em;text-transform:uppercase;font-family:var(--fc-display);font-style:italic}
+
+/* sino/avisos do shell */
+body .sx-bell-btn i{background:var(--fc-lime);color:var(--fc-lime-ink);border-radius:0;clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)}
+body .sx-item.warn{border-left-color:var(--fc-lime)}
+body .sx-busy i{border-top-color:var(--fc-lime)}
+
+@media(prefers-reduced-motion:reduce){
+  body :is(.ya-pod,.wa-award,.of-card,.of-post,.cc-focus,.nh-card,.ya-card),body .of-bar i,body .ya-stars-fill,body .world-competition-table tbody tr,body .game-shell .bar>i,body .game-shell .bar span{animation:none!important}
+  body .shop-item,body .club-pitch-player{transition:none}
+}
