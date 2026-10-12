@@ -383,3 +383,188 @@ h1,h2,.story-card b,.central-v3-team strong{text-wrap:balance}
   .central-v3-team strong{font-size:28px}
 }
 @media (max-width:430px){.central-v3-team strong{font-size:22px;letter-spacing:-.2px}}
+
+/* =====================================================================
+   BLOCO 2 · Meu jogador + Mercado (Transfer Hub) + Negociação
+   Animações e padrões inspirados no FC 27: GER animado, barras que
+   preenchem, abas de hub, medidor de tensão da negociação.
+   Tudo respeita prefers-reduced-motion.
+   ===================================================================== */
+@keyframes fc-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes fc-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes fc-slash{from{transform:translateX(-120%) skewX(-24deg);opacity:0}30%{opacity:.9}to{transform:translateX(220%) skewX(-24deg);opacity:0}}
+@keyframes fc-pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+@keyframes fc-pulse{0%,100%{box-shadow:0 0 0 0 rgba(201,242,58,.5)}50%{box-shadow:0 0 0 7px rgba(201,242,58,0)}}
+@keyframes fc-marker{from{left:0}to{left:var(--t,50%)}}
+
+/* entrada escalonada dos cartões de cada tela */
+main.sx-enter>.card,main.sx-enter .player-hub>.card,main.sx-enter .player-hub>section,
+main.sx-enter .world-market-layout>*,main.sx-enter .grid3>*{animation:fc-rise .5s cubic-bezier(.2,.7,.2,1) both}
+main.sx-enter .player-hub>*:nth-child(2),main.sx-enter .world-market-layout>*:nth-child(2),main.sx-enter .grid3>*:nth-child(2){animation-delay:.07s}
+main.sx-enter .player-hub>*:nth-child(3),main.sx-enter .grid3>*:nth-child(3){animation-delay:.14s}
+main.sx-enter .player-hub>*:nth-child(4){animation-delay:.21s}
+
+/* ---------- MEU JOGADOR: cartão em faixa de GER ---------- */
+.player-hero,.dev32-hero{--tier:var(--tier-silver)}
+.player-hero[data-tier="bronze"],.dev32-hero[data-tier="bronze"]{--tier:var(--tier-bronze)}
+.player-hero[data-tier="silver"],.dev32-hero[data-tier="silver"]{--tier:var(--tier-silver)}
+.player-hero[data-tier="gold"],.dev32-hero[data-tier="gold"]{--tier:var(--tier-gold)}
+.player-hero[data-tier="elite"],.dev32-hero[data-tier="elite"]{--tier:var(--tier-elite)}
+.game-shell .player-hero{
+  overflow:hidden;
+  background:
+    linear-gradient(115deg,color-mix(in srgb,var(--tier) 14%,transparent) 0 34%,transparent 34%),
+    repeating-linear-gradient(115deg,rgba(255,255,255,.02) 0 2px,transparent 2px 20px),
+    linear-gradient(160deg,#0e1823,#070b11);
+}
+.game-shell .player-hero::before{background:var(--tier);height:100%;width:4px}
+.game-shell .player-hero::after{
+  content:"";position:absolute;top:0;bottom:0;left:0;width:34%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.1),transparent);
+  animation:fc-slash 1.4s .35s ease-out 1 both;
+}
+.player-hero h1{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;font-size:clamp(34px,4vw,60px);letter-spacing:-.8px;line-height:.95}
+.player-hero-copy p b{color:var(--tier)}
+.player-ovr strong{
+  font-family:var(--fc-display);font-style:italic;font-weight:700;color:var(--tier);
+  font-size:clamp(76px,9vw,128px);line-height:.85;letter-spacing:-3px;
+  text-shadow:0 0 34px color-mix(in srgb,var(--tier) 38%,transparent);
+  font-variant-numeric:tabular-nums;
+}
+.player-ovr small,.player-ovr span{font-family:var(--fc-display);letter-spacing:2px;text-transform:uppercase}
+.player-ovr span{color:#fff;font-style:italic;font-weight:700}
+.player-tags span,.rating-badge{
+  border-radius:0;border:0;background:rgba(255,255,255,.07);color:var(--pl-text);transform:skewX(-10deg);
+  font-family:var(--fc-display);letter-spacing:.9px;text-transform:uppercase;font-size:12px;padding:5px 11px;
+}
+.player-tags span:first-child{background:var(--tier);color:#0a0d12;font-weight:800}
+.rating-badge{background:var(--fc-lime);color:var(--fc-lime-ink);font-weight:800}
+.player-tabs{background:transparent;border:0;border-bottom:1px solid var(--pl-line);border-radius:0;padding:0;gap:4px;box-shadow:none}
+.player-tabs :where(a,button){
+  clip-path:none;background:transparent;border:0;border-bottom:3px solid transparent;border-radius:0;
+  font-family:var(--fc-display);letter-spacing:1.2px;text-transform:uppercase;font-size:13px;color:var(--pl-text-3);padding:12px 16px;
+}
+.player-tabs :where(a,button):hover{color:#fff;background:rgba(255,255,255,.04);transform:none}
+.player-tabs :where(a.active,button.active,[aria-current]){color:var(--fc-lime);border-bottom-color:var(--fc-lime)}
+.stat,.player-kpis>*,.dev32-ratings>span,.dev32-vitals>*{
+  border-radius:0;border:0;border-left:2px solid var(--pl-line-strong);background:rgba(255,255,255,.03);
+}
+.stat small,.player-kpis small,.dev32-ratings small{font-family:var(--fc-display);letter-spacing:1.5px;text-transform:uppercase;color:var(--pl-text-3)}
+.stat b,.player-kpis b,.dev32-ratings strong,.dev32-vitals b{font-family:var(--fc-display);font-style:italic}
+.dev32-ratings strong{color:var(--tier)}
+
+/* barras de atributo: preenchem ao entrar, uma depois da outra */
+.player-attr i,.dev32-attribute i{display:block;height:6px;background:rgba(255,255,255,.07);overflow:hidden;border-radius:0}
+.player-attr i em,.dev32-attribute i em{
+  display:block;height:100%;background:linear-gradient(90deg,var(--fc-lime),#e8ff8d);transform-origin:left;
+  animation:fc-fill .8s cubic-bezier(.2,.7,.2,1) both;
+}
+.player-attr.good i em{background:linear-gradient(90deg,#7fe2a0,var(--fc-lime))}
+.player-attr:nth-child(2) i em,.dev32-attribute:nth-child(2) i em{animation-delay:.05s}
+.player-attr:nth-child(3) i em,.dev32-attribute:nth-child(3) i em{animation-delay:.1s}
+.player-attr:nth-child(4) i em,.dev32-attribute:nth-child(4) i em{animation-delay:.15s}
+.player-attr:nth-child(5) i em,.dev32-attribute:nth-child(5) i em{animation-delay:.2s}
+.player-attr:nth-child(6) i em,.dev32-attribute:nth-child(6) i em{animation-delay:.25s}
+.player-attr:nth-child(n+7) i em,.dev32-attribute:nth-child(n+7) i em{animation-delay:.3s}
+.player-attr b,.dev32-attribute b{font-family:var(--fc-display);font-style:italic}
+.player-attr-group h3{font-family:var(--fc-display);letter-spacing:1.6px;text-transform:uppercase;color:var(--fc-lime)}
+
+/* ---------- MERCADO: Transfer Hub ---------- */
+.window-card{
+  border-radius:0;border:1px solid var(--pl-line);background:rgba(255,255,255,.025);position:relative;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
+}
+.window-card h3{font-family:var(--fc-display);font-style:italic;letter-spacing:.3px}
+.window-card.open{border-color:var(--fc-lime);background:linear-gradient(160deg,var(--fc-lime-soft),transparent 70%)}
+.window-card.open::before{
+  content:"";position:absolute;top:14px;right:26px;width:9px;height:9px;border-radius:50%;background:var(--fc-lime);animation:fc-pulse 1.8s infinite;
+}
+body .world-live-market-dark{
+  --wm-bg:var(--pl-bg);--wm-card:var(--pl-surface-2);--wm-gold:var(--fc-lime);--wm-line:var(--pl-line-strong);--wm-muted:var(--pl-text-3);
+  border-radius:0;background:
+    linear-gradient(105deg,rgba(201,242,58,.06) 0 26%,transparent 26%),
+    repeating-linear-gradient(115deg,rgba(255,255,255,.018) 0 2px,transparent 2px 22px),var(--pl-bg);
+  border:1px solid var(--pl-line);
+}
+body .world-market-head h2{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:-.5px}
+body .world-market-head small{font-family:var(--fc-display);letter-spacing:2px;color:var(--fc-lime)}
+body .world-market-indicators span{border-radius:0;border:0;border-left:2px solid var(--fc-lime);background:rgba(255,255,255,.04)}
+body .world-market-indicators b{font-family:var(--fc-display);font-style:italic;font-size:30px;color:#fff}
+body .world-market-indicators small{font-family:var(--fc-display);letter-spacing:1.4px;text-transform:uppercase}
+body .world-market-tabs{border-bottom:1px solid var(--pl-line);padding:16px 0 0;gap:2px}
+body .world-market-tabs button{
+  clip-path:none;border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;color:var(--pl-text-3);
+  font-family:var(--fc-display);letter-spacing:1.3px;text-transform:uppercase;padding:12px 16px;font-weight:600;
+}
+body .world-market-tabs button:hover{color:#fff;background:rgba(255,255,255,.04);transform:none}
+body .world-market-tabs button.active{background:linear-gradient(0deg,var(--fc-lime-soft),transparent);color:var(--fc-lime);border-bottom-color:var(--fc-lime)}
+body .world-market-filters select{border-radius:0;background:#070c13}
+body .world-market-layout>main,body .world-market-layout>aside{
+  border-radius:0;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);background:linear-gradient(170deg,var(--pl-surface-2),var(--pl-surface));
+}
+body .world-market-deal{border-radius:0;border:0;border-left:3px solid var(--pl-line-strong);transition:border-color .15s,background .15s,transform .15s}
+body .world-market-deal:hover{border-left-color:var(--fc-lime);background:rgba(201,242,58,.05);transform:translateX(3px)}
+body .world-market-ovr{border-radius:0;background:var(--pl-surface-3);clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);width:56px}
+body .world-market-ovr b{font-family:var(--fc-display);font-style:italic;font-size:24px}
+body .world-market-route{border-radius:0}
+body .world-market-route i{font-style:normal;color:var(--fc-lime)}
+body .world-market-resolution{border-radius:0;background:var(--fc-lime-soft);color:var(--fc-lime)}
+body .world-market-timeline article{border-left-color:var(--fc-lime)}
+
+/* ---------- NEGOCIAÇÃO ---------- */
+.neg-card,.neg-center,.neg-profile{
+  border-radius:0;border:1px solid var(--pl-line);
+  clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%);
+  background:linear-gradient(170deg,var(--pl-surface-2),var(--pl-surface));
+}
+.neg-card.open,.neg-center{border-color:var(--fc-lime-line)}
+.neg-center{animation:fc-rise .45s cubic-bezier(.2,.7,.2,1) both}
+.neg-crest{border-radius:0;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);font-family:var(--fc-display);font-style:italic}
+.neg-head h3,.neg-center-head h3{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;font-size:24px}
+.neg-box,.neg-facts>div,.neg-dl>div{border-radius:0;border:0;border-left:2px solid var(--pl-line-strong);background:rgba(255,255,255,.03)}
+.neg-facts b.gold,.neg-dl dd.gold{color:var(--fc-lime);font-family:var(--fc-display);font-style:italic;font-size:18px}
+.neg-stage{gap:0}
+.neg-stage span{
+  border:0;border-radius:0;background:rgba(255,255,255,.05);padding:7px 20px 7px 22px;margin-right:-8px;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%,12px 50%);
+  font-family:var(--fc-display);letter-spacing:1px;text-transform:uppercase;
+}
+.neg-stage span.done{background:rgba(201,242,58,.16);color:var(--fc-lime)}
+.neg-stage span.now{background:var(--fc-lime);color:var(--fc-lime-ink);animation:fc-pop .4s both}
+.neg-interest{border-radius:0;transform:skewX(-10deg);font-family:var(--fc-display);letter-spacing:.8px;text-transform:uppercase}
+.neg-interest.lv-alto{color:var(--fc-lime);border-color:var(--fc-lime-line);background:var(--fc-lime-soft)}
+.neg-confirm{border-radius:0;border:0;border-left:3px solid var(--fc-lime);background:linear-gradient(90deg,var(--fc-lime-soft),transparent 70%)}
+.neg-confirm.danger{border-left-color:var(--pl-red);background:linear-gradient(90deg,rgba(255,123,131,.1),transparent 70%)}
+.neg-terms{border-radius:0}
+
+/* medidor de tensão (estimativa) */
+.fc-tension{display:grid;gap:6px}
+.fc-tension-head{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--fc-display);text-transform:uppercase;letter-spacing:1.3px;font-size:12px;color:var(--pl-text-3)}
+.fc-tension-head b{font-size:15px;font-style:italic;color:var(--fc-tone,var(--fc-lime))}
+.fc-tension-track{
+  position:relative;height:10px;
+  background:linear-gradient(90deg,#5fdc98 0,var(--fc-lime) 35%,#f1c75b 65%,#ff7b83 100%);
+  clip-path:polygon(0 0,100% 0,calc(100% - 6px) 100%,6px 100%);opacity:.9;
+}
+.fc-tension-track i{
+  position:absolute;top:-5px;left:var(--t,50%);width:4px;height:20px;background:#fff;transform:translateX(-50%) skewX(-14deg);
+  box-shadow:0 0 12px rgba(255,255,255,.75);animation:fc-marker .9s .15s cubic-bezier(.2,.7,.2,1) both;
+}
+.fc-tension-scale{display:flex;justify-content:space-between;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--pl-text-3)}
+.fc-tension small{color:var(--pl-text-3);line-height:1.4}
+.fc-tension[data-tone="calm"]{--fc-tone:#5fdc98}.fc-tension[data-tone="even"]{--fc-tone:var(--fc-lime)}
+.fc-tension[data-tone="tense"]{--fc-tone:#f1c75b}.fc-tension[data-tone="edge"]{--fc-tone:#ff7b83}
+
+/* apresentação de contratação (cinemática já existente) com identidade nova */
+.cine-title{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:-.3px;font-size:clamp(28px,5vw,46px)}
+.cine-steps li{border-radius:0;transform:skewX(-10deg)}
+.cine-steps li.done i,.cine-steps li.now i{background:var(--fc-lime);color:var(--fc-lime-ink);border-radius:0}
+
+/* ---------- movimento reduzido ---------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-delay:0s!important;animation-iteration-count:1!important}
+  body .world-market-deal:hover{transform:none}
+}
+
+/* ajuste: rótulos longos de métricas não quebram no meio da palavra */
+body .game-shell .stat-grid span, body .game-shell .metric span, body .game-shell [class*="stat"] > span{overflow-wrap:normal;word-break:normal;hyphens:none}

@@ -91,6 +91,7 @@ const files = [
   "src/ui/app.js",
   "src/ui/style.css",
   "src/ui/fc27-theme.css",
+  "src/ui/fc27-motion.js",
   "src/ui/update.js",
 ];
 module.exports = { files };
