@@ -88,7 +88,7 @@
       return { match:m, national:false, result:resultFor(s,m), rating,
         opponent:D.club(s,m.home===s.clubId?m.away:m.home)?.name || "Adversário",
         home:home?.name||"Mandante", away:away?.name||"Visitante", score:`${m.hg}–${m.ag}`,
-        competition:m.competitionName||m.leagueName||"Partida", date:m.date, goals, motm,
+        competition:m.competitionName||m.leagueName||"Partida", date:m.date, goals, motm, tie:m.tie||null,
         hero:heroStats?{played:true,starter:heroStats.starter!==false,entryMinute:heroStats.entryMinute||0,minutes:heroStats.minutes||0,goals:heroGoals,assists:heroAssists,rating}:{played:false}
       };
     });

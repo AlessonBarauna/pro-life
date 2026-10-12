@@ -803,3 +803,7 @@ body .sx-busy i{border-top-color:var(--fc-lime)}
   body :is(.ya-pod,.wa-award,.of-card,.of-post,.cc-focus,.nh-card,.ya-card),body .of-bar i,body .ya-stars-fill,body .world-competition-table tbody tr,body .game-shell .bar>i,body .game-shell .bar span{animation:none!important}
   body .shop-item,body .club-pitch-player{transition:none}
 }
+
+/* desfecho do confronto (prorrogação / pênaltis) */
+body .pl-ucl-embedded .pl-ucl-tie{display:block;margin-top:6px;padding:5px 8px;font-size:11px;line-height:1.3;color:var(--fc-lime-ink);background:var(--fc-lime);clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%);font-weight:700}
+body .match-detail-tie{border-left-color:var(--fc-lime)}

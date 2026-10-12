@@ -41,9 +41,35 @@ function initialize(ed,day){
   ed.knockout=result;
   return result;
 }
+function unit(seed){let h=hash(seed);h^=h>>>16;h=Math.imul(h,0x85ebca6b);h^=h>>>13;h=Math.imul(h,0xc2b2ae35);h^=h>>>16;return (h>>>0)/4294967296;}
+// Prorrogacao (30 min) e penaltis deterministicos: a mesma semente sempre gera o mesmo desfecho (idempotente e persistente).
+function extraTimeGoals(seed){const u=unit(seed);return u<0.66?0:u<0.94?1:2;}
+function shootout(seed){
+  const kicks=[[],[]],score=[0,0],P=0.76;
+  const take=(t,n)=>{const ok=unit(`${seed}|k${n}|${t}`)<P;kicks[t].push(ok?1:0);if(ok)score[t]++;};
+  for(let n=0;n<5;n++){
+    for(const t of [0,1]){
+      take(t,n);
+      const rem0=5-kicks[0].length,rem1=5-kicks[1].length;
+      if(score[0]>score[1]+rem1||score[1]>score[0]+rem0)return {score,kicks};
+    }
+  }
+  for(let n=5;n<10;n++){take(0,n);take(1,n);if(score[0]!==score[1])break;}
+  if(score[0]===score[1]){const w=unit(`${seed}|last`)<0.5?0:1;kicks[w].push(1);kicks[1-w].push(0);score[w]++;}
+  return {score,kicks};
+}
+// Desempate do confronto: agregado -> prorrogacao -> penaltis. Gols fora de casa nao contam (regra UEFA desde 2021/22).
+function resolveTie(teams,scores,seed){
+  if(scores[0]>scores[1])return {winnerIdx:0,decidedBy:"aggregate",extraTime:null,penalties:null};
+  if(scores[1]>scores[0])return {winnerIdx:1,decidedBy:"aggregate",extraTime:null,penalties:null};
+  const et=[extraTimeGoals(`${seed}|et|0`),extraTimeGoals(`${seed}|et|1`)];
+  if(et[0]!==et[1])return {winnerIdx:et[0]>et[1]?0:1,decidedBy:"extra_time",extraTime:et,penalties:null};
+  const pk=shootout(`${seed}|pen`);
+  return {winnerIdx:pk.score[0]>pk.score[1]?0:1,decidedBy:"penalties",extraTime:et,penalties:pk};
+}
 function decide(a,b,seed){
   if(a>b)return 0;if(b>a)return 1;
-  return hash(seed)%2;
+  return resolveTie(null,[a,b],seed).winnerIdx;
 }
 function stageWinners(st){
   if(st.matches.some(m=>!m.played))return null;
@@ -53,9 +79,10 @@ function stageWinners(st){
   for(const [i,ms] of [...pairs.entries()].sort((a,b)=>a[0]-b[0])){
     const teams=[ms[0].homeId,ms[0].awayId];
     const scores=teams.map(id=>ms.reduce((n,m)=>n+(m.homeId===id?m.hg:m.ag),0));
-    const chosen=decide(scores[0],scores[1],`${ms[0].id}|penalties`);
-    winners.push(teams[chosen]);
-    for(const m of ms){m.winnerId=teams[chosen];if(scores[0]===scores[1])m.decidedBy="penalties"}
+    const r=resolveTie(teams,scores,`${ms[0].id}|penalties`);
+    winners.push(teams[r.winnerIdx]);
+    const tie={teams,aggregate:scores,winnerId:teams[r.winnerIdx],decidedBy:r.decidedBy,extraTime:r.extraTime,penalties:r.penalties?{score:r.penalties.score,kicks:r.penalties.kicks}:null};
+    for(const m of ms){m.winnerId=teams[r.winnerIdx];m.tie=tie;if(r.decidedBy!=="aggregate")m.decidedBy=r.decidedBy;}
   }
   return winners;
 }
@@ -103,7 +130,7 @@ function nextFixture(s,ed,clubId){
   const st=ko.stages[ko.stages.length-1];
   return st?.matches.filter(m=>!m.played&&m.day>s.day&&[m.homeId,m.awayId].includes(clubId)).sort((a,b)=>a.day-b.day)[0]||null;
 }
-const api={STAGES,rank,initialize,daily,advance,nextFixture,stageWinners};
+const api={STAGES,rank,initialize,daily,advance,nextFixture,stageWinners,resolveTie};
 root.ProLifeChampionsKnockout=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

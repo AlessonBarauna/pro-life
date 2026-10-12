@@ -8,4 +8,21 @@ test('45 knockout games: 16+16+8+4+1',()=>{const ed=edition(),s={day:0,mode:'coa
 test('idempotent and persistent',()=>{const ed=edition(),s={day:218,mode:'coach'};K.daily(s,ed,hooks);const snap=JSON.stringify(ed.knockout);K.daily(s,ed,hooks);assert.equal(JSON.stringify(ed.knockout),snap);assert.equal(JSON.parse(JSON.stringify(ed)).knockout.stages[0].matches.filter(x=>x.played).length,8)});
 test('no retroactive bracket',()=>{const ed=edition();assert.throws(()=>K.initialize(ed,250),/retroativo/);assert.equal(ed.knockout,undefined)});
 test('no knockout until league complete',()=>{const ed=edition();ed.leagueSchedule.matches[0].played=false;assert.equal(K.daily({day:218},ed,hooks),null);assert.equal(ed.knockout,undefined)});
-test('winner by aggregate, penalties when tied',()=>{const ed=edition();K.initialize(ed,0);const st=ed.knockout.stages[0];for(const m of st.matches){m.played=true;m.hg=1;m.ag=1}const winners=K.stageWinners(st);assert.equal(winners.length,8);assert.ok(st.matches.every(m=>m.decidedBy==='penalties'))});
+test('winner by aggregate, penalties when tied',()=>{const ed=edition();K.initialize(ed,0);const st=ed.knockout.stages[0];for(const m of st.matches){m.played=true;m.hg=1;m.ag=1}const winners=K.stageWinners(st);assert.equal(winners.length,8);assert.ok(st.matches.every(m=>['extra_time','penalties'].includes(m.decidedBy)));assert.ok(st.matches.every(m=>m.tie&&m.tie.aggregate.join()==='2,2'&&m.tie.winnerId===m.winnerId))});
+
+test('desempate: agregado vence sem prorrogacao e gols fora nao contam',()=>{
+  const r=K.resolveTie(['a','b'],[3,2],'s|penalties');assert.deepEqual([r.winnerIdx,r.decidedBy,r.extraTime,r.penalties],[0,'aggregate',null,null]);
+  // 2-2 no agregado: mesmo com mais gols fora de casa para um lado, vai para prorrogacao/penaltis
+  const t=K.resolveTie(['a','b'],[2,2],'s|penalties');assert.ok(['extra_time','penalties'].includes(t.decidedBy));assert.ok(t.extraTime);
+});
+test('desempate: deterministico, prorrogacao e penaltis coerentes',()=>{
+  let ets=0,pens=0;
+  for(let i=0;i<400;i++){
+    const seed='x'+i+'|penalties',r=K.resolveTie(['a','b'],[1,1],seed),again=K.resolveTie(['a','b'],[1,1],seed);
+    assert.deepEqual(r,again);
+    assert.ok(Array.isArray(r.extraTime)&&r.extraTime.every(Number.isInteger));
+    if(r.decidedBy==='extra_time'){ets++;assert.notEqual(r.extraTime[0],r.extraTime[1]);assert.equal(r.penalties,null);assert.equal(r.winnerIdx,r.extraTime[0]>r.extraTime[1]?0:1);}
+    else{pens++;assert.equal(r.extraTime[0],r.extraTime[1]);const [p,q]=r.penalties.score;assert.notEqual(p,q);assert.equal(r.winnerIdx,p>q?0:1);assert.equal(r.penalties.kicks[0].filter(Boolean).length,p);assert.equal(r.penalties.kicks[1].filter(Boolean).length,q);assert.ok(r.penalties.kicks[0].length>=3);}
+  }
+  assert.ok(ets>0&&pens>0,'os dois desfechos devem ocorrer');
+});
