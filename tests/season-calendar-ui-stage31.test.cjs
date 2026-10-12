@@ -14,7 +14,13 @@ function make(mode) {
   w.scrollTo = () => {};
   w.URL.createObjectURL = () => "blob:test";
   w.URL.revokeObjectURL = () => {};
-  files.forEach((f) => w.eval(fs.readFileSync(base + f, "utf8")));
+  // 34F.15: a criação pela interface é só FC 27; estes testes exercitam a base legada carregando um slot existente.
+  files.slice(0, -1).forEach((f) => w.eval(fs.readFileSync(base + f, "utf8")));
+  assert.ok(w.ProLifeSave.saveAsNew(w.ProLife.create({ mode, age: mode === "coach" ? 35 : 16 }, 44)));
+  w.eval(fs.readFileSync(base + files[files.length - 1], "utf8"));
+  const existing = w.document.querySelector("[data-load-slot]");
+  if (existing) existing.click();
+  return dom;
   const newCareer = w.document.querySelector(mode === "coach" ? '[data-action="new-coach"]' : '[data-action="new-player"]');
   assert.ok(newCareer, "Central de Carreiras deve oferecer nova carreira");
   newCareer.click();
@@ -25,6 +31,7 @@ function make(mode) {
   }
   const form = w.document.querySelector("#creator");
   assert.ok(form, "Formulário de criação deve abrir");
+  form.elements.catalogVersion.value = "legacy";
   form.elements.mode.value = mode;
   form.elements.age.value = mode === "coach" ? "35" : "16";
   form.elements.seed.value = "44";

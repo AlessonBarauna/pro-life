@@ -90,6 +90,7 @@ const files = [
   "src/ui/player-development-view.js",
   "src/ui/app.js",
   "src/ui/style.css",
+  "src/ui/fc27-theme.css",
   "src/ui/update.js",
 ];
 module.exports = { files };

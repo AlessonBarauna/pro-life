@@ -3154,7 +3154,7 @@ button,a,select,input,label,summary{touch-action:manipulation}
 }
 
 /* =========================================================
-   FC27 CLUB BROWSER
+   CLUB BROWSER (catalogo atual)
    ========================================================= */
 
 .club-browser-root{
@@ -4024,3 +4024,33 @@ body.cine-open { overflow: hidden; }
 @keyframes cine-sign { to { stroke-dashoffset: 0; } }
 @keyframes cine-stamp { from { opacity: 0; transform: rotate(-7deg) scale(2.2); } to { opacity: .9; transform: rotate(-7deg) scale(1); } }
 @keyframes cine-shirt { from { opacity: 0; transform: translateY(24px) scale(.85); } to { opacity: 1; transform: none; } }
+
+/* 34F.14 — escolha da base de dados */
+.catalog-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 8px 0 6px; }
+.catalog-card { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.12); background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015)); color: #e8eef5; cursor: pointer; transition: border-color .15s, background .15s, transform .15s; font: inherit; }
+.catalog-card b { font-size: 15px; letter-spacing: .02em; }
+.catalog-card small { color: #9fb0c3; font-size: 12px; line-height: 1.35; }
+.catalog-card:hover, .catalog-card:focus-visible { border-color: var(--pl-cyan, #49e6dc); transform: translateY(-1px); outline: none; }
+.catalog-card.on, .catalog-card[aria-pressed="true"] { border-color: var(--pl-gold, #e9b84f); background: linear-gradient(180deg, rgba(233,184,79,.16), rgba(73,230,220,.05)); box-shadow: 0 0 0 1px rgba(233,184,79,.35) inset; }
+.catalog-badge { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: .08em; vertical-align: middle; border: 1px solid transparent; }
+.catalog-badge.cat-new { color: #0b1117; background: var(--pl-cyan, #49e6dc); }
+.catalog-badge.classic { color: var(--pl-gold, #e9b84f); border-color: rgba(233,184,79,.5); background: rgba(233,184,79,.1); }
+.wiz-busy { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: rgba(5,9,14,.82); backdrop-filter: blur(4px); }
+.wiz-busy-box { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 24px 32px; border-radius: 16px; border: 1px solid rgba(73,230,220,.32); background: #0d151d; color: #e8eef5; text-align: center; max-width: 86vw; }
+.wiz-busy-box i { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255,255,255,.15); border-top-color: var(--pl-cyan, #49e6dc); animation: wiz-spin .9s linear infinite; }
+.wiz-busy-box small { color: #9fb0c3; }
+@keyframes wiz-spin { to { transform: rotate(360deg); } }
+@media (max-width: 560px) { .catalog-grid { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .wiz-busy-box i { animation-duration: 3s; } .catalog-card { transition: none; } }
+
+/* 34F.15 — falha de salvamento */
+.save-fail-box { max-width: 460px; align-items: stretch; text-align: left; border-color: rgba(233,184,79,.55); }
+.save-fail-box b { font-size: 16px; color: var(--pl-gold, #e9b84f); }
+.save-fail-list { display: flex; flex-direction: column; gap: 6px; }
+
+/* Legado: contador de prêmios clicável e painel de conquistas pessoais */
+.metric-row .metric-link { all: unset; display: block; cursor: pointer; padding: 12px 10px; border-radius: 8px; }
+.metric-row .metric-link:hover, .metric-row .metric-link:focus-visible { background: rgba(73,230,220,.08); outline: 1px solid rgba(73,230,220,.35); }
+.metric-row .metric-link b { display: block; color: #fff; font-size: 24px; }
+.metric-row .metric-link small { font-size: 9px; text-transform: uppercase; letter-spacing: .7px; color: var(--pl-text-3, #8aa0b2); }
+.legacy-awards { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.08); }

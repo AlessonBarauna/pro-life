@@ -1,5 +1,8 @@
 (function (root) {
   "use strict";
+  const CH = () => root.ProLifeClubHistory || (typeof require === "function" ? (() => { try { return require("./club-history.js"); } catch (e) { return null; } })() : null);
+  const Ctx = () => root.ProLifeCareerContext || (typeof require === "function" ? (() => { try { return require("./career-context.js"); } catch (e) { return null; } })() : null);
+  const Names = root.ProLifeNames || (typeof require === "function" ? require("./display-names.js") : null);
   const fields = ["appearances", "starts", "minutes", "goals", "assists", "motm", "ratingTotal", "saves", "tackles", "shots", "onTarget", "xg", "yellowCards", "redCards", "wins", "draws", "losses", "hatTricks", "cleanSheets"];
   const blank = () => ({ appearances: 0, starts: 0, minutes: 0, goals: 0, assists: 0, motm: 0, ratingTotal: 0, saves: 0, tackles: 0, shots: 0, onTarget: 0, xg: 0, yellowCards: 0, redCards: 0, byCompetition: {}, byClub: {} });
   const checked = new WeakMap();
@@ -77,7 +80,7 @@
     let stint=stats.heroStints.find((x)=>x.season===s.season && x.clubId===clubId && x.endDay==null);
     if (!stint) {
       const c=s.clubs.find((x)=>x.id===clubId);
-      stint={ season:s.season, clubId, club:c?.name||clubId, startDay:s.day, endDay:null, transferType:"current" };
+      stint={ season:s.season, clubId, club:c?.name||CH()?.clubName(s,root.ProLife,clubId)||clubId, startDay:s.day, endDay:null, transferType:"current" };
       for (const f of fields) stint[f]=0;
       stats.heroStints.push(stint);
     }
@@ -99,9 +102,11 @@
     if (s.mode !== "player") return stats.heroStints;
     const own=(s.extras?.transfers||[]).filter((t)=>t.player===s.person?.name && Number.isFinite(t.season)).slice().sort((a,b)=>a.season-b.season || Number(a.day||0)-Number(b.day||0));
     if (!own.length) { ensureHeroStint(s); return stats.heroStints; }
-    const byName=(name)=>s.clubs.find((c)=>c.name===name)?.id || null;
+    // 34F.31D: nomes tambem resolvem para clubes do catalogo FC 27 e o clube anterior a primeira transferencia nunca e inferido do clube
+    // seguinte nem do clube atual (antes, "Sem clube -> X" atribuia X a todas as temporadas anteriores).
+    const byName=(name)=>s.clubs.find((c)=>c.name===name)?.id || CH()?.nameToId(s,root.ProLife,name) || null;
     const first=own[0], firstFrom=byName(first.from);
-    let clubId=firstFrom || byName(first.to) || s.clubId;
+    let clubId=firstFrom || null;
     let season=Math.min(2026, Number(first.season)||2026);
     let startDay=0;
     const wanted=[];
@@ -111,10 +116,10 @@
       while(season<trSeason){ add(season,clubId,startDay,null,"season"); season++; startDay=0; }
       if(fromId && fromId!==clubId) clubId=fromId;
       add(trSeason,clubId,startDay,trDay,tr.transferType||"transfer");
-      clubId=toId||clubId; season=trSeason; startDay=trDay;
+      clubId=toId||null; season=trSeason; startDay=trDay;
     }
     while(season<s.season){ add(season,clubId,startDay,null,"season"); season++; startDay=0; }
-    add(s.season,clubId||s.clubId,startDay,null,"current");
+    add(s.season,clubId||s.clubId,startDay,null,"current"); // temporada atual: o clube atual e a evidencia
     for(const w of wanted){
       let row=stats.heroStints.find((x)=>x.season===w.season && x.clubId===w.clubId && Number(x.startDay||0)===Number(w.startDay||0));
       if(!row){ row={...w}; for(const f of fields) row[f]=0; stats.heroStints.push(row); }
@@ -263,10 +268,10 @@
   }
   function competitionName(s, id) {
     if (id === "overall") return "Melhores do ano";
-    return root.ProLifeCompetitions?.statCompetitions?.(s).find((item) => item.id === id)?.name || root.ProLifeCompetitions?.leagueNames?.[id] || id;
+    return root.ProLifeCompetitions?.statCompetitions?.(s).find((item) => item.id === id)?.name || root.ProLifeCompetitions?.leagueNames?.[id] || (Names ? Names.league(s, id) : id);
   }
   function award(s, competitionId, name, winner) {
-    return winner && { season: s.season, leagueId: competitionId, competitionId, league: competitionName(s, competitionId), name, winner: winner.name, winnerClub: winner.club, clubId: winner.clubId, value: Number.isFinite(winner.value) ? winner.value : null };
+    return winner && { season: s.season, leagueId: competitionId, competitionId, league: competitionName(s, competitionId), name, winnerId: winner.id ?? null, winner: winner.name, winnerClub: winner.club, clubId: winner.clubId, value: Number.isFinite(winner.value) ? winner.value : null };
   }
   function compactWinner(item) {
     if (!item) return null;
@@ -277,7 +282,7 @@
   }
   function compactArchivedSeason(season, heroName) {
     if (!season || season.compact) return season;
-    season.awards=(season.awards||[]).filter((a)=>a.winner===heroName).map((a)=>({season:a.season,leagueId:a.leagueId,competitionId:a.competitionId,league:a.league,name:a.name,winner:a.winner,winnerClub:a.winnerClub,clubId:a.clubId,value:a.value}));
+    season.awards=(season.awards||[]).filter((a)=>a.winner===heroName).map((a)=>({season:a.season,leagueId:a.leagueId,competitionId:a.competitionId,league:a.league,name:a.name,winnerId:a.winnerId,winner:a.winner,winnerClub:a.winnerClub,clubId:a.clubId,value:a.value}));
     season.panorama=(season.panorama||[]).map((p)=>({id:p.id,name:p.name,type:p.type,champion:p.champion,championId:p.championId,runnerUp:p.runnerUp,runnerUpId:p.runnerUpId,topScorer:compactWinner(p.topScorer),assistLeader:compactWinner(p.assistLeader),bestPlayer:compactWinner(p.bestPlayer),bestYoung:compactWinner(p.bestYoung),bestKeeper:compactWinner(p.bestKeeper),bestCoach:compactWinner(p.bestCoach),team:[]}));
     season.teams=[];
     season.compact=true;
@@ -311,11 +316,11 @@
     const pc=s.extras?.playerCareer || {};
     const goals=sum("goals") || matchSnapshot.goals, assists=sum("assists") || matchSnapshot.assists, motm=sum("motm") || matchSnapshot.motm;
     const averageRating=ratingTotal && appearances ? +(ratingTotal/appearances).toFixed(2) : matchSnapshot.averageRating;
-    return { club:s.clubs.find((club)=>club.id===s.clubId)?.name || "Sem clube", clubs:heroStintHistory(s).filter(x=>x.season===s.season).map(x=>x.club), stints:heroStintHistory(s).filter(x=>x.season===s.season), age:s.person.age, overallStart:start?.overall ?? null, overallEnd:end?.overall ?? (root.ProLife?.overall ? root.ProLife.overall(s.person) : null), marketValueEnd:pc.marketValue||0, appearances, starts:Math.min(appearances, s.extras?.seasonStarts || appearances), minutes:s.person.minutes||0, goals, assists, motm, averageRating, reputation:Math.round(s.reputation||0), national:{ caps:s.nationalTeam?.caps||0, goals:s.nationalTeam?.goals||0, assists:s.nationalTeam?.assists||0 } };
+    return { clubId:s.clubId||null, clubIds:[...new Set(heroStintHistory(s).filter(x=>x.season===s.season).map(x=>x.clubId))], club:Ctx()?.clubName(s) || s.clubs.find((club)=>club.id===s.clubId)?.name || (s.clubId ? "Clube não identificado" : "Sem clube"), clubs:heroStintHistory(s).filter(x=>x.season===s.season).map(x=>Names?Names.club(s,x.clubId,x.club):x.club), stints:heroStintHistory(s).filter(x=>x.season===s.season), age:s.person.age, overallStart:start?.overall ?? null, overallEnd:end?.overall ?? (root.ProLife?.overall ? root.ProLife.overall(s.person) : null), marketValueEnd:pc.marketValue||0, appearances, starts:Math.min(appearances, s.extras?.seasonStarts || appearances), minutes:s.person.minutes||0, goals, assists, motm, averageRating, reputation:Math.round(s.reputation||0), national:{ caps:s.nationalTeam?.caps||0, goals:s.nationalTeam?.goals||0, assists:s.nationalTeam?.assists||0 } };
   }
 
   function heroDashboard(s) {
-    const hero=normalize(init(s).root.players.hero), currentClub=s.clubs.find(c=>c.id===s.clubId), seasonRows=Object.values(hero.byCompetition||{});
+    const hero=normalize(init(s).root.players.hero), currentClub=Ctx()?.clubOf(s) || s.clubs.find(c=>c.id===s.clubId), seasonRows=Object.values(hero.byCompetition||{});
     const sum=(rows,f)=>rows.reduce((n,r)=>n+Number(r?.[f]||0),0), pack=(row)=>{ row=row||{}; const apps=Number(row.appearances||0), mins=Number(row.minutes||0), goals=Number(row.goals||0), assists=Number(row.assists||0), shots=Number(row.shots||0), on=Number(row.onTarget||0); return { appearances:apps, starts:Number(row.starts||apps), minutes:mins, goals, assists, motm:Number(row.motm||0), averageRating:apps ? +(Number(row.ratingTotal||0)/apps).toFixed(2):0, goals90:mins ? +(goals*90/mins).toFixed(2):0, assists90:mins ? +(assists*90/mins).toFixed(2):0, shots, onTarget:on, xg:+Number(row.xg||0).toFixed(2), conversion:shots ? +(goals*100/shots).toFixed(1):0, yellowCards:Number(row.yellowCards||0), redCards:Number(row.redCards||0), tackles:Number(row.tackles||0), saves:Number(row.saves||0), wins:Number(row.wins||0), draws:Number(row.draws||0), losses:Number(row.losses||0), hatTricks:Number(row.hatTricks||0), cleanSheets:Number(row.cleanSheets||0) }; };
     const season={}; for(const f of fields) season[f]=sum(seasonRows,f);
     const seasonStints=heroStintHistory(s).filter(x=>x.season===s.season);
@@ -324,7 +329,7 @@
     const fullSeasonAtCurrentClub=seasonClubIds.length===1 && seasonClubIds[0]===s.clubId;
     const currentClubSeason={};
     for(const f of fields) currentClubSeason[f]=fullSeasonAtCurrentClub ? Number(season[f]||0) : sum(currentStints,f);
-    return { season:pack(season), currentClubSeason:pack(currentClubSeason), career:pack(hero), byCompetition:Object.entries(hero.byCompetition||{}).map(([id,row])=>({id,name:competitionName(s,id),...pack(row)})), byClub:Object.entries(hero.byClub||{}).map(([id,row])=>({id,name:s.clubs.find(c=>c.id===id)?.name||id,...pack(row)})), currentClub:currentClub?.name||"Sem clube", national:s.nationalTeam||{}, stints:heroStintHistory(s), seasons:(s.statistics?.seasons||[]).map(x=>({season:x.season,...x.player,stints:x.player?.stints||[]})) };
+    return { season:pack(season), currentClubSeason:pack(currentClubSeason), career:pack(hero), byCompetition:Object.entries(hero.byCompetition||{}).map(([id,row])=>({id,name:competitionName(s,id),...pack(row)})), byClub:Object.entries(hero.byClub||{}).map(([id,row])=>({id,name:Names?Names.club(s,id):(s.clubs.find(c=>c.id===id)?.name||id),...pack(row)})), currentClub:Ctx()?.clubName(s) || currentClub?.name || "Sem clube", national:s.nationalTeam||{}, stints:heroStintHistory(s), seasons:(s.statistics?.seasons||[]).map(x=>({season:x.season,...x.player,stints:x.player?.stints||[]})) };
   }
   function updateCareerMeta(s,m,heroGoals=0) {
     const stats=init(s).root, hero=normalize(stats.players.hero), apps=hero.appearances||0, goals=hero.goals||0, assists=hero.assists||0;
@@ -358,7 +363,7 @@
         stintGroups.set(key,{
           season:Number(stint.season),
           clubId:stint.clubId,
-          club:stint.club || s.clubs.find(c=>c.id===stint.clubId)?.name || stint.clubId,
+          club:Names ? Names.club(s,stint.clubId,stint.club) : (stint.club || s.clubs.find(c=>c.id===stint.clubId)?.name || stint.clubId),
           appearances:0,
           starts:0,
           minutes:0,
@@ -410,7 +415,7 @@
 
     const seasons=[
       ...stintSeasons,
-      ...seasonTotals.filter(x=>!seasonsWithStints.has(x.season))
+      ...seasonTotals.filter(x=>!seasonsWithStints.has(x.season)).flatMap(x=>x.season===s.season||!CH()?[x]:CH().rowsForArchived(s,root.ProLife,x))
     ].sort((a,b)=>
       b.season-a.season ||
       Number(a.startDay||0)-Number(b.startDay||0)
@@ -421,7 +426,7 @@
     const seasonScore=x=>Number(x.goals||0)*4+Number(x.assists||0)*3+Number(x.averageRating||0)*5+Number(x.appearances||0)*0.2;
     const bestSeason=seasonTotals.filter(x=>Number(x.appearances||0)>0).sort((a,b)=>seasonScore(b)-seasonScore(a))[0]||null;
     const timeline=[];
-    for(const t of (dash.stints||[]).slice().sort((a,b)=>a.season-b.season||Number(a.startDay||0)-Number(b.startDay||0))) timeline.push({season:t.season,day:t.startDay||0,type:"club",label:t.transferType==="current"?"Passagem pelo clube":"Transferência / passagem",detail:t.club});
+    for(const t of (dash.stints||[]).slice().sort((a,b)=>a.season-b.season||Number(a.startDay||0)-Number(b.startDay||0))) timeline.push({season:t.season,day:t.startDay||0,type:"club",label:t.transferType==="current"?"Passagem pelo clube":"Transferência / passagem",detail:Names?Names.club(s,t.clubId,t.club):t.club});
     for(const m of stats.milestones||[]) timeline.push({season:m.season,day:m.day,type:"milestone",label:m.label,detail:m.value});
     timeline.sort((a,b)=>a.season-b.season||a.day-b.day);
     return { season:dash.season, career:dash.career, competitions:dash.byCompetition, clubs, national:dash.national, seasons, recent, recentAverage, milestones:stats.milestones.slice(), records:{...stats.records,hatTricks:hero.hatTricks||0}, bestSeason, timeline, professional:{appearances:(dash.career.appearances||0)+Number(dash.national.caps||0),goals:(dash.career.goals||0)+Number(dash.national.goals||0),assists:(dash.career.assists||0)+Number(dash.national.assists||0)} };

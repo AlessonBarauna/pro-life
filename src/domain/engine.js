@@ -2,6 +2,14 @@
 (function (root) {
   "use strict";
   const WorldClubCompetitions=root.ProLifeWorldClubCompetitions||(typeof require==="function"?require("./world-club-competitions.js"):null);
+  const ClubIntelligence=root.ProLifeClubIntelligence||(typeof require==="function"?require("./club-intelligence.js"):null);
+  const WorldStats=root.ProLifeWorldStats||(typeof require==="function"?require("./world-stats.js"):null);
+  const Continental=root.ProLifeContinental||(typeof require==="function"?require("./continental.js"):null);
+  const ChampionsKnockout=root.ProLifeChampionsKnockout||(typeof require==="function"?require("./champions-knockout.js"):null);
+  const ChampionsSeason=root.ProLifeChampionsSeason||(typeof require==="function"?require("./champions-season.js"):null);
+  const NationalCallups=root.ProLifeNationalCallups||(typeof require==="function"?require("./national-callups.js"):null);
+  const OffField=root.ProLifeOffField||(typeof require==="function"?require("./off-field.js"):null);
+  const CoachCareer=root.ProLifeCoachCareer||(typeof require==="function"?require("./coach-career.js"):null);
   const WorldLiveMarket=root.ProLifeWorldLiveMarket||(typeof require==="function"?require("./world-live-market.js"):null);
   const SeasonCompetitionCenter=root.ProLifeSeasonCompetitionCenter||(typeof require==="function"?require("./season-competition-center.js"):null);
   const Character =
@@ -518,6 +526,15 @@
       "Sua história começa",
       "Analise estrutura, concorrência e salário antes de escolher seu clube.",
     );
+    // UCL_CREATE_DAY_ZERO_V35
+    if (s.catalogVersion === "fc27_v1" &&
+        Continental && ChampionsSeason && WorldClubCompetitions) {
+      Continental.init(s);
+      const ucl = Continental.edition(s, "ucl");
+      if (ucl?.status === "ready" && !ucl.leagueSchedule) {
+        ChampionsSeason.prepare(s, Continental, WorldClubCompetitions);
+      }
+    }
     if (plan && s.creation?.started) return s;
     if (mode === "player") Career.post(s, "Carreira", "Agente", "Sua origem: " + (plan ? plan.story.title : origin.name), origin.description + " Seu arquétipo inicial é " + (Training?.init(s)?.archetype?.name || "definido pela posição") + ".");
     Career.post(
@@ -712,57 +729,125 @@
     const salary = Math.round(Math.max(2500, value / 520) / 100) * 100;
     return { value, salary };
   }
+  // 34F.19: o mercado da IA respeita o minimo de jogadores por posicao, o tamanho maximo do elenco e o orcamento do comprador,
+  // e nunca mexe no clube do usuario no modo treinador. Volume maior dentro da janela de transferencias.
+  const MARKET_MIN = { GOL: 2, DEF: 5, MEI: 5, ATA: 3 };
+  const MARKET_TARGET = { GOL: 3, DEF: 8, MEI: 8, ATA: 5 };
+  const MARKET_MAX_SQUAD = 36;
+  const MARKET_ACTIVE_STATES = new Set(["rumor", "scouting", "negotiating", "offer"]);
+  function marketProtectedClub(s) {
+    return s.mode === "coach" && s.clubId ? s.clubId : null;
+  }
+  function marketCounts(s, adjustForPending = true) {
+    const counts = new Map(), squad = new Map();
+    for (const player of GlobalFootball?.activePlayers?.(s) || []) {
+      if (player.academy || !player.clubId) continue; // base e livres nao contam para o elenco principal
+      const key = `${player.clubId}|${player.pos}`;
+      counts.set(key, (counts.get(key) || 0) + 1);
+      squad.set(player.clubId, (squad.get(player.clubId) || 0) + 1);
+    }
+    if (adjustForPending) {
+      // Negociacoes em andamento (e fechadas ainda nao executadas) ja contam como saida/entrada.
+      for (const deal of WorldLiveMarket?.getDeals?.(s) || []) {
+        const pending = MARKET_ACTIVE_STATES.has(deal.state) || (deal.state === "completed" && deal.executionStatus === undefined);
+        if (!pending) continue;
+        const player = GlobalFootball?.playerById?.(s, deal.playerId);
+        if (!player) continue;
+        counts.set(`${deal.fromClubId}|${player.pos}`, (counts.get(`${deal.fromClubId}|${player.pos}`) || 0) - 1);
+        counts.set(`${deal.toClubId}|${player.pos}`, (counts.get(`${deal.toClubId}|${player.pos}`) || 0) + 1);
+        squad.set(deal.fromClubId, (squad.get(deal.fromClubId) || 0) - 1);
+        squad.set(deal.toClubId, (squad.get(deal.toClubId) || 0) + 1);
+      }
+    }
+    return { counts, squad };
+  }
+  // Usado por executeCompleted: devolve o motivo do cancelamento ou null.
+  function worldMarketCanExecute(s, deal) {
+    const player = GlobalFootball?.playerById?.(s, deal.playerId);
+    if (!player) return "player-unavailable";
+    const { counts, squad } = marketCounts(s, false);
+    const min = MARKET_MIN[player.pos];
+    if (min !== undefined && (counts.get(`${deal.fromClubId}|${player.pos}`) || 0) <= min) return "squad-minimum";
+    if ((squad.get(deal.toClubId) || 0) >= MARKET_MAX_SQUAD) return "squad-full";
+    return null;
+  }
+  function applyMarketBudgets(s, executedIds) {
+    for (const id of executedIds || []) {
+      const deal = WorldLiveMarket.getDeal(s, id);
+      if (!deal || deal.budgetApplied) continue;
+      // grava no objeto real do estado (clubById pode devolver copia)
+      const real = (cid) => (s.globalFootball?.clubs || []).find((c) => c.id === cid) || (s.clubs || []).find((c) => c.id === cid) || null;
+      const b = real(deal.toClubId), l = real(deal.fromClubId);
+      if (b && Number.isFinite(Number(b.budget))) b.budget = Math.max(0, Math.round(Number(b.budget) - deal.value));
+      if (l && Number.isFinite(Number(l.budget))) l.budget = Math.max(0, Math.round(Number(l.budget) + deal.value));
+      deal.budgetApplied = true;
+    }
+  }
   function generateWorldMarket(s, rng) {
     const market = WorldLiveMarket?.init?.(s);
     if (!market || s.day % 14 !== 0 || market.lastGenerationDay === s.day)
       return [];
     market.lastGenerationDay = s.day;
     GlobalFootball?.init?.(s);
-    const activeStates = new Set(["rumor", "scouting", "negotiating", "offer"]);
     const busy = new Set(
       WorldLiveMarket.getDeals(s)
-        .filter((deal) => activeStates.has(deal.state))
+        .filter((deal) => MARKET_ACTIVE_STATES.has(deal.state))
         .map((deal) => deal.playerId),
     );
+    const protectedClub = marketProtectedClub(s);
+    const { counts, squad } = marketCounts(s);
     const players = (GlobalFootball?.activePlayers?.(s) || []).filter(
       (player) =>
         player?.id &&
         player.id !== "hero" &&
         player.clubId &&
+        !player.academy &&
+        player.clubId !== protectedClub &&
         !busy.has(player.id) &&
+        MARKET_MIN[player.pos] !== undefined &&
         GlobalFootball.clubById(s, player.clubId)?.active !== false,
     );
     const seen = new Set();
     const clubs = [...(s.clubs || []), ...(s.globalFootball?.clubs || [])].filter(
       (club) => {
-        if (!club?.id || seen.has(club.id) || club.active === false || club.generated === true)
+        if (!club?.id || seen.has(club.id) || club.active === false || club.generated === true || club.id === protectedClub)
           return false;
         seen.add(club.id);
         return true;
       },
     );
-    const counts = new Map();
-    for (const player of GlobalFootball?.activePlayers?.(s) || []) {
-      const key = `${player.clubId}|${player.pos}`;
-      counts.set(key, (counts.get(key) || 0) + 1);
-    }
-    const wanted = Career.windowStatus(s).open ? 2 : 1;
+    const wanted = Career.windowStatus(s).open ? 10 : 2;
     const created = [];
     for (let slot = 0; slot < wanted && players.length; slot++) {
-      const player = players.splice(rng.int(0, players.length - 1), 1)[0];
+      // Vendedor: so clubes que podem ceder; prefere quem tem sobra na posicao e jogadores veteranos.
+      const sellers = [];
+      let sellerTotal = 0;
+      for (let i = 0; i < players.length; i++) {
+        const p = players[i];
+        const have = counts.get(`${p.clubId}|${p.pos}`) || 0;
+        if (have <= MARKET_MIN[p.pos]) continue;
+        const weight = 1 + Math.max(0, have - MARKET_TARGET[p.pos]) * 2 + (Number(p.age || 25) >= 31 ? 1.5 : 0);
+        sellers.push([i, weight]); sellerTotal += weight;
+      }
+      if (!sellerTotal) break;
+      let pick = rng.next() * sellerTotal, chosen = sellers.at(-1);
+      for (const entry of sellers) { pick -= entry[1]; if (pick <= 0) { chosen = entry; break; } }
+      const player = players.splice(chosen[0], 1)[0];
       const level = worldMarketPlayerLevel(player);
       const potential = Number(player.potential ?? level);
       const age = Number(player.age || 25);
       const projected = level + (age <= 23 ? clamp((potential - level) * 0.2, 0, 6) : 0);
       const weighted = clubs
-        .filter((candidate) => candidate.id !== player.clubId)
+        .filter((candidate) => candidate.id !== player.clubId && (squad.get(candidate.id) || 0) < MARKET_MAX_SQUAD)
         .map((candidate) => {
+          const terms = worldMarketTerms(player, candidate);
+          const budget = Number(candidate.budget);
+          if (Number.isFinite(budget) && terms.value > budget * 0.6) return { candidate, terms, weight: 0 };
           const strength = worldMarketClubStrength(candidate);
           const gap = Math.abs(strength - projected);
-          const target = { GOL: 2, DEF: 8, MEI: 8, ATA: 5 }[player.pos] || 5;
-          const need = Math.max(0, target - (counts.get(`${candidate.id}|${player.pos}`) || 0));
+          const need = Math.max(0, MARKET_TARGET[player.pos] - (counts.get(`${candidate.id}|${player.pos}`) || 0));
           const ageFit = age <= 22 && potential > level ? 4 : age >= 33 ? -2 : 0;
-          return { candidate, weight: Math.max(0, 26 - gap * 1.15 + need * 2.8 + ageFit) };
+          return { candidate, terms, weight: Math.max(0, 26 - gap * 1.15 + need * 2.8 + ageFit) };
         })
         .filter((entry) => entry.weight > 0);
       const total = weighted.reduce((sum, entry) => sum + entry.weight, 0);
@@ -774,7 +859,7 @@
         if (roll <= 0) { selected = entry; break; }
       }
       try {
-        const terms = worldMarketTerms(player, selected.candidate);
+        const terms = selected.terms;
         created.push(WorldLiveMarket.createDeal(s, {
           playerId: player.id,
           fromClubId: player.clubId,
@@ -784,6 +869,10 @@
           state: "rumor",
           startDay: s.day,
         }));
+        counts.set(`${player.clubId}|${player.pos}`, (counts.get(`${player.clubId}|${player.pos}`) || 0) - 1);
+        counts.set(`${selected.candidate.id}|${player.pos}`, (counts.get(`${selected.candidate.id}|${player.pos}`) || 0) + 1);
+        squad.set(player.clubId, (squad.get(player.clubId) || 0) - 1);
+        squad.set(selected.candidate.id, (squad.get(selected.candidate.id) || 0) + 1);
       } catch (_) {}
     }
     return created;
@@ -1285,6 +1374,8 @@
       return +(years*7 + experience*2.1 + ovr*.32 + positionLeadership + regularity + heroRole).toFixed(2);
     };
     const ranking=(team.roster||[]).filter(p=>!p.injury).map(p=>({player:p,score:score(p)})).sort((x,y)=>y.score-x.score || overall(y.player)-overall(x.player));
+    const chosen=CoachCareer?.captainOverride(s,team)||null;
+    if(chosen){const at=ranking.findIndex(x=>x.player===chosen);if(at>0)ranking.unshift(ranking.splice(at,1)[0]);}
     const captain=ranking[0]?.player||null, vice=ranking[1]?.player||null, heroIndex=ranking.findIndex(x=>x.player.id==="hero");
     return {captain,vice,ranking,heroRank:heroIndex>=0?heroIndex+1:null,heroScore:heroIndex>=0?ranking[heroIndex].score:null,heroYears:+heroYears.toFixed(1)};
   }
@@ -1295,6 +1386,7 @@
     if (selection) {
       c.formation=selection.formation;
       c.lineup=selection.starters.map(p=>p.id);
+      Squad.registerStarters?.(c,selection.starters);
       const leadership=captaincy(s,c);
       const xiIds=new Set(selection.starters.map(p=>p.id));
       const captain=leadership.ranking.find(x=>xiIds.has(x.player.id))?.player || selection.starters[0] || null;
@@ -1332,7 +1424,7 @@
     processDiscipline(s,m,disciplineMeta,hc,ac);
     serveDisciplineSuspensions(hc,disciplineKey);
     serveDisciplineSuspensions(ac,disciplineKey);
-    if (!leagueMatch) Competitions?.recordResult(s, m, rng);
+    if (!leagueMatch && meta.continentalMatch !== true) Competitions?.recordResult(s, m, rng);
     const heroOffense = m.offensiveStats?.hero;
     m.offensiveStats = heroOffense ? { hero: heroOffense } : {};
     s.matches.unshift(m);
@@ -1456,14 +1548,40 @@
       const f = WorldClubCompetitions.nextFixture(s, hc.leagueId, s.clubId);
       if (f && f.date >= s.day) world = { home: f.home, away: f.away, date: f.date, round: f.round, competitionId: hc.leagueId, competitionName: GlobalFootball?.leagueById?.(s, hc.leagueId)?.name || hc.leagueId };
     }
-    return [league, extra, national, world].filter(Boolean).sort((a, b) => a.date - b.date)[0] || null;
+    const uclSchedule = Continental?.edition?.(s, "ucl", s.season)?.leagueSchedule;
+    const uclMatch = Array.isArray(uclSchedule?.matches)
+      ? uclSchedule.matches
+          .filter(m =>
+            !m.played &&
+            Number.isInteger(m.day) &&
+            m.day > s.day &&
+            [m.homeId, m.awayId].includes(s.clubId)
+          )
+          .sort((a, b) => a.day - b.day)[0]
+      : null;
+    const continental = uclMatch && {
+      home: uclMatch.homeId,
+      away: uclMatch.awayId,
+      date: uclMatch.day,
+      round: uclMatch.round,
+      competitionId: "ucl",
+      competitionName: "UEFA Champions League",
+      stage: "Fase de liga"
+    };
+    const koFixture = ChampionsKnockout?.nextFixture?.(s,Continental?.edition?.(s,"ucl"),s.clubId);
+    const knockout = koFixture && {home:koFixture.homeId,away:koFixture.awayId,date:koFixture.day,round:koFixture.pair+1,competitionId:"ucl",competitionName:"UEFA Champions League",stage:koFixture.stage};
+    return [league, extra, national, world, continental, knockout].filter(Boolean).sort((a,b)=>a.date-b.date)[0] || null;
   }
   function newSeason(s, rng) {
     WorldClubCompetitions?.closeSeason(s);
+    WorldStats?.closeSeason(s);
+    CoachCareer?.closeSeason(s, API, { log: (title, body) => log(s, title, body) });
+    ClubIntelligence?.closeSeason(s, { log: (title, body) => log(s, title, body) });
     World2?.init(s, API);
     World2?.snapshotPerformance(s);
     const orders = Object.fromEntries((s.leagues || []).map((league) => [league.id, table(s, league.id)]));
     Competitions?.closeSeason(s, table);
+    try { Continental?.closeSeason(s, { orders }); } catch (e) { /* infraestrutura continental nunca bloqueia o fim da temporada */ }
     const seasonAwards = Statistics?.closeSeason(s) || [];
     if (s.mode === "player" && Career && seasonAwards.length) {
       const heroAwards=seasonAwards.filter(a=>a?.winner===s.person.name);
@@ -1530,6 +1648,18 @@
     s.worldMatchClubs = {};
     GlobalFootball?.rollSeason(s);
     WorldClubCompetitions?.nextSeason(s);
+    try { Continental?.startSeason(s); } catch (e) { /* idem */ }
+    // UCL annual lifecycle: initialize fixtures immediately on season rollover.
+    // This also covers advancing across 1 January in a single 30-day simulation.
+    if (ChampionsSeason && Continental && WorldClubCompetitions) {
+      const ucl=Continental.edition(s,"ucl");
+      if (ucl?.status==="ready" && !ucl.leagueSchedule &&
+          s.day < Continental.windows(s.season,"ucl")[0]) {
+        ChampionsSeason.prepare(s,Continental,WorldClubCompetitions);
+      }
+    }
+    ClubIntelligence?.startSeason(s);
+    CoachCareer?.startSeason(s, API);
     if (s.mode === "player") Statistics?.ensureHeroStint?.(s, s.clubId);
     s.round = 0;
     s.person.age++;
@@ -1632,7 +1762,143 @@
     Career.addMessage?.(s,{category:"VIDA PESSOAL",sender:"Assessoria",subject:x.title,body:x.body,priority:"NORMAL",eventId:`birthday_result_${s.day}_${choice}`});
     return true;
   }
+  // 34F.32B.4E.3 - Processamento diario da fase de liga.
+  function processChampionsDay(s, rng) {
+    if (!ChampionsSeason || !Continental || !WorldClubCompetitions) return null;
+
+    const ed = Continental.edition(s, "ucl");
+    if (!Array.isArray(ed?.leagueSchedule?.matches)) return null;
+
+    return ChampionsSeason.processDay(
+      s, Continental, WorldClubCompetitions, {
+        otherFixture(match) {
+          const home = GlobalFootball?.clubById?.(s, match.homeId);
+          const away = GlobalFootball?.clubById?.(s, match.awayId);
+          const hs = Number(home?.strength ?? home?.reputation ?? 65);
+          const as = Number(away?.strength ?? away?.reputation ?? 65);
+
+          let hash = 2166136261;
+          const key = match.id + "|" + String(s.season);
+
+          for (const c of key) {
+            hash = Math.imul(hash ^ c.charCodeAt(0), 16777619);
+          }
+
+          const seed = hash >>> 0;
+          const hg = Math.max(0, Math.min(6,
+            Math.round(1.35 + (hs - as) / 28 + ((seed % 5) - 2) / 2)
+          ));
+          const ag = Math.max(0, Math.min(6,
+            Math.round(1.05 + (as - hs) / 28 +
+              ((Math.floor(seed / 17) % 5) - 2) / 2)
+          ));
+
+          return { hg, ag };
+        },
+
+        heroFixture(match) {
+          if (s.mode !== "player" || !s.clubId) return null;
+
+          const hero = worldMatchClub(s, s.clubId);
+          if (!hero || match.day < (hero.joinedDay ?? s.day)) return null;
+
+          const previousScope = worldMatchScope;
+
+          worldMatchScope = {
+            s,
+            ids: [match.homeId, match.awayId],
+            cache: {}
+          };
+
+          try {
+            const m = registerMatch(
+              s, rng, match.homeId, match.awayId,
+              {
+                round: match.round,
+                competitionId: "ucl",
+                competitionName: "UEFA Champions League",
+                stage: "Fase de liga",
+                continentalMatch: true
+              },
+              false
+            );
+
+            m.continentalMatch = true;
+            return { hg: m.hg, ag: m.ag };
+          } finally {
+            worldMatchScope = previousScope;
+          }
+        }
+      }
+    );
+  }
+  // 34F.32B.6 - Knockout UCL persistente, separado da liga nacional.
+  function processChampionsKnockoutDay(s, rng) {
+    const ed=Continental?.edition?.(s,"ucl");
+    if(!ChampionsKnockout||!ed?.leagueSchedule?.matches)return null;
+    const score=(m)=>{
+      const hc=GlobalFootball?.clubById?.(s,m.homeId);
+      const ac=GlobalFootball?.clubById?.(s,m.awayId);
+      const hs=Number(hc?.strength??hc?.reputation??65),as=Number(ac?.strength??ac?.reputation??65);
+      const key=String(m.id)+"|"+String(s.season);
+      let h=2166136261;for(const c of key)h=Math.imul(h^c.charCodeAt(0),16777619);
+      const seed=h>>>0;
+      return {
+        hg:Math.max(0,Math.min(6,Math.round(1.35+(hs-as)/28+((seed%5)-2)/2))),
+        ag:Math.max(0,Math.min(6,Math.round(1.05+(as-hs)/28+((Math.floor(seed/17)%5)-2)/2)))
+      };
+    };
+    return ChampionsKnockout.daily(s,ed,{
+      otherFixture:score,
+      heroFixture(m){
+        const hero=worldMatchClub(s,s.clubId);
+        if(!hero||m.day<(hero.joinedDay??s.day))return null;
+        const before=worldMatchScope;
+        worldMatchScope={s,ids:[m.homeId,m.awayId],cache:{}};
+        try{
+          const names={playoffs:"Playoffs",round16:"Oitavas",quarters:"Quartas",semis:"Semifinais",final:"Final"};
+          const result=registerMatch(s,rng,m.homeId,m.awayId,{
+            round:m.pair+1,competitionId:"ucl",competitionName:"UEFA Champions League",
+            stage:names[m.stage]||m.stage,continentalMatch:true
+          },false);
+          result.continentalMatch=true;
+          return {hg:result.hg,ag:result.ag};
+        }finally{worldMatchScope=before}
+      }
+    });
+  }
   function advance(s, days = 1) {
+    // FC27/UCL: every advance reconciles missing continental editions.
+    // Legacy careers may have skipped the seasonal rollover entirely.
+    if (ChampionsSeason && Continental && WorldClubCompetitions) {
+      // Reconcile either a missing edition OR a registered edition without fixtures.
+      // A legacy fingerprint is an existing historical continental edition.
+      // Never recover a freshly created game that merely skipped its old window.
+      const legacyContinental = s.catalogVersion === "fc27_v1" &&
+        Number(s.season) > 2026 &&
+        Object.values(s.continental?.editions || {}).some(e =>
+          e && Number(e.season) < Number(s.season) && e.comp === "ucl"
+        );
+      Continental.init(s);
+      const ed=Continental.edition(s,"ucl");
+      if (ed?.status==="ready" && !ed.leagueSchedule) {
+        const firstDay=Continental.windows(s.season,"ucl")[0];
+        const base=(Number(s.season)-2026)*365;
+        if(s.day<firstDay) {
+          ChampionsSeason.prepare(s,Continental,WorldClubCompetitions);
+        } else if(legacyContinental && s.day<base+152) {
+          // One-time controlled 8-round rescheduling entirely after today.
+          // Recover only when all eight rounds fit before the knockout.
+          try {
+            ChampionsSeason.prepare(s,Continental,WorldClubCompetitions,{recover:true});
+          } catch(e) {
+            // Prevent corrupt saves / missing team coverage from stopping a career.
+            ed.recoveryError=String(e?.message||e);
+          }
+        }
+      }
+    }
+    if (s.catalogVersion === "fc27_v1") GlobalFootball?.ensureAcademies?.(s);
     Career.init(s);
     Training?.init(s);
     Statistics?.init(s);
@@ -1646,12 +1912,20 @@
       s.day++;
       generateWorldMarket(s, rng);
       WorldLiveMarket?.tick?.(s, rng);
-      WorldLiveMarket?.executeCompleted?.(s);
+      applyMarketBudgets(s, WorldLiveMarket?.executeCompleted?.(s, { canExecute: worldMarketCanExecute })?.executed);
       Career.daily(s);
       birthdayTick(s);
       World2?.daily(s, API);
       WorldClubCompetitions?.daily(s, { heroFixture: (...a) => worldHeroFixture(s, rng, ...a) });
+      processChampionsDay(s, rng);
+      processChampionsKnockoutDay(s, rng);
+      ClubIntelligence?.daily(s, { log: (title, body) => log(s, title, body) });
+      CoachCareer?.daily(s, API, { log: (title, body) => log(s, title, body) });
+      OffField?.daily(s, API, { log: (title, body) => log(s, title, body) });
       NationalTeam?.daily(s, rng, API, log);
+      const pendingBefore = new Set((NationalCallups?.pending?.(s) || []).map((r) => r.id));
+      try { NationalCallups?.daily(s, API, log); } catch (e) { /* convocacao nunca bloqueia o avanco do dia */ }
+      if ((NationalCallups?.pending?.(s) || []).some((r) => !pendingBefore.has(r.id))) days = d + 1; // convocacao NOVA: o avanco multi-dia termina neste dia
       Commercial?.daily?.(s, rng, Career, API);
       s.contract = Math.max(0, s.contract - 1);
       s.offers = s.offers.filter((o) => o.expires >= s.day);
@@ -1730,8 +2004,8 @@
           );
         }
         if (s.mode === "coach" && s.board <= 15) {
-          s.clubId = null;
-          s.board = 50;
+          if (CoachCareer) CoachCareer.dismiss(s, API, "Confiança da diretoria esgotada");
+          else { s.clubId = null; s.board = 50; }
           log(
             s,
             "Demissão",
@@ -1795,8 +2069,13 @@
     return out.sort((a,b)=>a.deadline-b.deadline);
   }
   function expiringAction(s, targetDay) { return pendingActions(s).find(x=>x.deadline<=targetDay) || null; }
+  function callupBlocker(s) {
+    try { return s.mode === "player" ? (NationalCallups?.blocker(s) || null) : null; } catch (e) { return null; }
+  }
   function contractualSimulationBlocker(s) {
     if (s.mode !== "player") return null;
+    const callupStop = callupBlocker(s);
+    if (callupStop) return callupStop;
     const pc = Career.init(s).playerCareer;
     if (pc?.renewalOffer) return { type:"renewal", contractKind:"renewal", page:"proposals", anchor:"renewal-offer", message:"Simulação interrompida: há uma proposta de renovação aguardando sua autorização." };
     const offer = (s.offers || []).find(o => o.expires >= s.day && (!o.onHold || o.expires <= s.day + 1));
@@ -1808,6 +2087,8 @@
     const career = s.mode === "player" ? Career.init(s) : null;
     const pc = career?.playerCareer || null;
     if (options.contractOnly) return contractualSimulationBlocker(s);
+    const callupStop = callupBlocker(s);
+    if (callupStop) return callupStop;
     if (s.decision && !before.decision) return { type:"decision", id:s.decision.id, title:s.decision.title, page:"life", anchor:"current-decision", message:`Simulação interrompida: ${s.decision.title}.` };
     if (s.decision && before.decision) return { type:"pending", id:s.decision.id, title:s.decision.title, page:"life", anchor:"current-decision", message:`Simulação pausada: responda ${s.decision.title}.` };
     if (pc?.renewalOffer && !before.renewalOffer) return { type:"renewal", page:"proposals", anchor:"renewal-offer", message:"Simulação interrompida: chegou uma proposta de renovação." };
@@ -1953,6 +2234,7 @@
     else throw Error("Tipo de simulação inválido.");
     let stop = null;
     const automatic = longMode;
+    if (!automatic) stop = callupBlocker(s);
     if (automatic) s.simulationPlan = { mode,startDay,startSeason,targetDay };
     if (automatic) {
       stop = contractualSimulationBlocker(s);
@@ -2223,6 +2505,12 @@
     Creation,
     World2,
     WorldClubCompetitions,
+    ClubIntelligence,
+    CoachCareer,
+    OffField,
+    WorldStats,
+    Continental,
+    NationalCallups,
     WorldLiveMarket,
     SeasonCompetitionCenter,
     log,

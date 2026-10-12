@@ -13,7 +13,8 @@ function player(seed=31530,personality="balanced"){
 function decision(s,id="family",choices=[["visit","Visitar a família"],["work","Priorizar o trabalho"]]){
   s.decision={id,title:`Decisão ${id}`,body:"Contexto de teste",choices,createdDay:s.day,deadline:s.day+7};
 }
-function effectCount(s,id){return (s.decisionConsequences||[]).filter(x=>x.decisionId===id).length;}
+// day (opcional): conta so a decisao injetada pelo teste; o jogo tambem gera decisoes "family"/"social" naturais em outros dias.
+function effectCount(s,id,day){return (s.decisionConsequences||[]).filter(x=>x.decisionId===id&&(day===undefined||x.day===day)).length;}
 
 test("31.5.3: avanço de +1 dia preserva decisão manual",()=>{
   const s=player();decision(s);D.advance(s,1);
@@ -84,7 +85,7 @@ test("31.5.3: plano pausado e decisões automáticas sobrevivem a save/reload se
   s.offers=[{clubId:"c1",salary:20000,role:"Titular",durationDays:730,expires:s.day+20}];
   D.simulateAdvance(s,"30days");
   const loaded=Save.parse(JSON.stringify(s));D.Career.rejectOffer(loaded,"c1");loaded.careerTransferAvailableDay=99999;D.simulateAdvance(loaded,"30days");
-  assert.equal(loaded.day,target);assert.equal(effectCount(loaded,"social"),1);
+  assert.equal(loaded.day,target);assert.equal(effectCount(loaded,"social",target-30),1);
   const ids=(D.Career.init(loaded).communications.messages||[]).map(x=>x.eventId).filter(Boolean);
   assert.equal(new Set(ids).size,ids.length);
 });
@@ -106,5 +107,5 @@ test("31.5.3: entrevistas são respondidas pelo handler existente",()=>{
 test("31.5.3: decisões funcionam em clube brasileiro e internacional",()=>{
   const local=player(31543,"balanced"),global=player(31544,"balanced");
   D.movePlayerToClub(global,"gf_real_madrid");
-  for(const s of [local,global]){decision(s,"family");const start=s.day,r=D.simulateAdvance(s,"30days");assert.equal(r.completed,true);assert.equal(s.day,start+30);assert.equal(effectCount(s,"family"),1);assert.ok(D.nextCommitment(s)||s.season>2026);}
+  for(const s of [local,global]){decision(s,"family");const start=s.day,r=D.simulateAdvance(s,"30days");assert.equal(r.completed,true);assert.equal(s.day,start+30);assert.equal(effectCount(s,"family",start),1);assert.ok(D.nextCommitment(s)||s.season>2026);}
 });

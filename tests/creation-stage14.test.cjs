@@ -151,7 +151,7 @@ test("Etapa 14: criação clássica (sem config.creation) permanece intacta", ()
   assert.equal(coach.creation, undefined);
 });
 
-test("Etapa 14: assistente na interface percorre os 6 passos, volta sem perder escolhas e cria a carreira", () => {
+test("Etapa 14: assistente na interface percorre os 6 passos, volta sem perder escolhas e cria a carreira", async () => {
   const fs = require("node:fs"), path = require("node:path"), { JSDOM } = require("jsdom");
   const base = path.join(__dirname, "..") + path.sep;
   const dom = new JSDOM(fs.readFileSync(base + "index.html", "utf8"), { runScripts: "outside-only", url: "https://offline-test.invalid" }), w = dom.window;
@@ -159,32 +159,36 @@ test("Etapa 14: assistente na interface percorre os 6 passos, volta sem perder e
   const order = fs.readFileSync(base + "index.html", "utf8").match(/src="(src\/[^"]+\.js)"/g).map((x) => x.slice(5, -1)).filter((f) => !/update\.js|avatar/.test(f));
   for (const f of order) w.eval(fs.readFileSync(base + f, "utf8"));
   const q = (s) => w.document.querySelector(s), click = (s) => { const el = q(s); assert.ok(el, s); el.click(); };
+  // 34F.15: a criação é só FC 27; criar o mundo leva alguns segundos, com carregamento assíncrono.
+  const settle = async () => { await new Promise((r) => setTimeout(r, 120)); for (let i = 0; i < 600 && q("#wiz-busy"); i++) await new Promise((r) => setTimeout(r, 100)); };
+  const go = async (sel) => { click(sel); await settle(); };
   assert.ok(q(".career-hub"), "central de carreiras é a tela inicial");
   click('[data-action="new-player"]');
   assert.ok(q(".wizard"), "nova carreira de jogador abre o assistente");
   assert.equal(w.document.querySelectorAll(".story-card").length, 6);
   click('[data-w-story="regional"]');
-  click("[data-w-next]");
+  await go("[data-w-next]");
   q('[name="name"]').value = "Teste Criador"; q('[name="name"]').dispatchEvent(new w.Event("change", { bubbles: true }));
-  click("[data-w-next]");
+  await go("[data-w-next]");
   click('[data-w-pos="MEI"]'); click('[data-w-pt="pass"][data-d="1"]');
-  click("[data-w-next]");
-  click("[data-w-next]");
+  await go("[data-w-next]");
+  await go("[data-w-next]");
   assert.equal(w.document.querySelectorAll(".offer-card").length >= 2, true);
-  click("[data-w-next]");
+  await go("[data-w-next]");
   assert.ok(!q(".wizard .w-step.on:nth-child(6)"), "não avança sem escolher clube");
-  click("[data-w-back]"); click("[data-w-back]");
+  await go("[data-w-back]"); await go("[data-w-back]");
   assert.equal(q('[data-w-pt="pass"]').parentNode.querySelector("b").textContent, "1", "volta preservando ajuste");
-  click("[data-w-next]"); click("[data-w-next]");
+  await go("[data-w-next]"); await go("[data-w-next]");
   const first = q("[data-w-club]").dataset.wClub; click(`[data-w-club="${first}"]`);
-  click("[data-w-next]");
+  await go("[data-w-next]");
   assert.match(q("#wizard").textContent, /Teste Criador/);
-  click("[data-w-next]");
+  await go("[data-w-next]");
   const slots = w.ProLifeSave.listSlots();
   assert.equal(slots.length, 1, "nova carreira cria um slot independente");
   const saved = w.ProLifeSave.loadSlot(slots[0].id);
   assert.equal(saved.person.name, "Teste Criador");
   assert.equal(saved.creation.status, "started");
+  assert.equal(saved.catalogVersion, "fc27_v1");
   assert.equal(saved.clubId, first);
   assert.equal(saved.person.pos, "MEI");
 });

@@ -517,9 +517,20 @@
     const key = [st.world, st.mode, st.initialSeed, version].join("|");
     if (baseCache.key !== key) {
       const fresh = engine.create({ world: st.world, mode: st.mode, name: "Reconstrucao", age: 22, pos: "ATA", clubId: "c0", ...(version === "fc27_v1" ? { catalogVersion: version } : {}) }, st.initialSeed);
-      baseCache = { key, base: fresh.internationalPlayers };
+      baseCache = { key, base: fresh.internationalPlayers, prepared: null, fp: null };
     }
     return baseCache.base;
+  }
+  // 34F.17: JSON por registro e impressao digital da base, calculados uma vez por base em cache (a base nao e alterada).
+  function basePrepared(base, codec) {
+    if (baseCache.base !== base) return null;
+    if (!baseCache.prepared && typeof codec.prepareBase === "function") baseCache.prepared = codec.prepareBase(base);
+    return baseCache.prepared;
+  }
+  function baseFingerprint(base, codec) {
+    if (baseCache.base !== base) return codec.fingerprint(base);
+    if (baseCache.fp === null || baseCache.fp === undefined) baseCache.fp = codec.fingerprint(base);
+    return baseCache.fp;
   }
 
   // Modo de escrita compacta: "off" (padrao), "onQuota" (so se a gravacao completa falhar) ou "always".
@@ -554,10 +565,20 @@
       // Verificacao antes de gravar: expandir o esparso precisa equivaler a expandir o completo.
       if (JSON.stringify(StatsCompact.expand(JSON.parse(JSON.stringify(stateOut.statistics)))) !== JSON.stringify(StatsCompact.expand(rest.statistics))) throw Error("Verificacao das estatisticas compactas falhou.");
     }
-    const value = { format: "PRO_LIFE_HYBRID", version: sparse ? 2 : 1, ...(sparse ? { statsFormat: SPARSE_STATS } : {}), state: stateOut, delta: codec.delta(base, internationalPlayers), fingerprint: codec.fingerprint(base) };
-    // Verificacao antes de gravar: a reconstrucao precisa ser identica ao estado atual.
-    const back = codec.restore(base, value.delta);
-    if (JSON.stringify(back) !== JSON.stringify(internationalPlayers)) throw Error("Verificacao do save compacto falhou.");
+    const prepared = typeof codec.deltaFast === "function" && typeof codec.verifyFast === "function" ? basePrepared(base, codec) : null;
+    let patch;
+    if (prepared) {
+      // 34F.17: caminho rapido (mesmo envelope e mesma verificacao de ida e volta, sem reserializar a base inteira).
+      const r = codec.deltaFast(prepared, base, internationalPlayers);
+      patch = r.patch;
+      if (!codec.verifyFast(prepared, patch, r.currentJson)) throw Error("Verificacao do save compacto falhou.");
+    } else {
+      patch = codec.delta(base, internationalPlayers);
+      // Verificacao antes de gravar: a reconstrucao precisa ser identica ao estado atual.
+      const back = codec.restore(base, patch);
+      if (JSON.stringify(back) !== JSON.stringify(internationalPlayers)) throw Error("Verificacao do save compacto falhou.");
+    }
+    const value = { format: "PRO_LIFE_HYBRID", version: sparse ? 2 : 1, ...(sparse ? { statsFormat: SPARSE_STATS } : {}), state: stateOut, delta: patch, fingerprint: baseFingerprint(base, codec) };
     return JSON.stringify(value);
   }
 
@@ -599,7 +620,7 @@
 
     const base = baseCatalogFor(value.state);
 
-    if (codec.fingerprint(base) !== value.fingerprint) {
+    if (baseFingerprint(base, codec) !== value.fingerprint) {
       throw Error("Catalogo internacional incompat\u00edvel. Save preservado.");
     }
 
@@ -624,9 +645,10 @@
       state = { ...state, statistics: StatsCompact.expand(st) };
     } else if (value.statsFormat !== undefined) throw Error("Formato de estatisticas inesperado no envelope v1.");
 
+    const prepared = typeof codec.restoreFast === "function" ? basePrepared(base, codec) : null;
     const restored = {
       ...state,
-      internationalPlayers: codec.restore(base, value.delta)
+      internationalPlayers: prepared ? codec.restoreFast(prepared, value.delta) : codec.restore(base, value.delta)
     };
 
     return validate(restored);
@@ -674,13 +696,119 @@
     } catch {}
     return slots;
   }
-  function listSlots() { return migrateLegacy().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)); }
-  function activeId() { migrateLegacy(); return localStorage.getItem(ACTIVE_KEY); }
+  function listSlots() {
+    const ls = migrateLegacy().filter((x) => !idbMem.has(x.id));
+    const idb = [...idbMem.entries()].map(([id, r]) => ({ ...(r.summary || {}), id, updatedAt: (r.summary && r.summary.updatedAt) || r.updatedAt || 0 }));
+    return ls.concat(idb).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  }
+  function activeId() { migrateLegacy(); return localStorage.getItem(ACTIVE_KEY) || memActive; }
+  // 34F.16: define a carreira ativa sem depender da cota do localStorage.
+  function setActive(id) { memActive = id; if (!trySet(ACTIVE_KEY, id)) { try { localStorage.removeItem(ACTIVE_KEY); } catch {} } return true; }
   function loadSlot(id) {
+    if (idbMem.has(id)) {
+      try { const s = decodeHybridSave(JSON.parse(idbMem.get(id).text)); setActive(id); bindStateToSlot(s, id); return s; } catch (e) { noteFailure("decode", e); return null; }
+    }
     try { const data=localStorage.getItem(SLOT_PREFIX+id); if(!data) return null; const s=decodeHybridSave(JSON.parse(data)); trySet(ACTIVE_KEY,id); bindStateToSlot(s,id); return s; } catch { return null; }
   }
-  const trySet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch { return false; } };
+  // 34F.15: motivo da ultima falha de gravacao (diagnostico para a interface; nao altera nenhum dado).
+  let lastFailure = null;
+  const noteFailure = (reason, e) => { lastFailure = { reason, message: String(e && e.message || e || ""), at: Date.now() }; };
+  const isQuota = (e) => !!e && (e.name === "QuotaExceededError" || e.code === 22 || e.code === 1014 || /quota/i.test(String(e.name || "") + String(e.message || "")));
+  const trySet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { noteFailure(isQuota(e) ? "quota" : "storage", e); return false; } };
+  function lastSaveError() { return lastFailure ? { ...lastFailure } : null; }
+  // Caracteres ocupados no localStorage (chave+valor), para orientar o jogador quando o espaco acaba.
+  function storageUsage() {
+    let used = 0, own = 0;
+    try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i), n = (k || "").length + (localStorage.getItem(k) || "").length; used += n; if (k && k.indexOf("prolife") === 0) own += n; } } catch {}
+    let idbChars = 0; for (const r of idbMem.values()) idbChars += (r.text || "").length;
+    return { used, own, approxLimit: 5 * 1024 * 1024, idbSlots: idbMem.size, idbChars };
+  }
   const tryGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+  // ---- 34F.16: IndexedDB para carreiras FC 27 (sem a cota de ~5 MB do localStorage) ----
+  // O cache em memoria (idbMem) guarda o ultimo estado CONFIRMADO no IndexedDB e mantem a API de leitura sincrona.
+  // Saves existentes do localStorage nunca sao movidos, copiados ou apagados.
+  const IDB_NAME = "prolife-saves", IDB_STORE = "slots";
+  const idbMem = new Map(), idbPending = new Map(), idbRunning = new Map(), failListeners = [];
+  let idbBackend = null, idbReady = null, idbOk = false, memActive = null;
+  function makeIdbBackend() {
+    const f = root.indexedDB || (typeof indexedDB !== "undefined" ? indexedDB : null);
+    if (!f) return null;
+    let dbp = null;
+    const open = () => dbp || (dbp = new Promise((res, rej) => {
+      let r; try { r = f.open(IDB_NAME, 1); } catch (e) { rej(e); return; }
+      r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains(IDB_STORE)) r.result.createObjectStore(IDB_STORE, { keyPath: "id" }); };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error || new Error("IndexedDB indisponivel."));
+      r.onblocked = () => rej(new Error("IndexedDB bloqueado por outra aba."));
+    }).catch((e) => { dbp = null; throw e; }));
+    const tx = (mode, fn) => open().then((db) => new Promise((res, rej) => {
+      let t, req; try { t = db.transaction(IDB_STORE, mode); req = fn(t.objectStore(IDB_STORE)); } catch (e) { rej(e); return; }
+      t.oncomplete = () => res(req && req.result);
+      t.onerror = () => rej(t.error || (req && req.error) || new Error("Falha no IndexedDB."));
+      t.onabort = () => rej(t.error || new Error("Transacao do IndexedDB abortada."));
+    }));
+    return { getAll: () => tx("readonly", (st) => st.getAll()), put: (rec) => tx("readwrite", (st) => st.put(rec)), del: (id) => tx("readwrite", (st) => st.delete(id)) };
+  }
+  // Retorna null quando nao ha IndexedDB (comportamento anterior, 100% localStorage) ou uma Promise.
+  function ready() {
+    if (idbReady) return idbReady;
+    if (!idbBackend) idbBackend = makeIdbBackend();
+    if (!idbBackend) return null;
+    try { if (root.navigator && root.navigator.storage && root.navigator.storage.persist) root.navigator.storage.persist().catch(() => {}); } catch {}
+    idbReady = Promise.resolve().then(() => idbBackend.getAll()).then((recs) => {
+      for (const r of recs || []) if (r && typeof r.id === "string" && typeof r.text === "string") idbMem.set(r.id, { text: r.text, summary: r.summary, updatedAt: r.updatedAt });
+      idbOk = true; return { ok: true, count: idbMem.size };
+    }).catch((e) => { idbOk = false; noteFailure("idb", e); return { ok: false, error: String(e && e.message || e) }; });
+    return idbReady;
+  }
+  function useIdbBackend(b) { idbBackend = b || null; idbReady = null; idbOk = false; idbMem.clear(); idbPending.clear(); idbRunning.clear(); memActive = null; }
+  function onSaveFailure(fn) { if (typeof fn === "function") failListeners.push(fn); }
+  function idbActive() { return idbOk; }
+  // Grava (put atomico por slot); mais recente vence; em falha o registro anterior do IndexedDB permanece como esta.
+  function idbWrite(id, rec) {
+    return new Promise((resolve) => {
+      const waiting = idbPending.get(id);
+      if (waiting) { waiting.rec = rec; waiting.waiters.push(resolve); return; }
+      const p = { rec, waiters: [resolve] };
+      idbPending.set(id, p);
+      const prev = idbRunning.get(id) || Promise.resolve();
+      const run = prev.then(() => {
+        if (idbPending.get(id) === p) idbPending.delete(id);
+        return idbBackend.put({ id, ...p.rec }).then(() => { idbMem.set(id, p.rec); p.waiters.forEach((w) => w(true)); }, (e) => {
+          noteFailure(isQuota(e) ? "quota" : "idb", e);
+          for (const fn of failListeners) { try { fn(lastSaveError()); } catch {} }
+          p.waiters.forEach((w) => w(false));
+        });
+      });
+      idbRunning.set(id, run);
+      run.then(() => { if (idbRunning.get(id) === run) idbRunning.delete(id); });
+    });
+  }
+  function idbFlush() { return Promise.all([...idbRunning.values()]).then(() => (idbPending.size || idbRunning.size ? idbFlush() : true)); }
+  function newSlotId() { return "career_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7); }
+  function idbRecord(id, s, label) {
+    const text = encodeHybridSave(s, { sparseStats: true });
+    if (!text) throw Error("Nao foi possivel gerar uma gravacao valida.");
+    const now = Date.now();
+    return { text, updatedAt: now, summary: { ...slotSummary(id, s, now), id, catalogVersion: s.catalogVersion, ...(label ? { label } : {}) } };
+  }
+  // Nova carreira FC 27 -> IndexedDB (nada e escrito no localStorage alem do ponteiro da carreira ativa). Demais -> caminho anterior.
+  function saveAsNewAsync(s) {
+    if (!(idbOk && s && s.catalogVersion === "fc27_v1")) return Promise.resolve(saveAsNew(s));
+    lastFailure = null;
+    let id, rec;
+    try { validate(s); id = newSlotId(); rec = idbRecord(id, s); } catch (e) { noteFailure("validate", e); return Promise.resolve(null); }
+    return idbWrite(id, rec).then((ok) => { if (!ok) return null; setActive(id); bindStateToSlot(s, id); return id; });
+  }
+  function saveIdb(id, s) {
+    validate(s);
+    const prev = idbMem.get(id);
+    idbWrite(id, idbRecord(id, s, prev && prev.summary && prev.summary.label));
+    return true;
+  }
+  function slotCatalog(id) { const r = idbMem.get(id); return r ? (r.summary && r.summary.catalogVersion) || "fc27_v1" : null; }
+  function storageMode() { return idbOk ? "indexeddb" : "localStorage"; }
+
   // Grava o slot e o indice sem apagar nada antes de confirmar; em falha restaura o estado anterior.
   function commitSlot(id, s, previousText) {
     const mode = compactWriteMode();
@@ -696,19 +824,21 @@
       let text; try { text = make(); } catch { text = null; }
       if (text && trySet(SLOT_PREFIX + id, text)) { written = true; break; }
     }
-    if (!written) return false;
+    if (!written) { if (!lastFailure || lastFailure.reason !== "quota") noteFailure("encode", "Nao foi possivel gerar uma gravacao valida."); return false; }
     try {
       const slots = readSlots(), i = slots.findIndex((x) => x.id === id), summary = slotSummary(id, s, Date.now());
       if (i >= 0) slots[i] = { ...slots[i], ...summary, label: slots[i].label }; else slots.push(summary);
       writeSlots(slots);
       return true;
-    } catch {
+    } catch (e) {
+      noteFailure(isQuota(e) ? "quota" : "storage", e);
       if (previousText === null) { try { localStorage.removeItem(SLOT_PREFIX + id); } catch {} } else trySet(SLOT_PREFIX + id, previousText);
       if (slotsBefore === null) { try { localStorage.removeItem(SLOTS_KEY); } catch {} } else trySet(SLOTS_KEY, slotsBefore);
       return false;
     }
   }
   function saveAsNew(s) {
+    lastFailure = null;
     try {
       validate(s);
       const id = "career_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
@@ -721,7 +851,7 @@
       }
       bindStateToSlot(s, id);
       return id;
-    } catch { return null; }
+    } catch (e) { noteFailure("validate", e); return null; }
   }
   // Identidade: um autosave so substitui o slot se for a mesma carreira.
   function sameCareer(prev, s) {
@@ -737,12 +867,13 @@
       let id = activeId();
       if (!id) return !!saveAsNew(s);
       if (stateSlotId(s) !== id) return false;
+      if (idbMem.has(id)) return saveIdb(id, s);
       const existing = localStorage.getItem(SLOT_PREFIX + id);
       if (existing === null) return false;
       try {
         const previous = JSON.parse(existing), fmt = detectSaveFormat(previous);
         if (fmt === "legacy") { validate(previous); if (!sameCareer(previous, s)) return false; }
-        else if (fmt === "compact") { if (!previous.state || !sameCareer(previous.state, s)) return false; if (root.ProLifeCompactSave.fingerprint(baseCatalogFor(previous.state)) !== previous.fingerprint) return false; if (previous.version === 2 ? previous.statsFormat !== SPARSE_STATS : previous.statsFormat !== undefined) return false; }
+        else if (fmt === "compact") { if (!previous.state || !sameCareer(previous.state, s)) return false; if (baseFingerprint(baseCatalogFor(previous.state), root.ProLifeCompactSave) !== previous.fingerprint) return false; if (previous.version === 2 ? previous.statsFormat !== SPARSE_STATS : previous.statsFormat !== undefined) return false; }
         else return false;
       } catch {
         return false;
@@ -752,6 +883,7 @@
   }
   // Diagnostico sem alterar nada: o slot abre com este codigo?
   function slotStatus(id) {
+    if (idbMem.has(id)) { try { decodeHybridSave(JSON.parse(idbMem.get(id).text)); return { ok: true, format: "indexeddb" }; } catch (e) { return { ok: false, reason: String(e && e.message || e) }; } }
     const data = tryGet(SLOT_PREFIX + id);
     if (data === null) return { ok: false, reason: "ausente" };
     try { const v = JSON.parse(data), fmt = detectSaveFormat(v); decodeHybridSave(v); return { ok: true, format: fmt }; }
@@ -763,16 +895,30 @@
     return null;
   }
   function removeSlot(id) {
+    if (idbMem.has(id) || idbPending.has(id) || idbRunning.has(id)) {
+      idbMem.delete(id); idbPending.delete(id);
+      const prev = idbRunning.get(id) || Promise.resolve();
+      const run = prev.then(() => idbBackend.del(id)).catch((e) => { noteFailure("idb", e); });
+      idbRunning.set(id, run); run.then(() => { if (idbRunning.get(id) === run) idbRunning.delete(id); });
+      if (activeId() === id) { memActive = null; try { localStorage.removeItem(ACTIVE_KEY); } catch {} }
+      return true;
+    }
     const slots=readSlots().filter(x=>x.id!==id); writeSlots(slots); localStorage.removeItem(SLOT_PREFIX+id);
     if(localStorage.getItem(ACTIVE_KEY)===id) localStorage.removeItem(ACTIVE_KEY);
     return true;
   }
   function renameSlot(id,name) {
+    if (idbMem.has(id)) {
+      const r = idbMem.get(id), label = String(name||"").trim().slice(0,60);
+      idbWrite(id, { ...r, summary: { ...r.summary, label } });
+      idbMem.set(id, { ...r, summary: { ...r.summary, label } });
+      return true;
+    }
     const slots=readSlots(), x=slots.find(s=>s.id===id); if(!x) return false;
     x.label=String(name||"").trim().slice(0,60); writeSlots(slots); return true;
   }
-  function clearActive() { localStorage.removeItem(ACTIVE_KEY); }
-  root.ProLifeSave = { parse, validate, save, load, saveAsNew, listSlots, loadSlot, removeSlot, renameSlot, activeId, clearActive, bindStateToSlot, stateSlotId, slotStatus, encodeHybridSave, decodeHybridSave, detectSaveFormat, setCompactWriteMode, compactWriteMode, KEY, SLOTS_KEY, ACTIVE_KEY };
+  function clearActive() { memActive = null; localStorage.removeItem(ACTIVE_KEY); }
+  root.ProLifeSave = { ready, useIdbBackend, onSaveFailure, idbActive, idbFlush, saveAsNewAsync, slotCatalog, storageMode, lastSaveError, storageUsage, parse, validate, save, load, saveAsNew, listSlots, loadSlot, removeSlot, renameSlot, activeId, clearActive, bindStateToSlot, stateSlotId, slotStatus, encodeHybridSave, decodeHybridSave, detectSaveFormat, setCompactWriteMode, compactWriteMode, KEY, SLOTS_KEY, ACTIVE_KEY };
   if (typeof module !== "undefined" && module.exports)
     module.exports = root.ProLifeSave;
 })(typeof globalThis !== "undefined" ? globalThis : this);

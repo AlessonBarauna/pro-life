@@ -337,6 +337,14 @@
         continue;
       }
 
+      if(typeof options.canExecute==="function"){
+        const reason=options.canExecute(s,deal);
+        if(reason){
+          cancelExecution(market,deal,day,String(reason),result.cancelled);
+          continue;
+        }
+      }
+
       const transferred=GF?.transferPlayer?.(s,deal.playerId,deal.toClubId);
       if(!transferred||transferred.id!==deal.playerId){
         cancelExecution(market,deal,day,"transfer-failed",result.cancelled);

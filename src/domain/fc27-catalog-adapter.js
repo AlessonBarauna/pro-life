@@ -1,4 +1,5 @@
 ﻿"use strict";
+(function () {
 
 const fs = typeof require === "function" ? require("fs") : null;
 
@@ -246,3 +247,4 @@ if (typeof globalThis !== "undefined")
 
 if (typeof module !== "undefined" && module.exports)
   module.exports = API;
+})();

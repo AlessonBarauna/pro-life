@@ -11,6 +11,7 @@
     );
 
   const VERSION=1;
+  const worldStats=()=> root.ProLifeWorldStats || (typeof require==="function" ? require("./world-stats.js") : null);
   const FIRST_MATCH_DAY=10;
   const LAST_MATCH_DAY=340;
   const HISTORY_LIMIT=400;
@@ -394,6 +395,47 @@
     );
   }
 
+  // 34F.21: a forca dos clubes da IA acompanha o elenco atual (mesma formula da criacao do catalogo FC 27: media dos 16 melhores,
+  // limitada a 30..99). No inicio da carreira o resultado e identico ao valor original; depois muda com transferencias,
+  // aposentadorias e evolucao dos atletas. Somente mundo FC 27; demais mundos mantem a forca original.
+  function refreshStrengths(s){
+    if(s?.catalogVersion!=="fc27_v1")
+      return 0;
+    const byClub=new Map();
+    for(const player of s.internationalPlayers||[]){
+      if(!player || !player.clubId || player.status==="retired" || player.active===false)
+        continue;
+      const value=Number(player.ovr??player.overall);
+      if(!Number.isFinite(value))
+        continue;
+      let list=byClub.get(player.clubId);
+      if(!list){
+        list=[];
+        byClub.set(player.clubId,list);
+      }
+      list.push(value);
+    }
+    let changed=0;
+    for(const club of s.globalFootball?.clubs||[]){
+      const list=club && byClub.get(club.id);
+      // so clubes do catalogo, que ja tinham forca definida (clubes "externos" criados por jogadores soltos ficam como estao)
+      if(!list || club.generated===true || !Number.isFinite(Number(club.strength)))
+        continue;
+      list.sort((a,b)=>b-a);
+      const top=list.slice(0,16);
+      const next=clamp(
+        Math.round(top.reduce((sum,v)=>sum+v,0)/top.length),
+        30,
+        99
+      );
+      if(club.strength!==next){
+        club.strength=next;
+        changed++;
+      }
+    }
+    return changed;
+  }
+
   function strength(club){
 
     if(!club)
@@ -406,7 +448,7 @@
 
     if(Number.isFinite(direct))
       return clamp(
-        direct,
+        direct+(Number(club.coachBonus)||0),
         35,
         100
       );
@@ -426,6 +468,13 @@
     return 60;
   }
 
+  // 34F.21: sensibilidade a diferenca de forca recalibrada (era 0.032/0.026: um favorito com 14+ pontos de vantagem vencia so ~51%).
+  // Medido: gols por jogo, mandante/empate/visitante e demais proporcoes ficam iguais; favorito com 8+ pontos vence ~55% e com 14+ ~65%.
+  // 34F.23: estilo do treinador [gols marcados, gols sofridos]; sem treinador definido o fator e 1.
+  const STYLE_FACTOR={ofensivo:[1.06,1.06],defensivo:[0.94,0.93],posse:[1.02,0.97],contra_ataque:[0.98,1]};
+  const styleFactor=club=>STYLE_FACTOR[club?.coachStyle]||[1,1];
+  const HOME_SLOPE=0.045;
+  const AWAY_SLOPE=0.038;
   function resultFor(
     season,
     leagueId,
@@ -454,7 +503,7 @@
     const homeLambda=
       clamp(
         1.35+
-        diff*0.032,
+        diff*HOME_SLOPE,
         0.25,
         3.6
       );
@@ -462,11 +511,12 @@
     const awayLambda=
       clamp(
         1.08-
-        diff*0.026,
+        diff*AWAY_SLOPE,
         0.20,
         3.2
       );
 
+    const hf=styleFactor(hc),af=styleFactor(ac);
     const rnd=
       random(
         hash(
@@ -487,7 +537,7 @@
     return [
       clamp(
         poisson(
-          homeLambda,
+          clamp(homeLambda*hf[0]*af[1],0.25,3.6),
           rnd
         ),
         0,
@@ -495,7 +545,7 @@
       ),
       clamp(
         poisson(
-          awayLambda,
+          clamp(awayLambda*af[0]*hf[1],0.20,3.2),
           rnd
         ),
         0,
@@ -597,6 +647,8 @@
         hg
       );
 
+      worldStats()?.record?.(s,leagueId,home,away,hg,ag,roundIndex,pairIndex,Array.isArray(official));
+
       state.scores.push([
         roundIndex,
         pairIndex,
@@ -697,6 +749,7 @@
 
     activeHooks=
       hooks||null;
+    let refreshed=false;
 
     try{
       for(
@@ -712,14 +765,20 @@
         if(state.status!=="active")
           continue;
 
+        const due=
+          dueRoundCount(
+            state,
+            s.day
+          );
+        if(!refreshed && due>state.round){
+          refreshStrengths(s);
+          refreshed=true;
+        }
         processUntil(
           s,
           leagueId,
           state,
-          dueRoundCount(
-            state,
-            s.day
-          ),
+          due,
           catalog
         );
       }
@@ -1021,6 +1080,8 @@
     const w=
       ensureSeason(s);
 
+    refreshStrengths(s);
+
     const catalog=
       clubCatalog(s);
 
@@ -1170,6 +1231,54 @@
       }));
   }
 
+  // 34F.18: cobertura de competicoes por liga. Somente leitura (nao grava no save). Nenhum clube e inventado:
+  // ligas com menos de MIN_LEAGUE_CLUBS clubes no catalogo ficam "somente catalogo" e dizem isso explicitamente.
+  const MIN_LEAGUE_CLUBS=10;
+  const REGIONAL_POOLS=new Set(["gf_fc27_conmebol_libertadores","gf_fc27_conmebol_sudamericana"]);
+  const OVERSIZED_LEAGUE=24;
+
+  function coverage(s){
+    const groups=clubGroups(s);
+
+    return (s.globalFootball?.leagues||[])
+      .filter(league=>league && league.active!==false)
+      .map(league=>{
+        const count=(groups.get(league.id)||[]).length;
+        const eligible=league.competitionEligible!==false;
+        const row={
+          leagueId:league.id,
+          name:league.name||league.id,
+          country:league.country||null,
+          clubCount:count,
+          status:"playable",
+          format:"double-round-robin",
+          rounds:0,
+          note:""
+        };
+
+        if(!eligible || count<MIN_LEAGUE_CLUBS){
+          row.status="catalog_only";
+          row.format=null;
+          row.note=!eligible
+            ? "Competicao desativada para esta carreira."
+            : `Somente catalogo: o FC 27 traz apenas ${count} clube${count===1?"":"s"} desta liga (minimo ${MIN_LEAGUE_CLUBS} para um campeonato). Nenhum clube ficticio foi criado; os jogadores continuam no mercado.`;
+          return row;
+        }
+
+        row.rounds=2*(count%2?count:count-1);
+
+        if(REGIONAL_POOLS.has(league.id)){
+          row.status="regional_pool";
+          row.note="Grupo regional de clubes de varios paises (nao e uma liga nacional); disputado em pontos corridos.";
+        }else if(count>=OVERSIZED_LEAGUE+6){
+          row.note=`Formato simplificado: tabela unica com ${count} clubes (sem conferencias ou fase final).`;
+        }
+
+        return row;
+      })
+      .sort((a,b)=>String(a.name).localeCompare(String(b.name),"pt-BR"));
+  }
+
   function integrity(s){
 
     const w=
@@ -1279,6 +1388,8 @@
     closeSeason,
     nextSeason,
     eligibleLeagues,
+    coverage,
+    refreshStrengths,
     standings,
     results,
     calendar,

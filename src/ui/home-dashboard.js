@@ -49,7 +49,7 @@
     const table = D.table(s), index = table.findIndex((x)=>x.id===c.id);
     if (index < 0) return { rows: [], position: 0, league: "" };
     const start = Math.max(0, Math.min(index - 2, table.length - 5));
-    return { rows: table.slice(start, start + 5).map((row,i)=>({...row, position:start+i+1})), position:index+1, league:s.leagues.find((l)=>l.id===c.leagueId)?.name || c.leagueId };
+    return { rows: table.slice(start, start + 5).map((row,i)=>({...row, position:start+i+1})), position:index+1, league:s.leagues.find((l)=>l.id===c.leagueId)?.name || (root.ProLifeNames?root.ProLifeNames.league(s,c.leagueId):c.leagueId) };
   }
   function nextInfo(s, D) {
     const fixture = D.nextCommitment(s); if (!fixture) return null;

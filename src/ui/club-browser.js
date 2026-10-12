@@ -1394,6 +1394,7 @@
     collect,
     formationFor,
     render,
+    open(clubId){ui.country="ALL";ui.league="ALL";ui.query="";ui.selectedClubId=clubId;},
     reset(){
       ui.country="ALL";
       ui.league="ALL";

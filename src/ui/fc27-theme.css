@@ -1,0 +1,385 @@
+/* =====================================================================
+   PRO LIFE · Tema "Série 27" (camada de redesign; só UI)
+   Carregado DEPOIS de style.css. Redefine tokens e re-estiliza a Home
+   (Central), o Elenco/Escalação e a Criação de carreira.
+   Estrutura inspirada no hub de carreira do FC 27 (hub, gestão de elenco,
+   moral/condição/forma). Identidade, marca e assets são próprios.
+
+   Linguagem visual:
+   - tinta quase preta com tom azul-petróleo, UM único acento (lime sinal)
+   - geometria tática: cantos cortados, abas inclinadas, hachura diagonal
+   - tipografia condensada de placar (Bahnschrift no Windows) + números tabulares
+   - GER (overall) com cor por faixa: bronze, prata, ouro, elite
+   ===================================================================== */
+
+:root{
+  --pl-bg:#05080d;
+  --pl-surface:#0b1119;
+  --pl-surface-2:#101924;
+  --pl-surface-3:#16222f;
+  --pl-line:rgba(180,205,230,.085);
+  --pl-line-strong:rgba(180,205,230,.2);
+  --pl-text:#eef3f8;
+  --pl-text-2:#b5c2cf;
+  --pl-text-3:#7f8f9f;
+
+  /* acento único */
+  --fc-lime:#c9f23a;
+  --fc-lime-soft:rgba(201,242,58,.1);
+  --fc-lime-line:rgba(201,242,58,.38);
+  --fc-lime-ink:#0b1004;
+  --pl-cyan:var(--fc-lime);
+  --pl-cyan-soft:var(--fc-lime-soft);
+  --pl-cyan-line:var(--fc-lime-line);
+  --game-cyan:var(--fc-lime);
+  --game-glow:rgba(201,242,58,.2);
+  --pl-gold:var(--fc-lime);
+  --pl-gold-soft:var(--fc-lime-soft);
+  --pl-focus:0 0 0 3px rgba(201,242,58,.42);
+
+  /* faixas de GER */
+  --tier-bronze:#d49a62;
+  --tier-silver:#c4cfda;
+  --tier-gold:#f1c75b;
+  --tier-elite:#7ff0ff;
+
+  --fc-display:"Bahnschrift","Segoe UI Variable Display","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --fc-body:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+  --fc-cut:14px;
+  --pl-r-sm:3px;--pl-r-md:4px;--pl-r-lg:4px;
+}
+
+body{
+  background:
+    repeating-linear-gradient(115deg,rgba(255,255,255,.012) 0 2px,transparent 2px 22px),
+    radial-gradient(1100px 520px at 12% -8%,rgba(201,242,58,.07),transparent 60%),
+    radial-gradient(900px 520px at 100% 0,rgba(60,120,170,.13),transparent 60%),
+    var(--pl-bg);
+  background-attachment:fixed;
+  font-family:var(--fc-body);
+  font-variant-numeric:tabular-nums;
+}
+
+/* ---------- tipografia ---------- */
+h1,h2,.brand,.central-v3-rating,.central-v3-team strong,.mega-rating,.player-ovr strong{
+  font-family:var(--fc-display);
+}
+.game-shell .topbar h1,.wizard h1{
+  font-size:44px;font-weight:700;font-style:italic;text-transform:uppercase;
+  letter-spacing:-.5px;line-height:1;margin:6px 0 4px;
+}
+.game-shell .topbar .tag,.tag{
+  font-family:var(--fc-display);letter-spacing:2px;color:var(--fc-lime);font-weight:600;
+}
+.game-shell h2{
+  font-family:var(--fc-display);font-size:15px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;
+}
+.game-shell h2::before{content:"";display:inline-block;width:18px;height:3px;margin-right:10px;vertical-align:middle;background:var(--fc-lime);transform:skewX(-30deg)}
+
+/* ---------- navegação ---------- */
+.game-nav{
+  height:70px;background:rgba(5,8,13,.92);border-bottom:1px solid var(--pl-line-strong);
+  box-shadow:0 1px 0 rgba(201,242,58,.12);
+}
+.game-nav .brand{
+  font-size:28px;font-style:italic;font-weight:800;letter-spacing:-.5px;color:#fff;
+  padding-right:22px;margin-right:2px;border-right:1px solid var(--pl-line-strong);
+}
+.game-nav .brand span{color:var(--fc-lime);margin-left:4px}
+.game-nav nav button{
+  font-family:var(--fc-display);font-size:13px;font-weight:600;letter-spacing:1.3px;text-transform:uppercase;
+  border-radius:0;height:38px;padding:0 18px;color:var(--pl-text-3);
+  transform:skewX(-14deg);border:0;background:transparent;
+}
+.game-nav nav button>*{transform:skewX(14deg)}
+.game-nav nav button:hover{background:rgba(255,255,255,.05);color:#fff;border:0}
+.game-nav nav button.active{
+  background:var(--fc-lime);color:var(--fc-lime-ink);border:0;box-shadow:none;
+}
+.game-nav nav button.active:after{display:none}
+.club-chip{
+  border:0;border-left:3px solid var(--fc-lime);border-radius:0;background:rgba(255,255,255,.035);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);
+}
+.club-chip small{color:var(--fc-lime);font-family:var(--fc-display);letter-spacing:1.6px}
+.club-chip b{font-family:var(--fc-display);font-size:16px;letter-spacing:.3px}
+
+.game-subnav{top:70px;background:rgba(8,12,18,.97);border-bottom:1px solid var(--pl-line)}
+.game-subnav button{
+  border-radius:0;font-family:var(--fc-display);letter-spacing:1px;text-transform:uppercase;font-size:12px;
+  background:transparent;border:0;border-bottom:2px solid transparent;color:var(--pl-text-3);padding:9px 14px;
+}
+.game-subnav button:hover{color:#fff;background:rgba(255,255,255,.04)}
+.game-subnav button.active{background:transparent;color:var(--fc-lime);border-bottom-color:var(--fc-lime)}
+
+/* ---------- botões ---------- */
+:where(.game-shell,.wizard) button{
+  border-radius:0;font-family:var(--fc-display);font-weight:600;letter-spacing:.8px;text-transform:uppercase;font-size:13px;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));
+  border:0;background:var(--pl-surface-3);color:var(--pl-text);
+  transition:background .14s,transform .14s,color .14s;
+}
+:where(.game-shell,.wizard) button:hover:not(:disabled){background:#22364a;transform:translateY(-1px)}
+:where(.game-shell,.wizard) button:active:not(:disabled){transform:translateY(1px) scale(.985)}
+.game-shell button.primary,.wizard button.primary{
+  background:var(--fc-lime);color:var(--fc-lime-ink);box-shadow:none;border:0;font-weight:800;
+}
+.game-shell button.primary:hover:not(:disabled),.wizard button.primary:hover:not(:disabled){background:#dbff55;transform:translateY(-1px)}
+.game-nav nav button,.game-subnav button,.sx-bell-btn{clip-path:none}
+
+/* ---------- cartões ---------- */
+.game-shell .card,.wizard .card,.pl-card,.central-v3-tile{
+  background:linear-gradient(170deg,var(--pl-surface-2),var(--pl-surface));
+  border:1px solid var(--pl-line);border-radius:0;box-shadow:none;
+  clip-path:polygon(0 0,calc(100% - var(--fc-cut)) 0,100% var(--fc-cut),100% 100%,0 100%);
+  position:relative;
+}
+.game-shell .card::before,.central-v3-tile::before{
+  content:"";position:absolute;left:0;top:0;width:3px;height:34px;background:var(--fc-lime);
+}
+
+/* =====================================================================
+   HOME · Central (hub da carreira)
+   ===================================================================== */
+/* o título "Central" aparecia duas vezes: mantém o da barra de ações */
+.central-v3-header{display:none}
+
+.career-central-v3{max-width:1560px}
+.central-v3-hero{
+  border:1px solid var(--pl-line-strong);border-radius:0;overflow:hidden;
+  background:
+    linear-gradient(100deg,rgba(201,242,58,.07) 0 38%,transparent 38%),
+    repeating-linear-gradient(115deg,rgba(255,255,255,.02) 0 2px,transparent 2px 20px),
+    linear-gradient(160deg,#0d1621,#070b11);
+  clip-path:polygon(0 0,calc(100% - 28px) 0,100% 28px,100% 100%,0 100%);
+  box-shadow:none;
+}
+.central-v3-match{background:transparent}
+.central-v3-eyebrow{font-family:var(--fc-display);letter-spacing:2.4px;color:var(--fc-lime);font-weight:700}
+.central-v3-competition b{font-family:var(--fc-display);font-size:18px;letter-spacing:.8px;text-transform:uppercase;color:#fff}
+.central-v3-competition mark{
+  background:var(--fc-lime);color:var(--fc-lime-ink);border:0;border-radius:0;font-family:var(--fc-display);
+  font-weight:800;letter-spacing:1.2px;padding:5px 10px;transform:skewX(-14deg);
+}
+.central-v3-team strong{
+  font-size:clamp(26px,2.7vw,40px);font-weight:700;font-style:italic;text-transform:uppercase;letter-spacing:-.5px;line-height:.95;
+}
+.central-v3-team i{
+  border-radius:0;background:var(--pl-surface-3);border:1px solid var(--pl-line-strong);color:#fff;
+  font-family:var(--fc-display);font-style:italic;font-weight:800;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
+}
+.central-v3-matchup em{font-family:var(--fc-display);font-size:34px;color:var(--fc-lime);font-style:italic;font-weight:800}
+.central-v3-matchup em small{color:var(--pl-text-3);letter-spacing:1.6px}
+.central-v3-match-meta span,.central-v3-status-row span{
+  border-radius:0;background:rgba(255,255,255,.035);border:0;border-left:2px solid var(--pl-line-strong);
+}
+.central-v3-match-meta small,.central-v3-status-row small{font-family:var(--fc-display);letter-spacing:1.4px;color:var(--pl-text-3)}
+.central-v3-match-meta b{font-family:var(--fc-display);letter-spacing:.3px}
+.central-v3-lineup{color:var(--fc-lime);background:transparent;clip-path:none;padding-left:0;text-transform:none;letter-spacing:.2px}
+
+/* cartão do jogador (estilo carta: GER grande + faixa de cor) */
+.central-v3-player{
+  --tier:var(--tier-silver);
+  position:relative;
+  background:
+    linear-gradient(180deg,color-mix(in srgb,var(--tier) 16%,transparent),transparent 42%),
+    linear-gradient(160deg,#101a26,#080d14);
+  border-left:1px solid var(--pl-line-strong);
+}
+.central-v3-player::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--tier)}
+.central-v3-player[data-tier="bronze"]{--tier:var(--tier-bronze)}
+.central-v3-player[data-tier="silver"]{--tier:var(--tier-silver)}
+.central-v3-player[data-tier="gold"]{--tier:var(--tier-gold)}
+.central-v3-player[data-tier="elite"]{--tier:var(--tier-elite)}
+.central-v3-avatar{border-radius:0;background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--tier) 22%,#0c141d),#070b11 70%);border:1px solid var(--pl-line)}
+.central-v3-rating{
+  color:var(--tier);font-size:84px;font-weight:700;font-style:italic;line-height:.85;letter-spacing:-2px;
+  text-shadow:0 0 28px color-mix(in srgb,var(--tier) 35%,transparent);
+}
+.central-v3-rating small{font-family:var(--fc-display);font-size:11px;letter-spacing:2.4px;font-style:normal;color:var(--pl-text-2);text-shadow:none}
+.central-v3-position{
+  background:var(--tier);color:#0a0d12;border:0;border-radius:0;font-family:var(--fc-display);font-weight:800;letter-spacing:1.2px;
+  transform:skewX(-14deg);padding:3px 10px;
+}
+.central-v3-player-id h2{font-style:italic;font-size:22px;letter-spacing:.4px}
+.central-v3-player-id h2::before{display:none}
+.central-v3-player-state span,.central-v3-player-stats span{border-radius:0;background:rgba(255,255,255,.035);border:0}
+.central-v3-player-state span i{background:var(--fc-lime)}
+.central-v3-player-state b{font-family:var(--fc-display);font-size:22px;color:#fff}
+.central-v3-player-stats b{font-family:var(--fc-display)}
+.central-v3-profile-link{background:transparent;color:var(--fc-lime);clip-path:none;padding-left:0;text-transform:none}
+
+/* tabelas, forma e tarefas */
+.central-v3-tile{padding:22px}
+.central-v3-tile-head h2{margin:0}
+.central-v3-standing{border-radius:0}
+.central-v3-standing.me{
+  background:linear-gradient(90deg,var(--fc-lime-soft),transparent);border-left:3px solid var(--fc-lime);
+}
+.central-v3-task{border-radius:0;border:0;border-left:2px solid var(--pl-line-strong);background:rgba(255,255,255,.03)}
+.central-v3-task small{font-family:var(--fc-display);letter-spacing:1.6px;color:var(--fc-lime)}
+.central-v3-context{border-radius:0;border:1px solid var(--pl-line);background:rgba(255,255,255,.025)}
+.central-v3-action-main{padding:14px 26px;font-size:15px}
+
+/* =====================================================================
+   ELENCO · Escalação do próximo jogo (gestão de equipe)
+   ===================================================================== */
+.fc-career-lineup .fc-match-header,.fc-manager-panel,.fc-player-situation{border-radius:0}
+.fc-selection-badge,.pill{
+  border-radius:0;font-family:var(--fc-display);letter-spacing:1.2px;text-transform:uppercase;font-weight:700;
+  background:var(--fc-lime-soft);color:var(--fc-lime);border:1px solid var(--fc-lime-line);transform:skewX(-10deg);
+}
+.fc-manager-bar{border-radius:0;height:6px;background:rgba(255,255,255,.07)}
+.fc-manager-bar>*,.fc-manager-bar i,.fc-manager-bar span{background:var(--fc-lime);border-radius:0}
+.central-kpis>*{border-radius:0;border:0;border-left:2px solid var(--pl-line-strong);background:rgba(255,255,255,.03)}
+.central-kpis small{font-family:var(--fc-display);letter-spacing:1.6px}
+.central-kpis b,.central-kpis strong{font-family:var(--fc-display);font-size:30px;font-style:italic}
+
+.fc-pitch-card{padding:0;overflow:hidden}
+.fc-tactical-board{
+  background:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 8.33%,transparent 8.33% 16.66%),
+    linear-gradient(180deg,#0e2a1d,#0a2016 60%,#07170f);
+  border:1px solid rgba(201,242,58,.18);border-radius:0;
+}
+.fc-pitch-lines,.fc-pitch-lines *{border-color:rgba(255,255,255,.2)!important}
+.fc-pitch-player{font-family:var(--fc-display);font-weight:700}
+.fc-shirt{border-radius:0;clip-path:polygon(18% 0,82% 0,100% 22%,86% 36%,86% 100%,14% 100%,14% 36%,0 22%);background:var(--pl-surface-3);border:0;color:#fff}
+.fc-pitch-player.vice .fc-shirt,.fc-pitch-player.captain .fc-shirt{background:var(--fc-lime);color:var(--fc-lime-ink)}
+.fc-lineup-player{
+  border-radius:0;border:0;border-left:2px solid var(--pl-line-strong);background:rgba(255,255,255,.03);
+}
+.fc-lineup-player:hover{border-left-color:var(--fc-lime);background:rgba(201,242,58,.05)}
+.fc-bench-panel{border-radius:0}
+.notice{border-radius:0;border:0;border-left:3px solid var(--fc-lime);background:linear-gradient(90deg,var(--fc-lime-soft),transparent 70%)}
+.notice b{font-family:var(--fc-display);letter-spacing:.8px;text-transform:uppercase}
+
+/* tabelas genéricas (elencos, classificação) */
+.game-shell table{border-collapse:separate;border-spacing:0 3px}
+.game-shell thead th{
+  font-family:var(--fc-display);font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--pl-text-3);
+  background:transparent;border:0;
+}
+.game-shell tbody tr{background:rgba(255,255,255,.028)}
+.game-shell tbody tr:hover{background:rgba(201,242,58,.06)}
+.game-shell tbody td{border:0}
+.game-shell tbody tr.hero-row{background:linear-gradient(90deg,var(--fc-lime-soft),transparent)}
+.game-shell tbody tr.hero-row td:first-child{box-shadow:inset 3px 0 var(--fc-lime)}
+
+/* =====================================================================
+   CRIAÇÃO DE CARREIRA (wizard)
+   ===================================================================== */
+.wizard{max-width:1280px}
+.wizard header{
+  background:rgba(5,8,13,.9);border:0;border-bottom:1px solid var(--pl-line-strong);border-radius:0;
+  box-shadow:0 1px 0 rgba(201,242,58,.14);
+}
+.wizard .brand{font-style:italic;font-weight:800}
+.wizard h2{
+  font-family:var(--fc-display);font-size:30px;font-style:italic;text-transform:uppercase;letter-spacing:-.3px;color:#fff;margin:6px 0 18px;
+}
+.wizard h2::before{content:"";display:inline-block;width:22px;height:4px;margin-right:12px;vertical-align:middle;background:var(--fc-lime);transform:skewX(-30deg)}
+.wizard .steps,.wizard .steps>*,.w-steps,.w-steps>*{border-radius:0}
+.wizard .step,.w-step{
+  font-family:var(--fc-display);letter-spacing:1.4px;text-transform:uppercase;font-weight:600;border-radius:0;color:var(--pl-text-3);
+}
+.wizard .step.active,.w-step.active{color:var(--fc-lime);border-bottom:3px solid var(--fc-lime);background:transparent}
+.wizard .step.active i,.w-step.active i,.wizard .step i.on{background:var(--fc-lime);color:var(--fc-lime-ink);border-radius:0;transform:skewX(-12deg)}
+.wizard .card{border-radius:0}
+.wizard .card.selected,.wizard .card.on,.wizard .card[aria-pressed="true"],.wizard button.card.on{
+  border-color:var(--fc-lime);box-shadow:inset 0 0 0 1px var(--fc-lime),0 0 0 4px rgba(201,242,58,.07);
+  background:linear-gradient(170deg,rgba(201,242,58,.1),var(--pl-surface));
+}
+.wizard .card h3,.wizard .card strong{font-family:var(--fc-display);font-size:20px;font-style:italic;text-transform:uppercase;letter-spacing:.2px}
+.wizard .chips .chip,.wizard .chip,.game-shell .chip{
+  border-radius:0;font-family:var(--fc-display);letter-spacing:.6px;text-transform:uppercase;font-size:12px;
+  transform:skewX(-10deg);border:1px solid var(--pl-line-strong);background:rgba(255,255,255,.04);
+}
+.wizard .chip.on,.game-shell .chip.on,.wizard .chip.on:hover{background:var(--fc-lime);border-color:var(--fc-lime);color:var(--fc-lime-ink)}
+.wizard .attribute em{font-family:var(--fc-display);font-size:20px;font-style:italic;color:var(--fc-lime)}
+:where(.wizard,.game-shell) :where(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea){
+  border-radius:0;background:#070c13;border:1px solid var(--pl-line-strong);
+}
+:where(.wizard,.game-shell) :where(input,select,textarea):focus{border-color:var(--fc-lime);box-shadow:var(--pl-focus)}
+.w-actions{border-top:1px solid var(--pl-line)}
+
+/* ---------- movimento reduzido ---------- */
+@media (prefers-reduced-motion:reduce){
+  :where(.game-shell,.wizard) button{transition:none}
+  :where(.game-shell,.wizard) button:hover:not(:disabled),:where(.game-shell,.wizard) button:active:not(:disabled){transform:none}
+}
+
+/* ---------- celular ---------- */
+@media (max-width:760px){
+  .game-shell .topbar h1,.wizard h1{font-size:32px}
+  .central-v3-rating{font-size:64px}
+  .game-nav nav button{transform:none;clip-path:none}
+  .game-nav nav button>*{transform:none}
+  .game-nav nav button.active{background:rgba(201,242,58,.12);color:var(--fc-lime)}
+  .game-nav .brand{border:0;padding:0}
+}
+
+/* botões primários que ainda herdavam dourado de regras mais específicas */
+body .game-shell .topbar .actions button.primary,
+body .neg-actions button.primary,body .neg-actions button.gold,
+body .cine-actions button.primary,body .game-shell button.gold{
+  background:var(--fc-lime);background-image:none;color:var(--fc-lime-ink);border:0;box-shadow:none;
+}
+body .game-shell .topbar .actions button{border:0;background:var(--pl-surface-3);color:var(--pl-text)}
+body .game-shell .topbar .actions button.primary:hover{background:#dbff55}
+
+/* ---------- Criação: seletores reais do wizard ---------- */
+.brand span{color:var(--fc-lime)}
+.wizard{--accent:var(--fc-lime)}
+.landing{--accent:var(--fc-lime)}
+.w-steps{gap:2px;border-bottom:1px solid var(--pl-line)}
+.wizard .w-step{
+  clip-path:none;background:transparent;border:0;border-bottom:3px solid transparent;color:var(--pl-text-3);
+  font-family:var(--fc-display);letter-spacing:1.4px;padding:12px 16px;
+}
+.wizard .w-step i{
+  display:inline-grid;place-items:center;width:24px;height:24px;margin-right:9px;border-radius:0;font-style:normal;
+  background:var(--pl-surface-3);color:var(--pl-text-2);transform:skewX(-12deg);font-weight:800;
+}
+.wizard .w-step.on{color:#fff;border-bottom-color:var(--fc-lime);background:linear-gradient(0deg,var(--fc-lime-soft),transparent)}
+.wizard .w-step.on i{background:var(--fc-lime);color:var(--fc-lime-ink)}
+.wizard .w-step:hover:not(:disabled){transform:none;background:rgba(255,255,255,.04)}
+
+.story-grid{gap:14px}
+.wizard button.story-card,.wizard .offer-card,.wizard button.offer-card{
+  clip-path:polygon(0 0,calc(100% - var(--fc-cut)) 0,100% var(--fc-cut),100% 100%,0 100%);
+  background:linear-gradient(170deg,var(--pl-surface-2),var(--pl-surface));
+  border:1px solid var(--pl-line);border-radius:0;text-align:left;text-transform:none;letter-spacing:0;
+  font-family:var(--fc-body);font-weight:400;padding:20px 18px;
+  box-shadow:none;
+}
+.story-card b{
+  font-family:var(--fc-display);font-size:22px;font-style:italic;text-transform:uppercase;letter-spacing:-.2px;color:#fff;display:block;margin-bottom:6px;
+}
+.story-card small{color:var(--pl-text-2);font-size:13px;line-height:1.5;text-transform:none}
+.story-meta i{
+  font-style:normal;border-radius:0;border:0;background:rgba(255,255,255,.06);color:var(--pl-text-2);
+  font-family:var(--fc-display);font-size:11px;letter-spacing:.9px;text-transform:uppercase;padding:4px 8px;transform:skewX(-10deg);
+}
+.wizard button.story-card:hover{background:linear-gradient(170deg,var(--pl-surface-3),var(--pl-surface-2));transform:translateY(-2px)}
+.wizard button.story-card.on{
+  background:linear-gradient(170deg,rgba(201,242,58,.13),var(--pl-surface) 70%);
+  border-color:var(--fc-lime);box-shadow:inset 0 0 0 1px var(--fc-lime);
+}
+.story-card.on .story-meta i{background:var(--fc-lime);color:var(--fc-lime-ink)}
+.landing.wizard header,.landing header{
+  border:0;border-bottom:1px solid var(--pl-line-strong);border-radius:0;background:rgba(5,8,13,.9);box-shadow:0 1px 0 rgba(201,242,58,.14);
+}
+.wizard h3{font-family:var(--fc-display);letter-spacing:1.6px;text-transform:uppercase;font-size:13px;color:var(--fc-lime)}
+.story-meta i{letter-spacing:.5px;padding:3px 7px;font-size:10.5px}
+h1,h2,.story-card b,.central-v3-team strong{text-wrap:balance}
+
+@media (max-width:760px){
+  .game-nav nav button{font-size:10px;letter-spacing:.3px;padding:0 2px;flex-basis:20vw}
+  .game-shell .topbar .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+  .game-shell .topbar .actions button{min-height:44px}
+  .game-shell .topbar .actions button.primary{grid-column:1/-1;order:-1}
+  .central-v3-team strong{font-size:28px}
+}
+@media (max-width:430px){.central-v3-team strong{font-size:22px;letter-spacing:-.2px}}

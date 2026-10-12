@@ -173,7 +173,7 @@ test("29D: avanço gera rumores realistas e moderados nos dois modos",()=>{
     s.worldLiveMarket.lastTickDay=13;
     D.advance(s,1);
     const deals=W.getDeals(s);
-    assert.ok(deals.length>=1&&deals.length<=2);
+    assert.ok(deals.length>=1&&deals.length<=10); // 34F.19: ate 10 rumores por ciclo de 14 dias com a janela aberta (antes: 2)
     assert.ok(deals.every(deal=>
       deal.state==="rumor"&&
       deal.playerId!=="hero"&&

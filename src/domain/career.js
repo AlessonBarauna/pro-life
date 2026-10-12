@@ -1942,6 +1942,33 @@
     const rivals = s.mode === "player" && c ? c.roster.filter((p)=>p.id!=="hero" && p.pos===s.person.pos).map((p)=>({name:p.name,overall:root.ProLife?.overall?root.ProLife.overall(p):0,injury:p.injury||0,suspension:p.suspension||0})).sort((a,b)=>b.overall-a.overall).slice(0,5) : [];
     return { ...lw, currentClubForm:c ? lw.clubForm[c.id] || null : null, positionRivals:rivals };
   }
+  // Premios pessoais realmente conquistados pelo protagonista (sala de trofeus canonica):
+  // arquivo de premios das ligas mundiais (playerId "hero") + premios estatisticos com vencedor identificado.
+  // Registros de outros jogadores, indicacoes, rankings e disputas em andamento nunca contam; nada e alterado no save.
+  function heroTrophies(s) {
+    const heroName = s?.person?.name, out = new Map();
+    const notWon = (a) => a.pending || a.provisional || a.live || a.inProgress || a.nominee || a.nomination || a.ranking === true || /disputa|andamento|pending|provisional|nomin|ranking|live/i.test(String(a.status || a.state || a.kind || ""));
+    const add = (a, season, competitionKey, category, club, competitionName) => {
+      const sid = a.awardId || a.id || "", key = [season, competitionKey || "", category || "", sid].join("|");
+      if (out.has(key)) return;
+      out.set(key, { id: sid || key, season, title: category || "Prêmio", competition: competitionName || competitionKey || "Geral", club: club || "Clube não registrado", leagueId: a.leagueId || a.competitionId || null });
+    };
+    try {
+      for (const a of root.ProLifeWorldStats?.heroAwards?.(s) || []) {
+        if (!a || a.playerId !== "hero" || notWon(a)) continue;
+        add(a, a.season, a.leagueId || a.league, a.label || a.name || a.title, a.club, a.league);
+      }
+    } catch (e) { /* mundo ainda nao inicializado */ }
+    const lists = [s?.statistics?.awards, s?.awards];
+    for (const list of lists) for (const a of Array.isArray(list) ? list : []) {
+      if (!a || typeof a !== "object" || notWon(a)) continue;
+      const wid = a.winnerId ?? a.playerId ?? a.winner?.id ?? null;
+      const mine = wid != null ? wid === "hero" : (a.winner != null && a.winner === heroName);
+      if (!mine) continue;
+      add(a, a.season, a.leagueId || a.competitionId || a.league, a.name || a.title || a.label, a.winnerClub || a.club, a.league);
+    }
+    return [...out.values()].sort((x, y) => (y.season || 0) - (x.season || 0) || String(x.title).localeCompare(String(y.title)));
+  }
   function legacySnapshot(s) {
     const e = init(s), n = s.nationalTeam || {}, heroStats = s.statistics?.players?.hero || {}, seasons = new Set((s.history || []).map((h) => h.season));
     const rivals = Object.values(e.legacy.rivalries).sort((a,b) => (b.points + b.games) - (a.points + a.games)).slice(0, 8);
@@ -1949,15 +1976,15 @@
     const ownTransfers = (e.transfers || []).filter((t) => t.player === s.person.name);
     const clubs = [...new Set(ownTransfers.flatMap((t) => [t.from, t.to]).filter((name) => name && name !== "Sem clube"))];
     const biggestTransfer = ownTransfers.slice().sort((a,b) => (b.fee || 0) - (a.fee || 0))[0] || null;
-    const awards = (s.statistics?.awards || s.awards || []).length || 0;
+    const trophies = heroTrophies(s), awards = trophies.length;
     const score = Math.round((e.careerGoals || 0) * 3 + (heroStats.assists || 0) * 2 + (e.played || 0) + titles * 80 + awards * 35 + (n.caps || 0) * 2 + (n.goals || 0) * 5 + s.reputation * 2);
     const tier = score >= 1800 ? "Lenda" : score >= 1000 ? "Ídolo" : score >= 500 ? "Referência" : score >= 200 ? "Destaque" : "Em construção";
-    return { score, tier, seasons: seasons.size || 1, titles, awards, games: e.played || 0, goals: e.careerGoals || 0, assists: heroStats.assists || 0, offensiveAnalytics: e.playerCareer?.offensiveAnalytics || {shots:0,onTarget:0,xg:0,goals:0,appearances:0}, national: { caps:n.caps||0, goals:n.goals||0, assists:n.assists||0 }, clubs, biggestTransfer, rivals, milestones:e.legacy.milestones.slice(0,30), retired:e.legacy.retired, retirement:e.legacy.retirement };
+    return { score, tier, seasons: seasons.size || 1, titles, awards, trophies, games: e.played || 0, goals: e.careerGoals || 0, assists: heroStats.assists || 0, offensiveAnalytics: e.playerCareer?.offensiveAnalytics || {shots:0,onTarget:0,xg:0,goals:0,appearances:0}, national: { caps:n.caps||0, goals:n.goals||0, assists:n.assists||0 }, clubs, biggestTransfer, rivals, milestones:e.legacy.milestones.slice(0,30), retired:e.legacy.retired, retirement:e.legacy.retirement };
   }
   function retirementSnapshot(s) {
     const e=init(s), snap=legacySnapshot(s);
     e.legacy.retired=true;
-    e.legacy.retirement={ day:s.day, season:s.season, age:s.person.age, club:s.clubs.find((c)=>c.id===s.clubId)?.name||"Sem clube", ...snap, retired:true };
+    e.legacy.retirement={ day:s.day, season:s.season, age:s.person.age, club:(root.ProLifeCareerContext?.clubName(s)||root.ProLife?.club?.(s)?.name||s.clubs.find((c)=>c.id===s.clubId)?.name)||"Sem clube", ...snap, retired:true };
     return e.legacy.retirement;
   }
   function rumor(s, rng) {
@@ -2055,6 +2082,7 @@
     livingWorld,
     livingWorldSnapshot,
     legacySnapshot,
+    heroTrophies,
     retirementSnapshot,
   };
   root.ProLifeCareer = api;

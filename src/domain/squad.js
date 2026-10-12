@@ -81,18 +81,39 @@
     if(!(Physical?.canPlay?.(p) ?? (!p.injury&&cond>=25))||p.suspension>0) v=-999;
     return v;
   }
+  // 34F.20: rodizio por sequencia de titularidades (p.startStreak, atualizada em registerStarters). Deterministico por jogador+dia,
+  // sem consumir o gerador aleatorio do jogo. Goleiros quase nao rodam. Mesma regra para o protagonista e para os demais.
+  const ROTATION_MAX_GAP=9,ROTATION_MIN_STREAK=3;
+  const ovrOf=p=>root.ProLife?.overall?root.ProLife.overall(p):Number(p.ovr??p.overall??50);
+  function restsToday(s,p){
+    const streak=Number(p.startStreak||0);
+    if(streak<ROTATION_MIN_STREAK)return false;
+    const chance=Math.min(0.45,(p.pos==="GOL"?0.015:0.06)*(streak-ROTATION_MIN_STREAK+1));
+    return hash("rest|"+p.id+"|"+s.day)/4294967296<chance;
+  }
+  function registerStarters(c,starters){
+    const ids=new Set(starters.map(p=>p.id));
+    for(const p of c.roster||[])p.startStreak=ids.has(p.id)?Math.min(60,Number(p.startStreak||0)+1):0;
+  }
   function formationFor(c,s=null){const preferred=s?init(s)?.manager?.preferredFormation:null;return c?.formation&&slots[c.formation]?c.formation:preferred&&slots[preferred]?preferred:"4-3-3";}
   function choose(s,c){
     const formation=formationFor(c,s), need=slots[formation], active=c.roster.filter(p=>(Physical?.canPlay?.(p) ?? (!p.injury&&Number(p.condition??100)>=25))&&!(p.suspension>0)&&!p._competitionSuspended);
-    const starters=[];
+    const starters=[],rested=[];
     for(const [pos,count] of Object.entries(need)){
       const pool=active.filter(p=>p.pos===pos&&!starters.includes(p)).sort((a,b)=>score(s,b)-score(s,a));
-      starters.push(...pool.slice(0,count));
+      const picked=pool.slice(0,count);
+      // 34F.20 rodizio: quem acumulou muitas partidas seguidas como titular pode descansar, se houver substituto de nivel proximo.
+      for(const tired of picked.slice()){
+        if(!restsToday(s,tired))continue;
+        const alt=pool.slice(count).find(a=>!picked.includes(a)&&!restsToday(s,a)&&ovrOf(a)>=ovrOf(tired)-ROTATION_MAX_GAP);
+        if(alt){picked[picked.indexOf(tired)]=alt;rested.push(tired);}
+      }
+      starters.push(...picked);
     }
     for(const p of active.slice().sort((a,b)=>score(s,b)-score(s,a))) if(starters.length<11&&!starters.includes(p)) starters.push(p);
     const bench=active.filter(p=>!starters.includes(p)).sort((a,b)=>score(s,b)-score(s,a)).slice(0,7);
     const out=c.roster.filter(p=>!starters.includes(p)&&!bench.includes(p));
-    return {formation,starters,bench,out};
+    return {formation,starters,bench,out,rested};
   }
   function roleForHero(s,selection){const pc=root.ProLifeCareer.init(s).playerCareer;if(selection.starters.some(p=>p.id==="hero"))return "Titular";if(selection.bench.some(p=>p.id==="hero"))return "Banco";return "Fora da relação";}
   function competition(s){
@@ -656,6 +677,6 @@
     const chance=clamp(.18+(trust/100)*.46+(morale/100)*.10+(fitness/100)*.10+Math.max(0,training)*.025-fatigue*.0025+matchNeed,.1,.92);
     return {minute,chance:+chance.toFixed(3),readiness:+readiness.toFixed(2)};
   }
-  const api={init,slots,tacticalStyles,managerArchetypes,createManager,managerProfile,managerValueLabel,managerTopCriteria,adjustTrustDeltaForManager,recentRatings,formValue,score,formationFor,choose,competition,roleForHero,recordDecision,recordTrustChange,trustSummary,coachConversationStatus,coachConversationChoices,startCoachConversation,respondCoachConversation,coachPromisePlan,coachPromiseStatus,requestCoachPromise,resolveCoachPromise,evaluateCoachPromise,handleManagerChange,handlePlayerTransfer,trainingResult,substitutePlan};
+  const api={init,slots,tacticalStyles,managerArchetypes,createManager,managerProfile,managerValueLabel,managerTopCriteria,adjustTrustDeltaForManager,recentRatings,formValue,score,formationFor,choose,registerStarters,competition,roleForHero,recordDecision,recordTrustChange,trustSummary,coachConversationStatus,coachConversationChoices,startCoachConversation,respondCoachConversation,coachPromisePlan,coachPromiseStatus,requestCoachPromise,resolveCoachPromise,evaluateCoachPromise,handleManagerChange,handlePlayerTransfer,trainingResult,substitutePlan};
   root.ProLifeSquad=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

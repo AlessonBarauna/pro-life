@@ -26,7 +26,6 @@ function play(s, tag) {
   if (tag === 1) {
     D.movePlayerToClub(s, "gf_fc27_243");
     Career.signContract(s, { clubId: "gf_fc27_243", salary: 9000, durationDays: 1095, signingBonus: 30000, squadRole: "Titular", transferType: "permanent" });
-    Career.init(s).transfers.push({ player: s.person.name, from: "Origem", to: "Real Madrid", day: s.day, status: "CONFIRMED" });
   }
   const p = G.playerById(s, "fc27_p_231747"); p.ovr += 1; p.overall += 1; p.potential = Math.min(99, p.potential + 1);
   G.transferPlayer(s, "fc27_p_" + (tag === 1 ? "192119" : "252371"), "gf_fc27_10");
@@ -34,6 +33,8 @@ function play(s, tag) {
   for (let i = 0, t = s.day + 4; s.day < t && i < 20; i++) { D.advanceToDay(s, t, { stopBeforeMatches: false }); s.decision = null; }
   return s;
 }
+// Referência: o mesmo estado gravado no formato completo e relido (a leitura recalcula derivados, p.ex. potencial dinâmico).
+const viaFull = (s) => S.parse(JSON.stringify(s));
 const cycle = (s) => { assert.equal(S.save(s), true); const back = S.loadSlot(S.stateSlotId(s)); assert.ok(back); return back; };
 
 test("34F.13 (1) nova carreira FC27 salva sozinha no formato híbrido, dentro da cota, com modo padrão desligado", () => {
@@ -56,14 +57,14 @@ test("34F.13 (2) carreira FC27 modificada preserva tudo após recarregar e em do
   const w1 = s1.wallet, tr1 = Career.init(s1).transfers.length, led1 = Career.init(s1).ledger.length, day1 = s1.day;
   const l1 = cycle(s1);
   assert.equal(l1.clubId, "gf_fc27_243"); assert.equal(l1.day, day1); assert.equal(l1.wallet, w1);
-  assert.equal(canon(l1), canon(s1), "ciclo 1: estado idêntico (transferência, contrato, finanças, atletas, calendário)");
+  assert.equal(canon(l1), canon(viaFull(s1)), "ciclo 1: híbrido == completo (transferência, contrato, finanças, atletas, calendário)");
   assert.equal(G.playerById(l1, "fc27_p_231747").ovr, 92); assert.equal(G.playerById(l1, "fc27_p_192119").clubId, "gf_fc27_10");
   assert.equal(Career.init(l1).playerCareer.contract.signingBonus, 30000);
   play(l1, 2);
   const w2 = l1.wallet, l2 = cycle(l1);
-  assert.equal(canon(l2), canon(l1), "ciclo 2: estado idêntico");
+  assert.equal(canon(l2), canon(viaFull(l1)), "ciclo 2: híbrido == completo");
   const again = cycle(l2); // salvar sem mudar nada
-  assert.equal(canon(again), canon(l2));
+  assert.equal(canon(again), canon(viaFull(l2)), "salvar sem mudar nada é estável");
   assert.equal(again.wallet, w2); assert.equal(Career.init(again).transfers.length, Career.init(l2).transfers.length);
   assert.equal(Career.init(again).ledger.length, Career.init(l2).ledger.length);
   assert.ok(Career.init(again).transfers.length >= tr1 && Career.init(again).ledger.length >= led1);
@@ -74,15 +75,15 @@ test("34F.13 (3) falha de quota preserva o último save válido (sem sobrescreve
   localStorage = new Quota(BROWSER_CAP);
   const s0 = mkFc(), id = S.saveAsNew(s0), s1 = S.loadSlot(id);
   play(s1, 1); const l1 = cycle(s1);
-  const good = slotText(id), slots = localStorage.getItem("prolife.v1.slots");
+  const goodRef = canon(viaFull(l1)), good = slotText(id), slots = localStorage.getItem("prolife.v1.slots");
   localStorage.cap = localStorage.used() + 100; // quase cheio
-  play(l1, 2); l1.history = [...(l1.history || []), ...Array.from({ length: 400 }, (_, i) => ({ day: i, text: "x".repeat(200) }))];
+  play(l1, 2); S.validate(l1); // o estado é válido: a rejeição abaixo é só por cota
   assert.equal(S.save(l1), false, "gravação rejeitada por cota");
   assert.equal(slotText(id), good, "slot anterior intacto byte a byte"); assert.equal(localStorage.getItem("prolife.v1.slots"), slots);
-  const back = S.loadSlot(id); assert.ok(back); assert.equal(canon(back), canon(s1.constructor === Object ? back : back)); assert.equal(back.clubId, "gf_fc27_243");
+  const back = S.loadSlot(id); assert.ok(back); assert.equal(canon(back), goodRef, "carrega exatamente o último save válido"); assert.equal(back.clubId, "gf_fc27_243");
   assert.equal(G.playerById(back, "fc27_p_231747").ovr, 92, "estado do último save válido");
   localStorage.cap = BROWSER_CAP; assert.equal(S.save(l1), true, "volta a salvar quando há espaço");
-  assert.equal(canon(S.loadSlot(id)), canon(l1));
+  assert.equal(canon(S.loadSlot(id)), canon(viaFull(l1)));
 });
 
 test("34F.13 (4) save híbrido adulterado ou de catálogo errado não abre nem é sobrescrito", () => {
@@ -112,7 +113,7 @@ test("34F.13 (6) carreira legada: formato e comportamento de salvamento inaltera
   assert.ok(id); assert.equal(S.detectSaveFormat(JSON.parse(slotText(id))), "legacy", "legado continua completo por padrão");
   const back = S.loadSlot(id); back.wallet += 777; back.history = back.history || [];
   assert.equal(S.save(back), true); const again = S.loadSlot(id);
-  assert.equal(again.wallet, back.wallet); assert.equal(again.catalogVersion, undefined); assert.equal(canon(again), canon(back));
-  S.setCompactWriteMode("always"); assert.ok(S.saveAsNew(l)); S.setCompactWriteMode("off"); // modo opt-in legado segue funcionando
+  assert.equal(again.wallet, back.wallet); assert.equal(again.catalogVersion, undefined); assert.equal(canon(again), canon(viaFull(back)));
+  localStorage = new Quota(BROWSER_CAP); S.setCompactWriteMode("always"); assert.ok(S.saveAsNew(l)); S.setCompactWriteMode("off"); // modo opt-in legado segue funcionando
   for (const f of GUARDED) assert.equal(sha(f), before[f], f + " não foi alterado");
 });

@@ -41,8 +41,11 @@
         break;
       }
       case "advance":
+        if (D.NationalCallups?.blocker?.(s)) throw Error("Reconheça a convocação pendente antes de continuar.");
         D.advance(s, data.days);
         break;
+      case "acknowledgeCallup":
+        return D.NationalCallups.acknowledge(s, data.id);
       case "simulateAdvance":
         return D.simulateAdvance(s, data.mode);
       case "join": {
@@ -252,6 +255,30 @@ case "tactic": {
       case "retire":
         D.retire(s);
         break;
+      case "offFieldPost":
+        D.OffField.post(s, D, data.kind);
+        break;
+      case "offFieldContact":
+        D.OffField.cultivate(s, D, data.id);
+        break;
+      case "offFieldFamily":
+        D.OffField.resolve(s, D, Number(data.choice), false);
+        break;
+      case "coachTalk": {
+        if (s.mode !== "coach") throw Error("Disponível para treinadores.");
+        D.CoachCareer.talk(s, D, data.kind, data.playerId);
+        break;
+      }
+      case "coachCaptain": {
+        if (s.mode !== "coach") throw Error("Disponível para treinadores.");
+        D.CoachCareer.setCaptain(s, D, data.playerId || null);
+        break;
+      }
+      case "coachFocus": {
+        if (s.mode !== "coach") throw Error("Disponível para treinadores.");
+        D.CoachCareer.setFocus(s, data.focus);
+        break;
+      }
       case "license": {
         if (s.mode !== "coach") throw Error("Disponível para treinadores.");
         const next = { C: "B", B: "A", A: "PRO" },

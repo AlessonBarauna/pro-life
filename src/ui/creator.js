@@ -6,6 +6,9 @@
   const STYLES = ["Técnico", "Velocista", "Organizador", "Combativo"];
   const COLORS = { skin: "#bc8660", hairColor: "#241e1a", eyeColor: "#4a3524" };
   let W = null;
+  // Base de dados escolhida na criação (lembrada entre aberturas do assistente). FC 27 é o padrão só para novas carreiras.
+  // 34F.15: FC 27 é a única base para novas carreiras.
+  const CATALOG = "fc27_v1";
 
   function freshSeed() { return (Date.now() >>> 0) || 1; }
   function birthDateForAge(age) {
@@ -23,7 +26,7 @@
   function init(ctx, keepSeed) {
     const D = ctx.D, id = "blank", story = D.Training.origins[id].story;
     W = {
-      step: 0, seed: keepSeed || freshSeed(), storyId: id, difficulty: "normal", personality: "balanced",
+      step: 0, seed: keepSeed || freshSeed(), catalogVersion: CATALOG, storyId: id, difficulty: "normal", personality: "balanced",
       cfg: {
         name: "Alesson Baraúna",
         city: "Mogi das Cruzes",
@@ -57,7 +60,7 @@
   }
   // Configuração que alimenta o domínio. Mesma entrada + mesma seed ⇒ mesmo resultado.
   function config(withClub) {
-    const c = { mode: "player", ...W.cfg, origin: W.storyId, points: { ...W.points }, creation: { difficulty: W.difficulty, personality: W.personality, startMode:W.startMode, custom: W.storyId === "custom" ? { ...W.custom } : undefined } };
+    const c = { mode: "player", catalogVersion: W.catalogVersion, ...W.cfg, origin: W.storyId, points: { ...W.points }, creation: { difficulty: W.difficulty, personality: W.personality, startMode:W.startMode, custom: W.storyId === "custom" ? { ...W.custom } : undefined } };
     if (W.storyId === "custom") {
       c.age = W.custom.age;
       c.birthDate = W.cfg.birthDate || birthDateForAge(W.custom.age);
@@ -68,7 +71,7 @@
   // Dependências que invalidam as oportunidades (nome/aparência/altura não entram).
   function depKey() {
     const c = config(false);
-    return JSON.stringify([c.origin, c.pos, c.age, c.archetypeId, c.style, c.points, c.creation, W.seed]);
+    return JSON.stringify([c.catalogVersion, c.origin, c.pos, c.age, c.archetypeId, c.style, c.points, c.creation, W.seed]);
   }
   function draft(ctx) {
     const key = depKey();
@@ -163,7 +166,7 @@
   function stepConfirm(ctx) {
     const { D, esc } = ctx, d = draft(ctx), o = d.offers.find((x) => x.clubId === W.clubId), cr = D.Creation, st = D.Training.origins[W.storyId].story;
     const c = d.clubs.find((x) => x.id === W.clubId);
-    return `<h2>Confirmar carreira</h2><div class="grid"><section class="card"><div class="tag">${esc(st.title.toUpperCase())}</div><h3>${esc(W.cfg.name)}</h3><p>${W.storyId === "custom" ? cr.sanitizeCustom(W.custom).age : W.cfg.age} anos · ${esc(W.cfg.nationality)} · ${esc(cr.posLabels[W.cfg.pos])} · ${esc(D.Training.archetypeCatalog[W.cfg.archetypeId].name)} · ${esc(cr.personalities[W.personality].name)}</p><p><b>${d.overall} GER</b> · reputação ${d.reputation} · popularidade ${d.popularity} · patrimônio ${money(d.wallet)}</p><p class="muted">Dificuldade: ${esc(cr.difficulties[W.difficulty].name)} · Seed ${W.seed}</p></section><section class="card"><div class="tag">PRIMEIRO CLUBE</div>${c?(W.startMode==="offers"&&o?`<h3>${esc(c.name)}</h3><p>${esc(kindLabel[o.pitch.kind])} · ${money(o.salary)}/mês · ${Math.round(o.durationDays / 365 * 10) / 10} ano(s)</p>`:`<h3>${esc(c.name)}</h3><p>Escolha direta · ${esc(c.country||"Brasil")} · ${esc(d.leagues.find(l=>l.id===c.leagueId)?.name||c.leagueId)}</p>`):'<div class="notice">Volte e escolha um clube.</div>'}<p class="muted">O contrato segue as regras de mercado do jogo. Seu papel será definido pelo treinador.</p></section></div><div class="notice">Ao confirmar, a carreira é criada e salva. O processo não altera nenhuma carreira anterior até você confirmar a substituição.</div>`;
+    return `<h2>Confirmar carreira</h2><div class="grid"><section class="card"><div class="tag">${esc(st.title.toUpperCase())}</div><h3>${esc(W.cfg.name)}</h3><p>${W.storyId === "custom" ? cr.sanitizeCustom(W.custom).age : W.cfg.age} anos · ${esc(W.cfg.nationality)} · ${esc(cr.posLabels[W.cfg.pos])} · ${esc(D.Training.archetypeCatalog[W.cfg.archetypeId].name)} · ${esc(cr.personalities[W.personality].name)}</p><p><b>${d.overall} GER</b> · reputação ${d.reputation} · popularidade ${d.popularity} · patrimônio ${money(d.wallet)}</p><p class="muted">Dificuldade: ${esc(cr.difficulties[W.difficulty].name)} · Seed ${W.seed}</p><p class="muted" data-w-base>Base de dados: FC 27</p></section><section class="card"><div class="tag">PRIMEIRO CLUBE</div>${c?(W.startMode==="offers"&&o?`<h3>${esc(c.name)}</h3><p>${esc(kindLabel[o.pitch.kind])} · ${money(o.salary)}/mês · ${Math.round(o.durationDays / 365 * 10) / 10} ano(s)</p>`:`<h3>${esc(c.name)}</h3><p>Escolha direta · ${esc(c.country||"Brasil")} · ${esc(d.leagues.find(l=>l.id===c.leagueId)?.name||c.leagueId)}</p>`):'<div class="notice">Volte e escolha um clube.</div>'}<p class="muted">O contrato segue as regras de mercado do jogo. Seu papel será definido pelo treinador.</p></section></div><div class="notice">Ao confirmar, a carreira é criada e salva. O processo não altera nenhuma carreira anterior até você confirmar a substituição.</div>`;
   }
   function valid(ctx) {
     if (W.step === 1 && !String(W.cfg.name).trim()) return "Informe o nome do jogador.";
@@ -219,6 +222,11 @@
     const b = e.target.closest("button");
     if (!b) return;
     const d = b.dataset, D = ctx.D;
+    // FC 27: criar o mundo leva alguns segundos; mostra carregamento e só então executa (a UI não parece travada).
+    if (W.catalogVersion === "fc27_v1" && !e._wBusy && ctx.busy) {
+      const finishing = "wNext" in d && W.step === 5, nav = "wNext" in d || d.wGo !== undefined || "wBack" in d;
+      if (finishing || (nav && W.cache?.key !== depKey()) ) { ctx.busy(finishing ? "Criando carreira FC 27…" : "Carregando base FC 27…", () => onClick(ctx, { target: b, _wBusy: true })); return; }
+    }
     if (d.wStory) {
       W.storyId = d.wStory; const st = D.Training.origins[W.storyId].story; W.cfg.age = st.age; W.cfg.birthDate = birthDateForAge(st.age); W.clubId = null;
     } else if (d.wDiff) W.difficulty = d.wDiff;
@@ -308,5 +316,5 @@
   }
   function reset() { W = null; }
   function state() { return W; }
-  root.ProLifeCreator = { mount, reset, state, config: () => (W ? config(true) : null), STEPS };
+  root.ProLifeCreator = { mount, reset, state, catalog: () => CATALOG, config: () => (W ? config(true) : null), STEPS };
 })(typeof globalThis !== "undefined" ? globalThis : this);
