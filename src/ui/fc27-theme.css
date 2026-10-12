@@ -568,3 +568,95 @@ body .world-market-timeline article{border-left-color:var(--fc-lime)}
 
 /* ajuste: rótulos longos de métricas não quebram no meio da palavra */
 body .game-shell .stat-grid span, body .game-shell .metric span, body .game-shell [class*="stat"] > span{overflow-wrap:normal;word-break:normal;hyphens:none}
+
+/* ============================================================
+   BLOCO 3 — TEMPORADA (campeonatos, calendário, partidas, Champions)
+   ============================================================ */
+@keyframes fc-row-in{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+@keyframes fc-live{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--fc-lime) 55%,transparent)}60%{box-shadow:0 0 0 7px transparent}}
+
+/* seletor de competições = lista lateral estilo "Torneios" */
+body .season-nav{border-top:2px solid var(--fc-lime);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)}
+body .season-group>.tag{position:sticky;top:0;z-index:2;background:var(--pl-surface-2,#0f1722);padding:6px 2px;letter-spacing:.22em}
+body .season-comp{position:relative;border-radius:0!important;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);transition:transform .16s,background .16s}
+body .season-comp:hover{transform:translateX(3px)}
+body .season-comp b{font-family:var(--fc-display);font-style:italic;letter-spacing:.2px;text-transform:uppercase}
+body .season-comp.on{background:linear-gradient(90deg,color-mix(in srgb,var(--fc-lime) 20%,transparent),transparent 85%)!important}
+
+/* cabeçalho + abas da competição */
+body .season-head h2{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:-.3px;font-size:clamp(24px,2.4vw,34px)}
+body .season-pills .pill{border-radius:0;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);padding:4px 12px;font-size:10px;letter-spacing:.8px;text-transform:uppercase}
+body .season-tabs button,body .season-toggle button{border-radius:0!important;clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%);padding:8px 22px;font-family:var(--fc-display);font-style:italic;letter-spacing:.6px;text-transform:uppercase;font-size:12px}
+body .season-tabs button.on,body .season-toggle button.on{background:var(--fc-lime)!important;border-color:var(--fc-lime)!important;color:var(--fc-lime-ink)!important}
+
+/* tabela de classificação */
+body .season-table thead th{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--pl-muted,#8fa0ad);border-bottom:2px solid color-mix(in srgb,var(--fc-lime) 55%,transparent)}
+body .season-table tbody tr{animation:fc-row-in .38s both;transition:background .14s}
+body .season-table tbody tr:nth-child(1){animation-delay:.02s}body .season-table tbody tr:nth-child(2){animation-delay:.05s}body .season-table tbody tr:nth-child(3){animation-delay:.08s}body .season-table tbody tr:nth-child(4){animation-delay:.11s}body .season-table tbody tr:nth-child(5){animation-delay:.14s}body .season-table tbody tr:nth-child(6){animation-delay:.17s}body .season-table tbody tr:nth-child(n+7){animation-delay:.2s}
+body .season-table tbody tr:hover{background:color-mix(in srgb,var(--fc-lime) 8%,transparent)}
+body .season-table tbody tr:nth-child(even){background:rgba(255,255,255,.018)}
+body .season-table tbody tr.selected,body .season-table tbody tr.me,body .season-table tbody tr.highlight{background:linear-gradient(90deg,color-mix(in srgb,var(--fc-lime) 18%,transparent),transparent 80%)!important;box-shadow:inset 3px 0 var(--fc-lime)}
+body .season-table .pts{font-family:var(--fc-display);font-style:italic;font-size:15px;color:var(--fc-lime)}
+body .season-table .num,body .season-table td:first-child{font-variant-numeric:tabular-nums}
+body .season-table td:first-child{font-family:var(--fc-display);font-weight:700}
+body .season-table .club .pill{border-radius:0;font-size:9px;letter-spacing:.8px;text-transform:uppercase;background:var(--fc-lime);color:var(--fc-lime-ink);padding:1px 6px;margin-left:6px}
+body .season-table tr.zone-promotion td:first-child,body .season-table tr.zone-qualification td:first-child{box-shadow:inset 4px 0 #3ddc97}
+body .season-table tr.zone-relegation td:first-child{box-shadow:inset 4px 0 #ff5d6c}
+body .season-table .form i{border-radius:0;clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);width:22px}
+
+/* calendário = grade de agenda */
+body .calendar-toolbar h2{font-family:var(--fc-display);font-style:italic;text-transform:uppercase}
+body .calendar-weekdays span{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--pl-muted,#8fa0ad)}
+body .calendar-grid{gap:2px;background:transparent}
+body .calendar-day{border-radius:0;background:rgba(255,255,255,.025);border:0;border-top:1px solid rgba(255,255,255,.06)}
+body .calendar-day .calendar-number{font-family:var(--fc-display);font-weight:700}
+body .calendar-day.present{background:color-mix(in srgb,var(--fc-lime) 11%,transparent);box-shadow:inset 0 3px var(--fc-lime)}
+body .calendar-day.next-game{box-shadow:inset 0 3px var(--fc-lime),inset 0 0 0 1px color-mix(in srgb,var(--fc-lime) 40%,transparent);background:color-mix(in srgb,var(--fc-lime) 7%,transparent)}
+body .calendar-day.next-game .calendar-number:after{color:var(--fc-lime);animation:fc-pulse 1.8s infinite}
+body .calendar-day.selected{outline-color:var(--fc-lime)}
+body span.calendar-event{border-radius:0;clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%);border-left-width:4px;background:rgba(255,255,255,.05);font-weight:600}
+body .calendar-event.hero{background:color-mix(in srgb,var(--fc-lime) 14%,transparent);border-left-color:var(--fc-lime)}
+body .calendar-event.hero.played{border-left-color:#3ddc97}
+body .cal-filters .cal-chip{border-radius:0;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);padding:6px 14px}
+
+/* Competições (hub) — tokens do bloco escuro herdam o acento único */
+body .ch-dark{--ch-gold:var(--fc-lime);--ch-card:#0f1a25;--ch-ok:#3ddc97;background:linear-gradient(160deg,#08111a,#0a0f16);border-radius:0;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%)}
+body .ch-dark h2,body .ch-dark h3{font-family:var(--fc-display);font-style:italic;text-transform:uppercase}
+body .ch-nav button.on,body .ch-nav button.active,body .ch-nav button[aria-selected="true"]{color:var(--fc-lime);border-bottom-color:var(--fc-lime)}
+body .ch-box,body .ch-main{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
+body .ch-main:first-child{border-color:var(--fc-lime);background:linear-gradient(135deg,color-mix(in srgb,var(--fc-lime) 10%,transparent),transparent 60%)}
+body .ch-strip b{font-family:var(--fc-display);font-style:italic;font-size:30px;font-variant-numeric:tabular-nums}
+
+/* Champions — identidade de torneio: azul-noite com acento ciano (não dourado) */
+body .pl-ucl-embedded{--ucl:#4aa8ff;background:radial-gradient(900px 300px at 10% -10%,rgba(74,168,255,.2),transparent 60%),linear-gradient(160deg,#060d1f,#09101c 70%);border-radius:0;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%);border-color:#1f3556}
+body .pl-ucl-embedded .pl-ucl-header{background:linear-gradient(110deg,#0e2a66,#071329 70%);border-radius:0;border-left:4px solid var(--ucl);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)}
+body .pl-ucl-embedded .pl-ucl-header h1{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:-.3px}
+body .pl-ucl-embedded .pl-ucl-kicker{color:var(--ucl)}
+body .pl-ucl-embedded .pl-ucl-badge{border-radius:0;background:rgba(74,168,255,.14);color:#bfe0ff;letter-spacing:.14em}
+body .pl-ucl-embedded .pl-ucl-nav button{border-radius:0;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);padding:9px 20px;font-family:var(--fc-display);font-style:italic;letter-spacing:.5px;text-transform:uppercase;font-size:12px;background:#0d1a33;border-color:#20365c}
+body .pl-ucl-embedded .pl-ucl-nav button.active{background:var(--ucl);color:#031024;border-color:var(--ucl)}
+body .pl-ucl-embedded .pl-ucl-stat,body .pl-ucl-embedded .pl-ucl-card{border-radius:0;background:linear-gradient(160deg,#0b1830,#09111f);border-color:#1f3556;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
+body .pl-ucl-embedded .pl-ucl-stat strong{font-family:var(--fc-display);font-style:italic;font-variant-numeric:tabular-nums;animation:fc-rise .5s both}
+body .pl-ucl-embedded .pl-ucl-card h2{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;font-size:16px;letter-spacing:.4px}
+body .pl-ucl-embedded .pl-ucl-table th{font-size:10px;letter-spacing:.14em;text-transform:uppercase;border-bottom:2px solid rgba(74,168,255,.5)}
+body .pl-ucl-embedded .pl-ucl-table tbody tr{animation:fc-row-in .36s both}
+body .pl-ucl-embedded .pl-ucl-table tr.hero{background:linear-gradient(90deg,rgba(74,168,255,.28),transparent 85%);box-shadow:inset 3px 0 var(--ucl)}
+body .pl-ucl-embedded .pl-ucl-rank{border-radius:0;clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);width:26px;font-family:var(--fc-display);font-weight:700}
+body .pl-ucl-embedded .pl-ucl-rank.direct{background:#12865f}body .pl-ucl-embedded .pl-ucl-rank.playoff{background:#a77a1b}
+body .pl-ucl-embedded .pl-ucl-fixture .score{font-family:var(--fc-display);font-style:italic;font-size:17px;background:rgba(255,255,255,.06);padding:3px 0}
+body .pl-ucl-embedded .pl-ucl-hero{background:linear-gradient(90deg,rgba(74,168,255,.22),transparent);border-radius:0}
+body .pl-ucl-embedded .pl-ucl-pair{border-radius:0;background:#0b1830;border-color:#1f3556;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+body .pl-ucl-embedded .pl-ucl-win{color:var(--fc-lime)}
+body .pl-ucl-embedded .pl-ucl-stage h3{color:var(--ucl);font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:.5px}
+
+/* estado vazio (Partidas etc.) mais “placar de espera” */
+body .game-shell .empty{border:1px dashed color-mix(in srgb,var(--fc-lime) 35%,transparent);background:repeating-linear-gradient(135deg,rgba(255,255,255,.02) 0 10px,transparent 10px 20px);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)}
+body .game-shell .empty:before{border-color:var(--fc-lime);animation:fc-live 2s infinite}
+
+@media(max-width:760px){
+  body .season-tabs button,body .season-toggle button{padding:8px 14px}
+  body .calendar-day{min-height:92px}
+}
+@media(prefers-reduced-motion:reduce){
+  body .season-table tbody tr,body .pl-ucl-embedded .pl-ucl-table tbody tr,body .pl-ucl-embedded .pl-ucl-stat strong,body .game-shell .empty:before,body .calendar-day.next-game .calendar-number:after{animation:none!important}
+}
