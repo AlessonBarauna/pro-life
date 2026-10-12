@@ -883,3 +883,24 @@ body .wizard .w-extra button{padding:8px 14px;font-size:12px;background:transpar
   body .wizard{padding-bottom:24px}
 }
 @media(max-width:700px){body .wizard>header{padding-left:16px;padding-right:16px}}
+
+/* ===== Celular: ações da página em uma faixa só, confronto da Central legível ===== */
+@media(max-width:700px){
+  body .actions:has(>[data-simulate="nextCommitment"]){display:flex!important;flex-wrap:nowrap!important;grid-template-columns:none!important;overflow-x:auto;gap:8px;margin:0 -16px!important;padding:2px 16px 8px!important;width:auto!important;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  body .actions:has(>[data-simulate="nextCommitment"])::-webkit-scrollbar{display:none}
+  body .actions:has(>[data-simulate="nextCommitment"])>button{flex:0 0 auto!important;width:auto!important;padding:10px 14px;font-size:12px;white-space:nowrap}
+  body .actions:has(>[data-simulate="nextCommitment"])>.primary{order:-1}
+  body .central-v3-matchup{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:start}
+  body .central-v3-team,body .central-v3-team.away{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;min-width:0}
+  body .central-v3-team strong{font-size:clamp(13px,4vw,17px);line-height:1.05;overflow-wrap:normal;max-width:100%}
+  body .central-v3-team small{display:none}
+  body .central-v3-team i{width:58px;height:66px;font-size:18px}
+  body .central-v3-matchup .fc-vs{min-width:50px;padding:6px 8px;margin-top:10px}
+  body .central-v3-matchup .fc-vs b{font-size:32px}
+  body .central-v3-matchup .fc-vs small{display:block}
+  body .central-v3-match{padding:24px 16px}
+}
+@media(max-width:700px){
+  body .topbar{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:12px}
+  body .topbar>div:first-child{min-width:0;width:100%}
+}
