@@ -904,3 +904,16 @@ body .wizard .w-extra button{padding:8px 14px;font-size:12px;background:transpar
   body .topbar{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:12px}
   body .topbar>div:first-child{min-width:0;width:100%}
 }
+@media(max-width:760px){
+  body .game-nav nav button i{position:absolute;top:4px;right:calc(50% - 30px);margin:0;min-width:17px;height:17px;padding:0 4px;display:grid;place-items:center;font-size:10px;line-height:1;border-radius:9px;background:var(--fc-lime);color:var(--fc-lime-ink)}
+  body .game-nav nav button.active{color:var(--fc-lime)}
+  body .game-nav nav button.active:after{display:block;background:var(--fc-lime)}
+}
+@media(max-width:1100px){
+  body .season-nav{position:static!important;top:auto!important;max-height:none!important;overflow:visible!important}
+}
+@media(max-width:760px){
+  body :is(.nh-tabs,.ya-tabs,.wa-tabs,.of-tabs,.cc-tabs){display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  body :is(.nh-tabs,.ya-tabs,.wa-tabs,.of-tabs,.cc-tabs)::-webkit-scrollbar{display:none}
+  body :is(.nh-tabs,.ya-tabs,.wa-tabs,.of-tabs,.cc-tabs) button{flex:0 0 auto;white-space:nowrap}
+}
