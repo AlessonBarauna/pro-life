@@ -1887,7 +1887,7 @@
         ag:Math.max(0,Math.min(6,Math.round(1.05+(as-hs)/28+((Math.floor(seed/17)%5)-2)/2)))
       };
     };
-    return ChampionsKnockout.daily(s,ed,{
+    const koResult=ChampionsKnockout.daily(s,ed,{
       otherFixture:score,
       heroFixture(m){
         const hero=worldMatchClub(s,s.clubId);
@@ -1905,6 +1905,15 @@
         }finally{worldMatchScope=before}
       }
     });
+    // desfecho (agregado / prorrogacao / penaltis) fica guardado no registro dos jogos do seu clube
+    try{
+      for(const st of koResult?.stages||[])for(const km of st.matches||[]){
+        if(!km.tie||!km.played)continue;
+        const rec=(s.matches||[]).find(x=>x.competitionId==="ucl"&&x.home===km.homeId&&x.away===km.awayId&&x.season===s.season&&!x.tie&&x.round===km.pair+1&&x.date===km.playedDay);
+        if(rec)rec.tie=km.tie;
+      }
+    }catch(e){}
+    return koResult;
   }
   function processEuropaDay(s, rng) {
     if (!EuropaSeason || !Continental || !WorldClubCompetitions) return null;

@@ -219,7 +219,9 @@ test("autosave stores, loads and replaces a newly created career", () => {
   assert.equal(S.save(first), true);
   assert.deepEqual(S.load(), first);
   const second = D.create({ mode: "coach", clubId: "c0" }, 410);
-  assert.equal(S.save(second), true);
+  // save() nunca sobrescreve o slot de outra carreira; uma carreira nova entra como novo slot ativo.
+  assert.equal(S.save(second), false);
+  assert.ok(S.saveAsNew(second));
   const loaded = S.load();
   assert.equal(loaded.mode, "coach");
   assert.equal(loaded.clubId, "c0");

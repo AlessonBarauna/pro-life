@@ -74,6 +74,8 @@
       p.potential = Math.max(o + 1, Math.min(Number.isFinite(p.potential) ? p.potential : cap, cap));
     }
     if (!Number.isFinite(p.potential)) p.potential = clamp(ovrOf(p) + 3, 40, 95);
+    // normalizePlayer (global-football) garante potencial >= GER ao carregar; manter a mesma regra aqui deixa salvar/carregar idempotente.
+    { const g = Number(p.ovr ?? p.overall); if (Number.isFinite(g) && p.potential < g) p.potential = g; }
     return p;
   }
   let overallFn = null;

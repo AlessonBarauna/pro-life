@@ -383,3 +383,503 @@ h1,h2,.story-card b,.central-v3-team strong{text-wrap:balance}
   .central-v3-team strong{font-size:28px}
 }
 @media (max-width:430px){.central-v3-team strong{font-size:22px;letter-spacing:-.2px}}
+
+/* =====================================================================
+   BLOCO 2 · Meu jogador + Mercado (Transfer Hub) + Negociação
+   Animações e padrões inspirados no FC 27: GER animado, barras que
+   preenchem, abas de hub, medidor de tensão da negociação.
+   Tudo respeita prefers-reduced-motion.
+   ===================================================================== */
+@keyframes fc-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes fc-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes fc-slash{from{transform:translateX(-120%) skewX(-24deg);opacity:0}30%{opacity:.9}to{transform:translateX(220%) skewX(-24deg);opacity:0}}
+@keyframes fc-pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+@keyframes fc-pulse{0%,100%{box-shadow:0 0 0 0 rgba(201,242,58,.5)}50%{box-shadow:0 0 0 7px rgba(201,242,58,0)}}
+@keyframes fc-marker{from{left:0}to{left:var(--t,50%)}}
+
+/* entrada escalonada dos cartões de cada tela */
+main.sx-enter>.card,main.sx-enter .player-hub>.card,main.sx-enter .player-hub>section,
+main.sx-enter .world-market-layout>*,main.sx-enter .grid3>*{animation:fc-rise .5s cubic-bezier(.2,.7,.2,1) both}
+main.sx-enter .player-hub>*:nth-child(2),main.sx-enter .world-market-layout>*:nth-child(2),main.sx-enter .grid3>*:nth-child(2){animation-delay:.07s}
+main.sx-enter .player-hub>*:nth-child(3),main.sx-enter .grid3>*:nth-child(3){animation-delay:.14s}
+main.sx-enter .player-hub>*:nth-child(4){animation-delay:.21s}
+
+/* ---------- MEU JOGADOR: cartão em faixa de GER ---------- */
+.player-hero,.dev32-hero{--tier:var(--tier-silver)}
+.player-hero[data-tier="bronze"],.dev32-hero[data-tier="bronze"]{--tier:var(--tier-bronze)}
+.player-hero[data-tier="silver"],.dev32-hero[data-tier="silver"]{--tier:var(--tier-silver)}
+.player-hero[data-tier="gold"],.dev32-hero[data-tier="gold"]{--tier:var(--tier-gold)}
+.player-hero[data-tier="elite"],.dev32-hero[data-tier="elite"]{--tier:var(--tier-elite)}
+.game-shell .player-hero{
+  overflow:hidden;
+  background:
+    linear-gradient(115deg,color-mix(in srgb,var(--tier) 14%,transparent) 0 34%,transparent 34%),
+    repeating-linear-gradient(115deg,rgba(255,255,255,.02) 0 2px,transparent 2px 20px),
+    linear-gradient(160deg,#0e1823,#070b11);
+}
+.game-shell .player-hero::before{background:var(--tier);height:100%;width:4px}
+.game-shell .player-hero::after{
+  content:"";position:absolute;top:0;bottom:0;left:0;width:34%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.1),transparent);
+  animation:fc-slash 1.4s .35s ease-out 1 both;
+}
+.player-hero h1{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;font-size:clamp(34px,4vw,60px);letter-spacing:-.8px;line-height:.95}
+.player-hero-copy p b{color:var(--tier)}
+.player-ovr strong{
+  font-family:var(--fc-display);font-style:italic;font-weight:700;color:var(--tier);
+  font-size:clamp(76px,9vw,128px);line-height:.85;letter-spacing:-3px;
+  text-shadow:0 0 34px color-mix(in srgb,var(--tier) 38%,transparent);
+  font-variant-numeric:tabular-nums;
+}
+.player-ovr small,.player-ovr span{font-family:var(--fc-display);letter-spacing:2px;text-transform:uppercase}
+.player-ovr span{color:#fff;font-style:italic;font-weight:700}
+.player-tags span,.rating-badge{
+  border-radius:0;border:0;background:rgba(255,255,255,.07);color:var(--pl-text);transform:skewX(-10deg);
+  font-family:var(--fc-display);letter-spacing:.9px;text-transform:uppercase;font-size:12px;padding:5px 11px;
+}
+.player-tags span:first-child{background:var(--tier);color:#0a0d12;font-weight:800}
+.rating-badge{background:var(--fc-lime);color:var(--fc-lime-ink);font-weight:800}
+.player-tabs{background:transparent;border:0;border-bottom:1px solid var(--pl-line);border-radius:0;padding:0;gap:4px;box-shadow:none}
+.player-tabs :where(a,button){
+  clip-path:none;background:transparent;border:0;border-bottom:3px solid transparent;border-radius:0;
+  font-family:var(--fc-display);letter-spacing:1.2px;text-transform:uppercase;font-size:13px;color:var(--pl-text-3);padding:12px 16px;
+}
+.player-tabs :where(a,button):hover{color:#fff;background:rgba(255,255,255,.04);transform:none}
+.player-tabs :where(a.active,button.active,[aria-current]){color:var(--fc-lime);border-bottom-color:var(--fc-lime)}
+.stat,.player-kpis>*,.dev32-ratings>span,.dev32-vitals>*{
+  border-radius:0;border:0;border-left:2px solid var(--pl-line-strong);background:rgba(255,255,255,.03);
+}
+.stat small,.player-kpis small,.dev32-ratings small{font-family:var(--fc-display);letter-spacing:1.5px;text-transform:uppercase;color:var(--pl-text-3)}
+.stat b,.player-kpis b,.dev32-ratings strong,.dev32-vitals b{font-family:var(--fc-display);font-style:italic}
+.dev32-ratings strong{color:var(--tier)}
+
+/* barras de atributo: preenchem ao entrar, uma depois da outra */
+.player-attr i,.dev32-attribute i{display:block;height:6px;background:rgba(255,255,255,.07);overflow:hidden;border-radius:0}
+.player-attr i em,.dev32-attribute i em{
+  display:block;height:100%;background:linear-gradient(90deg,var(--fc-lime),#e8ff8d);transform-origin:left;
+  animation:fc-fill .8s cubic-bezier(.2,.7,.2,1) both;
+}
+.player-attr.good i em{background:linear-gradient(90deg,#7fe2a0,var(--fc-lime))}
+.player-attr:nth-child(2) i em,.dev32-attribute:nth-child(2) i em{animation-delay:.05s}
+.player-attr:nth-child(3) i em,.dev32-attribute:nth-child(3) i em{animation-delay:.1s}
+.player-attr:nth-child(4) i em,.dev32-attribute:nth-child(4) i em{animation-delay:.15s}
+.player-attr:nth-child(5) i em,.dev32-attribute:nth-child(5) i em{animation-delay:.2s}
+.player-attr:nth-child(6) i em,.dev32-attribute:nth-child(6) i em{animation-delay:.25s}
+.player-attr:nth-child(n+7) i em,.dev32-attribute:nth-child(n+7) i em{animation-delay:.3s}
+.player-attr b,.dev32-attribute b{font-family:var(--fc-display);font-style:italic}
+.player-attr-group h3{font-family:var(--fc-display);letter-spacing:1.6px;text-transform:uppercase;color:var(--fc-lime)}
+
+/* ---------- MERCADO: Transfer Hub ---------- */
+.window-card{
+  border-radius:0;border:1px solid var(--pl-line);background:rgba(255,255,255,.025);position:relative;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
+}
+.window-card h3{font-family:var(--fc-display);font-style:italic;letter-spacing:.3px}
+.window-card.open{border-color:var(--fc-lime);background:linear-gradient(160deg,var(--fc-lime-soft),transparent 70%)}
+.window-card.open::before{
+  content:"";position:absolute;top:14px;right:26px;width:9px;height:9px;border-radius:50%;background:var(--fc-lime);animation:fc-pulse 1.8s infinite;
+}
+body .world-live-market-dark{
+  --wm-bg:var(--pl-bg);--wm-card:var(--pl-surface-2);--wm-gold:var(--fc-lime);--wm-line:var(--pl-line-strong);--wm-muted:var(--pl-text-3);
+  border-radius:0;background:
+    linear-gradient(105deg,rgba(201,242,58,.06) 0 26%,transparent 26%),
+    repeating-linear-gradient(115deg,rgba(255,255,255,.018) 0 2px,transparent 2px 22px),var(--pl-bg);
+  border:1px solid var(--pl-line);
+}
+body .world-market-head h2{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:-.5px}
+body .world-market-head small{font-family:var(--fc-display);letter-spacing:2px;color:var(--fc-lime)}
+body .world-market-indicators span{border-radius:0;border:0;border-left:2px solid var(--fc-lime);background:rgba(255,255,255,.04)}
+body .world-market-indicators b{font-family:var(--fc-display);font-style:italic;font-size:30px;color:#fff}
+body .world-market-indicators small{font-family:var(--fc-display);letter-spacing:1.4px;text-transform:uppercase}
+body .world-market-tabs{border-bottom:1px solid var(--pl-line);padding:16px 0 0;gap:2px}
+body .world-market-tabs button{
+  clip-path:none;border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;color:var(--pl-text-3);
+  font-family:var(--fc-display);letter-spacing:1.3px;text-transform:uppercase;padding:12px 16px;font-weight:600;
+}
+body .world-market-tabs button:hover{color:#fff;background:rgba(255,255,255,.04);transform:none}
+body .world-market-tabs button.active{background:linear-gradient(0deg,var(--fc-lime-soft),transparent);color:var(--fc-lime);border-bottom-color:var(--fc-lime)}
+body .world-market-filters select{border-radius:0;background:#070c13}
+body .world-market-layout>main,body .world-market-layout>aside{
+  border-radius:0;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);background:linear-gradient(170deg,var(--pl-surface-2),var(--pl-surface));
+}
+body .world-market-deal{border-radius:0;border:0;border-left:3px solid var(--pl-line-strong);transition:border-color .15s,background .15s,transform .15s}
+body .world-market-deal:hover{border-left-color:var(--fc-lime);background:rgba(201,242,58,.05);transform:translateX(3px)}
+body .world-market-ovr{border-radius:0;background:var(--pl-surface-3);clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);width:56px}
+body .world-market-ovr b{font-family:var(--fc-display);font-style:italic;font-size:24px}
+body .world-market-route{border-radius:0}
+body .world-market-route i{font-style:normal;color:var(--fc-lime)}
+body .world-market-resolution{border-radius:0;background:var(--fc-lime-soft);color:var(--fc-lime)}
+body .world-market-timeline article{border-left-color:var(--fc-lime)}
+
+/* ---------- NEGOCIAÇÃO ---------- */
+.neg-card,.neg-center,.neg-profile{
+  border-radius:0;border:1px solid var(--pl-line);
+  clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%);
+  background:linear-gradient(170deg,var(--pl-surface-2),var(--pl-surface));
+}
+.neg-card.open,.neg-center{border-color:var(--fc-lime-line)}
+.neg-center{animation:fc-rise .45s cubic-bezier(.2,.7,.2,1) both}
+.neg-crest{border-radius:0;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);font-family:var(--fc-display);font-style:italic}
+.neg-head h3,.neg-center-head h3{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;font-size:24px}
+.neg-box,.neg-facts>div,.neg-dl>div{border-radius:0;border:0;border-left:2px solid var(--pl-line-strong);background:rgba(255,255,255,.03)}
+.neg-facts b.gold,.neg-dl dd.gold{color:var(--fc-lime);font-family:var(--fc-display);font-style:italic;font-size:18px}
+.neg-stage{gap:0}
+.neg-stage span{
+  border:0;border-radius:0;background:rgba(255,255,255,.05);padding:7px 20px 7px 22px;margin-right:-8px;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%,12px 50%);
+  font-family:var(--fc-display);letter-spacing:1px;text-transform:uppercase;
+}
+.neg-stage span.done{background:rgba(201,242,58,.16);color:var(--fc-lime)}
+.neg-stage span.now{background:var(--fc-lime);color:var(--fc-lime-ink);animation:fc-pop .4s both}
+.neg-interest{border-radius:0;transform:skewX(-10deg);font-family:var(--fc-display);letter-spacing:.8px;text-transform:uppercase}
+.neg-interest.lv-alto{color:var(--fc-lime);border-color:var(--fc-lime-line);background:var(--fc-lime-soft)}
+.neg-confirm{border-radius:0;border:0;border-left:3px solid var(--fc-lime);background:linear-gradient(90deg,var(--fc-lime-soft),transparent 70%)}
+.neg-confirm.danger{border-left-color:var(--pl-red);background:linear-gradient(90deg,rgba(255,123,131,.1),transparent 70%)}
+.neg-terms{border-radius:0}
+
+/* medidor de tensão (estimativa) */
+.fc-tension{display:grid;gap:6px}
+.fc-tension-head{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--fc-display);text-transform:uppercase;letter-spacing:1.3px;font-size:12px;color:var(--pl-text-3)}
+.fc-tension-head b{font-size:15px;font-style:italic;color:var(--fc-tone,var(--fc-lime))}
+.fc-tension-track{
+  position:relative;height:10px;
+  background:linear-gradient(90deg,#5fdc98 0,var(--fc-lime) 35%,#f1c75b 65%,#ff7b83 100%);
+  clip-path:polygon(0 0,100% 0,calc(100% - 6px) 100%,6px 100%);opacity:.9;
+}
+.fc-tension-track i{
+  position:absolute;top:-5px;left:var(--t,50%);width:4px;height:20px;background:#fff;transform:translateX(-50%) skewX(-14deg);
+  box-shadow:0 0 12px rgba(255,255,255,.75);animation:fc-marker .9s .15s cubic-bezier(.2,.7,.2,1) both;
+}
+.fc-tension-scale{display:flex;justify-content:space-between;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--pl-text-3)}
+.fc-tension small{color:var(--pl-text-3);line-height:1.4}
+.fc-tension[data-tone="calm"]{--fc-tone:#5fdc98}.fc-tension[data-tone="even"]{--fc-tone:var(--fc-lime)}
+.fc-tension[data-tone="tense"]{--fc-tone:#f1c75b}.fc-tension[data-tone="edge"]{--fc-tone:#ff7b83}
+
+/* apresentação de contratação (cinemática já existente) com identidade nova */
+.cine-title{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:-.3px;font-size:clamp(28px,5vw,46px)}
+.cine-steps li{border-radius:0;transform:skewX(-10deg)}
+.cine-steps li.done i,.cine-steps li.now i{background:var(--fc-lime);color:var(--fc-lime-ink);border-radius:0}
+
+/* ---------- movimento reduzido ---------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-delay:0s!important;animation-iteration-count:1!important}
+  body .world-market-deal:hover{transform:none}
+}
+
+/* ajuste: rótulos longos de métricas não quebram no meio da palavra */
+body .game-shell .stat-grid span, body .game-shell .metric span, body .game-shell [class*="stat"] > span{overflow-wrap:normal;word-break:normal;hyphens:none}
+
+/* ============================================================
+   BLOCO 3 — TEMPORADA (campeonatos, calendário, partidas, Champions)
+   ============================================================ */
+@keyframes fc-row-in{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+@keyframes fc-live{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--fc-lime) 55%,transparent)}60%{box-shadow:0 0 0 7px transparent}}
+
+/* seletor de competições = lista lateral estilo "Torneios" */
+body .season-nav{border-top:2px solid var(--fc-lime);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)}
+body .season-group>.tag{position:sticky;top:0;z-index:2;background:var(--pl-surface-2,#0f1722);padding:6px 2px;letter-spacing:.22em}
+body .season-comp{position:relative;border-radius:0!important;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);transition:transform .16s,background .16s}
+body .season-comp:hover{transform:translateX(3px)}
+body .season-comp b{font-family:var(--fc-display);font-style:italic;letter-spacing:.2px;text-transform:uppercase}
+body .season-comp.on{background:linear-gradient(90deg,color-mix(in srgb,var(--fc-lime) 20%,transparent),transparent 85%)!important}
+
+/* cabeçalho + abas da competição */
+body .season-head h2{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:-.3px;font-size:clamp(24px,2.4vw,34px)}
+body .season-pills .pill{border-radius:0;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);padding:4px 12px;font-size:10px;letter-spacing:.8px;text-transform:uppercase}
+body .season-tabs button,body .season-toggle button{border-radius:0!important;clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%);padding:8px 22px;font-family:var(--fc-display);font-style:italic;letter-spacing:.6px;text-transform:uppercase;font-size:12px}
+body .season-tabs button.on,body .season-toggle button.on{background:var(--fc-lime)!important;border-color:var(--fc-lime)!important;color:var(--fc-lime-ink)!important}
+
+/* tabela de classificação */
+body .season-table thead th{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--pl-muted,#8fa0ad);border-bottom:2px solid color-mix(in srgb,var(--fc-lime) 55%,transparent)}
+body .season-table tbody tr{animation:fc-row-in .38s both;transition:background .14s}
+body .season-table tbody tr:nth-child(1){animation-delay:.02s}body .season-table tbody tr:nth-child(2){animation-delay:.05s}body .season-table tbody tr:nth-child(3){animation-delay:.08s}body .season-table tbody tr:nth-child(4){animation-delay:.11s}body .season-table tbody tr:nth-child(5){animation-delay:.14s}body .season-table tbody tr:nth-child(6){animation-delay:.17s}body .season-table tbody tr:nth-child(n+7){animation-delay:.2s}
+body .season-table tbody tr:hover{background:color-mix(in srgb,var(--fc-lime) 8%,transparent)}
+body .season-table tbody tr:nth-child(even){background:rgba(255,255,255,.018)}
+body .season-table tbody tr.selected,body .season-table tbody tr.me,body .season-table tbody tr.highlight{background:linear-gradient(90deg,color-mix(in srgb,var(--fc-lime) 18%,transparent),transparent 80%)!important;box-shadow:inset 3px 0 var(--fc-lime)}
+body .season-table .pts{font-family:var(--fc-display);font-style:italic;font-size:15px;color:var(--fc-lime)}
+body .season-table .num,body .season-table td:first-child{font-variant-numeric:tabular-nums}
+body .season-table td:first-child{font-family:var(--fc-display);font-weight:700}
+body .season-table .club .pill{border-radius:0;font-size:9px;letter-spacing:.8px;text-transform:uppercase;background:var(--fc-lime);color:var(--fc-lime-ink);padding:1px 6px;margin-left:6px}
+body .season-table tr.zone-promotion td:first-child,body .season-table tr.zone-qualification td:first-child{box-shadow:inset 4px 0 #3ddc97}
+body .season-table tr.zone-relegation td:first-child{box-shadow:inset 4px 0 #ff5d6c}
+body .season-table .form i{border-radius:0;clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);width:22px}
+
+/* calendário = grade de agenda */
+body .calendar-toolbar h2{font-family:var(--fc-display);font-style:italic;text-transform:uppercase}
+body .calendar-weekdays span{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--pl-muted,#8fa0ad)}
+body .calendar-grid{gap:2px;background:transparent}
+body .calendar-day{border-radius:0;background:rgba(255,255,255,.025);border:0;border-top:1px solid rgba(255,255,255,.06)}
+body .calendar-day .calendar-number{font-family:var(--fc-display);font-weight:700}
+body .calendar-day.present{background:color-mix(in srgb,var(--fc-lime) 11%,transparent);box-shadow:inset 0 3px var(--fc-lime)}
+body .calendar-day.next-game{box-shadow:inset 0 3px var(--fc-lime),inset 0 0 0 1px color-mix(in srgb,var(--fc-lime) 40%,transparent);background:color-mix(in srgb,var(--fc-lime) 7%,transparent)}
+body .calendar-day.next-game .calendar-number:after{color:var(--fc-lime);animation:fc-pulse 1.8s infinite}
+body .calendar-day.selected{outline-color:var(--fc-lime)}
+body span.calendar-event{border-radius:0;clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%);border-left-width:4px;background:rgba(255,255,255,.05);font-weight:600}
+body .calendar-event.hero{background:color-mix(in srgb,var(--fc-lime) 14%,transparent);border-left-color:var(--fc-lime)}
+body .calendar-event.hero.played{border-left-color:#3ddc97}
+body .cal-filters .cal-chip{border-radius:0;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);padding:6px 14px}
+
+/* Competições (hub) — tokens do bloco escuro herdam o acento único */
+body .ch-dark{--ch-gold:var(--fc-lime);--ch-card:#0f1a25;--ch-ok:#3ddc97;background:linear-gradient(160deg,#08111a,#0a0f16);border-radius:0;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%)}
+body .ch-dark h2,body .ch-dark h3{font-family:var(--fc-display);font-style:italic;text-transform:uppercase}
+body .ch-nav button.on,body .ch-nav button.active,body .ch-nav button[aria-selected="true"]{color:var(--fc-lime);border-bottom-color:var(--fc-lime)}
+body .ch-box,body .ch-main{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
+body .ch-main:first-child{border-color:var(--fc-lime);background:linear-gradient(135deg,color-mix(in srgb,var(--fc-lime) 10%,transparent),transparent 60%)}
+body .ch-strip b{font-family:var(--fc-display);font-style:italic;font-size:30px;font-variant-numeric:tabular-nums}
+
+/* Champions — identidade de torneio: azul-noite com acento ciano (não dourado) */
+body .pl-ucl-embedded{--ucl:#4aa8ff;background:radial-gradient(900px 300px at 10% -10%,rgba(74,168,255,.2),transparent 60%),linear-gradient(160deg,#060d1f,#09101c 70%);border-radius:0;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%);border-color:#1f3556}
+body .pl-ucl-embedded .pl-ucl-header{background:linear-gradient(110deg,#0e2a66,#071329 70%);border-radius:0;border-left:4px solid var(--ucl);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)}
+body .pl-ucl-embedded .pl-ucl-header h1{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:-.3px}
+body .pl-ucl-embedded .pl-ucl-kicker{color:var(--ucl)}
+body .pl-ucl-embedded .pl-ucl-badge{border-radius:0;background:rgba(74,168,255,.14);color:#bfe0ff;letter-spacing:.14em}
+body .pl-ucl-embedded .pl-ucl-nav button{border-radius:0;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);padding:9px 20px;font-family:var(--fc-display);font-style:italic;letter-spacing:.5px;text-transform:uppercase;font-size:12px;background:#0d1a33;border-color:#20365c}
+body .pl-ucl-embedded .pl-ucl-nav button.active{background:var(--ucl);color:#031024;border-color:var(--ucl)}
+body .pl-ucl-embedded .pl-ucl-stat,body .pl-ucl-embedded .pl-ucl-card{border-radius:0;background:linear-gradient(160deg,#0b1830,#09111f);border-color:#1f3556;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
+body .pl-ucl-embedded .pl-ucl-stat strong{font-family:var(--fc-display);font-style:italic;font-variant-numeric:tabular-nums;animation:fc-rise .5s both}
+body .pl-ucl-embedded .pl-ucl-card h2{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;font-size:16px;letter-spacing:.4px}
+body .pl-ucl-embedded .pl-ucl-table th{font-size:10px;letter-spacing:.14em;text-transform:uppercase;border-bottom:2px solid rgba(74,168,255,.5)}
+body .pl-ucl-embedded .pl-ucl-table tbody tr{animation:fc-row-in .36s both}
+body .pl-ucl-embedded .pl-ucl-table tr.hero{background:linear-gradient(90deg,rgba(74,168,255,.28),transparent 85%);box-shadow:inset 3px 0 var(--ucl)}
+body .pl-ucl-embedded .pl-ucl-rank{border-radius:0;clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%);width:26px;font-family:var(--fc-display);font-weight:700}
+body .pl-ucl-embedded .pl-ucl-rank.direct{background:#12865f}body .pl-ucl-embedded .pl-ucl-rank.playoff{background:#a77a1b}
+body .pl-ucl-embedded .pl-ucl-fixture .score{font-family:var(--fc-display);font-style:italic;font-size:17px;background:rgba(255,255,255,.06);padding:3px 0}
+body .pl-ucl-embedded .pl-ucl-hero{background:linear-gradient(90deg,rgba(74,168,255,.22),transparent);border-radius:0}
+body .pl-ucl-embedded .pl-ucl-pair{border-radius:0;background:#0b1830;border-color:#1f3556;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+body .pl-ucl-embedded .pl-ucl-win{color:var(--fc-lime)}
+body .pl-ucl-embedded .pl-ucl-stage h3{color:var(--ucl);font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:.5px}
+
+/* estado vazio (Partidas etc.) mais “placar de espera” */
+body .game-shell .empty{border:1px dashed color-mix(in srgb,var(--fc-lime) 35%,transparent);background:repeating-linear-gradient(135deg,rgba(255,255,255,.02) 0 10px,transparent 10px 20px);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)}
+body .game-shell .empty:before{border-color:var(--fc-lime);animation:fc-live 2s infinite}
+
+@media(max-width:760px){
+  body .season-tabs button,body .season-toggle button{padding:8px 14px}
+  body .calendar-day{min-height:92px}
+}
+@media(prefers-reduced-motion:reduce){
+  body .season-table tbody tr,body .pl-ucl-embedded .pl-ucl-table tbody tr,body .pl-ucl-embedded .pl-ucl-stat strong,body .game-shell .empty:before,body .calendar-day.next-game .calendar-number:after{animation:none!important}
+}
+
+/* ============================================================
+   BLOCO 4 — PARTIDA AO VIVO (transmissão)
+   ============================================================ */
+@keyframes fc-goal-in{0%{opacity:0;transform:translateX(-60px) skewX(-8deg)}60%{transform:translateX(8px) skewX(-8deg)}100%{opacity:1;transform:skewX(-8deg)}}
+@keyframes fc-goal-text{0%{letter-spacing:.6em;opacity:0}100%{letter-spacing:-.02em;opacity:1}}
+@keyframes fc-ball-glow{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.6)}50%{box-shadow:0 0 0 8px transparent}}
+
+body .live-match-overlay{background:#050a0f;font-family:var(--fc-body,inherit)}
+body .lm-shell{background:radial-gradient(900px 420px at 50% -10%,color-mix(in srgb,var(--fc-lime) 11%,transparent),transparent 65%),linear-gradient(180deg,#07101a,#050a0f)}
+
+/* header = scorebug de transmissão */
+body .lm-header{background:transparent;border:0;padding:18px 28px 6px;grid-template-columns:1fr auto auto}
+body .lm-header small{color:var(--fc-lime);letter-spacing:.28em;font-size:10px;text-transform:uppercase}
+body .lm-header>div:first-child b{display:inline-flex;align-items:stretch;font-family:var(--fc-display);font-style:italic;text-transform:uppercase;font-size:clamp(14px,1.5vw,20px);letter-spacing:.2px;margin-top:6px;background:#0d1620;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 100%,12px 100%);padding:0 22px;align-items:center;border-top:2px solid var(--fc-lime)}
+body .lm-header b strong{background:var(--fc-lime);color:var(--fc-lime-ink);margin:0 16px;padding:6px 18px;font-size:clamp(22px,2.4vw,32px);clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);font-variant-numeric:tabular-nums}
+body .lm-clock{font-family:var(--fc-display);font-style:italic;letter-spacing:.2em;font-size:10px;color:var(--fc-lime)}
+body .lm-clock strong{font-size:clamp(28px,3vw,40px);letter-spacing:0;font-variant-numeric:tabular-nums}
+body .lm-header>button{border-radius:0;clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%);padding:12px 26px;font-family:var(--fc-display);font-style:italic;letter-spacing:.14em;text-transform:uppercase}
+body .lm-header>button:not(:disabled){background:var(--fc-lime);color:var(--fc-lime-ink);border-color:var(--fc-lime)}
+
+/* campo */
+body .lm-pitch{border-radius:0;border-color:rgba(255,255,255,.7);clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%);background:radial-gradient(ellipse at 50% 50%,rgba(255,255,255,.07),transparent 70%),repeating-linear-gradient(90deg,#14462f 0 7.1428%,#175436 7.1428% 14.2857%);box-shadow:inset 0 0 110px rgba(0,0,0,.4),0 18px 50px rgba(0,0,0,.45)}
+body .lm-half,body .lm-circle,body .lm-pitch:before,body .lm-pitch:after{border-color:rgba(255,255,255,.62)}
+body .lm-player{width:30px;height:30px;font-family:var(--fc-display);font-size:10px;transition:left 1.2s cubic-bezier(.4,.1,.3,1),top 1.2s cubic-bezier(.4,.1,.3,1)}
+body .lm-home{background:var(--fc-lime);color:var(--fc-lime-ink);border:2px solid #fff}
+body .lm-away{background:#0d1620;color:#fff;border:2px solid #ff5d6c}
+body .lm-ball{width:14px;height:14px;transition:left 1.2s cubic-bezier(.4,.1,.3,1),top 1.2s cubic-bezier(.4,.1,.3,1);animation:fc-ball-glow 1.6s infinite}
+
+/* painel lateral */
+body .lm-panel{border-radius:0;background:linear-gradient(170deg,#0e1a27,#0a121b);border:1px solid rgba(255,255,255,.08);border-top:2px solid var(--fc-lime);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%)}
+body .lm-score strong{font-family:var(--fc-display);font-style:italic;color:var(--fc-lime);font-variant-numeric:tabular-nums}
+body .lm-score span{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;font-size:13px}
+body .lm-hero{border-left-color:var(--fc-lime);background:linear-gradient(90deg,color-mix(in srgb,var(--fc-lime) 14%,transparent),transparent)}
+body .lm-hero small{color:var(--fc-lime);letter-spacing:.2em}
+body .lm-hero b{font-family:var(--fc-display);font-style:italic}
+body .lm-panel h3{color:var(--fc-lime);letter-spacing:.24em;font-size:10px}
+body .lm-feed article{grid-template-columns:48px 1fr;position:relative}
+body .lm-feed article b{font-family:var(--fc-display);font-style:italic;font-variant-numeric:tabular-nums}
+body .lm-feed article.goal{color:#fff;background:linear-gradient(90deg,color-mix(in srgb,var(--fc-lime) 16%,transparent),transparent);box-shadow:inset 3px 0 var(--fc-lime);padding-left:10px}
+body .lm-feed article.goal b{color:var(--fc-lime)}
+body .lm-feed article.yellow{box-shadow:inset 3px 0 #ffd65b;padding-left:10px}
+body .lm-feed article.red{box-shadow:inset 3px 0 #ff5d6c;padding-left:10px}
+
+/* controles */
+body .lm-controls{background:#07101a;border-top:1px solid rgba(255,255,255,.07)}
+body .lm-controls button{border-radius:0;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);padding:10px 20px;font-family:var(--fc-display);font-style:italic;letter-spacing:.1em;text-transform:uppercase}
+body .lm-controls button.active{background:var(--fc-lime);color:var(--fc-lime-ink)}
+body .lm-controls span{font-variant-numeric:tabular-nums;letter-spacing:.06em}
+
+/* faixa de GOL */
+#fc-goal-banner{position:fixed;inset:0;z-index:10001;display:grid;place-items:center;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,.45),transparent 70%);transition:opacity .45s}
+#fc-goal-banner.out{opacity:0}
+#fc-goal-banner .fc-goal-card{display:grid;gap:4px;justify-items:center;text-align:center;padding:26px 64px 24px;background:linear-gradient(100deg,#0b1004,#16210a 60%,#0b1004);border:2px solid var(--fc-lime);box-shadow:0 0 0 6px rgba(201,242,58,.15),0 30px 80px rgba(0,0,0,.6);animation:fc-goal-in .55s cubic-bezier(.2,.9,.3,1.1) both;transform:skewX(-8deg)}
+#fc-goal-banner em{font-family:var(--fc-display);font-style:italic;font-weight:900;font-size:clamp(54px,9vw,120px);line-height:.95;color:var(--fc-lime);animation:fc-goal-text .7s .1s both}
+#fc-goal-banner b{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;font-size:clamp(18px,2.4vw,30px);color:#fff;letter-spacing:.04em}
+#fc-goal-banner small{color:#b7c5a0;font-size:13px;max-width:44ch}
+#fc-goal-banner strong{font-family:var(--fc-display);font-style:italic;font-size:clamp(24px,3vw,38px);color:#fff;margin-top:6px;font-variant-numeric:tabular-nums}
+
+@media(max-width:850px){
+  body .lm-header{padding:12px 14px 4px}
+  body .lm-header>div:first-child b{padding:0 12px;flex-wrap:wrap}
+  #fc-goal-banner .fc-goal-card{padding:20px 28px}
+}
+@media(prefers-reduced-motion:reduce){
+  body .lm-ball,#fc-goal-banner .fc-goal-card,#fc-goal-banner em{animation:none!important}
+  body .lm-player,body .lm-ball{transition:none}
+}
+
+/* ============================================================
+   BLOCOS 5 e 6 — SELEÇÃO, MUNDO, BASE, FORA DE CAMPO, TREINADOR,
+   CAIXA, SAVES, FINANÇAS, CLUBES
+   ============================================================ */
+@keyframes fc-bar-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes fc-card-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* módulos escuros: o dourado de cada módulo vira o acento único */
+body .world-competitions-dark{--wc-gold:var(--fc-lime);--wc-card:#0f1a25;background:radial-gradient(circle at 8% 0,color-mix(in srgb,var(--fc-lime) 10%,transparent),transparent 30%),#080f16}
+body .nh-dark{--nh-gold:var(--fc-lime);--nh-card:#0f1a25;--nh-ok:#3ddc97}
+body .ya-dark{--ya-gold:var(--fc-lime);--ya-teal:#3ddc97;--ya-card:#0f1a25}
+body .wa-dark{--wa-gold:var(--fc-lime);--wa-teal:#3ddc97;--wa-card:#0f1a25}
+body .of-dark{--of-gold:var(--fc-lime);--of-ok:#3ddc97;--of-card:#0f1a25}
+body .cc-dark{--cc-gold:var(--fc-lime);--cc-warn:var(--fc-lime);--cc-ok:#3ddc97;--cc-card:#0f1a25}
+body .world-competitions-dark,body .nh-dark,body .ya-dark,body .wa-dark,body .of-dark,body .cc-dark{border-radius:0;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%)}
+body :is(.world-competitions-dark,.nh-dark,.ya-dark,.wa-dark,.of-dark,.cc-dark) :is(h2,h3){font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:.2px}
+body :is(.world-competitions-dark,.nh-dark,.ya-dark,.wa-dark,.of-dark,.cc-dark) :is(h2){font-size:clamp(22px,2.4vw,32px)}
+
+/* abas: sublinhado vira bloco inclinado */
+body :is(.nh-tabs,.ya-tabs,.wa-tabs,.of-tabs,.cc-tabs) button{font-family:var(--fc-display);font-style:italic;letter-spacing:.5px;text-transform:uppercase;font-size:12px}
+body :is(.nh-tabs button.on,.ya-tabs button.active,.wa-tabs button.active,.of-tabs button.active,.cc-tabs button.active){color:var(--fc-lime);border-bottom-width:3px}
+body :is(.world-league-tabs,.world-round-tabs) button{border-radius:0;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);padding:7px 16px;font-family:var(--fc-display);font-style:italic;letter-spacing:.4px;text-transform:uppercase;font-size:12px}
+body :is(.world-league-tabs,.world-round-tabs) button.active{color:var(--fc-lime-ink)}
+body :is(.ya-chips) button{border-radius:0;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%)}
+body :is(.ya-chips) button.active{color:var(--fc-lime-ink)}
+
+/* cartões, pódios, prêmios */
+body :is(.ya-pod,.wa-award,.of-card,.of-post,.cc-focus,.nh-card,.ya-card){border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);animation:fc-card-in .45s both}
+body .ya-pod:nth-child(2){animation-delay:.08s}body .ya-pod:nth-child(3){animation-delay:.16s}
+body .ya-pod-ovr b{font-family:var(--fc-display);font-style:italic;text-shadow:0 0 28px color-mix(in srgb,var(--fc-lime) 45%,transparent)}
+body .ya-head-count b{font-family:var(--fc-display);font-style:italic}
+body .wa-award.hero{background:linear-gradient(135deg,color-mix(in srgb,var(--fc-lime) 14%,transparent),transparent 70%)}
+body .world-competition-table tbody tr:first-child td:first-child{box-shadow:inset 3px 0 var(--fc-lime)}
+body .world-competition-table strong{font-family:var(--fc-display);font-style:italic}
+body .world-competition-table tbody tr{animation:fc-row-in .36s both}
+
+/* barras que “enchem” (fora de campo, estrelas, evolução) */
+body .of-bar i,body .ya-stars-fill{transform-origin:left;animation:fc-bar-grow .9s .15s cubic-bezier(.2,.8,.2,1) both}
+
+/* Seleção */
+body .nh-flag{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);font-family:var(--fc-display);font-style:italic}
+body .nh-dark tr.me td{background:linear-gradient(90deg,color-mix(in srgb,var(--fc-lime) 14%,transparent),transparent 80%)}
+body .nh-pitch span.me{box-shadow:0 0 0 3px color-mix(in srgb,var(--fc-lime) 35%,transparent)}
+
+/* Clubes (navegador de elencos) */
+body .club-browser-hero{border-radius:0;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%);border-left:4px solid var(--fc-lime)}
+body .club-browser-overall{font-family:var(--fc-display);font-style:italic}
+body .club-browser-kpis>*{border-radius:0;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+body .club-browser-team-list button.active{background:linear-gradient(90deg,color-mix(in srgb,var(--fc-lime) 18%,transparent),transparent);box-shadow:inset 3px 0 var(--fc-lime)}
+body .club-pitch-player{transition:transform .18s}body .club-pitch-player:hover{transform:translateY(-3px) scale(1.06)}
+body .club-section-heading{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:.3px}
+
+/* Finanças / Patrocínios / Perfil e vida */
+body .shop-item{border-radius:0;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);transition:transform .16s,box-shadow .16s}
+body .shop-item:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(0,0,0,.4)}
+body .money-value{font-family:var(--fc-display);font-style:italic;font-variant-numeric:tabular-nums;color:var(--fc-lime)}
+body .life-tabs button{border-radius:0!important;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);font-family:var(--fc-display);font-style:italic;text-transform:uppercase;letter-spacing:.4px}
+body .life-tabs button.on,body .life-tabs button.active{background:var(--fc-lime)!important;color:var(--fc-lime-ink)!important;border-color:var(--fc-lime)!important}
+body .game-shell .stat strong,body .game-shell .stats .stat b{font-family:var(--fc-display);font-style:italic;font-variant-numeric:tabular-nums}
+body .game-shell .bar>i,body .game-shell .bar span{transform-origin:left;animation:fc-bar-grow .8s .1s cubic-bezier(.2,.8,.2,1) both}
+
+/* Caixa de entrada e Saves */
+body .game-shell .card .news,body .game-shell article.news{border-radius:0;border-left:3px solid var(--fc-lime);clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%)}
+body .game-shell .danger{border-radius:0;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);letter-spacing:.1em;text-transform:uppercase;font-family:var(--fc-display);font-style:italic}
+
+/* sino/avisos do shell */
+body .sx-bell-btn i{background:var(--fc-lime);color:var(--fc-lime-ink);border-radius:0;clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)}
+body .sx-item.warn{border-left-color:var(--fc-lime)}
+body .sx-busy i{border-top-color:var(--fc-lime)}
+
+@media(prefers-reduced-motion:reduce){
+  body :is(.ya-pod,.wa-award,.of-card,.of-post,.cc-focus,.nh-card,.ya-card),body .of-bar i,body .ya-stars-fill,body .world-competition-table tbody tr,body .game-shell .bar>i,body .game-shell .bar span{animation:none!important}
+  body .shop-item,body .club-pitch-player{transition:none}
+}
+
+/* desfecho do confronto (prorrogação / pênaltis) */
+body .pl-ucl-embedded .pl-ucl-tie{display:block;margin-top:6px;padding:5px 8px;font-size:11px;line-height:1.3;color:var(--fc-lime-ink);background:var(--fc-lime);clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%);font-weight:700}
+body .match-detail-tie{border-left-color:var(--fc-lime)}
+
+/* ===== Central — hub de carreira (FC 27): escudos com cor do clube, contagem regressiva, forma ===== */
+body .central-v3-hero{min-height:480px}
+body .central-v3-match{
+  background:
+    linear-gradient(112deg,hsl(var(--hh,150) 50% 24%/.3) 0 30%,transparent 30.2%),
+    linear-gradient(112deg,transparent 70%,hsl(var(--ha,210) 50% 24%/.28) 70.2%),
+    repeating-linear-gradient(115deg,rgba(255,255,255,.025) 0 2px,transparent 2px 22px),
+    linear-gradient(160deg,#0d1621,#070b11);
+}
+body .central-v3-matchup{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:clamp(12px,2.4vw,36px);margin:6px 0 4px}
+body .central-v3-team{grid-template-columns:96px 1fr;column-gap:18px}
+body .central-v3-team.away{grid-template-columns:1fr 96px}
+body .central-v3-team i,body .fc-crest{
+  --h:150;width:96px;height:108px;display:grid;place-items:center;border:0;border-radius:0;
+  background:linear-gradient(155deg,hsl(var(--h) 68% 46%),hsl(var(--h) 72% 20%));
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.88),inset 0 0 0 5px hsl(var(--h) 70% 18%);
+  clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%);
+  font-family:var(--fc-display);font-style:italic;font-weight:800;font-size:28px;letter-spacing:-.5px;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.35);
+  padding-bottom:12px;
+}
+body .fc-crest.mini{width:24px;height:27px;font-size:8px;padding-bottom:3px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.85)}
+body .central-v3-team small{letter-spacing:2px;color:rgba(255,255,255,.55)}
+body .fc-vs{display:grid;place-items:center;gap:0;min-width:92px;padding:10px 16px;background:var(--fc-lime);color:var(--fc-lime-ink);
+  transform:skewX(-12deg);box-shadow:6px 6px 0 rgba(0,0,0,.35)}
+body .fc-vs>*{transform:skewX(12deg)}
+body .fc-vs b{font-family:var(--fc-display);font-style:italic;font-weight:800;font-size:58px;line-height:.9;letter-spacing:-2px;font-variant-numeric:tabular-nums}
+body .central-v3-matchup .fc-vs small{color:var(--fc-lime-ink);font-family:var(--fc-display);font-weight:800;letter-spacing:2px;font-size:11px}
+body .central-v3-competition mark{display:none}
+body .fc-form-chips{display:flex;align-items:center;gap:10px}
+body .fc-form-chips em{display:flex;gap:4px;font-style:normal}
+body .fc-form-chips b{width:22px;height:22px;display:grid;place-items:center;font-family:var(--fc-display);font-size:11px;font-weight:800;color:#fff;background:#3a4756;transform:skewX(-10deg)}
+body .fc-form-chips b.form-win{background:#2fae72}
+body .fc-form-chips b.form-draw{background:#8f8a4a}
+body .fc-form-chips b.form-loss{background:#c04858}
+body .central-v3-standing{grid-template-columns:28px 30px 1fr auto;gap:10px}
+body .central-v3-standing.me b{color:var(--fc-lime)}
+body .central-v3-tile{position:relative}
+body .central-v3-tile::before{content:"";position:absolute;left:0;top:0;width:46px;height:3px;background:var(--fc-lime)}
+@media(max-width:760px){
+  body .central-v3-team,body .central-v3-team.away{display:flex;flex-direction:column;gap:6px;text-align:center}
+  body .central-v3-team i{width:64px;height:72px;font-size:19px}
+  body .fc-vs{min-width:60px;padding:6px 10px}body .fc-vs b{font-size:34px}
+}
+body .central-v3-team strong{font-size:clamp(24px,2.3vw,36px);overflow-wrap:normal}
+body .central-v3-team{align-items:center}
+
+/* Central — prioridades em cartões (trilho) e faixa de contexto estilo ticker */
+body .central-v3-tasks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-content:start}
+body .central-v3-tasks>.central-v3-eyebrow,body .central-v3-tasks>h2,body .central-v3-tasks>.muted,body .central-v3-tasks>.central-v3-decision{grid-column:1/-1}
+body .central-v3-task{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:132px;padding:14px 16px;border:0;border-top:3px solid var(--pl-line-strong);background:rgba(255,255,255,.04);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%);transition:transform .18s,border-color .18s,background .18s}
+body .central-v3-task:hover{transform:translateY(-3px);border-top-color:var(--fc-lime);background:rgba(201,242,58,.07)}
+body .central-v3-task small{font-family:var(--fc-display);font-size:10px;letter-spacing:1.8px;color:var(--fc-lime)}
+body .central-v3-task b{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;font-size:18px;line-height:1.05;letter-spacing:.2px;color:#fff}
+body .central-v3-task span{font-size:11px;color:var(--pl-text-2)}
+body .central-v3-task button{margin-top:auto;align-self:flex-start;grid-column:auto;grid-row:auto;padding:6px 12px;font-size:10px}
+body .central-v3-task-urgent{border-top-color:#ffb020}
+body .central-v3-task-urgent small{color:#ffb020}
+body .central-v3-context{position:relative;border-left:4px solid var(--fc-lime);background:linear-gradient(90deg,rgba(201,242,58,.08),rgba(18,28,38,.5) 40%)}
+body .central-v3-context small{font-family:var(--fc-display);letter-spacing:2px;color:var(--fc-lime)}
+body .central-v3-context b{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;font-size:15px}
+@media(max-width:1100px){body .central-v3-tasks{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){body .central-v3-tasks{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){body .central-v3-task{transition:none}}
+
+/* Assistente de criação: ações secundárias fora da barra fixa (no celular a barra era alta e cobria o conteúdo) */
+body .wizard .w-extra{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+body .wizard .w-extra button{padding:8px 14px;font-size:12px;background:transparent;border:1px solid var(--pl-line-strong);color:var(--pl-text-2)}
+@media(max-width:700px){
+  body .wizard .w-actions{display:flex;flex-wrap:nowrap;gap:8px;bottom:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));margin-top:8px}
+  body .wizard .w-actions button{flex:1 1 0;min-width:0;padding:12px 8px;font-size:14px;white-space:nowrap}
+  body .wizard .w-actions .primary{flex:2 1 0;margin-left:0}
+  body .wizard{padding-bottom:24px}
+}
+@media(max-width:700px){body .wizard>header{padding-left:16px;padding-right:16px}}

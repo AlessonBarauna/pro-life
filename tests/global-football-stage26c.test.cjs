@@ -23,7 +23,7 @@ test("26C: ids de clubes unicos e ligas coerentes",()=>{
   const ids=packs.flatMap(p=>p.clubs.map(c=>c[0]));
   assert.equal(new Set(ids).size,ids.length);
   assert.equal(new Set(packs.map(p=>p.league[0])).size,11);
-  packs.forEach(p=>p.clubs.forEach(c=>{assert.equal(c.length,6);assert.ok(c[1]&&c[2]);assert.ok(c[3]>0&&c[4]>0);}));
+  packs.forEach(p=>p.clubs.forEach(c=>{assert.ok(c.length===6||(c.length===7&&c[6]&&typeof c[6]==="object"));assert.ok(c[1]&&c[2]);assert.ok(c[3]>0&&c[4]>0);}));
 });
 test("26C: todo clube tem >=18 jogadores e >=1 goleiro",()=>{
   packs.forEach(p=>p.clubs.forEach(c=>{

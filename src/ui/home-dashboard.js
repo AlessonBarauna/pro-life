@@ -24,6 +24,22 @@
       seen.add(key); return true;
     }).slice(0,5);
   }
+  // Nome da seleção do registro: novo (m.team) -> selecao acompanhada da Copa daquele ano -> selecao do protagonista -> Brasil (legado).
+  function nationalTeamName(s,m) {
+    if(m&&m.team) return m.team;
+    try {
+      const year=Number(m&&m.season)||2026+Math.floor((Number(m&&m.day)||0)/365), cups=(s.nationalTeam&&s.nationalTeam.tournaments)||[];
+      const cup=cups.find(t=>t&&t.type==="WORLD_CUP"&&Number(t.year)===year);
+      if(cup&&/Copa/i.test(String(m&&m.competition||""))){
+        const id=cup.trackedTeamId===undefined||cup.trackedTeamId===null?"BRA":String(cup.trackedTeamId);
+        const team=(cup.groups||[]).flatMap(g=>g.teams||[]).find(t=>t.id===id);
+        if(team&&team.name) return team.name;
+      }
+      const NI=root.ProLifeNationalIdentity; const t=NI&&NI.heroTeam&&NI.heroTeam(s,root.ProLifeData||root.D);
+      if(t&&t.represented&&t.name) return t.name;
+    } catch(e) {}
+    return "Brasil";
+  }
   function nationalGoals(m) {
     if(!Array.isArray(m?.events)) return null;
     return m.events.filter((e)=>e&&Number.isFinite(Number(e.minute))).map((e)=>({minute:Number(e.minute),scorer:e.scorer||null,assist:e.assist||null,side:e.side===1?1:0})).sort((a,b)=>a.minute-b.minute);
@@ -44,10 +60,24 @@
     const other = match.home === s.clubId ? match.ag : match.hg;
     return own > other ? "V" : own < other ? "D" : "E";
   }
+  // Clubes do mundo global (La Liga, Premier...) guardam a tabela em ProLifeWorldClubCompetitions, nao em s.clubs.
+  function worldTableWindow(s, c) {
+    const empty = { rows: [], position: 0, league: "" };
+    try {
+      const W = root.ProLifeWorldClubCompetitions;
+      if (!W || !W.standings || !c.leagueId) return empty;
+      const table = W.standings(s, c.leagueId).map((r)=>({ id:r.id, name:r.name, stats:{ played:r.played, w:r.w, d:r.d, l:r.l, gf:r.gf, ga:r.ga, points:r.points } }));
+      const index = table.findIndex((x)=>x.id===c.id);
+      if (index < 0) return empty;
+      const start = Math.max(0, Math.min(index - 2, table.length - 5));
+      const league = root.ProLifeGlobalFootball?.leagueById?.(s, c.leagueId)?.name || c.leagueId;
+      return { rows: table.slice(start, start + 5).map((row,i)=>({ ...row, position:start+i+1 })), position:index+1, league };
+    } catch (e) { return empty; }
+  }
   function tableWindow(s, D) {
     const c = D.club(s); if (!c) return { rows: [], position: 0, league: "" };
     const table = D.table(s), index = table.findIndex((x)=>x.id===c.id);
-    if (index < 0) return { rows: [], position: 0, league: "" };
+    if (index < 0) return worldTableWindow(s, c);
     const start = Math.max(0, Math.min(index - 2, table.length - 5));
     return { rows: table.slice(start, start + 5).map((row,i)=>({...row, position:start+i+1})), position:index+1, league:s.leagues.find((l)=>l.id===c.leagueId)?.name || (root.ProLifeNames?root.ProLifeNames.league(s,c.leagueId):c.leagueId) };
   }
@@ -66,8 +96,8 @@
       if(kind==="national") {
         const rating=validRating(m.rating), starter=!!m.starter, brazil=Number(m.brazil), other=Number(m.other), hasScore=Number.isFinite(brazil)&&Number.isFinite(other);
         return { match:m, national:true, result:hasScore?(brazil>other?"V":brazil<other?"D":"E"):null, rating,
-          opponent:m.opponent||"Adversário", home:"Brasil", away:m.opponent||"Adversário", score:hasScore?`${brazil}–${other}`:"—",
-          competition:m.competition||"Seleção Brasileira", date:m.day, goals:nationalGoals(m), motm:nationalMotm(m),
+          opponent:m.opponent||"Adversário", home:nationalTeamName(s,m), teamName:nationalTeamName(s,m), away:m.opponent||"Adversário", score:hasScore?`${brazil}–${other}`:"—",
+          competition:m.competition||"Seleção", date:m.day, goals:nationalGoals(m), motm:nationalMotm(m),
           hero:{played:true,starter,entryMinute:starter?0:(m.entryMinute!==null&&m.entryMinute!==undefined&&Number.isFinite(Number(m.entryMinute))?Number(m.entryMinute):null),minutes:Math.max(0,Number(m.minutes)||0),goals:Math.max(0,Number(m.goals)||0),assists:Math.max(0,Number(m.assists)||0),rating}
         };
       }
@@ -88,7 +118,7 @@
       return { match:m, national:false, result:resultFor(s,m), rating,
         opponent:D.club(s,m.home===s.clubId?m.away:m.home)?.name || "Adversário",
         home:home?.name||"Mandante", away:away?.name||"Visitante", score:`${m.hg}–${m.ag}`,
-        competition:m.competitionName||m.leagueName||"Partida", date:m.date, goals, motm,
+        competition:m.competitionName||m.leagueName||"Partida", date:m.date, goals, motm, tie:m.tie||null,
         hero:heroStats?{played:true,starter:heroStats.starter!==false,entryMinute:heroStats.entryMinute||0,minutes:heroStats.minutes||0,goals:heroGoals,assists:heroAssists,rating}:{played:false}
       };
     });
