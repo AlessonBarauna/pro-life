@@ -60,10 +60,24 @@
     const other = match.home === s.clubId ? match.ag : match.hg;
     return own > other ? "V" : own < other ? "D" : "E";
   }
+  // Clubes do mundo global (La Liga, Premier...) guardam a tabela em ProLifeWorldClubCompetitions, nao em s.clubs.
+  function worldTableWindow(s, c) {
+    const empty = { rows: [], position: 0, league: "" };
+    try {
+      const W = root.ProLifeWorldClubCompetitions;
+      if (!W || !W.standings || !c.leagueId) return empty;
+      const table = W.standings(s, c.leagueId).map((r)=>({ id:r.id, name:r.name, stats:{ played:r.played, w:r.w, d:r.d, l:r.l, gf:r.gf, ga:r.ga, points:r.points } }));
+      const index = table.findIndex((x)=>x.id===c.id);
+      if (index < 0) return empty;
+      const start = Math.max(0, Math.min(index - 2, table.length - 5));
+      const league = root.ProLifeGlobalFootball?.leagueById?.(s, c.leagueId)?.name || c.leagueId;
+      return { rows: table.slice(start, start + 5).map((row,i)=>({ ...row, position:start+i+1 })), position:index+1, league };
+    } catch (e) { return empty; }
+  }
   function tableWindow(s, D) {
     const c = D.club(s); if (!c) return { rows: [], position: 0, league: "" };
     const table = D.table(s), index = table.findIndex((x)=>x.id===c.id);
-    if (index < 0) return { rows: [], position: 0, league: "" };
+    if (index < 0) return worldTableWindow(s, c);
     const start = Math.max(0, Math.min(index - 2, table.length - 5));
     return { rows: table.slice(start, start + 5).map((row,i)=>({...row, position:start+i+1})), position:index+1, league:s.leagues.find((l)=>l.id===c.leagueId)?.name || (root.ProLifeNames?root.ProLifeNames.league(s,c.leagueId):c.leagueId) };
   }

@@ -807,3 +807,49 @@ body .sx-busy i{border-top-color:var(--fc-lime)}
 /* desfecho do confronto (prorrogação / pênaltis) */
 body .pl-ucl-embedded .pl-ucl-tie{display:block;margin-top:6px;padding:5px 8px;font-size:11px;line-height:1.3;color:var(--fc-lime-ink);background:var(--fc-lime);clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%);font-weight:700}
 body .match-detail-tie{border-left-color:var(--fc-lime)}
+
+/* ===== Central — hub de carreira (FC 27): escudos com cor do clube, contagem regressiva, forma ===== */
+body .central-v3-hero{min-height:480px}
+body .central-v3-match{
+  background:
+    linear-gradient(112deg,hsl(var(--hh,150) 50% 24%/.3) 0 30%,transparent 30.2%),
+    linear-gradient(112deg,transparent 70%,hsl(var(--ha,210) 50% 24%/.28) 70.2%),
+    repeating-linear-gradient(115deg,rgba(255,255,255,.025) 0 2px,transparent 2px 22px),
+    linear-gradient(160deg,#0d1621,#070b11);
+}
+body .central-v3-matchup{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:clamp(12px,2.4vw,36px);margin:6px 0 4px}
+body .central-v3-team{grid-template-columns:96px 1fr;column-gap:18px}
+body .central-v3-team.away{grid-template-columns:1fr 96px}
+body .central-v3-team i,body .fc-crest{
+  --h:150;width:96px;height:108px;display:grid;place-items:center;border:0;border-radius:0;
+  background:linear-gradient(155deg,hsl(var(--h) 68% 46%),hsl(var(--h) 72% 20%));
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.88),inset 0 0 0 5px hsl(var(--h) 70% 18%);
+  clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%);
+  font-family:var(--fc-display);font-style:italic;font-weight:800;font-size:28px;letter-spacing:-.5px;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.35);
+  padding-bottom:12px;
+}
+body .fc-crest.mini{width:24px;height:27px;font-size:8px;padding-bottom:3px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.85)}
+body .central-v3-team small{letter-spacing:2px;color:rgba(255,255,255,.55)}
+body .fc-vs{display:grid;place-items:center;gap:0;min-width:92px;padding:10px 16px;background:var(--fc-lime);color:var(--fc-lime-ink);
+  transform:skewX(-12deg);box-shadow:6px 6px 0 rgba(0,0,0,.35)}
+body .fc-vs>*{transform:skewX(12deg)}
+body .fc-vs b{font-family:var(--fc-display);font-style:italic;font-weight:800;font-size:58px;line-height:.9;letter-spacing:-2px;font-variant-numeric:tabular-nums}
+body .central-v3-matchup .fc-vs small{color:var(--fc-lime-ink);font-family:var(--fc-display);font-weight:800;letter-spacing:2px;font-size:11px}
+body .central-v3-competition mark{display:none}
+body .fc-form-chips{display:flex;align-items:center;gap:10px}
+body .fc-form-chips em{display:flex;gap:4px;font-style:normal}
+body .fc-form-chips b{width:22px;height:22px;display:grid;place-items:center;font-family:var(--fc-display);font-size:11px;font-weight:800;color:#fff;background:#3a4756;transform:skewX(-10deg)}
+body .fc-form-chips b.form-win{background:#2fae72}
+body .fc-form-chips b.form-draw{background:#8f8a4a}
+body .fc-form-chips b.form-loss{background:#c04858}
+body .central-v3-standing{grid-template-columns:28px 30px 1fr auto;gap:10px}
+body .central-v3-standing.me b{color:var(--fc-lime)}
+body .central-v3-tile{position:relative}
+body .central-v3-tile::before{content:"";position:absolute;left:0;top:0;width:46px;height:3px;background:var(--fc-lime)}
+@media(max-width:760px){
+  body .central-v3-team,body .central-v3-team.away{display:flex;flex-direction:column;gap:6px;text-align:center}
+  body .central-v3-team i{width:64px;height:72px;font-size:19px}
+  body .fc-vs{min-width:60px;padding:6px 10px}body .fc-vs b{font-size:34px}
+}
+body .central-v3-team strong{font-size:clamp(24px,2.3vw,36px);overflow-wrap:normal}
+body .central-v3-team{align-items:center}
