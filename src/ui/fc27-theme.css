@@ -853,3 +853,22 @@ body .central-v3-tile::before{content:"";position:absolute;left:0;top:0;width:46
 }
 body .central-v3-team strong{font-size:clamp(24px,2.3vw,36px);overflow-wrap:normal}
 body .central-v3-team{align-items:center}
+
+/* Central — prioridades em cartões (trilho) e faixa de contexto estilo ticker */
+body .central-v3-tasks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-content:start}
+body .central-v3-tasks>.central-v3-eyebrow,body .central-v3-tasks>h2,body .central-v3-tasks>.muted,body .central-v3-tasks>.central-v3-decision{grid-column:1/-1}
+body .central-v3-task{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:132px;padding:14px 16px;border:0;border-top:3px solid var(--pl-line-strong);background:rgba(255,255,255,.04);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%);transition:transform .18s,border-color .18s,background .18s}
+body .central-v3-task:hover{transform:translateY(-3px);border-top-color:var(--fc-lime);background:rgba(201,242,58,.07)}
+body .central-v3-task small{font-family:var(--fc-display);font-size:10px;letter-spacing:1.8px;color:var(--fc-lime)}
+body .central-v3-task b{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;font-size:18px;line-height:1.05;letter-spacing:.2px;color:#fff}
+body .central-v3-task span{font-size:11px;color:var(--pl-text-2)}
+body .central-v3-task button{margin-top:auto;align-self:flex-start;grid-column:auto;grid-row:auto;padding:6px 12px;font-size:10px}
+body .central-v3-task-urgent{border-top-color:#ffb020}
+body .central-v3-task-urgent small{color:#ffb020}
+body .central-v3-context{position:relative;border-left:4px solid var(--fc-lime);background:linear-gradient(90deg,rgba(201,242,58,.08),rgba(18,28,38,.5) 40%)}
+body .central-v3-context small{font-family:var(--fc-display);letter-spacing:2px;color:var(--fc-lime)}
+body .central-v3-context b{font-family:var(--fc-display);font-style:italic;text-transform:uppercase;font-size:15px}
+@media(max-width:1100px){body .central-v3-tasks{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){body .central-v3-tasks{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){body .central-v3-task{transition:none}}
