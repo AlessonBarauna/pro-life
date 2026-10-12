@@ -24,6 +24,22 @@
       seen.add(key); return true;
     }).slice(0,5);
   }
+  // Nome da seleção do registro: novo (m.team) -> selecao acompanhada da Copa daquele ano -> selecao do protagonista -> Brasil (legado).
+  function nationalTeamName(s,m) {
+    if(m&&m.team) return m.team;
+    try {
+      const year=Number(m&&m.season)||2026+Math.floor((Number(m&&m.day)||0)/365), cups=(s.nationalTeam&&s.nationalTeam.tournaments)||[];
+      const cup=cups.find(t=>t&&t.type==="WORLD_CUP"&&Number(t.year)===year);
+      if(cup&&/Copa/i.test(String(m&&m.competition||""))){
+        const id=cup.trackedTeamId===undefined||cup.trackedTeamId===null?"BRA":String(cup.trackedTeamId);
+        const team=(cup.groups||[]).flatMap(g=>g.teams||[]).find(t=>t.id===id);
+        if(team&&team.name) return team.name;
+      }
+      const NI=root.ProLifeNationalIdentity; const t=NI&&NI.heroTeam&&NI.heroTeam(s,root.ProLifeData||root.D);
+      if(t&&t.represented&&t.name) return t.name;
+    } catch(e) {}
+    return "Brasil";
+  }
   function nationalGoals(m) {
     if(!Array.isArray(m?.events)) return null;
     return m.events.filter((e)=>e&&Number.isFinite(Number(e.minute))).map((e)=>({minute:Number(e.minute),scorer:e.scorer||null,assist:e.assist||null,side:e.side===1?1:0})).sort((a,b)=>a.minute-b.minute);
@@ -66,8 +82,8 @@
       if(kind==="national") {
         const rating=validRating(m.rating), starter=!!m.starter, brazil=Number(m.brazil), other=Number(m.other), hasScore=Number.isFinite(brazil)&&Number.isFinite(other);
         return { match:m, national:true, result:hasScore?(brazil>other?"V":brazil<other?"D":"E"):null, rating,
-          opponent:m.opponent||"Adversário", home:"Brasil", away:m.opponent||"Adversário", score:hasScore?`${brazil}–${other}`:"—",
-          competition:m.competition||"Seleção Brasileira", date:m.day, goals:nationalGoals(m), motm:nationalMotm(m),
+          opponent:m.opponent||"Adversário", home:nationalTeamName(s,m), teamName:nationalTeamName(s,m), away:m.opponent||"Adversário", score:hasScore?`${brazil}–${other}`:"—",
+          competition:m.competition||"Seleção", date:m.day, goals:nationalGoals(m), motm:nationalMotm(m),
           hero:{played:true,starter,entryMinute:starter?0:(m.entryMinute!==null&&m.entryMinute!==undefined&&Number.isFinite(Number(m.entryMinute))?Number(m.entryMinute):null),minutes:Math.max(0,Number(m.minutes)||0),goals:Math.max(0,Number(m.goals)||0),assists:Math.max(0,Number(m.assists)||0),rating}
         };
       }

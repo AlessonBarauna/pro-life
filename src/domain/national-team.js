@@ -8443,10 +8443,11 @@
     const winStart=participated?Math.max(1,Number(entryMinute)||1):1,winEnd=participated?Math.min(90,Math.max(winStart,(Number(entryMinute)||0)+Number(minutes||0))):90;
     const pick=(base,start,end)=>{const span=Math.max(1,end-start+1);let m=start+(base%span),guard=0;while(used.has(m)&&guard++<span)m=m<end?m+1:start;used.add(m);return m;};
     const heroGoals=participated?Math.min(goals,brazil):0,heroAssists=participated?Math.min(assists,Math.max(0,brazil-heroGoals)):0;
+    const teamLabel=(()=>{try{const n0=fixtureTeam(s,fixture).name;return n0&&n0!=="Brasil"?`de ${n0}`:"do Brasil";}catch(e){return "do Brasil";}})();
     for(let i=0;i<brazil;i++){
       const heroGoal=i<heroGoals,heroAssist=!heroGoal&&i<heroGoals+heroAssists;
       const minute=heroGoal||heroAssist?pick(Number(s.day||0)*13+i*19,winStart,winEnd):pick(Number(s.day||0)*13+i*19,8,88);
-      const event={minute,type:"goal",side:0,player:heroGoal?s.person.name:unknown,playerId:heroGoal?"hero":null,text:heroGoal?`Gol do Brasil com ${s.person.name}.`:`Gol do Brasil${heroAssist?` com assistência de ${s.person.name}`:""}.`};
+      const event={minute,type:"goal",side:0,player:heroGoal?s.person.name:unknown,playerId:heroGoal?"hero":null,text:heroGoal?`Gol ${teamLabel} com ${s.person.name}.`:`Gol ${teamLabel}${heroAssist?` com assistência de ${s.person.name}`:""}.`};
       if(heroAssist)event.assistPlayerId="hero";
       events.push(event);
     }
@@ -8507,7 +8508,7 @@
     const development=participated?api?.Training?.matchDevelopment?.(s,liveMatch,{overall:api.overall,clamp:api.clamp}):null;
     if (participated) {
       const beforeGoals=n.goals; n.caps++; if(starter)n.starts++; n.goals+=goals; n.assists+=assists; n.ratingTotal+=rating; n.minutes=(n.minutes||0)+minutes; if(rating>=8.6)n.motm++; n.debutDay??=s.day; if(goals&&beforeGoals===0)n.firstGoalDay??=s.day; s.person.condition=clamp((s.person.condition||100)-Math.round(minutes/10),0,100);
-      const match = { day: s.day, season: s.season, competition: n.competition, opponent, brazil, other, starter, entryMinute, minutes, rating: +rating.toFixed(1), goals, assists, events: matchEventRecords(liveMatch, s.person.name), players: liveMatch.players, motm: liveMatch.motm };
+      const match = { day: s.day, season: s.season, competition: n.competition, team: liveMatch.homeName||null, teamCode: liveMatch.home||null, opponent, brazil, other, starter, entryMinute, minutes, rating: +rating.toFixed(1), goals, assists, events: matchEventRecords(liveMatch, s.person.name), players: liveMatch.players, motm: liveMatch.motm };
       n.matches.unshift(match); n.matches = n.matches.slice(0, 100); for(let i=20;i<n.matches.length;i++)if(n.matches[i]?.players)delete n.matches[i].players;
       s.reputation = clamp(s.reputation + (rating >= 8 ? 2 : rating >= 7 ? 1 : 0)*Number(liveMatch.importance.factor||1), 0, 100); s.fans += Math.round(500 + rating * 120 + goals * 1000);
     }
