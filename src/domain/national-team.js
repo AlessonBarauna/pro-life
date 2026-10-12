@@ -5825,12 +5825,26 @@
     return fixture;
   }
 
+  // Adversarios das datas FIFA seguem a selecao do protagonista (nao so o ciclo sul-americano do Brasil).
+  const EURO_OPPONENTS = ["Espanha", "França", "Inglaterra", "Itália", "Portugal", "Países Baixos", "Bélgica", "Croácia", "Dinamarca", "Suíça", "Polônia", "Áustria"];
+  function windowOpponentsFor(s) {
+    let t = null;
+    try { t = root.ProLifeNationalIdentity?.heroTeam?.(s, root.ProLife) || null; } catch (e) { t = null; }
+    const own = t && t.represented ? worldCupNormalize(t.name) : "";
+    if (!t || !t.represented || t.code === "BRA" || t.confederation === "CONMEBOL")
+      return windowOpponents.map((pair) => pair.map((o) => (worldCupNormalize(o) === own ? "Brasil" : o)));
+    const pool = (t.confederation === "UEFA" ? EURO_OPPONENTS : EURO_OPPONENTS.concat(["Argentina", "Brasil", "Uruguai", "Estados Unidos"])).filter((o) => worldCupNormalize(o) !== own);
+    const offset = [...own].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % pool.length;
+    return [0, 1, 2, 3].map((i) => [pool[(offset + i * 2) % pool.length], pool[(offset + i * 2 + 1) % pool.length]]);
+  }
   function ensureSchedule(s, n) {
     if (!Array.isArray(n.schedule)) n.schedule = [];
+    const opps = windowOpponentsFor(s), allowedOpps = new Set(opps.flat());
+    n.schedule = n.schedule.filter((m) => m.played || m.participated || m.tournamentType || !/^-?\d+:/.test(String(m.id)) || allowedOpps.has(m.opponent));
     const yearStart = Math.floor(s.day / 365) * 365;
     for (let seasonOffset = 0; seasonOffset <= 1; seasonOffset++) for (let index = 0; index < windows.length; index++) {
       const windowDay = yearStart + seasonOffset * 365 + windows[index];
-      windowOpponents[index].forEach((opponent, matchIndex) => {
+      opps[index].forEach((opponent, matchIndex) => {
         const day = windowDay + matchIndex * 3, id = `${day}:${opponent}`;
         if (!n.schedule.some((match) => match.id === id)) n.schedule.push({ id, day, windowDay, opponent, competition: competition(s, day), played: false, participated: false, brazil: null, other: null });
       });

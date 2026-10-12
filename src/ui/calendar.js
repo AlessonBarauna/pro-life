@@ -20,7 +20,8 @@
     for (const round of schedule.cup?.rounds || []) for (const pair of round.pairs || []) if (!pair.played && (pair.home === own || pair.away === own)) result.push({ day: round.date, type: "cup", title: `${clubName(pair.home)} × ${clubName(pair.away)}`, detail: `${schedule.cup.name} · ${round.name}`, destination: "competitions" });
     if (s.mode === "player" && D.NationalTeam?.init) {
       const national = D.NationalTeam.init(s);
-      for (const match of national.schedule || []) result.push({ day: match.day, type: "national", title: match.played && match.brazil !== null ? `Brasil ${match.brazil} × ${match.other} ${match.opponent}` : `Brasil × ${match.opponent}`, detail: match.played && !match.participated ? `${match.competition} · sem participação` : match.calledUp || national.calledUp ? match.competition : `Data FIFA · ${match.competition}`, destination: "national" });
+      let heroNation = "Brasil"; try { const t = root.ProLifeNationalIdentity?.heroTeam?.(s, D); if (t && t.represented && t.name) heroNation = t.name; } catch { /* usa Brasil */ }
+      for (const match of national.schedule || []) result.push({ day: match.day, type: "national", title: match.played && match.brazil !== null ? `${heroNation} ${match.brazil} × ${match.other} ${match.opponent}` : `${heroNation} × ${match.opponent}`, detail: match.played && !match.participated ? `${match.competition} · sem participação` : match.calledUp || national.calledUp ? match.competition : `Data FIFA · ${match.competition}`, destination: "national" });
     }
     // Datas especiais recorrentes da carreira.
     // São eventos visuais: não bloqueiam partidas, treino ou avanço do calendário.
