@@ -1040,13 +1040,35 @@
     }
     return chosen.filter(Boolean).slice(0, 11);
   }
-  function quality(ps, key) {
+  // 04D: Forma recente e somente um efeito de rendimento, nao um atributo persistido.
+  // Dados ausentes ou chamada D.simulate() sem contexto preservam o modelo anterior.
+  function recentMatchFormFactors(context){
+    if(!context || !Array.isArray(context.matches)) return null;
+    const lists = new Map();
+    for(const match of context.matches){
+      for(const [id, raw] of Object.entries(match?.ratings || {})){
+        const rating = Number(raw);
+        if(!Number.isFinite(rating)) continue;
+        let values = lists.get(id);
+        if(!values){ values = []; lists.set(id,values); }
+        if(values.length < 5) values.push(rating);
+      }
+    }
+    const result = new Map();
+    for(const [id, values] of lists){
+      const avg = values.reduce((a,b)=>a+b,0)/values.length;
+      result.set(id, clamp(1 + (avg-6.5)*0.012, 0.958, 1.042));
+    }
+    return result;
+  }
+  function quality(ps, key, formFactors = null) {
     if (!ps.length) return 25;
     return (
       ps.reduce(
         (n, p) =>
           n +
           p.attrs[key] *
+            (formFactors?.get(p.id) ?? 1) *
             (0.55 + (0.45 * p.condition) / 100) *
             (0.85 + (0.15 * p.morale) / 100),
         0,
@@ -1056,6 +1078,7 @@
   function simulate(home, away, rng, context = null) {
     const hp = selected(home),
       ap = selected(away);
+    const formFactors = recentMatchFormFactors(context);
     let m = {
       home: home.id,
       away: away.id,
@@ -1081,8 +1104,8 @@
     for (let minute = 1; minute <= 94; minute++) {
       const control = squads.map(
         (ps, i) =>
-          quality(ps, "pass") +
-          quality(ps, "stamina") * 0.2 +
+          quality(ps, "pass", formFactors) +
+          quality(ps, "stamina", formFactors) * 0.2 +
           (i === 0 ? 3 : 0) +
           (clubs[i].tactic === "possession" ? 5 : 0) +
           tactical[i].possession -
@@ -1098,8 +1121,8 @@
       m.possessions[i]++;
       fatigue[i] += 0.07 + tactical[i].fatigue;
       const attack =
-        quality(ps, "pace") * 0.4 +
-        quality(ps, "pass") * 0.6 +
+        quality(ps, "pace", formFactors) * 0.4 +
+        quality(ps, "pass", formFactors) * 0.6 +
         (clubs[i].tactic === "attack"
           ? 7
           : clubs[i].tactic === "counter"
@@ -1107,8 +1130,8 @@
             : 0) +
         tactical[i].attack;
       const defense =
-        quality(opp, "defense") * 0.65 +
-        quality(opp, "strength") * 0.35 +
+        quality(opp, "defense", formFactors) * 0.65 +
+        quality(opp, "strength", formFactors) * 0.35 +
         (clubs[j].tactic === "counter"
           ? 8
           : clubs[j].tactic === "attack"
@@ -2297,7 +2320,7 @@
     const interviews=(Career.init(s)?.communications?.interviews || []).filter(i=>!i.answered);
     for (const i of interviews) out.push({ id:`interview:${i.id}`, entityId:i.id, type:"interview", title:i.title || i.subject || "Convite para uma entrevista", deadline:Number.isFinite(i.deadline)?i.deadline:s.day+7, page:"inbox", anchor:`interview-${i.id}`, priority:"URGENTE" });
     if (pc?.renewalOffer) out.push({ id:`renewal:${pc.renewalOffer.expires}`, entityId:String(pc.renewalOffer.expires), type:"renewal", title:"Responder proposta de renovação", deadline:pc.renewalOffer.expires, page:"proposals", anchor:"renewal-offer", priority:"URGENTE" });
-    for (const o of (s.offers || []).filter(o=>o.expires>=s.day)) out.push({ id:`offer:${o.clubId}:${o.expires}`, entityId:o.clubId, type:"offer", title:`Responder proposta de ${club(s,o.clubId)?.name || "transferência"}`, deadline:o.expires, page:"proposals", anchor:`transfer-offer-${o.clubId}`, priority:"URGENTE" });
+    for (const o of (s.offers || []).filter(o=>o.expires>=s.day && o.clubId!==pc?.marketState?.signedAgreement?.clubId)) out.push({ id:`offer:${o.clubId}:${o.expires}`, entityId:o.clubId, type:"offer", title:`Responder proposta de ${club(s,o.clubId)?.name || "transferência"}`, deadline:o.expires, page:"proposals", anchor:`transfer-offer-${o.clubId}`, priority:"URGENTE" });
     const commercial=Commercial?.init(s,API);
     for (const p of (commercial?.proposals || []).filter(p=>p.status==="PROPOSTA"&&p.expires>=s.day)) out.push({ id:`commercial:${p.id}`, entityId:p.id, type:"commercial", title:`Responder proposta de ${p.brand}`, deadline:p.expires, page:"sponsorships", anchor:`commercial-proposal-${p.id}`, priority:"URGENTE" });
     for (const e of (commercial?.events || []).filter(e=>["AGENDADO","REAGENDADO"].includes(e.status)&&e.mandatory&&e.day>=s.day)) out.push({ id:`commercial-event:${e.id}`, entityId:e.id, type:"commercial-event", title:`Confirmar compromisso com ${e.brand}`, deadline:e.day, page:"sponsorships", anchor:`commercial-event-${e.id}`, priority:"URGENTE" });
@@ -2313,7 +2336,9 @@
     if (callupStop) return callupStop;
     const pc = Career.init(s).playerCareer;
     if (pc?.renewalOffer) return { type:"renewal", contractKind:"renewal", page:"proposals", anchor:"renewal-offer", message:"Simulação interrompida: há uma proposta de renovação aguardando sua autorização." };
-    const offer = (s.offers || []).find(o => o.expires >= s.day && (!o.onHold || o.expires <= s.day + 1));
+    // Proposta do clube com acordo ja assinado nao e mais uma decisao pendente: a transferencia agendada segue sozinha.
+    const agreedClub = pc?.marketState?.signedAgreement?.clubId || null;
+    const offer = (s.offers || []).find(o => o.clubId !== agreedClub && o.expires >= s.day && (!o.onHold || o.expires <= s.day + 1));
     if (!offer) return null;
     const loan = offer.transferType === "loan";
     return { type:"offer", contractKind:loan?"loan":"transfer", id:offer.clubId, page:"proposals", anchor:`transfer-offer-${offer.clubId}`, message:`Simulação interrompida: há uma proposta de ${loan?"empréstimo":"transferência"} de ${club(s,offer.clubId)?.name || "outro clube"}.` };
@@ -2328,7 +2353,8 @@
     if (s.decision && before.decision) return { type:"pending", id:s.decision.id, title:s.decision.title, page:"life", anchor:"current-decision", message:`Simulação pausada: responda ${s.decision.title}.` };
     if (pc?.renewalOffer && !before.renewalOffer) return { type:"renewal", page:"proposals", anchor:"renewal-offer", message:"Simulação interrompida: chegou uma proposta de renovação." };
     const previousOffers = new Set(before.offers || []);
-    const newOffer = (s.offers || []).find(o=>!previousOffers.has(`${o.clubId}:${o.expires}:${o.salary}`));
+    const agreedClubId = pc?.marketState?.signedAgreement?.clubId || null;
+    const newOffer = (s.offers || []).find(o=>o.clubId!==agreedClubId && !previousOffers.has(`${o.clubId}:${o.expires}:${o.salary}`));
     if (newOffer) return { type:"offer", id:newOffer.clubId, page:"proposals", anchor:`transfer-offer-${newOffer.clubId}`, message:`Simulação interrompida: chegou uma proposta de ${club(s,newOffer.clubId)?.name || "outro clube"}.` };
     const previousInterviews = new Set(before.interviews || []);
     const interview = (career?.communications?.interviews || []).find(i=>!i.answered && !previousInterviews.has(i.id));
