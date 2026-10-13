@@ -33,7 +33,7 @@
     const nextXp=level>=50?xp:D.Training.xpForLevel(level+1);
     const archetypeXp=Number(plan.archetypeXp||0), archetypeLevel=Number(plan.archetypeLevel||1);
     return {
-      identity:{name:p.name,number:career.number,club:club?.name||"Sem clube",position:p.pos,age:p.age,nationality:p.nationality||null,overall,marketValue:pc.marketValue||0,salary:s.salary||0,squadRole:pc.squadRole||ct?.role||null,form:pc.form??null,condition:p.condition,morale:p.morale,origin:p.originName||null,style:p.style||null},
+      identity:{name:p.name,number:career.number,club:club?.name||"Sem clube",position:p.pos,age:p.age,nationality:p.nationality||null,overall,marketValue:pc.marketValue||0,salary:s.salary||0,squadRole:pc.squadRole||ct?.role||null,form:pc.form??(()=>{const r=(s.matches||[]).filter(m=>m.home===s.clubId||m.away===s.clubId).sort((a,b)=>Number(b.date??b.day??0)-Number(a.date??a.day??0)).slice(0,5).map(m=>Number(m.ratings?.hero)).filter(x=>x>=1&&x<=10);return r.length?+(r.reduce((n,x)=>n+x,0)/r.length).toFixed(1):null;})(),condition:p.condition,morale:p.morale,origin:p.originName||null,style:p.style||null},
       season:stats.season, careerStats:stats.career, national:stats.national,
       archetype:{...(plan.archetype||{}),specializations:(plan.specializations||[]).map(id=>D.Training.specializations[id]).filter(Boolean)},
       development:{overall,seasonStart:seasonStart?.overall??overall,seasonGrowth:overall-(seasonStart?.overall??overall),level,xp,nextXp,archetypeXp,archetypeLevel,attributePoints:Number(plan.attributePoints||0),potential:Number(p.potential||0),gains,history},
