@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 const files = [
   "index.html",
   "manifest.webmanifest",
@@ -91,6 +91,18 @@ const files = [
   "src/ui/app.js",
   "src/ui/style.css",
   "src/ui/fc27-theme.css",
+    "src/domain/europa-draw.js",
+  "src/domain/europa-fixtures.js",
+  "src/domain/europa-rounds.js",
+  "src/domain/europa-calendar.js",
+  "src/domain/europa-season.js",
+  "src/domain/europa-knockout.js",
+  "src/domain/conference-draw.js",
+  "src/domain/conference-fixtures.js",
+  "src/domain/conference-knockout.js",
+  "src/domain/conference-live.js",
+  "src/ui/europa-league-view.js",
+  "src/ui/conference-league-view.js",
   "src/ui/fc27-motion.js",
   "src/ui/update.js",
   "src/domain/display-names.js",
