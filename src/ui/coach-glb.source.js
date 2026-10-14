@@ -63,8 +63,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       const style=a.hair||"lowfade";
       if(style!=="bald"){
         const height=style==="afro"?.21:style==="curly"||style==="twists"?.17:style==="mullet"||style==="long"?.13:.08;
-        const cap=add(new THREE.SphereGeometry(.115,22,14),hair,0,1.655+height*.4,-.008);
-        cap.scale.set(style==="afro"?1.34:1.04,height/.115,1.03);
+        const cap=add(new THREE.SphereGeometry(.115,22,14),hair,0,1.675+height*.08,-.008);
+        cap.scale.set(style==="afro"?1.23:1.02,(height/.115)*.53,1.02);
         if(style==="long"||style==="mullet")add(new THREE.BoxGeometry(.18,.18,.1),mat(color),0,1.51,-.078);
         if(style==="braids"||style==="twists")for(const side of [-1,1])add(new THREE.CylinderGeometry(.018,.026,.17,9),mat(color),side*.09,1.53,-.04);
       }
@@ -76,7 +76,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       }
       if(a.accessory==="glasses"){
         for(const side of [-1,1]){
-          add(new THREE.TorusGeometry(.052,.008,7,22),eye,side*.057,1.573,.115);
+          add(new THREE.TorusGeometry(.039,.006,4,24),eye,side*.052,1.573,.115).rotation.z=Math.PI/4;
           add(new THREE.BoxGeometry(.065,.009,.012),mat("#b4d1dc"),side*.115,1.577,.087);
         }
         add(new THREE.BoxGeometry(.035,.009,.01),mat("#b4d1dc"),0,1.58,.121);
