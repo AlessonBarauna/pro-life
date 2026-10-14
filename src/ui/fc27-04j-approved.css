@@ -1,0 +1,215 @@
+/* PRO-LIFE 04J APPROVED PREVIEW */
+body{
+  background:#050e14;
+  color:#eff6fb;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-3;
+  background:#050e14;
+}
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  background:
+    linear-gradient(180deg,rgba(3,9,15,.88),rgba(4,11,16,.62) 18%,rgba(4,11,16,.36) 58%,rgba(4,11,16,.9) 100%),
+    url("../assets/fc27-stadium-04j.svg") center top / cover no-repeat;
+  pointer-events:none;
+}
+.layout{grid-template-columns:1fr!important;min-height:100vh;background:transparent!important}
+.sidebar{display:none!important}
+.main{max-width:1860px!important;width:min(98vw,1860px)!important;margin:0 auto!important;padding:0 28px 28px!important;background:transparent!important}
+.topbar{
+  margin:0 -28px 18px!important;
+  padding:0 24px!important;
+  min-height:78px;
+  background:rgba(3,9,15,.92)!important;
+  border-bottom:1px solid rgba(255,255,255,.12)!important;
+  backdrop-filter:blur(3px);
+}
+.topbar h1{font-size:28px!important;letter-spacing:-.03em;text-transform:uppercase}
+.topbar .tag,.topbar small{color:#9fb3bf!important}
+.actions button,.topbar button{
+  border-radius:8px!important;
+  border:1px solid #294754!important;
+  background:rgba(8,25,36,.84)!important;
+  color:#f0f6fa!important;
+  padding:10px 14px!important;
+  font-size:12px!important;
+  font-weight:800!important;
+}
+.actions button.primary,.topbar button.primary{background:#baf12d!important;border-color:#baf12d!important;color:#111c0c!important}
+.career-dashboard.career-central-v3{position:relative;max-width:1780px!important;width:100%;margin:0 auto!important;padding-top:8px;color:#f4f8fb}
+.career-dashboard.career-central-v3::before{content:"";position:absolute;inset:-22px -28px -28px;background:radial-gradient(circle at 70% 10%,rgba(49,80,88,.24),transparent 18%),repeating-linear-gradient(100deg,transparent 0,transparent 130px,rgba(49,255,132,.015) 131px,transparent 133px);pointer-events:none;z-index:-1}
+.central-v3-header{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;padding:12px 2px 18px!important;min-height:94px}
+.central-v3-header>div{display:block!important}
+.central-v3-header span,.central-v3-header time{display:inline-block;margin-right:12px;color:#a8bbc6!important;font-size:11px!important;font-weight:800!important;letter-spacing:1.4px!important;text-transform:uppercase}
+.central-v3-header h1{margin:6px 0 4px!important;font-size:52px!important;line-height:1!important;font-style:italic;font-weight:1000;letter-spacing:-2px;text-transform:uppercase}
+.central-v3-header p{margin:0!important;color:#b5c7d1!important;font-size:12px!important;font-weight:700!important}
+.central-v3-hero{display:grid!important;grid-template-columns:minmax(0,1.95fr) minmax(360px,.74fr)!important;min-height:610px!important;border:1px solid rgba(106,143,152,.45)!important;border-radius:14px!important;overflow:hidden!important;background:rgba(5,15,22,.66)!important;box-shadow:0 26px 80px rgba(0,0,0,.36)!important}
+.central-v3-match{position:relative!important;padding:28px 28px 118px!important;min-width:0;background:linear-gradient(90deg,rgba(3,11,18,.9),rgba(6,22,30,.46))!important}
+.central-v3-match::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,0) 35%,rgba(11,40,35,.15) 64%,rgba(0,0,0,0) 100%);pointer-events:none}
+.central-v3-eyebrow{display:flex;align-items:center;gap:10px;color:#54ff9b!important;font-size:11px!important;font-weight:900!important;letter-spacing:1.8px!important;text-transform:uppercase!important}
+.central-v3-eyebrow::before{content:"";display:inline-block;width:28px;height:4px;border-radius:999px;background:#b7f42d}
+.central-v3-competition{display:flex!important;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0 18px!important}
+.central-v3-competition b{font-size:28px!important;line-height:1.05;font-weight:1000!important;letter-spacing:-1px;text-transform:uppercase}
+.central-v3-competition span{color:#b5c7d1!important;font-size:12px!important;font-weight:700!important}
+.central-v3-competition mark{padding:6px 10px;border-radius:8px;background:#b7f42d;color:#13200c;font-weight:1000}
+.central-v3-matchup{display:grid!important;grid-template-columns:minmax(0,1fr) 104px minmax(0,1fr)!important;align-items:center;gap:16px;text-align:center;margin:14px 0 20px!important}
+.central-v3-team{min-width:0}
+.central-v3-team .has-crest,.central-v3-team i{display:grid;place-items:center;width:132px;height:140px;margin:0 auto 14px;border-radius:0!important;filter:drop-shadow(0 6px 14px rgba(0,0,0,.36))}
+.central-v3-team img{max-width:126px!important;max-height:126px!important;object-fit:contain}
+.central-v3-team small{display:block;font-size:11px!important;color:#9fb3bf!important;letter-spacing:1.2px!important;font-weight:800!important;text-transform:uppercase!important;margin-bottom:6px}
+.central-v3-team strong{display:block;font-size:40px!important;line-height:.96!important;font-style:italic;font-weight:1000!important;text-transform:uppercase;letter-spacing:-1.5px;overflow-wrap:normal;word-break:keep-all}
+.fc-vs{display:grid!important;justify-items:center;align-items:center;background:#b7f42d;color:#112008;border-radius:8px;padding:12px 0;min-height:112px;font-style:normal!important;box-shadow:0 12px 24px rgba(0,0,0,.18)}
+.fc-vs small{font-size:11px!important;font-weight:900!important;letter-spacing:1.4px!important;color:#112008!important;text-transform:uppercase!important}
+.fc-vs b{font-size:48px!important;line-height:1!important;font-style:italic;font-weight:1000!important;color:#112008!important}
+.central-v3-match-meta{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:10px;margin-top:8px!important}
+.central-v3-match-meta>span,.central-v3-status-row>span{display:block;padding:11px 10px;background:rgba(5,17,25,.72);border:1px solid rgba(193,226,233,.09);border-radius:8px}
+.central-v3-match-meta small,.central-v3-status-row small{display:block;margin-bottom:5px;color:#89a4af!important;font-size:10px!important;font-weight:900!important;letter-spacing:1.2px!important;text-transform:uppercase!important}
+.central-v3-match-meta b,.central-v3-status-row{font-size:13px!important;font-weight:800!important;color:#f5fbff!important}
+.fc-form-chips em{display:flex;gap:5px;align-items:center;font-style:normal}
+.fc-form-chips b{display:grid;place-items:center;width:20px;height:20px;border-radius:4px;color:#fff;font-size:10px!important}
+.fc-form-chips .form-win{background:#179c69}.fc-form-chips .form-draw{background:#7a8186}.fc-form-chips .form-loss{background:#bd485d}
+.central-v3-status-row{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px;margin-top:10px!important}
+.central-v3-lineup{margin-top:14px!important;padding:0!important;background:none!important;border:0!important;color:#c9ff49!important;font-size:13px!important;font-weight:900!important}
+.central-v3-actions{position:absolute;left:22px;right:22px;bottom:22px;display:flex!important;gap:12px;margin:0!important}
+.central-v3-actions button{flex:1 1 0;min-height:56px;padding:16px 18px!important;border-radius:8px!important;font-size:13px!important;font-weight:900!important;border:1px solid #2c4a57!important;background:rgba(8,25,36,.94)!important;color:#fff!important;white-space:normal}
+.central-v3-actions .central-v3-action-main{background:#1b2f26!important;border:2px solid #16ee87!important;box-shadow:0 0 0 2px rgba(22,238,135,.12),0 10px 22px rgba(0,0,0,.22)!important}
+.central-v3-player{padding:22px 18px 20px!important;background:linear-gradient(180deg,rgba(7,21,31,.86),rgba(8,20,32,.96))!important;border-left:1px solid rgba(255,255,255,.08)!important;display:flex!important;flex-direction:column!important;justify-content:flex-end!important}
+.central-v3-avatar{min-height:340px!important;display:flex!important;align-items:flex-end!important;justify-content:center!important;background:radial-gradient(ellipse at 50% 18%,rgba(238,248,247,.18),transparent 34%)!important;overflow:hidden!important}
+.central-v3-avatar .avatar-wrap,.central-v3-avatar .avatar-stage{height:100%!important;max-height:none!important}
+.central-v3-avatar svg,.central-v3-avatar canvas,.central-v3-avatar img{max-height:100%!important}
+.central-v3-player-id{display:grid!important;grid-template-columns:auto 1fr;gap:14px;align-items:end;margin-top:8px}
+.central-v3-rating{font-size:74px!important;line-height:.9!important;font-style:italic;font-weight:1000!important;letter-spacing:-3px;color:#e8eef7!important}
+.central-v3-rating small{display:block;font-size:12px!important;letter-spacing:1.2px!important;color:#92a7b2!important;font-style:normal;font-weight:800!important;text-transform:uppercase!important;margin-left:5px}
+.central-v3-position{display:block;color:#d6e54d!important;font-size:12px!important;font-weight:900!important;letter-spacing:1.2px!important;text-transform:uppercase!important}
+.central-v3-player-id h2{margin:3px 0 4px!important;font-size:32px!important;font-weight:1000!important;font-style:italic;text-transform:uppercase;letter-spacing:-1px;line-height:.98}
+.central-v3-player-id p{margin:0!important;color:#a6bbc6!important;font-size:12px!important}
+.central-v3-player-state{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px;margin-top:14px!important}
+.central-v3-player-state>span{display:block;background:rgba(10,24,38,.92);padding:10px 9px;border-radius:8px;text-align:center}
+.central-v3-player-state b{display:block;font-size:18px!important;color:#fff}
+.central-v3-player-state i{display:block;height:4px;border-radius:999px;background:linear-gradient(90deg,#cadf36 var(--state,0%),rgba(255,255,255,.14) 0)}
+.central-v3-player-stats{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:0;margin-top:12px!important;background:rgba(9,19,28,.92);border:1px solid rgba(255,255,255,.08);border-radius:8px;overflow:hidden}
+.central-v3-player-stats>span{display:block;padding:9px 8px;border-right:1px solid rgba(255,255,255,.08);text-align:center}.central-v3-player-stats>span:last-child{border-right:0}
+.central-v3-player-stats small{display:block;font-size:10px!important;color:#8ea4af!important;text-transform:uppercase;font-weight:800!important;letter-spacing:1px}
+.central-v3-player-stats b{display:block;font-size:13px!important;font-weight:900!important;color:#fff;margin-top:3px}
+.central-v3-profile-link{margin-top:16px!important;padding:0!important;background:none!important;border:0!important;color:#cbff4d!important;font-weight:900!important;align-self:flex-start}
+.central-v3-grid{display:grid!important;grid-template-columns:minmax(0,1.12fr) minmax(0,.92fr) minmax(330px,.9fr)!important;gap:14px;margin-top:14px!important;align-items:start}
+.central-v3-tile,.central-v3-context{background:rgba(5,17,25,.92)!important;border:1px solid #27444d!important;border-radius:10px!important;padding:18px 18px 16px!important;min-width:0;overflow:hidden}
+.central-v3-tile h2{margin:7px 0 14px!important;font-size:18px!important;line-height:1.1!important;font-weight:1000!important;letter-spacing:-.2px;text-transform:uppercase}
+.central-v3-tile button:last-child,.central-v3-context button{background:none!important;border:0!important;color:#c9ff49!important;padding:0!important;font-weight:900!important}
+.central-v3-table .central-v3-tile-head,.central-v3-form .central-v3-tile-head{display:flex;justify-content:space-between;align-items:center}
+.central-v3-table .central-v3-tile-head>span{padding:4px 8px;border-radius:999px;background:rgba(217,177,74,.14);color:#e4c857;font-size:12px;font-weight:900!important}
+.central-v3-standing{display:grid!important;grid-template-columns:24px 24px 1fr auto!important;gap:8px;align-items:center;padding:8px 3px;border-top:1px solid rgba(255,255,255,.08)}
+.central-v3-standing:first-of-type{border-top:0}
+.central-v3-standing.me{background:rgba(15,204,109,.19);border-radius:7px;padding-inline:6px}
+.central-v3-standing span:first-child{font-size:12px;color:#8ca1ac;font-weight:800!important}
+.central-v3-standing .mini img,.central-v3-standing .fc-crest img{max-width:20px;max-height:20px}.central-v3-standing b{font-size:13px!important;font-weight:800!important}.central-v3-standing strong{font-size:13px!important;font-weight:1000!important}
+.central-v3-form-list{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:7px}
+.central-v3-form-row{display:block!important;background:rgba(13,30,42,.9)!important;border:1px solid rgba(255,255,255,.08)!important;border-radius:10px!important;min-height:190px!important;padding:10px 4px 12px!important;text-align:center!important}
+.central-v3-form-row>b{display:inline-grid!important;place-items:center;width:28px;height:28px;margin:0 auto;border-radius:6px!important;font-size:13px!important;color:#fff!important}.central-v3-form-row.form-win>b{background:#179c69!important}.central-v3-form-row.form-draw>b{background:#777e86!important}.central-v3-form-row.form-loss>b{background:#bd485d!important}
+.central-v3-form-row .fc27-match{display:block!important;margin-top:14px!important}.central-v3-form-row .fc27-team{display:block!important}.central-v3-form-row .fc27-team img{max-width:34px!important;max-height:34px!important;display:block!important;margin:0 auto 6px!important}.central-v3-form-row .fc27-team span{display:block!important;font-size:11px!important;color:#bfd0d9!important;line-height:1.18!important;font-weight:800!important;text-transform:uppercase}
+.central-v3-form-row .fc27-score{display:block!important;font-size:28px!important;font-weight:1000!important;color:#fff;margin:8px 0}
+.central-v3-form-row .fc27-meta{display:block!important;margin-top:8px!important}.central-v3-form-row .fc27-meta span,.central-v3-form-row .fc27-meta em{display:block!important;color:#9db7c1!important;font-size:9px!important;line-height:1.2!important;font-style:normal}
+.central-v3-tasks .central-v3-task{display:grid!important;grid-template-columns:1fr auto!important;gap:5px 12px;align-items:start;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}
+.central-v3-tasks .central-v3-task:first-of-type{border-top:0}
+.central-v3-tasks .central-v3-task small{grid-column:1/-1;color:#d6e54d!important;font-size:10px!important;font-weight:900!important;letter-spacing:1.1px!important;text-transform:uppercase}
+.central-v3-tasks .central-v3-task b{font-size:15px!important;font-weight:1000!important;text-transform:uppercase}
+.central-v3-tasks .central-v3-task span{font-size:12px!important;color:#a6bbc6!important}
+.central-v3-tasks .central-v3-task button{grid-column:2;grid-row:1 / span 3;background:rgba(8,24,34,.8)!important;border:1px solid #264250!important;padding:10px 12px!important;color:#fff!important}
+.central-v3-context{display:grid!important;grid-template-columns:1fr auto!important;gap:16px;margin-top:14px!important;align-items:center;background:rgba(5,17,25,.9)!important}
+.central-v3-context div{min-width:0}
+.central-v3-context small{display:block;color:#8da3ad!important;font-size:10px!important;font-weight:900!important;letter-spacing:1.4px!important;text-transform:uppercase}
+.central-v3-context b{display:block;margin-top:4px;font-size:15px!important;font-weight:1000!important;text-transform:uppercase}
+.central-v3-context span{display:block;margin-top:3px;font-size:11px!important;color:#98acb8!important}
+.central-v3-context nav{display:flex!important;gap:18px;flex-wrap:wrap}
+@media (max-width:1600px){.central-v3-header h1{font-size:44px!important}.central-v3-team strong{font-size:34px!important}.central-v3-grid{grid-template-columns:1fr 1fr}.central-v3-tasks{grid-column:1 / -1}.central-v3-form-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:1180px){.central-v3-hero{grid-template-columns:1fr!important}.central-v3-actions{position:static;display:grid!important;grid-template-columns:1fr 1fr 1fr;margin-top:18px!important}.central-v3-match{padding-bottom:26px!important}.central-v3-grid{grid-template-columns:1fr}.central-v3-form-list{grid-template-columns:repeat(2,minmax(0,1fr))}.central-v3-context{grid-template-columns:1fr}}
+@media (max-width:760px){.main{padding:0 14px 18px!important}.topbar{margin:0 -14px 12px!important}.central-v3-header h1{font-size:34px!important}.central-v3-matchup{grid-template-columns:1fr!important}.fc-vs{min-height:0;padding:10px 0}.central-v3-match-meta{grid-template-columns:repeat(2,minmax(0,1fr))!important}.central-v3-status-row{grid-template-columns:1fr!important}.central-v3-actions{grid-template-columns:1fr!important}.central-v3-form-list{grid-template-columns:1fr}.central-v3-player-stats{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+
+/* 04J RESPONSIVE FIX - BEGIN */
+/* Keep the approved layout but fit ordinary desktop viewports and browser zoom. */
+html { overflow-x: hidden; }
+body { overflow-x: hidden; }
+.career-dashboard.career-central-v3 {
+  width: min(100%, 1600px) !important;
+  max-width: 1600px !important;
+  min-width: 0 !important;
+  margin-inline: auto !important;
+}
+.career-central-v3 .central-v3-header { min-height: 0 !important; padding: 4px 0 12px !important; }
+.career-central-v3 .central-v3-header h1 { font-size: clamp(27px, 2.3vw, 38px) !important; }
+.career-central-v3 .central-v3-hero {
+  min-height: 0 !important;
+  height: auto !important;
+  grid-template-columns: minmax(0, 1.65fr) minmax(265px, .9fr) !important;
+}
+.career-central-v3 .central-v3-match { padding: 24px 24px 100px !important; }
+.career-central-v3 .central-v3-matchup {
+  grid-template-columns: minmax(0,1fr) minmax(72px,82px) minmax(0,1fr) !important;
+  gap: 10px !important;
+  margin: 12px 0 16px !important;
+}
+.career-central-v3 .central-v3-team .has-crest,
+.career-central-v3 .central-v3-team i { width: 88px !important; height: 88px !important; margin-bottom: 8px !important; }
+.career-central-v3 .central-v3-team img { max-width: 84px !important; max-height: 84px !important; }
+.career-central-v3 .central-v3-team strong {
+  font-size: clamp(18px, 1.9vw, 29px) !important;
+  letter-spacing: -.8px !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  hyphens: none !important;
+}
+.career-central-v3 .fc-vs { min-height: 82px !important; }
+.career-central-v3 .fc-vs b { font-size: 36px !important; }
+.career-central-v3 .central-v3-competition { margin: 8px 0 12px !important; }
+.career-central-v3 .central-v3-competition b { font-size: clamp(18px, 1.7vw, 25px) !important; }
+.career-central-v3 .central-v3-match-meta { grid-template-columns: repeat(3, minmax(0,1fr)) !important; }
+.career-central-v3 .central-v3-status-row { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+.career-central-v3 .central-v3-match-meta>span,
+.career-central-v3 .central-v3-status-row>span { min-width: 0; padding: 8px 9px !important; }
+.career-central-v3 .central-v3-player { min-width: 0 !important; padding: 16px 17px !important; }
+.career-central-v3 .central-v3-avatar { min-height: 190px !important; max-height: 250px !important; }
+.career-central-v3 .central-v3-rating { font-size: 55px !important; }
+.career-central-v3 .central-v3-player-id h2 { font-size: clamp(17px, 1.5vw, 23px) !important; }
+.career-central-v3 .central-v3-player-state { margin-top: 10px !important; }
+.career-central-v3 .central-v3-player-stats { margin-top: 8px !important; }
+.career-central-v3 .central-v3-actions { bottom: 16px !important; left: 18px !important; right: 18px !important; gap: 8px !important; }
+.career-central-v3 .central-v3-actions button { min-width: 0 !important; min-height: 45px !important; padding: 10px 8px !important; font-size: 11px !important; }
+.career-central-v3 .central-v3-grid { grid-template-columns: 1fr 1fr .95fr !important; gap: 12px !important; }
+.career-central-v3 .central-v3-tile { min-width: 0 !important; padding: 15px !important; }
+.career-central-v3 .central-v3-tile h2 { font-size: 16px !important; }
+.career-central-v3 .central-v3-form-list { gap: 4px !important; }
+.career-central-v3 .central-v3-form-row { padding: 8px 3px !important; min-height: 160px !important; }
+.career-central-v3 .central-v3-form-row .fc27-score { font-size: 19px !important; }
+.career-central-v3 .central-v3-form-row .fc27-team img { max-width: 25px !important; max-height: 25px !important; }
+@media (min-width: 1650px) {
+  .career-dashboard.career-central-v3 { width:min(96vw,1690px) !important; max-width:1690px !important; }
+}
+@media (max-width: 1300px) {
+  .career-central-v3 .central-v3-hero { grid-template-columns:minmax(0,1.4fr) minmax(240px,.84fr) !important; }
+  .career-central-v3 .central-v3-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  .career-central-v3 .central-v3-tasks { grid-column:1/-1; }
+  .career-central-v3 .central-v3-form-list { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
+}
+@media (max-width: 920px) {
+  .career-central-v3 .central-v3-hero { display:block !important; }
+  .career-central-v3 .central-v3-match { padding-bottom:25px !important; }
+  .career-central-v3 .central-v3-actions { position:static !important; display:flex !important; flex-wrap:wrap !important; margin-top:18px !important; }
+  .career-central-v3 .central-v3-actions button { flex:1 1 145px; }
+  .career-central-v3 .central-v3-grid { grid-template-columns:1fr !important; }
+  .career-central-v3 .central-v3-match-meta { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+}
+@media (max-width: 560px) {
+  .main { width:100% !important; padding-inline:12px !important; }
+  .career-central-v3 .central-v3-matchup { grid-template-columns:minmax(0,1fr) 65px minmax(0,1fr) !important; }
+  .career-central-v3 .central-v3-team strong { font-size:16px !important; }
+  .career-central-v3 .central-v3-status-row { grid-template-columns:1fr !important; }
+  .career-central-v3 .central-v3-form-list { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+}
+/* 04J RESPONSIVE FIX - END */
