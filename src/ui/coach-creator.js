@@ -19,7 +19,7 @@ function render(ctx){
      <label class="coach-full">Nome completo<input name="name" required maxlength="60" autocomplete="name" value="" placeholder="Nome do treinador"></label>
      <label>Cidade natal<input name="city" required maxlength="60" value="" placeholder="Cidade"></label>
      <label>Idade inicial<input name="age" type="number" min="25" max="65" required value="35"></label>
-     <label class="coach-full">Nacionalidade<input name="nationality" maxlength="60" value="Brasil" required></label>
+     <label class="coach-full">Nacionalidade<input name="nationality" maxlength="60" value="Brasil" required></label><label>Cor da pele<input name="skin" type="color" value="#bc8660"></label><label>Cor do cabelo<input name="hairColor" type="color" value="#241e1a"></label><label>Cor dos olhos<input name="eyeColor" type="color" value="#694829"></label><label>Cabelo<select name="hair"><option value="lowfade">Degradê baixo</option><option value="crew">Social curto</option><option value="highfade">Degradê alto</option><option value="curly">Cacheado</option><option value="afro">Black power</option><option value="braids">Tranças</option><option value="long">Longo</option><option value="bald">Sem cabelo</option></select></label><label>Barba<select name="beard"><option value="none">Sem barba</option><option value="stubble">Por fazer</option><option value="short">Curta</option><option value="full">Cheia</option><option value="mustache">Bigode</option><option value="goatee">Cavanhaque</option></select></label><label>Roupa de treinador<select name="outfit"><option value="suit">Terno</option><option value="tracksuit">Agasalho esportivo</option><option value="polo">Polo do clube</option></select></label>
     </div><div class="coach-fields" data-coach-panel="1"><div class="coach-full coach-section-note"><b>Licença inicial: C · reputação: 35</b><p>Esses valores são definidos pelo motor, e podem evoluir durante a carreira.</p></div><label class="coach-full">Foco inicial de treino coletivo<select name="focus"><option value="equilibrado">Equilibrado</option><option value="fisico">Preparação física</option><option value="tecnico">Refino técnico</option><option value="jovens">Desenvolvimento de jovens</option><option value="recuperacao">Recuperação</option></select></label></div>
     <div class="coach-fields" data-coach-panel="2"><label class="coach-full">Primeiro projeto<select name="clubId"><option value="">Receber propostas de clubes</option>${options}</select></label><div class="coach-full coach-club-analysis" id="coach-club-analysis" aria-live="polite"></div>
     </div><div class="coach-fields" data-coach-panel="3"><div class="coach-full coach-section-note"><b>Configurações</b><p>Base FC 27 · carreira tradicional · regras padrão. O foco de treino selecionado afeta o elenco semanalmente. Se você escolher um clube diretamente, o estilo tático inicial também será aplicado ao clube.</p></div><label class="coach-full">Plano tático inicial (clube escolhido)<select name="tactic"><option value="balanced">Equilibrado</option><option value="possession">Posse de bola</option><option value="attack">Ofensivo</option><option value="counter">Contra-ataque</option></select></label><label class="coach-full">Seed do mundo (opcional)<input name="seed" type="number" placeholder="Mesmo número = mesmo universo inicial"></label>
@@ -29,7 +29,7 @@ function render(ctx){
    </section>
    <aside class="coach-creation-card">
     <h2>Seu projeto de carreira</h2>
-    <div class="coach-profile-art" aria-hidden="true"><svg viewBox="0 0 160 195" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="80" cy="47" r="26" fill="#C99B77"/><path d="M52 43c1-25 52-32 57-2l-4-16-17-10H70L56 25Z" fill="#242A2B"/><path d="M46 87c15-18 53-20 68 0l18 80H28l18-80Z" fill="#1B313E" stroke="#9DB4B7" stroke-width="2"/><path d="m65 88 15 24 15-24-15-13-15 13Z" fill="#EDF5F4"/><path d="m80 105-8 47h16l-8-47Z" fill="#B8F32E"/><path d="M24 166h112" stroke="#B8F32E" stroke-width="3"/></svg></div>
+    <div class="coach-profile-art" id="coach-profile-preview" aria-hidden="true"><svg viewBox="0 0 160 195" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="80" cy="47" r="26" fill="#C99B77"/><path d="M52 43c1-25 52-32 57-2l-4-16-17-10H70L56 25Z" fill="#242A2B"/><path d="M46 87c15-18 53-20 68 0l18 80H28l18-80Z" fill="#1B313E" stroke="#9DB4B7" stroke-width="2"/><path d="m65 88 15 24 15-24-15-13-15 13Z" fill="#EDF5F4"/><path d="m80 105-8 47h16l-8-47Z" fill="#B8F32E"/><path d="M24 166h112" stroke="#B8F32E" stroke-width="3"/></svg></div>
     <div class="coach-summary"><div><small>Modo</small><strong>Treinador</strong></div><div><small>Base</small><strong>FC 27</strong></div><div><small>Início</small><strong>Temporada 2026</strong></div><div><small>Carreira</small><strong>Gestão de clube</strong></div></div>
     <div class="coach-navigation"><button type="button" class="coach-return" data-coach-prev>← Anterior</button><button type="button" class="coach-start" data-coach-next>Próxima etapa →</button></div><button type="submit" class="coach-start" data-coach-finish>Iniciar carreira de treinador →</button>
     <p class="coach-helper">O jogo preserva o fluxo de saves existente. Nenhuma habilidade, posição ou ponto de atleta será solicitado.</p>
@@ -40,6 +40,13 @@ function render(ctx){
  const form=app.querySelector("#coach-creation-form");
  function selectedClub(){return clubs.find(c=>c.id===form.elements.clubId.value)||null;}
  function review(){
+  const preview=app.querySelector("#coach-profile-preview");
+  if(preview){const skin=form.elements.skin.value,hair=form.elements.hairColor.value,outfit=form.elements.outfit.value;
+   const face=preview.querySelector("circle"),hairPath=preview.querySelector("path"),jacket=preview.querySelectorAll("path")[1];
+   if(face)face.setAttribute("fill",skin);
+   if(hairPath)hairPath.setAttribute("fill",form.elements.hair.value==="bald"?"transparent":hair);
+   if(jacket)jacket.setAttribute("fill",outfit==="suit"?"#1b313e":outfit==="tracksuit"?"#254f42":"#355a62");
+  }
   const club=selectedClub(),target=app.querySelector("#coach-club-analysis");
   if(target)target.textContent=club
     ? "Clube: "+club.name+" · Liga: "+(club.leagueId||"Não informada")+" · Orçamento inicial: R$ "+Number(club.budget||0).toLocaleString("pt-BR")+"."
@@ -72,10 +79,14 @@ function render(ctx){
   const seedRaw=String(f.get("seed")||"").trim();
   const seed=seedRaw!==""?Number(seedRaw):Date.now();
   if(!Number.isFinite(seed)){ctx.toast("Seed invalida.");return;}
-  const config={mode:"coach",catalogVersion:"fc27_v1",name,city,age,nationality:String(f.get("nationality")||"Brasil").trim(),clubId:String(f.get("clubId")||"")};
+  const config={mode:"coach",catalogVersion:"fc27_v1",name,city,age,nationality:String(f.get("nationality")||"Brasil").trim(),clubId:String(f.get("clubId")||""),appearance:{skin:String(f.get("skin")),hairColor:String(f.get("hairColor")),eyeColor:String(f.get("eyeColor")),hair:String(f.get("hair")),beard:String(f.get("beard"))}};
   ctx.busy("Criando carreira de treinador FC 27…",()=>{
    try{
     const fresh=D.create(config,seed);
+    if(fresh.mode==="coach"){
+     if(!fresh.coachCareer)fresh.coachCareer={version:1};
+     fresh.coachCareer.presentation={outfit:String(f.get("outfit")||"suit")};
+    }
     const focus=String(f.get("focus")||"equilibrado");
     if(D.CoachCareer?.setFocus)D.CoachCareer.setFocus(fresh,focus);
     else if(fresh.mode==="coach"&&fresh.coachCareer)fresh.coachCareer.focus=focus;
