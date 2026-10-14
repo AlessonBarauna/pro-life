@@ -47,3 +47,40 @@
 .pl-j06-squad .pl-j06-tab-view .pl-squad-mini-kpis small{font-size:10px}
 .pl-j06-squad .pl-j06-tab-view .pl-squad-mini-kpis b{font-size:18px}
 @media(max-width:720px){.pl-j06-squad .pl-j06-tab-view .pl-squad-mini-kpis{grid-template-columns:1fr}}
+
+/* J06.6: compact player detail card, scoped to player mode only. */
+.pl-j06-squad .pl-squad-workspace{align-items:start}
+.pl-j06-squad .pl-squad-detail{align-self:start;height:auto;min-height:0;display:flex;flex-direction:column}
+.pl-j06-squad .pl-squad-detail-hero{min-height:180px}
+.pl-j06-squad .pl-squad-detail-tabs{height:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:12px 14px 0;border-bottom:none}
+.pl-j06-squad .pl-squad-detail-tabs button{min-width:0;min-height:42px;padding:10px 5px;overflow-wrap:anywhere;text-align:center;line-height:1.2;font-size:10px}
+.pl-j06-squad .pl-squad-detail-tabs button.active{background:linear-gradient(180deg,#a6ff3b17,#a6ff3b03);border-bottom:2px solid #b8f02d;color:#c8ff67}
+.pl-j06-squad .pl-j06-panel{min-height:0}
+.pl-j06-squad .pl-squad-ratings{display:grid;grid-template-columns:minmax(130px,.95fr) minmax(0,1.35fr);gap:16px;align-items:center;flex:none;min-height:0;padding:17px 16px 20px}
+.pl-j06-squad .pl-squad-radar{display:flex;align-items:center;justify-content:flex-start;gap:8px;min-width:0}
+.pl-j06-squad .pl-squad-radar svg{display:block;width:100%;max-width:185px;max-height:none;height:auto;aspect-ratio:1/1;overflow:visible}
+.pl-j06-squad .pl-squad-radar>small{font-size:10px;line-height:1.4;color:#b7c6d0;text-align:center;overflow-wrap:anywhere}
+.pl-j06-squad .pl-squad-attrs{display:grid;align-content:center;gap:13px;min-width:0}
+.pl-j06-squad .pl-squad-attrs>span{display:grid;grid-template-columns:minmax(76px,90px) minmax(0,1fr) 29px;gap:8px;align-items:center;min-width:0}
+.pl-j06-squad .pl-squad-attrs small{font-size:9px;line-height:1.25;white-space:normal;letter-spacing:.015em}
+.pl-j06-squad .pl-squad-attrs i{display:block;width:100%;min-width:0;height:7px;border-radius:999px;overflow:hidden;background:#ffffff17}
+.pl-j06-squad .pl-squad-attrs i em{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#72be65,#b9f13b)}
+.pl-j06-squad .pl-squad-attrs b{font-size:13px;text-align:right}
+.pl-j06-squad .pl-squad-detail>footer{flex:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid #354455;background:#111d2a}
+.pl-j06-squad .pl-squad-detail>footer span{padding:14px 8px;min-width:0;text-align:center}
+.pl-j06-squad .pl-squad-detail>footer small{font-size:9px;letter-spacing:.07em}
+.pl-j06-squad .pl-squad-detail>footer b{margin-top:7px;font-size:16px;overflow-wrap:anywhere}
+.pl-j06-squad .pl-squad-vitals{flex:none}
+@media(max-width:1180px) and (min-width:1001px){
+  .pl-j06-squad .pl-squad-ratings{grid-template-columns:minmax(105px,.8fr) minmax(0,1.2fr);gap:9px;padding:14px 10px}
+  .pl-j06-squad .pl-squad-radar{display:flex}
+  .pl-j06-squad .pl-squad-attrs>span{grid-template-columns:minmax(58px,75px) minmax(0,1fr) 24px;gap:5px}
+  .pl-j06-squad .pl-squad-attrs small{font-size:8px}
+}
+@media(max-width:600px){
+  .pl-j06-squad .pl-squad-ratings{grid-template-columns:minmax(0,1fr);gap:18px;padding:16px 13px}
+  .pl-j06-squad .pl-squad-radar svg{max-width:205px}
+  .pl-j06-squad .pl-squad-attrs>span{grid-template-columns:minmax(80px,95px) minmax(0,1fr) 28px;gap:8px}
+  .pl-j06-squad .pl-squad-detail-tabs{padding:9px 8px 0;gap:4px}
+  .pl-j06-squad .pl-squad-detail-tabs button{font-size:9px}
+}
