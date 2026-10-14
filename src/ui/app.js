@@ -7,6 +7,7 @@
     page = "home",
     setup = false,
     classicForm = false,
+    coachSetup = false,
     legacyAwardsOpen = false,
     squadSelectedId = null,
     squadTab = "lineup";
@@ -547,6 +548,13 @@
   }
   function landing() {
     if (!setup) { careerHub(); return; }
+    if (coachSetup && window.ProLifeCoachCreator) {
+      window.ProLifeCoachCreator.mount({ D, esc, toast, busy: withBusy,
+        onBack: () => { coachSetup = false; setup = false; render(); },
+        onStart: (fresh) => startCareer(fresh),
+      });
+      return;
+    }
     if (window.ProLifeCreator && !classicForm) {
       window.ProLifeCreator.mount({
         $, esc, opt, D, C, Charts, avatar, appearanceFields, toast, busy: withBusy,
@@ -8754,22 +8762,24 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
         importSave();
         break;
       case "guided":
+        coachSetup = false;
         classicForm = false;
         window.ProLifeCreator?.reset();
         render();
         break;
       case "new":
       case "new-player":
+        coachSetup = false;
         classicForm = false;
         window.ProLifeCreator?.reset();
         setup = true;
         render();
         break;
       case "new-coach":
-        classicForm = true;
+        coachSetup = true;
+        classicForm = false;
         setup = true;
         render();
-        setTimeout(()=>{const mode=document.getElementById("mode");if(mode){mode.value="coach";mode.dispatchEvent(new Event("change",{bubbles:true}));}},0);
         break;
       case "careers":
         state = null; setup = false; S.clearActive?.(); render(); break;
