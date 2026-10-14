@@ -903,7 +903,12 @@
     return false;
   }
   // 05B.7: uma unica sessao remunerada por dia, manual ou automatica (considera os dois marcadores legados).
-  function trainedToday(s,plan){ return s.day <= Math.max(Number(plan.lastTrainingDay)||0,Number(plan.lastAutoDay)||0); }
+  function trainedToday(s,plan){
+    // -999 significa nenhuma sessão: nunca converter esse marcador para o dia zero.
+    const lastManual=Number.isFinite(Number(plan.lastTrainingDay)) ? Number(plan.lastTrainingDay) : -999;
+    const lastAuto=Number.isFinite(Number(plan.lastAutoDay)) ? Number(plan.lastAutoDay) : -999;
+    return Number(s.day) <= Math.max(lastManual,lastAuto);
+  }
   function trainingAvailable(s){ return s.mode==="player" && !s.person.injury && !mandatoryCommitmentToday(s) && !trainedToday(s,init(s)); }
   function performTraining(s,rng,helpers,{automatic=false}={}){
     const plan=init(s);
