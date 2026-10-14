@@ -40,3 +40,24 @@ test("06B routes new-coach through manager creator and keeps new-player separate
  assert.match(app,/case "new-player":\s*coachSetup = false;/);
  assert.match(app,/if \(coachSetup && window\.ProLifeCoachCreator\)/);
 });
+
+test("06B wizard exposes five accessible stages and hides player-only inputs",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};
+ sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ const D={create:()=>({clubs:[]})};
+ sandbox.ProLifeCoachCreator.mount({D,esc:s=>String(s),toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const buttons=[...dom.window.document.querySelectorAll("[data-coach-step]")];
+ assert.equal(buttons.length,5);
+ const panels=[...dom.window.document.querySelectorAll("[data-coach-panel]")];
+ assert.equal(panels.length,5);
+ assert.equal(panels.filter(p=>!p.hidden).length,1);
+ buttons[2].click();
+ assert.equal(panels[2].hidden,false);
+ assert.equal(panels[0].hidden,true);
+ assert.equal(dom.window.document.querySelector("[data-coach-finish]").hidden,true);
+ buttons[4].click();
+ assert.equal(dom.window.document.querySelector("[data-coach-finish]").hidden,false);
+ assert.equal(dom.window.document.querySelector("[data-coach-next]").hidden,true);
+});
