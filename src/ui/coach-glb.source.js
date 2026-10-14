@@ -21,6 +21,7 @@ function mount(host,config){
  let disposed=false,raf=0,drag=false,lastX=0,turn=0,mixer=null,head=null,hair=null,body=null;
  const clock=new THREE.Clock();
  const skinMaterials=[],irisMaterials=[],shirtMaterials=[],pantsMaterials=[],hairMaterials=[],browMaterials=[];
+ const originalColors=new Map();
  function attach(gltf,index){
    if(disposed)return;
    const obj=gltf.scene;assembled.add(obj);
@@ -59,18 +60,19 @@ function mount(host,config){
  function apply(next){
    config=next;
    const appearance=next.appearance||{};
+   function setTint(list,color){const tint=new THREE.Color(color);for(const material of list){if(!material.color)continue;if(!originalColors.has(material))originalColors.set(material,material.color.clone());material.color.copy(originalColors.get(material)).multiply(tint);}}
    // Preserve the source PBR materials; tint only their existing colors.
    const tint=new THREE.Color(appearance.skin||"#bc8660");
-   for(const m of skinMaterials)if(m.color)m.color.copy(tint);
+   setTint(skinMaterials,tint);
    const iris=new THREE.Color(appearance.eyeColor||"#694829");
-   for(const m of irisMaterials)if(m.color)m.color.copy(iris);
+   setTint(irisMaterials,iris);
    const color=new THREE.Color(appearance.hairColor||"#241e1a");
-   for(const m of hairMaterials)if(m.color)m.color.copy(color);
-   for(const m of browMaterials)if(m.color)m.color.copy(color);
+   setTint(hairMaterials,color);
+   setTint(browMaterials,color);
    const outfits={suit:{shirt:"#253341",pants:"#182631"},tracksuit:{shirt:"#206052",pants:"#203b38"},polo:{shirt:"#e5e9e8",pants:"#2c394b"}};
    const chosen=outfits[next.outfit]||outfits.polo;
-   for(const m of shirtMaterials)if(m.color)m.color.set(chosen.shirt);
-   for(const m of pantsMaterials)if(m.color)m.color.set(chosen.pants);
+   setTint(shirtMaterials,chosen.shirt);
+   setTint(pantsMaterials,chosen.pants);
    if(hair){
      const style=appearance.hair||"lowfade";
      hair.visible=style!=="bald";
