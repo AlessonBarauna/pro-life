@@ -112,7 +112,7 @@
     const [minA, maxA] = W.storyId === "custom" ? [14, 32] : [14, st.ages[1]];
     const minBirthDate=`${2026-maxA-1}-01-02`, maxBirthDate=`${2026-minA}-01-01`;
     const birthValue=c.birthDate||birthDateForAge(c.age);
-    const ageField = `<label>Data de nascimento<input type="date" name="birthDate" min="${minBirthDate}" max="${maxBirthDate}" value="${birthValue}" required></label><label>Idade<input type="number" name="age" value="${c.age}" readonly tabindex="-1" aria-readonly="true"></label>`;
+    const ageField = `<label>Data de nascimento<input type="date" name="birthDate" min="${minBirthDate}" max="${maxBirthDate}" value="${birthValue}" required aria-describedby="w-birth-error"><small id="w-birth-error" class="muted" role="status" aria-live="polite"></small></label><label>Idade<input type="number" name="age" value="${c.age}" readonly tabindex="-1" aria-readonly="true"></label>`;
     return `<h2>Quem é você?</h2><div class="grid"><section class="card"><div class="formgrid"><label>Nome completo<input name="name" maxlength="60" value="${esc(c.name)}"></label><label>Cidade natal<input name="city" maxlength="60" value="${esc(c.city)}"></label><label>Nacionalidade<select name="nationality">${countries.map(country=>`<option value="${esc(country)}" ${country===c.nationality?"selected":""}>${esc(country)}</option>`).join("")}</select></label>${ageField}<label>Pé dominante<select name="foot">${opt([["right", "Direito"], ["left", "Esquerdo"]], c.foot)}</select></label><label>Altura (cm)<input name="height" type="number" min="150" max="210" value="${c.height}"></label><label>Peso (kg)<input name="weight" type="number" min="45" max="120" value="${c.weight}"></label></div><p class="muted">A nacionalidade é independente da cidade natal e do país do primeiro clube.</p></section><section class="card"><div id="w-avatar"></div>${appearanceFields(c.appearance)}</section></div>`;
   }
   function stepPosition(ctx) {
@@ -218,6 +218,10 @@
       }
       const ageInput=ctx.$('.wizard input[name="age"]');
       if(ageInput) ageInput.value=age===null?"":String(age);
+      const message=ctx.$("#w-birth-error");
+      const invalid=age===null || t.validity?.badInput || t.validity?.rangeOverflow || t.validity?.rangeUnderflow;
+      if(message) message.textContent=invalid?"Informe uma data válida dentro da faixa permitida.":"";
+      t.setAttribute("aria-invalid",invalid?"true":"false");
     }
     else if (["height", "weight"].includes(n)) c[n] = Number(t.value);
     else if (["skin", "hairColor", "eyeColor", "hair", "beard", "body", "accessory", "tattoo"].includes(n)) { c.appearance[n] = t.value; mountAvatar(ctx); }
@@ -312,11 +316,13 @@
     if (!W) init(ctx);
     render(ctx);
     const app = ctx.$("#app");
-    if (app._wizardBound) app.removeEventListener("click", app._wizardBound), app.removeEventListener("change", app._wizardChange);
+    if (app._wizardBound) app.removeEventListener("click", app._wizardBound), app.removeEventListener("change", app._wizardChange), app.removeEventListener("input", app._wizardInput);
     app._wizardBound = (e) => { if (W && ctx.$(".wizard")) onClick(ctx, e); };
     app._wizardChange = (e) => { if (W && ctx.$(".wizard")) onInput(ctx, e); };
+    app._wizardInput = (e) => { if (W && ctx.$(".wizard") && e.target?.name === "birthDate") onInput(ctx, e); };
     app.addEventListener("click", app._wizardBound);
     app.addEventListener("change", app._wizardChange);
+    app.addEventListener("input", app._wizardInput);
   }
   function reset() { W = null; }
   function state() { return W; }
