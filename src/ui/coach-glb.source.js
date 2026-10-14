@@ -56,7 +56,7 @@ function mount(host,config){
        if(/^vitpants$/i.test(name))pantsMaterials.push(m);
        if(/^vithairmat$/i.test(name))hairMaterials.push(m);
        if(/^vitbrowcardsmat$/i.test(name))browMaterials.push(m);
-       if(/^vitiris(?:\\.\\d+)?$/i.test(name))irisMaterials.push(m);
+       if(name==="vitiris"||/^vitiris[.]\d+$/.test(name))irisMaterials.push(m);
        m.side=THREE.DoubleSide;
      }
    });
