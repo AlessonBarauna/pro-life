@@ -1,0 +1,26 @@
+/* 06B - Coach-only career creation, scoped to avoid changes to player wizard. */
+.coach-creation{min-height:100vh;color:#f3f9fc;background:radial-gradient(ellipse at 78% 0%,#184032 0%,#07131a 44%,#050b10 100%);padding:32px clamp(20px,4vw,68px) 60px}
+.coach-creation *{box-sizing:border-box}
+.coach-creation-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #25424a;padding-bottom:22px;margin-bottom:28px}
+.coach-creation .coach-kicker{font-weight:900;letter-spacing:.18em;color:#c4fa3d;font-size:12px}
+.coach-creation h1{font-size:clamp(32px,4vw,58px);margin:8px 0 10px;font-style:italic;text-transform:uppercase;letter-spacing:-.04em}
+.coach-creation .coach-subtitle{font-size:15px;color:#a1b7be;max-width:670px;line-height:1.5}
+.coach-creation-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:20px;margin-top:28px}
+.coach-creation-card{background:#0b1b24df;border:1px solid #28454e;border-radius:12px;padding:clamp(20px,3vw,34px);min-width:0;box-shadow:0 18px 55px #0003}
+.coach-creation-card h2{font-size:20px;margin:0 0 22px;padding-bottom:15px;border-bottom:1px solid #30464d;text-transform:uppercase;letter-spacing:.04em}
+.coach-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.coach-fields label{display:flex;flex-direction:column;gap:9px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#aec4cf}
+.coach-fields input,.coach-fields select{width:100%;height:46px;background:#112833;border:1px solid #36525f;border-radius:6px;color:#fff;padding:0 12px;font-size:14px;text-transform:none;letter-spacing:normal}
+.coach-creation .coach-full{grid-column:1/-1}
+.coach-creation .coach-section-note{color:#9cb2c0;font-size:13px;line-height:1.5;margin:16px 0}
+.coach-creation .coach-profile-art{height:240px;border-radius:9px;background:radial-gradient(circle at 55% 10%,#315a56,transparent 45%),linear-gradient(135deg,#102b32,#08141b);display:grid;place-items:center;overflow:hidden;margin-bottom:18px}
+.coach-creation .coach-profile-art svg{width:160px;height:195px}
+.coach-creation .coach-summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.coach-creation .coach-summary>div{border:1px solid #2c4851;background:#11242d;border-radius:7px;padding:13px}
+.coach-creation .coach-summary small{display:block;color:#8faab6;font-size:11px;margin-bottom:6px}
+.coach-creation .coach-summary strong{font-size:17px}
+.coach-creation .coach-start{width:100%;background:#bdf12c;color:#102009;border:0;border-radius:7px;padding:17px 20px;font-weight:1000;font-size:15px;cursor:pointer}
+.coach-creation .coach-return{background:#122631;border:1px solid #39535f;border-radius:6px;color:#fff;padding:11px 16px;cursor:pointer}
+.coach-creation .coach-helper{color:#8aa4ae;font-size:12px;margin-top:12px}
+@media(max-width:900px){.coach-creation-grid{grid-template-columns:1fr}.coach-fields{grid-template-columns:1fr 1fr}}
+@media(max-width:540px){.coach-creation{padding:18px}.coach-creation-header{align-items:flex-start;gap:12px}.coach-fields{grid-template-columns:1fr}.coach-creation .coach-summary{grid-template-columns:1fr 1fr}}
