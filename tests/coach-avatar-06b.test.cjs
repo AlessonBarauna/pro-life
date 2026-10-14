@@ -44,3 +44,17 @@ test("06B locally installed human models are valid GLBs",()=>{
   assert.equal(bin.readUInt32LE(8),bin.length);
  }
 });
+
+test("06B Vitruvian hair options change real hair mesh silhouette without primitive overlays",()=>{
+ const source=read("src/ui/coach-glb.source.js").toString("utf8");
+ assert.match(source,/hair\.scale\.set/);
+ assert.match(source,/hair\.visible=style!=="bald"/);
+ assert.match(source,/The source contains one outfit, no beard\/glasses meshes/);
+ assert.doesNotMatch(source,/new THREE\.(CylinderGeometry|ConeGeometry|BoxGeometry)/);
+});
+test("06B manager creation discloses appearance options without models",()=>{
+ const creator=read("src/ui/coach-creator.js").toString("utf8");
+ assert.match(creator,/coach-appearance-notice/);
+ assert.match(creator,/Ainda sem modelos 3D para:/);
+ assert.match(creator,/não mudam o personagem nesta versão/);
+});
