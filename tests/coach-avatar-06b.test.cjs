@@ -97,3 +97,11 @@ test("06B every static facial piece follows the animated Mixamo head",()=>{
  assert.match(source,/for\(const part of \[head,hair\]\)/);
  assert.doesNotMatch(source,/hair\.scale\.set/);
 });
+
+test("06B identity preview is static and updates visible iris color",()=>{
+ const src=read("src/ui/coach-glb.source.js").toString("utf8");
+ assert.doesNotMatch(src,/mixer\.clipAction\(idle\)\.play\(\)/);
+ assert.match(src,/name\.includes\("iris"\)/);
+ assert.match(src,/setTint\(irisMaterials,iris\)/);
+ assert.match(src,/if\(m\.map\)\{m\.map=null;m\.needsUpdate=true;\}/);
+});
