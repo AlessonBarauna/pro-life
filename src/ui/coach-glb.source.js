@@ -44,6 +44,44 @@ function mount(host,config){
  }
  curvedFrame([[-.011,1.639,.078],[-.006,1.635,.081],[0,1.634,.082],[.006,1.635,.081],[.011,1.639,.078]],.002);
  eyewear.visible=false;
+ // Beard strands are fitted to the same Vitruvian face space as the approved eyewear.
+ const facialHair=new THREE.Group();assembled.add(facialHair);
+ const beardMaterial=new THREE.MeshStandardMaterial({color:0x241e1a,roughness:1,transparent:true,opacity:.84});
+ const beardParts={stubble:new THREE.Group(),short:new THREE.Group(),full:new THREE.Group(),mustache:new THREE.Group(),goatee:new THREE.Group()};
+ for(const part of Object.values(beardParts))facialHair.add(part);
+ function strand(group,points,width){
+  const curve=new THREE.CatmullRomCurve3(points.map(point=>new THREE.Vector3(...point)));
+  const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,Math.max(4,points.length*3),width,4,false),beardMaterial);
+  group.add(mesh);
+ }
+ // Fine facial strands; avoid opaque geometric caps covering lips or skin.
+ for(let n=0;n<84;n++){
+  const side=n%2===0?-1:1,segment=Math.floor(n/2);
+  const t=segment/41,angle=t*Math.PI*.9;
+  const x=side*(.018+.049*Math.sin(angle));
+  const y=1.568-.063*t;
+  const z=.078-.025*Math.abs(x)/.067-.009*t;
+  const len=.0025+(segment%5)*.0005;
+  strand(beardParts.stubble,[[x,y,z],[x+side*.0007,y-len,z+.0005]],.00035);
+  strand(beardParts.short,[[x,y,z],[x+side*.0012,y-len*2,z+.0015]],.0008);
+  strand(beardParts.full,[[x,y,z],[x+side*.0015,y-len*4,z+.003]],.0014);
+ }
+ for(let n=0;n<40;n++){
+  const x=(n-19.5)*.0022,abs=Math.abs(x)/.044;
+  const z=.093-.015*abs,y=1.572-.007*abs;
+  const length=.004+.004*abs;
+  strand(beardParts.mustache,[[x,y,z],[x+Math.sign(x)*.002,y-length,z+.002]],.0008);
+ }
+ for(let n=0;n<35;n++){
+  const x=(n-17)*.0024,edge=Math.abs(x)/.042;
+  const y=1.495+.009*edge,z=.073-.008*edge;
+  strand(beardParts.goatee,[[x,y,z],[x+Math.sign(x)*.001,y-.013*(1-edge*.4),z+.001]],.0013);
+ }
+ const beardGroups={
+  none:[],stubble:["stubble"],short:["short","mustache"],
+  full:["full","mustache","goatee"],mustache:["mustache"],goatee:["mustache","goatee"]
+ };
+
  let headBone=null,headRestInverse=null;
  const headCurrent=new THREE.Matrix4(),parentInverse=new THREE.Matrix4(),headDelta=new THREE.Matrix4();
  function attach(gltf,index){
@@ -91,6 +129,9 @@ function mount(host,config){
    config=next;
    const appearance=next.appearance||{};
    eyewear.visible=appearance.accessory==="glasses";
+   const visibleBeard=beardGroups[appearance.beard]||[];
+   for(const [name,part] of Object.entries(beardParts))part.visible=visibleBeard.includes(name);
+   beardMaterial.color.set(appearance.hairColor||"#241e1a");
    function setTint(list,color){const tint=new THREE.Color(color);for(const material of list){if(!material.color)continue;if(!originalColors.has(material))originalColors.set(material,material.color.clone());material.color.copy(originalColors.get(material)).multiply(tint);}}
    // Preserve the source PBR materials; tint only their existing colors.
    const tint=new THREE.Color(appearance.skin||"#bc8660");
@@ -141,7 +182,7 @@ function mount(host,config){
  function up(){drag=false;}
  renderer.domElement.addEventListener("pointerdown",down);renderer.domElement.addEventListener("pointermove",move);
  renderer.domElement.addEventListener("pointerup",up);renderer.domElement.addEventListener("pointercancel",up);
- function frame(){if(disposed)return;raf=root.requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.05);mixer?.update(dt);assembled.rotation.y=turn;assembled.updateMatrixWorld(true);if(headBone&&headRestInverse){parentInverse.copy(assembled.matrixWorld).invert();headCurrent.multiplyMatrices(parentInverse,headBone.matrixWorld);headDelta.multiplyMatrices(headCurrent,headRestInverse);for(const part of [head,hair,eyewear])if(part){part.matrixAutoUpdate=false;part.matrix.copy(headDelta);part.matrixWorldNeedsUpdate=true;}}renderer.render(scene,camera);}frame();
+ function frame(){if(disposed)return;raf=root.requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.05);mixer?.update(dt);assembled.rotation.y=turn;assembled.updateMatrixWorld(true);if(headBone&&headRestInverse){parentInverse.copy(assembled.matrixWorld).invert();headCurrent.multiplyMatrices(parentInverse,headBone.matrixWorld);headDelta.multiplyMatrices(headCurrent,headRestInverse);for(const part of [head,hair,eyewear,facialHair])if(part){part.matrixAutoUpdate=false;part.matrix.copy(headDelta);part.matrixWorldNeedsUpdate=true;}}renderer.render(scene,camera);}frame();
  const controller={update:apply,dispose(){
    if(disposed)return;disposed=true;root.cancelAnimationFrame(raf);observer?.disconnect();
    renderer.domElement.removeEventListener("pointerdown",down);renderer.domElement.removeEventListener("pointermove",move);
@@ -150,6 +191,7 @@ function mount(host,config){
    const seen=new Set();
    assembled.traverse(n=>{if(!n.isMesh)return;n.geometry?.dispose();const mats=Array.isArray(n.material)?n.material:[n.material];for(const m of mats){if(m&&!seen.has(m)){seen.add(m);m.dispose();}}});
    eyewear.traverse(n=>{if(n.isMesh)n.geometry.dispose();});frameMaterial.dispose();noseMaterial.dispose();
+   facialHair.traverse(n=>{if(n.isMesh)n.geometry.dispose();});beardMaterial.dispose();
    renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();if(active===controller)active=null;
  }};
  active=controller;return controller;
