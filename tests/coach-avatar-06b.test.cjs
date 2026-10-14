@@ -45,10 +45,12 @@ test("06B locally installed human models are valid GLBs",()=>{
  }
 });
 
-test("06B Vitruvian hair options change real hair mesh silhouette without primitive overlays",()=>{
+test("06B static hair and brows follow the animated head without fake meshes",()=>{
  const source=read("src/ui/coach-glb.source.js").toString("utf8");
- assert.match(source,/hair\.scale\.set/);
- assert.match(source,/hair\.visible=style!=="bald"/);
+ assert.match(source,/headRestInverse/);
+ assert.match(source,/headBone\.matrixWorld/);
+ assert.match(source,/part\.matrix\.copy\(headDelta\)/);
+ assert.match(source,/node\.name!=="VitHair"\|\|style!=="bald"/);
  assert.match(source,/The source contains one outfit, no beard\/glasses meshes/);
  assert.doesNotMatch(source,/new THREE\.(CylinderGeometry|ConeGeometry|BoxGeometry)/);
 });
@@ -87,4 +89,11 @@ test("06B material selectors match real Vitruvian asset names",()=>{
  }
  assert.match(src,/originalColors=new Map/);
  assert.match(src,/originalColors\.get\(material\)/);
+});
+
+test("06B every static facial piece follows the animated Mixamo head",()=>{
+ const source=read("src/ui/coach-glb.source.js").toString("utf8");
+ assert.match(source,/getObjectByName\("mixamorig:Head"\)/);
+ assert.match(source,/for\(const part of \[head,hair\]\)/);
+ assert.doesNotMatch(source,/hair\.scale\.set/);
 });
