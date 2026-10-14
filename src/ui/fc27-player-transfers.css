@@ -1,0 +1,55 @@
+/* J05.2: Carreira de Jogador — negociação 2D inspirada na organização do FC 27.
+   Escopo exclusivo de player para não afetar o fluxo do treinador. */
+body:has(.pl-player-transfer-experience) .game-shell{min-width:0}
+.pl-player-transfer-experience,
+.pl-player-transfer-experience .grid,
+.pl-player-transfer-experience .card,
+.pl-player-transfer-experience .neg-card,
+.pl-player-transfer-experience .neg-center,
+.pl-player-transfer-experience .neg-box{min-width:0;max-width:100%;box-sizing:border-box}
+.pl-player-transfer-experience .neg-card{background:#0c151e;border:1px solid #30404a;border-radius:8px;padding:clamp(12px,2.5vw,26px);overflow:hidden;gap:18px}
+.pl-player-transfer-experience .neg-card.open{border-color:#a5dc20}
+.pl-player-transfer-experience .neg-center{background:#0b1119;border:1px solid #33434d;border-radius:7px;padding:clamp(12px,2vw,25px);overflow:hidden;gap:18px}
+.pl-player-transfer-experience .neg-center-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;border-bottom:1px solid #32414a;padding-bottom:18px}
+.pl-player-transfer-experience .neg-center-head>*{min-width:0}
+.pl-player-transfer-experience .neg-center-head h3{font-size:clamp(20px,2.2vw,30px);line-height:1.1;overflow-wrap:anywhere}
+.pl-player-transfer-experience .neg-center-head .tag{color:#b9ef2b}
+.pl-player-transfer-experience .neg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.pl-player-transfer-experience .neg-box{background:#111b25;border:1px solid #30414c;border-radius:5px;padding:16px;overflow:hidden}
+.pl-player-transfer-experience .neg-box.wide{width:100%}
+.pl-player-transfer-experience .neg-box .tag{color:#b8ed25;font-size:11px;font-weight:800;letter-spacing:.085em;margin-bottom:12px}
+.pl-player-transfer-experience .neg-dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pl-player-transfer-experience .neg-dl>div{background:#182632;border:0;border-radius:3px;min-width:0;padding:12px}
+.pl-player-transfer-experience .neg-dl dt{color:#a4b6bf}
+.pl-player-transfer-experience .neg-dl dd{color:#f0f4f6;overflow-wrap:anywhere}
+.pl-player-transfer-experience .neg-stage{display:flex;flex-wrap:wrap;gap:7px}
+.pl-player-transfer-experience .neg-stage span{border:1px solid #51616b;border-radius:3px;background:#111c25;color:#c0cbd2;white-space:normal;padding:9px 11px}
+.pl-player-transfer-experience .neg-stage span.now{color:#142007;background:#b8ed25;border-color:#b8ed25}
+.pl-player-transfer-experience .neg-interest{max-width:100%;overflow-wrap:anywhere}
+.pl-player-transfer-experience .season-scroll{max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+.pl-player-transfer-experience .season-scroll table{width:100%;min-width:0;table-layout:fixed}
+.pl-player-transfer-experience .season-scroll th,
+.pl-player-transfer-experience .season-scroll td{max-width:100%;overflow-wrap:anywhere;white-space:normal}
+.pl-player-transfer-experience .neg-hist{max-width:100%;overflow-wrap:anywhere}
+.pl-player-transfer-experience .neg-actions.main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:18px 0 0;align-items:stretch}
+.pl-player-transfer-experience .neg-actions button{display:flex;align-items:center;justify-content:center;min-width:0;min-height:48px;height:auto;max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:center;padding:12px 15px;line-height:1.3;opacity:1;visibility:visible}
+.pl-player-transfer-experience .neg-actions.main .primary{grid-column:1/-1;background:#bbf326;border-color:#bbf326;color:#0b1608;font-weight:900}
+.pl-player-transfer-experience .neg-actions.main button:not(.primary){background:#16242e;color:#f5f8f9;border:1px solid #435862}
+.pl-player-transfer-experience .neg-actions.main button.danger{color:#ffaaa8;border-color:#905151}
+.pl-player-transfer-experience .neg-actions.main button:disabled{opacity:.55}
+.pl-player-transfer-experience .neg-confirm{min-width:0}
+.pl-player-transfer-experience .neg-confirm .actions{display:flex;flex-wrap:wrap;gap:8px}
+.pl-player-transfer-experience .neg-confirm button{white-space:normal}
+@media(max-width:850px){
+.pl-player-transfer-experience .neg-grid{grid-template-columns:minmax(0,1fr)}
+.pl-player-transfer-experience .neg-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pl-player-transfer-experience .neg-head{grid-template-columns:auto minmax(0,1fr)}
+.pl-player-transfer-experience .neg-head .neg-interest{grid-column:1/-1}
+}
+@media(max-width:520px){
+.pl-player-transfer-experience .neg-center-head{grid-template-columns:auto minmax(0,1fr)}
+.pl-player-transfer-experience .neg-center-head>button{grid-column:1/-1;justify-self:end}
+.pl-player-transfer-experience .neg-dl{grid-template-columns:minmax(0,1fr)}
+.pl-player-transfer-experience .neg-actions.main{grid-template-columns:minmax(0,1fr)}
+.pl-player-transfer-experience .neg-facts{grid-template-columns:minmax(0,1fr)}
+}
