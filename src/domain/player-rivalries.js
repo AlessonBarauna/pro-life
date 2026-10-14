@@ -9,16 +9,18 @@ const integer=v=>Math.max(0,Math.floor(Number(v)||0));
 const OBJECTIVES=Object.freeze({
   goals:Object.freeze({id:"goals",label:"Mais gols nas próximas 5 partidas",field:"goals"}),
   assists:Object.freeze({id:"assists",label:"Mais assistências nas próximas 5 partidas",field:"assists"}),
-  cleanSheets:Object.freeze({id:"cleanSheets",label:"Mais jogos sem sofrer gols nas próximas 5 partidas",field:"cleanSheets"})
+  cleanSheets:Object.freeze({id:"cleanSheets",label:"Mais jogos sem sofrer gols nas próximas 5 partidas",field:"cleanSheets"}),
+  hatTrick:Object.freeze({id:"hatTrick",label:"Quem marcar um hat-trick primeiro",field:"goals",kind:"firstAchievement",threshold:3})
 });
 function objectiveFor(position){
   const p=String(position||"").toUpperCase();
   return p==="GOL"||p==="DEF"||p==="ZAG"||p==="LD"||p==="LE" ? OBJECTIVES.cleanSheets
     : p==="MEI"||p==="MC"||p==="VOL" ? OBJECTIVES.assists : OBJECTIVES.goals;
 }
-function initial({season,clubId,playerId="hero",rivalId,position,maxMatches=5}={}){
+function initial({season,clubId,playerId="hero",rivalId,position,maxMatches=5,objectiveId}={}){
   if(!rivalId||String(rivalId)===String(playerId))throw Error("Rival precisa ser outro atleta.");
-  const objective=objectiveFor(position);
+  const objective=objectiveId ? OBJECTIVES[objectiveId] : objectiveFor(position);
+  if(!objective)throw Error("Objetivo de rivalidade desconhecido.");
   return {version:VERSION,season:integer(season),clubId:String(clubId||""),playerId:String(playerId),rivalId:String(rivalId),
     objectiveId:objective.id,targetMatches:clamp(Math.floor(maxMatches),1,20)||5,
     progress:0,hero:0,rival:0,result:"active",processed:[]};
@@ -31,9 +33,18 @@ function record(state,match){
   if(match.played!==true)return state;
   const objective=OBJECTIVES[state.objectiveId];
   if(!objective)throw Error("Objetivo desconhecido.");
+  const heroValue=integer(match.hero?.[objective.field]);
+  const rivalValue=integer(match.rival?.[objective.field]);
   const next={...state,processed:[...state.processed,id],progress:state.progress+1,
-    hero:state.hero+integer(match.hero?.[objective.field]),rival:state.rival+integer(match.rival?.[objective.field])};
-  if(next.progress>=next.targetMatches)next.result=next.hero>next.rival?"win":next.hero<next.rival?"loss":"draw";
+    hero:state.hero+heroValue,rival:state.rival+rivalValue};
+  if(objective.kind==="firstAchievement"){
+    const heroAchieved=heroValue>=objective.threshold;
+    const rivalAchieved=rivalValue>=objective.threshold;
+    if(heroAchieved||rivalAchieved)next.result=heroAchieved&&rivalAchieved?"draw":heroAchieved?"win":"loss";
+  }else if(next.progress>=next.targetMatches){
+    next.result=next.hero>next.rival?"win":next.hero<next.rival?"loss":"draw";
+  }
+  if(next.result==="active"&&next.progress>=next.targetMatches)next.result="unfinished";
   return next;
 }
 function reward(state){
