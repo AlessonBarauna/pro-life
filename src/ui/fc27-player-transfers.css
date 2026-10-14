@@ -53,3 +53,62 @@ body:has(.pl-player-transfer-experience) .game-shell{min-width:0}
 .pl-player-transfer-experience .neg-actions.main{grid-template-columns:minmax(0,1fr)}
 .pl-player-transfer-experience .neg-facts{grid-template-columns:minmax(0,1fr)}
 }
+
+/* J05.3 — tela de negociação dedicada (somente jogador).
+   Hierarquia visual inspirada nas imagens oficiais do FC 27; sem copiar assets. */
+.fc27-transfer-overlay{position:fixed;inset:0;z-index:9000;background:#05090ef5;color:#e8eff3;display:flex;align-items:center;justify-content:center;padding:clamp(8px,2vw,28px);overflow-y:auto;overscroll-behavior:contain}
+.fc27-transfer-overlay *{box-sizing:border-box}
+.fc27-transfer-shell{width:min(1230px,100%);min-width:0;max-height:calc(100dvh - 24px);display:flex;flex-direction:column;background:#0c151e;border:1px solid #40505c;box-shadow:0 24px 95px #000a;overflow:hidden}
+.fc27-transfer-top{flex:none;display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid #2c3944;background:#101b25;gap:15px}
+.fc27-transfer-top>div{display:flex;gap:15px;align-items:center;min-width:0;flex-wrap:wrap}
+.fc27-transfer-top small{font-size:10px;font-weight:800;letter-spacing:.13em;color:#b8c7cf}
+.fc27-transfer-top b{font-size:19px;letter-spacing:.05em;color:#fff}
+.fc27-transfer-top b span{color:#b6ec2a}
+.fc27-transfer-top button{border:1px solid #465764;border-radius:3px;color:#fff;background:#1b2934;padding:10px 13px;white-space:normal}
+.fc27-transfer-content{display:grid;grid-template-columns:minmax(280px,.85fr) minmax(0,1.5fr);min-height:0;overflow:auto}
+.fc27-transfer-contact{position:relative;background:linear-gradient(135deg,#20303c,#0b141c 67%);border-right:1px solid #394752;padding:clamp(20px,3vw,42px);display:flex;flex-direction:column;align-items:flex-start;gap:15px;min-width:0;min-height:525px}
+.fc27-transfer-crest{display:flex;align-items:center;justify-content:center;width:100px;height:100px;background:#15232d;border:1px solid #53616b;border-radius:3px}
+.fc27-transfer-crest .neg-crest{transform:scale(1.45)}
+.fc27-transfer-label,.fc27-transfer-eyebrow{font-size:10px;letter-spacing:.16em;color:#b9ed28;font-weight:900}
+.fc27-transfer-contact h2{font-size:clamp(32px,4vw,53px);line-height:.98;overflow-wrap:anywhere;margin:4px 0;color:#fff}
+.fc27-transfer-contact>p{color:#acbec8;font-size:14px}
+.fc27-transfer-contact-line{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:12px;border:1px solid #41525e;background:#13222c;width:100%;font-size:11px}
+.fc27-transfer-contact-line small{margin-left:auto;color:#afc1ca}
+.fc27-transfer-pulse{display:inline-block;width:9px;height:9px;border-radius:100%;background:#b5f027}
+.fc27-transfer-message{width:100%;padding:22px;background:#e6edf0;color:#101b21;border-left:4px solid #b9f02a;margin-top:7px}
+.fc27-transfer-message small{font-size:10px;font-weight:900;letter-spacing:.12em;color:#455863}
+.fc27-transfer-message p{color:#16242c;margin:12px 0 0;font-size:17px;line-height:1.4}
+.fc27-transfer-contact-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+.fc27-transfer-contact-meta span{font-size:10px;font-weight:800;border:1px solid #50616c;padding:7px;color:#d4e0e6}
+.fc27-transfer-details{min-width:0;padding:clamp(18px,3vw,36px);display:flex;flex-direction:column;gap:16px}
+.fc27-transfer-eyebrow{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.fc27-transfer-eyebrow span{color:#adbec9}
+.fc27-transfer-details h2{font-size:clamp(27px,3vw,39px);line-height:1.05;margin:0;color:#fff}
+.fc27-transfer-sub{margin:0;color:#afc0c9}
+.fc27-transfer-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.fc27-transfer-summary>div{min-width:0;min-height:98px;padding:15px;background:#192a35;border-top:3px solid #b4ee2c;display:flex;flex-direction:column;gap:7px}
+.fc27-transfer-summary small{color:#bbcad2;letter-spacing:.1em;font-size:10px;font-weight:800}
+.fc27-transfer-summary strong{color:#fff;font-size:clamp(18px,2vw,26px);overflow-wrap:anywhere}
+.fc27-transfer-summary span{color:#abbac5;font-size:11px}
+.fc27-transfer-comparison{width:100%;min-width:0}
+.fc27-transfer-table-head,.fc27-transfer-term{display:grid;grid-template-columns:minmax(110px,1.1fr) repeat(2,minmax(0,1fr));align-items:center;gap:8px;padding:13px 12px;border-bottom:1px solid #344551}
+.fc27-transfer-table-head{background:#243541;color:#bfced5;font-size:10px;letter-spacing:.08em;font-weight:900}
+.fc27-transfer-term{background:#111e28;font-size:13px;color:#c3d0d7}
+.fc27-transfer-term strong{color:#b8f02a}
+.fc27-transfer-term b,.fc27-transfer-term strong{overflow-wrap:anywhere}
+.fc27-transfer-meta{display:flex;flex-direction:column;gap:5px;color:#bccbd2;font-size:12px}
+.fc27-transfer-meta .neg-interest{color:#b8ef2a}
+.fc27-transfer-history{border:1px solid #374854;padding:10px 14px;color:#c9d5db}
+.fc27-transfer-history summary{cursor:pointer;font-size:12px;font-weight:800}
+.fc27-transfer-history li{overflow-wrap:anywhere;margin-top:8px}
+.fc27-transfer-terms-panel,.fc27-transfer-confirm{background:#192a35;border-left:3px solid #b8ef2a;padding:17px;display:grid;gap:10px}
+.fc27-transfer-terms-panel h3{margin:0;color:white}
+.fc27-transfer-terms-panel p,.fc27-transfer-confirm p{margin:0;color:#d3e0e6;font-size:13px}
+.fc27-transfer-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:auto;padding-top:9px}
+.fc27-transfer-controls button,.fc27-transfer-terms-panel button{width:100%;min-width:0;height:auto;min-height:46px;padding:12px 14px;white-space:normal;overflow-wrap:anywhere;text-align:center;border-radius:2px;border:1px solid #536471;background:#20303c;color:#f7fafb;font-size:13px;font-weight:800;cursor:pointer;opacity:1}
+.fc27-transfer-controls button:disabled{opacity:.45;cursor:default}
+.fc27-transfer-controls .fc27-transfer-accept{grid-column:1/-1;background:#b9ef2e;color:#101d06;border-color:#b9ef2e;font-weight:900;font-size:16px}
+.fc27-transfer-controls .fc27-transfer-reject{color:#ffbcba;border-color:#915e5a}
+.fc27-transfer-overlay button:focus-visible{outline:3px solid #b9ef2a;outline-offset:2px}
+@media(max-width:800px){.fc27-transfer-content{grid-template-columns:1fr}.fc27-transfer-contact{min-height:0;padding:20px;border-right:0;border-bottom:1px solid #40505c}.fc27-transfer-crest{width:70px;height:70px}.fc27-transfer-contact h2{font-size:31px}.fc27-transfer-message{padding:13px}.fc27-transfer-message p{font-size:14px}.fc27-transfer-shell{max-height:calc(100dvh - 12px)}}
+@media(max-width:450px){.fc27-transfer-overlay{padding:0}.fc27-transfer-shell{max-height:100dvh;min-height:100dvh}.fc27-transfer-top{padding:12px}.fc27-transfer-details{padding:14px}.fc27-transfer-summary{grid-template-columns:1fr}.fc27-transfer-summary>div{min-height:0}.fc27-transfer-controls{grid-template-columns:1fr}.fc27-transfer-table-head,.fc27-transfer-term{grid-template-columns:minmax(80px,1fr) repeat(2,minmax(0,1fr));font-size:11px;padding:10px 5px;gap:5px}}
