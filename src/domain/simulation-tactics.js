@@ -53,7 +53,42 @@ function playerModifiers(person){
   fatigue:p.pressing==="intense"?1.12:p.pressing==="conserve"?.9:1
  };
 }
-const api={PRESETS,presetFor,normalize,matchup,playerInstruction,playerModifiers};
+// 06A: deterministic tactical scouting report. It reads the same tactical plans
+// used by the simulation and never mutates clubs, saves or player attributes.
+function scoutingReport(ownClub,oppClub){
+ const own=matchup(ownClub,oppClub),opponent=matchup(oppClub,ownClub);
+ const ownPlan=own.plan,otherPlan=opponent.plan;
+ const pressGap=ownPlan.pressing-otherPlan.pressing;
+ const paceGap=ownPlan.tempo-otherPlan.tempo;
+ const buildup=ownPlan.buildUp;
+ const counterExposure=Math.max(0,ownPlan.line-55)*Math.max(0,otherPlan.directness-55)/500;
+ const opponentExposure=Math.max(0,otherPlan.line-55)*Math.max(0,ownPlan.directness-55)/500;
+ // Balanced baselines are deliberately neutral; the numbers are indices,
+ // not fabricated percentages or predictions of a match result.
+ const expectedPossession=clamp(50+(own.possession-opponent.possession)*1.5,30,70);
+ const chanceIndex=clamp(50+(own.attack-opponent.defense)*3+opponentExposure*2,20,80);
+ const defensiveIndex=clamp(50+(own.defense-opponent.attack)*3-counterExposure*2,20,80);
+ const workload=clamp(50+own.fatigue*280+Math.max(0,paceGap)*.08,20,90);
+ const warnings=[];
+ if(counterExposure>=1)warnings.push({id:"high-line-counter",severity:"high",label:"Linha alta exposta a bolas longas e contra-ataques"});
+ if(ownPlan.pressing>=75&&ownPlan.tempo>=60)warnings.push({id:"press-fatigue",severity:"medium",label:"Pressao e ritmo altos elevam o desgaste"});
+ if(ownPlan.risk>=70&&ownPlan.line>=65)warnings.push({id:"risk-transition",severity:"medium",label:"Risco ofensivo amplia os espacos na transicao"});
+ if(pressGap<=-25&&buildup==="possession")warnings.push({id:"buildup-press",severity:"medium",label:"Saida curta contra adversario com pressao superior"});
+ const strengths=[];
+ if(opponentExposure>=1)strengths.push("Atacar as costas da linha adversaria");
+ if(pressGap>=20)strengths.push("Pressionar a saida de bola do adversario");
+ if(buildup==="possession"&&expectedPossession>=53)strengths.push("Controlar o ritmo com posse de bola");
+ if(ownPlan.line<=38&&otherPlan.directness>=65)strengths.push("Proteger profundidade com bloco baixo");
+ const round=v=>Math.round(v*10)/10;
+ return {
+  own:ownPlan,opponent:otherPlan,
+  indices:{possession:round(expectedPossession),chanceCreation:round(chanceIndex),defensiveSecurity:round(defensiveIndex),workload:round(workload)},
+  matchup:{pressingGap:pressGap,tempoGap:paceGap,counterExposure:round(counterExposure),opponentCounterExposure:round(opponentExposure)},
+  warnings,strengths,
+  note:"Indices comparativos de scouting (0-100), nao probabilidades ou resultados garantidos."
+ };
+}
+const api={PRESETS,presetFor,normalize,matchup,scoutingReport,playerInstruction,playerModifiers};
 root.ProLifeSimulationTactics=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
