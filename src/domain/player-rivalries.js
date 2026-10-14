@@ -29,6 +29,26 @@ function eligibleRivals(s){
       .map(p=>({id:String(p.id),name:String(p.name||"Atleta"),clubId:String(c.id),position})))
     .sort((a,b)=>a.clubId.localeCompare(b.clubId)||a.id.localeCompare(b.id));
 }
+// Usa exclusivamente o registro estatístico da liga; ausência de dado é indicada como indisponível.
+function candidateStats(s){
+  const current=s?.clubs?.find(c=>String(c.id)===String(s.clubId));
+  const leagueId=current?.leagueId;
+  const players=s?.statistics?.players;
+  return eligibleRivals(s).map(candidate=>{
+    const row=players?.[candidate.id]?.byCompetition?.[leagueId];
+    const appearances=Number(row?.appearances);
+    const goals=Number(row?.goals);
+    const assists=Number(row?.assists);
+    const ratingTotal=Number(row?.ratingTotal);
+    const played=Number.isFinite(appearances)&&appearances>0;
+    return {...candidate,statistics:played?{
+      appearances,
+      goals:Number.isFinite(goals)?goals:0,
+      assists:Number.isFinite(assists)?assists:0,
+      averageRating:Number.isFinite(ratingTotal)?+(ratingTotal/appearances).toFixed(2):null
+    }:null};
+  });
+}
 function initial({season,clubId,playerId="hero",rivalId,position,maxMatches=5,objectiveId}={}){
   if(!rivalId||String(rivalId)===String(playerId))throw Error("Rival precisa ser outro atleta.");
   const objective=objectiveId ? OBJECTIVES[objectiveId] : objectiveFor(position);
@@ -78,7 +98,7 @@ function reward(state){
   if(!state||state.result==="active")return 0;
   return state.result==="win"?100:state.result==="draw"?50:state.result==="loss"?0:0;
 }
-const api=Object.freeze({VERSION,OBJECTIVES,objectiveFor,eligibleRivals,initial,record,fromSimulatedMatch,reward});
+const api=Object.freeze({VERSION,OBJECTIVES,objectiveFor,eligibleRivals,candidateStats,initial,record,fromSimulatedMatch,reward});
 root.ProLifePlayerRivalries=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
