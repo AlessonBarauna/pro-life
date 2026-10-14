@@ -27,7 +27,7 @@
 
 /* 06B wizard — all steps share the same validated form and save pipeline. */
 .coach-creation [hidden]{display:none!important}
-.coach-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:12px 0 20px}
+.coach-steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:12px 0 20px}
 .coach-steps button{background:#11252e;color:#92aeb9;border:1px solid #314c56;padding:14px 8px;border-radius:7px;font-size:12px;font-weight:800;cursor:pointer}
 .coach-steps button.on{color:#102006;background:#bbf329;border-color:#bbf329}
 .coach-navigation{display:flex;gap:10px;margin:16px 0}.coach-navigation .coach-start{flex:1}
