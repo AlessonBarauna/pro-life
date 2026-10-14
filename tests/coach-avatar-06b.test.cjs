@@ -70,3 +70,12 @@ test("06B appearance changes affect distinct licensed clothing and face material
  assert.match(src,/appearance\.skin/);
  assert.match(src,/appearance\.eyeColor/);
 });
+
+test("06B repeated color edits preserve source material colors",()=>{
+ const source=read("src/ui/coach-glb.source.js").toString("utf8");
+ assert.match(source,/originalColors=new Map/);
+ assert.match(source,/originalColors\.get\(material\)/);
+ assert.match(source,/setTint\(skinMaterials,tint\)/);
+ assert.match(source,/setTint\(shirtMaterials,chosen\.shirt\)/);
+ assert.match(source,/setTint\(pantsMaterials,chosen\.pants\)/);
+});
