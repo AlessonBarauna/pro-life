@@ -54,3 +54,12 @@
 .coach-club-option-crest{display:flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px}
 .coach-club-option-crest img,.coach-club-option-crest svg{max-width:36px;max-height:36px;object-fit:contain}
 .coach-club-option:focus-visible{outline:2px solid #bcf329;outline-offset:2px}
+
+.coach-settings-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.coach-settings-tabs button{background:#122c34;border:1px solid #38565e;color:#d7e7eb;border-radius:7px;padding:10px 13px;cursor:pointer;font-weight:700}
+.coach-settings-tabs button[aria-pressed="true"]{background:#bbf329;color:#112006;border-color:#bbf329}
+.coach-settings-pane{padding:13px;background:#11262c;border:1px solid #2d4c56;border-radius:8px;margin-bottom:12px;color:#d8e5e9}
+.coach-settings-pane[hidden]{display:none!important}
+.coach-settings-pane p{margin:0 0 10px;line-height:1.55}
+.coach-settings-pane label{display:block}
+.coach-settings-core{display:contents}
