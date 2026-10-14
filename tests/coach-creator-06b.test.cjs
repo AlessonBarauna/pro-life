@@ -175,9 +175,24 @@ test("06B controls with missing 3D meshes are visibly disabled",()=>{
  vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
  sandbox.ProLifeCoachCreator.mount({D:{create:()=>({clubs:[]})},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
  const form=dom.window.document.querySelector("#coach-creation-form");
- for(const [field,values] of Object.entries({hair:["crew","curly","afro","mullet"],beard:["short","full","goatee"],accessory:["glasses"],body:["strong","slim"]})){
+ for(const [field,values] of Object.entries({hair:["crew","curly","afro","mullet"],beard:["short","full","goatee"],accessory:[],body:["strong","slim"]})){
   for(const val of values){const option=form.elements[field].querySelector('option[value="'+val+'"]');assert.ok(option,field+":"+val);assert.equal(option.disabled,true,field+":"+val);}
  }
  assert.equal(form.elements.hair.querySelector('option[value="bald"]').disabled,false);
  assert.equal(form.elements.hair.querySelector('option[value="lowfade"]').disabled,false);
+});
+
+test("06B eyewear is selectable after native-space 3D fitting",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ let config=null;
+ sandbox.ProLifeCoachCreator.mount({D:{create:c=>c.name?(config=c,{mode:"coach",clubs:[],coachCareer:{}}):{clubs:[]}},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ const option=form.elements.accessory.querySelector('option[value="glasses"]');
+ assert.equal(option.disabled,false);
+ form.elements.name.value="Treinador";form.elements.city.value="Mogi";
+ form.elements.accessory.value="glasses";
+ form.dispatchEvent(new dom.window.Event("submit",{bubbles:true,cancelable:true}));
+ assert.equal(config.appearance.accessory,"glasses");
 });
