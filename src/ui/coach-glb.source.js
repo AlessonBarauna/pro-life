@@ -25,13 +25,73 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
     fill.position.set(-3,3,-4);scene.add(fill);
     const stand=new THREE.Mesh(new THREE.CylinderGeometry(.85,.93,.07,48),new THREE.MeshStandardMaterial({color:"#192d35",roughness:.54,metalness:.28}));
     stand.position.y=-.04;scene.add(stand);
+    // Visual accessories share a parent with the loaded, normalized humanoid mesh.
+    const wardrobe=new THREE.Group();
+    const mat=(color,roughness=.82)=>new THREE.MeshStandardMaterial({color,roughness,metalness:0});
+    const parts=[];
+    function add(geometry,material,x,y,z,rotation=0){
+      const mesh=new THREE.Mesh(geometry,material);
+      mesh.position.set(x,y,z);mesh.rotation.z=rotation;wardrobe.add(mesh);parts.push(mesh);return mesh;
+    }
+    function rebuildWardrobe(){
+      for(const item of parts){item.geometry.dispose();item.material.dispose();wardrobe.remove(item);}
+      parts.length=0;
+      const a=config.appearance||{},body=a.body||"normal",factor=body==="strong"?1.13:body==="slim"?.89:1;
+      const color=a.hairColor||"#241e1a",outfit=config.outfit||"suit";
+      const jacket=mat(outfit==="suit"?"#1b2530":outfit==="tracksuit"?"#214f43":"#365972");
+      const pants=mat(outfit==="suit"?"#1b2530":outfit==="tracksuit"?"#193c39":"#263b4d");
+      const trim=mat(outfit==="suit"?"#f0eee8":outfit==="tracksuit"?"#a7cfb5":"#9ebaca");
+      const hair=mat(color),eye=mat("#c1d8e3",.45);
+      // Coordinates normalized from floor 0 to crown ~1.72. The clothing
+      // masks the bare torso and legs; all meshes rotate with the model.
+      const torso=add(new THREE.CylinderGeometry(.19*factor,.235*factor,.59,24),jacket,0,1.05,0);
+      torso.scale.z=.78;
+      add(new THREE.CylinderGeometry(.22*factor,.16*factor,.32,24),pants,0,.66,0).scale.z=.85;
+      for(const side of [-1,1]){
+        add(new THREE.CylinderGeometry(.103*factor,.085*factor,.59,14),pants,side*.12,.34,0);
+        // T-pose sleeves: follow upper arms of the original rig.
+        add(new THREE.CylinderGeometry(.095,.115,.45,14),jacket,side*.36,1.23,0,side*Math.PI/2);
+      }
+      if(outfit==="suit"){
+        add(new THREE.ConeGeometry(.075,.25,3),trim,0,1.27,.177).rotation.z=Math.PI;
+        add(new THREE.ConeGeometry(.027,.19,3),mat("#7c9c7a"),0,1.15,.2).rotation.z=Math.PI;
+      } else if(outfit==="tracksuit"){
+        add(new THREE.BoxGeometry(.022,.34,.016),trim,0,1.15,.185);
+      } else {
+        add(new THREE.TorusGeometry(.095,.012,6,22),trim,0,1.37,.065).rotation.x=Math.PI/2;
+      }
+      const style=a.hair||"lowfade";
+      if(style!=="bald"){
+        const height=style==="afro"?.21:style==="curly"||style==="twists"?.17:style==="mullet"||style==="long"?.13:.08;
+        const cap=add(new THREE.SphereGeometry(.115,22,14),hair,0,1.655+height*.4,-.008);
+        cap.scale.set(style==="afro"?1.34:1.04,height/.115,1.03);
+        if(style==="long"||style==="mullet")add(new THREE.BoxGeometry(.18,.18,.1),mat(color),0,1.51,-.078);
+        if(style==="braids"||style==="twists")for(const side of [-1,1])add(new THREE.CylinderGeometry(.018,.026,.17,9),mat(color),side*.09,1.53,-.04);
+      }
+      const beard=a.beard||"none";
+      if(beard!=="none"){
+        const beardSize=beard==="full"?.16:beard==="goatee"?.065:beard==="mustache"?.045:.11;
+        const b=add(new THREE.SphereGeometry(beardSize,18,12),mat(color),0,beard==="mustache"?1.552:1.508,.095);
+        b.scale.set(beard==="mustache"?1.6:1,.45,.62);
+      }
+      if(a.accessory==="glasses"){
+        for(const side of [-1,1]){
+          add(new THREE.TorusGeometry(.052,.008,7,22),eye,side*.057,1.573,.115);
+          add(new THREE.BoxGeometry(.065,.009,.012),mat("#b4d1dc"),side*.115,1.577,.087);
+        }
+        add(new THREE.BoxGeometry(.035,.009,.01),mat("#b4d1dc"),0,1.58,.121);
+      }
+      if(a.eyeColor){
+        for(const side of [-1,1])add(new THREE.SphereGeometry(.009,10,8),mat(a.eyeColor,.4),side*.043,1.585,.118);
+      }
+    }
     let model=null,drag=false,lastX=0,turn=0,failed=false;
     let raf=0,disposed=false;
     function size(){
       const w=Math.max(1,host.clientWidth||370),h=Math.max(1,host.clientHeight||270);
       renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
     }
-    function draw(){if(disposed)return;raf=root.requestAnimationFrame(draw);if(model)model.rotation.y=turn;renderer.render(scene,camera);}
+    function draw(){if(disposed)return;raf=root.requestAnimationFrame(draw);if(model){model.rotation.y=turn;wardrobe.rotation.y=turn;}renderer.render(scene,camera);}
     function pointerDown(e){drag=true;lastX=e.clientX;renderer.domElement.setPointerCapture?.(e.pointerId);}
     function pointerMove(e){if(drag){turn+=(e.clientX-lastX)*.008;lastX=e.clientX;}}
     function pointerUp(){drag=false;}
@@ -57,6 +117,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       const tint=new THREE.Color(config.appearance?.skin||"#bc8660");
       model.traverse(node=>{if(node.isMesh){node.material=new THREE.MeshStandardMaterial({color:tint,roughness:.73,metalness:0,side:THREE.DoubleSide});node.frustumCulled=false;}});
       scene.add(model);
+      scene.add(wardrobe);rebuildWardrobe();
       // Half body framing focuses on face/torso; user can rotate the entire figure.
       camera.position.set(0,1.38,3.0);
       camera.lookAt(0,1.22,0);
@@ -70,7 +131,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       update(next){
         if(disposed)return;
         config=next;
-        if(model){const tint=new THREE.Color(next.appearance?.skin||"#bc8660");model.traverse(n=>{if(n.isMesh&&n.material?.color)n.material.color.copy(tint);});}
+        if(model){const tint=new THREE.Color(next.appearance?.skin||"#bc8660");model.traverse(n=>{if(n.isMesh&&n.material?.color)n.material.color.copy(tint);});rebuildWardrobe();}
       },
       dispose(){
         if(disposed)return;disposed=true;
@@ -80,6 +141,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
         renderer.domElement.removeEventListener("pointerup",pointerUp);
         renderer.domElement.removeEventListener("pointercancel",pointerUp);
         if(model){model.traverse(n=>{if(n.isMesh){n.geometry?.dispose?.();n.material?.dispose?.();}});}
+        for(const item of parts){item.geometry.dispose();item.material.dispose();}parts.length=0;
         stand.geometry.dispose();stand.material.dispose();
         renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();
         if(active===controller)active=null;
