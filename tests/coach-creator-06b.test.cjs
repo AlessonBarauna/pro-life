@@ -52,15 +52,15 @@ test("06B wizard exposes five accessible stages and hides player-only inputs",()
  form.elements.name.value="Treinador Teste";
  form.elements.city.value="Mogi das Cruzes";
  const buttons=[...dom.window.document.querySelectorAll("[data-coach-step]")];
- assert.equal(buttons.length,5);
+ assert.equal(buttons.length,6);
  const panels=[...dom.window.document.querySelectorAll("[data-coach-panel]")];
- assert.equal(panels.length,5);
+ assert.equal(panels.length,6);
  assert.equal(panels.filter(p=>!p.hidden).length,1);
- buttons[2].click();
- assert.equal(panels[2].hidden,false);
+ buttons[4].click();
+ assert.equal(panels[4].hidden,false);
  assert.equal(panels[0].hidden,true);
  assert.equal(dom.window.document.querySelector("[data-coach-finish]").hidden,true);
- buttons[4].click();
+ buttons[5].click();
  assert.equal(dom.window.document.querySelector("[data-coach-finish]").hidden,false);
  assert.equal(dom.window.document.querySelector("[data-coach-next]").hidden,true);
 });
@@ -79,7 +79,7 @@ test("06B manager briefing and review use chosen club and real initial budget",(
  form.elements.clubId.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
  assert.match(dom.window.document.querySelector("#coach-club-analysis").textContent,/Clube Real/);
  assert.match(dom.window.document.querySelector("#coach-club-analysis").textContent,/750.000/);
- dom.window.document.querySelector('[data-coach-step="4"]').click();
+ dom.window.document.querySelector('[data-coach-step="5"]').click();
  assert.match(dom.window.document.querySelector("#coach-confirm-details").textContent,/Ana Treinadora/);
  assert.match(dom.window.document.querySelector("#coach-confirm-details").textContent,/Clube Real/);
 });
@@ -262,4 +262,18 @@ test("27 manager nationality list has broad FC 27 nations and persists chosen na
  assert.equal(actual.nationality,"Japão");
  const engine=fs.readFileSync(path.join(__dirname,"../src/domain/engine.js"),"utf8");
  assert.match(engine,/mode === "coach" \? \(GlobalFootball\?\.resolveNationality/);
+});
+
+test("FC27 coach wizard provides six stages and explicitly disables unsupported routes",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ sandbox.ProLifeCoachCreator.mount({D:{create:()=>({clubs:[]})},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ assert.equal(dom.window.document.querySelectorAll("[data-coach-panel]").length,6);
+ assert.equal(form.elements.careerType.value,"original");
+ assert.equal(form.elements.coachType.value,"custom");
+ assert.equal(form.elements.careerType.querySelector('[value="live"]').disabled,true);
+ assert.equal(form.elements.coachType.querySelector('[value="real"]').disabled,true);
+ for(const v of ["tracksuit","polo","classic","suit"])assert.ok(form.elements.outfit.querySelector('[value="'+v+'"]'));
 });
