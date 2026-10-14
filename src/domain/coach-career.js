@@ -242,7 +242,7 @@
     const roster=club?(club.roster||[]).filter(p=>p.status!=="retired").slice().sort((a,b)=>Number(b.ovr||b.overall||0)-Number(a.ovr||a.overall||0)):[];
     const totals={w:0,d:0,l:0,titles:0,seasons:0};
     for(const st of c.stints){for(const r of st.rows){totals.w+=r.w;totals.d+=r.d;totals.l+=r.l;totals.seasons++;}totals.titles+=st.titles||0;}
-    return {enabled:true,hasClub:!!club,club:club?{id:club.id,name:club.name}:null,board:Number(s.board)||0,risk:riskOf(Number(s.board)||0),detail:c.board.risk,breakdown:c.board.breakdown,history:c.board.history.slice(0,12),
+    return {enabled:true,nationality:String(s.person?.nationality||"Brasil"),hasClub:!!club,club:club?{id:club.id,name:club.name}:null,board:Number(s.board)||0,risk:riskOf(Number(s.board)||0),detail:c.board.risk,breakdown:c.board.breakdown,history:c.board.history.slice(0,12),
       goals:c.goals,locker:club?lockerRoom(s,api):null,captain:club?(roster.find(p=>p.id===c.captainId)||null):null,
       candidates:roster.slice(0,16).map(p=>({id:p.id,name:p.name,pos:p.pos,age:p.age,ovr:Number(p.ovr||p.overall)||0,morale:Math.round(Number(p.morale)||0)})),
       focus:c.focus,foci:FOCI,stints:c.stints,totals,license:s.license,reputation:s.reputation};
