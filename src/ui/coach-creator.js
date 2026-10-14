@@ -8,8 +8,11 @@ const NATIONALITIES=["África do Sul","Albania","Alemanha","Andorra","Angola","A
 function render(ctx){
  const {D,esc}=ctx;
  // Reuse canonical available club catalog; no separate world or generated league list.
- let clubs=[];
- try{clubs=D.create({mode:"coach",catalogVersion:"fc27_v1"},1).clubs||[];}catch(e){console.warn("Club selection unavailable",e);}
+ let clubs=[],previewState=null;
+ try{previewState=D.create({mode:"coach",catalogVersion:"fc27_v1"},1);clubs=previewState.clubs||[];
+   const browser=root.ProLifeClubBrowser;
+   if(browser?.collect){const shared=browser.collect(previewState,D);if(shared.length)clubs=shared.map(c=>({...c,active:true,strength:Number(c.reputation)||60,budget:previewState.clubs?.find(x=>x.id===c.id)?.budget||0,roster:c.players||[],country:c.country,leagueName:c.leagueName,source:c.source}));}
+ }catch(e){console.warn("Club selection unavailable",e);}
  const options=clubs.filter(c=>c&&c.id&&c.active!==false).map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join("");
  const app=document.getElementById("app");
  if(!app)return;
@@ -25,7 +28,7 @@ function render(ctx){
      <label>Idade inicial<input name="age" type="number" min="25" max="65" required value="35"></label>
      <label class="coach-full">Nacionalidade<select name="nationality" required>${NATIONALITIES.map(n=>`<option value="${esc(n)}" ${n==="Brasil"?"selected":""}>${esc(n)}</option>`).join("")}</select></label><label>Cor da pele<input name="skin" type="color" value="#bc8660"></label><label>Cor do cabelo<input name="hairColor" type="color" value="#241e1a"></label><label>Cor dos olhos<input name="eyeColor" type="color" value="#694829"></label><label>Cabelo<select name="hair"><option value="lowfade">Cabelo original (Vitruvian)</option><option value="bald">Sem cabelo</option><option value="crew" disabled>Social curto — modelo pendente</option><option value="highfade" disabled>Degradê alto — modelo pendente</option><option value="buzz" disabled>Raspado — modelo pendente</option><option value="curly" disabled>Cacheado — modelo pendente</option><option value="afro" disabled>Black power — modelo pendente</option><option value="twists" disabled>Twists — modelo pendente</option><option value="braids" disabled>Tranças — modelo pendente</option><option value="mullet" disabled>Mullet — modelo pendente</option><option value="long" disabled>Longo — modelo pendente</option></select></label><label>Barba<select name="beard"><option value="none">Sem barba</option><option value="stubble">Por fazer</option><option value="short">Curta</option><option value="full">Cheia</option><option value="mustache">Bigode</option><option value="goatee">Cavanhaque</option></select></label><label>Biotipo<select name="body"><option value="normal">Normal</option><option value="slim" disabled>Magro</option><option value="strong" disabled>Forte</option></select></label>
     </div><div class="coach-fields" data-coach-panel="3"><div class="coach-full coach-section-note"><b>Vestuário do treinador</b><p>Por enquanto as categorias Esportivo, Casual, Clássico e Formal representam paletas da roupa atual. Peças 3D diferentes serão integradas depois.</p></div><label>Categoria de roupa<select name="outfit"><option value="tracksuit">Esportivo — cores</option><option value="polo">Casual — cores</option><option value="classic">Clássico — cores</option><option value="suit">Formal — cores</option></select></label><label>Óculos<select name="accessory"><option value="none">Sem óculos</option><option value="glasses">Óculos (armação 3D)</option></select></label></div>
-    <div class="coach-fields" data-coach-panel="4"><label>Buscar clube<input type="search" name="clubSearch" placeholder="Nome do clube" autocomplete="off"></label><label>Filtrar competição<select name="leagueFilter"><option value="">Todas as competições</option></select></label><label class="coach-full">Primeiro projeto<select name="clubId"><option value="">Receber propostas de clubes</option>${options}</select></label><div class="coach-full coach-club-analysis" id="coach-club-analysis" aria-live="polite"></div>
+    <div class="coach-fields" data-coach-panel="4"><label>Buscar clube<input type="search" name="clubSearch" placeholder="Nome do clube" autocomplete="off"></label><label>País<select name="countryFilter"><option value="">Todos os países</option></select></label><label>Filtrar competição<select name="leagueFilter"><option value="">Todas as competições</option></select></label><label class="coach-full">Primeiro projeto<select name="clubId"><option value="">Receber propostas de clubes</option>${options}</select></label><div class="coach-full coach-club-analysis" id="coach-club-analysis" aria-live="polite"></div>
     </div><div class="coach-fields" data-coach-panel="5"><div class="coach-full coach-section-note"><b>Configurações</b><p>Base FC 27 · carreira tradicional · regras padrão. O foco de treino selecionado afeta o elenco semanalmente. Se você escolher um clube diretamente, o estilo tático inicial também será aplicado ao clube.</p></div><label class="coach-full">Plano tático inicial (clube escolhido)<select name="tactic"><option value="balanced">Equilibrado</option><option value="possession">Posse de bola</option><option value="attack">Ofensivo</option><option value="counter">Contra-ataque</option></select></label><label class="coach-full">Foco inicial de treino coletivo<select name="focus"><option value="equilibrado">Equilibrado</option><option value="fisico">Preparação física</option><option value="tecnico">Refino técnico</option><option value="jovens">Desenvolvimento de jovens</option><option value="recuperacao">Recuperação</option></select></label><label class="coach-full">Seed do mundo (opcional)<input name="seed" type="number" placeholder="Mesmo número = mesmo universo inicial"></label>
     <div class="coach-full coach-section-note"><b>Revisão do projeto</b><div class="coach-confirm-details" id="coach-confirm-details" aria-live="polite"></div><p>A carreira será salva em um slot separado.</p></div></div>
     <p class="coach-section-note">A carreira de treinador usa reputação, licenças, objetivos da diretoria, elenco e orçamento do motor atual. As opções de formação e estilo tático serão configuradas dentro do clube, onde já existem efeitos reais.</p>
@@ -45,18 +48,20 @@ function render(ctx){
  function selectedClub(){return clubs.find(c=>c.id===form.elements.clubId.value)||null;}
  // Filter only the canonical club catalog. No duplicate league database or random entries.
  const leagueSelect=form.elements.leagueFilter;
+ const countrySelect=form.elements.countryFilter;
+ for(const country of [...new Set(clubs.map(c=>String(c.country||"Brasil")))].sort((a,b)=>a.localeCompare(b,"pt-BR"))){const option=document.createElement("option");option.value=country;option.textContent=country;countrySelect.appendChild(option);}
  const leagueNames=[...new Set(clubs.filter(c=>c&&c.active!==false).map(c=>String(c.leagueId||"Não informada")))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
  for(const league of leagueNames){const option=document.createElement("option");option.value=league;option.textContent=league;leagueSelect.appendChild(option);}
  const originalClubOptions=[...form.elements.clubId.options].map(option=>({value:option.value,text:option.textContent}));
  function filterClubs(){
    const term=String(form.elements.clubSearch.value||"").trim().toLocaleLowerCase("pt-BR");
-   const league=leagueSelect.value;
+   const league=leagueSelect.value,country=countrySelect.value;
    const selector=form.elements.clubId,selected=selector.value;
    selector.replaceChildren();
    for(const option of originalClubOptions){
      if(option.value){
        const club=clubs.find(c=>c.id===option.value);
-       if(!club||(league&&String(club.leagueId||"Não informada")!==league)||!String(club.name||"").toLocaleLowerCase("pt-BR").includes(term))continue;
+       if(!club||(country&&String(club.country||"Brasil")!==country)||(league&&String(club.leagueId||"Não informada")!==league)||!String(club.name||"").toLocaleLowerCase("pt-BR").includes(term))continue;
      }
      const node=document.createElement("option");node.value=option.value;node.textContent=option.text;selector.appendChild(node);
    }
@@ -66,6 +71,7 @@ function render(ctx){
  }
  form.elements.clubSearch.addEventListener("input",filterClubs);
  leagueSelect.addEventListener("change",filterClubs);
+ countrySelect.addEventListener("change",filterClubs);
  function update3D(){
   const viewer=root.ProLifeCoachAvatar3D;
   if(!viewer)return;
@@ -107,6 +113,8 @@ function render(ctx){
      "Expectativa esportiva estimada: "+kind,
      "Objetivos adicionais: orçamento positivo e moral do elenco acima de 60"
    ];
+   if(club.country)entries.splice(1,0,"País: "+club.country);
+   if(club.leagueName)entries[2]="Competição: "+club.leagueName;
    return entries.join(" · ");
  }
  function review(){appearanceNotice();
