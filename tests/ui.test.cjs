@@ -84,7 +84,7 @@ function click(w, sel) {
     const page = match?.[1];
     const groups = {
       training:"profile", statistics:"profile", awards:"profile", legacy:"profile", proposals:"market",
-      calendar:"league", matches:"league", competitions:"league", panorama:"league", squad:"league",
+      league:"competitions", calendar:"calendar", matches:"calendar", competitions:"competitions", panorama:"competitions", squad:"squad",
       life:"history", finance:"history", sponsorships:"history"
     };
     if (page && groups[page]) {
@@ -146,7 +146,7 @@ for (const mode of ["player", "coach"]) {
     ? [
         ["home", ["home"]],
         ["profile", ["profile", "training", "statistics", "awards", "legacy"]],
-        ["league", ["league", "calendar", "matches", "competitions", "panorama", "squad"]],
+        ["competitions", ["league", "calendar", "matches", "competitions", "panorama", "squad"]],
         ["market", ["market", "proposals"]],
         ["history", ["history", "life", "finance", "sponsorships"]],
         ["inbox", ["inbox"]],
@@ -155,13 +155,16 @@ for (const mode of ["player", "coach"]) {
     : [
         ["home", ["home"]],
         ["profile", ["profile", "training", "finance"]],
-        ["league", ["league", "calendar", "matches", "competitions", "panorama", "squad", "statistics", "awards"]],
+        ["competitions", ["league", "calendar", "matches", "competitions", "panorama", "squad", "statistics", "awards"]],
         ["market", ["market", "proposals"]],
         ["history", ["history", "life"]],
         ["inbox", ["inbox"]],
         ["save", ["save"]],
       ];
-  assert.ok(w.document.querySelectorAll(".game-nav nav button").length <= 8, "A navegacao principal deve permanecer enxuta");
+  const globalLabels = [...w.document.querySelectorAll(".game-nav nav button")].map((button) => button.textContent.trim());
+  assert.equal(globalLabels.length, 9, "A navegacao principal deve expor as nove areas prioritarias");
+  for (const label of ["Central", mode === "player" ? "Meu Jogador" : "Treinador", "Elenco", "Calendário", "Competições", "Mercado", "Treinamento", "Vida", "Caixa"])
+    assert.ok(globalLabels.some((item) => item.includes(label)), `atalho global ${label}`);
   for (const [group, pages] of navigation) {
     click(w, `.game-nav [data-page="${group}"]`);
     for (const page of pages) {
@@ -197,6 +200,16 @@ for (const mode of ["player", "coach"]) {
   if (mode === "coach") {
     click(w, '[data-page="squad"]');
     assert.ok(w.document.querySelector("main").textContent.includes("atletas"), "Elenco do treinador deve abrir");
+    assert.ok(w.document.querySelector(".pl-squad-screen"), "A central visual de escalação deve abrir");
+    assert.equal(w.document.querySelectorAll(".pl-squad-tabs [data-squad-tab]").length, 4, "A tela deve expor as quatro áreas do elenco");
+    assert.equal(w.document.querySelectorAll(".pl-squad-pitch .pl-squad-player").length, 11, "O campo deve mostrar o XI inicial");
+    assert.ok(w.document.querySelector(".pl-squad-detail"), "O painel do atleta selecionado deve existir");
+    const reserve = w.document.querySelector(".pl-squad-bench [data-squad-player]");
+    assert.ok(reserve, "A faixa de reservas deve existir");
+    reserve.click();
+    assert.ok(w.document.querySelector(".pl-squad-bench [data-squad-player].selected"), "A seleção visual do reserva deve persistir após renderizar");
+    click(w, '[data-squad-tab="tactics"]');
+    assert.ok(w.document.querySelector(".pl-squad-supplement"), "A área tática deve usar a nova composição");
     click(w, '[data-page="training"]');
     click(w, '[data-action="license"]');
     assert.equal(get(w).license, "B");
@@ -268,6 +281,14 @@ for (const mode of ["player", "coach"]) {
   }
   assert.ok(w.document.querySelector(".game-nav"), "A v0.5 deve renderizar a navegacao superior");
   click(w, '[data-page="profile"]');
+  if (mode === "player") {
+    assert.ok(w.document.querySelector(".pl-player-screen"), "Meu Jogador deve usar a composição 05C");
+    assert.ok(w.document.querySelector(".pl-player-showcase"), "O destaque cinematográfico do jogador deve existir");
+    assert.equal(w.document.querySelectorAll(".pl-player-tabs a").length, 5, "As cinco áreas principais do jogador devem estar acessíveis");
+    assert.ok(w.document.querySelector(".pl-player-radar .radar-chart"), "O radar deve consumir os atributos reais");
+    assert.equal(w.document.querySelectorAll(".pl-player-summary > article").length, 4, "Temporada, evolução, contrato e conquistas devem formar o resumo");
+    assert.ok(w.document.querySelector("#appearance-editor"), "A edição de aparência existente deve ser preservada");
+  }
   const chart = w.document.querySelector("#chart-key");
   assert.ok(chart, "O relatorio de desenvolvimento deve existir no perfil");
   chart.value = "all";
