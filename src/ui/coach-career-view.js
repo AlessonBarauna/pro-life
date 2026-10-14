@@ -4,8 +4,8 @@
   // Renderiza a partir de ProLifeCoachCareer.snapshot; os botoes usam data-coach-* e o app.js despacha command().
 
   const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
-  const ui={tab:"diretoria"};
-  const TABS=[["diretoria","Diretoria"],["vestiario","Vestiário"],["treino","Treino coletivo"],["prejogo","Pré-jogo"],["historico","Histórico"]];
+  const ui={tab:"central"};
+  const TABS=[["central","Central"],["diretoria","Diretoria"],["vestiario","Vestiário"],["treino","Treino coletivo"],["prejogo","Pré-jogo"],["historico","Histórico"]];
   const STATUS={cumprida:"Cumprida",falhou:"Falhou",em_andamento:"Em andamento"};
 
   function bar(value,tone){
@@ -16,6 +16,25 @@
 
   function tabs(){
     return `<nav class="cc-tabs" role="tablist" aria-label="Seções da carreira">${TABS.map(([id,label])=>`<button type="button" role="tab" aria-selected="${ui.tab===id}" class="${ui.tab===id?"active":""}" data-coach-tab="${id}">${label}</button>`).join("")}</nav>`;
+  }
+
+  function central(s,D,sn){
+    const next=typeof D?.nextCommitment==="function"?D.nextCommitment(s):null;
+    const club=sn.club?.name||"Sem clube";
+    const opponent=next?(next.home===s.clubId?next.away:next.away===s.clubId?next.home:null):null;
+    const other=opponent?(D?.club?.(s,opponent)?.name||String(opponent)):null;
+    const upcoming=next?'<b>'+esc(other||next.competitionName||"Próximo compromisso")+'</b><p class="cc-note">'+esc(next.competitionName||next.leagueName||"Competição")+' · Dia '+esc(next.date??next.day??"Não informado")+'</p>':'<p class="cc-note">Nenhum compromisso futuro registrado.</p>';
+    const actions=typeof D?.pendingActions==="function"?(D.pendingActions(s)||[]):[];
+    const pending=actions.slice(0,5).map(a=>'<li><span>'+esc(a.title||a.type||"Decisão pendente")+'</span><small>'+esc(a.page||"Acesse a seção correspondente")+'</small></li>').join("")||'<li class="muted">Nenhuma decisão pendente.</li>';
+    const stories=(s.news||[]).slice().sort((a,b)=>(b.day||0)-(a.day||0)).slice(0,4).map(n=>'<li><span>'+esc(n.title||n.body||"Notícia")+'</span><small>Dia '+esc(n.day??s.day)+'</small></li>').join("")||'<li class="muted">Sem notícias recentes.</li>';
+    const goals=(sn.goals?.items||[]).map(g=>'<li><span>'+esc(g.label)+'</span><small>'+esc(STATUS[g.status]||g.status)+'</small></li>').join("")||'<li class="muted">Metas disponíveis após assumir um clube.</li>';
+    return '<div class="cc-grid">'+
+      '<section class="cc-card"><small>PRÓXIMO COMPROMISSO</small><h3>'+esc(club)+'</h3>'+upcoming+'</section>'+
+      '<section class="cc-card"><small>DIRETORIA</small><div class="cc-big '+riskTone(sn.risk.id)+'"><b>'+esc(sn.board)+'</b><span>'+esc(sn.risk.label)+'</span></div>'+bar(sn.board,riskTone(sn.risk.id))+'</section>'+
+      '<section class="cc-card"><small>DECISÕES PENDENTES</small><ul class="cc-list">'+pending+'</ul></section>'+
+      '<section class="cc-card"><small>NOTÍCIAS RECENTES</small><ul class="cc-list">'+stories+'</ul></section>'+
+      '<section class="cc-card wide"><small>PRIORIDADES DA TEMPORADA</small><ul class="cc-list">'+goals+'</ul></section>'+
+      '</div>';
   }
 
   function board(sn){
@@ -105,7 +124,7 @@
     const C=D?.CoachCareer||root.ProLifeCoachCareer;
     if(!C||s?.mode!=="coach")return `<section class="card"><h2>Carreira do Treinador</h2><p class="muted">Disponível apenas no modo treinador.</p></section>`;
     const sn=C.snapshot(s,D);
-    const body=ui.tab==="vestiario"?locker(sn):ui.tab==="treino"?(sn.hasClub?training(sn):`<section class="cc-card"><p class="muted">Assine com um clube para definir o treino.</p></section>`):ui.tab==="historico"?history(sn):ui.tab==="prejogo"?prematch(s,D,sn):(sn.hasClub?board(sn):`<section class="cc-card"><p class="muted">Você está sem clube. Aceite uma proposta na aba Propostas para voltar a trabalhar.</p></section>`);
+    const body=ui.tab==="central"?central(s,D,sn):ui.tab==="vestiario"?locker(sn):ui.tab==="treino"?(sn.hasClub?training(sn):`<section class="cc-card"><p class="muted">Assine com um clube para definir o treino.</p></section>`):ui.tab==="historico"?history(sn):ui.tab==="prejogo"?prematch(s,D,sn):(sn.hasClub?board(sn):`<section class="cc-card"><p class="muted">Você está sem clube. Aceite uma proposta na aba Propostas para voltar a trabalhar.</p></section>`);
     return `${css()}<section class="cc-dark"><h2>Carreira do Treinador</h2><small>${esc(sn.club?.name||"Sem clube")} · Temporada ${esc(s.season)} · Reputação ${esc(Math.round(sn.reputation||0))}</small>${tabs()}${body}</section>`;
   }
 
