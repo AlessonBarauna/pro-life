@@ -118,3 +118,23 @@ test("06B coach appearance and outfit are transferred into save state",()=>{
  assert.equal(config.appearance.beard,"goatee");
  assert.equal(saved.coachCareer.presentation.outfit,"tracksuit");
 });
+
+test("06B identity controls persist eyewear and body shape and update portrait",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ let config;
+ const D={create:c=>c.name?(config=c,{mode:"coach",clubId:null,clubs:[],person:{appearance:c.appearance},coachCareer:{version:1}}):{clubs:[]}};
+ sandbox.ProLifeCoachCreator.mount({D,esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ form.elements.name.value="Treinador";form.elements.city.value="Mogi";
+ form.elements.accessory.value="glasses";form.elements.body.value="strong";
+ form.elements.eyeColor.value="#335577";form.elements.beard.value="full";
+ form.elements.accessory.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ const preview=dom.window.document.querySelector("#coach-profile-preview");
+ assert.equal(preview.querySelector("#coach-glasses").hidden,false);
+ assert.equal(preview.querySelector("#coach-eyes").getAttribute("fill"),"#335577");
+ form.dispatchEvent(new dom.window.Event("submit",{bubbles:true,cancelable:true}));
+ assert.equal(config.appearance.accessory,"glasses");
+ assert.equal(config.appearance.body,"strong");
+});
