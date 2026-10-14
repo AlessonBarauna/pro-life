@@ -2,7 +2,7 @@
 "use strict";
 // Coach-only renderer controller. A real licensed GLB replaces the legacy figure.
 // Never fetch remote assets; keep browser/offline saves working.
-const MODEL="src/assets/coach3d/coach-base.glb";
+const MODEL="src/assets/coach3d-realistic/vitruvian_body.glb";
 let renderer=null,lastConfig=null,version=0;
 function configFromForm(form){
  const a={};
