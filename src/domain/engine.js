@@ -420,7 +420,7 @@
         .trim()
         .slice(0, 60),
       city: String(config.city || "Mogi das Cruzes").slice(0, 60),
-      nationality: GlobalFootball?.resolveNationality?.(config.nationality,"Brasil") || "Brasil",
+      nationality: mode === "coach" ? (GlobalFootball?.resolveNationality?.(config.nationality,null) || String(config.nationality||"Brasil").trim().slice(0,60) || "Brasil") : (GlobalFootball?.resolveNationality?.(config.nationality,"Brasil") || "Brasil"),
       age: plan ? plan.age : clamp(
         Number(config.age) || (mode === "coach" ? 35 : (origin.age || 16)),
         mode === "coach" ? 25 : 14,
