@@ -86,6 +86,7 @@ const files = [
   "src/ui/home-dashboard.js",
   "src/ui/live-match.js",
   "src/ui/creator.js",
+  "src/ui/coach-avatar-3d.js",
   "src/ui/coach-creator.js",
   "src/ui/club-browser.js",
   "src/ui/world-competitions-view.js",
