@@ -30,3 +30,10 @@
 .pl-j06-squad .pl-squad-actions{margin-top:18px}
 @media(max-width:1000px){.pl-j06-squad .pl-squad-workspace{grid-template-columns:minmax(0,1fr)}.pl-j06-squad .pl-squad-detail{width:100%}}
 @media(max-width:600px){.pl-j06-squad .pl-squad-pitch{min-height:370px;padding:20px 6px}.pl-j06-squad .pl-squad-workspace{gap:12px}}
+
+/* J06 detail tabs: only active panel is visible. */
+.pl-j06-squad .pl-j06-panel[hidden]{display:none!important}
+.pl-j06-squad .pl-squad-detail-tabs button{font-size:11px;font-weight:800;letter-spacing:.03em;color:#d2e2e8;background:#273541;padding:9px 11px;border:1px solid transparent;border-radius:2px;cursor:pointer;min-height:38px}
+.pl-j06-squad .pl-squad-detail-tabs button.active{color:#bffa39;border-bottom:2px solid #bffa39;background:#162630}
+.pl-j06-squad .pl-squad-detail-tabs button:focus-visible{outline:2px solid #bffa39;outline-offset:2px}
+.pl-j06-squad .pl-j06-note{font-size:12px;color:#b8c9d2;line-height:1.5;padding:0 18px 14px}
