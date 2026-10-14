@@ -37,3 +37,13 @@
 .pl-j06-squad .pl-squad-detail-tabs button.active{color:#bffa39;border-bottom:2px solid #bffa39;background:#162630}
 .pl-j06-squad .pl-squad-detail-tabs button:focus-visible{outline:2px solid #bffa39;outline-offset:2px}
 .pl-j06-squad .pl-j06-note{font-size:12px;color:#b8c9d2;line-height:1.5;padding:0 18px 14px}
+
+/* J06: tabs are actual views, not supplements below the fold. */
+.pl-squad-screen .pl-squad-workspace[hidden]{display:none!important}
+.pl-j06-squad .pl-j06-tab-view{min-height:380px;padding:28px clamp(16px,3vw,48px);background:linear-gradient(120deg,#0d1c25,#101d29)}
+.pl-j06-squad .pl-j06-tab-view .pl-squad-supplement{margin:0;width:100%;max-width:1200px;padding:24px;grid-template-columns:1fr;background:#192632;border:1px solid #445561}
+.pl-j06-squad .pl-j06-tab-view .pl-squad-mini-kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;background:none}
+.pl-j06-squad .pl-j06-tab-view .pl-squad-mini-kpis span{padding:22px;background:#12212c;border:1px solid #3a4e5b}
+.pl-j06-squad .pl-j06-tab-view .pl-squad-mini-kpis small{font-size:10px}
+.pl-j06-squad .pl-j06-tab-view .pl-squad-mini-kpis b{font-size:18px}
+@media(max-width:720px){.pl-j06-squad .pl-j06-tab-view .pl-squad-mini-kpis{grid-template-columns:1fr}}
