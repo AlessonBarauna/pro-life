@@ -139,23 +139,32 @@ test("06B identity controls persist eyewear and body shape and update portrait",
  assert.equal(config.appearance.body,"strong");
 });
 
-test("06B avatar 3D receives changed hair, beard and live color controls",()=>{
+test("06B coach preview uses isolated renderer and updates customization",()=>{
  const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const avatarSrc=fs.readFileSync(path.join(__dirname,"../src/ui/coach-avatar-3d.js"),"utf8");
  const changes=[];
- const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console,ProLifeAvatar3D:{show:(node,person)=>{assert.ok(node);changes.push({...person.appearance});}}};sandbox.globalThis=sandbox;
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,console,globalThis:null,
+  ProLifeCoachGLB:{mount:(node,config)=>{changes.push(config);return {dispose:()=>{}};}}};
+ sandbox.globalThis=sandbox;
+ vm.runInNewContext(avatarSrc,sandbox,{filename:"coach-avatar-3d.js"});
  vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
  sandbox.ProLifeCoachCreator.mount({D:{create:()=>({clubs:[]})},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
  const form=dom.window.document.querySelector("#coach-creation-form");
  assert.equal(changes.length,1);
- form.elements.hair.value="curly";
- form.elements.hair.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
- form.elements.beard.value="full";
- form.elements.beard.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
- form.elements.skin.value="#884422";
- form.elements.skin.dispatchEvent(new dom.window.Event("input",{bubbles:true}));
- assert.equal(changes.length,4);
- assert.equal(changes.at(-1).hair,"curly");
- assert.equal(changes.at(-1).beard,"full");
- assert.equal(changes.at(-1).skin,"#884422");
- assert.equal(dom.window.document.querySelector("#coach-profile-preview").classList.contains("has-3d"),true);
+ form.elements.hair.value="curly";form.elements.hair.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ form.elements.skin.value="#884422";form.elements.skin.dispatchEvent(new dom.window.Event("input",{bubbles:true}));
+ assert.equal(changes.length,3);
+ assert.equal(changes.at(-1).appearance.hair,"curly");
+ assert.equal(changes.at(-1).appearance.skin,"#884422");
+ assert.equal(changes.at(-1).model,"src/assets/coach3d/coach-base.glb");
+});
+test("06B coach avatar displays a safe offline placeholder without installed model",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const avatarSrc=fs.readFileSync(path.join(__dirname,"../src/ui/coach-avatar-3d.js"),"utf8");
+ const sandbox={document:dom.window.document,console,globalThis:null};sandbox.globalThis=sandbox;
+ vm.runInNewContext(avatarSrc,sandbox);
+ const host=dom.window.document.createElement("div");
+ assert.equal(sandbox.ProLifeCoachAvatar3D.render(host,{appearance:{hair:"bald"}}),false);
+ assert.match(host.textContent,/Modelo 3D de alta qualidade ainda não instalado/);
+ assert.equal(host.dataset.avatarState,"placeholder");
 });
