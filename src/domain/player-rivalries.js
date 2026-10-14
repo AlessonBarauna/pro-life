@@ -17,6 +17,18 @@ function objectiveFor(position){
   return p==="GOL"||p==="DEF"||p==="ZAG"||p==="LD"||p==="LE" ? OBJECTIVES.cleanSheets
     : p==="MEI"||p==="MC"||p==="VOL" ? OBJECTIVES.assists : OBJECTIVES.goals;
 }
+// FC 27: candidatos pertencem à liga atual e ocupam função igual ou semelhante.
+// Nesta primeira versão só aceitamos a MESMA função; sem pesos de escolha não publicados.
+function eligibleRivals(s){
+  if(s?.mode!=="player"||!s.clubId||!Array.isArray(s.clubs))return [];
+  const current=s.clubs.find(c=>String(c.id)===String(s.clubId));
+  if(!current?.leagueId||!s.person?.pos)return [];
+  const position=String(s.person.pos).toUpperCase();
+  return s.clubs.filter(c=>c.leagueId===current.leagueId)
+    .flatMap(c=>(c.roster||[]).filter(p=>p?.id!=null&&String(p.id)!=="hero"&&String(p.pos||"").toUpperCase()===position)
+      .map(p=>({id:String(p.id),name:String(p.name||"Atleta"),clubId:String(c.id),position})))
+    .sort((a,b)=>a.clubId.localeCompare(b.clubId)||a.id.localeCompare(b.id));
+}
 function initial({season,clubId,playerId="hero",rivalId,position,maxMatches=5,objectiveId}={}){
   if(!rivalId||String(rivalId)===String(playerId))throw Error("Rival precisa ser outro atleta.");
   const objective=objectiveId ? OBJECTIVES[objectiveId] : objectiveFor(position);
@@ -66,7 +78,7 @@ function reward(state){
   if(!state||state.result==="active")return 0;
   return state.result==="win"?100:state.result==="draw"?50:state.result==="loss"?0:0;
 }
-const api=Object.freeze({VERSION,OBJECTIVES,objectiveFor,initial,record,fromSimulatedMatch,reward});
+const api=Object.freeze({VERSION,OBJECTIVES,objectiveFor,eligibleRivals,initial,record,fromSimulatedMatch,reward});
 root.ProLifePlayerRivalries=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
