@@ -29,7 +29,7 @@ function render(ctx){
    </section>
    <aside class="coach-creation-card">
     <h2>Seu projeto de carreira</h2>
-    <div class="coach-profile-art" id="coach-profile-preview" aria-label="Prévia do treinador"><div class="avatar-stage coach-3d-stage" id="coach-3d-stage"></div><svg viewBox="0 0 160 195" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="80" cy="47" r="26" fill="#C99B77"/><path d="M52 43c1-25 52-32 57-2l-4-16-17-10H70L56 25Z" fill="#242A2B"/><path d="M46 87c15-18 53-20 68 0l18 80H28l18-80Z" fill="#1B313E" stroke="#9DB4B7" stroke-width="2"/><path d="m65 88 15 24 15-24-15-13-15 13Z" fill="#EDF5F4"/><path d="m80 105-8 47h16l-8-47Z" fill="#B8F32E"/><path d="M24 166h112" stroke="#B8F32E" stroke-width="3"/><g id="coach-beard" fill="#241e1a" hidden><path d="M64 65Q80 84 96 65L94 77Q80 94 66 77Z"/></g><g id="coach-glasses" fill="none" stroke="#dce7e9" stroke-width="2" hidden><rect x="57" y="43" width="19" height="13" rx="5"/><rect x="84" y="43" width="19" height="13" rx="5"/><path d="M76 47h8"/></g><g id="coach-eyes" fill="#694829"><circle cx="68" cy="50" r="2.2"/><circle cx="92" cy="50" r="2.2"/></g></svg></div>
+    <div class="coach-appearance-notice" id="coach-appearance-notice" aria-live="polite">Visual 3D: pele, cabelo (cor e silhueta) e opção sem cabelo. Barba, óculos, roupas e biotipo aguardam modelos adicionais.</div><div class="coach-profile-art" id="coach-profile-preview" aria-label="Prévia do treinador"><div class="avatar-stage coach-3d-stage" id="coach-3d-stage"></div><svg viewBox="0 0 160 195" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="80" cy="47" r="26" fill="#C99B77"/><path d="M52 43c1-25 52-32 57-2l-4-16-17-10H70L56 25Z" fill="#242A2B"/><path d="M46 87c15-18 53-20 68 0l18 80H28l18-80Z" fill="#1B313E" stroke="#9DB4B7" stroke-width="2"/><path d="m65 88 15 24 15-24-15-13-15 13Z" fill="#EDF5F4"/><path d="m80 105-8 47h16l-8-47Z" fill="#B8F32E"/><path d="M24 166h112" stroke="#B8F32E" stroke-width="3"/><g id="coach-beard" fill="#241e1a" hidden><path d="M64 65Q80 84 96 65L94 77Q80 94 66 77Z"/></g><g id="coach-glasses" fill="none" stroke="#dce7e9" stroke-width="2" hidden><rect x="57" y="43" width="19" height="13" rx="5"/><rect x="84" y="43" width="19" height="13" rx="5"/><path d="M76 47h8"/></g><g id="coach-eyes" fill="#694829"><circle cx="68" cy="50" r="2.2"/><circle cx="92" cy="50" r="2.2"/></g></svg></div>
     <div class="coach-summary"><div><small>Modo</small><strong>Treinador</strong></div><div><small>Base</small><strong>FC 27</strong></div><div><small>Início</small><strong>Temporada 2026</strong></div><div><small>Carreira</small><strong>Gestão de clube</strong></div></div>
     <div class="coach-navigation"><button type="button" class="coach-return" data-coach-prev>← Anterior</button><button type="button" class="coach-start" data-coach-next>Próxima etapa →</button></div><button type="submit" class="coach-start" data-coach-finish>Iniciar carreira de treinador →</button>
     <p class="coach-helper">O jogo preserva o fluxo de saves existente. Nenhuma habilidade, posição ou ponto de atleta será solicitado.</p>
@@ -48,7 +48,20 @@ function render(ctx){
   const panel=app.querySelector("#coach-profile-preview");
   if(panel)panel.classList.add("has-3d");
  }
- function review(){
+ function appearanceNotice(){
+  const element=app.querySelector("#coach-appearance-notice");
+  if(!element)return;
+  const a=form.elements;
+  const unsupported=[];
+  if(a.beard.value!=="none")unsupported.push("barba");
+  if(a.accessory.value!=="none")unsupported.push("óculos");
+  if(a.outfit.value!=="polo")unsupported.push("troca de roupa");
+  if(a.body.value!=="normal")unsupported.push("biotipo");
+  element.textContent=unsupported.length
+   ? "Ainda sem modelos 3D para: "+unsupported.join(", ")+". Estas escolhas ficam no save, mas não mudam o personagem nesta versão."
+   : "Prévia 3D disponível: pele, cor do cabelo e silhueta do cabelo. As demais variações precisam de arquivos 3D próprios.";
+ }
+ function review(){appearanceNotice();
   const preview=app.querySelector("#coach-profile-preview");
   if(preview){const skin=form.elements.skin.value,hair=form.elements.hairColor.value,outfit=form.elements.outfit.value;
    const face=preview.querySelector("circle"),hairPath=preview.querySelector("path"),jacket=preview.querySelectorAll("path")[1];
