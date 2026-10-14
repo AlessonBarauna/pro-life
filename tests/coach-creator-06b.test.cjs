@@ -48,6 +48,9 @@ test("06B wizard exposes five accessible stages and hides player-only inputs",()
  vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
  const D={create:()=>({clubs:[]})};
  sandbox.ProLifeCoachCreator.mount({D,esc:s=>String(s),toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ form.elements.name.value="Treinador Teste";
+ form.elements.city.value="Mogi das Cruzes";
  const buttons=[...dom.window.document.querySelectorAll("[data-coach-step]")];
  assert.equal(buttons.length,5);
  const panels=[...dom.window.document.querySelectorAll("[data-coach-panel]")];
@@ -60,4 +63,23 @@ test("06B wizard exposes five accessible stages and hides player-only inputs",()
  buttons[4].click();
  assert.equal(dom.window.document.querySelector("[data-coach-finish]").hidden,false);
  assert.equal(dom.window.document.querySelector("[data-coach-next]").hidden,true);
+});
+
+test("06B manager briefing and review use chosen club and real initial budget",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};
+ sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ const D={create:()=>({clubs:[{id:"c1",name:"Clube Real",leagueId:"serieA",budget:750000,active:true}]})};
+ sandbox.ProLifeCoachCreator.mount({D,esc:s=>String(s),toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ form.elements.name.value="Ana Treinadora";
+ form.elements.city.value="Mogi das Cruzes";
+ form.elements.clubId.value="c1";
+ form.elements.clubId.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ assert.match(dom.window.document.querySelector("#coach-club-analysis").textContent,/Clube Real/);
+ assert.match(dom.window.document.querySelector("#coach-club-analysis").textContent,/750.000/);
+ dom.window.document.querySelector('[data-coach-step="4"]').click();
+ assert.match(dom.window.document.querySelector("#coach-confirm-details").textContent,/Ana Treinadora/);
+ assert.match(dom.window.document.querySelector("#coach-confirm-details").textContent,/Clube Real/);
 });
