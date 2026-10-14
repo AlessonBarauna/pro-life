@@ -8,3 +8,27 @@ coverage/
 PRO_LIFE_T*.json
 saves/
 backups/
+
+# Arquivos locais e descartes do desenvolvimento PRO-LIFE
+/_to_delete/
+*.bak
+*.bak[0-9]*
+*.backup_*
+*.[Bb][Aa][Kk][0-9]*
+*.pre-dbg
+*.tmp
+*.temp
+*.orig
+*.rej
+*.swp
+*~
+
+_to_delete/
+*.backup_*.*
+*.json.backup_*
+
+# PRO-LIFE: arquivos temporarios e descartados
+*.backup
+*.backup_hash_*
+*.backup_bom_*
+*.backup_14hash_*
