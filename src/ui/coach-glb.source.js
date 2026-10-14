@@ -49,6 +49,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       add(new THREE.CylinderGeometry(.22*factor,.16*factor,.32,24),pants,0,.66,0).scale.z=.85;
       for(const side of [-1,1]){
         add(new THREE.CylinderGeometry(.103*factor,.085*factor,.59,14),pants,side*.12,.34,0);
+        // Relaxed vertical sleeve, not a horizontal pipe across the T-pose.
+        add(new THREE.CylinderGeometry(.115*factor,.087*factor,.46,18),mat(outfit==="suit"?"#1b2530":outfit==="tracksuit"?"#214f43":"#365972"),side*.265,1.075,0,-side*.12);
       }
       if(outfit==="suit"){
         add(new THREE.ConeGeometry(.075,.25,3),trim,0,1.27,.177).rotation.z=Math.PI;
