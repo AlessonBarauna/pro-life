@@ -22,6 +22,28 @@ function mount(host,config){
  const clock=new THREE.Clock();
  const skinMaterials=[],irisMaterials=[],shirtMaterials=[],pantsMaterials=[],hairMaterials=[],browMaterials=[];
  const originalColors=new Map();
+ // Glasses authored for the Vitruvian head in its native meter coordinate space.
+ // Curved frame mesh, temples and nose bridge; no oversized cylinder overlays.
+ const eyewear=new THREE.Group();assembled.add(eyewear);
+ const frameMaterial=new THREE.MeshStandardMaterial({color:0x24252b,roughness:.38,metalness:.22});
+ const noseMaterial=new THREE.MeshStandardMaterial({color:0x656266,roughness:.6,metalness:.1});
+ function curvedFrame(points,radius,material=frameMaterial){
+  const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
+  const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,Math.max(16,points.length*4),radius,8,false),material);
+  eyewear.add(mesh);
+ }
+ for(const sign of [-1,1]){
+  const lens=[];
+  for(let i=0;i<=48;i++){
+   const t=i*Math.PI*2/48,x=sign*.034+.024*Math.cos(t);
+   lens.push([x,1.638+.016*Math.sin(t),.08-.008*(Math.abs(x)-.02)]);
+  }
+  curvedFrame(lens,.0021);
+  curvedFrame([[sign*.057,1.639,.078],[sign*.068,1.641,.064],[sign*.077,1.640,.012],[sign*.077,1.637,-.033],[sign*.073,1.630,-.060]],.00165);
+  curvedFrame([[sign*.013,1.632,.076],[sign*.012,1.627,.071],[sign*.010,1.626,.067]],.00135,noseMaterial);
+ }
+ curvedFrame([[-.011,1.639,.078],[-.006,1.635,.081],[0,1.634,.082],[.006,1.635,.081],[.011,1.639,.078]],.002);
+ eyewear.visible=false;
  let headBone=null,headRestInverse=null;
  const headCurrent=new THREE.Matrix4(),parentInverse=new THREE.Matrix4(),headDelta=new THREE.Matrix4();
  function attach(gltf,index){
@@ -68,6 +90,7 @@ function mount(host,config){
  function apply(next){
    config=next;
    const appearance=next.appearance||{};
+   eyewear.visible=appearance.accessory==="glasses";
    function setTint(list,color){const tint=new THREE.Color(color);for(const material of list){if(!material.color)continue;if(!originalColors.has(material))originalColors.set(material,material.color.clone());material.color.copy(originalColors.get(material)).multiply(tint);}}
    // Preserve the source PBR materials; tint only their existing colors.
    const tint=new THREE.Color(appearance.skin||"#bc8660");
@@ -118,7 +141,7 @@ function mount(host,config){
  function up(){drag=false;}
  renderer.domElement.addEventListener("pointerdown",down);renderer.domElement.addEventListener("pointermove",move);
  renderer.domElement.addEventListener("pointerup",up);renderer.domElement.addEventListener("pointercancel",up);
- function frame(){if(disposed)return;raf=root.requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.05);mixer?.update(dt);assembled.rotation.y=turn;assembled.updateMatrixWorld(true);if(headBone&&headRestInverse){parentInverse.copy(assembled.matrixWorld).invert();headCurrent.multiplyMatrices(parentInverse,headBone.matrixWorld);headDelta.multiplyMatrices(headCurrent,headRestInverse);for(const part of [head,hair])if(part){part.matrixAutoUpdate=false;part.matrix.copy(headDelta);part.matrixWorldNeedsUpdate=true;}}renderer.render(scene,camera);}frame();
+ function frame(){if(disposed)return;raf=root.requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.05);mixer?.update(dt);assembled.rotation.y=turn;assembled.updateMatrixWorld(true);if(headBone&&headRestInverse){parentInverse.copy(assembled.matrixWorld).invert();headCurrent.multiplyMatrices(parentInverse,headBone.matrixWorld);headDelta.multiplyMatrices(headCurrent,headRestInverse);for(const part of [head,hair,eyewear])if(part){part.matrixAutoUpdate=false;part.matrix.copy(headDelta);part.matrixWorldNeedsUpdate=true;}}renderer.render(scene,camera);}frame();
  const controller={update:apply,dispose(){
    if(disposed)return;disposed=true;root.cancelAnimationFrame(raf);observer?.disconnect();
    renderer.domElement.removeEventListener("pointerdown",down);renderer.domElement.removeEventListener("pointermove",move);
@@ -126,6 +149,7 @@ function mount(host,config){
    mixer?.stopAllAction();
    const seen=new Set();
    assembled.traverse(n=>{if(!n.isMesh)return;n.geometry?.dispose();const mats=Array.isArray(n.material)?n.material:[n.material];for(const m of mats){if(m&&!seen.has(m)){seen.add(m);m.dispose();}}});
+   eyewear.traverse(n=>{if(n.isMesh)n.geometry.dispose();});frameMaterial.dispose();noseMaterial.dispose();
    renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();if(active===controller)active=null;
  }};
  active=controller;return controller;
