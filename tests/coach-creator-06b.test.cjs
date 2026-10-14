@@ -302,3 +302,25 @@ test("27 coach picks real international clubs from shared player club browser",(
  const engine=fs.readFileSync(path.join(__dirname,"../src/domain/engine.js"),"utf8");
  assert.match(engine,/mode === "coach" && \(s\.globalFootball\?\.clubs/);
 });
+
+test("FC-inspired coach selection uses human league labels and clickable real club cards",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={document:dom.window.document,FormData:dom.window.FormData,console,globalThis:null,
+   ProLifeClubBrowser:{collect:()=>[
+     {id:"a",name:"Clube Local",country:"Brasil",leagueId:"serieA",leagueName:"Série A",source:"local",players:[]},
+     {id:"betis",name:"Real Betis",country:"Espanha",leagueId:"gf_fc27_la_liga",leagueName:"La Liga",source:"global",players:[]}
+   ]}};sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ sandbox.ProLifeCoachCreator.mount({D:{create:()=>({clubs:[{id:"a",name:"Clube Local"}]})},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ const league=[...form.elements.leagueFilter.options].find(o=>o.value==="gf_fc27_la_liga");
+ assert.ok(league);assert.equal(league.textContent,"La Liga");
+ form.elements.clubSearch.value="BeTiS";
+ form.elements.clubSearch.dispatchEvent(new dom.window.Event("input",{bubbles:true}));
+ assert.equal(form.elements.countryFilter.value,"");
+ const card=dom.window.document.querySelector('[data-club-choice="betis"]');
+ assert.ok(card);assert.match(card.textContent,/Real Betis/);assert.match(card.textContent,/Espanha/);
+ card.click();
+ assert.equal(form.elements.clubId.value,"betis");
+ assert.equal(card.getAttribute("aria-pressed"),"true");
+});
