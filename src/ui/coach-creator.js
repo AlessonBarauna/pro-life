@@ -50,29 +50,42 @@ function render(ctx){
  const leagueSelect=form.elements.leagueFilter;
  const countrySelect=form.elements.countryFilter;
  for(const country of [...new Set(clubs.map(c=>String(c.country||"Brasil")))].sort((a,b)=>a.localeCompare(b,"pt-BR"))){const option=document.createElement("option");option.value=country;option.textContent=country;countrySelect.appendChild(option);}
- const leagueNames=[...new Set(clubs.filter(c=>c&&c.active!==false).map(c=>String(c.leagueId||"Não informada")))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
- for(const league of leagueNames){const option=document.createElement("option");option.value=league;option.textContent=league;leagueSelect.appendChild(option);}
+ const leagueLabels=new Map(clubs.map(c=>[String(c.leagueId||""),String(c.leagueName||c.leagueId||"Liga não informada")]));
  const originalClubOptions=[...form.elements.clubId.options].map(option=>({value:option.value,text:option.textContent}));
+ function normalize(value){return String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLocaleLowerCase("pt-BR");}
+ function rebuildLeagueOptions(){
+   const old=leagueSelect.value,country=countrySelect.value;
+   const options=[...new Set(clubs.filter(c=>c.active!==false&&(!country||String(c.country||"Brasil")===country))
+     .map(c=>String(c.leagueId||"Não informada")))]
+     .sort((x,y)=>(leagueLabels.get(x)||x).localeCompare(leagueLabels.get(y)||y,"pt-BR"));
+   leagueSelect.replaceChildren();
+   const all=document.createElement("option");all.value="";all.textContent="Todas as competições";leagueSelect.appendChild(all);
+   for(const id of options){const node=document.createElement("option");node.value=id;node.textContent=leagueLabels.get(id)||id;leagueSelect.appendChild(node);}
+   leagueSelect.value=options.includes(old)?old:"";
+ }
  function filterClubs(){
-   const term=String(form.elements.clubSearch.value||"").trim().toLocaleLowerCase("pt-BR");
-   const league=leagueSelect.value,country=countrySelect.value;
+   const term=normalize(form.elements.clubSearch.value),league=leagueSelect.value,country=countrySelect.value;
    const selector=form.elements.clubId,selected=selector.value;
    selector.replaceChildren();
    for(const option of originalClubOptions){
      if(option.value){
        const club=clubs.find(c=>c.id===option.value);
-       if(!club||(country&&String(club.country||"Brasil")!==country)||(league&&String(club.leagueId||"Não informada")!==league)||!String(club.name||"").toLocaleLowerCase("pt-BR").includes(term))continue;
+       if(!club||(country&&String(club.country||"Brasil")!==country)||(league&&String(club.leagueId||"Não informada")!==league)||!normalize(club.name).includes(term))continue;
      }
      const node=document.createElement("option");node.value=option.value;node.textContent=option.text;selector.appendChild(node);
    }
-   if([...selector.options].some(option=>option.value===selected))selector.value=selected;
-   else selector.value="";
+   selector.value=[...selector.options].some(option=>option.value===selected)?selected:"";
    review();
  }
- form.elements.clubSearch.addEventListener("input",filterClubs);
+ rebuildLeagueOptions();
+ form.elements.clubSearch.addEventListener("input",()=>{
+   // Name search is global; reset geographic filters so international clubs can be discovered.
+   if(form.elements.clubSearch.value.trim()){countrySelect.value="";rebuildLeagueOptions();leagueSelect.value="";}
+   filterClubs();
+ });
  leagueSelect.addEventListener("change",filterClubs);
- countrySelect.addEventListener("change",filterClubs);
- function update3D(){
+ countrySelect.addEventListener("change",()=>{rebuildLeagueOptions();filterClubs();});
+  function update3D(){
   const viewer=root.ProLifeCoachAvatar3D;
   if(!viewer)return;
   const configuration=viewer.configFromForm(form);
