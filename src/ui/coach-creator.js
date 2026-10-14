@@ -84,6 +84,27 @@ function render(ctx){
    ? "Ainda sem modelos 3D para: "+unsupported.join(", ")+". Estas escolhas ficam no save, mas não mudam o personagem nesta versão."
    : "Prévia 3D disponível: pele, olhos, cabelo e cores da camisa/calça. Cortes de roupa e acessórios precisam de arquivos 3D próprios.";
  }
+ function clubBriefing(club){
+   if(!club)return "Receber propostas: você começa sem clube e poderá avaliar oportunidades na carreira.";
+   const peers=clubs.filter(c=>c.leagueId===club.leagueId&&c.active!==false)
+     .sort((a,b)=>Number(b.strength||0)-Number(a.strength||0)||String(a.id).localeCompare(String(b.id)));
+   const n=Math.max(1,peers.length),rank=Math.max(1,peers.findIndex(c=>c.id===club.id)+1);
+   const relative=(rank-1)/Math.max(1,n-1);
+   const kind=rank<=Math.max(1,Math.round(n*.12))?"Título":relative<.35?"Parte de cima da tabela":relative<.7?"Meio de tabela":"Permanência";
+   const roster=Array.isArray(club.roster)?club.roster.filter(p=>p.status!=="retired"):[];
+   const avg=roster.length?Math.round(roster.reduce((total,p)=>total+(Number(p.morale)||60),0)/roster.length):null;
+   const money=Number(club.budget||0).toLocaleString("pt-BR");
+   const entries=[
+     "Clube: "+club.name,
+     "Competição: "+(club.leagueId||"Não informada"),
+     "Orçamento disponível: R$ "+money,
+     "Jogadores no elenco: "+roster.length,
+     "Moral média: "+(avg===null?"Sem dados":avg+"/100"),
+     "Expectativa esportiva estimada: "+kind,
+     "Objetivos adicionais: orçamento positivo e moral do elenco acima de 60"
+   ];
+   return entries.join(" · ");
+ }
  function review(){appearanceNotice();
   const preview=app.querySelector("#coach-profile-preview");
   if(preview){const skin=form.elements.skin.value,hair=form.elements.hairColor.value,outfit=form.elements.outfit.value;
@@ -96,9 +117,7 @@ function render(ctx){
    const ears=preview.querySelector("#coach-eyes");if(ears)ears.setAttribute("fill",form.elements.eyeColor.value);
   }
   const club=selectedClub(),target=app.querySelector("#coach-club-analysis");
-  if(target)target.textContent=club
-    ? "Clube: "+club.name+" · Liga: "+(club.leagueId||"Não informada")+" · Orçamento inicial: R$ "+Number(club.budget||0).toLocaleString("pt-BR")+"."
-    : "Receber propostas: o motor da carreira selecionará oportunidades. Você ainda precisará escolher uma oferta.";
+  if(target)target.textContent=clubBriefing(club);
   const detail=app.querySelector("#coach-confirm-details");
   if(detail){
     detail.textContent="Treinador: "+(form.elements.name.value.trim()||"Não informado")+" · "+(form.elements.nationality.value.trim()||"Brasil")+" · Idade: "+form.elements.age.value+" · Projeto: "+(club?.name||"Propostas de clubes")+" · Aparência: "+form.elements.outfit.options[form.elements.outfit.selectedIndex].text+" · Treino: "+form.elements.focus.value+" · Tática: "+form.elements.tactic.value+" · Base FC 27 · Seed: "+(form.elements.seed.value||"automática");
