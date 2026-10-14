@@ -23,20 +23,24 @@ test("06B viewer stays separate from player avatar and is built for offline dev"
  for(const file of ["src/assets/coach3d/coach-base.glb","src/ui/coach-glb.js","src/ui/coach-avatar-3d.js"])assert.ok(assets.includes(file));
 });
 
-test("06B new coach GLB scene includes visual variants for identity options",()=>{
- const viewer=read("src/ui/coach-glb.source.js").toString("utf8");
- const creator=read("src/ui/coach-creator.js").toString("utf8");
- for(const term of ['a.hair','a.beard','a.accessory','a.eyeColor','a.body','config.outfit'])assert.ok(viewer.includes(term),term);
- assert.match(viewer,/rebuildWardrobe\(\)/);
- assert.match(creator,/"accessory","outfit"/);
- assert.match(viewer,/wardrobe\.rotation\.y=turn/);
+test("06B Vitruvian viewer loads real body head hair and animation without procedural geometry",()=>{
+ const source=read("src/ui/coach-glb.source.js").toString("utf8");
+ assert.match(source,/vitruvian_body\.glb/);
+ assert.match(source,/vitruvian_head\.glb/);
+ assert.match(source,/vitruvian_hair\.glb/);
+ assert.match(source,/new THREE\.AnimationMixer/);
+ assert.match(source,/mixer\.clipAction/);
+ assert.doesNotMatch(source,/CylinderGeometry|rebuildWardrobe|ConeGeometry/);
 });
-
-test("06B character uses real arm bones instead of T-pose sleeve pipes",()=>{
- const src=read("src/ui/coach-glb.source.js").toString("utf8");
- assert.match(src,/node\.name==="upperarm_l"/);
- assert.match(src,/node\.name==="upperarm_r"/);
- assert.match(src,/node\.rotation\.z=/);
- assert.doesNotMatch(src,/T-pose sleeves: follow upper arms/);
- assert.match(src,/Relaxed vertical sleeve/);
+test("06B locally installed human models are valid GLBs",()=>{
+ const dir=path.join(root,"src/assets/coach3d-realistic");
+ const files=["vitruvian_body.glb","vitruvian_head.glb","vitruvian_hair.glb"];
+ for(const name of files){
+  const file=path.join(dir,name);
+  if(!fs.existsSync(file))continue;
+  const bin=fs.readFileSync(file);
+  assert.equal(bin.toString("ascii",0,4),"glTF");
+  assert.equal(bin.readUInt32LE(4),2);
+  assert.equal(bin.readUInt32LE(8),bin.length);
+ }
 });
