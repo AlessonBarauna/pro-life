@@ -111,11 +111,11 @@ test("06B coach appearance and outfit are transferred into save state",()=>{
  sandbox.ProLifeCoachCreator.mount({D,esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:s=>{saved=s;},onBack:()=>{}});
  const form=dom.window.document.querySelector("#coach-creation-form");
  form.elements.name.value="Treinador";form.elements.city.value="Mogi";
- form.elements.skin.value="#884422";form.elements.hair.value="bald";form.elements.beard.value="goatee";form.elements.outfit.value="tracksuit";
+ form.elements.skin.value="#884422";form.elements.hair.value="bald";form.elements.beard.value="none";form.elements.outfit.value="tracksuit";
  form.dispatchEvent(new dom.window.Event("submit",{bubbles:true,cancelable:true}));
  assert.equal(config.appearance.skin,"#884422");
  assert.equal(config.appearance.hair,"bald");
- assert.equal(config.appearance.beard,"goatee");
+ assert.equal(config.appearance.beard,"none");
  assert.equal(saved.coachCareer.presentation.outfit,"tracksuit");
 });
 
@@ -128,15 +128,15 @@ test("06B identity controls persist eyewear and body shape and update portrait",
  sandbox.ProLifeCoachCreator.mount({D,esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
  const form=dom.window.document.querySelector("#coach-creation-form");
  form.elements.name.value="Treinador";form.elements.city.value="Mogi";
- form.elements.accessory.value="glasses";form.elements.body.value="strong";
- form.elements.eyeColor.value="#335577";form.elements.beard.value="full";
+ form.elements.accessory.value="none";form.elements.body.value="normal";
+ form.elements.eyeColor.value="#335577";form.elements.beard.value="none";
  form.elements.accessory.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
  const preview=dom.window.document.querySelector("#coach-profile-preview");
- assert.equal(preview.querySelector("#coach-glasses").hidden,false);
+ assert.equal(preview.querySelector("#coach-glasses").hidden,true);
  assert.equal(preview.querySelector("#coach-eyes").getAttribute("fill"),"#335577");
  form.dispatchEvent(new dom.window.Event("submit",{bubbles:true,cancelable:true}));
- assert.equal(config.appearance.accessory,"glasses");
- assert.equal(config.appearance.body,"strong");
+ assert.equal(config.appearance.accessory,"none");
+ assert.equal(config.appearance.body,"normal");
 });
 
 test("06B coach preview uses isolated renderer and updates customization",()=>{
@@ -151,10 +151,10 @@ test("06B coach preview uses isolated renderer and updates customization",()=>{
  sandbox.ProLifeCoachCreator.mount({D:{create:()=>({clubs:[]})},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
  const form=dom.window.document.querySelector("#coach-creation-form");
  assert.equal(changes.length,1);
- form.elements.hair.value="curly";form.elements.hair.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ form.elements.hair.value="bald";form.elements.hair.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
  form.elements.skin.value="#884422";form.elements.skin.dispatchEvent(new dom.window.Event("input",{bubbles:true}));
  assert.equal(changes.length,3);
- assert.equal(changes.at(-1).appearance.hair,"curly");
+ assert.equal(changes.at(-1).appearance.hair,"bald");
  assert.equal(changes.at(-1).appearance.skin,"#884422");
  assert.equal(changes.at(-1).model,"src/assets/coach3d-realistic/vitruvian_body.glb");
 });
@@ -167,4 +167,17 @@ test("06B coach avatar displays a safe offline placeholder without installed mod
  assert.equal(sandbox.ProLifeCoachAvatar3D.render(host,{appearance:{hair:"bald"}}),false);
  assert.match(host.textContent,/Modelo 3D de alta qualidade ainda não instalado/);
  assert.equal(host.dataset.avatarState,"placeholder");
+});
+
+test("06B controls with missing 3D meshes are visibly disabled",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ sandbox.ProLifeCoachCreator.mount({D:{create:()=>({clubs:[]})},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ for(const [field,values] of Object.entries({hair:["crew","curly","afro","mullet"],beard:["short","full","goatee"],accessory:["glasses"],body:["strong","slim"]})){
+  for(const val of values){const option=form.elements[field].querySelector('option[value="'+val+'"]');assert.ok(option,field+":"+val);assert.equal(option.disabled,true,field+":"+val);}
+ }
+ assert.equal(form.elements.hair.querySelector('option[value="bald"]').disabled,false);
+ assert.equal(form.elements.hair.querySelector('option[value="lowfade"]').disabled,false);
 });
