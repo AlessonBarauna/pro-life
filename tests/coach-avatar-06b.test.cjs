@@ -31,3 +31,12 @@ test("06B new coach GLB scene includes visual variants for identity options",()=
  assert.match(creator,/"accessory","outfit"/);
  assert.match(viewer,/wardrobe\.rotation\.y=turn/);
 });
+
+test("06B character uses real arm bones instead of T-pose sleeve pipes",()=>{
+ const src=read("src/ui/coach-glb.source.js").toString("utf8");
+ assert.match(src,/node\.name==="upperarm_l"/);
+ assert.match(src,/node\.name==="upperarm_r"/);
+ assert.match(src,/node\.rotation\.z=/);
+ assert.doesNotMatch(src,/T-pose sleeves: follow upper arms/);
+ assert.match(src,/Relaxed vertical sleeve/);
+});
