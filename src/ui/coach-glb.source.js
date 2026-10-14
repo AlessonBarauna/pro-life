@@ -20,7 +20,7 @@ function mount(host,config){
  const assembled=new THREE.Group();scene.add(assembled);
  let disposed=false,raf=0,drag=false,lastX=0,turn=0,mixer=null,head=null,hair=null,body=null;
  const clock=new THREE.Clock();
- const skinMaterials=[],irisMaterials=[];
+ const skinMaterials=[],irisMaterials=[],shirtMaterials=[],pantsMaterials=[],hairMaterials=[],browMaterials=[];
  function attach(gltf,index){
    if(disposed)return;
    const obj=gltf.scene;assembled.add(obj);
@@ -42,7 +42,11 @@ function mount(host,config){
      for(const m of mats){
        if(!m)continue;
        const name=(m.name||"").toLowerCase();
-       if(/skin|face|body|dermis|vitruvian/i.test(name))skinMaterials.push(m);
+       if(/skin|dermis|vitbody/i.test(name))skinMaterials.push(m);
+       if(/vitshirt/i.test(name))shirtMaterials.push(m);
+       if(/vitpants/i.test(name))pantsMaterials.push(m);
+       if(/vithairmat/i.test(name))hairMaterials.push(m);
+       if(/vitbrowcards/i.test(name))browMaterials.push(m);
        if(/iris/i.test(name))irisMaterials.push(m);
        m.side=THREE.DoubleSide;
      }
@@ -61,7 +65,12 @@ function mount(host,config){
    const iris=new THREE.Color(appearance.eyeColor||"#694829");
    for(const m of irisMaterials)if(m.color)m.color.copy(iris);
    const color=new THREE.Color(appearance.hairColor||"#241e1a");
-   hair?.traverse(n=>{if(n.isMesh){const mats=Array.isArray(n.material)?n.material:[n.material];for(const m of mats)if(m?.color)m.color.copy(color);}});
+   for(const m of hairMaterials)if(m.color)m.color.copy(color);
+   for(const m of browMaterials)if(m.color)m.color.copy(color);
+   const outfits={suit:{shirt:"#253341",pants:"#182631"},tracksuit:{shirt:"#206052",pants:"#203b38"},polo:{shirt:"#e5e9e8",pants:"#2c394b"}};
+   const chosen=outfits[next.outfit]||outfits.polo;
+   for(const m of shirtMaterials)if(m.color)m.color.set(chosen.shirt);
+   for(const m of pantsMaterials)if(m.color)m.color.set(chosen.pants);
    if(hair){
      const style=appearance.hair||"lowfade";
      hair.visible=style!=="bald";
