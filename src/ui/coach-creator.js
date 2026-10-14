@@ -13,7 +13,7 @@ function render(ctx){
  if(!app)return;
  app.innerHTML=`<main class="coach-creation" data-coach-creator="1">
   <header class="coach-creation-header"><div><span class="coach-kicker">PRO LIFE · FC 27 · MODO TREINADOR</span><h1>Construir carreira</h1><p class="coach-subtitle">Escolha sua identidade e seu primeiro projeto. Comande um clube, gerencie o elenco e responda à diretoria.</p></div><button type="button" class="coach-return" data-coach-back="1">← Voltar</button></header>
-  <nav class="coach-steps" aria-label="Etapas de criação">${STEPS.map((label,i)=>`<button type="button" data-coach-step="${i}" class="${i===currentStep?"on":""}" aria-current="${i===currentStep?"step":"false"}">${String(i+1).padStart(2,"0")} · ${label}</button>`).join("")}</nav><form id="coach-creation-form"><div class="coach-creation-grid">
+  <nav class="coach-steps" aria-label="Etapas de criação">${STEPS.map((label,i)=>'<button type="button" data-coach-step="'+i+'" class="'+(i===currentStep?"on":"")+'" aria-current="'+(i===currentStep?"step":"false")+'">'+String(i+1).padStart(2,"0")+' · '+label+'</button>').join("")}</nav><form id="coach-creation-form"><div class="coach-creation-grid">
    <section class="coach-creation-card"><h2>Perfil do treinador</h2>
     <div class="coach-fields" data-coach-panel="0">
      <label class="coach-full">Nome completo<input name="name" required maxlength="60" autocomplete="name" value="" placeholder="Nome do treinador"></label>
