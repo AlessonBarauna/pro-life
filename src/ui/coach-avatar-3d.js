@@ -12,6 +12,7 @@ function configFromForm(form){
 function render(host,configuration){
  if(!host)return false;
  lastConfig=configuration;
+ if(renderer?.update){renderer.update(configuration);return true;}
  const id=++version;
  if(renderer?.dispose)renderer.dispose();renderer=null;
  host.textContent="";
