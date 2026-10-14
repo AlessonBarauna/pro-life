@@ -245,3 +245,21 @@ test("08 first club briefing uses canonical ranking roster morale and budget",()
  form.elements.clubId.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
  assert.match(dom.window.document.querySelector("#coach-club-analysis").textContent,/começa sem clube/);
 });
+
+test("27 manager nationality list has broad FC 27 nations and persists chosen nationality",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ let actual=null;
+ sandbox.ProLifeCoachCreator.mount({D:{create:cfg=>cfg.name?(actual=cfg,{mode:"coach",clubId:null,clubs:[],coachCareer:{}}):{clubs:[]}},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ assert.ok(form.elements.nationality.options.length>=150);
+ assert.equal(form.elements.nationality.value,"Brasil");
+ form.elements.name.value="Treinador";
+ form.elements.city.value="Mogi";
+ form.elements.nationality.value="Japão";
+ form.dispatchEvent(new dom.window.Event("submit",{bubbles:true,cancelable:true}));
+ assert.equal(actual.nationality,"Japão");
+ const engine=fs.readFileSync(path.join(__dirname,"../src/domain/engine.js"),"utf8");
+ assert.match(engine,/mode === "coach" \? \(GlobalFootball\?\.resolveNationality/);
+});
