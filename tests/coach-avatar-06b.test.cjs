@@ -94,7 +94,7 @@ test("06B material selectors match real Vitruvian asset names",()=>{
 test("06B every static facial piece follows the animated Mixamo head",()=>{
  const source=read("src/ui/coach-glb.source.js").toString("utf8");
  assert.match(source,/getObjectByName\("mixamorig:Head"\)/);
- assert.match(source,/for\(const part of \[head,hair\]\)/);
+ assert.match(source,/for\(const part of \[head,hair,eyewear\]\)/);
  assert.doesNotMatch(source,/hair\.scale\.set/);
 });
 
@@ -104,4 +104,12 @@ test("06B identity preview is static and updates visible iris color",()=>{
  assert.match(src,/name\.includes\("iris"\)/);
  assert.match(src,/setTint\(irisMaterials,iris\)/);
  assert.match(src,/if\(m\.map\)\{m\.map=null;m\.needsUpdate=true;\}/);
+});
+
+test("06B modeled glasses toggle and follow the rigged head",()=>{
+ const src=read("src/ui/coach-glb.source.js").toString("utf8");
+ assert.match(src,/eyewear\.visible=appearance\.accessory==="glasses"/);
+ assert.match(src,/new THREE\.TubeGeometry/);
+ assert.match(src,/for\(const part of \[head,hair,eyewear\]\)/);
+ assert.match(src,/frameMaterial\.dispose\(\)/);
 });
