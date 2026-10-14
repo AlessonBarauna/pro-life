@@ -62,7 +62,22 @@ function mount(host,config){
    for(const m of irisMaterials)if(m.color)m.color.copy(iris);
    const color=new THREE.Color(appearance.hairColor||"#241e1a");
    hair?.traverse(n=>{if(n.isMesh){const mats=Array.isArray(n.material)?n.material:[n.material];for(const m of mats)if(m?.color)m.color.copy(color);}});
-   if(hair)hair.visible=appearance.hair!=="bald";
+   if(hair){
+     const style=appearance.hair||"lowfade";
+     hair.visible=style!=="bald";
+     // One licensed hair mesh. These are honest silhouette variations,
+     // not invented meshes for different hairstyles.
+     const transforms={
+       lowfade:[1,.93,1],crew:[.97,.85,.96],highfade:[.96,.89,.95],
+       buzz:[.95,.78,.95],curly:[1.08,1.08,1.1],afro:[1.15,1.2,1.15],
+       twists:[1.05,1.04,1.04],braids:[1,1.05,1.02],
+       mullet:[1,1.08,1.12],long:[1,1.14,1.12],bald:[1,1,1]
+     };
+     const v=transforms[style]||transforms.lowfade;
+     hair.scale.set(v[0],v[1],v[2]);
+   }
+   // The source contains one outfit, no beard/glasses meshes and no body morph targets.
+   // Do not fake customization by overlaying primitive meshes.
  }
  function failure(error){
    if(disposed)return;
