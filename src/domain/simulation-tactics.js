@@ -25,10 +25,11 @@ function matchup(ownClub,oppClub){
  const own=normalize(ownClub),opp=normalize(oppClub);
  const pressVsBuild=(own.pressing-50)*.055-(opp.buildUp==="possession"?2.2:opp.buildUp==="counter"?-1.1:0);
  const lineRisk=Math.max(0,own.line-58)*Math.max(0,opp.directness-58)/900;
+ const opponentLineRisk=Math.max(0,opp.line-58)*Math.max(0,own.directness-58)/900;
  const deepProtection=Math.max(0,48-own.line)*.045;
  const possession=(own.buildUp==="possession"?5:0)+(own.width-50)*.025-(opp.pressing-50)*.035;
- const attack=(own.tempo-50)*.045+(own.directness-50)*.035+(own.risk-50)*.025+lineRisk;
- const defense=(own.pressing-50)*.035+deepProtection-(own.risk-50)*.025;
+ const attack=(own.tempo-50)*.045+(own.directness-50)*.035+(own.risk-50)*.025+opponentLineRisk;
+ const defense=(own.pressing-50)*.035+deepProtection-(own.risk-50)*.025-lineRisk;
  const fatigue=Math.max(0,own.pressing-55)*.0025+Math.max(0,own.tempo-60)*.0015;
  const volatility=Math.abs(own.risk-50)*.004+Math.abs(own.line-50)*.002;
  return {plan:own,possession:+possession.toFixed(3),attack:+attack.toFixed(3),defense:+defense.toFixed(3),pressVsBuild:+pressVsBuild.toFixed(3),lineRisk:+lineRisk.toFixed(3),fatigue:+fatigue.toFixed(4),volatility:+volatility.toFixed(3)};
