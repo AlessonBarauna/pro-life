@@ -499,7 +499,14 @@
   function slotCrest(x) {
     const C = window.ProLifeClubCrests; if (!C || !x) return "";
     let id = x.clubId || null;
-    if (!id && x.club && Array.isArray(window.ProLifeCrestData)) { const m = window.ProLifeCrestData.filter((c) => c.name === x.club); if (m.length === 1) id = m[0].id; }
+    if (!id && x.club && Array.isArray(window.ProLifeCrestData)) {
+      const normalize = (v) => String(v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+      const name = normalize(x.club);
+      const matches = window.ProLifeCrestData.filter((c) => normalize(c.name) === name);
+      const domestic = matches.filter((c) => c.source === "domestic");
+      if (domestic.length === 1) id = domestic[0].id;
+      else if (matches.length === 1) id = matches[0].id;
+    }
     const h = id ? C.render(id, { size: "lg" }) : "";
     return h.startsWith("<img") ? `<span class="slot-crest">${h}</span>` : "";
   }
