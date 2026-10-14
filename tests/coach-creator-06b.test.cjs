@@ -156,7 +156,7 @@ test("06B coach preview uses isolated renderer and updates customization",()=>{
  assert.equal(changes.length,3);
  assert.equal(changes.at(-1).appearance.hair,"curly");
  assert.equal(changes.at(-1).appearance.skin,"#884422");
- assert.equal(changes.at(-1).model,"src/assets/coach3d/coach-base.glb");
+ assert.equal(changes.at(-1).model,"src/assets/coach3d-realistic/vitruvian_body.glb");
 });
 test("06B coach avatar displays a safe offline placeholder without installed model",()=>{
  const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
