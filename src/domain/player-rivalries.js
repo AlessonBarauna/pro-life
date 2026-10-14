@@ -47,11 +47,26 @@ function record(state,match){
   if(next.result==="active"&&next.progress>=next.targetMatches)next.result="unfinished";
   return next;
 }
+// Converte apenas fatos observados no relatório da partida; nunca inventa números do rival.
+function fromSimulatedMatch(state,m){
+  if(!state||state.result!=="active"||!m||!Array.isArray(m.events))return state;
+  const players=(m.participants||[]).flat();
+  if(!players.includes(state.playerId)||!players.includes(state.rivalId))return state;
+  const stats=id=>({
+    goals:m.events.filter(e=>e.type==="goal"&&String(e.playerId)===id).length,
+    assists:m.events.filter(e=>e.type==="goal"&&String(e.assistPlayerId)===id).length
+  });
+  const objective=OBJECTIVES[state.objectiveId];
+  if(!objective||objective.field==="cleanSheets")return state; // exige escalação/resultado individual confiável
+  const id=[m.season,m.date,m.competitionId||m.leagueId||"",m.round??"",m.home,m.away].join(":");
+  if(!m.home||!m.away||m.date===undefined)return state;
+  return record(state,{id,played:true,hero:stats(state.playerId),rival:stats(state.rivalId)});
+}
 function reward(state){
   if(!state||state.result==="active")return 0;
   return state.result==="win"?100:state.result==="draw"?50:state.result==="loss"?0:0;
 }
-const api=Object.freeze({VERSION,OBJECTIVES,objectiveFor,initial,record,reward});
+const api=Object.freeze({VERSION,OBJECTIVES,objectiveFor,initial,record,fromSimulatedMatch,reward});
 root.ProLifePlayerRivalries=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
