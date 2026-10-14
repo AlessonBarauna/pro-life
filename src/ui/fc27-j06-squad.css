@@ -1,0 +1,32 @@
+/* J06 — gestão de equipe visual, inspirada na referência enviada pelo usuário.
+   Mudanças restritas à carreira de jogador. */
+.pl-j06-squad{max-width:1550px;margin:auto;color:#e9f1f4}
+.pl-j06-squad .pl-squad-workspace{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(310px,.85fr);gap:22px;align-items:stretch}
+.pl-j06-squad .pl-squad-left{min-width:0;display:flex;flex-direction:column;gap:14px}
+.pl-j06-squad .pl-squad-pitch{position:relative;background:linear-gradient(165deg,#182530,#111a26);border:1px solid #4d5a69;border-radius:5px;box-shadow:inset 0 0 60px #0004;min-height:490px;overflow:hidden;padding:35px 18px}
+.pl-j06-squad .pl-pitch-lines{opacity:.65}
+.pl-j06-squad .pl-squad-row{position:relative;z-index:2}
+.pl-j06-squad .pl-squad-player{cursor:pointer;transition:background .15s,outline-color .15s}
+.pl-j06-squad .pl-squad-player.selected{outline:2px solid #cdfc3f;outline-offset:1px;background:#203c2f}
+.pl-j06-squad .pl-squad-player.hero{box-shadow:inset 0 -3px #b8f52c}
+.pl-j06-squad .pl-squad-bench{border:1px solid #455464;background:#1b2430;border-radius:5px;padding:16px;min-width:0}
+.pl-j06-squad .pl-squad-detail{min-width:0;background:linear-gradient(180deg,#222735,#171c2a);border:1px solid #465468;border-radius:8px;overflow:hidden}
+.pl-j06-squad .pl-squad-detail-hero{min-height:155px;background:linear-gradient(110deg,#15313a,#242737)}
+.pl-j06-squad .pl-squad-detail-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;border-bottom:1px solid #435063}
+.pl-j06-squad .pl-squad-detail-tabs span{font-size:11px;font-weight:800;letter-spacing:.03em;color:#d2e2e8;background:#273541;padding:8px 10px;border-radius:2px}
+.pl-j06-squad .pl-squad-detail-tabs span:first-child{color:#bffa39;border-bottom:2px solid #bffa39}
+.pl-j06-competition{display:grid;gap:6px;padding:15px 18px;background:#141f2b;border-bottom:1px solid #354453}
+.pl-j06-competition small,.pl-j06-trust small{font-size:10px;letter-spacing:.1em;font-weight:900;color:#b8f02d}
+.pl-j06-competition strong{font-size:16px;color:#fff}
+.pl-j06-competition span{font-size:12px;color:#bcccd3}
+.pl-j06-trust{padding:16px 18px;display:grid;gap:9px;border-bottom:1px solid #354453}
+.pl-j06-trust>div:first-child{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.pl-j06-trust b{color:#bffa39}
+.pl-j06-trust>i{display:block;height:6px;border-radius:3px;background:#304450;overflow:hidden}
+.pl-j06-trust>i>em{display:block;height:100%;background:#bffa39}
+.pl-j06-trust p{margin:0;font-size:12px;line-height:1.45;color:#d0dde5}
+.pl-j06-status{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-top:1px solid #33404c;font-size:12px}
+.pl-j06-status strong{color:#c7f96b}
+.pl-j06-squad .pl-squad-actions{margin-top:18px}
+@media(max-width:1000px){.pl-j06-squad .pl-squad-workspace{grid-template-columns:minmax(0,1fr)}.pl-j06-squad .pl-squad-detail{width:100%}}
+@media(max-width:600px){.pl-j06-squad .pl-squad-pitch{min-height:370px;padding:20px 6px}.pl-j06-squad .pl-squad-workspace{gap:12px}}
