@@ -39,3 +39,5 @@
 .coach-creation .coach-confirm-details{margin-top:14px;overflow-wrap:anywhere}
 
 .coach-profile-art{position:relative}.coach-3d-stage{position:absolute;inset:0;z-index:2}.coach-profile-art:not(.has-3d) .coach-3d-stage,.coach-profile-art.has-3d>svg{display:none}
+
+.coach-avatar-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:9px;padding:24px;background:radial-gradient(ellipse at 50% 10%,#24434c,#09151e 70%)}.coach-avatar-placeholder strong{font-size:17px;color:#e8f6ea}.coach-avatar-placeholder small{font-size:11px;color:#a0bac5;max-width:240px;line-height:1.5}.coach-avatar-silhouette{width:90px;height:112px;border-radius:46% 46% 22% 22%;background:radial-gradient(ellipse at 50% 18%,#536d72 0 23%,transparent 24%),linear-gradient(145deg,#284d51,#192e39);border:1px solid #4e6d76;filter:drop-shadow(0 6px 18px #0007)}
