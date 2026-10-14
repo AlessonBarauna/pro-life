@@ -324,3 +324,28 @@ test("FC-inspired coach selection uses human league labels and clickable real cl
  assert.equal(form.elements.clubId.value,"betis");
  assert.equal(card.getAttribute("aria-pressed"),"true");
 });
+
+test("coach final settings tabs and one-time finance funding use existing club budget",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ let saved=null;
+ const D={create:cfg=>cfg.name?{mode:"coach",clubId:"a",clubs:[{id:"a",name:"Clube A",budget:25000000}],coachCareer:{version:1}}:{clubs:[{id:"a",name:"Clube A",budget:25000000}]},
+ club:(state,id)=>state.clubs.find(c=>c.id===id)};
+ sandbox.ProLifeCoachCreator.mount({D,esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:state=>{saved=state;},onBack:()=>{}});
+ const doc=dom.window.document,form=doc.querySelector("#coach-creation-form");
+ assert.equal(doc.querySelectorAll("[data-settings-tab]").length,6);
+ doc.querySelector('[data-settings-tab="finance"]').click();
+ assert.equal(doc.querySelector('[data-settings-panel="finance"]').hidden,false);
+ assert.equal(doc.querySelector('[data-settings-panel="market"]').hidden,true);
+ form.elements.name.value="Treinador";form.elements.city.value="Mogi";
+ form.elements.clubId.value="a";
+ form.elements.funding.value="10000000";
+ form.elements.funding.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ assert.equal(form.elements.preset.value,"custom");
+ form.dispatchEvent(new dom.window.Event("submit",{bubbles:true,cancelable:true}));
+ assert.ok(saved);
+ assert.equal(saved.clubs[0].budget,35000000);
+ assert.equal(saved.coachCareer.settings.fundingApplied,true);
+ assert.equal(saved.coachCareer.settings.funding,10000000);
+});
