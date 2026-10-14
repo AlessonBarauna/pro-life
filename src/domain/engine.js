@@ -2251,8 +2251,10 @@
           Squad?.trainingResult?.(s, improved);
           log(s, "Evolução no treino", improved.label + " melhorou com a rotina de trabalho.");
         }
-        Physical?.trainLoad?.(s.person, s.intensity);
-        if (s.intensity === "hard" && rng.next() < (Physical?.risk?.(s.person, "hard") ?? 0.015)) {
+        // Carga e risco por treino exigem sessao efetivamente realizada.
+        // Em dia de jogo, descanso ou rotina bloqueada nao existe treino fisico adicional.
+        if (improved?.available) Physical?.trainLoad?.(s.person, s.intensity);
+        if (improved?.available && s.intensity === "hard" && rng.next() < (Physical?.risk?.(s.person, "hard") ?? 0.015)) {
           const trainingInjury = Physical?.injure?.(s.person, rng, s.day, "treino");
           if (!trainingInjury) s.person.injury = rng.int(3, 12);
           log(
