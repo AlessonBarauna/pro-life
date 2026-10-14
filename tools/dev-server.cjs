@@ -12,6 +12,7 @@ const mime = {
   ".png": "image/png",
   ".svg": "image/svg+xml",
   ".webp": "image/webp",
+  ".glb": "model/gltf-binary",
   ".webmanifest": "application/manifest+json; charset=utf-8",
 };
 const client = `<script>
