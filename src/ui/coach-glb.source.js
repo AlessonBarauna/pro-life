@@ -43,12 +43,12 @@ function mount(host,config){
      for(const m of mats){
        if(!m)continue;
        const name=(m.name||"").toLowerCase();
-       if(/skin|dermis|vitbody/i.test(name))skinMaterials.push(m);
-       if(/vitshirt/i.test(name))shirtMaterials.push(m);
-       if(/vitpants/i.test(name))pantsMaterials.push(m);
-       if(/vithairmat/i.test(name))hairMaterials.push(m);
-       if(/vitbrowcards/i.test(name))browMaterials.push(m);
-       if(/iris/i.test(name))irisMaterials.push(m);
+       if(/^(vitskin|vitbody)$/i.test(name))skinMaterials.push(m);
+       if(/^vitshirt$/i.test(name))shirtMaterials.push(m);
+       if(/^vitpants$/i.test(name))pantsMaterials.push(m);
+       if(/^vithairmat$/i.test(name))hairMaterials.push(m);
+       if(/^vitbrowcardsmat$/i.test(name))browMaterials.push(m);
+       if(/^vitiris(?:\\.\\d+)?$/i.test(name))irisMaterials.push(m);
        m.side=THREE.DoubleSide;
      }
    });
