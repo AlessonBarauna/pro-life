@@ -277,3 +277,28 @@ test("FC27 coach wizard provides six stages and explicitly disables unsupported 
  assert.equal(form.elements.coachType.querySelector('[value="real"]').disabled,true);
  for(const v of ["tracksuit","polo","classic","suit"])assert.ok(form.elements.outfit.querySelector('[value="'+v+'"]'));
 });
+
+test("27 coach picks real international clubs from shared player club browser",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={document:dom.window.document,FormData:dom.window.FormData,console,globalThis:null,
+  ProLifeClubBrowser:{collect:()=>[
+   {id:"local",name:"Clube Local",leagueId:"serieA",leagueName:"Série A",country:"Brasil",source:"local",players:[]},
+   {id:"betis",name:"Real Betis",leagueId:"laliga",leagueName:"La Liga",country:"Espanha",source:"global",players:[]}
+  ]}};
+ sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ sandbox.ProLifeCoachCreator.mount({D:{create:()=>({clubs:[{id:"local",name:"Clube Local",active:true}]})},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ form.elements.countryFilter.value="Espanha";
+ form.elements.countryFilter.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ assert.deepEqual([...form.elements.clubId.options].map(o=>o.value),["","betis"]);
+ form.elements.clubSearch.value="betis";
+ form.elements.clubSearch.dispatchEvent(new dom.window.Event("input",{bubbles:true}));
+ assert.deepEqual([...form.elements.clubId.options].map(o=>o.value),["","betis"]);
+ form.elements.clubId.value="betis";
+ form.elements.clubId.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ assert.match(dom.window.document.querySelector("#coach-club-analysis").textContent,/Real Betis/);
+ assert.match(dom.window.document.querySelector("#coach-club-analysis").textContent,/Espanha/);
+ const engine=fs.readFileSync(path.join(__dirname,"../src/domain/engine.js"),"utf8");
+ assert.match(engine,/mode === "coach" && \(s\.globalFootball\?\.clubs/);
+});
