@@ -24,3 +24,13 @@
 .coach-creation .coach-helper{color:#8aa4ae;font-size:12px;margin-top:12px}
 @media(max-width:900px){.coach-creation-grid{grid-template-columns:1fr}.coach-fields{grid-template-columns:1fr 1fr}}
 @media(max-width:540px){.coach-creation{padding:18px}.coach-creation-header{align-items:flex-start;gap:12px}.coach-fields{grid-template-columns:1fr}.coach-creation .coach-summary{grid-template-columns:1fr 1fr}}
+
+/* 06B wizard — all steps share the same validated form and save pipeline. */
+.coach-creation [hidden]{display:none!important}
+.coach-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:12px 0 20px}
+.coach-steps button{background:#11252e;color:#92aeb9;border:1px solid #314c56;padding:14px 8px;border-radius:7px;font-size:12px;font-weight:800;cursor:pointer}
+.coach-steps button.on{color:#102006;background:#bbf329;border-color:#bbf329}
+.coach-navigation{display:flex;gap:10px;margin:16px 0}.coach-navigation .coach-start{flex:1}
+.coach-creation .coach-fields[data-coach-panel]{min-height:240px;align-content:start}
+.coach-creation .coach-fields[data-coach-panel="1"] .coach-section-note,.coach-creation .coach-fields[data-coach-panel="4"] .coach-section-note{font-size:15px}
+@media(max-width:760px){.coach-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
