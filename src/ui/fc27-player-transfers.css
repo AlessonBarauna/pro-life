@@ -112,3 +112,19 @@ body:has(.pl-player-transfer-experience) .game-shell{min-width:0}
 .fc27-transfer-overlay button:focus-visible{outline:3px solid #b9ef2a;outline-offset:2px}
 @media(max-width:800px){.fc27-transfer-content{grid-template-columns:1fr}.fc27-transfer-contact{min-height:0;padding:20px;border-right:0;border-bottom:1px solid #40505c}.fc27-transfer-crest{width:70px;height:70px}.fc27-transfer-contact h2{font-size:31px}.fc27-transfer-message{padding:13px}.fc27-transfer-message p{font-size:14px}.fc27-transfer-shell{max-height:calc(100dvh - 12px)}}
 @media(max-width:450px){.fc27-transfer-overlay{padding:0}.fc27-transfer-shell{max-height:100dvh;min-height:100dvh}.fc27-transfer-top{padding:12px}.fc27-transfer-details{padding:14px}.fc27-transfer-summary{grid-template-columns:1fr}.fc27-transfer-summary>div{min-height:0}.fc27-transfer-controls{grid-template-columns:1fr}.fc27-transfer-table-head,.fc27-transfer-term{grid-template-columns:minmax(80px,1fr) repeat(2,minmax(0,1fr));font-size:11px;padding:10px 5px;gap:5px}}
+
+/* J05.4 — organização de mercado por áreas, sem alterar dados salvos */
+.pl-market-j054{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.pl-market-j054>.pl-market-nav{display:flex;flex-wrap:wrap;gap:7px;padding:9px;background:#0c151d;border:1px solid #30414a}
+.pl-market-nav button{border:1px solid #30444e;background:#172630;color:#e0e9ed;font-size:13px;font-weight:800;padding:13px 18px;min-height:46px;white-space:normal;border-radius:3px}
+.pl-market-nav button.active{background:#baf02c;border-color:#baf02c;color:#0c1a06}
+.pl-market-j054[data-player-market-section="negotiations"] .pl-market-contracts,
+.pl-market-j054[data-player-market-section="negotiations"] .pl-market-clubs,
+.pl-market-j054[data-player-market-section="clubs"] .pl-market-negotiations,
+.pl-market-j054[data-player-market-section="clubs"] .pl-market-contracts,
+.pl-market-j054[data-player-market-section="contracts"] .pl-market-negotiations,
+.pl-market-j054[data-player-market-section="contracts"] .pl-market-clubs{display:none}
+.pl-market-j054[data-player-market-section="clubs"] #player-market-overview,
+.pl-market-j054[data-player-market-section="contracts"] #player-market-overview{display:none}
+.pl-market-j054 .pl-market-negotiations,.pl-market-j054 .pl-market-contracts,.pl-market-j054 .pl-market-clubs{min-width:0}
+@media(max-width:600px){.pl-market-j054>.pl-market-nav{display:grid;grid-template-columns:1fr}.pl-market-nav button{width:100%}}
