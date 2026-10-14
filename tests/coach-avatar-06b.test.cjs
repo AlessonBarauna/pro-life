@@ -22,3 +22,12 @@ test("06B viewer stays separate from player avatar and is built for offline dev"
  assert.match(pkg.scripts.build,/coach:avatar/);
  for(const file of ["src/assets/coach3d/coach-base.glb","src/ui/coach-glb.js","src/ui/coach-avatar-3d.js"])assert.ok(assets.includes(file));
 });
+
+test("06B new coach GLB scene includes visual variants for identity options",()=>{
+ const viewer=read("src/ui/coach-glb.source.js").toString("utf8");
+ const creator=read("src/ui/coach-creator.js").toString("utf8");
+ for(const term of ['a.hair','a.beard','a.accessory','a.eyeColor','a.body','config.outfit'])assert.ok(viewer.includes(term),term);
+ assert.match(viewer,/rebuildWardrobe\(\)/);
+ assert.match(creator,/"accessory","outfit"/);
+ assert.match(viewer,/wardrobe\.rotation\.y=turn/);
+});
