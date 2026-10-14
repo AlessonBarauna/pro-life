@@ -14,6 +14,6 @@ O arquivo minificado é gerado localmente, enquanto o código-fonte editável fi
 
 ## Limitações da primeira integração
 - Rotação por arraste, iluminação PBR e escolha de cor de pele são renderizadas pelo motor GLB.
-- Cabelo, barba, óculos, roupa e biotipo são registrados no formulário e salvos na carreira, mas ainda **não correspondem a modelos 3D independentes no GLB**.
-- O novo modelo não deve ser confundido com a qualidade visual do FC 27. Melhorias de malha, penteados e vestuário seguem como pendências.
+- Cabelo, barba, óculos, roupa e biotipo agora acionam acessórios e roupas 3D procedurais sobre o GLB, com atualização em tempo real. Ainda não são malhas humanas de alta fidelidade e podem exigir calibração de encaixe.
+- O novo modelo não deve ser confundido com a qualidade visual do FC 27. A base ainda usa uma pose em T; enquadramento fechado reduz sua exposição, mas corrigir o esqueleto/animação e criar modelos detalhados de cabelo e roupas continuam pendentes.
 - O criador de jogador não foi alterado.
