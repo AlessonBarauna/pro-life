@@ -1,0 +1,142 @@
+{
+  "c1": {
+    "name": "Atlético-MG",
+    "league": "serieA",
+    "file": "c1.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "ab6172691163e90303e2097378383674d72dce4b656624e80772575a96ecdb90",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  },
+  "c23": {
+    "name": "Avaí",
+    "league": "serieB",
+    "file": "c23.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "1b40426d2e239d03ff8aa29bc673ea8156b581791cc990cdf222a627c973d0dc",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  },
+  "c5": {
+    "name": "Corinthians",
+    "league": "serieA",
+    "file": "c5.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "3140ad824ca3fc25c19f061c82f947aaef1b3bc1daecacb213bdd35615fe03fe",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  },
+  "c6": {
+    "name": "Coritiba",
+    "league": "serieA",
+    "file": "c6.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "57f0d47bab94a63686b860c7613de2928e5f53ab5ebd915d2f750447f64fe8a7",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  },
+  "c11": {
+    "name": "Internacional",
+    "league": "serieA",
+    "file": "c11.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "e969dd5deb0f3bf25eb0af9e2db6b861d0b8cd328dcfbcd7c883bedc7efad8b5",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  },
+  "c16": {
+    "name": "Santos",
+    "league": "serieA",
+    "file": "c16.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "ba9812df1f673145dcd054faf1ab0efd0e09cbcfe080d4918c07311d6af6b748",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  },
+  "c17": {
+    "name": "São Paulo",
+    "league": "serieA",
+    "file": "c17.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "7a24aa46a8d6408257726dcf96d2b8acbbda9656b77693630a9f3463bfd39a1c",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  },
+  "c37": {
+    "name": "Sport",
+    "league": "serieB",
+    "file": "c37.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "cbc035705af54e8ad5532c52df99af9c206967af7dbec119993017e371a82438",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  },
+  "c18": {
+    "name": "Vasco da Gama",
+    "league": "serieA",
+    "file": "c18.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "8357adc0bacc611905f27bc7fc1fcaa1aa7c81a59d0b9783507705f9f1b50c57",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  },
+  "c22": {
+    "name": "Atlético Goianiense",
+    "league": "serieB",
+    "file": "c22.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "3f81d5e42a327868c154d1203f5f86ed088bf8ec954326243e7550296d53fd2c",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  },
+  "c26": {
+    "name": "Ceará",
+    "league": "serieB",
+    "file": "c26.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "c3c3bcaa28c8f6bba25f294f2c28888fa8497effead4940396147987d57cb9f8",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  },
+  "c25": {
+    "name": "CRB",
+    "league": "serieB",
+    "file": "c25.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "9bf382214f8a9e78aaf59ed83f8baa8e930fd7d0b9c39050359378ea6e535e4f",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  },
+  "c39": {
+    "name": "Vila Nova",
+    "league": "serieB",
+    "file": "c39.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "bfcf9b037bfb8ecad9f311784a8e7559a5215d86aaf46cac96db1d17ff3eca87",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  },
+  "c19": {
+    "name": "Vitória",
+    "league": "serieA",
+    "file": "c19.svg",
+    "sourceRepo": "https://github.com/hugomiura/escudos-times-brasil-svg",
+    "sha256": "9e8395cdaac4e9758c8d1a36c09d86a5c7469f5a51f8134b36049bc34050333c",
+    "licenseStatus": "nao verificada (marca registrada do clube; responsabilidade do usuario)",
+    "provisional": true,
+    "note": "Sprite SVG de serie-a/serie-b; versao pode nao ser a mais recente."
+  }
+}

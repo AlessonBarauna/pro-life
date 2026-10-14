@@ -123,7 +123,7 @@
       <div class="target-club-list">${shown.map(club=>{
         const fit=Career.targetClubAssessment(s,club.id);
         const active=target?.id===club.id;
-        return `<article class="target-club-row ${active?"active":""}"><span class="target-club-badge">${esc(String(club.shortName||club.name).slice(0,3).toUpperCase())}</span><div><b>${esc(club.name)}</b><small>${esc(club.country)} · ${esc(club.leagueName)}</small></div><span><small>NÍVEL</small><b>${club.level}</b></span><span class="target-club-fit ${fit?.realistic?"compatible":"ambitious"}">${esc(fit?.label||"Em análise")}</span><button type="button" data-target-club-select="${esc(club.id)}" ${active?"disabled":""}>${active?"Objetivo atual":"Definir objetivo"}</button></article>`;
+        return `<article class="target-club-row ${active?"active":""}">${(()=>{const h=root.ProLifeClubCrests&&root.ProLifeClubCrests.render?root.ProLifeClubCrests.render(club.id,{size:"md"}):"";return h.startsWith("<img")?`<span class="target-club-badge target-club-badge--img">${h}</span>`:`<span class="target-club-badge">${esc(String(club.shortName||club.name).slice(0,3).toUpperCase())}</span>`;})()}<div><b>${esc(club.name)}</b><small>${esc(club.country)} · ${esc(club.leagueName)}</small></div><span><small>NÍVEL</small><b>${club.level}</b></span><span class="target-club-fit ${fit?.realistic?"compatible":"ambitious"}">${esc(fit?.label||"Em análise")}</span><button type="button" data-target-club-select="${esc(club.id)}" ${active?"disabled":""}>${active?"Objetivo atual":"Definir objetivo"}</button></article>`;
       }).join("")||`<div class="target-club-empty">Nenhum clube encontrado. Ajuste os filtros ou a busca.</div>`}</div>
     </section>`;
   }

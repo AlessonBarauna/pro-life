@@ -70,7 +70,7 @@ test("34F.16 (1) com ~3,7 MB antigos no localStorage: cria, salva e reabre carre
   click(w, `.career-slots [data-load-slot="${id}"]`); await sleep(100);
   assert.ok(q(w, ".game-shell"), "reaberta após recarregar");
   const s = w.ProLifeSave.loadSlot(id);
-  assert.equal(s.catalogVersion, "fc27_v1"); assert.deepEqual(counts(s), [49, 670, 17849]); assert.equal(s.mode, "coach");
+  assert.equal(s.catalogVersion, "fc27_v1"); assert.deepEqual(counts(s), [49, 687, 18379]); assert.equal(s.mode, "coach");
   // save clássico continua abrindo
   toHub(w); click(w, `.career-slots [data-load-slot="${legacy.id}"]`); assert.ok(q(w, ".game-shell"));
 });
@@ -98,7 +98,7 @@ test("34F.16 (2) cinco carreiras FC 27 simultâneas: criadas, recarregadas e ín
   // recarrega e confere as cinco
   w = openPage(br); await hubReady(w);
   assert.equal(w.ProLifeSave.listSlots().length, 5);
-  for (const id of ids) { const s = w.ProLifeSave.loadSlot(id); assert.ok(s, id); assert.equal(s.catalogVersion, "fc27_v1"); assert.deepEqual(counts(s), [49, 670, 17849]); }
+  for (const id of ids) { const s = w.ProLifeSave.loadSlot(id); assert.ok(s, id); assert.equal(s.catalogVersion, "fc27_v1"); assert.deepEqual(counts(s), [49, 687, 18379]); }
   assert.ok(w.ProLifeSave.loadSlot(ids[2]).news.some((n) => n.id === "marca"), "autosave sobreviveu ao recarregar");
   assert.equal([...w.document.querySelectorAll(".career-slots .catalog-badge")].filter((x) => x.textContent === "FC 27").length, 5);
 });
@@ -182,7 +182,7 @@ test("34F.16 (5) backend IndexedDB real: abre, grava, lista, apaga e reidrata ap
   assert.ok(id); await S.idbFlush();
   assert.equal(w.localStorage.getItem("prolife.v1.slot." + id), null, "nada no localStorage");
   w = load(); assert.equal(JSON.stringify(await w.ProLifeSave.ready()), '{"ok":true,"count":1}');
-  const s = w.ProLifeSave.loadSlot(id); assert.equal(s.catalogVersion, "fc27_v1"); assert.deepEqual(counts(s), [49, 670, 17849]);
+  const s = w.ProLifeSave.loadSlot(id); assert.equal(s.catalogVersion, "fc27_v1"); assert.deepEqual(counts(s), [49, 687, 18379]);
   w.ProLifeSave.removeSlot(id); await w.ProLifeSave.idbFlush();
   w = load(); assert.equal(JSON.stringify(await w.ProLifeSave.ready()), '{"ok":true,"count":0}');
 });

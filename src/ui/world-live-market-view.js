@@ -1,6 +1,7 @@
 (function worldLiveMarketViewModule(root){
   "use strict";
 
+  const cr=id=>{const c=(typeof window!=='undefined'?window:globalThis).ProLifeClubCrests;return c&&c.inline&&id?c.inline(id,'sm'):'';};
   const TABS=[
     {id:"rumors",label:"Rumores",states:["rumor","scouting"]},
     {id:"negotiations",label:"Negociações",states:["negotiating"]},
@@ -164,7 +165,7 @@
     const age=finite(player?.age);
     return `<article class="world-market-deal status-${esc(status.kind)}" data-world-market-deal="${esc(deal.id)}">
       <header><div><small>${esc(status.label)}</small><h3>${esc(player?.name||"Jogador indisponível")}</h3><p>${esc(player?.pos||"—")} · ${age===null?"—":Math.round(age)+" anos"}</p></div><span class="world-market-ovr"><small>GER</small><b>${item.overall===null?"—":item.overall}</b></span></header>
-      <div class="world-market-route"><span><small>ORIGEM</small><b>${esc(from.name)}</b><em>${esc(from.country)} · ${esc(from.leagueName)}</em></span><i>→</i><span><small>DESTINO</small><b>${esc(to.name)}</b><em>${esc(to.country)} · ${esc(to.leagueName)}</em></span></div>
+      <div class="world-market-route"><span><small>ORIGEM</small><b>${cr(from.id)}${esc(from.name)}</b><em>${esc(from.country)} · ${esc(from.leagueName)}</em></span><i>→</i><span><small>DESTINO</small><b>${cr(to.id)}${esc(to.name)}</b><em>${esc(to.country)} · ${esc(to.leagueName)}</em></span></div>
       <footer><span><small>VALOR</small><b>${esc(money(deal.value))}</b></span><span><small>SALÁRIO</small><b>${esc(money(deal.salary))}</b></span><span><small>ATUALIZAÇÃO</small><b>Dia ${finite(deal.updatedDay)??finite(deal.startDay)??0}</b></span></footer>
       ${deal.state==="completed"?`<div class="world-market-resolution ${deal.executionStatus==="executed"?"executed":"agreement"}">${deal.executionStatus==="executed"?`Transferência efetivada no dia ${finite(deal.executedDay)??"—"}`:deal.executionStatus==="cancelled"?`Execução cancelada no dia ${finite(deal.cancelledDay)??"—"}`:"Acordo fechado; transferência ainda não efetivada."}</div>`:""}
     </article>`;

@@ -115,13 +115,14 @@
     return `<div class="world-competition-table-wrap"><table class="world-competition-table">
       <thead><tr><th>#</th><th>Clube</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th><th>PTS</th></tr></thead>
       <tbody>${rows.map((row,index)=>`<tr>
-        <td>${index+1}</td><td><b>${esc(row.name||row.id)}</b></td>
+        <td>${index+1}</td><td><b>${cr(row.id)}${esc(row.name||row.id)}</b></td>
         <td>${safeInt(row.played)}</td><td>${safeInt(row.w)}</td><td>${safeInt(row.d)}</td><td>${safeInt(row.l)}</td>
         <td>${safeInt(row.gd)}</td><td><strong>${safeInt(row.points)}</strong></td>
       </tr>`).join("")}</tbody>
     </table></div>`;
   }
 
+  function cr(id){const c=root.ProLifeClubCrests;return c&&c.inline?c.inline(id,'sm'):'';}
   function renderRound(round,catalog){
     if(!round)
       return `<div class="world-competition-empty">Nenhuma rodada disponível.</div>`;
@@ -136,7 +137,7 @@
       const score=pair.played
         ? `<strong>${safeInt(pair.hg)} <i>–</i> ${safeInt(pair.ag)}</strong>`
         : `<strong class="scheduled">×</strong>`;
-      return `<article class="world-round-game"><span>${esc(home)}</span>${score}<span>${esc(away)}</span></article>`;
+      return `<article class="world-round-game"><span>${cr(pair.home)}${esc(home)}</span>${score}<span>${cr(pair.away)}${esc(away)}</span></article>`;
     }).join("")}</div>`;
   }
 
@@ -203,7 +204,7 @@
             ${renderRound(round,catalog)}
           </section>
           <section class="world-competition-card"><div class="world-section-title"><div><small>RESULTADOS</small><h3>Últimos jogos</h3></div></div>
-            ${lastResults.length?`<div class="world-recent-results">${lastResults.map(match=>`<article><span>${esc(match.homeName||match.home)}</span><strong>${safeInt(match.hg)} – ${safeInt(match.ag)}</strong><span>${esc(match.awayName||match.away)}</span></article>`).join("")}</div>`:`<div class="world-competition-empty">Ainda não há resultados disputados.</div>`}
+            ${lastResults.length?`<div class="world-recent-results">${lastResults.map(match=>`<article><span>${cr(match.home)}${esc(match.homeName||match.home)}</span><strong>${safeInt(match.hg)} – ${safeInt(match.ag)}</strong><span>${cr(match.away)}${esc(match.awayName||match.away)}</span></article>`).join("")}</div>`:`<div class="world-competition-empty">Ainda não há resultados disputados.</div>`}
           </section>
           <section class="world-competition-card world-champions"><div class="world-section-title"><div><small>HISTÓRICO</small><h3>Campeões</h3></div></div>
             ${data.history.length?data.history.slice(0,6).map(item=>`<div><span>${safeInt(item.season)}</span><b>${esc(item.champion||"Não definido")}</b></div>`).join(""):`<div class="world-competition-empty">O primeiro campeão ainda será definido.</div>`}

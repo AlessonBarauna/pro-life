@@ -902,11 +902,13 @@
     if(s.nationalTeam?.calledUp && s.nationalTeam.schedule?.some(match=>!match.played&&match.day===s.day)) return true;
     return false;
   }
-  function trainingAvailable(s){ return s.mode==="player" && !s.person.injury && !mandatoryCommitmentToday(s) && s.day > init(s).lastTrainingDay; }
+  // 05B.7: uma unica sessao remunerada por dia, manual ou automatica (considera os dois marcadores legados).
+  function trainedToday(s,plan){ return s.day <= Math.max(Number(plan.lastTrainingDay)||0,Number(plan.lastAutoDay)||0); }
+  function trainingAvailable(s){ return s.mode==="player" && !s.person.injury && !mandatoryCommitmentToday(s) && !trainedToday(s,init(s)); }
   function performTraining(s,rng,helpers,{automatic=false}={}){
     const plan=init(s);
-    const available = automatic ? (s.mode==="player" && !s.person.injury && s.day > plan.lastAutoDay) : trainingAvailable(s);
-    if(!available) return {available:false,reason:s.person.injury?"Lesionado":(!automatic&&mandatoryCommitmentToday(s))?"Há um compromisso obrigatório hoje.":"Você já treinou hoje."};
+    const available = trainingAvailable(s);
+    if(!available) return {available:false,reason:s.person.injury?"Lesionado":mandatoryCommitmentToday(s)?"Há um compromisso obrigatório hoje.":"Você já treinou hoje."};
     const ex=plan.exerciseId && exercises[plan.exerciseId];
     if(!ex) return {available:false,reason:"Escolha um exercício."};
     const category={...trainingCategories[ex.category],id:ex.category};
@@ -949,7 +951,7 @@
       const archetyped=compatible.find(ex=>trainingCategories[ex.category].attrs.some(k=>plan.archetype?.focus?.includes(k)));
       plan.exerciseId=(focused||archetyped||compatible[0])?.id||null;
     }
-    if(plan.exerciseId && s.day>plan.lastAutoDay) return performTraining(s,rng,helpers,{automatic:true});
+    if(plan.exerciseId && !trainedToday(s,plan)) return performTraining(s,rng,helpers,{automatic:true});
     return null;
   }
   function matchDevelopment(s, match, helpers) {

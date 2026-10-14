@@ -130,7 +130,7 @@
           if (s.mode === "player" && nextExercise) {
             // Alterar o plano após a sessão do dia apenas salva a nova rotina.
             // Não concede XP, não consome condição e não cria uma segunda sessão manual.
-            if (s.day <= plan.lastTrainingDay && changed) return { planUpdated: true, trained: false };
+            if (s.day <= Math.max(Number(plan.lastTrainingDay) || 0, Number(plan.lastAutoDay) || 0) && changed) return { planUpdated: true, trained: false };
             const rng = new D.Random(s.rng);
             const result = D.Training.performTraining(s, rng, { overall: D.overall, clamp: D.clamp });
             D.Squad?.trainingResult?.(s, result);

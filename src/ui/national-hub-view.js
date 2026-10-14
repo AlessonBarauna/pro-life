@@ -25,7 +25,7 @@
     const home=m.homeId===code;const opp=home?m.away:m.home;
     let res="A disputar";
     if(m.played){res=`${num(m.homeGoals)} × ${num(m.awayGoals)}`;if(m.homeGoals===m.awayGoals&&m.winnerId)res+=` · ${esc(m.winnerId===code?"avançou":"eliminado")} nos pênaltis`;}
-    return `<tr><td>${esc(m.round?`Rodada ${m.round}`:(m.phaseLabel||m.phase||"Mata-mata"))}</td><td>${esc(m.home)} × ${esc(m.away)}</td><td>${res}</td></tr>`;
+    return `<tr><td>${esc(m.round?`Rodada ${m.round}`:(m.phaseLabel||m.phase||"Mata-mata"))}</td><td>${(root.ProLifeNationalCrests?root.ProLifeNationalCrests.inline(m.homeId||m.home,"sm"):"")}${esc(m.home)} × ${(root.ProLifeNationalCrests?root.ProLifeNationalCrests.inline(m.awayId||m.away,"sm"):"")}${esc(m.away)}</td><td>${res}</td></tr>`;
   }
   function unavailable(P){
     return `<section class="nh-box nh-warn"><small>SELEÇÃO NÃO DISPONÍVEL</small><h2>${esc(P.team.name||"Nacionalidade não informada")}</h2><p>${esc(P.team.reason)}</p><p class="nh-note">Sua nacionalidade real foi preservada. O PRO-LIFE não substitui por outra seleção.</p></section>`;
@@ -62,7 +62,7 @@
       const wc=NIm.worldCupOf(s,D,t);
       let out="";
       if(wc&&wc.qualified){
-        out+=`<h3>Copa do Mundo ${esc(wc.year)} · Grupo ${esc(wc.group)}</h3>${tbl(["#","Seleção","J","V","E","D","SG","Pts"],wc.table.map((r,i)=>`<tr class="${r.id===code?"me":""}"><td>${i+1}</td><td>${esc(r.name)}</td><td>${num(r.played)}</td><td>${num(r.w)}</td><td>${num(r.d)}</td><td>${num(r.l)}</td><td>${num(r.gd)}</td><td>${num(r.points)}</td></tr>`))}<h3>Jogos de ${esc(t.name)}</h3>${tbl(["Fase","Jogo","Resultado"],[...wc.matches,...wc.knockout].map(m=>matchLine(m,code)))}`;
+        out+=`<h3>Copa do Mundo ${esc(wc.year)} · Grupo ${esc(wc.group)}</h3>${tbl(["#","Seleção","J","V","E","D","SG","Pts"],wc.table.map((r,i)=>`<tr class="${r.id===code?"me":""}"><td>${i+1}</td><td>${(root.ProLifeNationalCrests?root.ProLifeNationalCrests.inline(r.id||r.name,"sm"):"")}${esc(r.name)}</td><td>${num(r.played)}</td><td>${num(r.w)}</td><td>${num(r.d)}</td><td>${num(r.l)}</td><td>${num(r.gd)}</td><td>${num(r.points)}</td></tr>`))}<h3>Jogos de ${esc(t.name)}</h3>${tbl(["Fase","Jogo","Resultado"],[...wc.matches,...wc.knockout].map(m=>matchLine(m,code)))}`;
       }else out+=`<p class="nh-note">${esc(wc&&wc.note||"Sem calendário da Copa para esta seleção.")}</p>`;
       out+=`<p class="nh-note">${(root.ProLifeCallupView&&root.ProLifeCallupView.calendar)?root.ProLifeCallupView.calendar(s,D):""}Confrontos de amistosos, eliminatórias e torneios de confederação de ${esc(t.name)} não são simulados; nenhuma partida foi inventada.</p>`;
       return out;
@@ -94,7 +94,7 @@
     }
     const P=NIm.profile(s,D),t=P.team;
     const tab=TABS.some(x=>x[0]===ui.tab)?ui.tab:"geral";
-    const head=`<div class="nh-head"><div class="nh-flag">${esc(t.code||"?")}</div><div><small>MINHA SELEÇÃO</small><h2>${esc(t.represented?`Seleção de ${t.name}`:(t.name||"Sem nacionalidade"))}</h2><span class="nh-chip">Nacionalidade: ${esc(t.raw||"—")}</span> ${t.confederation?`<span class="nh-chip">${esc(t.confederation)}</span>`:""}</div></div>`;
+    const head=`<div class="nh-head"><div class="nh-flag">${(()=>{const h=root.ProLifeNationalCrests?root.ProLifeNationalCrests.render(t.code||t.name,{size:"lg"}):"";return h||esc(t.code||"?");})()}</div><div><small>MINHA SELEÇÃO</small><h2>${esc(t.represented?`Seleção de ${t.name}`:(t.name||"Sem nacionalidade"))}</h2><span class="nh-chip">Nacionalidade: ${esc(t.raw||"—")}</span> ${t.confederation?`<span class="nh-chip">${esc(t.confederation)}</span>`:""}</div></div>`;
     const classicBtn=t.code==="BRA"?`<div style="margin-top:14px"><button type="button" class="nh-act" data-nh-classic="1">Abrir visão completa da Seleção Brasileira</button></div>`:"";
     if(!t.represented)return `${css()}<section class="nh-dark" data-national-hub>${head}${unavailable(P)}</section>`;
     return `${css()}<section class="nh-dark" data-national-hub>${head}<nav class="nh-tabs">${TABS.map(([id,l])=>`<button type="button" class="${id===tab?"on":""}" data-nh-tab="${id}">${l}</button>`).join("")}</nav>${body(s,D,P,tab)}${classicBtn}</section>`;

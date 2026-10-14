@@ -22,6 +22,8 @@
     ].filter(([, v]) => has(v));
   }
   function crest(m) {
+    const real = m.clubId && window.ProLifeClubCrests ? window.ProLifeClubCrests.render(m.clubId, { size: "lg" }) : "";
+    if (real.startsWith("<img")) return `<span class="cine-crest cine-crest--img" aria-hidden="true">${real}</span>`;
     return `<span class="cine-crest" aria-hidden="true">${esc(initials(m.clubName))}</span>`;
   }
   // Documento do contrato. state: "draft" (sem assinatura), "signing" (assinatura animada) ou "signed" (assinatura fixa).
@@ -72,7 +74,7 @@ ${m.future && has(m.fromClub) ? `<p class="cine-note">Você continua no <b>${esc
   }
   function presentation(m) {
     const c = color(m.clubColor);
-    return `<section class="cine-present"><div class="cine-shirt" ${c ? `style="--club:${c}"` : ""} role="img" aria-label="Camisa do ${esc(m.clubName)}"><span class="collar"></span><b>${esc(initials(m.clubName))}</b>${has(m.number) ? `<em>${esc(m.number)}</em>` : ""}</div>
+    return `<section class="cine-present"><div class="cine-shirt" ${c ? `style="--club:${c}"` : ""} role="img" aria-label="Camisa do ${esc(m.clubName)}"><span class="collar"></span>${(() => { const h = m.clubId && window.ProLifeClubCrests ? window.ProLifeClubCrests.render(m.clubId, { size: "lg" }) : ""; return h.startsWith("<img") ? `<span class="cine-shirt-crest">${h}</span>` : `<b>${esc(initials(m.clubName))}</b>`; })()}${has(m.number) ? `<em>${esc(m.number)}</em>` : ""}</div>
 <div class="cine-welcome"><small>APRESENTAÇÃO OFICIAL</small><h2>Bem-vindo ao ${esc(m.clubName)}</h2>${has(m.athlete) ? `<p class="who">${esc(m.athlete)}</p>` : ""}${has(m.place) ? `<p>${esc(m.place)}</p>` : ""}</div>
 <dl class="cine-chal">${[["Novo desafio", has(m.role) ? "Papel de " + m.role : null], ["Competição", m.league], ["Estádio", m.stadium], ["Contrato", [m.duration, m.salary].filter(has).join(" · ") || null]].filter(([, v]) => has(v)).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl></section>
 <div class="cine-actions"><button type="button" class="primary gold" data-cine-close>Entrar em campo</button></div>`;

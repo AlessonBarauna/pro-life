@@ -70,6 +70,7 @@
   function recentRatings(s,id="hero",limit=5){return (s.matches||[]).filter(m=>Number.isFinite(Number(m.ratings?.[id]))).slice(0,limit).map(m=>Number(m.ratings[id]));}
   function formValue(s,p){const rs=recentRatings(s,p.id);return rs.length?rs.reduce((a,b)=>a+b,0)/rs.length:6.5;}
   const Physical=root.ProLifePhysical||(typeof require==="function"?require("./physical.js"):null);
+  const SpecificSelection=root.ProLifeSquadPositionSelection||(typeof require==="function"?require("./squad-position-selection.js"):null);
   function score(s,p){
     const ov=root.ProLife?.overall?root.ProLife.overall(p):50, form=formValue(s,p), cond=Number(p.condition??100), morale=Number(p.morale??50);
     const q=init(s),manager=q?.manager,w=manager?.selectionWeights||{overall:60,form:60,training:60,fitness:60,trust:60,potential:60,experience:60};
@@ -99,6 +100,11 @@
   function choose(s,c){
     const formation=formationFor(c,s), need=slots[formation], active=c.roster.filter(p=>(Physical?.canPlay?.(p) ?? (!p.injury&&Number(p.condition??100)>=25))&&!(p.suspension>0)&&!p._competitionSuspended);
     const starters=[],rested=[];
+    // 05A3: opt-in; todos os saves legados usam exatamente a rotina anterior.
+    if(SpecificSelection?.supportsSpecific(c.roster)){
+      const chosen=SpecificSelection.choose({formation,active,roster:c.roster,score:p=>score(s,p),overall:ovrOf,restsToday:p=>restsToday(s,p),maxGap:ROTATION_MAX_GAP});
+      if(chosen)return chosen;
+    }
     for(const [pos,count] of Object.entries(need)){
       const pool=active.filter(p=>p.pos===pos&&!starters.includes(p)).sort((a,b)=>score(s,b)-score(s,a));
       const picked=pool.slice(0,count);

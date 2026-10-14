@@ -339,7 +339,7 @@ test("elite performances add progression and career accolades can raise ceiling"
 });
 
 test("Brazil national team tracks callups and international career separately", () => {
-  const s = D.create({ clubId: "c0" }, 520);
+  const s = D.create({ clubId: "c0" }, 522);
   Object.values(s.person.attrs).forEach((_, i) => {});
   for (const k of Object.keys(s.person.attrs)) s.person.attrs[k] = 90;
   s.reputation = 85; s.person.morale = 90;

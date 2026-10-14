@@ -36,7 +36,7 @@
     const title=rec.called?(first?"Primeira convocação":"Convocado"):"Fora da lista";
     return `${CSS}<div class="cu-back" id="callup-modal" role="dialog" aria-modal="true"><section class="cu-card ${first?"first":""} ${rec.called?"":"out"}"><div class="cu-in">
 <div class="cu-kick">${rec.called?"Chamada da seleção":"Lista divulgada"} · ${esc(rec.competition)}</div>
-<div class="cu-head"><div class="cu-crest">${esc(rec.teamCode)}</div><div><h2 class="cu-h">${esc(title)}</h2><p class="cu-sub">${esc(hero.name)} · ${esc(rec.teamName)}</p></div></div>
+<div class="cu-head"><div class="cu-crest">${(()=>{const h=root.ProLifeNationalCrests?root.ProLifeNationalCrests.render(rec.teamCode||rec.teamName,{size:"lg"}):"";return h||esc(rec.teamCode);})()}</div><div><h2 class="cu-h">${esc(title)}</h2><p class="cu-sub">${esc(hero.name)} · ${esc(rec.teamName)}</p></div></div>
 <div class="cu-grid"><div><small>Histórico</small><b>${esc(prevText)}</b></div><div><small>Apresentação</small><b>${esc(N.fmt(rec.presentationDay))}</b></div><div><small>Janela até</small><b>${esc(N.fmt(rec.endDay))}</b></div><div><small>Papel inicial</small><b>${esc(role)}</b></div><div><small>GER considerado</small><b>${num(rec.score&&rec.score.ger)}</b></div><div><small>Disputa em ${esc(hero.pos||"")}</small><b>${rec.rank?num(rec.rank)+"º · "+num(rec.quota)+" vagas":"—"}</b></div></div>
 <p class="cu-note"><b>Partidas:</b> ${matches}</p>
 ${rec.called?`<p class="cu-note">A ida à seleção não é uma transferência: contrato e vínculo com o clube permanecem.</p>`:`<p class="cu-note">${esc((rec.reasons||[]).join(" · "))}</p>`}

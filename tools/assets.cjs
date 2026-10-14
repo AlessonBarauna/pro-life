@@ -20,6 +20,10 @@ const files = [
   "src/domain/career.js",
   "src/domain/commercial.js",
   "src/domain/squad.js",
+  "src/domain/player-positions.js",
+  "src/domain/player-position-overlay.js",
+  "src/domain/squad-position-selection.js",
+  "src/domain/match-position-effects.js",
   "src/domain/unexpected-events.js",
   "src/domain/simulation-tactics.js",
   "src/data/global-football-seed.js",
@@ -112,6 +116,8 @@ const files = [
   "src/domain/coach-career.js",
   "src/domain/off-field.js",
   "src/data/fc27/fc27-manifest-v1.js",
+  "src/data/fc27/fc27-positions-v1.js",
+  "src/data/fc27/fc27-colombia-v1.js",
   "src/domain/fc27-catalog-adapter.js",
   "src/domain/continental.js",
   "src/domain/champions-draw.js",
@@ -148,5 +154,11 @@ const files = [
   "src/ui/national-hub-view.js",
   "src/ui/contract-signing.js",
   "src/ui/champions-league-view.js",
+  "src/ui/club-crests.css",
+  "src/ui/club-crests-data.js",
+  "src/ui/club-crests.js","src/ui/national-crests.js",
 ];
+// 04E: escudos instalados (somente imagens; manifestos ficam fora da publicacao).
+try { const d = require("path").join(__dirname, "..", "src/assets/club-crests"); for (const f of require("fs").readdirSync(d).sort()) if (/^[a-zA-Z0-9_-]+\.(png|svg|webp)$/.test(f)) files.push("src/assets/club-crests/" + f); } catch (e) { /* sem escudos */ }
+try { const d = require("path").join(__dirname, "..", "src/assets/national-crests"); for (const f of require("fs").readdirSync(d).sort()) if (/^nt_[A-Z]{3}\.png$/.test(f)) files.push("src/assets/national-crests/" + f); } catch (e) { /* sem escudos de selecoes */ }
 module.exports = { files };

@@ -681,8 +681,11 @@
   }
   function writeSlots(slots) { localStorage.setItem(SLOTS_KEY, JSON.stringify(slots)); }
   function slotSummary(id, s, updatedAt) {
-    const club=s.clubs?.find(c=>c.id===s.clubId);
-    return { id, name:s.person?.name||"Carreira", mode:s.mode, club:club?.name||"Sem clube", pos:s.person?.pos||"", age:s.person?.age||0, season:s.season, day:s.day, updatedAt:updatedAt||Date.now() };
+    // Clube atual tambem em ligas do mundo (globalFootball); antes so olhava os clubes do Brasil e mostrava "Sem clube".
+    let clubName=null;
+    try { clubName=globalThis.ProLifeCareerContext?.clubName?.(s)||null; } catch {}
+    if(!clubName) clubName=(s.clubs||[]).find(c=>c.id===s.clubId)?.name||(s.globalFootball?.clubs||[]).find(c=>c.id===s.clubId)?.name||null;
+    return { id, name:s.person?.name||"Carreira", mode:s.mode, clubId:s.clubId||null, club:clubName||"Sem clube", pos:s.person?.pos||"", age:s.person?.age||0, season:s.season, day:s.day, updatedAt:updatedAt||Date.now() };
   }
   function migrateLegacy() {
     let slots=readSlots();
@@ -918,7 +921,7 @@
     x.label=String(name||"").trim().slice(0,60); writeSlots(slots); return true;
   }
   function clearActive() { memActive = null; localStorage.removeItem(ACTIVE_KEY); }
-  root.ProLifeSave = { ready, useIdbBackend, onSaveFailure, idbActive, idbFlush, saveAsNewAsync, slotCatalog, storageMode, lastSaveError, storageUsage, parse, validate, save, load, saveAsNew, listSlots, loadSlot, removeSlot, renameSlot, activeId, clearActive, bindStateToSlot, stateSlotId, slotStatus, encodeHybridSave, decodeHybridSave, detectSaveFormat, setCompactWriteMode, compactWriteMode, KEY, SLOTS_KEY, ACTIVE_KEY };
+  root.ProLifeSave = { ready, useIdbBackend, onSaveFailure, idbActive, idbFlush, saveAsNewAsync, slotCatalog, storageMode, lastSaveError, storageUsage, slotSummary, parse, validate, save, load, saveAsNew, listSlots, loadSlot, removeSlot, renameSlot, activeId, clearActive, bindStateToSlot, stateSlotId, slotStatus, encodeHybridSave, decodeHybridSave, detectSaveFormat, setCompactWriteMode, compactWriteMode, KEY, SLOTS_KEY, ACTIVE_KEY };
   if (typeof module !== "undefined" && module.exports)
     module.exports = root.ProLifeSave;
 })(typeof globalThis !== "undefined" ? globalThis : this);

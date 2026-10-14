@@ -36,6 +36,7 @@
   const W=D=>D?.WorldClubCompetitions||root.ProLifeWorldClubCompetitions;
   const N=()=>root.ProLifeNames;
   const club=(s,id)=>N()?N().club(s,id):String(id);
+  const cr=id=>{const c=root.ProLifeClubCrests;return c&&c.inline?c.inline(id,'sm'):'';};
   const dateOf=d=>new Date(2026,0,1+Number(d||0)).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
   const heroClub=s=>(root.ProLifeCareerContext?.clubOf?.(s))||(s.clubs||[]).find(c=>c.id===s.clubId)||null;
   const CONTI=()=>root.ProLifeContinental||(root.ProLife&&root.ProLife.Continental)||null;
@@ -154,7 +155,7 @@
   }
   function tableHtml(s,rows,hc){
     if(!rows.length)return empty("Classificação ainda indisponível.");
-    return `<table class="ch-table"><thead><tr><th>#</th><th>Clube</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th><th>Pts</th></tr></thead><tbody>${rows.map((r,i)=>{const st=r.stats||r;return `<tr class="${hc&&r.id===hc.id?"hero":""}"><td>${i+1}</td><td><b>${esc(club(s,r.id)||r.name)}</b></td><td>${st.played??0}</td><td>${st.w??0}</td><td>${st.d??0}</td><td>${st.l??0}</td><td>${st.gd??((st.gf||0)-(st.ga||0))}</td><td><b>${st.points??0}</b></td></tr>`;}).join("")}</tbody></table>`;
+    return `<table class="ch-table"><thead><tr><th>#</th><th>Clube</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th><th>Pts</th></tr></thead><tbody>${rows.map((r,i)=>{const st=r.stats||r;return `<tr class="${hc&&r.id===hc.id?"hero":""}"><td>${i+1}</td><td><b>${cr(r.id)}${esc(club(s,r.id)||r.name)}</b></td><td>${st.played??0}</td><td>${st.w??0}</td><td>${st.d??0}</td><td>${st.l??0}</td><td>${st.gd??((st.gf||0)-(st.ga||0))}</td><td><b>${st.points??0}</b></td></tr>`;}).join("")}</tbody></table>`;
   }
   function brazilBody(s,D,lg){
     const rows=D.table?.(s,lg.id)||[];
@@ -171,7 +172,7 @@
       const cal=api.calendar(s,lg.id)||[];
       const cur=Math.max(0,cal.findIndex(r=>!r.played));const idx=ui.round!=null?Math.min(cal.length-1,Math.max(0,ui.round)):(cur<0?cal.length-1:cur);
       const r=cal[idx];
-      return `<section class="ch-box"><div class="ch-roundbar"><button type="button" data-ch-round="${idx-1}" ${idx<=0?"disabled":""}>‹</button><b>Rodada ${r?r.round:"—"} de ${cal.length}${r?` · ${dateOf(r.date)}`:""}</b><button type="button" data-ch-round="${idx+1}" ${idx>=cal.length-1?"disabled":""}>›</button></div>${r?`<div class="ch-games">${r.pairs.map(p=>`<article class="${hc&&(p.home===hc.id||p.away===hc.id)?"hero":""}"><span>${esc(club(s,p.home))}</span><b>${p.played?`${p.hg} – ${p.ag}`:"×"}</b><span>${esc(club(s,p.away))}</span></article>`).join("")}</div>`:empty("Sem rodadas.")}</section>`;
+      return `<section class="ch-box"><div class="ch-roundbar"><button type="button" data-ch-round="${idx-1}" ${idx<=0?"disabled":""}>‹</button><b>Rodada ${r?r.round:"—"} de ${cal.length}${r?` · ${dateOf(r.date)}`:""}</b><button type="button" data-ch-round="${idx+1}" ${idx>=cal.length-1?"disabled":""}>›</button></div>${r?`<div class="ch-games">${r.pairs.map(p=>`<article class="${hc&&(p.home===hc.id||p.away===hc.id)?"hero":""}"><span>${cr(p.home)}${esc(club(s,p.home))}</span><b>${p.played?`${p.hg} – ${p.ag}`:"×"}</b><span>${cr(p.away)}${esc(club(s,p.away))}</span></article>`).join("")}</div>`:empty("Sem rodadas.")}</section>`;
     }
     if(ui.tab==="stats"){
       if(!ws)return empty("Estatísticas indisponíveis.");
@@ -184,13 +185,13 @@
     }
     if(ui.tab==="clubes"){
       const st=s.globalFootball?.worldCompetitions?.leagues?.[lg.id],ids=st?.clubIds||[];
-      return `<section class="ch-box"><small>PARTICIPANTES (${ids.length})</small><div class="ch-clubs">${ids.map(id=>`<button type="button" class="${hc&&id===hc.id?"hero":""}" data-ch-club="${esc(id)}" data-ch-league="${esc(lg.id)}">${esc(club(s,id))}</button>`).join("")}</div><p class="ch-note">Escolha um clube para ver o elenco completo.</p></section>`;
+      return `<section class="ch-box"><small>PARTICIPANTES (${ids.length})</small><div class="ch-clubs">${ids.map(id=>`<button type="button" class="${hc&&id===hc.id?"hero":""}" data-ch-club="${esc(id)}" data-ch-league="${esc(lg.id)}">${cr(id)}${esc(club(s,id))}</button>`).join("")}</div><p class="ch-note">Escolha um clube para ver o elenco completo.</p></section>`;
     }
     // visao geral
     const rows=api.standings(s,lg.id),cal=api.calendar(s,lg.id)||[],cur=cal.find(r=>!r.played);
     const next=hc?api.nextFixture(s,lg.id,hc.id):null;
     const top=ws?["goals","assists"].map(k=>ws.leaders(s,{leagueId:lg.id,stat:k,limit:1})[0]):[];
-    return `<div class="ch-cols"><section class="ch-box"><small>CLASSIFICAÇÃO (TOP 5)</small>${tableHtml(s,rows.slice(0,5),hc)}</section><section class="ch-box"><small>PRÓXIMA RODADA${cur?` · ${cur.round}`:""}</small>${cur?`<div class="ch-games">${cur.pairs.slice(0,6).map(p=>`<article class="${hc&&(p.home===hc.id||p.away===hc.id)?"hero":""}"><span>${esc(club(s,p.home))}</span><b>×</b><span>${esc(club(s,p.away))}</span></article>`).join("")}</div>`:empty("Temporada concluída.")}${next?`<p class="ch-note">Seu próximo jogo: ${esc(club(s,next.home))} × ${esc(club(s,next.away))} · ${dateOf(next.date)}</p>`:""}</section></div><section class="ch-box"><small>DESTAQUES</small>${top[0]&&top[1]?`<p class="ch-note"><b>${esc(top[0].name)}</b> (${esc(top[0].club)}) lidera a artilharia com ${esc(ws.format("gols",top[0].goals))}; <b>${esc(top[1].name)}</b> (${esc(top[1].club)}) lidera com ${esc(ws.format("assistencias",top[1].assists))}.</p>`:empty("Destaques aparecem após as primeiras rodadas.")}</section>`;
+    return `<div class="ch-cols"><section class="ch-box"><small>CLASSIFICAÇÃO (TOP 5)</small>${tableHtml(s,rows.slice(0,5),hc)}</section><section class="ch-box"><small>PRÓXIMA RODADA${cur?` · ${cur.round}`:""}</small>${cur?`<div class="ch-games">${cur.pairs.slice(0,6).map(p=>`<article class="${hc&&(p.home===hc.id||p.away===hc.id)?"hero":""}"><span>${cr(p.home)}${esc(club(s,p.home))}</span><b>×</b><span>${cr(p.away)}${esc(club(s,p.away))}</span></article>`).join("")}</div>`:empty("Temporada concluída.")}${next?`<p class="ch-note">Seu próximo jogo: ${esc(club(s,next.home))} × ${esc(club(s,next.away))} · ${dateOf(next.date)}</p>`:""}</section></div><section class="ch-box"><small>DESTAQUES</small>${top[0]&&top[1]?`<p class="ch-note"><b>${esc(top[0].name)}</b> (${esc(top[0].club)}) lidera a artilharia com ${esc(ws.format("gols",top[0].goals))}; <b>${esc(top[1].name)}</b> (${esc(top[1].club)}) lidera com ${esc(ws.format("assistencias",top[1].assists))}.</p>`:empty("Destaques aparecem após as primeiras rodadas.")}</section>`;
   }
   function pastSeason(s,D,lg){
     const h=(W(D)?.history?.(s)||[]).find(x=>x.leagueId===lg.id&&String(x.season)===String(ui.season));

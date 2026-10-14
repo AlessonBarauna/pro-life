@@ -926,16 +926,7 @@
 
             <header class="club-browser-hero">
 
-              <div class="club-browser-crest">
-                ${esc(
-                  String(
-                    club.shortName||
-                    club.name
-                  )
-                  .slice(0,3)
-                  .toUpperCase()
-                )}
-              </div>
+              ${(()=>{const h=window.ProLifeClubCrests&&window.ProLifeClubCrests.render?window.ProLifeClubCrests.render(club.id,{size:"lg"}):"";return h.startsWith("<img")?`<div class="club-browser-crest club-browser-crest--img">${h}</div>`:`<div class="club-browser-crest">${esc(String(club.shortName||club.name).slice(0,3).toUpperCase())}</div>`;})()}
 
               <div>
                 <div class="tag">

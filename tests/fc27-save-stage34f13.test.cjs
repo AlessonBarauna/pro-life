@@ -46,7 +46,7 @@ test("34F.13 (1) nova carreira FC27 salva sozinha no formato híbrido, dentro da
   assert.equal(S.detectSaveFormat(JSON.parse(text)), "compact"); assert.ok(text.length < BROWSER_CAP / 2, "tamanho " + text.length);
   const back = S.loadSlot(id);
   assert.equal(back.catalogVersion, "fc27_v1");
-  assert.deepEqual([back.globalFootball.leagues.length, back.globalFootball.clubs.length, back.internationalPlayers.length], [49, 670, 17849]);
+  assert.deepEqual([back.globalFootball.leagues.length, back.globalFootball.clubs.length, back.internationalPlayers.length], [49, 687, 18379]);
   assert.equal(canon(back.internationalPlayers), canon(s.internationalPlayers)); assert.equal(canon(back.globalFootball), canon(s.globalFootball));
 });
 

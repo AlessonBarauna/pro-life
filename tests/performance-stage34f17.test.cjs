@@ -43,10 +43,10 @@ test("34F.17 (1) consultas por clube/liga/jogador devolvem o mesmo que a dedupli
   assert.equal(J(G.playersByNationality(s, "Brasil").map((p) => p.id)), J(ref.filter((p) => G.normalizedNationality(p.nationality) === G.normalizedNationality("Brasil")).map((p) => p.id)));
 });
 
-test("34F.17 (2) o catalogo FC 27 segue integro (17.849 jogadores, ids unicos, 670 clubes, 49 ligas)", () => {
-  assert.equal(s.internationalPlayers.length, 17849);
-  assert.equal(new Set(s.internationalPlayers.map((p) => p.id)).size, 17849);
-  assert.equal(s.globalFootball.clubs.length, 670);
+test("34F.17 (2) o catalogo FC 27 segue integro (18.379 jogadores, ids unicos, 687 clubes, 49 ligas)", () => {
+  assert.equal(s.internationalPlayers.length, 18379);
+  assert.equal(new Set(s.internationalPlayers.map((p) => p.id)).size, 18379);
+  assert.equal(s.globalFootball.clubs.length, 687);
   assert.equal(s.globalFootball.leagues.length, 49);
 });
 

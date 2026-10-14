@@ -1,0 +1,1541 @@
+{
+  "AIA": {
+    "name": "Anguilla",
+    "file": "nt_AIA.png",
+    "sourceRepo": "https://football-logos.cc/anguilla/",
+    "sha256": "9ee5d79505d0b9724940fea4f2764e8d67bc801058844b3892c1c3ee8a9a8b6c",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ALB": {
+    "name": "Albania",
+    "file": "nt_ALB.png",
+    "sourceRepo": "https://football-logos.cc/albania/",
+    "sha256": "7f8082c6a99222d169c1efd3031a215c97e04ef7dcdd0f6aaa6874e0efe2a08a",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ALG": {
+    "name": "Argelia",
+    "file": "nt_ALG.png",
+    "sourceRepo": "https://football-logos.cc/algeria/",
+    "sha256": "5786c81359627a7d66054449c393db413d58b02daf574592f0d69fe405c9dccb",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "AND": {
+    "name": "Andorra",
+    "file": "nt_AND.png",
+    "sourceRepo": "https://football-logos.cc/andorra/",
+    "sha256": "2cea6c054c7e36ea5e4e5427ce777c0b6232029dbe83ee5d534c1b4b2e2d1f12",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ANG": {
+    "name": "Angola",
+    "file": "nt_ANG.png",
+    "sourceRepo": "https://football-logos.cc/angola/",
+    "sha256": "39d7dc8d1e85234e568be1a0c484d77160c3e1c8cf47665a2f0c408139411028",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ANT": {
+    "name": "Antigua e Barbuda",
+    "file": "nt_ANT.png",
+    "sourceRepo": "https://football-logos.cc/antigua-and-barbuda/",
+    "sha256": "5e27135c241f5c3e49defac64178a73e752ea1f4fc461941bcf73a12b772dcab",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ARG": {
+    "name": "Argentina",
+    "file": "nt_ARG.png",
+    "sourceRepo": "https://football-logos.cc/argentina/",
+    "sha256": "c2754eccaa5d97e577954f702ac4cc759fb0d0bef66301c6b6dae0be84b3ccb4",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ARM": {
+    "name": "Armenia",
+    "file": "nt_ARM.png",
+    "sourceRepo": "https://football-logos.cc/armenia/",
+    "sha256": "58af126437256bc628c81608bb968711010e9b5138ecc208429ce848e7f27fe4",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ARU": {
+    "name": "Aruba",
+    "file": "nt_ARU.png",
+    "sourceRepo": "https://football-logos.cc/aruba/",
+    "sha256": "561cf24ea6f602be308b6e3fcf2bde5babb872d5318111b17fb83295aa6fecd0",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ASA": {
+    "name": "Samoa Americana",
+    "file": "nt_ASA.png",
+    "sourceRepo": "https://football-logos.cc/american-samoa/",
+    "sha256": "d8e7112d610401c33a72c5074208d8570e6cf0583cd894760b48f2cc4c2b2d18",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "AUS": {
+    "name": "Australia",
+    "file": "nt_AUS.png",
+    "sourceRepo": "https://football-logos.cc/australia/",
+    "sha256": "1c43ca85113d944e193f8274d14beed70574dd5c7ffe64521593ac177a89fa65",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "AUT": {
+    "name": "Austria",
+    "file": "nt_AUT.png",
+    "sourceRepo": "https://football-logos.cc/austria/",
+    "sha256": "063844177cb440227a4d563c145c30e6d6ed4a5fdad8787dd90e1b4c665e88ef",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "AZE": {
+    "name": "Azerbaijao",
+    "file": "nt_AZE.png",
+    "sourceRepo": "https://football-logos.cc/azerbaijan/",
+    "sha256": "dfb3f9eef32b814905e8b00ed55239ab63373e9c3c519bbcbc1b2e80853321a6",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BAH": {
+    "name": "Bahamas",
+    "file": "nt_BAH.png",
+    "sourceRepo": "https://football-logos.cc/bahamas/",
+    "sha256": "27f47285ceac33c42de6e318e2d83f92f98998e3efb50af698a53b0a5add2c4c",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BEL": {
+    "name": "Belgica",
+    "file": "nt_BEL.png",
+    "sourceRepo": "https://football-logos.cc/belgium/",
+    "sha256": "9b2712120d8fd3a987e91f3bcf60c705463df6316e0aee69f1fec8502a59bc57",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BEN": {
+    "name": "Benin",
+    "file": "nt_BEN.png",
+    "sourceRepo": "https://football-logos.cc/benin/",
+    "sha256": "e7f01b37740a4886477f0942586c96cc3ab1a2ca262406e4bb3ac8ae50fa70c9",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BER": {
+    "name": "Bermudas",
+    "file": "nt_BER.png",
+    "sourceRepo": "https://football-logos.cc/bermuda/",
+    "sha256": "805dabc761e368272e8984c430b3b9db6723277b7373b80b88340e7677983423",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BFA": {
+    "name": "Burkina Faso",
+    "file": "nt_BFA.png",
+    "sourceRepo": "https://football-logos.cc/burkina-faso/",
+    "sha256": "cab6429a97e5cd3d154a793e870687c7541ab9c2df5970a3c2b7cd22f6365340",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BHR": {
+    "name": "Bahrein",
+    "file": "nt_BHR.png",
+    "sourceRepo": "https://football-logos.cc/bahrain/",
+    "sha256": "dc46b86905adfe9cab38f4fbe2bd30bce116d49f4e6805b192a51846a7027957",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BIH": {
+    "name": "Bosnia e Herzegovina",
+    "file": "nt_BIH.png",
+    "sourceRepo": "https://football-logos.cc/bosnia-and-herzegovina/",
+    "sha256": "4adc3d9c6db32f27eeb770d18884627c712679202cf4787940431d9c05b11c06",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BLR": {
+    "name": "Belarus",
+    "file": "nt_BLR.png",
+    "sourceRepo": "https://football-logos.cc/belarus/",
+    "sha256": "41499991c584ddb9ced2629b7464fbebcfbe37ae778f7f61ae295ff96550c9cc",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BLZ": {
+    "name": "Belize",
+    "file": "nt_BLZ.png",
+    "sourceRepo": "https://football-logos.cc/belize/",
+    "sha256": "fba8b23fe47457539c1f6e6f465db3de752f72b10a825b393e1d1743e4870cdb",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BOL": {
+    "name": "Bolivia",
+    "file": "nt_BOL.png",
+    "sourceRepo": "https://football-logos.cc/bolivia/",
+    "sha256": "5b427ce1a1760780a09431f7bb2cfc8c08e52acb833731ebc3a7f3c41577b7f5",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BON": {
+    "name": "Bonaire",
+    "file": "nt_BON.png",
+    "sourceRepo": "https://football-logos.cc/bonaire/",
+    "sha256": "a12eb0dd922b5e2a015d6541942012f2658ca244784d1b7d5d65c152daca3294",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BRA": {
+    "name": "Brasil",
+    "file": "nt_BRA.png",
+    "sourceRepo": "https://football-logos.cc/brazil/",
+    "sha256": "02e9686c5607fdebc891b995895c9bd25e97c3c35dfbcce803b75495cb98c5f1",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BRB": {
+    "name": "Barbados",
+    "file": "nt_BRB.png",
+    "sourceRepo": "https://football-logos.cc/barbados/",
+    "sha256": "fbd71412f24048b380c83a20c6ce0377a220b0b390c16136b33e05469b7ca2a0",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "BUL": {
+    "name": "Bulgaria",
+    "file": "nt_BUL.png",
+    "sourceRepo": "https://football-logos.cc/bulgaria/",
+    "sha256": "4313d31f9f204df2457ea0ba8d2371171e7b83fa381c30e3442d6fab4b314550",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CAN": {
+    "name": "Canada",
+    "file": "nt_CAN.png",
+    "sourceRepo": "https://football-logos.cc/canada/",
+    "sha256": "60e3355783864f97cc3db2f648b5aaf7c22ce2bd5623b562ef7d3acdf190137d",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CAY": {
+    "name": "Ilhas Cayman",
+    "file": "nt_CAY.png",
+    "sourceRepo": "https://football-logos.cc/cayman-islands/",
+    "sha256": "3617b581ef68703ecc6141158d93e0810513402a118096cdb80b88281d6cd94f",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CHI": {
+    "name": "Chile",
+    "file": "nt_CHI.png",
+    "sourceRepo": "https://football-logos.cc/chile/",
+    "sha256": "b300614f7a978916df28f4a18359cc5346e832ad93277105b441658d92b42964",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CHN": {
+    "name": "China",
+    "file": "nt_CHN.png",
+    "sourceRepo": "https://football-logos.cc/china/",
+    "sha256": "0161ca88cffc0dbda4085a51829d2706c289ba000382813660a26dcde8e4c64e",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CIV": {
+    "name": "Costa do Marfim",
+    "file": "nt_CIV.png",
+    "sourceRepo": "https://football-logos.cc/cote-d-ivoire/",
+    "sha256": "552ff768932f186be7517ad546cf50f88dacd0e423d3fbc0b0f8f2c41c7164a8",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CMR": {
+    "name": "Camaroes",
+    "file": "nt_CMR.png",
+    "sourceRepo": "https://football-logos.cc/cameroon/",
+    "sha256": "5c63837ad4f8365d6871a4ad18061cad871b503bb671beef6a2c0b7165d0da1b",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "COD": {
+    "name": "RD Congo",
+    "file": "nt_COD.png",
+    "sourceRepo": "https://football-logos.cc/congo-dr/",
+    "sha256": "087f7272ae25ef2ea56eb33d7e687a7679e6bda95a88ef5258150876d8fa7539",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "COL": {
+    "name": "Colombia",
+    "file": "nt_COL.png",
+    "sourceRepo": "https://football-logos.cc/colombia/",
+    "sha256": "84a3e6be979cb8ee57175d8c12410b05021cacc40ed0de85d3647eddc16e1820",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "COM": {
+    "name": "Comores",
+    "file": "nt_COM.png",
+    "sourceRepo": "https://football-logos.cc/comoros/",
+    "sha256": "2de1191fb4332ecee95bba1a445cc252ca0663116c4e24ff73b9d50f09dcf6da",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CPV": {
+    "name": "Cabo Verde",
+    "file": "nt_CPV.png",
+    "sourceRepo": "https://football-logos.cc/cabo-verde/",
+    "sha256": "12cd32943d3b212a4fe339cd5f5dd6ea25424fc7acd4a2e3b5e760454ebb4ec2",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CRC": {
+    "name": "Costa Rica",
+    "file": "nt_CRC.png",
+    "sourceRepo": "https://football-logos.cc/costa-rica/",
+    "sha256": "3a3069267a72b151c1911e16a308c542cef4f48dc7ca1fb152ceb4f461ff12b7",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CRO": {
+    "name": "Croacia",
+    "file": "nt_CRO.png",
+    "sourceRepo": "https://football-logos.cc/croatia/",
+    "sha256": "4da7afa595ed4979ace74947c6b964a83ca39d20a5262be4324a0a47c5eb7659",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CUB": {
+    "name": "Cuba",
+    "file": "nt_CUB.png",
+    "sourceRepo": "https://football-logos.cc/cuba/",
+    "sha256": "681685c25069bc45b5f1fd4d627122012d8e1800c86f42e7ba9a17ae97f70b24",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CUR": {
+    "name": "Curacao",
+    "file": "nt_CUR.png",
+    "sourceRepo": "https://football-logos.cc/curacao/",
+    "sha256": "decaaaee90ee67e012baa4f54215fb090fb54122e92fa5dcae9a5d1d683ea694",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CUW": {
+    "name": "Curacao",
+    "file": "nt_CUW.png",
+    "sourceRepo": "https://football-logos.cc/curacao/",
+    "sha256": "decaaaee90ee67e012baa4f54215fb090fb54122e92fa5dcae9a5d1d683ea694",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CYP": {
+    "name": "Chipre",
+    "file": "nt_CYP.png",
+    "sourceRepo": "https://football-logos.cc/cyprus/",
+    "sha256": "b6a7e9ed10c132d86b3e9309f38169f939482dd5fa22369a434072640de32298",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "CZE": {
+    "name": "Republica Tcheca",
+    "file": "nt_CZE.png",
+    "sourceRepo": "https://football-logos.cc/czech-republic/",
+    "sha256": "08954c965260503c3de83e180ee3ac462352a5808fc2656f65bc02d1fef748ee",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "DEN": {
+    "name": "Dinamarca",
+    "file": "nt_DEN.png",
+    "sourceRepo": "https://football-logos.cc/denmark/",
+    "sha256": "4769fa72d9579c48938e803aa4e0bcecfcb4b4257dd13f5adf8b81788aa7c28c",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "DMA": {
+    "name": "Dominica",
+    "file": "nt_DMA.png",
+    "sourceRepo": "https://football-logos.cc/dominica/",
+    "sha256": "ef57410c29c28a0082f39459c59b583fec54cd503386dd9a3057f9a5459e43a9",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "DOM": {
+    "name": "Republica Dominicana",
+    "file": "nt_DOM.png",
+    "sourceRepo": "https://football-logos.cc/dominican-republic/",
+    "sha256": "feb46da8fe6ef949ead54e1ec702d8ac79f279ec839c9d7073a29190c2e479cf",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ECU": {
+    "name": "Equador",
+    "file": "nt_ECU.png",
+    "sourceRepo": "https://football-logos.cc/ecuador/",
+    "sha256": "e152aef8fc997f07e0adb7f9d3720f987e125c352baa28651f33f91d619978d7",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "EGY": {
+    "name": "Egito",
+    "file": "nt_EGY.png",
+    "sourceRepo": "https://football-logos.cc/egypt/",
+    "sha256": "9707dacf05b830ec158cedc0a1dbd1e3d1e9db1b5d2560499ebf24c2f167cfa0",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ENG": {
+    "name": "Inglaterra",
+    "file": "nt_ENG.png",
+    "sourceRepo": "https://football-logos.cc/england/",
+    "sha256": "eda3121685ae9a14bf249ceb2516b03ef7341060dfc1fe25afa928d850cc4ba0",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "EQG": {
+    "name": "Guine Equatorial",
+    "file": "nt_EQG.png",
+    "sourceRepo": "https://football-logos.cc/equatorial-guinea/",
+    "sha256": "3ddcc44c288726d3133dbdbff22fc1f8c55132aeb820f89f62daa02b770b3340",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ESP": {
+    "name": "Espanha",
+    "file": "nt_ESP.png",
+    "sourceRepo": "https://football-logos.cc/spain/",
+    "sha256": "dd309b252e600275e02ede386c1038f5f81790b6f83a91b3198a38758e9a14c4",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "EST": {
+    "name": "Estonia",
+    "file": "nt_EST.png",
+    "sourceRepo": "https://football-logos.cc/estonia/",
+    "sha256": "e3f8de1e150b4433953125a4975bc96e58e5971928ad355d55d09fc71a0075aa",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "FGU": {
+    "name": "Guiana Francesa",
+    "file": "nt_FGU.png",
+    "sourceRepo": "https://football-logos.cc/french-guiana/",
+    "sha256": "a0672e0c946c3262f94fbd5567d4818f74e2389e1dd96be2cfab41d5d253df01",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "FIJ": {
+    "name": "Fiji",
+    "file": "nt_FIJ.png",
+    "sourceRepo": "https://football-logos.cc/fiji/",
+    "sha256": "faaea445a9acbbb58de828c136ba5d7c723a0988b2951bb0725f2ec84cd60bdd",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "FIN": {
+    "name": "Finlandia",
+    "file": "nt_FIN.png",
+    "sourceRepo": "https://football-logos.cc/finland/",
+    "sha256": "71521206f31432331a4e943378cf61485b29e843f78e0da0131aa19af083af52",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "FRA": {
+    "name": "Franca",
+    "file": "nt_FRA.png",
+    "sourceRepo": "https://football-logos.cc/france/",
+    "sha256": "51b79c224ccdf26a344c0b6b7c4ad0484cc42a338cc61b0c490d31dd0d3904b8",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "FRO": {
+    "name": "Ilhas Faroé",
+    "file": "nt_FRO.png",
+    "sourceRepo": "https://football-logos.cc/faroe-islands/",
+    "sha256": "b8b11492f2fa8815dc21b7e18061c644b54f49bf2f6d5fd57f85fffabc5c1023",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "GAB": {
+    "name": "Gabao",
+    "file": "nt_GAB.png",
+    "sourceRepo": "https://football-logos.cc/gabon/",
+    "sha256": "b36927b31099df107ecefec3aaba2f73cafb9201cb81330a0077e013543d90ba",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "GEO": {
+    "name": "Georgia",
+    "file": "nt_GEO.png",
+    "sourceRepo": "https://football-logos.cc/georgia/",
+    "sha256": "fff2c4a06ed726d3798f288106a5ae698fb86502a673b6be2906dfa0ebd79c18",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "GER": {
+    "name": "Alemanha",
+    "file": "nt_GER.png",
+    "sourceRepo": "https://football-logos.cc/germany/",
+    "sha256": "bf5c26490cb525a3c51f060f865a0349b31db4bc1fa29c838ee09d15bb254a4a",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "GHA": {
+    "name": "Gana",
+    "file": "nt_GHA.png",
+    "sourceRepo": "https://football-logos.cc/ghana/",
+    "sha256": "5877ce8b97499b9b9d533f278494a7d04677529dc8e413d93dfb41db2008967a",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "GIB": {
+    "name": "Gibraltar",
+    "file": "nt_GIB.png",
+    "sourceRepo": "https://football-logos.cc/gibraltar/",
+    "sha256": "b6eb0d0b878259c108ad703398355e4955f60d934975c5d90efff169ffbd1568",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "GLP": {
+    "name": "Guadalupe",
+    "file": "nt_GLP.png",
+    "sourceRepo": "https://football-logos.cc/guadeloupe/",
+    "sha256": "3b32c421767f8a478b95c1f9b00da79eb5785de4c6426a326b5becc3ef4ef52e",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "GRE": {
+    "name": "Grecia",
+    "file": "nt_GRE.png",
+    "sourceRepo": "https://football-logos.cc/greece/",
+    "sha256": "0b7b328d9a7d5e5143ebdf181c6881ff0e0b6e328d9e3e0e51c44d38f84d2d06",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "GRN": {
+    "name": "Granada",
+    "file": "nt_GRN.png",
+    "sourceRepo": "https://football-logos.cc/grenada/",
+    "sha256": "d72eec9d1d898aa1c39a740f6b2f07b60dd9eb75fe3215966fd5b3b5e33a83c3",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "GUA": {
+    "name": "Guatemala",
+    "file": "nt_GUA.png",
+    "sourceRepo": "https://football-logos.cc/guatemala/",
+    "sha256": "3e325f0fb64ad9519dc19c524e273023237e662ad4f74c4d39870e7348f7dba3",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "GUI": {
+    "name": "Guine",
+    "file": "nt_GUI.png",
+    "sourceRepo": "https://football-logos.cc/guinea/",
+    "sha256": "a7fc2631b14ac918d9b836afcf0138f371409d07689425a870c52a82fa7c1e06",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "GUM": {
+    "name": "Guam",
+    "file": "nt_GUM.png",
+    "sourceRepo": "https://football-logos.cc/guam/",
+    "sha256": "aebacc96388f26f2fc510beb4a2269a180c7f67cfdfe2ee79eed11d2e2966fbf",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "GUY": {
+    "name": "Guiana",
+    "file": "nt_GUY.png",
+    "sourceRepo": "https://football-logos.cc/guyana/",
+    "sha256": "a1a6efb7e5cd1c98d507f72e2ba8ed6c09c3552b22c426eb9848efc9e831a2bf",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "HAI": {
+    "name": "Haiti",
+    "file": "nt_HAI.png",
+    "sourceRepo": "https://football-logos.cc/haiti/",
+    "sha256": "ef005bf333ce36eb7b15812b4d2f51a159140731468a9ec910526be2b07e2749",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "HON": {
+    "name": "Honduras",
+    "file": "nt_HON.png",
+    "sourceRepo": "https://football-logos.cc/honduras/",
+    "sha256": "469070d05f920c4011dcf6011ea66d7de449c6a2aaaffa72c1d9bd44bdd482d0",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "HUN": {
+    "name": "Hungria",
+    "file": "nt_HUN.png",
+    "sourceRepo": "https://football-logos.cc/hungary/",
+    "sha256": "47458e97ee7aeed5bf679783ee86054594c8093130fc895103b68b1b65da5a0b",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "IDN": {
+    "name": "Indonesia",
+    "file": "nt_IDN.png",
+    "sourceRepo": "https://football-logos.cc/indonesia/",
+    "sha256": "c9e42cdb3976750c524450cc009eab942e511b1787962701b3ef1707cd58be76",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "IND": {
+    "name": "India",
+    "file": "nt_IND.png",
+    "sourceRepo": "https://football-logos.cc/india/",
+    "sha256": "7346ac055be0791894b2a90592fbc0787d4c6d4a4ebc5679bde577ffb8764b5b",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "IRL": {
+    "name": "Irlanda",
+    "file": "nt_IRL.png",
+    "sourceRepo": "https://football-logos.cc/republic-of-ireland/",
+    "sha256": "1ce0bdd3592c22e3fc1b73e226e11d98f4d04629f26fcfb528f08875643e4ef1",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "IRN": {
+    "name": "Ira",
+    "file": "nt_IRN.png",
+    "sourceRepo": "https://football-logos.cc/iran/",
+    "sha256": "1538bece3bd6fb24807c61e33e41a6cf49a646fd2a91ad08afb66edb608e7bbc",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "IRQ": {
+    "name": "Iraque",
+    "file": "nt_IRQ.png",
+    "sourceRepo": "https://football-logos.cc/iraq/",
+    "sha256": "aca17b36ce0cfb71b59c3fd83e51dc119d93164368afe1f9f5d96a2bbe4453a4",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ISL": {
+    "name": "Islandia",
+    "file": "nt_ISL.png",
+    "sourceRepo": "https://football-logos.cc/iceland/",
+    "sha256": "6064f33fcf91a749ea00aaeb2be5b877862087007c6d2ac8daab8b66fd98eaf9",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ITA": {
+    "name": "Italia",
+    "file": "nt_ITA.png",
+    "sourceRepo": "https://football-logos.cc/italy/",
+    "sha256": "f6d07df9b94772e00c5892bc10552bbbfac4401c1246ed76b3ab010899675d7a",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "JAM": {
+    "name": "Jamaica",
+    "file": "nt_JAM.png",
+    "sourceRepo": "https://football-logos.cc/jamaica/",
+    "sha256": "597eb76ee5d305b80908eddbc5c69d0ae8ff42c46c34a97688b504781c3031f4",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "JOR": {
+    "name": "Jordania",
+    "file": "nt_JOR.png",
+    "sourceRepo": "https://football-logos.cc/jordan/",
+    "sha256": "ae271b845a6a5717ffa6da4158f5c0ad2dc64d332bcd907c751b54d7f6aaec75",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "JPN": {
+    "name": "Japao",
+    "file": "nt_JPN.png",
+    "sourceRepo": "https://football-logos.cc/japan/",
+    "sha256": "4c4d1d32ae7cdbc8f2077b95c9622b8dcaebaf77ce8ee5e062b24183385af32c",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "KAZ": {
+    "name": "Cazaquistao",
+    "file": "nt_KAZ.png",
+    "sourceRepo": "https://football-logos.cc/kazakhstan/",
+    "sha256": "cd89175235cfa21df2f78f91bfde89672e0b244531783bd1972ef148191721e0",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "KEN": {
+    "name": "Quenia",
+    "file": "nt_KEN.png",
+    "sourceRepo": "https://football-logos.cc/kenya/",
+    "sha256": "73656af5942233ae6a7e756b361072384dd56e75d4d52e8e9cb40484c6f54e93",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "KGZ": {
+    "name": "Quirguistao",
+    "file": "nt_KGZ.png",
+    "sourceRepo": "https://football-logos.cc/kyrgyzstan/",
+    "sha256": "67b40b419563ea156ff228f90360c297591f3921f014f9fd82c92b3e8bb70723",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "KOR": {
+    "name": "Coreia do Sul",
+    "file": "nt_KOR.png",
+    "sourceRepo": "https://football-logos.cc/south-korea/",
+    "sha256": "ceaf9d9fa669b0c472be70af60d3c12f0cb4729a064028ac435db2bd4c283935",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "KOS": {
+    "name": "Kosovo",
+    "file": "nt_KOS.png",
+    "sourceRepo": "https://football-logos.cc/kosovo/",
+    "sha256": "d65f4532ffaa3979cb9d29bf83a2846fc37ce5c54856827382221b22c6202f68",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "KSA": {
+    "name": "Arabia Saudita",
+    "file": "nt_KSA.png",
+    "sourceRepo": "https://football-logos.cc/saudi-arabia/",
+    "sha256": "c47e72ec90d14b159ff98ffe2edcb3f7d59628409a06ab16fad4b3c430dfdf81",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "KUW": {
+    "name": "Kuwait",
+    "file": "nt_KUW.png",
+    "sourceRepo": "https://football-logos.cc/kuwait/",
+    "sha256": "c19c9bca3ad3219a8891c412d42067a3b7afcd9ea681d4aefe894f66909e3ec6",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "LAT": {
+    "name": "Letonia",
+    "file": "nt_LAT.png",
+    "sourceRepo": "https://football-logos.cc/latvia/",
+    "sha256": "c6942c03c92d1ece367f96c76b4c7e42eb4ac47638d273246f7c2242ddebd36c",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "LBN": {
+    "name": "Libano",
+    "file": "nt_LBN.png",
+    "sourceRepo": "https://football-logos.cc/lebanon/",
+    "sha256": "0e6e449cda58172f941953141e29ca2ac1c2a44ef74fee9bc75a7b00fc4f3dfe",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "LCA": {
+    "name": "Santa Lucia",
+    "file": "nt_LCA.png",
+    "sourceRepo": "https://football-logos.cc/saint-lucia/",
+    "sha256": "f658e70d4dadf0f34a57e3a7312951858796c683140395b1239af83ebd121188",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "LIE": {
+    "name": "Liechtenstein",
+    "file": "nt_LIE.png",
+    "sourceRepo": "https://football-logos.cc/liechtenstein/",
+    "sha256": "a876e48f7450990ceb1aab3a144a659f8499d72d1fe52f0ef93255b22b8be46c",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "LTU": {
+    "name": "Lituania",
+    "file": "nt_LTU.png",
+    "sourceRepo": "https://football-logos.cc/lithuania/",
+    "sha256": "43a60906a975f949737cdc552ddb44afb522e7bc8dc045ced5370fab1d4419d3",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "LUX": {
+    "name": "Luxemburgo",
+    "file": "nt_LUX.png",
+    "sourceRepo": "https://football-logos.cc/luxembourg/",
+    "sha256": "0efe40928f94b387316a68df9ae14748c950f25d8ad4aef884c6dc47027d8aad",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "MAC": {
+    "name": "Macau",
+    "file": "nt_MAC.png",
+    "sourceRepo": "https://football-logos.cc/macau/",
+    "sha256": "0eb932edf835b364f42f2f335bf94c496d81ae8e0aefd61d0f4490afb0b1ecbd",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "MAF": {
+    "name": "Saint Martin",
+    "file": "nt_MAF.png",
+    "sourceRepo": "https://football-logos.cc/saint-martin/",
+    "sha256": "82c90850a95f29df1c5423e8bffe2bff6d335ad3a9dafb110d4f8e010bb9f25b",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "MAR": {
+    "name": "Marrocos",
+    "file": "nt_MAR.png",
+    "sourceRepo": "https://football-logos.cc/morocco/",
+    "sha256": "0588c6e17b62f409c8f351ae0ceab54d436943b68860c5c3226758bb2e7496f3",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "MAS": {
+    "name": "Malasia",
+    "file": "nt_MAS.png",
+    "sourceRepo": "https://football-logos.cc/malaysia/",
+    "sha256": "e31c0b15163de5f450f3846386f1be4fcdf20555bd6540a082584da39b068295",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "MDA": {
+    "name": "Moldavia",
+    "file": "nt_MDA.png",
+    "sourceRepo": "https://football-logos.cc/moldova/",
+    "sha256": "d2f0c0cc82facbd4728da88ab98468f0087a6618e157873f8561d000eaa28ef3",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "MEX": {
+    "name": "Mexico",
+    "file": "nt_MEX.png",
+    "sourceRepo": "https://football-logos.cc/mexico/",
+    "sha256": "7bff0736a046a574c29eca89dac2198d39e3bcff6249d254630589d1d8ff7d34",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "MKD": {
+    "name": "Macedonia do Norte",
+    "file": "nt_MKD.png",
+    "sourceRepo": "https://football-logos.cc/north-macedonia/",
+    "sha256": "39bc6ad4e9cf56eec129e258d1133740574fe5c29788389b54547a6b3f1dd3e8",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "MLI": {
+    "name": "Mali",
+    "file": "nt_MLI.png",
+    "sourceRepo": "https://football-logos.cc/mali/",
+    "sha256": "c334451742a825d183bd8986bb584791d49376d5741610c1af0d14bc0a23adcc",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "MLT": {
+    "name": "Malta",
+    "file": "nt_MLT.png",
+    "sourceRepo": "https://football-logos.cc/malta/",
+    "sha256": "417e3f170fb77f0a3380d338a5769b9b3bde71b4a7064b23d3cb0951cfad9908",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "MNE": {
+    "name": "Montenegro",
+    "file": "nt_MNE.png",
+    "sourceRepo": "https://football-logos.cc/montenegro/",
+    "sha256": "7efc7e57772ea2f0b37ffbff0d9d8c46e46b4d802b2ec87d30bbd2795d15fa1f",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "MOZ": {
+    "name": "Mocambique",
+    "file": "nt_MOZ.png",
+    "sourceRepo": "https://football-logos.cc/mozambique/",
+    "sha256": "0786f0774e9ed1086e5cf2adc61418972f0daf24ceaf908a0dff78d740cbb26c",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "MSR": {
+    "name": "Montserrat",
+    "file": "nt_MSR.png",
+    "sourceRepo": "https://football-logos.cc/montserrat/",
+    "sha256": "0b0ed82d8b9e7e1c13878df95def257817286d4b194bd1ebd80beadf3ac17683",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "MTQ": {
+    "name": "Martinica",
+    "file": "nt_MTQ.png",
+    "sourceRepo": "https://football-logos.cc/martinique/",
+    "sha256": "0613efa37369df45e4331ba49211474d9b1785122824d67cd08fdfc132e0fa96",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "NAM": {
+    "name": "Namibia",
+    "file": "nt_NAM.png",
+    "sourceRepo": "https://football-logos.cc/namibia/",
+    "sha256": "3cfc23a05119c939ad3b98fe3836b45da6bb471d7706382bcd2f75885612ef9f",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "NCL": {
+    "name": "Nova Caledonia",
+    "file": "nt_NCL.png",
+    "sourceRepo": "https://football-logos.cc/new-caledonia/",
+    "sha256": "b0d2c6b16f99971a522fd44e342fa2b5ec19177c4781641c1e9837f73b68bf6d",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "NED": {
+    "name": "Holanda",
+    "file": "nt_NED.png",
+    "sourceRepo": "https://football-logos.cc/netherlands/",
+    "sha256": "fdce957ef905a8fa541e3205caa10d194eb4b8f5aa9e38a118d602e03ab50707",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "NGA": {
+    "name": "Nigeria",
+    "file": "nt_NGA.png",
+    "sourceRepo": "https://football-logos.cc/nigeria/",
+    "sha256": "efc5405d41346e0dd6fd9cfdfc6562d0b8ab941563ed5de4e56f0390d58251a9",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "NIC": {
+    "name": "Nicaragua",
+    "file": "nt_NIC.png",
+    "sourceRepo": "https://football-logos.cc/nicaragua/",
+    "sha256": "bfa930b8c902d23c50c107483424c67b23aa70b21ddc94ceec9f778403b445fb",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "NIR": {
+    "name": "Irlanda do Norte",
+    "file": "nt_NIR.png",
+    "sourceRepo": "https://football-logos.cc/northern-ireland/",
+    "sha256": "bc967eddf5980822ea9837e9bda8436a145ec139b89f2ad405d2e7c9e59d1fb3",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "NOR": {
+    "name": "Noruega",
+    "file": "nt_NOR.png",
+    "sourceRepo": "https://football-logos.cc/norway/",
+    "sha256": "6643295bb551079e29d6f77ad68850ec37aae1d07c8efa3ec2f6b0b19d06fb32",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "NZL": {
+    "name": "Nova Zelandia",
+    "file": "nt_NZL.png",
+    "sourceRepo": "https://football-logos.cc/new-zealand/",
+    "sha256": "e0bc6e0dd382c04d0c0a0faa25f9b2127c31ac00b5a801f1c000cb9688b1a321",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "OMA": {
+    "name": "Oma",
+    "file": "nt_OMA.png",
+    "sourceRepo": "https://football-logos.cc/oman/",
+    "sha256": "fce4fa7ede00c2a6f3404e372bd4de0e4b93eb714688358d5992e19dff3fadc6",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "PAN": {
+    "name": "Panama",
+    "file": "nt_PAN.png",
+    "sourceRepo": "https://football-logos.cc/panama/",
+    "sha256": "eca5e6b0c8ac8099decc48b65b0e0ce5e834b72caa13cff57f4baa52168bd1ea",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "PAR": {
+    "name": "Paraguai",
+    "file": "nt_PAR.png",
+    "sourceRepo": "https://football-logos.cc/paraguay/",
+    "sha256": "2da601c63f48c109078682bd07fd0c5814e4f26112e2a18d1248ec5dfd8f132b",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "PER": {
+    "name": "Peru",
+    "file": "nt_PER.png",
+    "sourceRepo": "https://football-logos.cc/peru/",
+    "sha256": "738084e55a84a055016617fc6f19ac22bad0271de729e2ea20fa07905c706942",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "PLE": {
+    "name": "Palestina",
+    "file": "nt_PLE.png",
+    "sourceRepo": "https://football-logos.cc/palestine/",
+    "sha256": "c0cfebfc9380957b19363d4f8a95c153fdae220bc9661dbc0b1cb8231c3fadd8",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "PNG": {
+    "name": "Papua-Nova Guine",
+    "file": "nt_PNG.png",
+    "sourceRepo": "https://football-logos.cc/papua-new-guinea/",
+    "sha256": "9c925b9b2472d9095d96e17bb373b0f68f52444411acc7adc7c3f824e0064297",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "POL": {
+    "name": "Polonia",
+    "file": "nt_POL.png",
+    "sourceRepo": "https://football-logos.cc/poland/",
+    "sha256": "c01847d48c5c914eb0127440c36c194a930f66cad6e9221144892190f8260cb5",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "PRK": {
+    "name": "Coreia do Norte",
+    "file": "nt_PRK.png",
+    "sourceRepo": "https://football-logos.cc/north-korea/",
+    "sha256": "d605f1f7645049da79dfb15fd543bd59603804ce68a7a6cfc6c551497896e025",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "PUR": {
+    "name": "Porto Rico",
+    "file": "nt_PUR.png",
+    "sourceRepo": "https://football-logos.cc/puerto-rico/",
+    "sha256": "8eb877790f5807cd26264861cbfb029a7212a9e9a7128507ddace555725ad068",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "QAT": {
+    "name": "Catar",
+    "file": "nt_QAT.png",
+    "sourceRepo": "https://football-logos.cc/qatar/",
+    "sha256": "49f4b8149935d854c110d32a737623686eb68339b6ea47de8b447bafcb7ec135",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ROU": {
+    "name": "Romenia",
+    "file": "nt_ROU.png",
+    "sourceRepo": "https://football-logos.cc/romania/",
+    "sha256": "d604e3a40917dcb69baf3a0f3c152001a7d0218d0a1ddf1f8a89ca65b7e5b330",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "RSA": {
+    "name": "Africa do Sul",
+    "file": "nt_RSA.png",
+    "sourceRepo": "https://football-logos.cc/south-africa/",
+    "sha256": "9509957f688dbd4fdc0b157f1b0dadc09f459671fabd5b5e65fa9e3b92a8a1ef",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "RWA": {
+    "name": "Ruanda",
+    "file": "nt_RWA.png",
+    "sourceRepo": "https://football-logos.cc/rwanda/",
+    "sha256": "fe5d3b97a821f7e5ab1fee47a8785a86cf37a23e4ccaab81417539b8419a52ac",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SAM": {
+    "name": "Samoa",
+    "file": "nt_SAM.png",
+    "sourceRepo": "https://football-logos.cc/samoa/",
+    "sha256": "98771dfba2bf28ee7650599bd2c9c844e3595d38633bfea4f3b42b1ef7d5b11f",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SCO": {
+    "name": "Escocia",
+    "file": "nt_SCO.png",
+    "sourceRepo": "https://football-logos.cc/scotland/",
+    "sha256": "fbf2e0036269bf5d91ab79750a303f9d9fd2d8e26efa704dacf95a69e925fbda",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SDN": {
+    "name": "Sudao",
+    "file": "nt_SDN.png",
+    "sourceRepo": "https://football-logos.cc/sudan/",
+    "sha256": "2f3586eb8a02d34e944d992ecc8747bf577acb182b0cd3f29d0d700c8ce708fd",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SEN": {
+    "name": "Senegal",
+    "file": "nt_SEN.png",
+    "sourceRepo": "https://football-logos.cc/senegal/",
+    "sha256": "009c2998d225d2fbd0fd6bc8df677cf91e37462a4b5d4cb28ff884d29184c634",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SKN": {
+    "name": "Sao Cristovao e Nevis",
+    "file": "nt_SKN.png",
+    "sourceRepo": "https://football-logos.cc/st-kitts-and-nevis/",
+    "sha256": "c2b56a6165551d3806db25c101e4d5880a7c3e17d2c6585622b5fa566d94edd1",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SLE": {
+    "name": "Serra Leoa",
+    "file": "nt_SLE.png",
+    "sourceRepo": "https://football-logos.cc/sierra-leone/",
+    "sha256": "0067916fd206368e12798393a98ab174c62dc2b64f21e73dae42d2736ab7e5c4",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SLV": {
+    "name": "El Salvador",
+    "file": "nt_SLV.png",
+    "sourceRepo": "https://football-logos.cc/el-salvador/",
+    "sha256": "f523d5e242b992e34e1b0ea61deabfa74a20e0aee847529ed1daf5a9ae457d17",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SMR": {
+    "name": "San Marino",
+    "file": "nt_SMR.png",
+    "sourceRepo": "https://football-logos.cc/san-marino/",
+    "sha256": "0f5fc2c836c11e3ea02d86b0d374b4903fd3231248ee130bbcb31a375afca0f7",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SOL": {
+    "name": "Ilhas Salomao",
+    "file": "nt_SOL.png",
+    "sourceRepo": "https://football-logos.cc/solomon-islands/",
+    "sha256": "aa2803fdf923184285876eeae7e7e49be6e4315d16dba8aacf3219048fc0718c",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SRB": {
+    "name": "Servia",
+    "file": "nt_SRB.png",
+    "sourceRepo": "https://football-logos.cc/serbia/",
+    "sha256": "7ea3612a2997273bf536d4c030e8cf2c69b77a5f9322becf52565e7aa4eac8a3",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SUI": {
+    "name": "Suica",
+    "file": "nt_SUI.png",
+    "sourceRepo": "https://football-logos.cc/switzerland/",
+    "sha256": "715ba8e656737db7f8c6581d31c7ae8c3c1a0788e01b5966ee077a11f491378c",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SUR": {
+    "name": "Suriname",
+    "file": "nt_SUR.png",
+    "sourceRepo": "https://football-logos.cc/suriname/",
+    "sha256": "e5221e64c4fd7a6f7ba15619447a16d3c52cbb735b294de5a4cff21223f189c7",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SVG": {
+    "name": "Sao Vicente e Granadinas",
+    "file": "nt_SVG.png",
+    "sourceRepo": "https://football-logos.cc/saint-vincent-and-the-grenadines/",
+    "sha256": "9bf35a829dcac28f93378e4bbfcb35ea5844a40e0db52d78ac2eb36d90d06915",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SVK": {
+    "name": "Eslovaquia",
+    "file": "nt_SVK.png",
+    "sourceRepo": "https://football-logos.cc/slovakia/",
+    "sha256": "c2e611752c29ea95071b3e1e282ae5fb23576fc4ecc116ff23ea4326e2ab94e9",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SVN": {
+    "name": "Eslovenia",
+    "file": "nt_SVN.png",
+    "sourceRepo": "https://football-logos.cc/slovenia/",
+    "sha256": "bc1bd62961a643b190f1963c8c40de17ceb02e8e82f6682af7a7d133d6350d36",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SWE": {
+    "name": "Suecia",
+    "file": "nt_SWE.png",
+    "sourceRepo": "https://football-logos.cc/sweden/",
+    "sha256": "306158f4f9a895bb2e7137ec214d60a76fb1f8c9051ac1527357a68cdd234901",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SXM": {
+    "name": "Sint Maarten",
+    "file": "nt_SXM.png",
+    "sourceRepo": "https://football-logos.cc/sint-maarten/",
+    "sha256": "e9fb3bc8102389e788fb774a9fbad946f91b28ffbfaf8d60d7438eb1cfe9338f",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "SYR": {
+    "name": "Siria",
+    "file": "nt_SYR.png",
+    "sourceRepo": "https://football-logos.cc/syria/",
+    "sha256": "100604bf70a10d048a38db3c8ac3abc0471919ab81c8582a20af7377902fc030",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "TAH": {
+    "name": "Taiti",
+    "file": "nt_TAH.png",
+    "sourceRepo": "https://football-logos.cc/tahiti/",
+    "sha256": "879bbd2cf6a4e4748f00b84f3847450ac57b326bd5c671ef991b177eafe96d8e",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "TAN": {
+    "name": "Tanzania",
+    "file": "nt_TAN.png",
+    "sourceRepo": "https://football-logos.cc/tanzania/",
+    "sha256": "6563b3cbd54d15bcaa94fa3912eeaafcf939bd9c199606c59636237c9302bb15",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "TCA": {
+    "name": "Ilhas Turcas e Caicos",
+    "file": "nt_TCA.png",
+    "sourceRepo": "https://football-logos.cc/turks-and-caicos-islands/",
+    "sha256": "8aa7326e9fd61a311b931f17af797c8d218ed576e89eef80b4627508b8f4a5f5",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "THA": {
+    "name": "Tailandia",
+    "file": "nt_THA.png",
+    "sourceRepo": "https://football-logos.cc/thailand/",
+    "sha256": "a116fe13b45a2c92597fe40ab551844eab2d938d6ecd7576228eb66a405860eb",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "TJK": {
+    "name": "Tajiquistao",
+    "file": "nt_TJK.png",
+    "sourceRepo": "https://football-logos.cc/tajikistan/",
+    "sha256": "7a2138a47aaf5fa7c763d7dadbf6cb538be18e0ed4e26987e16bc009b082fb9b",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "TRI": {
+    "name": "Trinidad e Tobago",
+    "file": "nt_TRI.png",
+    "sourceRepo": "https://football-logos.cc/trinidad-and-tobago/",
+    "sha256": "7dfd11d90f271a7f79f24f97d13a710d06783a06a39a8099fc418b40fbbf0bd0",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "TUN": {
+    "name": "Tunisia",
+    "file": "nt_TUN.png",
+    "sourceRepo": "https://football-logos.cc/tunisia/",
+    "sha256": "88777cf48f0e54693ac3d12943b9ab1a4dc4a88e2e8e71792efbfd22f1c23441",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "TUR": {
+    "name": "Turquia",
+    "file": "nt_TUR.png",
+    "sourceRepo": "https://football-logos.cc/turkey/",
+    "sha256": "49724c6b9d6ae381e8c71cfebcb8e12f8209c531c3cda72fc748966ac15070c0",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "UAE": {
+    "name": "Emirados Arabes",
+    "file": "nt_UAE.png",
+    "sourceRepo": "https://football-logos.cc/uae/",
+    "sha256": "7bd8b5d83b658e272c69fc4f3e7b889a1463fa59f1432f0b1a73e1c6b2a45087",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "UGA": {
+    "name": "Uganda",
+    "file": "nt_UGA.png",
+    "sourceRepo": "https://football-logos.cc/uganda/",
+    "sha256": "857fe5ea94f995cebf75c491dbc07eb33d32e692cd1684a6c57855209f7e9ca7",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "UKR": {
+    "name": "Ucrania",
+    "file": "nt_UKR.png",
+    "sourceRepo": "https://football-logos.cc/ukraine/",
+    "sha256": "38757ba4af4479be0dface881dfe97db3821dc638e0575d7e222e524897a1c10",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "URU": {
+    "name": "Uruguai",
+    "file": "nt_URU.png",
+    "sourceRepo": "https://football-logos.cc/uruguay/",
+    "sha256": "e3a317a84b6f027f697c241800bfe7f9a64b75c056dd5f6bad4f2d3e7624b341",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "USA": {
+    "name": "Estados Unidos",
+    "file": "nt_USA.png",
+    "sourceRepo": "https://football-logos.cc/usa/",
+    "sha256": "ea808747c0b4ff163651c8a0da8f6fe9f64465acd7b67787a6c3315ab1dc163e",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "UZB": {
+    "name": "Uzbequistao",
+    "file": "nt_UZB.png",
+    "sourceRepo": "https://football-logos.cc/uzbekistan/",
+    "sha256": "0ec1adbffff930f9d3f07423392295aadf977e8e81d87ff58d7db36271009804",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "VAN": {
+    "name": "Vanuatu",
+    "file": "nt_VAN.png",
+    "sourceRepo": "https://football-logos.cc/vanuatu/",
+    "sha256": "0b00463665580611a9add2e91f15393e730323f3b95337ab5ca2ac445dc245e3",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "VEN": {
+    "name": "Venezuela",
+    "file": "nt_VEN.png",
+    "sourceRepo": "https://football-logos.cc/venezuela/",
+    "sha256": "5e9f21bfb15e1dcf159d2f3a043814aaa0cf70c7433c5e04ff99bbc65b986abd",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "VGB": {
+    "name": "Ilhas Virgens Britanicas",
+    "file": "nt_VGB.png",
+    "sourceRepo": "https://football-logos.cc/british-virgin-islands/",
+    "sha256": "13f31bdbd81e1ebf02b6fda266faee986f5ce28b4017f8b17c12bed0b1031e4e",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "VIE": {
+    "name": "Vietna",
+    "file": "nt_VIE.png",
+    "sourceRepo": "https://football-logos.cc/vietnam/",
+    "sha256": "b796454f8ce12469988d4ff1cbcf0174e41729557b044d1fc249420e1eb95c5d",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "VIR": {
+    "name": "Ilhas Virgens Americanas",
+    "file": "nt_VIR.png",
+    "sourceRepo": "https://football-logos.cc/us-virgin-islands/",
+    "sha256": "f274503afd24d2abb516d40b95c4a04d26d6ac53eedf36029ff0ca94a9441012",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "WAL": {
+    "name": "Pais de Gales",
+    "file": "nt_WAL.png",
+    "sourceRepo": "https://football-logos.cc/wales/",
+    "sha256": "3293719db2ca3e48eef269ac67a9ca91f33b2b51f771096cdf0ea8f1e12b34d3",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ZAM": {
+    "name": "Zambia",
+    "file": "nt_ZAM.png",
+    "sourceRepo": "https://football-logos.cc/zambia/",
+    "sha256": "592c2a7f61c3deaa7b9e4567f9725465f89c0b866971fb2a06945805c8182132",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "ZIM": {
+    "name": "Zimbabue",
+    "file": "nt_ZIM.png",
+    "sourceRepo": "https://football-logos.cc/zimbabwe/",
+    "sha256": "dfa79af3acd6f477bf5bf7aa9e32c2be31baefef1871aaecdba217a7a5c1593a",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  },
+  "RUS": {
+    "name": "RUS",
+    "file": "nt_RUS.png",
+    "sourceRepo": "https://football-logos.cc/russia/",
+    "sha256": "04a78a569f654e9993901b1954921651cda24f91d8791738739db996b59b2cee",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
+    "provisional": true
+  }
+}

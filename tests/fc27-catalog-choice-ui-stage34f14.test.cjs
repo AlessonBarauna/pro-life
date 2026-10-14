@@ -66,7 +66,7 @@ test("34F.15 (2) jogador: História → Confirmar com 'Base de dados: FC 27'; sa
   const slots = w.ProLifeSave.listSlots(); assert.equal(slots.length, 1);
   const s = w.ProLifeSave.loadSlot(slots[0].id);
   assert.equal(s.catalogVersion, "fc27_v1");
-  assert.deepEqual(counts(s), { leagues: 49, clubs: 670, players: 17849 });
+  assert.deepEqual(counts(s), { leagues: 49, clubs: 687, players: 18379 });
   assert.equal(s.mode, "player"); assert.equal(s.person.name, "Jogador FC27");
   assert.equal(q(w, "#wiz-busy"), null);
   toHub(w);
@@ -83,7 +83,7 @@ test("34F.15 (3) treinador FC 27 + segunda carreira sem perder a primeira; selos
   const id1 = w.ProLifeSave.activeId(), t1 = slotText(w, id1);
   const c1 = w.ProLifeSave.loadSlot(id1);
   assert.equal(c1.mode, "coach"); assert.equal(c1.catalogVersion, "fc27_v1");
-  assert.deepEqual(counts(c1), { leagues: 49, clubs: 670, players: 17849 });
+  assert.deepEqual(counts(c1), { leagues: 49, clubs: 687, players: 18379 });
   toHub(w);
   click(w, '[data-action="new-player"]'); click(w, "[data-w-coach]");
   fillClassic(w, "player"); submit(w); await settle(w);
@@ -91,7 +91,7 @@ test("34F.15 (3) treinador FC 27 + segunda carreira sem perder a primeira; selos
   assert.notEqual(id2, id1, "segunda carreira em novo slot");
   assert.equal(slotText(w, id1), t1, "primeira carreira intacta byte a byte");
   const c2 = w.ProLifeSave.loadSlot(id2);
-  assert.equal(c2.mode, "player"); assert.deepEqual(counts(c2), { leagues: 49, clubs: 670, players: 17849 });
+  assert.equal(c2.mode, "player"); assert.deepEqual(counts(c2), { leagues: 49, clubs: 687, players: 18379 });
   assert.equal(w.ProLifeSave.listSlots().length, 2);
   toHub(w);
   const badges = [...w.document.querySelectorAll(".career-slots .catalog-badge")].map((x) => x.textContent);

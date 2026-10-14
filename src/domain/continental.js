@@ -52,7 +52,7 @@
     const regional=cov.filter(c=>c.status==="regional_pool");
     const uefa=new Map(),conmebol=new Map();
     for(const c of playable){
-      const lg=g.find(l=>l.id===c.leagueId),code=ni.codeOf(lg&&lg.country);if(!code)continue;
+      const lg=g.find(l=>l.id===c.leagueId),code=ni?ni.codeOf(lg&&lg.country):null;if(!code)continue;
       const conf=ni.confederationOf(code);
       const best=conf==="UEFA"?uefa:conf==="CONMEBOL"?conmebol:null;if(!best)continue;
       const prev=best.get(code);if(!prev||(lg.reputation||0)>(prev.reputation||0))best.set(code,{code,leagueId:lg.id,league:lg.name,reputation:lg.reputation||0,clubCount:c.clubCount,mode:"league"});

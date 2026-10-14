@@ -80,6 +80,29 @@ function estimatePotential(player, season = 2026) {
   return Math.min(99, Math.max(overall, overall + bonus));
 }
 
+const FC27_SPECIFIC = { GK:"GOL", RB:"LD", LB:"LE", CB:"ZAG", RWB:"ALD", LWB:"ALE", CDM:"VOL", CM:"MC", RM:"MD", LM:"ME", CAM:"MEI", RW:"PD", LW:"PE", CF:"SA", ST:"CA" };
+const SPECIFIC_GROUP = { GOL:"GOL", LD:"DEF", LE:"DEF", ZAG:"DEF", ALD:"DEF", ALE:"DEF", VOL:"MEI", MC:"MEI", MD:"MEI", ME:"MEI", MEI:"MEI", PD:"ATA", PE:"ATA", SA:"ATA", CA:"ATA" };
+function specificFromFC27(code, group) {
+  const s = FC27_SPECIFIC[String(code || "").toUpperCase()];
+  // Sem dado confiavel => nulo (fallback generico). Divergencia de grupo e aceita: `pos` legado e mantido.
+  return s || null;
+}
+let positionsData;
+function loadPositions() {
+  if (positionsData !== undefined) return positionsData;
+  positionsData = globalThis.ProLifeFC27Positions || null;
+  if (!positionsData && typeof require === "function") {
+    try { require("../data/fc27/fc27-positions-v1.js"); positionsData = globalThis.ProLifeFC27Positions || null; } catch (e) { positionsData = null; }
+  }
+  return positionsData;
+}
+function mergeSecondaries(p) {
+  const base = Array.isArray(p.secondaryPositions) ? p.secondaryPositions : [];
+  const extra = loadPositions()?.alt?.[p.eaId];
+  const list = typeof extra === "string" && extra ? extra.split(",").filter((c) => SPECIFIC_GROUP[c]) : [];
+  return [...new Set([...list, ...base])].slice(0, 7);
+}
+
 function buildCatalog(manifest) {
   validate(manifest);
 
@@ -115,7 +138,8 @@ function buildCatalog(manifest) {
     nationality: p.nationality,
     clubId: p.clubId,
     pos: p.pos,
-    secondaryPositions: [...p.secondaryPositions],
+    primaryPosition: p.primaryPosition || specificFromFC27(p.positionFC27, p.pos),
+    secondaryPositions: mergeSecondaries(p),
     ovr: p.overall,
     overall: p.overall,
     potential: p.potential ?? estimatePotential(p),
@@ -143,6 +167,20 @@ let manifestCache = null;
 let catalogCache = null;
 
 // Node: JSON local. Navegador: manifesto ja registrado em globalThis. Nunca usa fetch.
+// 05A.8b: clubes colombianos (ESPN) ausentes do FC 27, para a Liga Colombia ter campeonato (>=10 clubes). GER estimado, nao oficial.
+function withColombia(data) {
+  let extra = globalThis.ProLifeFC27Colombia || null;
+  if (!extra && typeof require === "function") {
+    try { extra = require("../data/fc27/fc27-colombia-v1.js"); } catch (e) { extra = null; }
+  }
+  if (!extra || !Array.isArray(extra.clubs) || !data.leagues.some((l) => l.id === "gf_fc27_liga_colombia")) return data;
+  const have = new Set(data.clubs.map((c) => c.id));
+  const clubs = extra.clubs.filter((c) => !have.has(c.id));
+  if (!clubs.length) return data;
+  const ids = new Set(clubs.map((c) => c.id));
+  return { ...data, clubs: [...data.clubs, ...clubs], players: [...data.players, ...extra.players.filter((p) => ids.has(p.clubId))] };
+}
+
 function getManifest() {
   if (manifestCache) return manifestCache;
   let data = typeof globalThis !== "undefined" ? globalThis.ProLifeFC27Manifest : null;
@@ -151,6 +189,7 @@ function getManifest() {
     data = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "fc27", "fc27-manifest-v1.json"), "utf8"));
   }
   if (!data) throw Error("Manifesto FC27 indisponivel.");
+  data = withColombia(data);
   validate(data);
   manifestCache = data;
   return data;
@@ -198,7 +237,7 @@ function stateCatalog() {
   });
   const players = cat.players.map(p => ({
     id: p.id, eaId: p.eaId, name: p.name, shortName: p.shortName, nationality: p.nationality, birthYear: p.birthYear,
-    pos: p.pos, secondaryPositions: [...p.secondaryPositions], ovr: p.overall, overall: p.overall, potential: p.potential,
+    pos: p.pos, primaryPosition: p.primaryPosition || null, secondaryPositions: [...p.secondaryPositions], ovr: p.overall, overall: p.overall, potential: p.potential,
     clubId: p.clubId, status: "active", active: true,
     reputation: Math.max(40, p.overall - 12), external: true, marketStatus: "external"
   }));

@@ -72,7 +72,15 @@ test("34F.32A (8) protagonista so participa por merito; Real Madrid entra na Cha
 test("34F.32A (9) save/load e carreira legada: estado compacto, init idempotente, nada reescrito", () => {
   const s = make(5); const e1 = JSON.stringify(C.init(s)); const copy = JSON.parse(JSON.stringify(s));
   assert.equal(JSON.stringify(C.init(copy)), e1);
-  delete copy.continental; assert.equal(JSON.stringify(C.init(copy)), e1, "save antigo sem s.continental recria igual");
+  // D.create prepara calendarios UEFA no dia zero; C.init reconstrui somente inscricoes.
+  delete copy.continental;
+  const reconstructed = C.init(copy);
+  const registration = rows => rows.map(e => ({key:e.key,comp:e.comp,season:e.season,status:e.status,required:e.required,count:e.count,source:e.source,entrants:e.entrants,reasons:e.reasons,drawSeed:e.drawSeed,drawn:e.drawn}));
+  assert.deepEqual(registration(reconstructed), registration(C.init(s)), "save legado recupera inscricoes e criterios originais");
+  assert.equal(JSON.stringify(C.init(copy)), JSON.stringify(reconstructed), "reconstrucao idempotente");
+  for (const comp of ["ucl", "uel", "uecl"]) {
+    assert.ok(C.edition(s, comp).leagueSchedule || C.edition(s, comp).matches || C.edition(s, comp).conferenceState, `${comp}: edicao original preparada`);
+  }
   assert.ok(JSON.stringify(s.continental).length < 60000, "persistencia compacta");
   const n = D.GlobalFootball.allPlayers(s).filter((p) => String(p.id).startsWith("fc27_p_")).length; assert.ok(n > 17000);
 });

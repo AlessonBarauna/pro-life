@@ -22,10 +22,10 @@ test("34F.12 (1) carreira legada: sem catalogVersion, sem FC27, determinística 
   assert.throws(() => D.create({ mode: "player", clubId: "c0", catalogVersion: "fc99" }, SEED), /catalogVersion/);
 });
 
-test("34F.12 (2) FC27: 49 ligas, 670 clubes, 17.849 jogadores, sem legado e com clubes brasileiros locais intactos", () => {
+test("34F.12 (2) FC27: 49 ligas, 687 clubes, 18.379 jogadores, sem legado e com clubes brasileiros locais intactos", () => {
   const s = fc27(), l = legacy();
   assert.equal(s.catalogVersion, "fc27_v1");
-  assert.deepEqual([s.globalFootball.leagues.length, s.globalFootball.clubs.length, s.internationalPlayers.length], [49, 670, 17849]);
+  assert.deepEqual([s.globalFootball.leagues.length, s.globalFootball.clubs.length, s.internationalPlayers.length], [49, 687, 18379]);
   for (const list of [s.globalFootball.leagues, s.globalFootball.clubs, s.internationalPlayers]) assert.equal(new Set(list.map((x) => x.id)).size, list.length, "ids únicos");
   assert.ok(s.globalFootball.clubs.every((c) => c.id.startsWith("gf_fc27_")) && s.globalFootball.leagues.every((x) => x.id.startsWith("gf_fc27_")));
   assert.ok(s.internationalPlayers.every((p) => /^fc27_p_\d+$/.test(p.id)), "nenhum jogador legado/pool reinserido");
@@ -61,15 +61,15 @@ test("34F.12 (5) GlobalFootball.init e InternationalPool.init repetidos não dup
   const s = clone(fc27()), snap = () => JSON.stringify([s.globalFootball.leagues, s.globalFootball.clubs, s.internationalPlayers.map((p) => [p.id, p.ovr, p.clubId, p.potential])]);
   const before = snap();
   G.init(s); G.init(s); D.InternationalPool.init(s); G.init(s);
-  assert.equal(snap(), before); assert.equal(s.internationalPlayers.length, 17849);
+  assert.equal(snap(), before); assert.equal(s.internationalPlayers.length, 18379);
   assert.ok(s.catalogVersion === "fc27_v1" && !s.internationalPlayers.some((p) => !p.id.startsWith("fc27_p_")));
 });
 
 test("34F.12 (6) competições mundiais enxergam as ligas FC27 elegíveis e nenhuma legada", () => {
   const s = fc27(), per = {};
-  for (const c of manifest.clubs) per[c.leagueId] = (per[c.leagueId] || 0) + 1;
+  for (const c of manifest.clubs.concat(require("../src/data/fc27/fc27-colombia-v1.js").clubs)) per[c.leagueId] = (per[c.leagueId] || 0) + 1;
   const eligible = Object.keys(per).filter((k) => per[k] >= 10).sort(), seen = Object.keys(s.globalFootball.worldCompetitions.leagues).sort();
-  assert.deepEqual(seen, eligible); assert.equal(eligible.length, 36);
+  assert.deepEqual(seen, eligible); assert.equal(eligible.length, 37);
   for (const id of seen) assert.equal(s.globalFootball.worldCompetitions.leagues[id].clubIds.length, per[id]);
 });
 
@@ -96,7 +96,7 @@ test("34F.12 (8) save completo: grava e carrega sem perda; hybrid FC27 faz round
   assert.ok(localStorage.getItem("prolife.v1.slot." + id) === null || true);
   const back = S.loadSlot(id);
   assert.equal(back.catalogVersion, "fc27_v1");
-  assert.deepEqual([back.globalFootball.leagues.length, back.globalFootball.clubs.length, back.internationalPlayers.length], [49, 670, 17849]);
+  assert.deepEqual([back.globalFootball.leagues.length, back.globalFootball.clubs.length, back.internationalPlayers.length], [49, 687, 18379]);
   assert.equal(JSON.stringify(back.internationalPlayers), JSON.stringify(s.internationalPlayers), "jogadores idênticos");
   assert.equal(JSON.stringify(back.globalFootball.clubs), JSON.stringify(s.globalFootball.clubs));
   // hybrid FC27 (reconstrução pelo manifesto versionado)
@@ -133,7 +133,7 @@ test("34F.12 (9) navegador simulado: manifesto registrado, sem fetch, mesma inte
   assert.ok(w.ProLifeFC27Manifest);
   const s = w.ProLife.create({ mode: "player", clubId: "c0", catalogVersion: "fc27_v1" }, SEED);
   assert.equal(fetched, 0);
-  assert.deepEqual([s.globalFootball.leagues.length, s.globalFootball.clubs.length, s.internationalPlayers.length], [49, 670, 17849]);
+  assert.deepEqual([s.globalFootball.leagues.length, s.globalFootball.clubs.length, s.internationalPlayers.length], [49, 687, 18379]);
   const rm = w.ProLifeGlobalFootball.playersByClub(s, "gf_fc27_243");
   assert.equal(rm.length, 32); assert.equal(rm.find((p) => p.id === "fc27_p_231747").ovr, 91);
 });

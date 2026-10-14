@@ -52,6 +52,10 @@
   const Squad =
     root.ProLifeSquad ||
     (typeof require === "function" ? require("./squad.js") : null);
+  const PositionOverlay = root.ProLifePositionOverlay ||
+    (typeof require === "function" ? require("./player-position-overlay.js") : null);
+  const MatchPositions = root.ProLifeMatchPositionEffects ||
+    (typeof require === "function" ? require("./match-position-effects.js") : null);
   const Physical =
     root.ProLifePhysical ||
     (typeof require === "function" ? require("./physical.js") : null);
@@ -315,6 +319,17 @@
     });
   }
 
+  // 05A.8: posicoes especificas vinculadas por id estavel (somente dados verificados; sem inventar).
+  const SPEC_GROUP = { GOL:"GOL", LD:"DEF", LE:"DEF", ZAG:"DEF", ALD:"DEF", ALE:"DEF", VOL:"MEI", MC:"MEI", MD:"MEI", ME:"MEI", MEI:"MEI", PD:"ATA", PE:"ATA", SA:"ATA", CA:"ATA" };
+  function localPositions(r) {
+    const row = root.ProLifeFC27Positions?.local?.[r.id] ||
+      (typeof require === "function" && !root.ProLifeFC27Positions ? (() => { try { return require("../data/fc27/fc27-positions-v1.js").local?.[r.id]; } catch (e) { return null; } })() : null);
+    if (typeof row !== "string" || !row) return {};
+    const list = row.split(",").filter((c) => SPEC_GROUP[c]);
+    if (!list.length) return {};
+    const main = SPEC_GROUP[list[0]] === r.pos ? list[0] : null;
+    return { primaryPosition: main, secondaryPositions: (main ? list.slice(1) : list).slice(0, 6) };
+  }
   function create(config, seed = Date.now()) {
     const rng = new Random(seed),
       mode = config.mode === "coach" ? "coach" : "player";
@@ -343,6 +358,7 @@
             number: r.number,
             nationality: r.nationality,
             real: true,
+            ...localPositions(r),
           }))
         : Array.from({ length: 22 }, (_, j) =>
             player(
@@ -576,7 +592,7 @@
     const ovr = clamp(Math.round(Number(gp.ovr) || 55), 30, 99), h = wmHash(gp.id), j = (k) => ((h >> k) % 5) - 2;
     const off = { GOL: [-8, -20, -6, 4, 2, -2], DEF: [-2, -10, 0, 4, 3, 0], MEI: [0, -3, 4, -4, -3, 2], ATA: [3, 4, 0, -12, 0, -1] }[gp.pos] || [0, 0, 0, 0, 0, 0];
     const a = {}; attrs.forEach((k, i) => (a[k] = clamp(ovr + off[i] + j(i * 3), 20, 99)));
-    const p = { id: gp.id, name: gp.name, shortName: gp.shortName || gp.name, age: s.season - (gp.birthYear || s.season - 26), pos: gp.pos, attrs: a, condition: 100, morale: 60 + (h % 21), discipline: 40 + (h % 51), potential: gp.potential || ovr, injury: 0, goals: 0, minutes: 0, ovr, overall: ovr, number, nationality: gp.nationality, birthYear: gp.birthYear, secondaryPositions: [], status: "active", active: true, reputation: clamp(ovr - 15, 10, 95), clubId: gc.id, leagueId: gc.leagueId, contract: { end: s.season + 1 + (h % 3), salary: Math.round(ovr * ovr * 6) } };
+    const p = { id: gp.id, name: gp.name, shortName: gp.shortName || gp.name, age: s.season - (gp.birthYear || s.season - 26), pos: gp.pos, attrs: a, condition: 100, morale: 60 + (h % 21), discipline: 40 + (h % 51), potential: gp.potential || ovr, injury: 0, goals: 0, minutes: 0, ovr, overall: ovr, number, nationality: gp.nationality, birthYear: gp.birthYear, primaryPosition: (PositionOverlay?.normalized(gp,gc.name).primaryPosition || null), secondaryPositions: (PositionOverlay?.normalized(gp,gc.name).secondaryPositions || []), status: "active", active: true, reputation: clamp(ovr - 15, 10, 95), clubId: gc.id, leagueId: gc.leagueId, contract: { end: s.season + 1 + (h % 3), salary: Math.round(ovr * ovr * 6) } };
     const diff = ovr - overall(p);
     if (diff) attrs.forEach((k) => (a[k] = clamp(a[k] + diff, 20, 99)));
     return p;
@@ -1061,13 +1077,14 @@
     }
     return result;
   }
-  function quality(ps, key, formFactors = null) {
+  function quality(ps, key, formFactors = null, roles = null) {
     if (!ps.length) return 25;
     return (
       ps.reduce(
         (n, p) =>
           n +
           p.attrs[key] *
+            (MatchPositions?.factor(p, roles) ?? 1) *
             (formFactors?.get(p.id) ?? 1) *
             (0.55 + (0.45 * p.condition) / 100) *
             (0.85 + (0.15 * p.morale) / 100),
@@ -1079,6 +1096,7 @@
     const hp = selected(home),
       ap = selected(away);
     const formFactors = recentMatchFormFactors(context);
+    const positionRoles = [MatchPositions?.create(home,hp)??null,MatchPositions?.create(away,ap)??null];
     let m = {
       home: home.id,
       away: away.id,
@@ -1104,8 +1122,8 @@
     for (let minute = 1; minute <= 94; minute++) {
       const control = squads.map(
         (ps, i) =>
-          quality(ps, "pass", formFactors) +
-          quality(ps, "stamina", formFactors) * 0.2 +
+          quality(ps, "pass", formFactors, positionRoles[i]) +
+          quality(ps, "stamina", formFactors, positionRoles[i]) * 0.2 +
           (i === 0 ? 3 : 0) +
           (clubs[i].tactic === "possession" ? 5 : 0) +
           tactical[i].possession -
@@ -1121,8 +1139,8 @@
       m.possessions[i]++;
       fatigue[i] += 0.07 + tactical[i].fatigue;
       const attack =
-        quality(ps, "pace", formFactors) * 0.4 +
-        quality(ps, "pass", formFactors) * 0.6 +
+        quality(ps, "pace", formFactors, positionRoles[i]) * 0.4 +
+        quality(ps, "pass", formFactors, positionRoles[i]) * 0.6 +
         (clubs[i].tactic === "attack"
           ? 7
           : clubs[i].tactic === "counter"
@@ -1130,8 +1148,8 @@
             : 0) +
         tactical[i].attack;
       const defense =
-        quality(opp, "defense", formFactors) * 0.65 +
-        quality(opp, "strength", formFactors) * 0.35 +
+        quality(opp, "defense", formFactors, positionRoles[j]) * 0.65 +
+        quality(opp, "strength", formFactors, positionRoles[j]) * 0.35 +
         (clubs[j].tactic === "counter"
           ? 8
           : clubs[j].tactic === "attack"
@@ -1157,7 +1175,7 @@
             if (p.archetypeId === "finisher") protagonism *= 1.16;
             else if (p.archetypeId === "nine") protagonism *= 1.09;
           }
-          return Math.max(1, role * relativeQuality * protagonism * (g.finish * 0.5 + g.pace * 0.16 + (p.attrs.positioning ?? (((p.attrs.pass ?? g.pass) + (p.attrs.finish ?? g.finish)) / 2)) * 0.34));
+          return Math.max(1, role * relativeQuality * protagonism * (MatchPositions?.factor(p, positionRoles[i]) ?? 1) * (g.finish * 0.5 + g.pace * 0.16 + (p.attrs.positioning ?? (((p.attrs.pass ?? g.pass) + (p.attrs.finish ?? g.finish)) / 2)) * 0.34));
         });
         let shooterRoll = rng.next() * shooterWeights.reduce((n, v) => n + v, 0), shooter = candidates[0];
         for (let si = 0; si < candidates.length; si++) { shooterRoll -= shooterWeights[si]; if (shooterRoll <= 0) { shooter = candidates[si]; break; } }
@@ -1172,7 +1190,7 @@
         m.xg[i] += shotXg;
         m.offensiveStats[shooter.id].xg += shotXg;
         const shooterGroups = Training?.groupRatings ? Training.groupRatings(shooter.attrs) : shooter.attrs,
-          finish = shooterGroups.finish * (0.7 + (0.3 * shooter.condition) / 100),
+          finish = shooterGroups.finish * (MatchPositions?.factor(shooter, positionRoles[i]) ?? 1) * (0.7 + (0.3 * shooter.condition) / 100),
           keeper = opp.find((p) => p.pos === "GOL"),
           keeperGroups = keeper && Training?.groupRatings ? Training.groupRatings(keeper.attrs) : keeper?.attrs;
         const onTarget = rng.next() < clamp(0.28 + finish / 220, 0.3, 0.72);
@@ -1233,15 +1251,19 @@
           if(!on && minute===subPlan.minute){
             const eligible=pc.matchSelection?.bench?.includes("hero");
             if(eligible&&rng.next()<subPlan.chance){
-              let idx=heroSquad.findIndex(p=>p.pos===hero.pos); if(idx<0)idx=heroSquad.length-1;
+              let idx=MatchPositions?.bestExit(heroSquad,hero,positionRoles[heroSide])??-1;
+              if(idx<0)idx=heroSquad.findIndex(p=>p.pos===hero.pos); if(idx<0)idx=heroSquad.length-1;
               const out=heroSquad[idx]; heroSquad[idx]=hero;
+              if(positionRoles[heroSide]?.has(out.id)){const role=positionRoles[heroSide].get(out.id);positionRoles[heroSide].delete(out.id);positionRoles[heroSide].set(hero.id,role);}
               if(m.participation[out.id]){m.participation[out.id].exitMinute=minute;m.participation[out.id].minutes=minute-m.participation[out.id].entryMinute;}
               m.participation.hero={side:heroSide,starter:false,entryMinute:minute,exitMinute:94,minutes:94-minute};m.participants[heroSide].push("hero");
               m.events.push({minute,type:"substitution",side:heroSide,player:hero.name,playerId:"hero",outPlayer:out.name,outPlayerId:out.id,text:`Substituição: sai ${out.name}, entra ${hero.name}.`});
             }
           } else if(on && minute===65 && hero.condition<58 && rng.next()<.7){
-            const sub=ownClub.roster.filter(x=>!heroSquad.includes(x)&&!x.injury&&!(x.suspension>0)&&x.pos===hero.pos).sort((a,b)=>overall(b)-overall(a))[0];
-            if(sub){const idx=heroSquad.findIndex(p=>p.id==="hero");heroSquad[idx]=sub;m.participation.hero.exitMinute=minute;m.participation.hero.minutes=minute;m.participation[sub.id]={side:heroSide,starter:false,entryMinute:minute,exitMinute:94,minutes:94-minute};m.participants[heroSide].push(sub.id);m.events.push({minute,type:"substitution",side:heroSide,player:sub.name,playerId:sub.id,outPlayer:hero.name,outPlayerId:"hero",text:`Substituição: sai ${hero.name}, entra ${sub.name}.`});}
+            const replacements=ownClub.roster.filter(x=>!heroSquad.includes(x)&&!x.injury&&!(x.suspension>0)&&!x._competitionSuspended&&x.pos===hero.pos);
+            const heroRole=positionRoles[heroSide]?.get(hero.id);
+            const sub=MatchPositions?.bestReplacement(replacements,heroRole,overall)||replacements.sort((a,b)=>overall(b)-overall(a))[0];
+            if(sub){const idx=heroSquad.findIndex(p=>p.id==="hero");heroSquad[idx]=sub;if(heroRole){positionRoles[heroSide].delete(hero.id);positionRoles[heroSide].set(sub.id,heroRole);}m.participation.hero.exitMinute=minute;m.participation.hero.minutes=minute;m.participation[sub.id]={side:heroSide,starter:false,entryMinute:minute,exitMinute:94,minutes:94-minute};m.participants[heroSide].push(sub.id);m.events.push({minute,type:"substitution",side:heroSide,player:sub.name,playerId:sub.id,outPlayer:hero.name,outPlayerId:"hero",text:`Substituição: sai ${hero.name}, entra ${sub.name}.`});}
           }
         }
       }
@@ -1402,13 +1424,13 @@
     const heroYears=arrivalDay==null ? 0 : Math.max(0,(s.day-arrivalDay)/365);
     const score=(p)=>{
       const age=Math.max(14,Number(p.age||24)), ovr=overall(p), form=Number(p.form||6.5);
-      const years=p.id==="hero" ? heroYears : Math.max(0,Number(p.clubYears ?? p.yearsAtClub ?? Math.max(0,(age-20)*0.45)));
+      const years=p.id==="hero" ? heroYears : Math.max(0,Number(p.clubYears ?? p.yearsAtClub ?? 0));
       const experience=Math.min(12,Math.max(0,age-20));
       const positionLeadership=["GOL","DEF","MEI"].includes(p.pos)?4:1;
       const regularity=Math.max(0,Math.min(8,(form-6)*4));
       const heroRole=p.id==="hero" ? ({Estrela:8,Importante:6,Titular:4,Rotação:2,Reserva:0,"Fora dos planos":-5}[pc?.squadRole]||0) : 3;
       // Longevidade e experiência pesam mais; GER/status e forma apenas complementam.
-      return +(years*7 + experience*2.1 + ovr*.32 + positionLeadership + regularity + heroRole).toFixed(2);
+      return +(Math.min(years,8)*1.6 + experience*.7 + ovr*.85 + positionLeadership + regularity + heroRole).toFixed(2);
     };
     const ranking=(team.roster||[]).filter(p=>!p.injury).map(p=>({player:p,score:score(p)})).sort((x,y)=>y.score-x.score || overall(y.player)-overall(x.player));
     const chosen=CoachCareer?.captainOverride(s,team)||null;

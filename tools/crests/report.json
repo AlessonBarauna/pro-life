@@ -1,0 +1,338 @@
+{
+  "c0": {
+    "name": "Athletico-PR",
+    "league": "serieA",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Supercopa do Brasil 2020.png -> nome nao confere; File:SÉRIE A - PALMEIRAS 0 X 2 ATHLETICO PARANAENSE - 52192996579.jpg -> formato; File:SÉRIE A - PALMEIRAS 0 X 2 ATHLETICO PARANAENSE.jpg -> formato"
+  },
+  "c1": {
+    "name": "Atlético-MG",
+    "league": "serieA",
+    "status": "pending",
+    "reason": "arquivo invalido (png, 2226012 bytes)"
+  },
+  "c3": {
+    "name": "Botafogo",
+    "league": "serieA",
+    "status": "review",
+    "reason": "nome com homonimos conhecidos (Botafogo): conferir manualmente o clube correto"
+  },
+  "c5": {
+    "name": "Corinthians",
+    "league": "serieA",
+    "status": "review",
+    "reason": "nome com homonimos conhecidos (Corinthians): conferir manualmente o clube correto"
+  },
+  "c6": {
+    "name": "Coritiba",
+    "league": "serieA",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Parana SC.png -> nome nao confere; File:CoritibaSE.png -> nome nao confere; File:ECFC1.png -> nome nao confere"
+  },
+  "c11": {
+    "name": "Internacional",
+    "league": "serieA",
+    "status": "pending",
+    "reason": "sem candidato livre: File:LibreOffice+IBM+BIPM logos.svg -> nome nao confere; File:ICC Artek Emblem (Ukraine).svg -> nome nao confere; File:Bandera del Club Atlético Independiente.svg -> nome nao confere"
+  },
+  "c12": {
+    "name": "Mirassol",
+    "league": "serieA",
+    "status": "ambiguous",
+    "reason": "candidatos empatados: File:Mirassol Logo.svg | File:Mirassol Futebol Clube logo.svg | File:Mirassol Futebol Clube logo (no stars).svg"
+  },
+  "c14": {
+    "name": "Red Bull Bragantino",
+    "league": "serieA",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Red Bull New York.svg -> nome nao confere; File:Bragantino.JPG -> formato; File:Brasileirão Série A- Bragantino 4 x 2 Coritiba.jpg -> formato"
+  },
+  "c15": {
+    "name": "Remo",
+    "league": "serieA",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Escudo Nueva Esparta.svg -> nome nao confere; File:SDRC Shield.png -> nome nao confere; File:The fair lady of Halifax, or, Colmey's six hundred (IA fairladyofhalifa00conv).pdf -> formato"
+  },
+  "c16": {
+    "name": "Santos",
+    "league": "serieA",
+    "status": "pending",
+    "reason": "SVG com conteudo inseguro"
+  },
+  "c17": {
+    "name": "São Paulo",
+    "league": "serieA",
+    "status": "ambiguous",
+    "reason": "candidatos empatados: File:Brasao do Sao Paulo Futebol Clube.svg | File:Partido Monarquista de São Paulo (PM - SP).svg"
+  },
+  "c18": {
+    "name": "Vasco da Gama",
+    "league": "serieA",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Escudo vasco.JPG -> formato; File:Cameroon away kit 2008.svg -> titulo historico/nao escudo; File:Spain home kit 2008.svg -> titulo historico/nao escudo"
+  },
+  "c19": {
+    "name": "Vitória",
+    "league": "serieA",
+    "status": "pending",
+    "reason": "SVG com conteudo inseguro"
+  },
+  "c21": {
+    "name": "Athletic",
+    "league": "serieB",
+    "status": "review",
+    "reason": "nome com homonimos conhecidos (Athletic): conferir manualmente o clube correto"
+  },
+  "c22": {
+    "name": "Atlético Goianiense",
+    "league": "serieB",
+    "status": "ambiguous",
+    "reason": "candidatos empatados: File:Atlético Goianiense.svg | File:Atlético Goianiense logo (sem estrelas).png"
+  },
+  "c23": {
+    "name": "Avaí",
+    "league": "serieB",
+    "status": "ambiguous",
+    "reason": "candidatos empatados: File:Avaí Futebol Clube logo.svg | File:Avaí Futebol Clube logo (without the star).svg | File:Avai FC (04) - SC.svg"
+  },
+  "c25": {
+    "name": "CRB",
+    "league": "serieB",
+    "status": "ambiguous",
+    "reason": "candidatos empatados: File:Escudo CRB.png | File:Logo CRB modrn.png | File:CRB logo2023.png"
+  },
+  "c26": {
+    "name": "Ceará",
+    "league": "serieB",
+    "status": "pending",
+    "reason": "sem candidato livre: File:TV Ceará logo 2015.png -> titulo historico/nao escudo; File:São Gonçalo.png -> nome nao confere; File:Rádio Universitária (Fortaleza) logo.svg -> nome nao confere"
+  },
+  "c27": {
+    "name": "Criciúma",
+    "league": "serieB",
+    "status": "ambiguous",
+    "reason": "candidatos empatados: File:Criciúma EC 2025 crest.svg | File:Criciúma Esporte Clube logo (until 2025).svg | File:92 FM Criciúma logo.png"
+  },
+  "c28": {
+    "name": "Cuiabá",
+    "league": "serieB",
+    "status": "ambiguous",
+    "reason": "candidatos empatados: File:Brasão de Cuiabá.svg | File:Logo Águas Cuiabá.png | File:Cuiabá Esporte Clube.svg"
+  },
+  "c31": {
+    "name": "Juventude",
+    "league": "serieB",
+    "status": "review",
+    "reason": "nome com homonimos conhecidos (Juventude): conferir manualmente o clube correto"
+  },
+  "c32": {
+    "name": "Londrina",
+    "league": "serieB",
+    "status": "review",
+    "reason": "nome com homonimos conhecidos (Londrina): conferir manualmente o clube correto"
+  },
+  "c34": {
+    "name": "Náutico",
+    "league": "serieB",
+    "status": "review",
+    "reason": "nome com homonimos conhecidos (Náutico): conferir manualmente o clube correto"
+  },
+  "c35": {
+    "name": "Operário PR",
+    "league": "serieB",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Kit body operariofec15a.png -> titulo historico/nao escudo; File:Kit left arm operariofec15a.png -> titulo historico/nao escudo; File:Kit right arm operariofec15a.png -> titulo historico/nao escudo"
+  },
+  "c36": {
+    "name": "Ponte Preta",
+    "league": "serieB",
+    "status": "review",
+    "reason": "nome com homonimos conhecidos (Ponte Preta): conferir manualmente o clube correto"
+  },
+  "c37": {
+    "name": "Sport",
+    "league": "serieB",
+    "status": "review",
+    "reason": "nome com homonimos conhecidos (Sport): conferir manualmente o clube correto"
+  },
+  "c38": {
+    "name": "São Bernardo",
+    "league": "serieB",
+    "status": "review",
+    "reason": "nome com homonimos conhecidos (São Bernardo): conferir manualmente o clube correto"
+  },
+  "c39": {
+    "name": "Vila Nova",
+    "league": "serieB",
+    "status": "ambiguous",
+    "reason": "candidatos empatados: File:Vila Nova Logo Oficial.svg | File:Logo of Vila Nova de Milfontes 001.svg | File:Vila Nova AC.svg"
+  },
+  "gf_fc27_73": {
+    "name": "Paris SG",
+    "league": "gf_fc27_ligue_1_mcdonald_s",
+    "status": "pending",
+    "reason": "sem candidato livre: File:A.C. Milan PL.pdf -> formato; File:Nicolae Iorga - Istoria literaturii românești în veacul al XIX-lea, de la 1821 înainte, în legătură cu dezvoltarea culturală a neamului. Volum.pdf -> formato; File:Paris Saint-Germain (1992-1996).gif -> formato"
+  },
+  "gf_fc27_1": {
+    "name": "Arsenal",
+    "league": "gf_fc27_premier_league",
+    "status": "ambiguous",
+    "reason": "candidatos empatados: File:Logo Arsenal Filmverleih.svg | File:Arsenal Crest Art Deco.svg | File:Kyiv Arsenal Plant logo.png"
+  },
+  "gf_fc27_48": {
+    "name": "SSC Napoli",
+    "league": "gf_fc27_serie_a_enilive",
+    "status": "ambiguous",
+    "reason": "candidatos empatados: File:SSC Napoli 2024 (azure).svg | File:SSC Napoli 2023 (silver).svg | File:SSC Napoli 2023 (gold).svg"
+  },
+  "gf_fc27_5": {
+    "name": "Chelsea",
+    "league": "gf_fc27_premier_league",
+    "status": "pending",
+    "reason": "sem candidato livre: File:The Peerage, Baronetage and Knightage of the British Empire Part 1.djvu -> formato; File:A history of the emblem of the codfish in the hall of the House of representatives (IA historyofemblemo01mass).pdf -> formato; File:A history of the emblem of the codfish in the hall of the House of representatives (IA historyofemblemo02mass).pdf -> formato"
+  },
+  "gf_fc27_7": {
+    "name": "Everton",
+    "league": "gf_fc27_premier_league",
+    "status": "pending",
+    "reason": "sem candidato livre: File:EscudoEvertonLP.jpg -> formato; File:The gentleman's magazine. Volume 93 (Being the Sixteenth of a New Series. Part the First.), January - June 1823 (IA s2492id1330050).pdf -> formato; File:Campbell Interurban Press 1917-04-27 (IA cacblm 000523).pdf -> formato"
+  },
+  "gf_fc27_448": {
+    "name": "Athletic Club",
+    "league": "gf_fc27_laliga_ea_sports",
+    "status": "pending",
+    "reason": "SVG com conteudo inseguro"
+  },
+  "gf_fc27_347": {
+    "name": "Lecce",
+    "league": "gf_fc27_serie_a_enilive",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Marine Corps JAG.jpg -> formato; File:ISS055-E-111289 - View of Greece.jpg -> formato; File:ISS055-E-111274 - View of Italy.jpg -> formato"
+  },
+  "gf_fc27_19": {
+    "name": "West Ham",
+    "league": "gf_fc27_efl_championship",
+    "status": "pending",
+    "reason": "sem candidato livre: File:-2019-08-19 West Ham United F.C. football Pin badge.JPG -> formato; File:Essex Borough arms and the traditional arms of Essex and the arms of Chelmsford diocese (IA essexborougharms00benhrich).pdf -> formato; File:Monograph (1-16) (IA monograph06comm).pdf -> formato"
+  },
+  "gf_fc27_66": {
+    "name": "OL",
+    "league": "gf_fc27_ligue_1_mcdonald_s",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Logo München 1972.svg -> titulo historico/nao escudo; File:Accepted meat and poultry equipment as of April 1986. (IA CAT76678025024).pdf -> formato; File:Book bindings - historical and decorative (IA bookbindingshist00maggrich).pdf -> formato"
+  },
+  "gf_fc27_189": {
+    "name": "Bologna",
+    "league": "gf_fc27_serie_a_enilive",
+    "status": "pending",
+    "reason": "sem candidato livre: File:BolognaFC1909 Old logo (1993-2018).png -> titulo historico/nao escudo; File:170px logo IC Futsal.svg -> nome nao confere; File:Shakespeare and the emblem writers; an exposition of their similarities of thought and expression. Preceded by a view of emblem-literature down to A. D. 1616 (IA shakespeareemble00greerich).pdf -> formato"
+  },
+  "gf_fc27_64": {
+    "name": "RC Lens",
+    "league": "gf_fc27_ligue_1_mcdonald_s",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Tifo Lens-Lille 2009.jpg -> formato; File:Valenciennes - Lens (29-11-2019) 13.jpg -> formato; File:Christopher Wooh Lens.jpg -> formato"
+  },
+  "gf_fc27_111974": {
+    "name": "Sassuolo",
+    "league": "gf_fc27_serie_a_enilive",
+    "status": "pending",
+    "reason": "sem candidato livre: File:ISS037-E-15316 - View of Italy.jpg -> formato; File:ISS037-E-15318 - View of Italy.jpg -> formato; File:ISS037-E-15319 - View of Italy.jpg -> formato"
+  },
+  "gf_fc27_479": {
+    "name": "CA Osasuna",
+    "league": "gf_fc27_laliga_ea_sports",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Europa-Osasuna.jpg -> formato; File:Almeria Osasuna 0708.JPG -> formato; File:Kit shorts osasuna3.png -> titulo historico/nao escudo"
+  },
+  "gf_fc27_69": {
+    "name": "AS Monaco",
+    "league": "gf_fc27_ligue_1_mcdonald_s",
+    "status": "pending",
+    "reason": "sem candidato livre: File:600px Crown on red and white.png -> nome nao confere; File:Kit body asmonaco1314h.png -> titulo historico/nao escudo; File:Wintering at Mentone (IA b21996453).pdf -> formato"
+  },
+  "gf_fc27_74": {
+    "name": "Stade Rennais FC",
+    "league": "gf_fc27_ligue_1_mcdonald_s",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Stade rennais - Le Havre AC 20150708 37.JPG -> formato; File:Logo RoazhonGuys.png -> nome nao confere; File:Stade Rennais (logo 1960).svg -> titulo historico/nao escudo"
+  },
+  "gf_fc27_480": {
+    "name": "Rayo Vallecano",
+    "league": "gf_fc27_laliga_ea_sports",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Bandera Rayo.jpg -> formato; File:Escudomg.jpg -> formato; File:EntradaTRivero.jpg -> formato"
+  },
+  "gf_fc27_144": {
+    "name": "Fulham",
+    "league": "gf_fc27_premier_league",
+    "status": "pending",
+    "reason": "sem candidato livre: File:ChelseaFulhamQPRsat.jpg -> formato; File:The A40 Trunk Road (Hammersmith & Fulham, Kensington & Chelsea and Westminster) Red Route (Clearway) Traffic Order 2000 (UKSI 2000-1644).pdf -> formato; File:The A3220 Trunk Road (Hammersmith & Fulham) Red Route (Clearway) Traffic Order 2000 (UKSI 2000-1643).pdf -> formato"
+  },
+  "gf_fc27_65": {
+    "name": "LOSC Lille",
+    "league": "gf_fc27_ligue_1_mcdonald_s",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Grand Stade Lille Métropole LOSC first match.JPG -> formato; File:LOSC chinese new year.jpg -> formato; File:LilleChelsea2022tifo.jpg -> formato"
+  },
+  "gf_fc27_219": {
+    "name": "OM",
+    "league": "gf_fc27_ligue_1_mcdonald_s",
+    "status": "pending",
+    "reason": "sem candidato livre: File:National emblem of Oman.svg -> nome nao confere; File:Top of Atmosphere.jpg -> formato; File:Emblem for cultural property in Brussels.png -> nome nao confere"
+  },
+  "gf_fc27_452": {
+    "name": "RCD Espanyol",
+    "league": "gf_fc27_laliga_ea_sports",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Club Espanyol de Foot-ball 1901.png -> titulo historico/nao escudo; File:RCDE.JPG -> formato; File:Club Deportiu Espanyol 1909.png -> titulo historico/nao escudo"
+  },
+  "gf_fc27_456": {
+    "name": "R. Racing Club",
+    "league": "gf_fc27_laliga_ea_sports",
+    "status": "pending",
+    "reason": "nenhum resultado"
+  },
+  "gf_fc27_453": {
+    "name": "RCD Mallorca",
+    "league": "gf_fc27_laliga_hypermotion",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Manuel Preciado.jpg -> formato; File:D-ALTD 1 A320-214 LTU (RCD Mallorca logo) DUS 29JUL06 (5837096177).jpg -> formato; File:AlfonsoXIIIFC.png -> nome nao confere"
+  },
+  "gf_fc27_110": {
+    "name": "Wolves",
+    "league": "gf_fc27_efl_championship",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Uboat Flo12 logo.gif -> formato; File:Sun Belt logo in Arkansas State colors.svg -> nome nao confere; File:DWD Vector Logo V3.svg -> nome nao confere"
+  },
+  "gf_fc27_110827": {
+    "name": "R. Oviedo",
+    "league": "gf_fc27_laliga_hypermotion",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Aficionados R.Oviedo esperando a F. Hierro.jpg -> formato; File:Coleccion de los viajes y descubrimientos (Tomo IV).pdf -> formato; File:Charles Canady administers the oath of office to Larry Cretul.jpg -> formato"
+  },
+  "gf_fc27_1809": {
+    "name": "Toulouse FC",
+    "league": "gf_fc27_ligue_1_mcdonald_s",
+    "status": "pending",
+    "reason": "sem candidato livre: File:TFC players on Fan days - Shavy Babicka (cropped).jpg -> formato; File:TFC players on Fan days - Gboho - Mawissa - Aradj.jpg -> formato; File:TFC players on Fan days - Gboho (cropped) - 1.jpg -> formato"
+  },
+  "gf_fc27_55": {
+    "name": "Udinese",
+    "league": "gf_fc27_serie_a_enilive",
+    "status": "pending",
+    "reason": "sem candidato livre: File:EUD 2003-839.pdf -> formato; File:EUD 2003-458.pdf -> formato; File:EUD 2004-850.pdf -> formato"
+  },
+  "gf_fc27_461": {
+    "name": "Valencia CF",
+    "league": "gf_fc27_laliga_ea_sports",
+    "status": "pending",
+    "reason": "sem candidato livre: File:Bianco con Pipistrello Nero e colori catalani.svg -> nome nao confere; File:Kit body valencia1011a.png -> titulo historico/nao escudo; File:Kit body valencia0910h.png -> titulo historico/nao escudo"
+  },
+  "gf_fc27_1861": {
+    "name": "UD Almería",
+    "league": "gf_fc27_laliga_hypermotion",
+    "status": "ambiguous",
+    "reason": "candidatos empatados: File:600px Almeria and ball on red and white.png | File:600px Pallone e Almeria su sfondo Rosso e Bianco.png"
+  }
+}

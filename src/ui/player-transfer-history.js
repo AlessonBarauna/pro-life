@@ -2,6 +2,7 @@
   "use strict";
 
   const esc=(value)=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
+  const cr=id=>{const c=(typeof window!=='undefined'?window:globalThis).ProLifeClubCrests;return c&&c.inline&&id?c.inline(id,'sm'):'';};
   const clubMap=(s)=>new Map([...(s?.clubs||[]),...(s?.globalFootball?.clubs||[])].filter(club=>club?.id).map(club=>[club.id,club.name||club.id]));
   const seasonAt=(s,day,explicit)=>{
     if(Number.isFinite(Number(explicit))) return Number(explicit);
@@ -29,7 +30,7 @@
   const money=(value)=>Number(value)>0?Number(value).toLocaleString("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0}):"Livre";
   function render(s,playerId){
     const rows=collect(s,playerId);
-    return `<section id="player-transfers" class="card section player-transfer-history"><div class="tag">CARREIRA</div><h2>Histórico de transferências</h2>${rows.length?`<div class="tablewrap"><table><thead><tr><th>Temporada</th><th>Origem</th><th>Destino</th><th>Valor</th><th>GER</th></tr></thead><tbody>${rows.map(row=>`<tr><td>${row.season??"—"}</td><td>${esc(row.from)}</td><td>${esc(row.to)}</td><td>${money(row.value)}</td><td>${row.overall??"—"}</td></tr>`).join("")}</tbody></table></div>`:`<p class="muted">Nenhuma transferência efetivada registrada para este jogador.</p>`}</section>`;
+    return `<section id="player-transfers" class="card section player-transfer-history"><div class="tag">CARREIRA</div><h2>Histórico de transferências</h2>${rows.length?`<div class="tablewrap"><table><thead><tr><th>Temporada</th><th>Origem</th><th>Destino</th><th>Valor</th><th>GER</th></tr></thead><tbody>${rows.map(row=>`<tr><td>${row.season??"—"}</td><td>${cr(row.fromId)}${esc(row.from)}</td><td>${cr(row.toId)}${esc(row.to)}</td><td>${money(row.value)}</td><td>${row.overall??"—"}</td></tr>`).join("")}</tbody></table></div>`:`<p class="muted">Nenhuma transferência efetivada registrada para este jogador.</p>`}</section>`;
   }
   const api={collect,render,esc};
   root.ProLifePlayerTransferHistory=api;

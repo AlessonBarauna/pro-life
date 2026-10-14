@@ -8,16 +8,16 @@
   function events(s, D) {
     const result = [], own = s.clubId;
     const clubName = (id) => D.club(s, id)?.name || "Clube";
-    for (const match of s.matches || []) if (match.home === own || match.away === own) result.push({ day: match.date ?? match.day, type: "played", title: `${clubName(match.home)} ${match.hg} × ${match.ag} ${clubName(match.away)}`, detail: match.competitionName || "Partida", destination: "matches" });
+    for (const match of s.matches || []) if (match.home === own || match.away === own) result.push({ day: match.date ?? match.day, type: "played", title: `${clubName(match.home)} ${match.hg} × ${match.ag} ${clubName(match.away)}`, detail: match.competitionName || "Partida", destination: "matches", clubs: [match.home, match.away] });
     (s.fixtures || []).forEach((round, index) => {
       const pair = round.find((fixture) => fixture.includes(own));
       if (!pair || index < s.round) return;
       const day = (s.season - 2026) * 365 + (s.calendarDays?.[index] ?? 7 + index * 21);
-      result.push({ day, type: "club", title: `${clubName(pair[0])} × ${clubName(pair[1])}`, detail: s.leagues.find((league) => league.id === D.club(s)?.leagueId)?.name || "Liga", destination: "matches" });
+      result.push({ day, type: "club", title: `${clubName(pair[0])} × ${clubName(pair[1])}`, detail: s.leagues.find((league) => league.id === D.club(s)?.leagueId)?.name || "Liga", destination: "matches", clubs: [pair[0], pair[1]] });
     });
     const schedule = s.competitionSchedule || {};
-    for (const fixture of schedule.state?.fixtures || []) if (!fixture.played) result.push({ day: fixture.date, type: "state", title: `${clubName(fixture.home)} × ${clubName(fixture.away)}`, detail: schedule.state.name, destination: "competitions" });
-    for (const round of schedule.cup?.rounds || []) for (const pair of round.pairs || []) if (!pair.played && (pair.home === own || pair.away === own)) result.push({ day: round.date, type: "cup", title: `${clubName(pair.home)} × ${clubName(pair.away)}`, detail: `${schedule.cup.name} · ${round.name}`, destination: "competitions" });
+    for (const fixture of schedule.state?.fixtures || []) if (!fixture.played) result.push({ day: fixture.date, type: "state", title: `${clubName(fixture.home)} × ${clubName(fixture.away)}`, detail: schedule.state.name, destination: "competitions", clubs: [fixture.home, fixture.away] });
+    for (const round of schedule.cup?.rounds || []) for (const pair of round.pairs || []) if (!pair.played && (pair.home === own || pair.away === own)) result.push({ day: round.date, type: "cup", title: `${clubName(pair.home)} × ${clubName(pair.away)}`, detail: `${schedule.cup.name} · ${round.name}`, destination: "competitions", clubs: [pair.home, pair.away] });
     if (s.mode === "player" && D.NationalTeam?.init) {
       const national = D.NationalTeam.init(s);
       let heroNation = "Brasil"; try { const t = root.ProLifeNationalIdentity?.heroTeam?.(s, D); if (t && t.represented && t.name) heroNation = t.name; } catch { /* usa Brasil */ }
@@ -58,6 +58,7 @@
   }
   function monthId(s) { return dateForDay(s.day).toISOString().slice(0, 7); }
   function shift(month, amount) { const [year, value] = month.split("-").map(Number), date = new Date(Date.UTC(year, value - 1 + amount, 1)); return date.toISOString().slice(0, 7); }
+  const crests = (event) => { const c = root.ProLifeClubCrests; return c && c.inline && Array.isArray(event.clubs) ? event.clubs.map((id) => c.inline(id, "sm")).join("") : ""; };
   function render(s, D, options) {
     const esc = options.esc, dayDate = options.dayDate, selected = /^\d{4}-\d{2}$/.test(options.month || "") ? options.month : monthId(s);
     const [year, month] = selected.split("-").map(Number), first = new Date(Date.UTC(year, month - 1, 1)), startOffset = (first.getUTCDay() + 6) % 7;
@@ -65,10 +66,10 @@
     for (const event of list) { const id = key(event.day); if (!grouped.has(id)) grouped.set(id, []); grouped.get(id).push(event); }
     const cells = Array.from({ length: 42 }, (_, index) => {
       const day = gridStart + index, date = dateForDay(day), currentMonth = date.getUTCMonth() === month - 1, today = day === s.day, items = grouped.get(key(day)) || [];
-      return `<div class="calendar-day ${currentMonth ? "" : "outside"} ${today ? "today" : ""}" data-calendar-day="${day}"><span class="calendar-number">${date.getUTCDate()}</span>${items.slice(0, 3).map((event) => `<button class="calendar-event ${event.type}" data-page="${event.destination}" title="${esc(event.detail)}">${esc(event.title)}</button>`).join("")}${items.length > 3 ? `<small>+${items.length - 3} evento(s)</small>` : ""}</div>`;
+      return `<div class="calendar-day ${currentMonth ? "" : "outside"} ${today ? "today" : ""}" data-calendar-day="${day}"><span class="calendar-number">${date.getUTCDate()}</span>${items.slice(0, 3).map((event) => `<button class="calendar-event ${event.type}" data-page="${event.destination}" title="${esc(event.detail)}">${crests(event)}${esc(event.title)}</button>`).join("")}${items.length > 3 ? `<small>+${items.length - 3} evento(s)</small>` : ""}</div>`;
     }).join("");
     const upcoming = list.filter((event) => event.day >= s.day).slice(0, 10), title = first.toLocaleDateString("pt-BR", { timeZone: "UTC", month: "long", year: "numeric" });
-    return `<section class="card career-calendar"><div class="calendar-toolbar"><div><div class="tag">AGENDA INTEGRADA</div><h2>${esc(title.charAt(0).toUpperCase() + title.slice(1))}</h2></div><div class="actions"><button data-calendar="prev" aria-label="Mês anterior">←</button><button data-calendar="today">Hoje</button><button data-calendar="next" aria-label="Próximo mês">→</button></div></div><div class="calendar-legend"><span class="club">Clube</span><span class="state">Estadual</span><span class="cup">Copa do Brasil</span>${s.mode === "player" ? '<span class="national">Seleção</span>' : ""}<span class="window">Mercado</span><span class="event">Eventos</span></div><div class="calendar-weekdays">${["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"].map((name) => `<b>${name}</b>`).join("")}</div><div class="calendar-grid">${cells}</div></section><section class="card section"><div class="tag">PRÓXIMOS COMPROMISSOS</div><h2>Agenda rápida</h2>${upcoming.length ? `<div class="calendar-upcoming">${upcoming.map((event) => `<button data-page="${event.destination}"><time>${dayDate(event.day)}</time><span><b>${esc(event.title)}</b><small>${esc(event.detail)}</small></span></button>`).join("")}</div>` : '<p class="muted">Nenhum compromisso futuro registrado.</p>'}</section>`;
+    return `<section class="card career-calendar"><div class="calendar-toolbar"><div><div class="tag">AGENDA INTEGRADA</div><h2>${esc(title.charAt(0).toUpperCase() + title.slice(1))}</h2></div><div class="actions"><button data-calendar="prev" aria-label="Mês anterior">←</button><button data-calendar="today">Hoje</button><button data-calendar="next" aria-label="Próximo mês">→</button></div></div><div class="calendar-legend"><span class="club">Clube</span><span class="state">Estadual</span><span class="cup">Copa do Brasil</span>${s.mode === "player" ? '<span class="national">Seleção</span>' : ""}<span class="window">Mercado</span><span class="event">Eventos</span></div><div class="calendar-weekdays">${["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"].map((name) => `<b>${name}</b>`).join("")}</div><div class="calendar-grid">${cells}</div></section><section class="card section"><div class="tag">PRÓXIMOS COMPROMISSOS</div><h2>Agenda rápida</h2>${upcoming.length ? `<div class="calendar-upcoming">${upcoming.map((event) => `<button data-page="${event.destination}"><time>${dayDate(event.day)}</time><span><b>${crests(event)}${esc(event.title)}</b><small>${esc(event.detail)}</small></span></button>`).join("")}</div>` : '<p class="muted">Nenhum compromisso futuro registrado.</p>'}</section>`;
   }
   root.ProLifeCalendar = { events, monthId, shift, render };
   if (typeof module !== "undefined" && module.exports) module.exports = root.ProLifeCalendar;

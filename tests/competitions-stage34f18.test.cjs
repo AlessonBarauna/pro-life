@@ -5,19 +5,20 @@ const D = require("../src/domain/engine.js");
 const View = require("../src/ui/world-competitions-view.js");
 const W = D.WorldClubCompetitions;
 const manifest = require("../src/data/fc27/fc27-manifest-v1.json");
+const colombia = require("../src/data/fc27/fc27-colombia-v1.js"); // clubes colombianos adicionais (ESPN), 05A.8b
 const fc27 = (seed = 3418) => D.create({ mode: "player", clubId: "c0", catalogVersion: "fc27_v1" }, seed);
 
-test("34F.18 (1) cobertura: 49 ligas classificadas; 36 jogaveis, 13 so catalogo, sem clubes inventados", () => {
+test("34F.18 (1) cobertura: 49 ligas classificadas; 37 jogaveis, 12 so catalogo, sem clubes inventados", () => {
   const s = fc27(), rows = W.coverage(s);
   assert.equal(rows.length, 49);
-  assert.equal(rows.filter((r) => r.status !== "catalog_only").length, 36);
+  assert.equal(rows.filter((r) => r.status !== "catalog_only").length, 37);
   const only = rows.filter((r) => r.status === "catalog_only");
-  assert.equal(only.length, 13);
+  assert.equal(only.length, 12);
   for (const r of only) { assert.ok(r.clubCount >= 1 && r.clubCount < 10, r.leagueId); assert.match(r.note, /Somente cat/); assert.match(r.note, /ficticio/); assert.equal(r.rounds, 0); }
   // contagens batem com o manifesto oficial do projeto
-  for (const r of rows) assert.equal(r.clubCount, manifest.clubs.filter((c) => c.leagueId === r.leagueId).length, r.leagueId);
-  assert.equal(s.globalFootball.clubs.length, 670, "nenhum clube criado nem removido");
-  assert.equal(s.internationalPlayers.length, 17849);
+  for (const r of rows) assert.equal(r.clubCount, manifest.clubs.concat(colombia.clubs).filter((c) => c.leagueId === r.leagueId).length, r.leagueId);
+  assert.equal(s.globalFootball.clubs.length, 687, "nenhum clube criado nem removido");
+  assert.equal(s.internationalPlayers.length, 18379);
 });
 
 test("34F.18 (2) grupos regionais sinalizados e consistentes com as ligas que realmente jogam", () => {
@@ -41,7 +42,7 @@ test("34F.18 (4) a tela mostra a cobertura e as ligas sem calendario com o motiv
   const s = fc27(); W.init(s);
   const html = View.render(s, D, {});
   assert.match(html, /data-world-coverage/);
-  assert.match(html, /36 de 49 ligas com calend/);
+  assert.match(html, /37 de 49 ligas com calend/);
   assert.match(html, /Somente cat/);
   assert.match(html, /Hellas Liga/);
   const snap = View.snapshot(s, D, {});
@@ -52,14 +53,14 @@ test("34F.18 (5) todas as ligas jogaveis tem calendario integro e uma temporada 
   const s = fc27(); W.init(s);
   const integrity = W.integrity(s);
   assert.equal(integrity.ok, true, integrity.issues.join("; "));
-  assert.equal(integrity.leagues, 36);
+  assert.equal(integrity.leagues, 37);
   for (const l of W.eligibleLeagues(s)) {
     const ids = s.globalFootball.worldCompetitions.leagues[l.id].clubIds, sched = W.makeSchedule(ids);
     assert.equal(sched.length, 2 * (ids.length % 2 ? ids.length : ids.length - 1), l.id);
   }
   W.closeSeason(s);
   const history = W.history(s);
-  assert.equal(history.length, 36, "uma entrada de campeao por liga jogavel");
+  assert.equal(history.length, 37, "uma entrada de campeao por liga jogavel");
   const ids = new Set(history.map((h) => h.leagueId));
   for (const r of W.coverage(s)) assert.equal(ids.has(r.leagueId), r.status !== "catalog_only", r.leagueId);
   for (const h of history) assert.ok(h.championId, h.leagueId);

@@ -1,0 +1,81 @@
+Clubes ainda sem escudo (79 de 750)
+
+c42 | América-RN | serieC
+c60 | Água Santa | serieD
+c68 | Gama | serieD
+gf_fc27_131682 | Lombardia FC | serie_a_enilive
+gf_fc27_131681 | Milano FC | serie_a_enilive
+gf_fc27_115845 | Bergamo Calcio | serie_a_enilive
+gf_fc27_111701 | Al Ain FC | united_emirates_league
+gf_fc27_113050 | Club Atlético Gimnasia y Esgrima | lpf
+gf_fc27_101100 | Atl. Nacional | liga_colombia
+gf_fc27_111008 | Libertad | conmebol_libertadores
+gf_fc27_100135 | APOEL FC | liga_cyprus
+gf_fc27_101101 | Junior | conmebol_libertadores
+gf_fc27_101108 | Olimpia | conmebol_sudamericana
+gf_fc27_112908 | IDV | conmebol_libertadores
+gf_fc27_113888 | Qarabağ FK | liga_azerbaijan
+gf_fc27_112716 | Cerro Porteño | conmebol_libertadores
+gf_fc27_101104 | Indep. Santa Fe | conmebol_libertadores
+gf_fc27_264 | Omonia FC | liga_cyprus
+gf_fc27_110981 | Barcelona SC | conmebol_libertadores
+gf_fc27_112638 | Buriram United | thailand_league
+gf_fc27_110986 | LDU Quito | conmebol_libertadores
+gf_fc27_112494 | Südtirol | serie_bkt
+gf_fc27_101099 | América de Cali | conmebol_sudamericana
+gf_fc27_111398 | Newcastle Jets | isuzu_ute_a_league
+gf_fc27_114577 | Always Ready | conmebol_libertadores
+gf_fc27_101105 | Millonarios | conmebol_sudamericana
+gf_fc27_113146 | Mohun Bagan SG | isl
+gf_fc27_101103 | Indep. Medellín | conmebol_libertadores
+gf_fc27_111722 | Deportes Tolima | conmebol_libertadores
+gf_fc27_110968 | Bolívar | conmebol_libertadores
+gf_fc27_115693 | UCV FC | conmebol_libertadores
+gf_fc27_131826 | Recoleta | conmebol_sudamericana
+gf_fc27_113040 | NorthEast United | isl
+gf_fc27_306 | Shamrock Rovers | sse_airtricity_men_s_premier_division
+gf_fc27_111397 | Melb. Victory | isuzu_ute_a_league
+gf_fc27_111393 | Adelaide United | isuzu_ute_a_league
+gf_fc27_445 | Derry City | sse_airtricity_men_s_premier_division
+gf_fc27_111399 | Perth Glory | isuzu_ute_a_league
+gf_fc27_131739 | Auckland FC | isuzu_ute_a_league
+gf_fc27_110991 | Carabobo FC | conmebol_sudamericana
+gf_fc27_114578 | Macar | conmebol_sudamericana
+gf_fc27_114611 | Puerto Cabello | conmebol_sudamericana
+gf_fc27_100325 | HJK Helsinki | finnliiga
+gf_fc27_112224 | Melbourne City | isuzu_ute_a_league
+gf_fc27_111400 | Sydney FC | isuzu_ute_a_league
+gf_fc27_113302 | Bengaluru FC | isl
+gf_fc27_112853 | Dep. La Guaira | conmebol_libertadores
+gf_fc27_1756 | HamKam Fotball | eliteserien
+gf_fc27_115517 | Ind. Petrolero | conmebol_sudamericana
+gf_fc27_110982 | Dep. Cuenca | conmebol_sudamericana
+gf_fc27_110711 | Real Sociedad B | laliga_hypermotion
+gf_fc27_526 | Rot-Weiss Essen | 3_liga
+gf_fc27_112427 | WS Wanderers | isuzu_ute_a_league
+gf_fc27_110967 | Blooming | conmebol_sudamericana
+gf_fc27_110989 | Caracas FC | conmebol_sudamericana
+gf_fc27_111395 | Brisbane Roar | isuzu_ute_a_league
+gf_fc27_423 | St. Pats | sse_airtricity_men_s_premier_division
+gf_fc27_305 | Bohemians | sse_airtricity_men_s_premier_division
+gf_fc27_563 | Sligo Rovers | sse_airtricity_men_s_premier_division
+gf_fc27_114604 | Macarthur FC | isuzu_ute_a_league
+gf_fc27_111766 | Well. Phoenix | isuzu_ute_a_league
+gf_fc27_113300 | Mumbai City FC | isl
+gf_fc27_113297 | Chennaiyin FC | isl
+gf_fc27_110716 | Celta Fortuna | laliga_hypermotion
+gf_fc27_110685 | TSG Hoffenheim II | 3_liga
+gf_fc27_753 | Waterford | sse_airtricity_men_s_premier_division
+gf_fc27_543 | Jahn Regensburg | 3_liga
+gf_fc27_113257 | Odisha FC | isl
+gf_fc27_110697 | VfB Stuttgart II | 3_liga
+gf_fc27_111396 | Central Coast | isuzu_ute_a_league
+gf_fc27_131461 | Inter Kashi | isl
+gf_fc27_834 | Shelbourne | sse_airtricity_men_s_premier_division
+gf_fc27_113298 | FC Goa | isl
+gf_fc27_1572 | Drogheda United | sse_airtricity_men_s_premier_division
+gf_fc27_113299 | Kerala Blasters | isl
+gf_fc27_113301 | Hyderabad FC | isl
+gf_fc27_837 | Dundalk | sse_airtricity_men_s_premier_division
+gf_fc27_1571 | Galway United | sse_airtricity_men_s_premier_division
+gf_fc27_115202 | Punjab FC | isl

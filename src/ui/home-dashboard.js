@@ -88,7 +88,7 @@
     const home = national ? fixture.homeName : D.club(s, fixture.home)?.name;
     const away = national ? fixture.awayName : D.club(s, fixture.away)?.name;
     const opponent = national ? fixture.opponent : D.club(s, fixture.home === s.clubId ? fixture.away : fixture.home)?.name;
-    return { ...fixture, national, home:home || "—", away:away || "—", opponent:opponent || "—", stage:D.Competitions?.fixtureStage?.(s,fixture) || fixture.stage || (fixture.round ? `Rodada ${fixture.round}` : "Próximo compromisso") };
+    return { ...fixture, national, homeClubId:national?null:fixture.home, awayClubId:national?null:fixture.away, home:home || "—", away:away || "—", opponent:opponent || "—", stage:D.Competitions?.fixtureStage?.(s,fixture) || fixture.stage || (fixture.round ? `Rodada ${fixture.round}` : "Próximo compromisso") };
   }
   function snapshot(s, D, Calendar) {
     const c=D.club(s), career=D.Career.init(s), stats=D.Statistics?.heroDashboard?.(s), current=stats?.currentClubSeason || stats?.season || {}, plan=D.Training.init(s), next=nextInfo(s,D), table=tableWindow(s,D), pc=career.playerCareer || {};
