@@ -106,11 +106,13 @@ function render(ctx){
        const label=document.createElement("span");label.textContent=club.name;
        const meta=document.createElement("small");meta.textContent=[club.country||"Brasil",club.leagueName||leagueLabels.get(String(club.leagueId))||club.leagueId].filter(Boolean).join(" · ");
        const info=document.createElement("span");info.className="coach-club-option-info";info.append(label,meta);
-       if(root.ProLifeClubCrests?.inline){
-         const crest=root.ProLifeClubCrests.inline(club.id,"sm");
-         if(crest&&/^<(?:img|svg|span|i)\\b/i.test(crest)){const emblem=document.createElement("span");emblem.className="coach-club-option-crest";emblem.innerHTML=crest;button.appendChild(emblem);}
-       }
-       button.appendChild(info);
+       if(root.ProLifeClubCrests?.render){
+         const crest=root.ProLifeClubCrests.render(club.id,{size:"sm"});
+         if(crest&&/^<(?:img|svg|span)\b/i.test(crest)){
+           const emblem=document.createElement("span");emblem.className="coach-club-option-crest";
+           emblem.innerHTML=crest;button.appendChild(emblem);
+         }
+       }       button.appendChild(info);
        button.addEventListener("click",()=>{selector.value=club.id;results.querySelectorAll("[data-club-choice]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.clubChoice===club.id)));review();});
        results.appendChild(button);
      }
