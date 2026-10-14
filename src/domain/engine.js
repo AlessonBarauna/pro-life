@@ -528,7 +528,7 @@
     if (plan) Creation.applyContext(s, plan);
     s.offers = plan ? Creation.opportunities(s, rng, API, plan) : weightedCareerOffers(s, rng, mode === "player" ? Math.min(5, 3 + (origin.offerBoost || 0)) : 3);
     if (plan && config.clubId) Creation.accept(s, config.clubId, API);
-    else if (config.clubId && clubs.some((c) => c.id === config.clubId)) {
+    else if (config.clubId && (clubs.some((c) => c.id === config.clubId) || (mode === "coach" && (s.globalFootball?.clubs || []).some(c => c.id === config.clubId && c.generated !== true && c.active !== false)))) {
       movePlayerToClub(s, config.clubId);
       if (mode === "player") {
         const initialOffer = s.offers.find((o) => o.clubId === config.clubId);
