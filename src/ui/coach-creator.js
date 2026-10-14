@@ -21,9 +21,9 @@ function render(ctx){
      <label>Idade inicial<input name="age" type="number" min="25" max="65" required value="35"></label>
      <label class="coach-full">Nacionalidade<input name="nationality" maxlength="60" value="Brasil" required></label>
     </div><div class="coach-fields" data-coach-panel="1"><div class="coach-full coach-section-note"><b>Experiência profissional</b><p>Sua licença e reputação começam conforme as regras do motor. As progressões serão conquistadas durante a carreira.</p><p>Não há atributos ou pontos de jogador neste modo.</p></div></div>
-    <div class="coach-fields" data-coach-panel="2"><label class="coach-full">Primeiro projeto<select name="clubId"><option value="">Receber propostas de clubes</option>${options}</select></label>
+    <div class="coach-fields" data-coach-panel="2"><label class="coach-full">Primeiro projeto<select name="clubId"><option value="">Receber propostas de clubes</option>${options}</select></label><div class="coach-full coach-club-analysis" id="coach-club-analysis" aria-live="polite"></div>
     </div><div class="coach-fields" data-coach-panel="3"><div class="coach-full coach-section-note"><b>Configurações</b><p>Base de dados FC 27 · carreira tradicional · regras padrão. Para evitar opções sem efeito real, táticas e formação são configuradas após assumir um clube.</p></div><label class="coach-full">Seed do mundo (opcional)<input name="seed" type="number" placeholder="Mesmo número = mesmo universo inicial"></label>
-    </div><div class="coach-fields" data-coach-panel="4"><div class="coach-full coach-section-note"><b>Revisão do projeto</b><p>Confira nome, nacionalidade, clube e seed antes de iniciar. A carreira será salva em um slot separado.</p></div></div>
+    </div><div class="coach-fields" data-coach-panel="4"><div class="coach-full coach-section-note"><b>Revisão do projeto</b><div class="coach-confirm-details" id="coach-confirm-details" aria-live="polite"></div><p>A carreira será salva em um slot separado.</p></div></div>
     <p class="coach-section-note">A carreira de treinador usa reputação, licenças, objetivos da diretoria, elenco e orçamento do motor atual. As opções de formação e estilo tático serão configuradas dentro do clube, onde já existem efeitos reais.</p>
     <p class="coach-section-note">Base FC 27 selecionada para a nova carreira. Os dados do mundo e dos atletas são simulados.</p>
    </section>
@@ -37,9 +37,30 @@ function render(ctx){
   </div></form></main>`;
  const panels=Array.from(app.querySelectorAll("[data-coach-panel]"));
  const next=app.querySelector("[data-coach-next]"),finish=app.querySelector("[data-coach-finish]"),prev=app.querySelector("[data-coach-prev]");
+ const form=app.querySelector("#coach-creation-form");
+ function selectedClub(){return clubs.find(c=>c.id===form.elements.clubId.value)||null;}
+ function review(){
+  const club=selectedClub(),target=app.querySelector("#coach-club-analysis");
+  if(target)target.textContent=club
+    ? "Clube: "+club.name+" · Liga: "+(club.leagueId||"Não informada")+" · Orçamento inicial: R$ "+Number(club.budget||0).toLocaleString("pt-BR")+"."
+    : "Receber propostas: o motor da carreira selecionará oportunidades. Você ainda precisará escolher uma oferta.";
+  const detail=app.querySelector("#coach-confirm-details");
+  if(detail){
+    detail.textContent="Treinador: "+(form.elements.name.value.trim()||"Não informado")+" · "+(form.elements.nationality.value.trim()||"Brasil")+" · Idade: "+form.elements.age.value+" · Projeto: "+(club?.name||"Propostas de clubes")+" · Base FC 27 · Seed: "+(form.elements.seed.value||"automática");
+  }
+ }
+ function validIdentity(){
+  for(const key of ["name","city","age","nationality"]){
+   const el=form.elements[key];
+   if(!el.checkValidity() || !String(el.value).trim()){el.reportValidity();el.focus();return false;}
+  }
+  const age=Number(form.elements.age.value);
+  if(!Number.isInteger(age)||age<25||age>65){ctx.toast("Idade entre 25 e 65 anos.");return false;}
+  return true;
+ }
  function showStep(index){currentStep=Math.max(0,Math.min(4,index));panels.forEach((p,i)=>{p.hidden=i!==currentStep;});app.querySelectorAll("[data-coach-step]").forEach((b,i)=>{b.classList.toggle("on",i===currentStep);b.setAttribute("aria-current",i===currentStep?"step":"false");});next.hidden=currentStep===4;finish.hidden=currentStep!==4;prev.hidden=currentStep===0;}
- app.querySelectorAll("[data-coach-step]").forEach(b=>b.addEventListener("click",()=>showStep(Number(b.dataset.coachStep))));
- next.addEventListener("click",()=>showStep(currentStep+1));prev.addEventListener("click",()=>showStep(currentStep-1));showStep(0);
+ app.querySelectorAll("[data-coach-step]").forEach(b=>b.addEventListener("click",()=>{const target=Number(b.dataset.coachStep);if(target>0&&!validIdentity())return;showStep(target);review();}));
+ next.addEventListener("click",()=>{if(currentStep===0&&!validIdentity())return;showStep(currentStep+1);review();});prev.addEventListener("click",()=>showStep(currentStep-1));form.addEventListener("input",review);form.addEventListener("change",review);showStep(0);review();
  app.querySelector('[data-coach-back]').addEventListener("click",()=>{currentStep=0;ctx.onBack();});
  app.querySelector("#coach-creation-form").addEventListener("submit",event=>{
   event.preventDefault();
