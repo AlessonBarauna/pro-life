@@ -49,8 +49,6 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       add(new THREE.CylinderGeometry(.22*factor,.16*factor,.32,24),pants,0,.66,0).scale.z=.85;
       for(const side of [-1,1]){
         add(new THREE.CylinderGeometry(.103*factor,.085*factor,.59,14),pants,side*.12,.34,0);
-        // T-pose sleeves: follow upper arms of the original rig.
-        add(new THREE.CylinderGeometry(.095,.115,.45,14),jacket,side*.36,1.23,0,side*Math.PI/2);
       }
       if(outfit==="suit"){
         add(new THREE.ConeGeometry(.075,.25,3),trim,0,1.27,.177).rotation.z=Math.PI;
@@ -116,6 +114,15 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       // Apply the user-selected palette while retaining mesh normals and original topology.
       const tint=new THREE.Color(config.appearance?.skin||"#bc8660");
       model.traverse(node=>{if(node.isMesh){node.material=new THREE.MeshStandardMaterial({color:tint,roughness:.73,metalness:0,side:THREE.DoubleSide});node.frustumCulled=false;}});
+      // Character has a true skinned skeleton. Lower the arms from T-pose
+      // into a relaxed standing stance before overlaying manager attire.
+      model.traverse(node=>{
+        if(!node.isBone)return;
+        if(node.name==="upperarm_l")node.rotation.z=-1.05;
+        if(node.name==="upperarm_r")node.rotation.z=1.05;
+        if(node.name==="lowerarm_l")node.rotation.z=-.13;
+        if(node.name==="lowerarm_r")node.rotation.z=.13;
+      });
       scene.add(model);
       scene.add(wardrobe);rebuildWardrobe();
       // Half body framing focuses on face/torso; user can rotate the entire figure.
