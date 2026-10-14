@@ -83,3 +83,21 @@ test("06B manager briefing and review use chosen club and real initial budget",(
  assert.match(dom.window.document.querySelector("#coach-confirm-details").textContent,/Ana Treinadora/);
  assert.match(dom.window.document.querySelector("#coach-confirm-details").textContent,/Clube Real/);
 });
+
+test("06B coach selections affect training focus and club tactic",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ let saved=null;
+ const D={
+  create:cfg=>cfg.name?{mode:"coach",person:{name:cfg.name},clubId:"c1",clubs:[{id:"c1",tactic:"balanced"}],coachCareer:{focus:"equilibrado"}}:{clubs:[{id:"c1",name:"Clube Real",active:true}]},
+  CoachCareer:{setFocus:(state,focus)=>{state.coachCareer.focus=focus;}}
+ };
+ sandbox.ProLifeCoachCreator.mount({D,esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:state=>{saved=state;},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ form.elements.name.value="Treinador Teste";form.elements.city.value="Mogi";
+ form.elements.clubId.value="c1";form.elements.focus.value="jovens";form.elements.tactic.value="counter";
+ form.dispatchEvent(new dom.window.Event("submit",{bubbles:true,cancelable:true}));
+ assert.equal(saved.coachCareer.focus,"jovens");
+ assert.equal(saved.clubs[0].tactic,"counter");
+});
