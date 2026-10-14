@@ -20,9 +20,9 @@ function render(ctx){
      <label>Cidade natal<input name="city" required maxlength="60" value="" placeholder="Cidade"></label>
      <label>Idade inicial<input name="age" type="number" min="25" max="65" required value="35"></label>
      <label class="coach-full">Nacionalidade<input name="nationality" maxlength="60" value="Brasil" required></label>
-    </div><div class="coach-fields" data-coach-panel="1"><div class="coach-full coach-section-note"><b>Experiência profissional</b><p>Sua licença e reputação começam conforme as regras do motor. As progressões serão conquistadas durante a carreira.</p><p>Não há atributos ou pontos de jogador neste modo.</p></div></div>
+    </div><div class="coach-fields" data-coach-panel="1"><div class="coach-full coach-section-note"><b>Licença inicial: C · reputação: 35</b><p>Esses valores são definidos pelo motor, e podem evoluir durante a carreira.</p></div><label class="coach-full">Foco inicial de treino coletivo<select name="focus"><option value="equilibrado">Equilibrado</option><option value="fisico">Preparação física</option><option value="tecnico">Refino técnico</option><option value="jovens">Desenvolvimento de jovens</option><option value="recuperacao">Recuperação</option></select></label></div>
     <div class="coach-fields" data-coach-panel="2"><label class="coach-full">Primeiro projeto<select name="clubId"><option value="">Receber propostas de clubes</option>${options}</select></label><div class="coach-full coach-club-analysis" id="coach-club-analysis" aria-live="polite"></div>
-    </div><div class="coach-fields" data-coach-panel="3"><div class="coach-full coach-section-note"><b>Configurações</b><p>Base de dados FC 27 · carreira tradicional · regras padrão. Para evitar opções sem efeito real, táticas e formação são configuradas após assumir um clube.</p></div><label class="coach-full">Seed do mundo (opcional)<input name="seed" type="number" placeholder="Mesmo número = mesmo universo inicial"></label>
+    </div><div class="coach-fields" data-coach-panel="3"><div class="coach-full coach-section-note"><b>Configurações</b><p>Base FC 27 · carreira tradicional · regras padrão. O foco de treino selecionado afeta o elenco semanalmente. Se você escolher um clube diretamente, o estilo tático inicial também será aplicado ao clube.</p></div><label class="coach-full">Plano tático inicial (clube escolhido)<select name="tactic"><option value="balanced">Equilibrado</option><option value="possession">Posse de bola</option><option value="attack">Ofensivo</option><option value="counter">Contra-ataque</option></select></label><label class="coach-full">Seed do mundo (opcional)<input name="seed" type="number" placeholder="Mesmo número = mesmo universo inicial"></label>
     </div><div class="coach-fields" data-coach-panel="4"><div class="coach-full coach-section-note"><b>Revisão do projeto</b><div class="coach-confirm-details" id="coach-confirm-details" aria-live="polite"></div><p>A carreira será salva em um slot separado.</p></div></div>
     <p class="coach-section-note">A carreira de treinador usa reputação, licenças, objetivos da diretoria, elenco e orçamento do motor atual. As opções de formação e estilo tático serão configuradas dentro do clube, onde já existem efeitos reais.</p>
     <p class="coach-section-note">Base FC 27 selecionada para a nova carreira. Os dados do mundo e dos atletas são simulados.</p>
@@ -46,7 +46,7 @@ function render(ctx){
     : "Receber propostas: o motor da carreira selecionará oportunidades. Você ainda precisará escolher uma oferta.";
   const detail=app.querySelector("#coach-confirm-details");
   if(detail){
-    detail.textContent="Treinador: "+(form.elements.name.value.trim()||"Não informado")+" · "+(form.elements.nationality.value.trim()||"Brasil")+" · Idade: "+form.elements.age.value+" · Projeto: "+(club?.name||"Propostas de clubes")+" · Base FC 27 · Seed: "+(form.elements.seed.value||"automática");
+    detail.textContent="Treinador: "+(form.elements.name.value.trim()||"Não informado")+" · "+(form.elements.nationality.value.trim()||"Brasil")+" · Idade: "+form.elements.age.value+" · Projeto: "+(club?.name||"Propostas de clubes")+" · Treino: "+form.elements.focus.value+" · Tática: "+form.elements.tactic.value+" · Base FC 27 · Seed: "+(form.elements.seed.value||"automática");
   }
  }
  function validIdentity(){
@@ -74,7 +74,17 @@ function render(ctx){
   if(!Number.isFinite(seed)){ctx.toast("Seed invalida.");return;}
   const config={mode:"coach",catalogVersion:"fc27_v1",name,city,age,nationality:String(f.get("nationality")||"Brasil").trim(),clubId:String(f.get("clubId")||"")};
   ctx.busy("Criando carreira de treinador FC 27…",()=>{
-   try{const fresh=D.create(config,seed);return ctx.onStart(fresh);}
+   try{
+    const fresh=D.create(config,seed);
+    const focus=String(f.get("focus")||"equilibrado");
+    if(D.CoachCareer?.setFocus)D.CoachCareer.setFocus(fresh,focus);
+    else if(fresh.mode==="coach"&&fresh.coachCareer)fresh.coachCareer.focus=focus;
+    const tactic=String(f.get("tactic")||"balanced");
+    if(!["balanced","possession","attack","counter"].includes(tactic))throw Error("Estilo tático inválido.");
+    const selected=fresh.clubs?.find(c=>c.id===fresh.clubId);
+    if(selected)selected.tactic=tactic;
+    return ctx.onStart(fresh);
+   }
    catch(err){ctx.toast(err.message);return false;}
   });
  });
