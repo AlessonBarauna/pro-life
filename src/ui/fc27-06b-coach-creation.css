@@ -34,3 +34,6 @@
 .coach-creation .coach-fields[data-coach-panel]{min-height:240px;align-content:start}
 .coach-creation .coach-fields[data-coach-panel="1"] .coach-section-note,.coach-creation .coach-fields[data-coach-panel="4"] .coach-section-note{font-size:15px}
 @media(max-width:760px){.coach-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.coach-creation .coach-club-analysis,.coach-creation .coach-confirm-details{padding:16px;border:1px solid #376253;border-left:4px solid #baf12d;background:#102d2a;border-radius:8px;color:#e5f3e9;font-size:14px;line-height:1.6;min-height:58px}
+.coach-creation .coach-confirm-details{margin-top:14px;overflow-wrap:anywhere}
