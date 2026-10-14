@@ -115,7 +115,7 @@
       const heroStats=m.playerStats?.hero, heroGoals=goals.filter(g=>(m.events||[]).some(e=>e.type==="goal"&&e.playerId==="hero"&&e.minute===g.minute)).length;
       const heroAssists=(m.events||[]).filter(e=>e.type==="goal"&&e.assistPlayerId==="hero").length;
       const rating=validRating(m.ratings?.hero);
-      return { match:m, national:false, result:resultFor(s,m), rating,
+      return { match:m, national:false, homeClubId:m.home, awayClubId:m.away, result:resultFor(s,m), rating,
         opponent:D.club(s,m.home===s.clubId?m.away:m.home)?.name || "Adversário",
         home:home?.name||"Mandante", away:away?.name||"Visitante", score:`${m.hg}–${m.ag}`,
         competition:m.competitionName||m.leagueName||"Partida", date:m.date, goals, motm, tie:m.tie||null,
