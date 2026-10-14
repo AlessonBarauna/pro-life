@@ -55,11 +55,11 @@ function render(ctx){
   const unsupported=[];
   if(a.beard.value!=="none")unsupported.push("barba");
   if(a.accessory.value!=="none")unsupported.push("óculos");
-  if(a.outfit.value!=="polo")unsupported.push("troca de roupa");
+  if(a.outfit.value!=="polo")unsupported.push("modelo da roupa (somente as cores da camisa e calça mudam)");
   if(a.body.value!=="normal")unsupported.push("biotipo");
   element.textContent=unsupported.length
    ? "Ainda sem modelos 3D para: "+unsupported.join(", ")+". Estas escolhas ficam no save, mas não mudam o personagem nesta versão."
-   : "Prévia 3D disponível: pele, cor do cabelo e silhueta do cabelo. As demais variações precisam de arquivos 3D próprios.";
+   : "Prévia 3D disponível: pele, olhos, cabelo e cores da camisa/calça. Cortes de roupa e acessórios precisam de arquivos 3D próprios.";
  }
  function review(){appearanceNotice();
   const preview=app.querySelector("#coach-profile-preview");
