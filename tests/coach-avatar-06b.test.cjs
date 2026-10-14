@@ -58,3 +58,15 @@ test("06B manager creation discloses appearance options without models",()=>{
  assert.match(creator,/Ainda sem modelos 3D para:/);
  assert.match(creator,/não mudam o personagem nesta versão/);
 });
+
+test("06B appearance changes affect distinct licensed clothing and face material slots",()=>{
+ const src=read("src/ui/coach-glb.source.js").toString("utf8");
+ for(const slot of ["vitbody","vitshirt","vitpants","vitiris","vithairmat","vitbrowcards"]) {
+  assert.ok(src.toLowerCase().includes(slot),slot);
+ }
+ assert.match(src,/shirtMaterials/);
+ assert.match(src,/pantsMaterials/);
+ assert.match(src,/next\.outfit/);
+ assert.match(src,/appearance\.skin/);
+ assert.match(src,/appearance\.eyeColor/);
+});
