@@ -138,3 +138,24 @@ test("06B identity controls persist eyewear and body shape and update portrait",
  assert.equal(config.appearance.accessory,"glasses");
  assert.equal(config.appearance.body,"strong");
 });
+
+test("06B avatar 3D receives changed hair, beard and live color controls",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const changes=[];
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console,ProLifeAvatar3D:{show:(node,person)=>{assert.ok(node);changes.push({...person.appearance});}}};sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ sandbox.ProLifeCoachCreator.mount({D:{create:()=>({clubs:[]})},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ assert.equal(changes.length,1);
+ form.elements.hair.value="curly";
+ form.elements.hair.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ form.elements.beard.value="full";
+ form.elements.beard.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ form.elements.skin.value="#884422";
+ form.elements.skin.dispatchEvent(new dom.window.Event("input",{bubbles:true}));
+ assert.equal(changes.length,4);
+ assert.equal(changes.at(-1).hair,"curly");
+ assert.equal(changes.at(-1).beard,"full");
+ assert.equal(changes.at(-1).skin,"#884422");
+ assert.equal(dom.window.document.querySelector("#coach-profile-preview").classList.contains("has-3d"),true);
+});
