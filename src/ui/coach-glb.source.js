@@ -22,11 +22,19 @@ function mount(host,config){
  const clock=new THREE.Clock();
  const skinMaterials=[],irisMaterials=[],shirtMaterials=[],pantsMaterials=[],hairMaterials=[],browMaterials=[];
  const originalColors=new Map();
+ let headBone=null,headRestInverse=null;
+ const headCurrent=new THREE.Matrix4(),parentInverse=new THREE.Matrix4(),headDelta=new THREE.Matrix4();
  function attach(gltf,index){
    if(disposed)return;
    const obj=gltf.scene;assembled.add(obj);
    if(index===0){
      body=obj;
+     headBone=obj.getObjectByName("mixamorig:Head");
+     if(headBone){
+       assembled.updateMatrixWorld(true);
+       headCurrent.copy(assembled.matrixWorld).invert().multiply(headBone.matrixWorld);
+       headRestInverse=headCurrent.clone().invert();
+     }
      if(gltf.animations.length){
        mixer=new THREE.AnimationMixer(obj);
        const idle=gltf.animations.find(a=>/idle/i.test(a.name))||gltf.animations[0];
@@ -75,17 +83,13 @@ function mount(host,config){
    setTint(pantsMaterials,chosen.pants);
    if(hair){
      const style=appearance.hair||"lowfade";
-     hair.visible=style!=="bald";
-     // One licensed hair mesh. These are honest silhouette variations,
-     // not invented meshes for different hairstyles.
-     const transforms={
-       lowfade:[1,.93,1],crew:[.97,.85,.96],highfade:[.96,.89,.95],
-       buzz:[.95,.78,.95],curly:[1.08,1.08,1.1],afro:[1.15,1.2,1.15],
-       twists:[1.05,1.04,1.04],braids:[1,1.05,1.02],
-       mullet:[1,1.08,1.12],long:[1,1.14,1.12],bald:[1,1,1]
-     };
-     const v=transforms[style]||transforms.lowfade;
-     hair.scale.set(v[0],v[1],v[2]);
+     // Hair and eyebrows share a GLB but are separate named meshes.
+     // Do not scale the complete file: vertex coordinates are in world-space.
+     hair.traverse(node=>{
+       if(node.isMesh&&/^(VitHair|VitBrowCards)$/i.test(node.name)){
+         node.visible=node.name!=="VitHair"||style!=="bald";
+       }
+     });
    }
    // The source contains one outfit, no beard/glasses meshes and no body morph targets.
    // Do not fake customization by overlaying primitive meshes.
@@ -112,7 +116,7 @@ function mount(host,config){
  function up(){drag=false;}
  renderer.domElement.addEventListener("pointerdown",down);renderer.domElement.addEventListener("pointermove",move);
  renderer.domElement.addEventListener("pointerup",up);renderer.domElement.addEventListener("pointercancel",up);
- function frame(){if(disposed)return;raf=root.requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.05);mixer?.update(dt);assembled.rotation.y=turn;renderer.render(scene,camera);}frame();
+ function frame(){if(disposed)return;raf=root.requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.05);mixer?.update(dt);assembled.rotation.y=turn;assembled.updateMatrixWorld(true);if(headBone&&headRestInverse){parentInverse.copy(assembled.matrixWorld).invert();headCurrent.multiplyMatrices(parentInverse,headBone.matrixWorld);headDelta.multiplyMatrices(headCurrent,headRestInverse);for(const part of [head,hair])if(part){part.matrixAutoUpdate=false;part.matrix.copy(headDelta);part.matrixWorldNeedsUpdate=true;}}renderer.render(scene,camera);}frame();
  const controller={update:apply,dispose(){
    if(disposed)return;disposed=true;root.cancelAnimationFrame(raf);observer?.disconnect();
    renderer.domElement.removeEventListener("pointerdown",down);renderer.domElement.removeEventListener("pointermove",move);
