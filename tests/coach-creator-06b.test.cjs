@@ -225,3 +225,23 @@ test("27 manager first-club search filters the canonical club catalog",()=>{
  form.elements.leagueFilter.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
  assert.deepEqual([...form.elements.clubId.options].map(o=>o.value),["","a","c"]);
 });
+
+test("08 first club briefing uses canonical ranking roster morale and budget",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ const clubs=[
+  {id:"a",name:"Clube Alfa",leagueId:"A",active:true,strength:95,budget:750000,roster:[{morale:80},{morale:60}]},
+  {id:"b",name:"Clube Beta",leagueId:"A",active:true,strength:72,budget:230000,roster:[{morale:40}]},
+  {id:"c",name:"Clube Gama",leagueId:"A",active:true,strength:60,budget:100000,roster:[]}
+ ];
+ sandbox.ProLifeCoachCreator.mount({D:{create:()=>({clubs})},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ form.elements.clubId.value="a";form.elements.clubId.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ const text=dom.window.document.querySelector("#coach-club-analysis").textContent;
+ assert.match(text,/750.000/);assert.match(text,/Jogadores no elenco: 2/);
+ assert.match(text,/Moral média: 70\/100/);assert.match(text,/Título/);
+ form.elements.clubId.value="";
+ form.elements.clubId.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ assert.match(dom.window.document.querySelector("#coach-club-analysis").textContent,/começa sem clube/);
+});
