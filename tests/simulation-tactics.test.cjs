@@ -23,3 +23,15 @@ test("player simulation instructions have measurable tradeoffs",()=>{
  assert.ok(creative.turnoverRisk>safe.turnoverRisk);
  assert.ok(creative.fatigue>safe.fatigue);
 });
+
+test("a high line suffers defensively against direct opponents, rather than receiving an attack bonus",()=>{
+ const opponent={tacticalPlan:{...T.PRESETS.counter,directness:90}};
+ const high=T.matchup({tacticalPlan:{...T.PRESETS.highPress,line:90}},opponent);
+ const medium=T.matchup({tacticalPlan:{...T.PRESETS.highPress,line:55}},opponent);
+ assert.ok(high.defense<medium.defense);
+ assert.equal(high.attack,medium.attack);
+ const forward={tacticalPlan:{...T.PRESETS.counter,directness:90}};
+ const deep=T.matchup(forward,{tacticalPlan:{...T.PRESETS.balanced,line:48}});
+ const exposed=T.matchup(forward,{tacticalPlan:{...T.PRESETS.balanced,line:90}});
+ assert.ok(exposed.attack>deep.attack);
+});
