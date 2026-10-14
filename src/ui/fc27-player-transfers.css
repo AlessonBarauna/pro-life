@@ -128,3 +128,40 @@ body:has(.pl-player-transfer-experience) .game-shell{min-width:0}
 .pl-market-j054[data-player-market-section="contracts"] #player-market-overview{display:none}
 .pl-market-j054 .pl-market-negotiations,.pl-market-j054 .pl-market-contracts,.pl-market-j054 .pl-market-clubs{min-width:0}
 @media(max-width:600px){.pl-market-j054>.pl-market-nav{display:grid;grid-template-columns:1fr}.pl-market-nav button{width:100%}}
+
+/* J05.5 — jornada contratual e lista de ofertas (apenas modo jogador) */
+.pl-market-j054>.pl-contract-journey{min-width:0;padding:22px;background:linear-gradient(105deg,#172631,#0b151e);border:1px solid #40515c}
+.pl-contract-journey h2{margin:4px 0 18px}
+.pl-contract-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.pl-contract-step{min-width:0;background:#13222d;border:1px solid #354651;padding:15px;display:flex;flex-direction:column;gap:9px;opacity:.65}
+.pl-contract-step.current{opacity:1;border-color:#baf02d;background:#223226}
+.pl-contract-step.completed{opacity:1;border-color:#577b37}
+.pl-contract-step small{color:#baf02d;font-size:11px;font-weight:900}
+.pl-contract-step b{font-size:15px;color:#fff}
+.pl-contract-step span{color:#afc0ca;font-size:11px;line-height:1.45}
+.pl-contract-attention{padding:14px 18px;margin-top:14px;border-left:3px solid #baf02d;background:#1c2d34}
+.pl-contract-attention strong{color:#dffca0}
+.pl-contract-attention p{color:#d4e0e6}
+.pl-contract-attention button{padding:12px 16px;background:#baf02d;color:#122009;font-weight:900}
+.pl-offer-shortlist{display:grid;gap:15px;margin:12px 0;padding:16px;border:1px solid #40515b;background:#101d27;max-width:100%;min-width:0}
+.pl-offer-shortlist.expanded{border-color:#baf02d}
+.pl-offer-shortlist-main{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.8fr) minmax(0,.85fr);gap:12px;align-items:center}
+.pl-offer-shortlist-club{display:flex;gap:12px;align-items:center;min-width:0}
+.pl-offer-shortlist-club>div{min-width:0}
+.pl-offer-shortlist-club h3{font-size:20px;color:#fff;margin:5px 0;overflow-wrap:anywhere}
+.pl-offer-shortlist-club p{margin:0;color:#b0c1cb;font-size:12px;overflow-wrap:anywhere}
+.pl-offer-shortlist-club small,.pl-offer-shortlist-price small{color:#baf02d;font-size:10px;font-weight:900;letter-spacing:.1em}
+.pl-offer-shortlist-price,.pl-offer-shortlist-status{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pl-offer-shortlist-price strong{color:#fff;font-size:clamp(17px,2vw,24px);overflow-wrap:anywhere}
+.pl-offer-shortlist-price span,.pl-offer-shortlist-status small{color:#afc1ca;font-size:12px}
+.pl-offer-shortlist-status span{font-size:10px;color:#baf02d;font-weight:900}
+.pl-offer-shortlist-status b{font-size:14px;color:#fff}
+.pl-offer-shortlist-actions{display:flex;gap:9px;flex-wrap:wrap;border-top:1px solid #324450;padding-top:12px}
+.pl-offer-shortlist-actions button{padding:12px 16px;border:1px solid #526673;background:#1d303d;color:#fff;font-weight:800;min-height:45px}
+.pl-offer-shortlist-actions button.primary{background:#baf02d;color:#102007;border-color:#baf02d}
+.pl-deal-progress{display:flex;flex-direction:column;gap:7px;padding:12px 15px;border-left:3px solid #baf02d;background:#172832;color:#d6e5ea}
+.pl-deal-progress b{color:#baf02d}
+.pl-deal-progress span{font-size:12px}
+.pl-offer-shortlist .fc27-transfer-overlay{position:fixed}
+@media(max-width:850px){.pl-contract-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.pl-offer-shortlist-main{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.pl-offer-shortlist-club{grid-column:1/-1}}
+@media(max-width:520px){.pl-contract-steps{grid-template-columns:1fr 1fr}.pl-contract-step{padding:10px}.pl-offer-shortlist-main{grid-template-columns:minmax(0,1fr)}.pl-offer-shortlist-club{grid-column:auto}.pl-offer-shortlist-actions button{flex:1 1 100%}}
