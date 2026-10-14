@@ -9153,7 +9153,7 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
     if (q("[data-cine-present]")) { cineOpen("present"); return; }
     if (q("[data-cine-agreement]")) { cineOpen("agreement"); return; }
     if ((el = q("[data-cine-open]"))) { cineOpen(el.dataset.cineOpen); return; }
-    if ((el = q("[data-player-market-section]"))) { playerMarketSection=el.dataset.playerMarketSection; render(); return; }
+    if ((el = q("button[data-player-market-section]"))) { playerMarketSection=el.dataset.playerMarketSection; render(); return; }
     if ((el = q("[data-neg-open]"))) { negUi.open = negUi.open === el.dataset.negOpen ? null : el.dataset.negOpen; negUi.confirm = null; negUi.terms = false; render(); return; }
     if (q("[data-neg-close]")) { negUi.open = null; negUi.confirm = null; negUi.terms = false; render(); return; }
     if ((el = q("[data-club-profile]"))) { negUi.profile = negUi.profile === el.dataset.clubProfile ? null : el.dataset.clubProfile; render(); return; }
