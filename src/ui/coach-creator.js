@@ -129,7 +129,7 @@ function render(ctx){
    const ears=preview.querySelector("#coach-eyes");if(ears)ears.setAttribute("fill",form.elements.eyeColor.value);
   }
   const club=selectedClub(),target=app.querySelector("#coach-club-analysis");
-  if(target)target.textContent=clubBriefing(club);
+  if(target){target.textContent=clubBriefing(club);if(club&&root.ProLifeClubCrests?.inline){const emblem=root.ProLifeClubCrests.inline(club.id,"sm");if(emblem&&/^<(?:img|svg|span|i)\b/i.test(emblem)){const node=document.createElement("span");node.className="coach-club-crest";node.innerHTML=emblem;target.prepend(node);}}}
   const detail=app.querySelector("#coach-confirm-details");
   if(detail){
     detail.textContent="Treinador: "+(form.elements.name.value.trim()||"Não informado")+" · "+(form.elements.nationality.value.trim()||"Brasil")+" · Idade: "+form.elements.age.value+" · Projeto: "+(club?.name||"Propostas de clubes")+" · Aparência: "+form.elements.outfit.options[form.elements.outfit.selectedIndex].text+" · Treino: "+form.elements.focus.value+" · Tática: "+form.elements.tactic.value+" · Base FC 27 · Seed: "+(form.elements.seed.value||"automática");
