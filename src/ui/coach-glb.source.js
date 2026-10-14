@@ -119,8 +119,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       scene.add(model);
       scene.add(wardrobe);rebuildWardrobe();
       // Half body framing focuses on face/torso; user can rotate the entire figure.
-      camera.position.set(0,1.38,3.0);
-      camera.lookAt(0,1.22,0);
+      camera.position.set(0,1.42,1.9);
+      camera.lookAt(0,1.36,0);
       host.dataset.avatarState="glb";
     },undefined,error=>{
       if(disposed)return;
