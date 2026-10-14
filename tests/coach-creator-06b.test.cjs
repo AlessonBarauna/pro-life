@@ -8,7 +8,7 @@ const {JSDOM}=require("jsdom");
 const creator=fs.readFileSync(path.join(__dirname,"../src/ui/coach-creator.js"),"utf8");
 test("06B manager has a dedicated creator without player attributes",()=>{
  const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
- const sandbox={window:dom.window,document:dom.window.document,globalThis:null,console};
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};
  sandbox.globalThis=sandbox;
  vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
  let created=null,started=null,alerts=[];
