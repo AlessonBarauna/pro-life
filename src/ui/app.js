@@ -1368,7 +1368,57 @@
       return "Fora da relação";
     } catch { return "A definir"; }
   }
+  // J05.3: tela dedicada 2D. Reaproveita ações canônicas e não calcula tensão fictícia.
+  function playerFc27Negotiation(o){
+    const {info,left,stage}=offerFacts(o),id=o.clubId,w=Career.windowStatus(state);
+    const hist=negUi.hist[id]||[],loan=o.transferType==="loan";
+    const current=currentTerms();
+    const fields=[
+      ["Salário mensal",current.salary===null?NI:money(current.salary),fin(o.salary)===null?NI:money(o.salary)],
+      ["Luvas",current.bonus===null?NI:money(current.bonus),moneyOrNI(o.signingBonus??0)],
+      ["Duração",current.days===null?NI:dur(current.days),dur(o.durationDays??730)],
+      ["Papel no elenco",txt(current.role),txt(o.squadRole||"Rotação")]
+    ];
+    const heading=info?.name||"Clube interessado";
+    const factRows=fields.map(([label,oldValue,newValue])=>`<div class="fc27-transfer-term"><span>${esc(label)}</span><b>${esc(oldValue)}</b><strong>${esc(newValue)}</strong></div>`).join("");
+    const confirm=negUi.confirm?.id===id?negUi.confirm.type:null;
+    const rejectConfirmation=confirm==="reject"?`<section class="fc27-transfer-confirm" role="alertdialog"><p>Recusar definitivamente a proposta do ${esc(heading)}?</p><div class="fc27-transfer-controls"><button class="danger" type="button" data-reject="${esc(id)}">Confirmar recusa</button><button type="button" data-neg-cancel>Voltar</button></div></section>`:"";
+    const termsPanel=negUi.terms?`<section class="fc27-transfer-terms-panel"><h3>Negociar condições</h3><p>Seu empresário pode solicitar uma melhoria de salário e luvas uma vez por proposta. Os termos finais dependem da resposta do clube.</p><button type="button" data-counter="${esc(id)}" ${o.negotiated?"disabled":""}>${o.negotiated?"Clube já respondeu":"Pedir melhores termos"}</button></section>`:"";
+    return `<section class="fc27-transfer-overlay" role="dialog" aria-modal="true" aria-label="Negociação com ${esc(heading)}">
+      <div class="fc27-transfer-shell">
+        <header class="fc27-transfer-top"><div><small>CARREIRA DE JOGADOR / NEGOCIAÇÃO</small><b>PRO<span>LIFE</span></b></div><button type="button" data-neg-close>Fechar negociação ✕</button></header>
+        <div class="fc27-transfer-content">
+          <aside class="fc27-transfer-contact">
+            <div class="fc27-transfer-crest">${crest(info)}</div>
+            <span class="fc27-transfer-label">CONTATO COM REPRESENTANTE</span>
+            <h2>${esc(heading)}</h2>
+            <p>${esc(leagueLine(info))}</p>
+            <div class="fc27-transfer-contact-line"><span class="fc27-transfer-pulse"></span><b>PROPOSTA RECEBIDA</b><small>Prazo: ${left} dia(s)</small></div>
+            <div class="fc27-transfer-message"><small>MENSAGEM DO CLUBE</small><p>Queremos contar com você no nosso elenco.</p><p>Papel oferecido: <strong>${esc(txt(o.squadRole||"Rotação"))}</strong>.</p></div>
+            <div class="fc27-transfer-contact-meta"><span>${loan?"EMPRÉSTIMO":"CONTRATO"} </span><span>${esc(stage.label)}</span></div>
+          </aside>
+          <div class="fc27-transfer-details">
+            <div class="fc27-transfer-eyebrow">NEGOCIAÇÃO ATIVA <span>${esc(heading)}</span></div>
+            <h2>Termos do contrato</h2>
+            <p class="fc27-transfer-sub">Confira as condições antes de decidir seu próximo passo.</p>
+            <div class="fc27-transfer-summary"><div><small>SALÁRIO OFERECIDO</small><strong>${esc(fin(o.salary)===null?NI:money(o.salary))}</strong><span>por mês</span></div><div><small>LUVAS</small><strong>${esc(moneyOrNI(o.signingBonus??0))}</strong></div><div><small>VÍNCULO</small><strong>${esc(dur(o.durationDays??730))}</strong></div></div>
+            <section class="fc27-transfer-comparison"><div class="fc27-transfer-table-head"><span>CONDIÇÕES</span><b>ATUAL</b><b>PROPOSTA</b></div>${factRows}</section>
+            <div class="fc27-transfer-meta"><span>Interesse registrado: ${interestBadge(o)}</span><span>Projeto: ${esc(txt(o.role))}</span></div>
+            ${hist.length||o.negotiated?`<details class="fc27-transfer-history"><summary>Histórico de contrapropostas</summary>${hist.length?`<ul>${hist.map(h=>`<li>${esc(moneyOrNI(h.salary))} → ${esc(moneyOrNI(h.afterSalary))} / mês</li>`).join("")}</ul>`:"<p>Contraproposta já respondida. Histórico detalhado não disponível.</p>"}</details>`:""}
+            ${rejectConfirmation}${termsPanel}
+            <footer class="fc27-transfer-controls">
+              <button type="button" class="fc27-transfer-accept" data-neg-sign="${esc(id)}">${cineAgreement()?.clubId===id?"Visualizar acordo assinado":w.open?"Aceitar e assinar":"Aceitar e agendar transferência"}</button>
+              <button type="button" data-neg-terms>${negUi.terms?"Ocultar negociação":"Negociar termos"}</button>
+              <button type="button" data-hold-offer="${esc(id)}" ${o.onHold?"disabled":""}>${o.onHold?"Prazo estendido":"Pedir tempo"}</button>
+              <button type="button" class="fc27-transfer-reject" data-neg-reject="${esc(id)}">Recusar</button>
+            </footer>
+          </div>
+        </div>
+      </div>
+    </section>`;
+  }
   function negotiationCenter(o) {
+    if(state.mode==="player") return playerFc27Negotiation(o);
     const { info, left, stage } = offerFacts(o), w = Career.windowStatus(state), id = o.clubId, hist = negUi.hist[id] || [];
     const confirm = negUi.confirm && negUi.confirm.id === id ? negUi.confirm.type : null;
     const confirmBar = confirm === "sign" && (state.mode !== "player" || !window.ProLifeContractSigning) ? `<div class="neg-confirm" role="alertdialog" aria-label="Confirmar assinatura"><p><b>Confirmar assinatura com ${esc(txt(info?.name))}?</b> ${w.open ? "O contrato entra em vigor agora." : "A transferência será agendada para a próxima janela."}</p><div class="actions"><button class="primary" type="button" data-join="${esc(id)}">Confirmar assinatura</button><button type="button" data-neg-cancel>Voltar</button></div></div>`
