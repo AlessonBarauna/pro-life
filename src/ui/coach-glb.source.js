@@ -38,7 +38,7 @@ function mount(host,config){
      if(gltf.animations.length){
        mixer=new THREE.AnimationMixer(obj);
        const idle=gltf.animations.find(a=>/idle/i.test(a.name))||gltf.animations[0];
-       if(idle)mixer.clipAction(idle).play();
+       // Creation preview uses a fixed neutral pose; do not auto-play movement.
      }
    } else if(index===1)head=obj;
    else hair=obj;
@@ -56,7 +56,7 @@ function mount(host,config){
        if(/^vitpants$/i.test(name))pantsMaterials.push(m);
        if(/^vithairmat$/i.test(name))hairMaterials.push(m);
        if(/^vitbrowcardsmat$/i.test(name))browMaterials.push(m);
-       if(name==="vitiris"||/^vitiris[.]\d+$/.test(name))irisMaterials.push(m);
+       if(name==="vitiris"||/^vitiris[.]\d+$/.test(name)||name.includes("iris"))irisMaterials.push(m);
        m.side=THREE.DoubleSide;
      }
    });
@@ -74,6 +74,8 @@ function mount(host,config){
    setTint(skinMaterials,tint);
    const iris=new THREE.Color(appearance.eyeColor||"#694829");
    setTint(irisMaterials,iris);
+   // Vitruvian eye textures can obscure baseColor tint; use material color and disable its base texture only for iris.
+   for(const m of irisMaterials){if(m.map){m.map=null;m.needsUpdate=true;}}
    const color=new THREE.Color(appearance.hairColor||"#241e1a");
    setTint(hairMaterials,color);
    setTint(browMaterials,color);
