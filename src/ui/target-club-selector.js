@@ -135,48 +135,34 @@
     </style>`;
   }
 
-  function refresh(options={}){
-    if(!current||!root.document) return;
+  function refresh(){
+    if(!current||!root.document)return;
     const element=root.document.querySelector("[data-target-club-root]");
-    if(!element) return;
-    const focused=root.document.activeElement;
-    const selector=focused?.matches?.("[data-target-club-country]")?"[data-target-club-country]"
-      :focused?.matches?.("[data-target-club-league]")?"[data-target-club-league]"
-      :focused?.matches?.("[data-target-club-search]")?"[data-target-club-search]":null;
-    const start=selector==="[data-target-club-search]"?focused.selectionStart:null;
-    const end=selector==="[data-target-club-search]"?focused.selectionEnd:null;
-    // Renderizar o novo resultado sem substituir o controle ativo.
+    if(!element)return;
+    // Não remover o formulário: replaceWith/outerHTML causa blur e fecha selects nativos.
     const template=root.document.createElement("template");
     template.innerHTML=render(current.s,current.D,current.Career);
     const replacement=template.content.querySelector("[data-target-club-root]");
     if(!replacement)return;
-    const nextFilters=replacement.querySelector(".target-club-filters");
-    const existingFilters=element.querySelector(".target-club-filters");
-    if(nextFilters&&existingFilters){
-      // Mantém os elementos input/select originais e, com eles, o foco e menus nativos.
-      nextFilters.replaceWith(existingFilters);
-      for(const key of ["country","league"]){
-        const select=existingFilters.querySelector("[data-target-club-"+key+"]");
-        const updated=replacement.querySelector("[data-target-club-"+key+"]");
-        // A lista de ligas depende do país: sincronizar opções sem recriar o select.
-        if(select&&updated&&key==="league"){
-          const selected=ui.league;
-          select.innerHTML=updated.innerHTML;
-          select.value=selected;
-        }
-        if(select&&key==="country")select.value=ui.country;
-      }
-      const search=existingFilters.querySelector("[data-target-club-search]");
-      if(search&&search.value!==ui.query)search.value=ui.query;
-    }
-    element.replaceWith(replacement);
-    const active=selector?replacement.querySelector(selector):null;
-    if(active&&!active.matches(":focus")){
-      active.focus({preventScroll:true});
-      if(selector==="[data-target-club-search]"&&start!==null&&end!==null){
-        try{active.setSelectionRange(start,end);}catch{}
+    for(const selector of [".target-club-count",".target-club-list",".target-club-current"]){
+      const oldNode=element.querySelector(selector);
+      const newNode=replacement.querySelector(selector);
+      if(oldNode&&newNode)oldNode.replaceWith(newNode);
+      else if(oldNode&&!newNode)oldNode.remove();
+      else if(!oldNode&&newNode){
+        const before=selector===".target-club-current"?element.querySelector(".target-club-filters"):null;
+        if(before)before.before(newNode);
       }
     }
+    const oldLeague=element.querySelector("[data-target-club-league]");
+    const newLeague=replacement.querySelector("[data-target-club-league]");
+    if(oldLeague&&newLeague){
+      oldLeague.innerHTML=newLeague.innerHTML;
+      oldLeague.value=ui.league;
+    }
+    const country=element.querySelector("[data-target-club-country]");
+    if(country)country.value=ui.country;
+    // O input de busca não é recriado e mantém valor, cursor e foco.
   }
 
   function mount(s,D,Career){
