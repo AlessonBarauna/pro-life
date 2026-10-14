@@ -139,11 +139,43 @@
     if(!current||!root.document) return;
     const element=root.document.querySelector("[data-target-club-root]");
     if(!element) return;
-    element.outerHTML=render(current.s,current.D,current.Career);
-    if(options.focusSearch){
-      const input=root.document.querySelector("[data-target-club-search]");
-      input?.focus();
-      try{input?.setSelectionRange(input.value.length,input.value.length);}catch{}
+    const focused=root.document.activeElement;
+    const selector=focused?.matches?.("[data-target-club-country]")?"[data-target-club-country]"
+      :focused?.matches?.("[data-target-club-league]")?"[data-target-club-league]"
+      :focused?.matches?.("[data-target-club-search]")?"[data-target-club-search]":null;
+    const start=selector==="[data-target-club-search]"?focused.selectionStart:null;
+    const end=selector==="[data-target-club-search]"?focused.selectionEnd:null;
+    // Renderizar o novo resultado sem substituir o controle ativo.
+    const template=root.document.createElement("template");
+    template.innerHTML=render(current.s,current.D,current.Career);
+    const replacement=template.content.querySelector("[data-target-club-root]");
+    if(!replacement)return;
+    const nextFilters=replacement.querySelector(".target-club-filters");
+    const existingFilters=element.querySelector(".target-club-filters");
+    if(nextFilters&&existingFilters){
+      // Mantém os elementos input/select originais e, com eles, o foco e menus nativos.
+      nextFilters.replaceWith(existingFilters);
+      for(const key of ["country","league"]){
+        const select=existingFilters.querySelector("[data-target-club-"+key+"]");
+        const updated=replacement.querySelector("[data-target-club-"+key+"]");
+        // A lista de ligas depende do país: sincronizar opções sem recriar o select.
+        if(select&&updated&&key==="league"){
+          const selected=ui.league;
+          select.innerHTML=updated.innerHTML;
+          select.value=selected;
+        }
+        if(select&&key==="country")select.value=ui.country;
+      }
+      const search=existingFilters.querySelector("[data-target-club-search]");
+      if(search&&search.value!==ui.query)search.value=ui.query;
+    }
+    element.replaceWith(replacement);
+    const active=selector?replacement.querySelector(selector):null;
+    if(active&&!active.matches(":focus")){
+      active.focus({preventScroll:true});
+      if(selector==="[data-target-club-search]"&&start!==null&&end!==null){
+        try{active.setSelectionRange(start,end);}catch{}
+      }
     }
   }
 
