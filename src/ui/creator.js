@@ -12,13 +12,16 @@
 
   function freshSeed() { return (Date.now() >>> 0) || 1; }
   function birthDateForAge(age) {
-    const y = 2026 - Number(age || 18);
+    const y = 2026 - Number(age ?? 18);
     return `${y}-01-01`;
   }
   function ageFromBirthDate(value) {
     const m = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (!m) return null;
     const y=Number(m[1]), mo=Number(m[2]), d=Number(m[3]);
+    if (y < 1900 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+    const check=new Date(Date.UTC(y,mo-1,d));
+    if(check.getUTCFullYear()!==y || check.getUTCMonth()!==mo-1 || check.getUTCDate()!==d) return null;
     let age=2026-y;
     if (1<mo || (mo===1 && 1<d)) age--;
     return age;
@@ -208,12 +211,13 @@
     if (!n) return;
     if (["name", "city", "nationality", "foot", "celebration"].includes(n)) c[n] = t.value;
     else if (n === "birthDate") {
+      c.birthDate=t.value;
       const age=ageFromBirthDate(t.value);
       if(age!==null){
-        c.birthDate=t.value; c.age=age; if(W.storyId==="custom") W.custom.age=age;
-        const ageInput=ctx.$('.wizard input[name="age"]');
-        if(ageInput) ageInput.value=String(age);
+        c.age=age; if(W.storyId==="custom") W.custom.age=age;
       }
+      const ageInput=ctx.$('.wizard input[name="age"]');
+      if(ageInput) ageInput.value=age===null?"":String(age);
     }
     else if (["height", "weight"].includes(n)) c[n] = Number(t.value);
     else if (["skin", "hairColor", "eyeColor", "hair", "beard", "body", "accessory", "tattoo"].includes(n)) { c.appearance[n] = t.value; mountAvatar(ctx); }
