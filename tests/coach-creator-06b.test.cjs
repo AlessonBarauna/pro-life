@@ -207,3 +207,21 @@ test("06B facial hair choices are enabled in trainer identity",()=>{
   assert.equal(form.elements.beard.querySelector('option[value="'+name+'"]').disabled,false,name);
  }
 });
+
+test("27 manager first-club search filters the canonical club catalog",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ const clubs=[{id:"a",name:"Clube Alfa",active:true,leagueId:"A"},{id:"b",name:"Clube Beta",active:true,leagueId:"B"},{id:"c",name:"Outro Alfa",active:true,leagueId:"B"}];
+ sandbox.ProLifeCoachCreator.mount({D:{create:()=>({clubs})},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ form.elements.leagueFilter.value="B";
+ form.elements.leagueFilter.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ assert.deepEqual([...form.elements.clubId.options].map(o=>o.value),["","b","c"]);
+ form.elements.clubSearch.value="Alfa";
+ form.elements.clubSearch.dispatchEvent(new dom.window.Event("input",{bubbles:true}));
+ assert.deepEqual([...form.elements.clubId.options].map(o=>o.value),["","c"]);
+ form.elements.leagueFilter.value="";
+ form.elements.leagueFilter.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ assert.deepEqual([...form.elements.clubId.options].map(o=>o.value),["","a","c"]);
+});
