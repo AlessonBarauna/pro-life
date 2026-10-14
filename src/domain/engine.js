@@ -46,6 +46,7 @@
   const Identity =
     root.ProLifeIdentity ||
     (typeof require === "function" ? require("./identity.js") : null);
+  const PlayerRivalries=root.ProLifePlayerRivalries||(typeof require==="function"?require("./player-rivalries.js"):null);
   const Statistics =
     root.ProLifeStatistics ||
     (typeof require === "function" ? require("./statistics.js") : null);
@@ -1488,6 +1489,9 @@
     m.offensiveStats = heroOffense ? { hero: heroOffense } : {};
     s.matches.unshift(m);
     Statistics?.recordMatch(s, m);
+    if(s.mode==="player" && s.extras?.playerRivalry && PlayerRivalries?.fromSimulatedMatch){
+      s.extras.playerRivalry=PlayerRivalries.fromSimulatedMatch(s.extras.playerRivalry,m);
+    }
     const heroDevelopment = Training?.matchDevelopment?.(s, m, { overall, clamp });
     if (![homeId, awayId].includes(s.clubId)) { delete m.participation; delete m.playerStats; }
     else m.playerStats = m.playerStats?.hero ? { hero:m.playerStats.hero } : {};
