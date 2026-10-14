@@ -101,3 +101,20 @@ test("06B coach selections affect training focus and club tactic",()=>{
  assert.equal(saved.coachCareer.focus,"jovens");
  assert.equal(saved.clubs[0].tactic,"counter");
 });
+
+test("06B coach appearance and outfit are transferred into save state",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ let config=null,saved=null;
+ const D={create:(cfg)=>cfg.name?(config=cfg,{mode:"coach",clubId:null,clubs:[],person:{appearance:cfg.appearance},coachCareer:{version:1,focus:"equilibrado"}}):{clubs:[]}};
+ sandbox.ProLifeCoachCreator.mount({D,esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:s=>{saved=s;},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ form.elements.name.value="Treinador";form.elements.city.value="Mogi";
+ form.elements.skin.value="#884422";form.elements.hair.value="bald";form.elements.beard.value="goatee";form.elements.outfit.value="tracksuit";
+ form.dispatchEvent(new dom.window.Event("submit",{bubbles:true,cancelable:true}));
+ assert.equal(config.appearance.skin,"#884422");
+ assert.equal(config.appearance.hair,"bald");
+ assert.equal(config.appearance.beard,"goatee");
+ assert.equal(saved.coachCareer.presentation.outfit,"tracksuit");
+});
