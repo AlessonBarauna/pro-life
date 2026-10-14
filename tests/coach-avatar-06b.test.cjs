@@ -79,3 +79,12 @@ test("06B repeated color edits preserve source material colors",()=>{
  assert.match(source,/setTint\(shirtMaterials,chosen\.shirt\)/);
  assert.match(source,/setTint\(pantsMaterials,chosen\.pants\)/);
 });
+
+test("06B material selectors match real Vitruvian asset names",()=>{
+ const src=read("src/ui/coach-glb.source.js").toString("utf8");
+ for(const key of ["vitskin","vitbody","vitiris","vithairmat","vitbrowcardsmat","vitshirt","vitpants"]){
+  assert.ok(src.includes(key),key);
+ }
+ assert.match(src,/originalColors=new Map/);
+ assert.match(src,/originalColors\.get\(material\)/);
+});
