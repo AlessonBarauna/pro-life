@@ -354,7 +354,8 @@ case "tactic": {
         const optionPrice=isLoan&&data.buyOption==="on"?Math.ceil(valuation(p)*1.1/1000)*1000:0;
         const plan=rules?.installments==="on"&&data.paymentPlan==="split"&&!isLoan?"split":"upfront";
         if(isLoan)fee=Math.ceil(fee*0.08*(duration/180)/1000)*1000;
-        if(!isLoan){const negotiation=s.coachCareer?.negotiations?.find(n=>n.playerId===p.id&&n.sellerClubId===source.id&&n.buyerClubId===own.id&&n.status==="pending"&&n.expiresDay>=s.day);if(negotiation){fee=negotiation.finalFee;negotiation.status="accepted";}}
+        const negotiation=!isLoan?s.coachCareer?.negotiations?.find(n=>n.playerId===p.id&&n.sellerClubId===source.id&&n.buyerClubId===own.id&&n.status==="pending"&&n.expiresDay>=s.day):null;
+        if(negotiation)fee=negotiation.finalFee;
         const due=plan==="split"?Math.floor(fee/2):0,upfront=fee-due;
         if (own.budget < upfront) throw Error("Orçamento insuficiente para a entrada.");
         // The deferred half becomes a persistent financial obligation, not free money.
@@ -362,6 +363,7 @@ case "tactic": {
           throw Error(
             "O jogador recusou: busca um projeto com maior estrutura.",
           );
+        if(negotiation)negotiation.status="accepted";
         own.budget -= upfront;
         source.budget = (Number(source.budget)||0) + upfront;
         // Pay the previous selling club its agreed percentage from proceeds
