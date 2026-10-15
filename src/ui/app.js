@@ -8725,10 +8725,68 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       box.hidden=false; return;
     }
     if (b.hasAttribute("data-close-match-detail")) { const box=document.getElementById("recent-match-detail"); if(box) box.hidden=true; document.querySelectorAll("[data-recent-match]").forEach(el=>el.setAttribute("aria-expanded","false")); return; }
+    if (b.hasAttribute("data-coach-prematch-cancel")) {
+      document.getElementById("coach-prematch-substitutions")?.remove();return;
+    }
+    if (b.hasAttribute("data-coach-prematch-add")) {
+      const modal=document.getElementById("coach-prematch-substitutions");
+      if(!modal)return;
+      const outgoing=modal.querySelector("[data-coach-prematch-out]")?.value;
+      const incoming=modal.querySelector("[data-coach-prematch-in]")?.value;
+      const minute=Number(modal.querySelector("[data-coach-prematch-minute]")?.value);
+      const actions=modal._coachActions||[];
+      if(!outgoing||!incoming||outgoing===incoming||!Number.isInteger(minute)||minute<1||minute>90||
+        actions.length>=5||actions.some(a=>a.outId===outgoing||a.inId===incoming||a.outId===incoming)){
+        toast("Troca inválida. Confira jogadores, minuto e limite de cinco substituições.");return;
+      }
+      actions.push({type:"substitution",side:Number(modal.dataset.side),minute,outId:outgoing,inId:incoming});
+      modal._coachActions=actions;
+      const names=modal._coachNames||{};
+      modal.querySelector("[data-coach-prematch-list]").textContent=actions.map(a=>a.minute+"' "+(names[a.outId]||a.outId)+" → "+(names[a.inId]||a.inId)).join(" | ");
+      return;
+    }
+    if (b.hasAttribute("data-coach-prematch-play")) {
+      const modal=document.getElementById("coach-prematch-substitutions");
+      if(!modal)return;
+      const next=D.nextCommitment(state),actions=modal._coachActions||[];
+      if(!next||next.home!==modal.dataset.home||next.away!==modal.dataset.away||
+         !D.scheduleCoachActions?.(state,next,actions)){toast("Não foi possível preparar o plano de substituições.");return;}
+      modal.remove();
+      // Reuse the existing official match-day pipeline after queueing actions.
+      const before=new Set(state.matches.map(m=>`${m.season}:${m.date}:${m.home}:${m.away}:${m.competitionId||m.leagueId||""}`));
+      D.advance(state,1);
+      const played=state.matches.find(m=>[m.home,m.away].includes(state.clubId)&&m.date===state.day&&!before.has(`${m.season}:${m.date}:${m.home}:${m.away}:${m.competitionId||m.leagueId||""}`));
+      persist();render();
+      if(!played){toast("Não foi possível localizar a partida oficial.");return;}
+      window.ProLifeLiveMatch.start({match:played,home:D.club(state,played.home),away:D.club(state,played.away),mode:state.mode});
+      return;
+    }
     if (b.hasAttribute("data-live-match")) {
       const next = D.nextCommitment(state);
       if (!next) { toast("Não há próximo jogo agendado."); return; }
       if (next.date !== state.day + 1) { toast("Use Simular até o jogo primeiro. O acompanhamento abre na véspera da partida."); return; }
+      if(state.mode==="coach"&&!next.national&&typeof D.scheduleCoachActions==="function"){
+        const own=D.club(state,state.clubId);
+        const selected=D.selected(own);
+        const starters=new Set(selected.map(p=>String(p.id)));
+        const bench=(own.roster||[]).filter(p=>p&&!starters.has(String(p.id))&&!p.injury&&!(p.suspension>0)&&p.condition>35).slice(0,15);
+        const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+        const option=p=>'<option value="'+safe(p.id)+'">'+safe(p.name)+' ('+safe(p.pos||"") +')</option>';
+        const dialog=document.createElement("div");
+        dialog.id="coach-prematch-substitutions";
+        dialog.dataset.home=String(next.home);dialog.dataset.away=String(next.away);
+        dialog.dataset.side=String(state.clubId===next.home?0:1);
+        dialog._coachActions=[];dialog._coachNames=Object.fromEntries((own.roster||[]).map(p=>[String(p.id),p.name]));
+        dialog.style.cssText="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.88);display:grid;place-items:center;padding:18px;color:white";
+        dialog.innerHTML='<section style="background:#152028;border:1px solid #47606b;border-radius:12px;padding:24px;width:min(660px,96vw);max-height:85vh;overflow:auto"><h2>Plano de jogo · Substituições</h2><p>Defina trocas para o confronto oficial. Elas serão aplicadas no minuto escolhido. O acompanhamento continuará sendo uma reprodução após a simulação.</p>'+
+          '<label>Minuto <input data-coach-prematch-minute type="number" value="60" min="1" max="90" style="width:75px"></label> '+
+          '<label>Sai <select data-coach-prematch-out>'+selected.map(option).join("")+'</select></label> '+
+          '<label>Entra <select data-coach-prematch-in>'+bench.map(option).join("")+'</select></label>'+
+          '<div style="margin:12px 0"><button data-coach-prematch-add '+(!bench.length?'disabled':'')+'>Adicionar troca</button></div>'+
+          '<div data-coach-prematch-list aria-live="polite">Nenhuma substituição programada.</div>'+
+          '<div style="display:flex;gap:10px;margin-top:18px"><button data-coach-prematch-play>Confirmar e acompanhar partida</button><button data-coach-prematch-cancel>Cancelar</button></div></section>';
+        document.body.appendChild(dialog);return;
+      }
       const before = next.national ? null : new Set(state.matches.map((m) => `${m.season}:${m.date}:${m.home}:${m.away}:${m.competitionId||m.leagueId||""}`));
       D.advance(state, 1);
       const played = next.national
