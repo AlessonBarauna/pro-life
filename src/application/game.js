@@ -201,6 +201,24 @@ case "tactic": {
         c.tactic = data.value;
         break;
       }
+      case "coachTeamTactics": {
+        const club=D.club(s);
+        if(s.mode!=="coach"||!club)throw Error("Táticas exclusivas do treinador.");
+        const style=String(data.style||"balanced");
+        const pressing=String(data.pressing||"balanced");
+        const buildup=String(data.buildup||"balanced");
+        const width=Number(data.width),depth=Number(data.depth);
+        if(!["balanced","possession","counter","attack"].includes(style)||
+           !["low","balanced","high"].includes(pressing)||
+           !["short","balanced","direct"].includes(buildup)||
+           !Number.isSafeInteger(width)||width<20||width>80||
+           !Number.isSafeInteger(depth)||depth<20||depth>80)
+          throw Error("Configuração tática inválida.");
+        s.coachCareer||={version:1};
+        s.coachCareer.teamTactics={style,pressing,buildup,width,depth};
+        club.tactic=style;
+        break;
+      }
       case "coachPlayerRole": {
         const club=D.club(s);
         if(s.mode!=="coach"||!club)throw Error("Funções disponíveis apenas ao treinador.");
