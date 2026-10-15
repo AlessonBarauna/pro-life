@@ -12,6 +12,7 @@
     squadSelectedId = null,
     squadTab = "lineup",
     squadDetailTab = "attributes",
+    squadPhase = "with-ball",
     squadSwapSource = null,
     squadUndo = null,
     coachProfileTab = "resumo";
@@ -2285,6 +2286,15 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         (currentRole?.position===activeRolePosition?'<p class="muted">Função registrada: '+esc(allowedRoles.find(x=>x[0]===currentRole.role)?.[1]||currentRole.role)+'</p>':'')+
         '</section>':'';
       const teamTactics=state.coachCareer?.teamTactics||{};
+      const phaseDescription=squadPhase==="with-ball"?
+        "Com bola: construção "+({short:"curta",balanced:"equilibrada",direct:"direta"}[teamTactics.buildup]||"equilibrada")+", largura "+(teamTactics.width??50)+" e estilo "+tacticLabel+".":
+        "Sem bola: pressão "+({low:"bloco baixo",balanced:"equilibrada",high:"alta"}[teamTactics.pressing]||"equilibrada")+", profundidade "+(teamTactics.depth??50)+".";
+      const phasePreview='<div class="pl-coach-phase"><div class="pl-coach-phase-tabs">'+
+        '<button type="button" data-squad-phase="with-ball"'+(squadPhase==="with-ball"?' aria-pressed="true" class="active"':' aria-pressed="false"')+'>Com bola</button>'+
+        '<button type="button" data-squad-phase="without-ball"'+(squadPhase==="without-ball"?' aria-pressed="true" class="active"':' aria-pressed="false"')+'>Sem bola</button></div>'+
+        '<p>'+esc(phaseDescription)+'</p><div class="pl-coach-phase-stats"><span><small>FORMAÇÃO</small><b>'+esc(formation)+'</b></span>'+
+        '<span><small>'+(squadPhase==="with-ball"?'LARGURA':'PROFUNDIDADE')+'</small><b>'+esc(squadPhase==="with-ball"?(teamTactics.width??50):(teamTactics.depth??50))+'</b></span>'+
+        '<span><small>'+(squadPhase==="with-ball"?'CONSTRUÇÃO':'PRESSÃO')+'</small><b>'+esc(squadPhase==="with-ball"?(teamTactics.buildup||"balanced"):(teamTactics.pressing||"balanced"))+'</b></span></div></div>';
       const tacticSettings=squadTab==="tactics"&&coach?`<section class="pl-squad-supplement pl-team-tactics"><div class="tag">TÁTICAS COLETIVAS</div><h2>Modelo de jogo</h2><p>Estilo coletivo aplicado ao motor de partidas. Pressão, construção, largura e profundidade são preparadas para integração tática posterior.</p>
       <div class="pl-team-tactics-grid">
       <label>Estilo<select data-team-tactic-style>${opt([["balanced","Equilibrado"],["possession","Posse e bola"],["counter","Contra-ataque"],["attack","Ofensivo"]],teamTactics.style||c.tactic||"balanced")}</select></label>
@@ -2292,7 +2302,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       <label>Construção<select data-team-tactic-buildup>${opt([["short","Passes curtos"],["balanced","Equilibrada"],["direct","Passe direto"]],teamTactics.buildup||"balanced")}</select></label>
       <label>Largura <input type="number" min="20" max="80" step="5" data-team-tactic-width value="${teamTactics.width??50}"></label>
       <label>Profundidade <input type="number" min="20" max="80" step="5" data-team-tactic-depth value="${teamTactics.depth??50}"></label>
-      </div><button type="button" data-team-tactics-save>Salvar táticas</button></section>`:"";
+      </div>${phasePreview}<button type="button" data-team-tactics-save>Salvar táticas</button></section>`:"";
       const tabSupplement=squadTab==="tactics"?tacticSettings:squadTab==="roles"?rolePanel:squadTab==="hierarchy"?`${coachRelation}${relation}`:"";
       const contractSalary=selected?[selected.salary,selected.monthlySalary,selected.wage,selected.contract?.salary,selected.contract?.monthlySalary].find(v=>v!=null&&Number.isFinite(Number(v))&&Number(v)>0):null;
       const contractEnd=selected?[selected.contractEndDay,selected.contract?.endDay,selected.contract?.expiresDay].find(v=>v!=null&&Number.isFinite(Number(v))):null;
@@ -8783,6 +8793,11 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         else{delete state.coachCareer.pitchSlots;delete state.coachCareer.pitchFormation;}
         squadUndo=null;squadSwapSource=null;persist();render();toast("Última troca desfeita.");
       }catch(error){toast(error.message);}
+      return;
+    }
+    if(b.hasAttribute("data-squad-phase")){
+      const next=b.getAttribute("data-squad-phase");
+      if(next==="with-ball"||next==="without-ball"){squadPhase=next;render();}
       return;
     }
     if(b.hasAttribute("data-team-tactics-save")){
