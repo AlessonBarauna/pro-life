@@ -371,9 +371,15 @@
     const monthlyRevenue=knownRecurringRevenue.reduce((sum,x)=>sum+Number(x.monthlyAmount),0);
     const financeGap=Math.max(0,wageBudgetProjection.monthly-monthlyRevenue);
     const financeCoverage=wageBudgetProjection.monthly>0?Math.min(100,Math.floor(monthlyRevenue/wageBudgetProjection.monthly*100)):100;
+    const fundingSnapshot=root.ProLifeClubEconomy?.fundingSnapshot?.(own,c.finance,wageBudgetProjection.monthly);
+    const fundingDetails=fundingSnapshot?'<p><b>Orçamento salarial independente:</b> '+
+      (fundingSnapshot.salaryBudget===null?'Ainda não configurado':esc(money(fundingSnapshot.salaryBudget))+'/mês')+
+      ' · <b>Receita anual documentada:</b> '+esc(money(fundingSnapshot.annualRevenue))+'</p>'+
+      '<p class="cc-note">Projeção somente informativa. Fontes não cadastradas não são consideradas; nenhum valor foi debitado ou creditado.</p>':'';
     const financeReadiness='<section class="cc-card" aria-label="Planejamento do custeio salarial"><h4>Planejamento do custeio salarial</h4>'+
       '<p><b>Receitas recorrentes cadastradas:</b> '+esc(money(monthlyRevenue))+'/mês · <b>Cobertura informada:</b> '+esc(financeCoverage)+'%</p>'+
       '<p><b>Necessidade ainda não financiada:</b> '+esc(money(financeGap))+'/mês</p>'+
+      fundingDetails+
       '<p class="cc-note">Somente receitas cadastradas e ativas são consideradas. Ausência de cadastro não significa receita real igual a zero. Não inclui patrocínios, bilheteria ou premiações ainda não implementados. Nenhuma receita ou despesa foi lançada.</p></section>';
     const settlementAudit=root.ProLifeCoachCareer?.payrollReadiness?.(s,D);
     const settlementPanel=settlementAudit?'<section class="cc-card" aria-label="Pendencias para pagamento salarial"><h4>Pendências antes de ativar pagamentos</h4>'+
