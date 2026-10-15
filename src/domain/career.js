@@ -1642,6 +1642,22 @@
         (s.news||[]).unshift({day:s.day,season:s.season,title:"Parcela de transferência liquidada",body:"Pagamento de R$ "+debt.amount.toLocaleString("pt-BR")+" concluído."});
       }
     }
+    // Loan return: deterministic, idempotent and isolated from the player career.
+    if(s.mode==="coach"&&Array.isArray(s.coachCareer?.loans)){
+      for(const loan of s.coachCareer.loans){
+        if(loan.returned||Number(s.day)<Number(loan.dueDay))continue;
+        const all=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])];
+        const borrowing=all.find(c=>c.id===loan.toClubId),origin=all.find(c=>c.id===loan.fromClubId);
+        if(!borrowing||!origin||!Array.isArray(borrowing.roster)||!Array.isArray(origin.roster))continue;
+        const p=borrowing.roster.find(p=>p.id===loan.playerId);
+        if(!p)continue;
+        borrowing.roster=borrowing.roster.filter(x=>x.id!==loan.playerId);
+        if(Array.isArray(borrowing.lineup))borrowing.lineup=borrowing.lineup.filter(id=>id!==loan.playerId);
+        if(!origin.roster.some(x=>x.id===loan.playerId))origin.roster.push(p);
+        loan.returned=true;loan.returnDay=s.day;
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Retorno de empréstimo",body:p.name+" voltou ao "+(origin.name||"clube de origem")+".");
+      }
+    }
     pruneMessages(s);
     agencyDaily(s);
     if (s.mode === "player" && s.clubId && s.contract > 0) {
