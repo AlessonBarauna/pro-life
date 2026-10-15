@@ -11,6 +11,7 @@
     legacyAwardsOpen = false,
     squadSelectedId = null,
     squadTab = "lineup",
+    squadSwapSource = null,
     coachProfileTab = "resumo";
   const $ = (q) => document.querySelector(q),
     esc = (v) =>
@@ -2195,7 +2196,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const isUnavailable=(p)=>p.injury||p.suspension>0;
       const selectionStatus=(p)=>starters.includes(p)?"Titular":bench.includes(p)?"Banco":"Fora";
       const moraleLabel=(value)=>value>=78?"Alta":value>=55?"Estável":"Baixa";
-      const playerTile=(p,compact=false)=>`<article class="pl-squad-player ${p.id===selected?.id?"selected":""} ${p.id==="hero"?"hero":""} ${isUnavailable(p)?"unavailable":""}" data-squad-player="${esc(p.id)}" role="button" tabindex="0" aria-label="Selecionar ${esc(p.name)}"><span class="pl-squad-face" aria-hidden="true">${esc(initials(p.name))}</span><span class="pl-squad-player-copy"><small>${esc(positionOf(p))}</small><b>${esc(shortName(p.name))}</b><i><em style="width:${Math.max(0,Math.min(100,Math.round(p.condition??0)))}%"></em></i></span><strong>${D.overall(p)}</strong><span class="pl-squad-morale ${Number(p.morale||0)>=55?"good":"low"}" title="Moral ${Math.round(p.morale||0)}">${Number(p.morale||0)>=55?"●":"◆"}</span>${coach?`<label class="pl-xi-toggle" title="Incluir no XI"><input type="checkbox" class="lineup" value="${esc(p.id)}" ${c.lineup.includes(p.id)?"checked":""} ${isUnavailable(p)?"disabled":""}><span>XI</span></label>`:""}${p.injury?'<span class="pl-squad-alert">LESÃO</span>':p.suspension>0?'<span class="pl-squad-alert">SUSPENSO</span>':""}</article>`;
+      const playerTile=(p,compact=false)=>`<article class="pl-squad-player ${p.id===selected?.id?"selected":""} ${p.id==="hero"?"hero":""} ${isUnavailable(p)?"unavailable":""}" data-squad-player="${esc(p.id)}" ${coach?'draggable="true" title="Arraste para trocar ou clique em dois jogadores para substituir"':""} role="button" tabindex="0" aria-label="Selecionar ${esc(p.name)}"><span class="pl-squad-face" aria-hidden="true">${esc(initials(p.name))}</span><span class="pl-squad-player-copy"><small>${esc(positionOf(p))}</small><b>${esc(shortName(p.name))}</b><i><em style="width:${Math.max(0,Math.min(100,Math.round(p.condition??0)))}%"></em></i></span><strong>${D.overall(p)}</strong><span class="pl-squad-morale ${Number(p.morale||0)>=55?"good":"low"}" title="Moral ${Math.round(p.morale||0)}">${Number(p.morale||0)>=55?"●":"◆"}</span>${coach?`<label class="pl-xi-toggle" title="Incluir no XI"><input type="checkbox" class="lineup" value="${esc(p.id)}" ${c.lineup.includes(p.id)?"checked":""} ${isUnavailable(p)?"disabled":""}><span>XI</span></label>`:""}${p.injury?'<span class="pl-squad-alert">LESÃO</span>':p.suspension>0?'<span class="pl-squad-alert">SUSPENSO</span>':""}</article>`;
       const roleRows={"4-2-3-1":[["ATA",["CA"]],["MEI",["PE","MEI","PD"]],["VOL",["VOL","VOL"]],["DEF",["LE","ZAG","ZAG","LD"]],["GOL",["GOL"]]],"4-4-2":[["ATA",["CA","CA"]],["MEI",["ME","MC","MC","MD"]],["DEF",["LE","ZAG","ZAG","LD"]],["GOL",["GOL"]]],"4-3-3":[["ATA",["PE","CA","PD"]],["MEI",["MC","VOL","MC"]],["DEF",["LE","ZAG","ZAG","LD"]],["GOL",["GOL"]]]};
       const remaining=starters.slice(), assigned=selection?.assignedPositions||{};
       const broad=(role,p)=>role==="GOL"?p.pos==="GOL":["LE","ZAG","LD"].includes(role)?["DEF","LE","ZAG","LD"].includes(p.pos):["PE","CA","PD"].includes(role)?["ATA","PE","CA","PD"].includes(p.pos):["MEI","ME","MC","VOL","MD"].includes(p.pos);
@@ -8521,10 +8522,50 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     });
     input.click();
   }
+  function swapSquadPlayers(fromId,toId){
+    if(state?.mode!=="coach"||!fromId||!toId||fromId===toId)return false;
+    const club=D.club(state);
+    if(!club?.roster?.some(p=>p.id===fromId)||!club.roster.some(p=>p.id===toId))return false;
+    const from=club.roster.find(p=>p.id===fromId),to=club.roster.find(p=>p.id===toId);
+    if(from.injury||from.suspension>0||to.injury||to.suspension>0){toast("Jogador indisponível para escalação.");return false;}
+    const ids=[...(club.lineup||[])],fi=ids.indexOf(fromId),ti=ids.indexOf(toId);
+    if(fi<0&&ti<0){toast("Escolha pelo menos um titular para realizar a troca.");return false;}
+    if(fi>=0&&ti>=0){ids[fi]=toId;ids[ti]=fromId;}
+    else if(fi>=0)ids[fi]=toId;
+    else ids[ti]=fromId;
+    try{A.execute(state,"lineup",{ids});persist();squadSelectedId=toId;render();toast("Troca realizada e escalação salva.");return true;}
+    catch(e){toast(e.message);return false;}
+  }
+  document.addEventListener("dragstart", e=>{
+    const tile=e.target.closest?.("[data-squad-player][draggable]");
+    if(!tile||state?.mode!=="coach")return;
+    squadSwapSource=tile.dataset.squadPlayer;
+    e.dataTransfer?.setData("text/plain",squadSwapSource);
+    if(e.dataTransfer)e.dataTransfer.effectAllowed="move";
+  });
+  document.addEventListener("dragover",e=>{
+    if(state?.mode!=="coach"||!squadSwapSource||!e.target.closest?.("[data-squad-player]"))return;
+    e.preventDefault();
+    if(e.dataTransfer)e.dataTransfer.dropEffect="move";
+  });
+  document.addEventListener("drop",e=>{
+    const target=e.target.closest?.("[data-squad-player]");
+    if(!target||!squadSwapSource||state?.mode!=="coach")return;
+    e.preventDefault();
+    const source=squadSwapSource;squadSwapSource=null;
+    swapSquadPlayers(source,target.dataset.squadPlayer);
+  });
+  document.addEventListener("dragend",()=>{squadSwapSource=null;});
   document.addEventListener("click", (e) => {
     const squadPlayer = e.target.closest?.("[data-squad-player]");
     if (squadPlayer && !e.target.closest(".pl-xi-toggle")) {
-      squadSelectedId = squadPlayer.dataset.squadPlayer;
+      const id=squadPlayer.dataset.squadPlayer;
+      if(state?.mode==="coach"&&squadSwapSource&&squadSwapSource!==id){
+        const source=squadSwapSource;squadSwapSource=null;
+        swapSquadPlayers(source,id);return;
+      }
+      squadSwapSource=state?.mode==="coach"?id:null;
+      squadSelectedId=id;
       render();
       return;
     }
