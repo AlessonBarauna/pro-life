@@ -384,6 +384,31 @@
     }
     return count;
   }
+  // M03.7: financial accrual snapshots only. Never debit transfer budget.
+  // This ledger is an estimate, not proof of a wage payment.
+  function recordPayrollForecast(s,api){
+    const c=state(s),club=clubOf(s,api);
+    if(!c||!club||!Number.isSafeInteger(Number(s.day))||Number(s.day)<0)return null;
+    const ledger=c.payrollForecast||={version:1,clubId:club.id,anchorDay:Number(s.day),entries:[]};
+    if(ledger.clubId!==club.id){
+      c.payrollForecast={version:1,clubId:club.id,anchorDay:Number(s.day),entries:[]};
+      return null;
+    }
+    if(!Array.isArray(ledger.entries))ledger.entries=[];
+    const elapsed=Number(s.day)-Number(ledger.anchorDay);
+    if(elapsed<30)return null;
+    const period=Math.floor(elapsed/30);
+    const id=club.id+":"+String(ledger.anchorDay)+":"+String(period);
+    if(ledger.entries.some(e=>e.id===id))return null;
+    const roster=(club.roster||[]).filter(p=>p&&p.id!=="hero");
+    const recorded=roster.filter(p=>p.salary!=null&&p.salary!==""&&Number.isFinite(Number(p.salary))&&Number(p.salary)>=0);
+    const monthly=recorded.reduce((v,p)=>v+Number(p.salary),0);
+    const entry={id,day:Number(s.day),clubId:club.id,monthlyRegistered:monthly,
+      missingCount:roster.length-recorded.length,playersCount:roster.length,status:"forecast_only"};
+    ledger.entries.push(entry);
+    if(ledger.entries.length>48)ledger.entries.splice(0,ledger.entries.length-48);
+    return entry;
+  }
   // ---------- agenda diaria ----------
   function daily(s,api,hooks){
     if(!isCoach(s))return null;
@@ -391,6 +416,7 @@
     root.ProLifeCoachScoutingV2?.advance?.(s);
     settleInquiries(s,api);
     settleTransferReplies(s);
+    recordPayrollForecast(s,api);
     if(s.day%7===0&&s.clubId){
       weeklyTraining(s,api);
       return evaluate(s,api,hooks);
@@ -415,7 +441,7 @@
       focus:c.focus,foci:FOCI,stints:c.stints,totals,license:s.license,reputation:s.reputation};
   }
 
-  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,settleInquiries,settleTransferReplies,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf};
+  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,settleInquiries,settleTransferReplies,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
