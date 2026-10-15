@@ -10,7 +10,7 @@ const strength=club=>{
 };
 function createPreview(home,away,seed=1){
  if(!Engine)return null;
- return {kind:"experimental",match:Engine.create({seed,homeStrength:strength(home),awayStrength:strength(away)}),actions:[]};
+ return {kind:"experimental",match:Engine.create({seed,homeStrength:strength(home),awayStrength:strength(away)}),actions:[],lineups:[home,away].map(c=>{const roster=(Array.isArray(c?.roster)?c.roster:[]).filter(p=>p&&p.id!=null);return {starters:roster.slice(0,11).map(p=>String(p.id)),bench:roster.slice(11).map(p=>String(p.id))};})};
 }
 function decision(preview,{side=0,tactic,incomingStrength}={}){
  if(!preview||preview.kind!=="experimental")return {ok:false,reason:"Prévia indisponível"};
@@ -19,6 +19,20 @@ function decision(preview,{side=0,tactic,incomingStrength}={}){
  else if(incomingStrength!==undefined)ok=Engine.substitute(preview.match,side,{incomingStrength});
  if(!ok)return {ok:false,reason:"Alteração não permitida"};
  preview.actions.push({minute:preview.match.minute,side,tactic:tactic??null,incomingStrength:incomingStrength??null});
+ return {ok:true};
+}
+function swapPlayer(preview,side,outId,inId,roster){
+ if(!preview||!([0,1].includes(side)))return {ok:false,reason:"Equipe indisponivel"};
+ const line=preview.lineups?.[side];
+ if(!line||!Array.isArray(roster))return {ok:false,reason:"Elenco indisponivel"};
+ const oi=line.starters.indexOf(String(outId)),bi=line.bench.indexOf(String(inId));
+ if(oi<0||bi<0||String(outId)===String(inId))return {ok:false,reason:"Troca invalida"};
+ const incoming=roster.find(p=>String(p.id)===String(inId));
+ const strength=Number(incoming?.ovr??incoming?.overall);
+ const result=decision(preview,{side,incomingStrength:Number.isFinite(strength)&&strength>0?strength:70});
+ if(!result.ok)return result;
+ line.starters[oi]=String(inId);line.bench.splice(bi,1);
+ const last=preview.actions[preview.actions.length-1];last.outId=String(outId);last.inId=String(inId);
  return {ok:true};
 }
 function advance(preview,minute){
@@ -30,7 +44,7 @@ function summary(preview){
  if(!m)return null;
  return {experimental:true,minute:m.minute,score:m.score.slice(),shots:m.shots.slice(),tactics:[m.home.tactic,m.away.tactic],substitutions:[m.home.subs,m.away.subs],actions:preview.actions.length};
 }
-const api=Object.freeze({createPreview,decision,advance,summary,strength});
+const api=Object.freeze({createPreview,decision,swapPlayer,advance,summary,strength});
 root.ProLifeCoachMatchLabV2=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
