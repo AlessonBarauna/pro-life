@@ -3,6 +3,7 @@
   // Stage 34F.24 - tela "Carreira do Treinador": diretoria, vestiario, capitao, treino coletivo e historico.
   // Renderiza a partir de ProLifeCoachCareer.snapshot; os botoes usam data-coach-* e o app.js despacha command().
 
+  const careerDate=(s,day)=>Number.isFinite(Number(day))?new Date(Date.UTC(2026,0,s?.world==="legacy"?5:1)+Number(day)*86400000).toLocaleDateString("pt-BR",{timeZone:"UTC"}):"Data indisponível";
   const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
   const ui={tab:"central",dealTab:"propostas",selectedDeal:null,marketArea:"transferencias",scoutQuery:"",scoutPosition:"all",scoutClub:"",scoutCompetition:"",scoutCountry:"all",scoutAge:"all",scoutCategory:"all"};
   const TABS=[["central","Central"],["diretoria","Diretoria"],["vestiario","Vestiário"],["treino","Treino coletivo"],["prejogo","Pré-jogo"],["negociacoes","Negociações"],["historico","Histórico"]];
@@ -214,7 +215,7 @@
         const inquiryReady=inquiry?.status==="accepted"&&Number(s.day)<=Number(inquiry.expiresDay);
         const inquiryPending=inquiry?.status==="pending";
         const inquiryRejected=inquiry?.status==="rejected";
-        const inquiryStatus=inquiryPending?"Sondagem enviada · resposta a partir do dia "+inquiry.responseDay:
+        const inquiryStatus=inquiryPending?"Sondagem enviada · resposta prevista em "+careerDate(s,inquiry.responseDay):
           inquiryReady?"Sondagem aceita · interesse "+({high:"alto",medium:"médio",low:"baixo"}[inquiry.interest]||"confirmado"):
           inquiryRejected?"Sondagem recusada · "+(inquiry.playerDecision==="rejected"?"jogador sem interesse":"clube não autoriza"):"";
         const inquiryExplanation=inquiry&&!inquiryPending?
