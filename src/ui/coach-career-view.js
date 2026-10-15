@@ -161,13 +161,26 @@
         candidates.push({p,cl});
         if(candidates.length>=80)break;
       }
+      const scouting=root.ProLifeCoachScoutingV2;
+      const missions=Array.isArray(c.scoutingV2?.missions)?c.scoutingV2.missions:[];
+      const playerLookup=new Map(pool.filter(p=>p?.id!=null).map(p=>[String(p.id),p]));
+      const missionRows=missions.slice().reverse().slice(0,15).map(m=>{
+        const p=playerLookup.get(String(m.playerId));
+        const info=scouting?.report?.(s,m.id,p)||null;
+        const percent=Math.round(Math.max(0,Math.min(1,Number(m.progress)||0))*100);
+        const name=esc(p?.name||m.playerId);
+        const stage=esc(m.status==="complete"?"Concluida":"Em andamento");
+        const range=info?.available?'GER estimado '+info.estimatedOverall.join("–")+' · Potencial '+info.potentialRange.join("–"):'Jogador ainda nao encontrado neste save';
+        return '<article class="cc-deal"><div class="cc-deal-player"><strong>'+name+'</strong><small>'+esc(m.region||"Regiao nao informada")+' · '+stage+'</small></div><div class="cc-deal-team"><span>'+percent+'% · '+esc(range)+'</span></div></article>';
+      }).join("");
+      const missionPanel='<section class="cc-card"><small>REDE DE OBSERVACAO - T2</small><h3>Missoes e relatorios</h3><p class="cc-note">A qualidade das estimativas melhora com os dias de observacao. Missoes sao registradas no save do treinador.</p>'+(missionRows||'<p class="cc-note">Nenhuma missao cadastrada.</p>')+'</section>';
       const shortlist=c.shortlist||[];
       const rows=candidates.map(({p,cl})=>{
         const overall=p.overall??p.ovr??D?.overall?.(p);
         const saved=shortlist.some(x=>x.playerId===p.id&&x.clubId===cl.id);
         return '<article class="cc-deal"><div class="cc-deal-player"><strong>'+esc(p.name||"Atleta")+'</strong><small>'+esc([p.pos||p.position,Number.isFinite(Number(overall))?"GER "+Math.round(Number(overall)):null,p.age?"Idade "+p.age:null].filter(Boolean).join(" · "))+'</small></div><div class="cc-deal-team">'+(root.ProLifeClubCrests?.render?.(cl.id,{size:"sm"})||"")+'<span>'+esc(cl.name||cl.id)+'</span></div><div class="cc-deal-actions"><button type="button" data-coach-shortlist="'+esc(cl.id)+'" data-coach-player="'+esc(p.id)+'">'+(saved?"Remover da lista":"Adicionar à lista")+'</button><button type="button" data-coach-scout-offer="'+esc(cl.id)+'" data-coach-player="'+esc(p.id)+'">Iniciar negociação</button></div></article>';
       }).join("");
-      return '<nav class="cc-deal-nav" aria-label="Áreas do mercado"><button type="button" data-coach-market-area="observacao" aria-current="page">Observação</button><button type="button" data-coach-market-area="transferencias">Transferências</button></nav><section class="cc-card"><h3>Observação e busca de jogadores</h3><p class="cc-note">Resultados do catálogo dos clubes carregados neste save. Acompanhamento persistido na carreira do treinador.</p><label>Nome do atleta <input data-coach-scout-search placeholder="Buscar jogador..." value="'+esc(ui.scoutQuery)+'"></label><label>Posição <select data-coach-scout-position><option value="all"'+(ui.scoutPosition==="all"?" selected":"")+'>Todas</option>'+["GOL","ZAG","LAT","VOL","MEI","ATA"].map(v=>'<option value="'+v+'"'+(ui.scoutPosition===v?" selected":"")+'>'+v+'</option>').join("")+'</select></label><div class="cc-deal-actions"><button data-coach-scout-apply type="button">Pesquisar</button></div>'+(rows||'<p class="cc-note">Nenhum atleta encontrado.</p>')+'</section>';
+      return '<nav class="cc-deal-nav" aria-label="Áreas do mercado"><button type="button" data-coach-market-area="observacao" aria-current="page">Observação</button><button type="button" data-coach-market-area="transferencias">Transferências</button></nav><section class="cc-card"><h3>Observação e busca de jogadores</h3><p class="cc-note">Resultados do catálogo dos clubes carregados neste save. Acompanhamento persistido na carreira do treinador.</p><label>Nome do atleta <input data-coach-scout-search placeholder="Buscar jogador..." value="'+esc(ui.scoutQuery)+'"></label><label>Posição <select data-coach-scout-position><option value="all"'+(ui.scoutPosition==="all"?" selected":"")+'>Todas</option>'+["GOL","ZAG","LAT","VOL","MEI","ATA"].map(v=>'<option value="'+v+'"'+(ui.scoutPosition===v?" selected":"")+'>'+v+'</option>').join("")+'</select></label><div class="cc-deal-actions"><button data-coach-scout-apply type="button">Pesquisar</button></div>'+(rows||'<p class="cc-note">Nenhum atleta encontrado.</p>')+'</section>'+missionPanel;
     }
     const money=v=>"R$ "+Math.round(Number(v)||0).toLocaleString("pt-BR");
     const all=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])];
