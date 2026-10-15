@@ -201,6 +201,26 @@ case "tactic": {
         c.tactic = data.value;
         break;
       }
+      case "coachPlayerRole": {
+        const club=D.club(s);
+        if(s.mode!=="coach"||!club)throw Error("Funções disponíveis apenas ao treinador.");
+        const player=club.roster?.find(p=>p.id===data.playerId);
+        if(!player)throw Error("Jogador não pertence ao elenco.");
+        const roles={
+          GOL:["traditional","sweeper"],ZAG:["defender","ball_playing","stopper"],
+          LE:["fullback","wingback","inverted"],LD:["fullback","wingback","inverted"],DEF:["defender","ball_playing","stopper"],
+          VOL:["holding","deep_playmaker","box_to_box"],MC:["box_to_box","playmaker","holding"],
+          MEI:["playmaker","advanced","shadow"],ME:["wide","winger","playmaker"],MD:["wide","winger","playmaker"],
+          PE:["winger","inside_forward","wide_playmaker"],PD:["winger","inside_forward","wide_playmaker"],
+          ATA:["poacher","false_nine","target"],CA:["poacher","false_nine","target"]
+        };
+        const position=String(data.position||player.pos||"").toUpperCase();
+        if(!roles[position]?.includes(data.role))throw Error("Função incompatível com a posição escolhida.");
+        s.coachCareer||={version:1};
+        s.coachCareer.playerRoles||={};
+        s.coachCareer.playerRoles[player.id]={position,role:data.role};
+        break;
+      }
       case "coachFormation": {
         const c=D.club(s);
         if(s.mode!=="coach"||!c)throw Error("Formação exclusiva do treinador.");
