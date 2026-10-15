@@ -46,6 +46,7 @@
     if(session.coach&&session.lab){
       const lab=root.ProLifeCoachMatchLabV2;
       if(b.hasAttribute("data-live-lab-next")){lab.advance(session.lab,Math.min(90,session.lab.match.minute+10));paint();return;}
+      if(b.hasAttribute("data-live-lab-sub")){lab.decision(session.lab,{side:session.labSide,incomingStrength:75});paint();return;}
       if(b.hasAttribute("data-live-lab-swap")){
         const out=document.querySelector?.("[data-live-lab-out]")?.value;
         const incoming=document.querySelector?.("[data-live-lab-in]")?.value;
