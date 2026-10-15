@@ -222,12 +222,30 @@
     return `${css()}<section class="cc-dark"><h2>Carreira do Treinador</h2><small>${esc(sn.club?.name||"Sem clube")} · Temporada ${esc(s.season)} · Nacionalidade: ${esc(s.person?.nationality||"Brasil")} · Reputação ${esc(Math.round(sn.reputation||0))}</small>${tabs()}${body}</section>`;
   }
 
+  function signingPresentation(entry,s){
+    const money=n=>"R$ "+Math.round(Number(n)||0).toLocaleString("pt-BR");
+    const prestige=Number(entry.overall||0)>=83||Number(entry.fee||0)>=30000000;
+    const crest=id=>root.ProLifeClubCrests?.render?.(id,{size:"sm"})||"";
+    const from=esc(entry.fromClubName||"Clube anterior"),to=esc(entry.toClubName||"Novo clube");
+    return '<article class="cc-card cc-signing" role="region" aria-label="Apresentação oficial do reforço">'+
+      '<style>.cc-signing{background:radial-gradient(ellipse at 78% 10%,#294047,#0d1b25 65%);border-color:#bedb3a;padding:25px}.cc-signing h2{font-size:clamp(30px,5vw,64px);font-weight:900;letter-spacing:-.04em;margin:8px 0}.cc-signing .cc-signing-tag{font-size:12px;color:#d0f54a;font-weight:800;letter-spacing:.2em}.cc-signing .cc-signing-clubs{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:24px 0}.cc-signing .cc-signing-facts{display:flex;gap:18px;flex-wrap:wrap;margin:20px 0}.cc-signing .cc-signing-facts span{background:#20313c;padding:12px;border-radius:8px}.cc-signing .cc-signing-actions{display:flex;gap:10px;flex-wrap:wrap}.cc-signing button{cursor:pointer}</style>'+
+      '<div class="cc-signing-tag">'+(prestige?"APRESENTAÇÃO DE DESTAQUE":"CONTRATAÇÃO CONFIRMADA")+'</div>'+
+      '<h2>'+esc(entry.playerName||"Novo reforço")+'</h2><p class="cc-note">'+(prestige?"Grande expectativa pela chegada do reforço.":"O elenco ganha uma nova opção para a temporada.")+'</p>'+
+      '<div class="cc-signing-clubs">'+crest(entry.fromClubId)+'<b>'+from+'</b><span aria-hidden="true">→</span>'+crest(entry.toClubId)+'<b>'+to+'</b></div>'+
+      '<div class="cc-signing-facts"><span>Valor: <b>'+money(entry.fee)+'</b></span><span>Posição: <b>'+esc(entry.position||"—")+'</b></span><span>GER: <b>'+esc(entry.overall??"—")+'</b></span><span>Idade: <b>'+esc(entry.age??"—")+'</b></span><span>Operação: <b>'+esc(entry.type==="loan"?"Empréstimo":entry.type==="purchase-option"?"Compra após empréstimo":"Definitiva")+'</b></span></div>'+
+      '<p class="cc-note">O jogador já foi integrado ao elenco. Esta apresentação não realiza nova transferência ou pagamento.</p>'+
+      '<div class="cc-signing-actions"><button type="button" data-coach-signing-done="'+esc(entry.id)+'">Continuar</button><button type="button" data-coach-signing-squad="'+esc(entry.id)+'">Ver no elenco</button><button type="button" data-coach-signing-history="'+esc(entry.id)+'">Ver histórico</button></div></article>';
+  }
   function renderMarket(s,D){
     if(s?.mode!=="coach")return '<section class="card"><h2>Transferências</h2><p class="muted">Disponível na carreira de treinador.</p></section>';
     const own=D?.club?.(s,s.clubId);
     const balance=Number(own?.budget);
     const budget=Number.isFinite(balance)?"R$ "+Math.round(balance).toLocaleString("pt-BR"):"Não informado";
-    return css()+'<section class="cc-dark cc-market-screen"><div class="cc-market-heading"><small>CENTRAL DE TRANSFERÊNCIAS</small><h2>Mercado de jogadores</h2><p class="cc-note">'+esc(own?.name||"Sem clube")+' · Temporada '+esc(s.season)+' · Orçamento '+esc(budget)+'</p></div>'+negotiations(s,D)+'</section>';
+    const pending=(s.coachCareer?.presentations||[]).filter(x=>!x.presented&&x.toClubId===s.clubId);
+    const current=pending[0]||null;
+    const presented=(s.coachCareer?.presentations||[]).filter(x=>x.presented&&x.toClubId===s.clubId).slice(-5).reverse();
+    const intro=current?signingPresentation(current,s):'<div class="cc-card"><small>ÚLTIMOS REFORÇOS</small><p class="cc-note">'+(presented.length?presented.map(x=>esc(x.playerName)).join(" · "):"Nenhum reforço apresentado nesta carreira.")+'</p></div>';
+    return css()+'<section class="cc-dark cc-market-screen"><div class="cc-market-heading"><small>CENTRAL DE TRANSFERÊNCIAS</small><h2>Mercado de jogadores</h2><p class="cc-note">'+esc(own?.name||"Sem clube")+' · Temporada '+esc(s.season)+' · Orçamento '+esc(budget)+'</p></div>'+intro+negotiations(s,D)+'</section>';
   }
 
   const api={render,renderMarket,state:ui,esc,setTab:id=>{if(TABS.some(x=>x[0]===id))ui.tab=id;},setDealTab:id=>{if(["lista","recebidas","propostas","emprestimos","financeiro","clausulas","historico"].includes(id))ui.dealTab=id;},openDeal:id=>{ui.selectedDeal=id;ui.dealTab="propostas";},closeDeal:()=>{ui.selectedDeal=null;},setMarketArea:id=>{if(["observacao","transferencias"].includes(id))ui.marketArea=id;},setScoutFilters:(query,pos)=>{ui.scoutQuery=String(query||"").slice(0,80);ui.scoutPosition=["all","GOL","ZAG","LAT","VOL","MEI","ATA"].includes(pos)?pos:"all";}};
