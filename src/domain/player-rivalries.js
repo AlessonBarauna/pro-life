@@ -115,12 +115,48 @@ function onCareerMatch(s,m){
   s.extras.playerRivalry=fromSimulatedMatch(state,m);
   return s.extras.playerRivalry;
 }
+// FC 27: acompanha as próximas partidas de CADA atleta na mesma liga.
+// Apenas participações e eventos efetivamente registrados pelo simulador são aceitos.
+function recordLeagueMatch(s,m){
+  const q=ensureCareer(s);
+  if(!q||q.result!=="active"||!m||!Array.isArray(m.events))return q;
+  const club=(s.clubs||[]).find(c=>String(c.id)===String(s.clubId));
+  if(!club?.leagueId||String(m.leagueId)!==String(club.leagueId))return q;
+  if(m.date==null||m.home==null||m.away==null)return q;
+  const id=[m.season,m.date,m.competitionId||m.leagueId||"",m.round??"",m.home,m.away].join(":");
+  if((q.processed||[]).includes(id))return q;
+  const participated=playerId=>Number(m.participation?.[playerId]?.minutes||0)>0||Number.isFinite(Number(m.ratings?.[playerId]));
+  const hero=participated(q.playerId)&&Number(q.heroGames??q.progress)<q.targetMatches;
+  const rival=participated(q.rivalId)&&Number(q.rivalGames??q.progress)<q.targetMatches;
+  if(!hero&&!rival)return q;
+  const objective=OBJECTIVES[q.objectiveId];
+  if(!objective)return q;
+  const value=(playerId,side)=>{
+    if(objective.field==="cleanSheets"){
+      const scoreAgainst=side===0?Number(m.ag):Number(m.hg);
+      return Number.isFinite(scoreAgainst)&&scoreAgainst===0?1:0;
+    }
+    return (m.events||[]).filter(e=>e.type==="goal"&&String(e[objective.field==="assists"?"assistPlayerId":"playerId"])===String(playerId)).length;
+  };
+  const side=id=>String(m.home)===String((s.clubs||[]).find(c=>(c.roster||[]).some(p=>String(p.id)===String(id)))?.id)?0:1;
+  q.processed=[...(q.processed||[]),id].slice(-500);
+  q.heroGames=Number(q.heroGames??q.progress)+(hero?1:0);
+  q.rivalGames=Number(q.rivalGames??q.progress)+(rival?1:0);
+  const heroValue=hero?value(q.playerId,side(q.playerId)):0,rivalValue=rival?value(q.rivalId,side(q.rivalId)):0;
+  q.hero+=heroValue;q.rival+=rivalValue;
+  q.progress=Math.min(q.heroGames,q.rivalGames);
+  if(objective.kind==="firstAchievement"&&(heroValue>=objective.threshold||rivalValue>=objective.threshold))
+    q.result=heroValue>=objective.threshold&&rivalValue>=objective.threshold?"draw":heroValue>=objective.threshold?"win":"loss";
+  else if(q.heroGames>=q.targetMatches&&q.rivalGames>=q.targetMatches)
+    q.result=q.hero>q.rival?"win":q.hero<q.rival?"loss":"draw";
+  return q;
+}
 function careerSnapshot(s){
   const q=s?.extras?.playerRivalry;
   if(!q)return null;
   return {...q,processed:[...(q.processed||[])]};
 }
-const api=Object.freeze({VERSION,OBJECTIVES,objectiveFor,eligibleRivals,candidateStats,initial,record,fromSimulatedMatch,reward,ensureCareer,onCareerMatch,careerSnapshot});
+const api=Object.freeze({VERSION,OBJECTIVES,objectiveFor,eligibleRivals,candidateStats,initial,record,fromSimulatedMatch,reward,ensureCareer,onCareerMatch,recordLeagueMatch,careerSnapshot});
 root.ProLifePlayerRivalries=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
