@@ -2303,13 +2303,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       <label>Largura <input type="number" min="20" max="80" step="5" data-team-tactic-width value="${teamTactics.width??50}"></label>
       <label>Profundidade <input type="number" min="20" max="80" step="5" data-team-tactic-depth value="${teamTactics.depth??50}"></label>
       </div>${phasePreview}<button type="button" data-team-tactics-save>Salvar táticas</button></section>`:"";
-      const coverage=coach?window.ProLifeCoachCareer?.positionCoverage?.(state):null;
-      const positionAudit=coverage?'<section class="pl-squad-supplement"><div class="tag">AUDITORIA FC27</div><h2>Posições alternativas do banco de jogadores</h2><p>Dados do save atual. Verificado significa registro com ID do catálogo ou marcado como verificado; sugerido significa posição inferida, não oficial.</p><div class="pl-squad-mini-kpis">'+
-        [['Total',coverage.total],['Verificados',coverage.verified],['Sugeridos',coverage.suggested],['Sem correspondência',coverage.unmatched]].map(([label,value])=>'<span><small>'+label+'</small><b>'+value+'</b></span>').join("")+'</div>'+
-        '<details><summary>Cobertura por posição</summary><div class="tablewrap"><table><thead><tr><th>Posição</th><th>Total</th><th>Verificados</th><th>Sugeridos</th><th>Sem correspondência</th></tr></thead><tbody>'+
-        Object.entries(coverage.byPosition).sort((a,b)=>a[0].localeCompare(b[0])).map(([pos,r])=>'<tr><td>'+esc(pos)+'</td><td>'+r.total+'</td><td>'+r.verified+'</td><td>'+r.suggested+'</td><td>'+r.unmatched+'</td></tr>').join("")+
-        '</tbody></table></div></details></section>':'';
-      const tabSupplement=squadTab==="tactics"?tacticSettings:squadTab==="roles"?rolePanel:squadTab==="hierarchy"?`${coachRelation}${relation}${positionAudit}`:"";
+      const tabSupplement=squadTab==="tactics"?tacticSettings:squadTab==="roles"?rolePanel:squadTab==="hierarchy"?`${coachRelation}${relation}`:"";
       const contractSalary=selected?[selected.salary,selected.monthlySalary,selected.wage,selected.contract?.salary,selected.contract?.monthlySalary].find(v=>v!=null&&Number.isFinite(Number(v))&&Number(v)>0):null;
       const contractEnd=selected?[selected.contractEndDay,selected.contract?.endDay,selected.contract?.expiresDay].find(v=>v!=null&&Number.isFinite(Number(v))):null;
       const contractEndYear=selected?[selected.contractUntil,selected.contract?.endYear,selected.contract?.expiryYear].find(v=>v!=null&&Number.isFinite(Number(v))):null;
