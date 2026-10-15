@@ -9,7 +9,7 @@ test("Roster records initialized across clubs without overwriting existing contr
  assert.match(domain,/p\.secondaryPositionsSource="suggested"/);
  assert.match(domain,/p\.contractEndDay=Number\(s\.day\|\|0\)\+years\*365/);
  assert.match(domain,/p\.contractEndSource="generated_game"/);
- assert.match(domain,/if\(c\.playerDataVersion!==2\)/);
+ assert.match(domain,/if\(c\.playerDataVersion!==3\)/);
 });
 test("Manager can save focus and training honors selected attribute groups",()=>{
  assert.match(game,/case "coachDevelopmentPlan":/);
@@ -38,4 +38,13 @@ test("Legacy defender dossier shows labeled suggestions when position array is e
  assert.match(ui,/const alternativesLabel=/);
  assert.match(ui,/sugeridas \(sem registro oficial\)/);
  assert.match(ui,/esc\(alternativesLabel\)/);
+});
+
+test("Bundled FC27 catalog takes priority over generic suggestions",()=>{
+ const official=require("../src/data/fc27/fc27-positions-v1.js");
+ assert.ok(Object.keys(official.alt).length>10000);
+ assert.match(domain,/Object\.prototype\.hasOwnProperty\.call\(eaCatalog,eaKey\)/);
+ assert.match(domain,/p\.secondaryPositionsSource="ea_fc27"/);
+ assert.match(domain,/if\(knownEntry\)/);
+ assert.match(domain,/const eaKey=String\(p\.eaId/);
 });
