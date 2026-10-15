@@ -224,6 +224,7 @@
   function daily(s,api,hooks){
     if(!isCoach(s))return null;
     state(s);
+    root.ProLifeCoachScoutingV2?.advance?.(s);
     if(s.day%7===0&&s.clubId){
       weeklyTraining(s,api);
       return evaluate(s,api,hooks);
