@@ -48,7 +48,26 @@
       days:n
     };
   }
-  const api=Object.freeze({evaluate,evaluateRoster,recovery});
+  // Advisory selection only: does not change the active lineup or simulation engine.
+  function recommendLineup(players,slots,{contextForPlayer}={}){
+    const roster=Array.isArray(players)?players:[];
+    const places=Array.isArray(slots)?slots:[];
+    const used=new Set();
+    return places.map((slot,index)=>{
+      const options=roster.map((player,rosterIndex)=>{
+        const context=typeof contextForPlayer==="function"?contextForPlayer(player,slot,index):{};
+        const rating=evaluate(player,context);
+        const matching=String(player?.position??player?.pos??"").toUpperCase()===String(slot??"").toUpperCase();
+        return {player,rosterIndex,rating,matching,score:rating.effective+(matching?2:-6)};
+      }).filter(x=>x.rating.available&&!used.has(x.rosterIndex))
+        .sort((a,b)=>b.score-a.score||a.rosterIndex-b.rosterIndex);
+      const best=options[0];
+      if(!best)return {slot,index,playerId:null,reason:"Sem atleta disponivel"};
+      used.add(best.rosterIndex);
+      return {slot,index,playerId:best.player?.id??null,base:best.rating.base,effective:best.rating.effective,score:best.score,matching:best.matching};
+    });
+  }
+  const api=Object.freeze({evaluate,evaluateRoster,recovery,recommendLineup});
   root.ProLifeCoachMatchRating=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
