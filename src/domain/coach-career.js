@@ -409,6 +409,24 @@
     if(ledger.entries.length>48)ledger.entries.splice(0,ledger.entries.length-48);
     return entry;
   }
+  // M03.12: conservative readiness gate. This is not a payment authorization.
+  function payrollReadiness(s,api){
+    if(!isCoach(s))return {ready:false,reasons:["Modo treinador indisponivel"]};
+    const club=clubOf(s,api),c=s.coachCareer||{};
+    if(!club)return {ready:false,reasons:["Clube indisponivel"]};
+    const roster=(club.roster||[]).filter(p=>p&&p.id!=="hero");
+    const missing=roster.filter(p=>p.salary==null||p.salary===""||!Number.isFinite(Number(p.salary))||Number(p.salary)<0).length;
+    const loans=(c.loans||[]).filter(l=>!l.returned&&(l.fromClubId===club.id||l.toClubId===club.id));
+    const revenue=(c.finance?.recurringRevenues||[]).filter(x=>x&&x.active===true&&Number.isFinite(Number(x.monthlyAmount))&&Number(x.monthlyAmount)>0);
+    const reasons=[];
+    if(missing)reasons.push(missing+" salario(s) sem contrato confirmado");
+    if(loans.length)reasons.push("Rateio dos emprestimos precisa ser validado");
+    if(!revenue.length)reasons.push("Receitas recorrentes nao configuradas");
+    if(!Number.isFinite(Number(c.finance?.salaryBudget)))reasons.push("Orcamento salarial independente nao configurado");
+    // A separate, reviewed settlement action is required even when data is complete.
+    reasons.push("Pagamento automatico ainda nao autorizado");
+    return {ready:false,reasons,missing,loans:loans.length,revenueSources:revenue.length};
+  }
   // ---------- agenda diaria ----------
   function daily(s,api,hooks){
     if(!isCoach(s))return null;
@@ -441,7 +459,7 @@
       focus:c.focus,foci:FOCI,stints:c.stints,totals,license:s.license,reputation:s.reputation};
   }
 
-  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,settleInquiries,settleTransferReplies,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf};
+  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
