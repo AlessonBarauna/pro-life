@@ -413,12 +413,12 @@ case "tactic": {
         const previous=n.contractOffer;
         if(previous?.status==="accepted")throw Error("Contrato já acordado.");
         if((previous?.round||0)>=3)throw Error("Limite de rodadas contratuais atingido.");
-        const baseline=Math.max(minimumMarketSalaryMonthly(player),Number(player.salary)||0);
-        const seniority=Math.max(0,Number(D.overall(player)||70)-70);
-        const expectation=Math.round(baseline*(1+seniority*.007));
-        const roleFactor={rotation:0.92,important:1,starter:1.04,star:1.12}[role];
-        const required=Math.ceil(expectation*roleFactor/1000)*1000;
-        const accepted=salary+Math.floor(bonus/Math.max(1,years*12))>=required;
+        const requirements=coachContractRequirements(player,buyerOrCurrentClub(s,n),seller,role,years);
+        const required=requirements.requiredSalary;
+        // Bonus reduces the monthly asking price only within a capped range.
+        // This keeps a signing bonus from replacing a viable recurring wage.
+        const bonusCredit=Math.min(Math.floor(required*0.15),Math.floor(bonus/Math.max(1,years*12)));
+        const accepted=salary+bonusCredit>=required;
         const round=(previous?.round||0)+1;
         n.contractOffer={round,status:accepted?"accepted":round>=3?"rejected":"counter",salary,years,bonus,role,requiredSalary:required,history:[...(previous?.history||[]),{round,day:s.day,salary,years,bonus,role,accepted}]};
         (s.news||[]).unshift({day:s.day,season:s.season,title:accepted?"Contrato acordado":"Resposta do agente",body:accepted?"O jogador aceitou as condições apresentadas.":"O agente solicita salário e bônus mais competitivos."});
@@ -780,7 +780,23 @@ case "tactic": {
     const weekly = Math.max(750, Math.round(valuation(p) * 0.00085 / 250) * 250);
     return Math.ceil(weekly * 52 / 12 / 1000) * 1000;
   }
-  root.ProLifeApp = { execute, valuation, minimumMarketSalaryMonthly };
+  function buyerOrCurrentClub(s,n) {
+    return D.club(s,n.buyerClubId);
+  }
+  function coachContractRequirements(player,buyer,seller,role="important",years=3) {
+    const baseline=Math.max(minimumMarketSalaryMonthly(player), Number(player.salary)||0);
+    const overall=Math.max(40,Math.min(99,Number(D.overall(player))||65));
+    const seniority=1+Math.max(0,overall-70)*0.007;
+    const roleFactor={rotation:0.92,important:1,starter:1.04,star:1.12}[role]||1;
+    // Prestige influences asking wages, but never discounts a player's salary.
+    const buyerRep=Number(buyer?.reputation??buyer?.prestige??buyer?.strength??60);
+    const sellerRep=Number(seller?.reputation??seller?.prestige??seller?.strength??60);
+    const prestigePremium=Math.max(0,Math.min(.15,(buyerRep-sellerRep)*.0025));
+    const requiredSalary=Math.ceil(baseline*seniority*roleFactor*(1+prestigePremium)/1000)*1000;
+    const suggestedBonus=Math.ceil(requiredSalary*Math.max(1,Math.min(5,Number(years)||3))*0.35/10000)*10000;
+    return {requiredSalary,suggestedBonus,baseline};
+  }
+  root.ProLifeApp = { execute, valuation, minimumMarketSalaryMonthly, coachContractRequirements };
   if (typeof module !== "undefined" && module.exports)
     module.exports = root.ProLifeApp;
 })(typeof globalThis !== "undefined" ? globalThis : this);
