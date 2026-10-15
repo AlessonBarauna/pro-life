@@ -16,8 +16,8 @@
    const p=m?.participation?.hero;
    const stats=m?.playerStats?.hero||{};
    if(!p)return {label:"Participação não informada",entry:null,exit:null,played:false};
-   const entry=Number.isFinite(Number(p.entryMinute))?Number(p.entryMinute):null;
-   const exit=Number.isFinite(Number(p.exitMinute))?Number(p.exitMinute):null;
+   const entry=p.entryMinute!==null&&p.entryMinute!==undefined&&Number.isFinite(Number(p.entryMinute))?Number(p.entryMinute):null;
+   const exit=p.exitMinute!==null&&p.exitMinute!==undefined&&Number.isFinite(Number(p.exitMinute))?Number(p.exitMinute):null;
    const status=String(p.status||p.role||"").toLowerCase();
    if(status.includes("not")||status.includes("fora")||status.includes("unused")||status.includes("não utilizado"))return {label:"Não utilizado / fora da relação",entry,exit,played:false};
    if(entry===null)return {label:"Situação não informada",entry,exit,played:false};
