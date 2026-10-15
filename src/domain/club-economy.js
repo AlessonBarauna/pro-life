@@ -105,7 +105,26 @@
     return (Array.isArray(records)?records:[]).filter(x=>String(x.clubId)===String(clubId))
       .map(x=>({...x,postedPeriods:[...(x.postedPeriods||[])]}));
   }
-  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,registerRevenueContract,revenueContractsSnapshot,VERSION:"m04.8"};
+  // M04.9: read-only future due dates, measured in career days.
+  function revenueSchedule(state,clubId){
+    const today=Number(state?.day)||0,events=[];
+    for(const contract of revenueContractsSnapshot(state,clubId)){
+      const start=Number(contract.startDay),end=Number(contract.endDay);
+      if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||end<=start)continue;
+      const amount=Number(contract.annualAmount);
+      if(!Number.isFinite(amount)||amount<=0)continue;
+      const posted=new Set(contract.postedPeriods||[]);
+      let period=0;
+      for(let day=start+30;day<=end;day+=30){
+        period++;
+        if(day<today||posted.has(period))continue;
+        events.push({contractId:contract.id,type:contract.type,dueDay:day,
+          expectedAmount:Math.round(amount/12),period,status:"forecast_only"});
+      }
+    }
+    return events.sort((a,b)=>a.dueDay-b.dueDay||String(a.contractId).localeCompare(String(b.contractId))).slice(0,36);
+  }
+  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,registerRevenueContract,revenueContractsSnapshot,revenueSchedule,VERSION:"m04.9"};
   root.ProLifeClubEconomy=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
