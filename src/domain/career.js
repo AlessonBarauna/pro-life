@@ -1633,6 +1633,14 @@
     if(s.mode==="coach"&&s.coachCareer?.negotiations?.some(n=>n.status==="awaiting_window")&&windowStatus(s).open){
       root.ProLifeApp?.execute?.(s,"settleCoachWindowDeals",{});
     }
+    // Close expired incoming proposals once and announce their outcome.
+    if(s.mode==="coach"&&Array.isArray(s.coachCareer?.saleOffers)){
+      for(const offer of s.coachCareer.saleOffers){
+        if(offer.status!=="pending"||!Number.isFinite(Number(offer.expiresDay))||Number(s.day)<=Number(offer.expiresDay))continue;
+        offer.status="expired";offer.closedDay=s.day;
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Proposta de transferência expirada",body:"A oferta por "+(s.clubs||[]).flatMap(c=>c.roster||[]).find(p=>p.id===offer.playerId)?.name+" expirou sem resposta."});
+      }
+    }
     // Periodic inbound approaches; preferences and pending-offer limits are respected.
     if(s.mode==="coach"&&s.clubId&&s.coachCareer){
       const cc=s.coachCareer,prefs=cc.offerPreferences||{mode:"all"};
