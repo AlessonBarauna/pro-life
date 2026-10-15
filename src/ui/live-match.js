@@ -35,5 +35,6 @@
       if(b.dataset.liveLabTactic){lab.decision(session.lab,{side:session.labSide,tactic:b.dataset.liveLabTactic});paint();return;}
     }
     if(b.hasAttribute("data-live-pause")&&session.coach){session.paused=!session.paused;paint();return;}if(b.dataset.liveTab&&session.coach){session.tab=b.dataset.liveTab;paint();return;}if(b.dataset.liveSpeed){session.speed=Number(b.dataset.liveSpeed);paint();return;}if(b.hasAttribute("data-live-finish")){session.minute=94;clearInterval(timer);timer=null;paint();return;}if(b.hasAttribute("data-live-close")&&session.minute>=94)close();});
+  if(typeof document!=="undefined") document.addEventListener("change",e=>{if(!session?.coach||!session.lab||!e.target?.matches?.("[data-live-lab-side]"))return;session.labSide=e.target.value==="1"?1:0;paint();});
   const API={start,close,scoreAt};if(typeof module!=="undefined"&&module.exports)module.exports=API;root.ProLifeLiveMatch=API;
 })(typeof globalThis!=="undefined"?globalThis:this);
