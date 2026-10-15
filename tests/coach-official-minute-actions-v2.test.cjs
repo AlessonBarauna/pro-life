@@ -2,7 +2,8 @@ const test=require("node:test"),assert=require("node:assert/strict"),fs=require(
 const src=fs.readFileSync(path.join(__dirname,"../src/domain/engine.js"),"utf8");
 test("official simulator accepts optional minute-directed coach actions without changing existing calls",()=>{
  assert.match(src,/function simulate\(home, away, rng, context = null, coachActions = \[\]\)/);
- assert.match(src,/Array\.isArray\(coachActions\)\?coachActions\.slice\(\)\.sort/);
+ assert.match(src,/function\* simulateSteps\(home, away, rng, context = null, coachActions = \[\]\)/);
+ assert.match(src,/const plannedActions=Array\.isArray\(coachActions\)\?coachActions:\[\]/);
 });
 test("planned substitutions are applied before subsequent possession and shot logic",()=>{
  const begin=src.indexOf('for (let minute = 1; minute <= 94; minute++)');
