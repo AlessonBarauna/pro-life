@@ -116,10 +116,34 @@
     const playable=list.filter(c=>c.status!=="catalog_only").length;
     return `${filters(s,cat)}<p class="ch-note">${list.length} competição(ões) · ${playable} com calendário simulado.</p><div class="ch-list">${list.map(c=>card(c,s,D)).join("")||empty("Nenhuma competição para os filtros escolhidos.")}</div>${info.length?`<section class="ch-box"><small>INFORMAÇÃO DO CATÁLOGO FC 27</small>${info.map(c=>`<p class="ch-note"><b>${esc(c.name)}</b> (${c.clubCount} clube${c.clubCount===1?"":"s"} no catálogo). Não é uma competição independente: o Brasil já é disputado no PRO-LIFE pelo Brasileirão Série A, B, C e D. Os clubes brasileiros do catálogo continuam ligados ao manifesto, sem fusão automática de jogadores.</p>`).join("")}</section>`:""}`;
   }
+  // J12.3: chave real, derivada das rodadas ja registradas no save.
+  function playerCupRounds(s){
+    if(s?.mode!=="player")return "";
+    const cup=s.competitionSchedule?.cup;
+    const rounds=Array.isArray(cup?.rounds)?cup.rounds:[];
+    if(!rounds.length)return "";
+    const hero=String(s.clubId||"");
+    const selected=rounds.find(r=>(r.pairs||[]).some(p=>String(p.home)===hero||String(p.away)===hero)&&!(r.pairs||[]).every(p=>p.played))||rounds.find(r=>(r.pairs||[]).some(p=>String(p.home)===hero||String(p.away)===hero))||rounds[rounds.length-1];
+    const pair=(p)=>{
+      const played=!!p.played;
+      const a=club(s,p.home),b=club(s,p.away);
+      const score=played&&Number.isFinite(Number(p.hg))&&Number.isFinite(Number(p.ag))?`${p.hg} – ${p.ag}`:"×";
+      const winner=played&&p.winnerId?club(s,p.winnerId):null;
+      const important=String(p.home)===hero||String(p.away)===hero;
+      return `<li class="ch-cup-pair ${important?"hero":""}"><span>${esc(a)}</span><b>${esc(score)}</b><span>${esc(b)}</span>${winner?`<small>Classificado: ${esc(winner)}</small>`:""}</li>`;
+    };
+    const stages=rounds.map(r=>{
+      const total=(r.pairs||[]).length,completed=(r.pairs||[]).filter(p=>p.played).length;
+      const here=(r.pairs||[]).some(p=>String(p.home)===hero||String(p.away)===hero);
+      return `<div class="ch-cup-stage ${r===selected?"current":""}"><b>${esc(r.name||"Fase "+(Number(r.index||0)+1))}</b><span>${completed}/${total} confronto(s) concluídos</span>${here?'<small>SEU CLUBE</small>':""}</div>`;
+    }).join("");
+    const matches=(selected.pairs||[]).map(pair).join("");
+    return `<section class="ch-box ch-cup-path"><small>J12.3 · CAMINHO DO TÍTULO</small><h3>${esc(cup.name||"Copa do Brasil")}</h3><div class="ch-cup-stages">${stages}</div><h4>${esc(selected.name||"Confrontos da fase")} · ${dateOf(selected.date)}</h4><ul class="ch-cup-pairs">${matches||"<li>Sem confrontos registrados nesta fase.</li>"}</ul><p class="ch-note">Fases e classificados são lidos diretamente do save. Sem simulação adicional.</p></section>`;
+  }
   function copas(s,D,cat){
     const cups=brazilCups(s);
     const rows=cups.map(c=>`<article class="ch-card ${c.status==="playable"?"":"off"}"><div><small>${esc(c.country)}</small><b>${esc(c.name)}</b></div>${chip(c.status)}<span>${c.entrants?`${c.entrants} clube(s)`:""}</span>${c.champion?`<p>Campeão: ${esc(c.champion.name||c.champion)}</p>`:c.status==="playable"?`<p>Em disputa.</p>`:`<p>Participantes insuficientes para um torneio competitivo.</p>`}</article>`).join("");
-    return `<p class="ch-note">Copa do Brasil e estaduais são simulados. Copas nacionais de outros países ainda não existem no motor: nenhuma é exibida como jogável.</p><div class="ch-list">${rows||empty("Nenhuma copa nacional nesta carreira.")}</div><div class="ch-actions"><button type="button" data-page="league">Ver campeonatos e calendário do Brasil</button></div>`;
+    return `${playerCupRounds(s)}<p class="ch-note">Copa do Brasil e estaduais são simulados. Copas nacionais de outros países ainda não existem no motor: nenhuma é exibida como jogável.</p><div class="ch-list">${rows||empty("Nenhuma copa nacional nesta carreira.")}</div><div class="ch-actions"><button type="button" data-page="league">Ver campeonatos e calendário do Brasil</button></div>`;
   }
   function continentais(s,D,cat){
     const C=CONTI();let eds=[];try{eds=C?C.editions(s,s.season):[];}catch(e){}
@@ -202,6 +226,7 @@
   function css(){
     return `<style>.ch-dark{--ch-card:#111b26;--ch-line:rgba(255,255,255,.09);--ch-text:#f2f4f6;--ch-muted:#8b99a6;--ch-gold:#d8b45b;--ch-ok:#4cc3b0;padding:24px;border-radius:18px;background:#0a1119;color:var(--ch-text);border:1px solid var(--ch-line)}
 .ch-player-focus{margin:16px 0;padding:20px;border:1px solid rgba(185,240,55,.35);background:linear-gradient(120deg,#172933,#101d28);border-radius:12px}.ch-player-focus header small{color:#b9f037}.ch-player-focus h3{font-size:25px;margin:8px 0 15px!important}.ch-player-focus-grid{display:grid;grid-template-columns:1fr 1.5fr 1.5fr;gap:9px}.ch-player-focus-grid article{min-width:0;display:flex;flex-direction:column;gap:8px;background:#0d1a25;border:1px solid var(--ch-line);padding:15px}.ch-player-focus-grid strong{font-size:27px;color:#fff}.ch-player-focus-grid article>b{font-size:17px}.ch-player-focus-grid span{font-size:12px;color:#c6d6db}.ch-player-focus-grid ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}.ch-player-focus-grid li{display:grid;gap:4px}.ch-player-focus-grid li b{font-size:12px}.ch-player-focus-actions{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0}.ch-player-focus-actions button{border:1px solid #739094;background:#233b46;padding:10px 14px;color:#f3f7f8;cursor:pointer}.ch-player-focus>p{font-size:11px;color:#9db2b9;margin:0}@media(max-width:850px){.ch-player-focus-grid{grid-template-columns:1fr}}
+.ch-cup-stages{display:flex;gap:9px;overflow:auto;padding:12px 0}.ch-cup-stage{flex:1 0 145px;padding:12px;background:#182a34;border:1px solid var(--ch-line);display:grid;gap:6px}.ch-cup-stage.current{border-color:#b8f03c}.ch-cup-stage b{color:#fff}.ch-cup-stage span,.ch-cup-stage small{font-size:11px;color:#b8cbd0}.ch-cup-stage small{color:#b8f03c}.ch-cup-pairs{list-style:none;padding:0;display:grid;gap:8px}.ch-cup-pair{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:12px;background:#10202b;border:1px solid var(--ch-line)}.ch-cup-pair.hero{border-color:#b8f03c}.ch-cup-pair>b{color:#fff}.ch-cup-pair>small{grid-column:1/-1;color:#b8f03c}.ch-cup-path h4{color:#fff}.ch-cup-path h3{color:#fff;font-size:23px;margin:8px 0}@media(max-width:600px){.ch-cup-pair{font-size:12px}}
 .ch-dark h2,.ch-dark h3{margin:0 0 4px}.ch-dark small{color:var(--ch-muted);letter-spacing:.1em;text-transform:uppercase;font-size:11px}.ch-note{color:var(--ch-muted);font-size:13px;margin:8px 0}
 .ch-nav{display:flex;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--ch-line);margin:14px 0 16px}.ch-nav button{background:none;border:0;border-bottom:2px solid transparent;color:var(--ch-muted);padding:9px 14px;font:inherit;font-weight:600;cursor:pointer}.ch-nav button.active{color:var(--ch-text);border-bottom-color:var(--ch-gold)}.ch-nav.sub button{padding:7px 12px;font-size:13px}
 .ch-filters{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px}.ch-filters label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--ch-muted);text-transform:uppercase;letter-spacing:.1em}.ch-filters select{min-width:170px;max-width:100%}
