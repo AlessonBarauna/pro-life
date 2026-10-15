@@ -211,3 +211,41 @@ test("Negotiation detail exposes editable terms and round history",()=>{
  for(const marker of ['rodada 2/3','data-coach-deal-revise="n"','data-coach-deal-plan="n"','Rodadas da negociação','50% agora'])assert.ok(html.includes(marker),marker);
  V.closeDeal();V.setTab("central");
 });
+
+test("Incoming club offers transfer a player exactly once, credit budget and persist",()=>{
+ const appSource=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"utf8");
+ const root={};root.globalThis=root;
+ let transfers=0;
+ root.ProLife={club:(s,id=s.clubId)=>s.clubs.find(c=>c.id===id),overall:p=>p.overall,Career:{windowStatus:()=>({open:true}),transfer:()=>{transfers++;}}};
+ vm.runInNewContext(appSource,root,{filename:"game.js"});
+ const roster=Array.from({length:20},(_,i)=>({id:"p"+i,name:"Atleta "+i,age:25,overall:65,pos:"ATA"}));
+ let state={mode:"coach",clubId:"a",day:10,season:2026,news:[],clubs:[{id:"a",name:"Meu Clube",budget:500000,roster,lineup:["p0"]},{id:"b",name:"Comprador",budget:2000000,roster:[],lineup:[]}],coachCareer:{settings:{marketStrictness:"normal"},sellOnClauses:[]}};
+ root.ProLifeApp.execute(state,"generateSaleInterest",{});
+ const offer=state.coachCareer.saleOffers[0];
+ assert.equal(offer.status,"pending");
+ state=JSON.parse(JSON.stringify(state));
+ const price=offer.amount,fromBudget=state.clubs[0].budget,toBudget=state.clubs[1].budget;
+ root.ProLifeApp.execute(state,"acceptSaleOffer",{id:offer.id});
+ assert.equal(state.clubs[0].budget,fromBudget+price);
+ assert.equal(state.clubs[1].budget,toBudget-price);
+ assert.equal(state.clubs[0].roster.length,19);
+ assert.equal(state.clubs[1].roster.length,1);
+ assert.equal(transfers,1);
+ state=JSON.parse(JSON.stringify(state));
+ assert.throws(()=>root.ProLifeApp.execute(state,"acceptSaleOffer",{id:offer.id}),/indisponível/);
+ assert.equal(state.clubs[0].roster.length,19);
+ assert.equal(transfers,1);
+});
+test("Incoming offer rejection survives reload, and transfer UI exposes sale actions",()=>{
+ const appSource=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"utf8");
+ const root={};root.globalThis=root;
+ root.ProLife={club:(s,id=s.clubId)=>s.clubs.find(c=>c.id===id),overall:p=>p.overall,Career:{windowStatus:()=>({open:true}),transfer:()=>{}}};
+ vm.runInNewContext(appSource,root,{filename:"game.js"});
+ const state={mode:"coach",clubId:"a",day:5,season:2026,news:[],coachCareer:{saleOffers:[{id:"sale",sellerClubId:"a",buyerClubId:"b",status:"pending",expiresDay:10}]},clubs:[{id:"a",roster:[]},{id:"b",roster:[]}]};
+ root.ProLifeApp.execute(state,"rejectSaleOffer",{id:"sale"});
+ const saved=JSON.parse(JSON.stringify(state));
+ assert.equal(saved.coachCareer.saleOffers[0].status,"rejected");
+ assert.throws(()=>root.ProLifeApp.execute(saved,"acceptSaleOffer",{id:"sale"}),/indisponível/);
+ const view=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ for(const control of ["data-coach-sale-generate","data-coach-sale-accept","data-coach-sale-reject","data-coach-sale-counter"])assert.ok(view.includes(control),control);
+});
