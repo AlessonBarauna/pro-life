@@ -8,7 +8,7 @@ test("Coverage report uses bundled FC27 EA-ID catalog",()=>{
  assert.match(domain,/function positionCoverage\(s\)/);
  assert.match(domain,/const hasSource=Object\.prototype\.hasOwnProperty\.call\(catalog,key\)/);
  assert.match(domain,/const type=verified\?"verified":suggested\?"suggested":"unmatched"/);
- assert.match(domain,/positionCoverage,riskOf/);
+ assert.match(domain,/fillPlayerRecords,positionCoverage/);
 });
 test("Coverage report is available in hierarchy with four distinct counts",()=>{
  assert.match(ui,/ProLifeCoachCareer\?\.positionCoverage\?\.\(state\)/);
