@@ -8085,7 +8085,8 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       <section id="national-history" class="card section"><h2>Jogos pela Seleção</h2>${n.matches.length?`<div class="tablewrap"><table><thead><tr><th>Data</th><th>Competição</th><th>Jogo</th><th>Min.</th><th>Nota</th><th>G</th><th>A</th></tr></thead><tbody>${n.matches.map(m=>`<tr><td>${dayDate(m.day)}</td><td>${esc(m.competition)}</td><td>${natCrest(heroNat().code)}${esc(heroNat().name)} ${m.brazil} × ${m.other} ${(window.ProLifeNationalCrests?window.ProLifeNationalCrests.inline(m.opponent,"sm"):"")}${esc(m.opponent)}</td><td>${m.minutes}</td><td>${Number(m.rating).toFixed(1)}</td><td>${m.goals}</td><td>${m.assists}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">Nenhuma partida disputada pela Seleção ainda.</div>'}</section>`;
     },
     calendar() {
-      return calendarView();
+      const j12=state.mode==="player"?(window.ProLifeJ12?.render?.(state,D,dayDate)||""):"";
+      return j12+calendarView();
     },
     awards() {
       return window.ProLifeWorldAwardsView?.render
