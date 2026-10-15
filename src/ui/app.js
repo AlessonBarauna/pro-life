@@ -8368,6 +8368,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if(el.hasAttribute("data-coach-market-area")) { V?.setMarketArea(el.getAttribute("data-coach-market-area")); render(); return; }
     if(el.hasAttribute("data-coach-scout-apply")) { V?.setScoutFilters(document.querySelector("[data-coach-scout-search]")?.value, document.querySelector("[data-coach-scout-position]")?.value, {
       club:document.querySelector("[data-coach-scout-club]")?.value,
+      competition:document.querySelector("[data-coach-scout-competition]")?.value,
       country:document.querySelector("[data-coach-scout-country]")?.value,
       age:document.querySelector("[data-coach-scout-age]")?.value,
       category:document.querySelector("[data-coach-scout-category]")?.value
