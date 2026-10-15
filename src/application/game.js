@@ -596,6 +596,21 @@ case "tactic": {
         (s.news||[]).unshift({day:s.day,season:s.season,title:accepted?"Oferta aceita pelo clube":"Nova contraproposta do clube",body:p.name+" · "+finalFee.toLocaleString("pt-BR")+"."});
         return s;
       }
+      case "coachInquiry": {
+        if(s.mode!=="coach")throw Error("Sondagem disponível apenas ao treinador.");
+        const buyer=D.club(s),seller=D.club(s,data.clubId);
+        const p=seller?.roster?.find(x=>x.id===data.playerId)||D.GlobalFootball?.playersByClub?.(s,seller?.id)?.find(x=>x.id===data.playerId);
+        if(!buyer||!seller||buyer.id===seller.id||!p||p.id==="hero")throw Error("Jogador indisponível para sondagem.");
+        s.coachCareer||={version:1};
+        const inquiries=s.coachCareer.inquiries||=[];
+        const existing=inquiries.find(x=>x.clubId===seller.id&&x.playerId===p.id&&x.buyerClubId===buyer.id);
+        if(existing&&existing.status==="pending")throw Error("Já existe uma sondagem em andamento.");
+        if(existing&&existing.status==="accepted"&&Number(s.day)<=Number(existing.expiresDay))throw Error("Sondagem aprovada: você já pode negociar.");
+        const entry={id:"inq_"+s.season+"_"+s.day+"_"+p.id,playerId:p.id,clubId:seller.id,buyerClubId:buyer.id,startDay:Number(s.day)||0,responseDay:(Number(s.day)||0)+2,expiresDay:(Number(s.day)||0)+12,status:"pending"};
+        if(existing)inquiries.splice(inquiries.indexOf(existing),1);
+        inquiries.push(entry);
+        break;
+      }
       case "counterRecruit": {
         if(s.mode!=="coach")throw Error("Negociação disponível apenas ao treinador.");
         const buyer=D.club(s),seller=D.club(s,data.clubId);
