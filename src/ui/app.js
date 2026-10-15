@@ -2259,7 +2259,32 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const leadership=D.captaincy?.(state,c)||{};
       const tacticLabel={balanced:"Equilibrado",possession:"Posse e construção",counter:"Bloco baixo e contra-ataque",attack:"Ataque e risco"}[c.tactic]||c.tactic;
       const comparison=c.roster.filter(p=>p.id!==selected?.id&&positionOf(p)===positionOf(selected)).sort((a,b)=>D.overall(b)-D.overall(a))[0];
-      const tabSupplement=squadTab==="tactics"?`<section class="pl-squad-supplement"><div><div class="tag">PLANO TÁTICO</div><h2>${esc(tacticLabel)}</h2><p>${coach?"Ajuste o comportamento coletivo sem alterar o motor de partidas.":"Plano definido pela comissão técnica."}</p></div>${coach?`<label>Estilo<select id="tactic">${opt([["balanced","Equilibrado"],["possession","Posse e construção"],["counter","Bloco baixo e contra-ataque"],["attack","Ataque e risco"]],c.tactic)}</select></label>`:""}<div class="pl-squad-mini-kpis"><span><small>Formação</small><b>${esc(formation)}</b></span><span><small>Elenco</small><b>${c.roster.length}</b></span><span><small>Disponíveis</small><b>${c.roster.filter(p=>!isUnavailable(p)).length}</b></span></div></section>`:squadTab==="roles"?`<section class="pl-squad-supplement"><div><div class="tag">FUNÇÕES</div><h2>Liderança do elenco</h2><p>As funções seguem a hierarquia e os dados reais da carreira.</p></div><div class="pl-squad-mini-kpis"><span><small>Capitão</small><b>${esc(leadership.captain?.name||"—")}</b></span><span><small>Vice</small><b>${esc(leadership.vice?.name||"—")}</b></span><span><small>Jogador selecionado</small><b>${esc(selectionStatus(selected))}</b></span></div></section>`:squadTab==="hierarchy"?`${coachRelation}${relation}`:"";
+      const roleOptions={
+        GOL:[["traditional","Goleiro tradicional"],["sweeper","Goleiro líbero"]],
+        ZAG:[["defender","Zagueiro clássico"],["ball_playing","Construtor"],["stopper","Combativo"]],
+        LE:[["fullback","Lateral equilibrado"],["wingback","Ala ofensivo"],["inverted","Lateral invertido"]],
+        LD:[["fullback","Lateral equilibrado"],["wingback","Ala ofensivo"],["inverted","Lateral invertido"]],
+        DEF:[["defender","Defensor"],["ball_playing","Construtor"],["stopper","Combativo"]],
+        VOL:[["holding","Volante marcador"],["deep_playmaker","Armador recuado"],["box_to_box","Área a área"]],
+        MC:[["box_to_box","Área a área"],["playmaker","Organizador"],["holding","Marcador"]],
+        MEI:[["playmaker","Armador"],["advanced","Meia avançado"],["shadow","Infiltrador"]],
+        ME:[["wide","Meia aberto"],["winger","Ponta"],["playmaker","Organizador"]],
+        MD:[["wide","Meia aberto"],["winger","Ponta"],["playmaker","Organizador"]],
+        PE:[["winger","Ponta aberto"],["inside_forward","Ponta interior"],["wide_playmaker","Armador aberto"]],
+        PD:[["winger","Ponta aberto"],["inside_forward","Ponta interior"],["wide_playmaker","Armador aberto"]],
+        ATA:[["poacher","Finalizador"],["false_nine","Falso nove"],["target","Referência"]],
+        CA:[["poacher","Finalizador"],["false_nine","Falso nove"],["target","Referência"]]
+      };
+      const selectedSlot=rows.flatMap(row=>row.players.map((p,i)=>({id:p.id,position:row.roles?.[i]}))).find(x=>x.id===selected?.id);
+      const activeRolePosition=selectedSlot?.position||positionOf(selected);
+      const allowedRoles=roleOptions[activeRolePosition]||roleOptions[selected?.pos]||[];
+      const currentRole=state.coachCareer?.playerRoles?.[selected?.id];
+      const rolePanel=coach?'<section class="pl-squad-supplement"><div><div class="tag">FUNÇÕES INDIVIDUAIS</div><h2>'+esc(selected?.name||"Jogador")+'</h2><p>Função para '+esc(activeRolePosition)+'. Selecione o atleta no campo antes de configurar. As funções são salvas na carreira e ainda não alteram o motor da partida.</p></div>'+
+        '<label>Papel tático<select data-coach-player-role data-player-id="'+esc(selected?.id)+'" data-position="'+esc(activeRolePosition)+'">'+allowedRoles.map(([id,label])=>'<option value="'+esc(id)+'"'+(currentRole?.position===activeRolePosition&&currentRole?.role===id?' selected':'')+'>'+esc(label)+'</option>').join("")+'</select></label>'+
+        '<button type="button" data-coach-role-save="'+esc(selected?.id)+'" '+(!allowedRoles.length?'disabled':'')+'>Salvar função</button>'+
+        (currentRole?.position===activeRolePosition?'<p class="muted">Função registrada: '+esc(allowedRoles.find(x=>x[0]===currentRole.role)?.[1]||currentRole.role)+'</p>':'')+
+        '</section>':'';
+      const tabSupplement=squadTab==="tactics"?`<section class="pl-squad-supplement"><div><div class="tag">PLANO TÁTICO</div><h2>${esc(tacticLabel)}</h2><p>${coach?"Ajuste o comportamento coletivo sem alterar o motor de partidas.":"Plano definido pela comissão técnica."}</p></div>${coach?`<label>Estilo<select id="tactic">${opt([["balanced","Equilibrado"],["possession","Posse e construção"],["counter","Bloco baixo e contra-ataque"],["attack","Ataque e risco"]],c.tactic)}</select></label>`:""}<div class="pl-squad-mini-kpis"><span><small>Formação</small><b>${esc(formation)}</b></span><span><small>Elenco</small><b>${c.roster.length}</b></span><span><small>Disponíveis</small><b>${c.roster.filter(p=>!isUnavailable(p)).length}</b></span></div></section>`:squadTab==="roles"?rolePanel:squadTab==="hierarchy"?`${coachRelation}${relation}`:"";
       const contractSalary=selected?[selected.salary,selected.monthlySalary,selected.wage,selected.contract?.salary,selected.contract?.monthlySalary].find(v=>v!=null&&Number.isFinite(Number(v))&&Number(v)>0):null;
       const contractEnd=selected?[selected.contractEndDay,selected.contract?.endDay,selected.contract?.expiresDay].find(v=>v!=null&&Number.isFinite(Number(v))):null;
       const contractEndYear=selected?[selected.contractUntil,selected.contract?.endYear,selected.contract?.expiryYear].find(v=>v!=null&&Number.isFinite(Number(v))):null;
@@ -8750,6 +8775,12 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         squadUndo=null;squadSwapSource=null;persist();render();toast("Última troca desfeita.");
       }catch(error){toast(error.message);}
       return;
+    }
+    if (b.hasAttribute("data-coach-role-save")) {
+      const id=b.getAttribute("data-coach-role-save");
+      const input=document.querySelector('[data-coach-player-role]');
+      if(!input||input.dataset.playerId!==id)return;
+      return command("coachPlayerRole",{playerId:id,position:input.dataset.position,role:input.value});
     }
     if (b.dataset.squadTab) {
       squadTab = b.dataset.squadTab;
