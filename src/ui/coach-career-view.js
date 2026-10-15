@@ -128,12 +128,24 @@
     const c=s.coachCareer||{};
     // Market panels are read from the same save used by the existing transfer engine.
     if(ui.marketArea==="observacao"){
+      const gf=D?.GlobalFootball||root.ProLifeGlobalFootball;
       const clubs=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])];
+      const clubIndex=new Map(clubs.map(cl=>[cl.id,cl]));
       const needle=ui.scoutQuery.trim().toLocaleLowerCase("pt-BR");
-      const candidates=clubs.filter(cl=>cl.id!==s.clubId && Array.isArray(cl.roster)).flatMap(cl=>cl.roster.map(p=>({p,cl})))
-        .filter(({p})=>p.id!=="hero" && (!needle || String(p.name||"").toLocaleLowerCase("pt-BR").includes(needle))
-          && (ui.scoutPosition==="all" || String(p.pos||p.position||"").toUpperCase().includes(ui.scoutPosition)))
-        .slice(0,40);
+      // International athletes are stored in internationalPlayers, not global clubs' rosters.
+      const pool=gf?.activePlayers?.(s)||[...clubs.flatMap(cl=>cl.roster||[]),...(s.internationalPlayers||[])];
+      const seen=new Set(),candidates=[];
+      for(const p of pool){
+        if(!p?.id||p.id==="hero"||seen.has(p.id)||p.active===false||p.status==="retired")continue;
+        seen.add(p.id);
+        if(!p.clubId||p.clubId===s.clubId)continue;
+        if(needle&&!String(p.name||"").toLocaleLowerCase("pt-BR").includes(needle))continue;
+        if(ui.scoutPosition!=="all"&&!String(p.pos||p.position||"").toUpperCase().includes(ui.scoutPosition))continue;
+        const cl=clubIndex.get(p.clubId)||gf?.clubById?.(s,p.clubId);
+        if(!cl||cl.active===false)continue;
+        candidates.push({p,cl});
+        if(candidates.length>=80)break;
+      }
       const shortlist=c.shortlist||[];
       const rows=candidates.map(({p,cl})=>{
         const overall=p.overall??p.ovr??D?.overall?.(p);
@@ -150,7 +162,7 @@
     const team=id=>'<span class="cc-deal-team">'+crest(id)+'<span>'+esc(clubName(id))+'</span></span>';
     const player=id=>{
       for(const x of all){const p=x.roster?.find(p=>p.id===id);if(p)return p;}
-      return null;
+      return D?.GlobalFootball?.playerById?.(s,id)||root.ProLifeGlobalFootball?.playerById?.(s,id)||null;
     };
     const athlete=id=>{
       const p=player(id);
