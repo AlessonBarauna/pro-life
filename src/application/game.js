@@ -309,13 +309,21 @@ case "tactic": {
           throw Error("Jogador indisponível.");
         let fee = valuation(p);
         if(rules?.marketStrictness==="strict")fee=Math.ceil(fee*1.25/1000)*1000;
-        if (own.budget < fee) throw Error("Orçamento insuficiente.");
+        const plan=rules?.installments==="on"&&data.paymentPlan==="split"?"split":"upfront";
+        const due=plan==="split"?Math.floor(fee/2):0,upfront=fee-due;
+        if (own.budget < upfront) throw Error("Orçamento insuficiente para a entrada.");
+        // The deferred half becomes a persistent financial obligation, not free money.
         if (D.overall(p) > own.structure + (rules?.marketStrictness==="strict"?7:14))
           throw Error(
             "O jogador recusou: busca um projeto com maior estrutura.",
           );
-        own.budget -= fee;
-        source.budget += fee;
+        own.budget -= upfront;
+        source.budget = (Number(source.budget)||0) + upfront;
+        if(due){
+          if(!s.coachCareer)s.coachCareer={version:1};
+          if(!Array.isArray(s.coachCareer.transferDebts))s.coachCareer.transferDebts=[];
+          s.coachCareer.transferDebts.push({id:"coach_debt_"+s.season+"_"+s.day+"_"+p.id,sourceClubId:source.id,buyerClubId:own.id,playerId:p.id,amount:due,dueDay:(Number(s.day)||0)+180,paid:false});
+        }
         source.roster = source.roster.filter((x) => x.id !== p.id);
         source.lineup = source.lineup.filter((id) => id !== p.id);
         own.roster.push(p);
