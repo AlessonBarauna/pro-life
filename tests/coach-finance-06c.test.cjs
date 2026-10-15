@@ -483,3 +483,29 @@ test("Signing reveal actions and market presentation stay manager-only",()=>{
  assert.doesNotMatch(html,/aria-label="Seções da carreira"/);
  assert.match(app,/ackCoachPresentation/);
 });
+
+test("Coach can negotiate outside transfer window but cannot recruit until window opens",()=>{
+ const {root,state}=saleFixture(false);
+ state.clubId="b";
+ state.clubs[0].roster=Array.from({length:20},(_,i)=>({id:"p"+i,name:"Athlete "+i,age:22,overall:70,pos:"ATA"}));
+ state.clubs[1].budget=10000000;state.clubs[1].structure=90;
+ root.ProLife.Career.windowStatus=()=>({open:false,remaining:31});
+ const before=JSON.stringify(state.clubs);
+ root.ProLifeApp.execute(state,"counterRecruit",{clubId:"a",playerId:"p0",offer:1000000});
+ assert.equal(state.coachCareer.negotiations.length,1);
+ assert.equal(state.coachCareer.negotiations[0].expiresDay,state.day+38);
+ assert.equal(JSON.stringify(state.clubs),before);
+ assert.throws(()=>root.ProLifeApp.execute(state,"recruit",{clubId:"a",playerId:"p0"}),/Janela de transferências fechada/);
+ assert.equal(JSON.stringify(state.clubs),before);
+});
+test("Shortlist indicates transferred player belongs to new club and old target is removable",()=>{
+ const {root,state}=saleFixture();
+ state.clubs[1].roster=[{id:"target",name:"Target",clubId:"b",pos:"ATA"}];
+ root.ProLifeApp.execute(state,"toggleCoachShortlist",{clubId:"b",playerId:"target"});
+ state.clubs[1].roster=[];
+ state.clubs[0].roster.push({id:"target",name:"Target",clubId:"a",pos:"ATA"});
+ const view=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ assert.match(view,/Já está no seu elenco/);
+ root.ProLifeApp.execute(state,"toggleCoachShortlist",{clubId:"b",playerId:"target"});
+ assert.equal(state.coachCareer.shortlist.length,0);
+});
