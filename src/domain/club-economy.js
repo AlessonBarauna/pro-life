@@ -93,6 +93,43 @@
         existingClubContract:false,readOnly:true}))
       .sort((a,b)=>b.prestige-a.prestige||a.name.localeCompare(b.name,"pt-BR"));
   }
+  // M04.11: deterministic sponsorship offers with one role per club.
+  function sponsorshipOffers(state,club,brands){
+    if(!state||!club||String(club.id)!==String(state.clubId))return [];
+    const candidates=sponsorshipCandidates(club,brands);
+    const projection=revenueProjection(club).sponsorshipAnnual;
+    const roles=[["main","Patrocinador principal",.6],["kit","Material esportivo",.25],["partner","Parceiro comercial",.15]];
+    const contracts=state.coachCareer?.finance?.revenueContracts||[];
+    const offers=state.coachCareer?.finance?.sponsorshipOffers||[];
+    return roles.filter(([role])=>!contracts.some(x=>x.sponsorRole===role&&x.endDay>state.day)&&
+      !offers.some(x=>x.role===role&&x.status==="accepted")).map(([role,label,fraction],i)=>{
+      const available=candidates.filter(b=>role!=="kit"||b.category==="SPORTSWEAR");
+      const brand=available[i%available.length];
+      if(!brand)return null;
+      const annualAmount=Math.max(100000,Math.round(projection*fraction/100000)*100000);
+      return {id:"sponsor_"+String(state.clubId)+"_"+role+"_"+String(state.season||0),
+        brandId:brand.id,brandName:brand.name,role,label,annualAmount,durationDays:365,
+        status:"proposal",readOnly:true};
+    }).filter(Boolean);
+  }
+  function acceptSponsorshipOffer(state,club,brands,offerId){
+    if(!state||!club||String(club.id)!==String(state.clubId)||!state.coachCareer)throw Error("Clube invalido.");
+    const finance=state.coachCareer.finance||={};
+    const existing=(finance.sponsorshipOffers||[]).find(x=>x.id===offerId);
+    if(existing?.status==="accepted")throw Error("Proposta ja aceita.");
+    const offer=sponsorshipOffers(state,club,brands).find(x=>x.id===offerId);
+    if(!offer)throw Error("Proposta indisponivel.");
+    const startDay=Number(state.day)+1;
+    const contractId="contract_"+offer.id;
+    const signed=registerRevenueContract(state,club.id,{
+      id:contractId,type:"sponsorship",annualAmount:offer.annualAmount,startDay,
+      durationDays:offer.durationDays
+    });
+    signed.brandId=offer.brandId;signed.brandName=offer.brandName;signed.sponsorRole=offer.role;
+    finance.sponsorshipOffers||=[];
+    finance.sponsorshipOffers.push({...offer,status:"accepted",acceptedDay:Number(state.day),contractId});
+    return signed;
+  }
   // M04.8: explicit contract registration; no automatic funding or retroactive receivables.
   function registerRevenueContract(state,clubId,input){
     if(!state||!state.coachCareer||String(state.clubId)!==String(clubId))throw Error("Clube da carreira invalido.");
@@ -137,7 +174,7 @@
     }
     return events.sort((a,b)=>a.dueDay-b.dueDay||String(a.contractId).localeCompare(String(b.contractId))).slice(0,36);
   }
-  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,registerRevenueContract,revenueContractsSnapshot,revenueSchedule,sponsorshipCandidates,VERSION:"m04.10"};
+  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,registerRevenueContract,revenueContractsSnapshot,revenueSchedule,sponsorshipCandidates,sponsorshipOffers,acceptSponsorshipOffer,VERSION:"m04.11"};
   root.ProLifeClubEconomy=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
