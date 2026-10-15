@@ -80,6 +80,19 @@
       sponsorshipAnnual,broadcastAnnual,totalAnnual:sponsorshipAnnual+broadcastAnnual,
       status:"simulation_only",recognizedRevenue:0,readOnly:true};
   }
+  // M04.10: read-only reuse of existing player-commercial brand identities.
+  // It is a candidate catalog, not a record of current club sponsorships.
+  function sponsorshipCandidates(club,brands){
+    const tierRank={LOCAL:1,REGIONAL:2,NATIONAL:3,PREMIUM:4,GLOBAL:5};
+    const strength=Math.max(0,Math.min(100,Number(club?.structure??club?.strength??club?.reputation??60)||60));
+    const minTier=strength>=85?3:strength>=65?2:1;
+    return (Array.isArray(brands)?brands:[]).filter(b=>b&&b.id&&b.name&&
+      Number.isFinite(tierRank[String(b.tier)])&&tierRank[String(b.tier)]>=minTier)
+      .map(b=>({id:String(b.id),name:String(b.name),category:String(b.category||""),
+        tier:String(b.tier),prestige:Number(b.prestige)||0,source:"commercial_brand_catalog",
+        existingClubContract:false,readOnly:true}))
+      .sort((a,b)=>b.prestige-a.prestige||a.name.localeCompare(b.name,"pt-BR"));
+  }
   // M04.8: explicit contract registration; no automatic funding or retroactive receivables.
   function registerRevenueContract(state,clubId,input){
     if(!state||!state.coachCareer||String(state.clubId)!==String(clubId))throw Error("Clube da carreira invalido.");
@@ -124,7 +137,7 @@
     }
     return events.sort((a,b)=>a.dueDay-b.dueDay||String(a.contractId).localeCompare(String(b.contractId))).slice(0,36);
   }
-  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,registerRevenueContract,revenueContractsSnapshot,revenueSchedule,VERSION:"m04.9"};
+  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,registerRevenueContract,revenueContractsSnapshot,revenueSchedule,sponsorshipCandidates,VERSION:"m04.10"};
   root.ProLifeClubEconomy=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
