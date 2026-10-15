@@ -90,6 +90,22 @@
         : "Existe uma decisão importante aguardando sua resposta."
     };
   }
+  // Coach sponsorship alerts reuse the existing player-career decision popup.
+  const coachSponsorPopupSeen=new Set();
+  function ensureCoachSponsorPopup(){
+    if(!state||state.mode!=="coach"||setup||document.getElementById("simulation-stop-modal"))return;
+    const economy=window.ProLifeClubEconomy,brands=window.ProLifeCommercial?.brands;
+    const club=D.club?.(state);
+    if(!economy?.sponsorshipOffers||!club||!Array.isArray(brands))return;
+    const offers=economy.sponsorshipOffers(state,club,brands);
+    const pending=offers.find(o=>!coachSponsorPopupSeen.has(o.id));
+    if(!pending)return;
+    coachSponsorPopupSeen.add(pending.id);
+    showSimulationStop({type:"coach-sponsor",id:pending.id,
+      title:"Nova proposta de patrocínio — "+pending.brandName,
+      message:pending.label+" · R$ "+pending.annualAmount.toLocaleString("pt-BR")+
+        " por ano. Analise a proposta na área financeira do clube."});
+  }
   function ensurePendingDecisionPopup(force=false) {
     clearTimeout(popupCheckTimer);
     popupCheckTimer=setTimeout(()=>{
@@ -120,6 +136,7 @@
       offer:{page:"proposals",anchor:`transfer-offer-${stop.id}`,label:"Ir para proposta"},
       decision:{page:"life",anchor:"current-decision",label:"Ir para decisão"},
       commercial:{page:"sponsorships",anchor:`commercial-proposal-${stop.id}`,label:"Ir para proposta"},
+      "coach-sponsor":{page:"market",anchor:"",label:"Ver proposta de patrocínio"},
       "commercial-event":{page:"sponsorships",anchor:`commercial-event-${stop.id}`,label:"Ir para campanha"}
     };
     const route=routes[stop.type] || {page:stop.page||"inbox",anchor:stop.anchor||"",label:"Ir para decisão"};
@@ -446,6 +463,7 @@
     mountAvatar();
     revealActiveTab();
     ensurePendingDecisionPopup();
+    ensureCoachSponsorPopup();
     cineAutoPresent();
     mountCine();
   }
@@ -9034,6 +9052,14 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
           setTimeout(()=>target.classList.remove("popup-decision-target"),2200);
         } else window.scrollTo(0,0);
       });
+      return;
+    }
+    if(b.dataset.stopGo==="market"&&state?.mode==="coach"){
+      closeSimulationStop();
+      page="market";
+      window.ProLifeCoachCareerView?.setMarketArea("transferencias");
+      window.ProLifeCoachCareerView?.setDealTab("financeiro");
+      render();
       return;
     }
     if (b.dataset.stopChoice) { command("decide", { choice:b.dataset.stopChoice }); closeSimulationStop(); return; }
