@@ -92,6 +92,7 @@
   }
   // Coach sponsorship alerts reuse the existing player-career decision popup.
   const coachSponsorPopupSeen=new Set();
+  let coachSponsorPopupTimer=null;
   function ensureCoachSponsorPopup(){
     if(!state||state.mode!=="coach"||setup||document.getElementById("simulation-stop-modal"))return;
     const economy=window.ProLifeClubEconomy,brands=window.ProLifeCommercial?.brands;
@@ -100,11 +101,23 @@
     const offers=economy.sponsorshipOffers(state,club,brands);
     const pending=offers.find(o=>!coachSponsorPopupSeen.has(o.id));
     if(!pending)return;
-    coachSponsorPopupSeen.add(pending.id);
-    showSimulationStop({type:"coach-sponsor",id:pending.id,
-      title:"Nova proposta de patrocínio — "+pending.brandName,
-      message:pending.label+" · R$ "+pending.annualAmount.toLocaleString("pt-BR")+
-        " por ano. Analise a proposta na área financeira do clube."});
+    // Wait until the player/coach pending-decision queue has had a chance to show its popup.
+    // Never mark a proposal as shown while another modal is in front of it.
+    clearTimeout(coachSponsorPopupTimer);
+    coachSponsorPopupTimer=setTimeout(()=>{
+      if(!state||state.mode!=="coach"||document.getElementById("simulation-stop-modal")||
+        document.getElementById("callup-modal")||document.querySelector(".cine-backdrop"))return;
+      if(coachSponsorPopupSeen.has(pending.id))return;
+      const nowClub=D.club?.(state);
+      const current=window.ProLifeClubEconomy?.sponsorshipOffers?.(
+        state,nowClub,window.ProLifeCommercial?.brands||[])||[];
+      if(!current.some(o=>o.id===pending.id))return;
+      showSimulationStop({type:"coach-sponsor",id:pending.id,
+        title:"Nova proposta de patrocínio — "+pending.brandName,
+        message:pending.label+" · R$ "+pending.annualAmount.toLocaleString("pt-BR")+
+          " por ano. Analise a proposta na área financeira do clube."});
+      coachSponsorPopupSeen.add(pending.id);
+    },150);
   }
   function ensurePendingDecisionPopup(force=false) {
     clearTimeout(popupCheckTimer);
