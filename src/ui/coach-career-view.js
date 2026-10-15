@@ -172,12 +172,12 @@
       return '<strong>'+esc(p.name||id)+'</strong><small>'+esc(facts)+'</small>';
     };
     const pending=(c.negotiations||[]).filter(n=>n.status==="pending"||n.status==="awaiting_window");
-    const sales=(c.saleOffers||[]).filter(o=>o.status==="pending");
+    const sales=(c.saleOffers||[]).filter(o=>o.status==="pending"||o.status==="awaiting_window");
     const loans=(c.loans||[]).filter(l=>!l.returned);
     const debts=(c.transferDebts||[]).filter(d=>!d.paid);
     const clauses=(c.sellOnClauses||[]).filter(x=>x.active);
     const negotiationHistory=(c.negotiations||[]).filter(n=>n.status!=="pending"&&n.status!=="awaiting_window");
-    const saleHistory=(c.saleOffers||[]).filter(o=>o.status!=="pending");
+    const saleHistory=(c.saleOffers||[]).filter(o=>o.status!=="pending"&&o.status!=="awaiting_window");
     const paid=(c.transferDebts||[]).filter(d=>d.paid);
     const finishedLoans=(c.loans||[]).filter(l=>l.returned);
     const transactions=(D?.Career?.init?.(s)?.transfers||[]).filter(x=>x&&x.day!==undefined);
@@ -196,10 +196,11 @@
     const total=sales.reduce((sum,o)=>sum+Math.max(0,Number(o.amount)||0),0);
     const inboxHeader='<div class="cc-strip" aria-label="Resumo de propostas recebidas"><div><b>'+sales.length+'</b><span>Ofertas aguardando resposta</span></div><div><b>'+urgent+'</b><span>Prazo próximo (até 3 dias)</span></div><div><b>'+esc(money(total))+'</b><span>Valor total oferecido</span></div></div><p class="cc-note">Responder até o prazo indicado. Aceitar uma venda movimenta o atleta e o orçamento apenas com a janela aberta.</p>';
     const saleRows=inboxHeader+offerSettings+'<div class="cc-deal-actions"><button type="button" data-coach-sale-generate="1">Consultar interesse dos clubes</button></div>'+wrap(sales,o=>{
-      const expired=s.day>o.expiresDay;
+      const waiting=o.status==="awaiting_window",expired=!waiting&&s.day>o.expiresDay;
       const days=Math.max(0,Number(o.expiresDay)-Number(s.day));
-      const urgency=expired?'EXPIRADA':days<=3?'URGENTE · '+days+' dia(s)':'AGUARDANDO · '+days+' dia(s)';
-      return '<article class="cc-deal"><div class="cc-deal-player">'+athlete(o.playerId)+'</div><div>'+team(o.buyerClubId)+'<small> Interesse em contratar · rodada '+esc(o.round||1)+'/3</small></div><div class="cc-deal-terms"><b>'+esc(money(o.amount))+'</b><small>Até o dia '+esc(o.expiresDay)+'</small></div><div class="cc-deal-actions">'+(expired?'<span class="cc-status">Expirada</span>':'<button type="button" data-coach-sale-accept="'+esc(o.id)+'">Aceitar e vender</button>')+'<button type="button" data-coach-sale-reject="'+esc(o.id)+'">Recusar</button>'+(expired||o.round>=3?'':'<input type="number" min="1000" step="1000" value="'+esc(o.amount)+'" data-coach-sale-amount="'+esc(o.id)+'" aria-label="Valor da contraproposta"><button type="button" data-coach-sale-counter="'+esc(o.id)+'">Contraproposta</button>')+'</div></article>';
+      const urgency=waiting?(o.lastSettlementError?"Regularização: "+o.lastSettlementError:"Acordo assinado · aguardando janela"):expired?"Expirada":days<=3?"Urgente · "+days+" dia(s)":"Restam "+days+" dia(s)";
+      const controls=waiting?'<span class="cc-status">Venda programada</span>':expired?'<span class="cc-status">Expirada</span>':'<button type="button" data-coach-sale-accept="'+esc(o.id)+'">'+(D.Career.windowStatus(s).open?"Aceitar e vender":"Aceitar acordo futuro")+'</button><button type="button" data-coach-sale-reject="'+esc(o.id)+'">Recusar</button>'+(o.round>=3?'':'<input type="number" min="1000" step="1000" value="'+esc(o.amount)+'" data-coach-sale-amount="'+esc(o.id)+'" aria-label="Valor da contraproposta"><button type="button" data-coach-sale-counter="'+esc(o.id)+'">Contraproposta</button>');
+      return '<article class="cc-deal"><div class="cc-deal-player">'+athlete(o.playerId)+'</div><div>'+team(o.buyerClubId)+'<small> Interesse em contratar · rodada '+esc(o.round||1)+'/3</small></div><div class="cc-deal-terms"><b>'+esc(money(o.amount))+'</b><small>'+esc(urgency)+'</small></div><div class="cc-deal-actions">'+controls+'</div></article>';
     },"Nenhuma proposta de compra recebida.");
     const deals=wrap(pending,n=>{
       const waiting=n.status==="awaiting_window";
