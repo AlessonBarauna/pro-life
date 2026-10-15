@@ -6,7 +6,7 @@
   const careerDate=(s,day)=>Number.isFinite(Number(day))?new Date(Date.UTC(2026,0,s?.world==="legacy"?5:1)+Number(day)*86400000).toLocaleDateString("pt-BR",{timeZone:"UTC"}):"Data indisponível";
   const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
   const ui={tab:"central",dealTab:"propostas",selectedDeal:null,draftOffer:null,marketArea:"transferencias",scoutQuery:"",scoutPosition:"all",scoutClub:"",scoutCompetition:"",scoutCountry:"all",scoutAge:"all",scoutCategory:"all"};
-  const TABS=[["central","Central"],["diretoria","Diretoria"],["vestiario","Vestiário"],["treino","Treino coletivo"],["prejogo","Pré-jogo"],["negociacoes","Negociações"],["historico","Histórico"]];
+  const TABS=[["central","Central"],["diretoria","Diretoria"],["vestiario","Vestiário"],["treino","Treino coletivo"],["prejogo","Pré-jogo"],["negociacoes","Negociações"],["historico","Histórico"],["configuracoes","Configurações"]];
   const STATUS={cumprida:"Cumprida",falhou:"Falhou",em_andamento:"Em andamento"};
 
   function bar(value,tone){
@@ -426,26 +426,30 @@
       {label:"Aguardando janela",value:pending.filter(x=>x.status==="awaiting_window").length+sales.filter(x=>x.status==="awaiting_window").length,tab:"propostas",note:"Acordos futuros"},
       {label:"Jogadores observados",value:(c.shortlist||[]).length,tab:"lista",note:"Lista de alvos"}
     ];
-    const difficulty=String(c.settings?.marketStrictness||"normal");
+    const marketOverview='<section class="cc-market-overview" aria-label="Painel de decisões do mercado"><div class="cc-market-overview-heading"><div><small>VISÃO GERAL</small><h3>Decisões do mercado</h3></div><p>Dados atuais da carreira. Selecione uma categoria para continuar.</p></div><div class="cc-market-overview-grid">'+
+      summaryCards.map(x=>'<button type="button" class="cc-market-overview-card" data-coach-deal-tab="'+esc(x.tab)+'"><small>'+esc(x.label)+'</small><strong>'+x.value+'</strong><span>'+esc(x.note)+'</span></button>').join("")+'</div></section>';
+    const content={lista:listRows,recebidas:saleRows,propostas:deals,emprestimos:loanRows,financeiro:payrollPanel+financeReadiness+settlementPanel+financeAudit+payrollHistory+debtRows,contratos:payrollPanel+contractRows,clausulas:clauseRows,historico:historyRows};
+    const heading={lista:"Jogadores observados",recebidas:"Propostas recebidas pelos seus jogadores",propostas:"Propostas e contrapropostas",emprestimos:"Empréstimos ativos",financeiro:"Obrigações financeiras",contratos:"Contratos do elenco",clausulas:"Cláusulas de revenda",historico:"Histórico financeiro e de transferências"};
+    return '<nav class="cc-deal-nav" aria-label="Áreas do mercado"><button type="button" data-coach-market-area="observacao">Observação</button><button type="button" data-coach-market-area="transferencias" aria-current="page">Transferências</button></nav><div class="cc-strip"><div><b>'+pending.length+'</b><span>Propostas pendentes</span></div><div><b>'+loans.length+'</b><span>Empréstimos ativos</span></div><div><b>'+debts.length+'</b><span>Parcelas a pagar</span></div><div><b>'+clauses.length+'</b><span>Cláusulas de revenda</span></div></div><p class="cc-note">Valores do save atual em BRL · prazos em dias da carreira</p>'+draftPanel+marketOverview+taskPanel+'<nav class="cc-deal-nav" aria-label="Categorias de negociações">'+tabs.map(([id,label,count])=>'<button type="button" data-coach-deal-tab="'+id+'" aria-pressed="'+(ui.dealTab===id)+'">'+label+' <small>'+count+'</small></button>').join("")+'</nav><section class="cc-card cc-deal-section"><h3>'+heading[ui.dealTab]+'</h3>'+detail+content[ui.dealTab]+'</section>';
+  }
+
+
+  function settings(s){
+    const difficulty=String(s.coachCareer?.settings?.marketStrictness||"normal");
     const marketDifficultyPanel='<section class="cc-card" aria-label="Rigor das negociações"><h4>Rigor das negociações</h4>'+
       '<p class="cc-note">Escolha o rigor das próximas sondagens e propostas. Acordos enviados e respostas já recebidas não são recalculados.</p>'+
       '<label>Negociações <select data-coach-market-difficulty>'+
       [['flexible','Flexível — negociações mais fáceis'],['normal','Normal — avaliação atual'],['strict','Rigoroso — maiores exigências']].map(([value,label])=>
         '<option value="'+value+'"'+(difficulty===value?' selected':'')+'>'+label+'</option>').join('')+
       '</select></label><button type="button" data-coach-market-difficulty-save>Aplicar rigor</button></section>';
-    const marketOverview='<section class="cc-market-overview" aria-label="Painel de decisões do mercado"><div class="cc-market-overview-heading"><div><small>VISÃO GERAL</small><h3>Decisões do mercado</h3></div><p>Dados atuais da carreira. Selecione uma categoria para continuar.</p></div><div class="cc-market-overview-grid">'+
-      summaryCards.map(x=>'<button type="button" class="cc-market-overview-card" data-coach-deal-tab="'+esc(x.tab)+'"><small>'+esc(x.label)+'</small><strong>'+x.value+'</strong><span>'+esc(x.note)+'</span></button>').join("")+'</div></section>';
-    const content={lista:listRows,recebidas:saleRows,propostas:deals,emprestimos:loanRows,financeiro:payrollPanel+financeReadiness+settlementPanel+financeAudit+payrollHistory+debtRows,contratos:payrollPanel+contractRows,clausulas:clauseRows,historico:historyRows};
-    const heading={lista:"Jogadores observados",recebidas:"Propostas recebidas pelos seus jogadores",propostas:"Propostas e contrapropostas",emprestimos:"Empréstimos ativos",financeiro:"Obrigações financeiras",contratos:"Contratos do elenco",clausulas:"Cláusulas de revenda",historico:"Histórico financeiro e de transferências"};
-    return '<nav class="cc-deal-nav" aria-label="Áreas do mercado"><button type="button" data-coach-market-area="observacao">Observação</button><button type="button" data-coach-market-area="transferencias" aria-current="page">Transferências</button></nav><div class="cc-strip"><div><b>'+pending.length+'</b><span>Propostas pendentes</span></div><div><b>'+loans.length+'</b><span>Empréstimos ativos</span></div><div><b>'+debts.length+'</b><span>Parcelas a pagar</span></div><div><b>'+clauses.length+'</b><span>Cláusulas de revenda</span></div></div><p class="cc-note">Valores do save atual em BRL · prazos em dias da carreira</p>'+draftPanel+marketDifficultyPanel+marketOverview+taskPanel+'<nav class="cc-deal-nav" aria-label="Categorias de negociações">'+tabs.map(([id,label,count])=>'<button type="button" data-coach-deal-tab="'+id+'" aria-pressed="'+(ui.dealTab===id)+'">'+label+' <small>'+count+'</small></button>').join("")+'</nav><section class="cc-card cc-deal-section"><h3>'+heading[ui.dealTab]+'</h3>'+detail+content[ui.dealTab]+'</section>';
+    return '<section class="cc-card"><small>AJUSTES DA CARREIRA</small><h3>Configurações de transferências</h3><p class="cc-note">Estas opções são específicas deste save.</p></section>'+marketDifficultyPanel;
   }
-
 
   function render(s,D){
     const C=D?.CoachCareer||root.ProLifeCoachCareer;
     if(!C||s?.mode!=="coach")return `<section class="card"><h2>Carreira do Treinador</h2><p class="muted">Disponível apenas no modo treinador.</p></section>`;
     const sn=C.snapshot(s,D);
-    const body=ui.tab==="central"?central(s,D,sn):ui.tab==="vestiario"?locker(sn):ui.tab==="treino"?(sn.hasClub?training(sn):`<section class="cc-card"><p class="muted">Assine com um clube para definir o treino.</p></section>`):ui.tab==="historico"?history(sn):ui.tab==="negociacoes"?negotiations(s,D):ui.tab==="prejogo"?prematch(s,D,sn):(sn.hasClub?board(sn):`<section class="cc-card"><p class="muted">Você está sem clube. Aceite uma proposta na aba Propostas para voltar a trabalhar.</p></section>`);
+    const body=ui.tab==="central"?central(s,D,sn):ui.tab==="vestiario"?locker(sn):ui.tab==="treino"?(sn.hasClub?training(sn):`<section class="cc-card"><p class="muted">Assine com um clube para definir o treino.</p></section>`):ui.tab==="historico"?history(sn):ui.tab==="configuracoes"?settings(s):ui.tab==="negociacoes"?negotiations(s,D):ui.tab==="prejogo"?prematch(s,D,sn):(sn.hasClub?board(sn):`<section class="cc-card"><p class="muted">Você está sem clube. Aceite uma proposta na aba Propostas para voltar a trabalhar.</p></section>`);
     return `${css()}<section class="cc-dark"><h2>Carreira do Treinador</h2><small>${esc(sn.club?.name||"Sem clube")} · Temporada ${esc(s.season)} · Nacionalidade: ${esc(s.person?.nationality||"Brasil")} · Reputação ${esc(Math.round(sn.reputation||0))}</small>${tabs()}${body}</section>`;
   }
 
