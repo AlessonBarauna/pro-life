@@ -587,7 +587,7 @@ case "tactic": {
         const offer=Number(data.offer);
         if(!Number.isSafeInteger(offer)||offer<1000||offer>100000000000)throw Error("Valor da proposta inválido.");
         const currentInquiry=s.coachCareer?.inquiries?.find(x=>x.playerId===p.id&&x.clubId===seller.id&&x.buyerClubId===buyer.id);
-        if(currentInquiry&&(currentInquiry.status!=="accepted"||Number(s.day)>Number(currentInquiry.expiresDay)))
+        if(currentInquiry&&(!["accepted","asking_price"].includes(currentInquiry.status)||Number(s.day)>Number(currentInquiry.expiresDay)))
           throw Error("Clube e jogador ainda não autorizaram esta negociação.");
         const base=valuation(p)*(s.coachCareer?.settings?.marketStrictness==="strict"?1.25:1);
         const threshold=Math.ceil(base*(0.9+Math.min(n.round||1,2)*0.025)/1000)*1000;
@@ -611,7 +611,7 @@ case "tactic": {
         const existing=inquiries.find(x=>x.clubId===seller.id&&x.playerId===p.id&&x.buyerClubId===buyer.id);
         if(existing&&existing.status==="pending")throw Error("Já existe uma sondagem em andamento.");
         if(existing&&existing.status==="rejected"&&Number(s.day)<Number(existing.answeredDay||existing.responseDay)+14)throw Error("Aguarde 14 dias após a recusa para consultar novamente.");
-        if(existing&&existing.status==="accepted"&&Number(s.day)<=Number(existing.expiresDay))throw Error("Sondagem aprovada: você já pode negociar.");
+        if(existing&&["accepted","asking_price"].includes(existing.status)&&Number(s.day)<=Number(existing.expiresDay))throw Error("Sondagem aprovada: você já pode negociar.");
         const entry={id:"inq_"+s.season+"_"+s.day+"_"+p.id,playerId:p.id,clubId:seller.id,buyerClubId:buyer.id,startDay:Number(s.day)||0,responseDay:(Number(s.day)||0)+2,expiresDay:(Number(s.day)||0)+12,status:"pending"};
         if(existing)inquiries.splice(inquiries.indexOf(existing),1);
         inquiries.push(entry);
