@@ -356,3 +356,30 @@ test("Coach profile tabs render independently and do not alter player profile",(
  assert.match(coach,/coachProfileTab==="resumo"\?`<div/);
  assert.ok(app.slice(end).includes('id="shirt-number"'));
 });
+
+test("Coach scouting shortlist persists and does not modify player career",()=>{
+ const {root,state}=saleFixture();
+ const original=JSON.stringify(state.clubs);
+ assert.throws(()=>root.ProLifeApp.execute(state,"toggleCoachShortlist",{clubId:"b",playerId:"none"}),/indisponível/);
+ state.clubs[1].roster.push({id:"target",name:"Alvo",overall:70,pos:"ATA"});
+ root.ProLifeApp.execute(state,"toggleCoachShortlist",{clubId:"b",playerId:"target"});
+ let saved=JSON.parse(JSON.stringify(state));
+ assert.equal(saved.coachCareer.shortlist.length,1);
+ assert.equal(JSON.stringify(saved.clubs),JSON.stringify(state.clubs));
+ root.ProLifeApp.execute(saved,"toggleCoachShortlist",{clubId:"b",playerId:"target"});
+ assert.equal(saved.coachCareer.shortlist.length,0);
+ saved.mode="player";
+ assert.throws(()=>root.ProLifeApp.execute(saved,"toggleCoachShortlist",{clubId:"b",playerId:"target"}),/treinador/);
+});
+
+test("Scouting screens and actions are wired only in coach mode",()=>{
+ const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+ const view=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ for(const key of ["data-coach-market-area","data-coach-scout-apply","data-coach-shortlist","data-coach-scout-offer"]){
+   assert.ok(app.includes(key),key+" handler");
+   assert.ok(view.includes(key),key+" view");
+ }
+ assert.ok(app.includes('state.mode !== "coach"'));
+ assert.ok(view.includes("setMarketArea"));
+ assert.ok(view.includes("setScoutFilters"));
+});
