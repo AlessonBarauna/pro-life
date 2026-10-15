@@ -294,6 +294,39 @@ case "tactic": {
         s.reputation = D.clamp(s.reputation + 3, 0, 100);
         break;
       }
+      case "counterRecruit": {
+        if(s.mode!=="coach"||!D.Career.windowStatus(s).open)throw Error("Negociação indisponível.");
+        const buyer=D.club(s),seller=D.club(s,data.clubId);
+        const p=seller?.roster?.find(x=>x.id===data.playerId);
+        if(!buyer||!seller||buyer.id===seller.id||!p||p.id==="hero")throw Error("Jogador indisponível.");
+        const base=valuation(p)*(s.coachCareer?.settings?.marketStrictness==="strict"?1.25:1);
+        const requested=Number(data.offer);
+        if(!Number.isFinite(requested)||requested<=0)throw Error("Proposta inválida.");
+        const minimum=Math.ceil(base*0.9/1000)*1000;
+        s.coachCareer ||= {version:1};
+        s.coachCareer.negotiations ||= [];
+        s.coachCareer.negotiations=s.coachCareer.negotiations.filter(n=>!(n.playerId===p.id&&n.buyerClubId===buyer.id&&n.status==="pending"));
+        const accepted=requested>=minimum;
+        const finalFee=accepted?Math.ceil(requested/1000)*1000:Math.ceil(base/1000)*1000;
+        const entry={id:"neg_"+s.season+"_"+s.day+"_"+p.id,playerId:p.id,sellerClubId:seller.id,buyerClubId:buyer.id,requested,finalFee,status:"pending",expiresDay:s.day+7};
+        s.coachCareer.negotiations.push(entry);
+        (s.news||[]).unshift({day:s.day,season:s.season,title:accepted?"Proposta aceita":"Contraproposta recebida",body:accepted?"O clube aceitou R$ "+finalFee.toLocaleString("pt-BR")+".":"O clube pede R$ "+finalFee.toLocaleString("pt-BR")+" pelo atleta."});
+        return s;
+      }
+      case "buyLoan": {
+        if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
+        const loan=s.coachCareer?.loans?.find(l=>l.id===data.loanId&&!l.returned&&!l.purchased);
+        if(!loan||loan.toClubId!==s.clubId||Number(s.day)>=loan.dueDay)throw Error("Empréstimo indisponível para compra.");
+        if(!Number.isFinite(loan.buyOption)||loan.buyOption<=0)throw Error("Este empréstimo não possui opção de compra.");
+        const buyer=D.club(s,loan.toClubId),seller=D.club(s,loan.fromClubId);
+        const player=buyer?.roster?.find(p=>p.id===loan.playerId);
+        if(!player||!seller||Number(buyer.budget)<loan.buyOption)throw Error("Saldo ou jogador indisponível.");
+        buyer.budget-=loan.buyOption;seller.budget=(Number(seller.budget)||0)+loan.buyOption;
+        loan.purchased=true;loan.purchaseDay=s.day;loan.returned=true;
+        D.Career.transfer(s,player,seller,buyer,loan.buyOption);
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Opção de compra exercida",body:player.name+" foi contratado em definitivo."});
+        return s;
+      }
       case "recruit": {
         const rules=s.mode==="coach"?s.coachCareer?.settings:null;
         if(rules?.firstWindow==="off" && Number(s.day||0)>=Number(rules.firstWindowStartDay||0) && Number(s.day||0)<59)
@@ -316,8 +349,12 @@ case "tactic": {
         const sellOn=Number(data.sellOn||0);
         if(!isLoan&&![0,10,20].includes(sellOn))throw Error("Cláusula de revenda inválida.");
         if(isLoan && (s.coachCareer?.loans||[]).some(l=>l.playerId===p.id&&!l.returned))throw Error("O atleta já está emprestado.");
+        const salaryShare=isLoan?Number(data.salaryShare??50):0;
+        if(isLoan&&![0,50,100].includes(salaryShare))throw Error("Divisão salarial inválida.");
+        const optionPrice=isLoan&&data.buyOption==="on"?Math.ceil(valuation(p)*1.1/1000)*1000:0;
         const plan=rules?.installments==="on"&&data.paymentPlan==="split"&&!isLoan?"split":"upfront";
         if(isLoan)fee=Math.ceil(fee*0.08*(duration/180)/1000)*1000;
+        if(!isLoan){const negotiation=s.coachCareer?.negotiations?.find(n=>n.playerId===p.id&&n.sellerClubId===source.id&&n.buyerClubId===own.id&&n.status==="pending"&&n.expiresDay>=s.day);if(negotiation){fee=negotiation.finalFee;negotiation.status="accepted";}}
         const due=plan==="split"?Math.floor(fee/2):0,upfront=fee-due;
         if (own.budget < upfront) throw Error("Orçamento insuficiente para a entrada.");
         // The deferred half becomes a persistent financial obligation, not free money.
@@ -351,7 +388,7 @@ case "tactic": {
         own.roster.push(p);
         if(isLoan){
           s.coachCareer.loans ||= [];
-          s.coachCareer.loans.push({id:"loan_"+s.season+"_"+s.day+"_"+p.id,playerId:p.id,fromClubId:source.id,toClubId:own.id,startDay:Number(s.day)||0,dueDay:(Number(s.day)||0)+duration,fee,returned:false});
+          s.coachCareer.loans.push({id:"loan_"+s.season+"_"+s.day+"_"+p.id,playerId:p.id,fromClubId:source.id,toClubId:own.id,startDay:Number(s.day)||0,dueDay:(Number(s.day)||0)+duration,fee,salaryShare,buyOption:optionPrice,nextSalaryDay:(Number(s.day)||0)+30,returned:false});
         }else if(sellOn){
           s.coachCareer.sellOnClauses ||= [];
           s.coachCareer.sellOnClauses.push({playerId:p.id,buyerClubId:own.id,sellerClubId:source.id,percentage:sellOn,active:true});
