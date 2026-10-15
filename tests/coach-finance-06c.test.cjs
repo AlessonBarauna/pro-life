@@ -70,3 +70,28 @@ test("Coach market offers loan buy-out and counterproposal commands",()=>{
  for(const action of ['case "buyLoan"','case "counterRecruit"'])assert.ok(actions.includes(action));
  for(const control of ["data-loan-buy","data-counter-recruit","data-salary-share","data-buy-option"])assert.ok(ui.includes(control));
 });
+
+test("Manager negotiations survive JSON reload and failed purchases do not consume offers",()=>{
+ const appSource=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"utf8");
+ const root={};root.globalThis=root;
+ root.ProLife={club:(s,id=s.clubId)=>s.clubs.find(c=>c.id===id),overall:p=>p.overall,
+  Career:{windowStatus:()=>({open:true}),transfer:()=>{}}};
+ vm.runInNewContext(appSource,root,{filename:"game.js"});
+ const p={id:"p1",name:"Atleta",age:25,overall:75,pos:"ATA"};
+ const others=Array.from({length:18},(_,i)=>({id:"s"+i,name:"Reserva"}));
+ let state={mode:"coach",clubId:"b",day:0,season:2026,news:[],
+  coachCareer:{settings:{marketStrictness:"normal",firstWindow:"on",loans:"on",installments:"off"}},
+  clubs:[{id:"a",name:"Origem",budget:100000,structure:90,roster:[p,...others],lineup:["p1"]},
+   {id:"b",name:"Destino",budget:0,structure:90,roster:[],lineup:[]}]};
+ const base=root.ProLifeApp.valuation(p);
+ root.ProLifeApp.execute(state,"counterRecruit",{clubId:"a",playerId:"p1",offer:base/2});
+ state=JSON.parse(JSON.stringify(state));
+ assert.equal(state.coachCareer.negotiations.length,1);
+ assert.throws(()=>root.ProLifeApp.execute(state,"recruit",{clubId:"a",playerId:"p1"}),/Orçamento insuficiente/);
+ assert.equal(state.coachCareer.negotiations[0].status,"pending");
+ state.clubs[1].budget=base*3;
+ root.ProLifeApp.execute(state,"recruit",{clubId:"a",playerId:"p1"});
+ assert.equal(state.coachCareer.negotiations[0].status,"accepted");
+ assert.equal(state.clubs[1].roster.length,1);
+ assert.equal(state.clubs[0].roster.length,18);
+});
