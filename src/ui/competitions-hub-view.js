@@ -201,6 +201,7 @@
 
   function css(){
     return `<style>.ch-dark{--ch-card:#111b26;--ch-line:rgba(255,255,255,.09);--ch-text:#f2f4f6;--ch-muted:#8b99a6;--ch-gold:#d8b45b;--ch-ok:#4cc3b0;padding:24px;border-radius:18px;background:#0a1119;color:var(--ch-text);border:1px solid var(--ch-line)}
+.ch-player-focus{margin:16px 0;padding:20px;border:1px solid rgba(185,240,55,.35);background:linear-gradient(120deg,#172933,#101d28);border-radius:12px}.ch-player-focus header small{color:#b9f037}.ch-player-focus h3{font-size:25px;margin:8px 0 15px!important}.ch-player-focus-grid{display:grid;grid-template-columns:1fr 1.5fr 1.5fr;gap:9px}.ch-player-focus-grid article{min-width:0;display:flex;flex-direction:column;gap:8px;background:#0d1a25;border:1px solid var(--ch-line);padding:15px}.ch-player-focus-grid strong{font-size:27px;color:#fff}.ch-player-focus-grid article>b{font-size:17px}.ch-player-focus-grid span{font-size:12px;color:#c6d6db}.ch-player-focus-grid ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}.ch-player-focus-grid li{display:grid;gap:4px}.ch-player-focus-grid li b{font-size:12px}.ch-player-focus-actions{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0}.ch-player-focus-actions button{border:1px solid #739094;background:#233b46;padding:10px 14px;color:#f3f7f8;cursor:pointer}.ch-player-focus>p{font-size:11px;color:#9db2b9;margin:0}@media(max-width:850px){.ch-player-focus-grid{grid-template-columns:1fr}}
 .ch-dark h2,.ch-dark h3{margin:0 0 4px}.ch-dark small{color:var(--ch-muted);letter-spacing:.1em;text-transform:uppercase;font-size:11px}.ch-note{color:var(--ch-muted);font-size:13px;margin:8px 0}
 .ch-nav{display:flex;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--ch-line);margin:14px 0 16px}.ch-nav button{background:none;border:0;border-bottom:2px solid transparent;color:var(--ch-muted);padding:9px 14px;font:inherit;font-weight:600;cursor:pointer}.ch-nav button.active{color:var(--ch-text);border-bottom-color:var(--ch-gold)}.ch-nav.sub button{padding:7px 12px;font-size:13px}
 .ch-filters{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px}.ch-filters label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--ch-muted);text-transform:uppercase;letter-spacing:.1em}.ch-filters select{min-width:170px;max-width:100%}
@@ -218,6 +219,24 @@
 @media(max-width:900px){.ch-dark{padding:16px}.ch-cols{grid-template-columns:1fr}}</style>`;
   }
 
+  // J12.2: contexto do atleta derivado do motor existente, sem agenda paralela.
+  function playerCompetitionFocus(s,D){
+    if(s?.mode!=="player"||!s.clubId)return "";
+    const hc=heroClub(s),next=D?.nextCommitment?.(s)||null;
+    let standings=[];
+    try { if(hc?.leagueId)standings=D?.table?.(s,hc.leagueId)||[]; }catch(e){}
+    const ix=standings.findIndex(r=>String(r.id)===String(s.clubId));
+    const league=(s.leagues||[]).find(l=>l.id===hc?.leagueId);
+    const row=ix>=0?standings[ix]:null,st=row?.stats||row;
+    const recent=(s.matches||[]).filter(m=>(String(m.home)===String(s.clubId)||String(m.away)===String(s.clubId))&&Number(m.date)<=Number(s.day)&&Number.isFinite(Number(m.hg))&&Number.isFinite(Number(m.ag)))
+      .slice().sort((a,b)=>Number(b.date)-Number(a.date)).slice(0,3);
+    const teamName=id=>esc(club(s,id));
+    const lastHtml=recent.length?recent.map(m=>`<li><span>${esc(m.competitionName||"Competição")} · ${dateOf(m.date)}</span><b>${teamName(m.home)} ${Number(m.hg)} × ${Number(m.ag)} ${teamName(m.away)}</b></li>`).join(""):"<li><span>Ainda não existem partidas registradas.</span></li>";
+    let stage="";
+    try {stage=next?D?.Competitions?.fixtureStage?.(s,next)||"":"";}catch(e){}
+    const nextLabel=next?`<b>${esc(next.home||club(s,next.homeId))} × ${esc(next.away||club(s,next.awayId))}</b><span>${esc(next.competitionName||"Competição")} · ${esc(stage||next.stage||"Fase não informada")} · ${dateOf(next.date)}</span>`:"<span>Nenhum compromisso agendado.</span>";
+    return `<section class="ch-player-focus" aria-label="Minha temporada"><header><small>CARREIRA DE ATLETA · VISÃO DA TEMPORADA</small><h3>${esc(hc?.name||"Meu clube")}</h3></header><div class="ch-player-focus-grid"><article><small>SITUAÇÃO NA LIGA</small><strong>${ix>=0?ix+1+"º":"—"}</strong><span>${esc(league?.name||"Classificação indisponível")}${st&&Number.isFinite(Number(st.points))?" · "+st.points+" pts":""}</span></article><article><small>PRÓXIMA PARTIDA</small>${nextLabel}</article><article><small>RESULTADOS RECENTES</small><ul>${lastHtml}</ul></article></div><nav class="ch-player-focus-actions"><button type="button" data-page="calendar">Calendário completo</button><button type="button" data-page="matches">Pré-jogo e relatórios</button><button type="button" data-page="lineup">Escalação</button></nav><p>Dados obtidos da tabela e dos compromissos já simulados; os detalhes de cada torneio permanecem nas abas abaixo.</p></section>`;
+  }
   function render(s,D){
     if(!s||!W(D))return `<section class="card"><h2>Competições</h2><p class="muted">Módulo indisponível.</p></section>`;
     try{W(D).init?.(s);}catch(e){}
@@ -233,7 +252,7 @@
     else if(ui.section==="historico")body=historico(s,D);
     else body=minhas(s,D,cat);
     const playable=cat.filter(c=>c.status==="playable"||c.status==="regional_pool").length;
-    return `${css()}<section class="ch-dark" data-competitions-hub><small>CENTRAL MUNDIAL</small><h2>Competições · Temporada ${esc(s.season)}</h2><p class="ch-note">${cat.length} ligas no catálogo · ${playable} com calendário simulado. Nenhum clube fictício foi criado para completar ligas.</p>${nav()}${body}</section>`;
+    return `${css()}<section class="ch-dark" data-competitions-hub><small>CENTRAL MUNDIAL</small><h2>Competições · Temporada ${esc(s.season)}</h2><p class="ch-note">${cat.length} ligas no catálogo · ${playable} com calendário simulado. Nenhum clube fictício foi criado para completar ligas.</p>${ui.section==="minhas"&&!ui.leagueId?playerCompetitionFocus(s,D):""}${nav()}${body}</section>`;
   }
   const api={render,state:ui,catalog,continentOf,
     setSection(id){if(SECTIONS.some(x=>x[0]===id)){ui.section=id;ui.leagueId=null;ui.tab="geral";ui.round=null;}},
