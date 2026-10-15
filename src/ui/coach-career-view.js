@@ -4,7 +4,7 @@
   // Renderiza a partir de ProLifeCoachCareer.snapshot; os botoes usam data-coach-* e o app.js despacha command().
 
   const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
-  const ui={tab:"central"};
+  const ui={tab:"central",dealTab:"propostas"};
   const TABS=[["central","Central"],["diretoria","Diretoria"],["vestiario","Vestiário"],["treino","Treino coletivo"],["prejogo","Pré-jogo"],["negociacoes","Negociações"],["historico","Histórico"]];
   const STATUS={cumprida:"Cumprida",falhou:"Falhou",em_andamento:"Em andamento"};
 
@@ -115,6 +115,7 @@
       .cc-talk{display:grid;grid-template-columns:1fr minmax(0,240px) auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--cc-line)}.cc-talk p{margin:2px 0 0}.cc-dark select{max-width:100%;margin:6px 0}.cc-card button:disabled{opacity:.5;cursor:not-allowed}
       .cc-foci{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:10px}.cc-focus{display:flex;flex-direction:column;gap:6px;text-align:left;background:transparent;border:1px solid var(--cc-line);border-radius:10px;padding:12px;color:var(--cc-text);cursor:pointer}.cc-focus span{color:var(--cc-muted);font-size:12px}.cc-focus.active{border-color:var(--cc-gold);background:rgba(216,180,91,.08)}
       .cc-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}.cc-strip b{display:block;font-size:24px}.cc-strip span{color:var(--cc-muted);font-size:12px}.cc-table{width:100%;border-collapse:collapse;font-size:13px}.cc-table th,.cc-table td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--cc-line)}.cc-table th{color:var(--cc-muted);font-weight:600}
+      .cc-deal-nav{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.cc-deal-nav button{background:transparent;border:1px solid var(--cc-line);color:var(--cc-text);padding:10px 14px;border-radius:8px;cursor:pointer}.cc-deal-nav button[aria-pressed="true"]{border-color:var(--cc-gold);background:rgba(216,180,91,.15)}.cc-deal-nav small{opacity:.7;margin-left:5px}.cc-deal-section{min-height:200px}.cc-deal-player{display:flex;flex-direction:column;gap:4px}.cc-deal-player small{color:var(--cc-muted)}.cc-deal-parties{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.cc-deal-team{display:inline-flex;align-items:center;gap:6px;font-size:13px}.cc-deal-team .pl-club-crest{width:28px;height:28px;object-fit:contain}.cc-deal-terms{display:flex;flex-direction:column;gap:4px}.cc-deal-terms small{color:var(--cc-muted)}
       .cc-deal-grid{margin-top:14px}.cc-deal{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--cc-line)}.cc-deal strong,.cc-deal b{font-size:14px}.cc-deal-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cc-deal-actions button,.cc-deal button{background:rgba(216,180,91,.12);border:1px solid var(--cc-gold);color:var(--cc-text);padding:8px 12px;border-radius:7px;cursor:pointer}.cc-status{font-size:12px;color:var(--cc-muted)}.cc-deal small{color:var(--cc-muted)}
       .cc-dark button:focus-visible,.cc-dark select:focus-visible{outline:2px solid var(--cc-gold);outline-offset:2px}
       @media(max-width:900px){.cc-dark{padding:16px}.cc-grid{grid-template-columns:1fr}.cc-row{grid-template-columns:110px 1fr 32px}.cc-talk{grid-template-columns:1fr}.cc-strip{grid-template-columns:repeat(2,1fr)}}
@@ -124,26 +125,53 @@
   // Career-facing deal centre. Read-only lists follow persisted financial records;
   // actions use the existing app command dispatcher and never duplicate market logic.
   function negotiations(s,D){
-    const c=s.coachCareer||{},cl=id=>D?.club?.(s,id)?.name||id||"Clube";
+    const c=s.coachCareer||{};
     const money=v=>"R$ "+Math.round(Number(v)||0).toLocaleString("pt-BR");
+    const all=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])];
+    const club=id=>D?.club?.(s,id)||all.find(x=>x.id===id)||null;
+    const clubName=id=>club(id)?.name||id||"Clube";
+    const crest=id=>root.ProLifeClubCrests?.render?.(id,{size:"sm"})||"";
+    const team=id=>'<span class="cc-deal-team">'+crest(id)+'<span>'+esc(clubName(id))+'</span></span>';
+    const player=id=>{
+      for(const x of all){const p=x.roster?.find(p=>p.id===id);if(p)return p;}
+      return null;
+    };
+    const athlete=id=>{
+      const p=player(id);
+      if(!p)return '<strong>'+esc(id||"Jogador")+'</strong><small>Dados individuais indisponíveis neste save</small>';
+      const overall=p.overall??p.ovr??(D?.overall?.(p));
+      const facts=[p.pos||p.position,Number.isFinite(Number(overall))?'GER '+Math.round(Number(overall)):null,Number.isFinite(Number(p.age))?'Idade '+p.age:null,p.nationality||p.nation].filter(Boolean).join(' · ');
+      return '<strong>'+esc(p.name||id)+'</strong><small>'+esc(facts)+'</small>';
+    };
     const pending=(c.negotiations||[]).filter(n=>n.status==="pending");
     const loans=(c.loans||[]).filter(l=>!l.returned);
     const debts=(c.transferDebts||[]).filter(d=>!d.paid);
     const clauses=(c.sellOnClauses||[]).filter(x=>x.active);
-    const closed=(c.negotiations||[]).filter(n=>n.status!=="pending");
-    const name=id=>{for(const club of [...(s.clubs||[]),...(s.globalFootball?.clubs||[])]){const p=club.roster?.find(p=>p.id===id);if(p)return p.name;}return id||"Jogador";};
-    const item=(heading,content)=>'<section class="cc-card"><h3>'+heading+'</h3>'+content+'</section>';
-    const empty=message=>'<p class="cc-note">'+message+'</p>';
-    const pendingHtml=pending.length?pending.map(n=>{
+    const negotiationHistory=(c.negotiations||[]).filter(n=>n.status!=="pending");
+    const paid=(c.transferDebts||[]).filter(d=>d.paid);
+    const finishedLoans=(c.loans||[]).filter(l=>l.returned);
+    const transactions=(D?.Career?.init?.(s)?.transfers||[]).filter(x=>x&&x.day!==undefined);
+    const tabs=[["propostas","Propostas",pending.length],["emprestimos","Empréstimos",loans.length],["financeiro","Finanças",debts.length],["clausulas","Cláusulas",clauses.length],["historico","Histórico",negotiationHistory.length+paid.length+finishedLoans.length]];
+    if(!tabs.some(x=>x[0]===ui.dealTab))ui.dealTab="propostas";
+    const wrap=(items,fn,empty)=>items.length?items.map(fn).join(""):'<p class="cc-note">'+esc(empty)+'</p>';
+    const deals=wrap(pending,n=>{
       const expired=Number(s.day)>Number(n.expiresDay);
-      return '<div class="cc-deal"><div><strong>'+esc(name(n.playerId))+'</strong><p class="cc-note">'+esc(cl(n.sellerClubId))+' → '+esc(cl(n.buyerClubId))+' · Vencimento: dia '+esc(n.expiresDay)+'</p><b>'+esc(money(n.finalFee))+'</b></div><div class="cc-deal-actions"><span class="cc-status">'+(expired?'Expirada':'Aguardando decisão')+'</span>'+(expired?'':'<button type="button" data-coach-deal-accept="'+esc(n.id)+'">Aceitar valor</button>')+'<button type="button" data-coach-deal-reject="'+esc(n.id)+'">Recusar</button></div></div>';
-    }).join(""):empty("Nenhuma contraproposta pendente.");
-    const loanHtml=loans.length?loans.map(l=>'<div class="cc-deal"><div><strong>'+esc(name(l.playerId))+'</strong><p class="cc-note">'+esc(cl(l.fromClubId))+' → '+esc(cl(l.toClubId))+' · Término: dia '+esc(l.dueDay)+' · Salário: '+esc(l.salaryShare??0)+'%</p><b>'+(l.buyOption?'Opção de compra '+esc(money(l.buyOption)):'Sem opção de compra')+'</b></div>'+((l.buyOption&&l.toClubId===s.clubId)?'<button type="button" data-coach-deal-buy="'+esc(l.id)+'">Comprar jogador</button>':'')+'</div>').join(""):empty("Nenhum empréstimo ativo.");
-    const debtHtml=debts.length?debts.map(d=>'<div class="cc-deal"><span>'+esc(cl(d.buyerClubId))+' → '+esc(cl(d.sourceClubId))+'</span><strong>'+esc(money(d.amount))+'</strong><small>Dia '+esc(d.dueDay)+'</small></div>').join(""):empty("Nenhuma parcela em aberto.");
-    const historyHtml=closed.length?closed.slice().reverse().slice(0,20).map(n=>'<div class="cc-deal"><strong>'+esc(name(n.playerId))+'</strong><span>'+esc(money(n.finalFee))+'</span><small>'+esc(n.status)+'</small></div>').join(""):empty("Nenhuma negociação concluída ou recusada.");
-    const clausesHtml=clauses.length?clauses.map(x=>'<div class="cc-deal"><span>'+esc(name(x.playerId))+' · '+esc(cl(x.sellerClubId))+'</span><b>'+esc(x.percentage)+'% de revenda</b></div>').join(""):empty("Nenhuma cláusula ativa.");
-    return '<div class="cc-strip"><div><b>'+pending.length+'</b><span>Propostas pendentes</span></div><div><b>'+loans.length+'</b><span>Empréstimos ativos</span></div><div><b>'+debts.length+'</b><span>Parcelas a pagar</span></div><div><b>'+clauses.length+'</b><span>Cláusulas de revenda</span></div></div><p class="cc-note">Negociações e finanças do clube · valores em BRL · prazos em dias da carreira</p><div class="cc-grid cc-deal-grid">'+item("Propostas e contrapropostas",pendingHtml)+item("Empréstimos ativos",loanHtml)+item("Obrigações financeiras",debtHtml)+item("Cláusulas de revenda",clausesHtml)+item("Histórico de negociações",historyHtml)+'</div>';
+      return '<article class="cc-deal"><div class="cc-deal-player">'+athlete(n.playerId)+'</div><div class="cc-deal-parties">'+team(n.sellerClubId)+'<span aria-hidden="true">→</span>'+team(n.buyerClubId)+'</div><div class="cc-deal-terms"><b>'+esc(money(n.finalFee))+'</b><small>Proposta: '+esc(money(n.requested))+' · Até dia '+esc(n.expiresDay)+'</small></div><div class="cc-deal-actions"><span class="cc-status">'+(expired?'Expirada':'Aguardando decisão')+'</span>'+(expired?'':'<button type="button" data-coach-deal-accept="'+esc(n.id)+'">Aceitar valor</button>')+'<button type="button" data-coach-deal-reject="'+esc(n.id)+'">Recusar</button></div></article>';
+    },"Nenhuma contraproposta pendente.");
+    const loanRows=wrap(loans,l=>'<article class="cc-deal"><div class="cc-deal-player">'+athlete(l.playerId)+'</div><div class="cc-deal-parties">'+team(l.fromClubId)+'<span aria-hidden="true">→</span>'+team(l.toClubId)+'</div><div class="cc-deal-terms"><b>Até dia '+esc(l.dueDay)+'</b><small>Salário do contratante: '+esc(l.salaryShare??0)+'% · Taxa: '+esc(money(l.fee))+'</small><small>'+(l.buyOption?'Opção de compra '+esc(money(l.buyOption)):'Sem opção de compra')+'</small></div>'+(l.buyOption&&l.toClubId===s.clubId?'<button type="button" data-coach-deal-buy="'+esc(l.id)+'">Comprar jogador</button>':'')+'</article>',"Nenhum empréstimo ativo.");
+    const debtRows=wrap(debts,d=>'<article class="cc-deal"><div class="cc-deal-parties">'+team(d.buyerClubId)+'<span aria-hidden="true">→</span>'+team(d.sourceClubId)+'</div><div class="cc-deal-terms"><b>'+esc(money(d.amount))+'</b><small>Vencimento: dia '+esc(d.dueDay)+' · '+esc(d.playerId||"Transferência")+'</small></div><span class="cc-status">A pagar</span></article>',"Nenhuma parcela em aberto.");
+    const clauseRows=wrap(clauses,x=>'<article class="cc-deal"><div class="cc-deal-player">'+athlete(x.playerId)+'</div><div class="cc-deal-parties">'+team(x.sellerClubId)+'<span aria-hidden="true">→</span>'+team(x.buyerClubId)+'</div><div class="cc-deal-terms"><b>'+esc(x.percentage)+'% de revenda</b><small>Ativa até uma próxima venda definitiva</small></div></article>',"Nenhuma cláusula ativa.");
+    const historyRows=[
+      ...negotiationHistory.map(n=>({day:n.closedDay??n.expiresDay,html:'<div class="cc-deal"><div class="cc-deal-player">'+athlete(n.playerId)+'</div><div>'+esc(money(n.finalFee))+'</div><small>'+esc(n.status)+'</small></div>'})),
+      ...paid.map(d=>({day:d.paidDay??d.dueDay,html:'<div class="cc-deal"><div>'+team(d.buyerClubId)+' → '+team(d.sourceClubId)+'</div><b>'+esc(money(d.amount))+'</b><small>Parcela liquidada · dia '+esc(d.paidDay??d.dueDay)+'</small></div>'})),
+      ...finishedLoans.map(l=>({day:l.returnDay??l.purchaseDay??l.dueDay,html:'<div class="cc-deal"><div class="cc-deal-player">'+athlete(l.playerId)+'</div><span>'+(l.purchased?'Compra definitiva':'Empréstimo encerrado')+'</span><small>Dia '+esc(l.returnDay??l.purchaseDay??l.dueDay)+'</small></div>'})),
+      ...transactions.slice(0,30).map(t=>({day:t.day,html:'<div class="cc-deal"><span>'+esc(t.player||"Jogador")+' · '+esc(t.from||"Origem")+' → '+esc(t.to||"Destino")+'</span><b>'+esc(money(t.fee))+'</b><small>Dia '+esc(t.day)+'</small></div>'}))
+    ].sort((a,b)=>Number(b.day||0)-Number(a.day||0)).slice(0,45).map(x=>x.html).join("")||'<p class="cc-note">Nenhuma movimentação registrada.</p>';
+    const content={propostas:deals,emprestimos:loanRows,financeiro:debtRows,clausulas:clauseRows,historico:historyRows};
+    const heading={propostas:"Propostas e contrapropostas",emprestimos:"Empréstimos ativos",financeiro:"Obrigações financeiras",clausulas:"Cláusulas de revenda",historico:"Histórico financeiro e de transferências"};
+    return '<div class="cc-strip"><div><b>'+pending.length+'</b><span>Propostas pendentes</span></div><div><b>'+loans.length+'</b><span>Empréstimos ativos</span></div><div><b>'+debts.length+'</b><span>Parcelas a pagar</span></div><div><b>'+clauses.length+'</b><span>Cláusulas de revenda</span></div></div><p class="cc-note">Valores do save atual em BRL · prazos em dias da carreira</p><nav class="cc-deal-nav" aria-label="Categorias de negociações">'+tabs.map(([id,label,count])=>'<button type="button" data-coach-deal-tab="'+id+'" aria-pressed="'+(ui.dealTab===id)+'">'+label+' <small>'+count+'</small></button>').join("")+'</nav><section class="cc-card cc-deal-section"><h3>'+heading[ui.dealTab]+'</h3>'+content[ui.dealTab]+'</section>';
   }
+
 
   function render(s,D){
     const C=D?.CoachCareer||root.ProLifeCoachCareer;
@@ -153,7 +181,7 @@
     return `${css()}<section class="cc-dark"><h2>Carreira do Treinador</h2><small>${esc(sn.club?.name||"Sem clube")} · Temporada ${esc(s.season)} · Nacionalidade: ${esc(s.person?.nationality||"Brasil")} · Reputação ${esc(Math.round(sn.reputation||0))}</small>${tabs()}${body}</section>`;
   }
 
-  const api={render,state:ui,esc,setTab:id=>{if(TABS.some(x=>x[0]===id))ui.tab=id;}};
+  const api={render,state:ui,esc,setTab:id=>{if(TABS.some(x=>x[0]===id))ui.tab=id;},setDealTab:id=>{if(["propostas","emprestimos","financeiro","clausulas","historico"].includes(id))ui.dealTab=id;}};
   root.ProLifeCoachCareerView=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
