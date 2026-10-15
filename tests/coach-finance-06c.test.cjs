@@ -125,8 +125,20 @@ test("Coach negotiation centre renders five real finance sections from persisted
  const state={mode:"coach",clubId:"b",season:2026,day:6,person:{nationality:"Brasil"},clubs:[{id:"a",name:"Origem",roster:[]},{id:"b",name:"Destino",roster:[]}],
  coachCareer:{negotiations:[{id:"n1",playerId:"p1",sellerClubId:"a",buyerClubId:"b",status:"pending",expiresDay:10,finalFee:10000}],loans:[{id:"l1",playerId:"p2",fromClubId:"a",toClubId:"b",returned:false,dueDay:180,buyOption:50000,salaryShare:50}],transferDebts:[{id:"d1",buyerClubId:"b",sourceClubId:"a",amount:4000,dueDay:180,paid:false}],sellOnClauses:[{playerId:"p3",sellerClubId:"a",percentage:20,active:true}]}};
  const D={club:(s,id)=>s.clubs.find(x=>x.id===id),CoachCareer:{snapshot:()=>({club:{name:"Destino"},reputation:50,hasClub:true})}};
- const html=V.render(state,D);
- for(const x of ["Propostas e contrapropostas","Empréstimos ativos","Obrigações financeiras","Cláusulas de revenda","Histórico de negociações","data-coach-deal-accept","data-coach-deal-reject","data-coach-deal-buy"])assert.ok(html.includes(x),x);
+ const expected=[
+  ["propostas","Propostas e contrapropostas","data-coach-deal-accept","data-coach-deal-reject"],
+  ["emprestimos","Empréstimos ativos","data-coach-deal-buy"],
+  ["financeiro","Obrigações financeiras","R$ 4.000"],
+  ["clausulas","Cláusulas de revenda","20%"],
+  ["historico","Histórico financeiro e de transferências"]
+ ];
+ for(const [tab,...markers] of expected){
+   V.setDealTab(tab);
+   const html=V.render(state,D);
+   assert.ok(html.includes('data-coach-deal-tab="'+tab+'"'),tab);
+   assert.ok(html.includes('aria-label="Categorias de negociações"'));
+   for(const marker of markers)assert.ok(html.includes(marker),tab+" / "+marker);
+ }
  V.setTab("central");
 });
 test("Coach central rejection is persistent and prevents accepting closed offer",()=>{
