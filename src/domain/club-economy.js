@@ -80,7 +80,32 @@
       sponsorshipAnnual,broadcastAnnual,totalAnnual:sponsorshipAnnual+broadcastAnnual,
       status:"simulation_only",recognizedRevenue:0,readOnly:true};
   }
-  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,VERSION:"m04.7"};
+  // M04.8: explicit contract registration; no automatic funding or retroactive receivables.
+  function registerRevenueContract(state,clubId,input){
+    if(!state||!state.coachCareer||String(state.clubId)!==String(clubId))throw Error("Clube da carreira invalido.");
+    const type=String(input?.type||"");
+    if(!["sponsorship","broadcast"].includes(type))throw Error("Tipo de receita invalido.");
+    const amount=Number(input?.annualAmount),start=Number(input?.startDay),duration=Number(input?.durationDays);
+    if(!Number.isSafeInteger(amount)||amount<=0||!Number.isSafeInteger(start)||start<Number(state.day)||
+      !Number.isSafeInteger(duration)||duration<30||duration>1825)throw Error("Dados do contrato invalidos.");
+    const finance=state.coachCareer.finance||={};
+    const contracts=finance.revenueContracts||=[];
+    const id=String(input?.id||"");
+    if(!/^[a-zA-Z0-9_-]{1,80}$/.test(id))throw Error("Identificador do contrato invalido.");
+    if(contracts.some(x=>x.id===id))throw Error("Contrato ja registrado.");
+    const entry={id,clubId:String(clubId),type,annualAmount:amount,startDay:start,
+      endDay:start+duration,status:"scheduled",postedAmount:0,postedPeriods:[],createdDay:Number(state.day)};
+    contracts.push(entry);
+    finance.revenueHistory||=[];
+    finance.revenueHistory.push({contractId:id,day:Number(state.day),event:"registered",amount:0});
+    return entry;
+  }
+  function revenueContractsSnapshot(state,clubId){
+    const records=state?.coachCareer?.finance?.revenueContracts;
+    return (Array.isArray(records)?records:[]).filter(x=>String(x.clubId)===String(clubId))
+      .map(x=>({...x,postedPeriods:[...(x.postedPeriods||[])]}));
+  }
+  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,registerRevenueContract,revenueContractsSnapshot,VERSION:"m04.8"};
   root.ProLifeClubEconomy=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
