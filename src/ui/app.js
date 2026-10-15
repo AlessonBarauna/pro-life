@@ -8525,16 +8525,42 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
   function swapSquadPlayers(fromId,toId){
     if(state?.mode!=="coach"||!fromId||!toId||fromId===toId)return false;
     const club=D.club(state);
-    if(!club?.roster?.some(p=>p.id===fromId)||!club.roster.some(p=>p.id===toId))return false;
+    if(!club?.roster)return false;
     const from=club.roster.find(p=>p.id===fromId),to=club.roster.find(p=>p.id===toId);
-    if(from.injury||from.suspension>0||to.injury||to.suspension>0){toast("Jogador indisponível para escalação.");return false;}
+    if(!from||!to)return false;
+    if(from.injury||from.suspension>0){toast("O jogador selecionado está indisponível.");return false;}
+    const usable=p=>!p.injury&&!(Number(p.suspension)>0);
     const ids=[...(club.lineup||[])],fi=ids.indexOf(fromId),ti=ids.indexOf(toId);
-    if(fi<0&&ti<0){toast("Escolha pelo menos um titular para realizar a troca.");return false;}
+    if(fi<0&&ti<0){toast("Escolha um titular para a troca.");return false;}
     if(fi>=0&&ti>=0){ids[fi]=toId;ids[ti]=fromId;}
-    else if(fi>=0)ids[fi]=toId;
-    else ids[ti]=fromId;
-    try{A.execute(state,"lineup",{ids});persist();squadSelectedId=toId;render();toast("Troca realizada e escalação salva.");return true;}
-    catch(e){toast(e.message);return false;}
+    else if(fi>=0){ids[fi]=toId;}
+    else {ids[ti]=fromId;}
+    // Old saves can contain injured starters, or an incomplete XI.
+    // Repair only invalid and vacant slots, never displace a healthy selected player.
+    const chosen=[],seen=new Set();
+    for(const id of ids){
+      const p=club.roster.find(x=>x.id===id);
+      if(p&&usable(p)&&!seen.has(id)){chosen.push(id);seen.add(id);}
+    }
+    const pool=club.roster.filter(p=>usable(p)&&!seen.has(p.id)).sort((a,b)=>(D.overall(b)||0)-(D.overall(a)||0));
+    const hasGoalkeeper=()=>chosen.some(id=>club.roster.some(p=>p.id===id&&p.pos==="GOL"));
+    if(!hasGoalkeeper()){
+      const gk=pool.find(p=>p.pos==="GOL");
+      if(gk){chosen.push(gk.id);seen.add(gk.id);}
+    }
+    for(const p of pool){
+      if(chosen.length>=11)break;
+      if(!seen.has(p.id)){chosen.push(p.id);seen.add(p.id);}
+    }
+    if(chosen.length!==11||!hasGoalkeeper()){
+      toast("Não há 11 atletas disponíveis com goleiro. Complete a escalação manualmente.");
+      return false;
+    }
+    try{
+      A.execute(state,"lineup",{ids:chosen});
+      persist();squadSelectedId=fromId;render();toast("Substituição realizada e XI atualizado.");
+      return true;
+    }catch(e){toast(e.message);return false;}
   }
   document.addEventListener("dragstart", e=>{
     const tile=e.target.closest?.("[data-squad-player][draggable]");
