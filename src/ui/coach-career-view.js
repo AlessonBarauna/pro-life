@@ -332,16 +332,19 @@
       return '<article class="cc-deal"><div class="cc-deal-player">'+athlete(n.playerId)+'</div><div class="cc-deal-parties">'+team(n.sellerClubId)+'<span aria-hidden="true">→</span>'+team(n.buyerClubId)+'</div><div class="cc-deal-terms"><b>'+esc(money(n.finalFee))+'</b><small>Proposta: '+esc(money(n.requested))+' · Até dia '+esc(n.expiresDay)+'</small></div><div class="cc-deal-actions"><span class="cc-status">'+(waiting?(n.lastSettlementError?'Aguardando regularização: '+esc(n.lastSettlementError):'Aguardando abertura da janela'):expired?'Expirada':waitingReply?'Resposta prevista em '+careerDate(s,n.replyDay):'Aguardando decisão')+'</span>'+(expired||waiting?'':'<button type="button" data-coach-deal-accept="'+esc(n.id)+'"'+(n.response!=="accepted"?' disabled':'')+'>Aceitar valor</button>')+'<button type="button" data-coach-deal-reject="'+esc(n.id)+'">Recusar</button><button type="button" data-coach-deal-open="'+esc(n.id)+'">Ver negociação</button></div></article>';
     },"Nenhuma contraproposta pendente.");
     const loanRows=wrap(loans,l=>'<article class="cc-deal"><div class="cc-deal-player">'+athlete(l.playerId)+'</div><div class="cc-deal-parties">'+team(l.fromClubId)+'<span aria-hidden="true">→</span>'+team(l.toClubId)+'</div><div class="cc-deal-terms"><b>Até dia '+esc(l.dueDay)+'</b><small>Salário do contratante: '+esc(l.salaryShare??0)+'% · Taxa: '+esc(money(l.fee))+'</small><small>'+(l.buyOption?'Opção de compra '+esc(money(l.buyOption)):'Sem opção de compra')+'</small></div>'+(l.buyOption&&l.toClubId===s.clubId?'<button type="button" data-coach-deal-buy="'+esc(l.id)+'">Comprar jogador</button>':'')+'</article>',"Nenhum empréstimo ativo.");
-    // M03.5: read-only payroll forecast. Does not debit the transfer budget.
+    // M03.6: non-mutating estimates for legacy wages. Never writes salary or debits budget.
     const payrollPlayers=(own?.roster||[]).filter(p=>p&&p.id!=="hero");
-    const knownSalaries=payrollPlayers.filter(p=>p.salary!==null&&p.salary!==undefined&&p.salary!=="").map(p=>Number(p.salary)).filter(v=>Number.isFinite(v)&&v>=0);
-    const missingSalaries=payrollPlayers.length-knownSalaries.length;
-    const monthlyPayroll=knownSalaries.reduce((sum,v)=>sum+v,0);
+    const hasWage=p=>p.salary!==null&&p.salary!==undefined&&p.salary!==""&&Number.isFinite(Number(p.salary))&&Number(p.salary)>=0;
+    const knownSalaries=payrollPlayers.filter(hasWage);
+    const missingSalaries=payrollPlayers.filter(p=>!hasWage(p));
+    const registeredMonthly=knownSalaries.reduce((total,p)=>total+Number(p.salary),0);
+    const estimatedMonthly=missingSalaries.reduce((total,p)=>total+(Number(root.ProLifeApp?.minimumMarketSalaryMonthly?.(p))||0),0);
+    const forecastMonthly=registeredMonthly+estimatedMonthly;
     const payrollPanel='<section class="cc-card" aria-label="Projeção da folha salarial"><h4>Projeção da folha salarial</h4>'+
-      '<p><b>Salários mensais registrados:</b> '+esc(money(monthlyPayroll))+' · <b>Projeção anual:</b> '+esc(money(monthlyPayroll*12))+'</p>'+
-      '<p class="cc-note">Jogadores considerados: '+esc(knownSalaries.length)+' de '+esc(payrollPlayers.length)+'. '+
-      (missingSalaries?'Salário não informado para '+esc(missingSalaries)+' jogador(es). ':'')+
-      'Estimativa baseada nos contratos registrados; não é débito nem prova de pagamento. Empréstimos podem ter divisão salarial própria.</p></section>';
+      '<p><b>Salários registrados:</b> '+esc(money(registeredMonthly))+'/mês · <b>Estimativas sem contrato:</b> '+esc(money(estimatedMonthly))+'/mês</p>'+
+      '<p><b>Folha mensal projetada:</b> '+esc(money(forecastMonthly))+' · <b>Folha anual projetada:</b> '+esc(money(forecastMonthly*12))+'</p>'+
+      '<p class="cc-note">Contratos registrados: '+esc(knownSalaries.length)+' · Salários estimados: '+esc(missingSalaries.length)+
+      '. Estimativas calculadas por GER, idade e potencial, não representam salário acordado. Nenhum contrato, save ou orçamento é alterado; empréstimos ainda exigem rateio salarial.</p></section>';
     const debtRows=wrap(debts,d=>'<article class="cc-deal"><div class="cc-deal-parties">'+team(d.buyerClubId)+'<span aria-hidden="true">→</span>'+team(d.sourceClubId)+'</div><div class="cc-deal-terms"><b>'+esc(money(d.amount))+'</b><small>Vencimento: dia '+esc(d.dueDay)+' · '+esc(d.playerId||"Transferência")+'</small></div><span class="cc-status">A pagar</span></article>',"Nenhuma parcela em aberto.");
     const clauseRows=wrap(clauses,x=>'<article class="cc-deal"><div class="cc-deal-player">'+athlete(x.playerId)+'</div><div class="cc-deal-parties">'+team(x.sellerClubId)+'<span aria-hidden="true">→</span>'+team(x.buyerClubId)+'</div><div class="cc-deal-terms"><b>'+esc(x.percentage)+'% de revenda</b><small>Ativa até uma próxima venda definitiva</small></div></article>',"Nenhuma cláusula ativa.");
     const historyRows=[
