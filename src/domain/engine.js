@@ -13,6 +13,7 @@
   const ChampionsSeason=root.ProLifeChampionsSeason||(typeof require==="function"?require("./champions-season.js"):null);
   const NationalCallups=root.ProLifeNationalCallups||(typeof require==="function"?require("./national-callups.js"):null);
   const OffField=root.ProLifeOffField||(typeof require==="function"?require("./off-field.js"):null);
+  const ClubEconomy=root.ProLifeClubEconomy||(typeof require==="function"?require("./club-economy.js"):null);
   const CoachCareer=root.ProLifeCoachCareer||(typeof require==="function"?require("./coach-career.js"):null);
   const WorldLiveMarket=root.ProLifeWorldLiveMarket||(typeof require==="function"?require("./world-live-market.js"):null);
   const SeasonCompetitionCenter=root.ProLifeSeasonCompetitionCenter||(typeof require==="function"?require("./season-competition-center.js"):null);
@@ -525,6 +526,19 @@
     WorldLiveMarket?.init?.(s);
     NationalTeam?.init(s);
     World2?.init(s, API, seed);
+    // M04.4: opt-in only at new coach career creation; existing saves untouched.
+    if(mode==="coach"&&config.financialScenario!=null&&config.financialScenario!=="legacy"){
+      const allowed=["conservative","standard","ambitious"];
+      if(!allowed.includes(config.financialScenario))throw Error("Cenario financeiro desconhecido.");
+      if(!ClubEconomy?.scenarios)throw Error("Modulo de economia de clubes indisponivel.");
+      const target=(s.clubs||[]).find(c=>c.id===config.clubId)||
+        (s.globalFootball?.clubs||[]).find(c=>c.id===config.clubId);
+      if(!target)throw Error("Selecione um clube para configurar o orcamento inicial.");
+      const option=ClubEconomy.scenarios(target).find(o=>o.id===config.financialScenario);
+      target.budget=option.proposedTransferBudget;
+      s.coachInitialFinance={version:1,clubId:target.id,scenario:option.id,
+        initialTransferBudget:option.proposedTransferBudget};
+    }
     if (plan) Creation.applyContext(s, plan);
     s.offers = plan ? Creation.opportunities(s, rng, API, plan) : weightedCareerOffers(s, rng, mode === "player" ? Math.min(5, 3 + (origin.offerBoost || 0)) : 3);
     if (plan && config.clubId) Creation.accept(s, config.clubId, API);
