@@ -8262,10 +8262,14 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
   }
   document.addEventListener("click", (event) => {
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
-    const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus]");
+    const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy]");
     if (!el || !state || state.mode !== "coach") return;
     const V = window.ProLifeCoachCareerView;
     if (el.hasAttribute("data-coach-tab")) { V?.setTab(el.getAttribute("data-coach-tab")); render(); return; }
+    if (el.hasAttribute("data-coach-deal-accept")) return command("acceptCoachDeal",{id:el.getAttribute("data-coach-deal-accept")});
+    if (el.hasAttribute("data-coach-deal-reject")) return command("rejectCoachDeal",{id:el.getAttribute("data-coach-deal-reject")});
+    if (el.hasAttribute("data-coach-deal-buy")) return command("buyLoan",{loanId:el.getAttribute("data-coach-deal-buy")});
+
     if (el.hasAttribute("data-coach-focus")) return command("coachFocus", { focus: el.getAttribute("data-coach-focus") });
     if (el.hasAttribute("data-coach-setcaptain")) return command("coachCaptain", { playerId: document.querySelector("[data-coach-captain]")?.value || null });
     const kind = el.getAttribute("data-coach-talk");
