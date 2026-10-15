@@ -269,6 +269,8 @@ case "tactic": {
         s.coachCareer||={version:1};
         s.coachCareer.playerRoles||={};
         s.coachCareer.playerRoles[player.id]={position,role:data.role};
+        club.coachPlayerRoles||={};
+        club.coachPlayerRoles[player.id]={position,role:data.role};
         break;
       }
       case "coachFormation": {
