@@ -28,3 +28,24 @@ test("Transfer installment option is isolated to coach rules",()=>{
  assert.match(actions,/if\(due\)/);
  assert.match(ui,/data-recruit-plan/);
 });
+
+test("Coach loan matures, returns the same player, and never duplicates him",()=>{
+ const root={};root.globalThis=root;vm.runInNewContext(src,root,{filename:"career.js"});
+ const C=root.ProLifeCareer,player={id:"p1",name:"Jogador X",pos:"ATA"};
+ const s={mode:"coach",day:179,season:2026,person:{name:"Treinador",condition:100},news:[],
+  clubs:[{id:"a",name:"Origem",roster:[],lineup:[]},{id:"b",name:"Destino",roster:[player],lineup:["p1"]}],
+  coachCareer:{loans:[{id:"l1",fromClubId:"a",toClubId:"b",playerId:"p1",dueDay:180,returned:false}]}};
+ C.daily(s);assert.equal(s.clubs[1].roster.length,1);
+ s.day=180;C.daily(s);C.daily(s);
+ assert.equal(s.clubs[0].roster.filter(x=>x.id==="p1").length,1);
+ assert.equal(s.clubs[1].roster.length,0);
+ assert.equal(s.coachCareer.loans[0].returned,true);
+});
+test("Manager recruitment includes loan and sell-on terms",()=>{
+ const actions=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"utf8");
+ const ui=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+ assert.match(actions,/sellOnClauses/);
+ assert.match(actions,/data\.dealType==="loan"/);
+ assert.match(ui,/data-loan-days/);
+ assert.match(ui,/data-sell-on/);
+});
