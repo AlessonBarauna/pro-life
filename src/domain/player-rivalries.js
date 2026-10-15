@@ -98,7 +98,36 @@ function reward(state){
   if(!state||state.result==="active")return 0;
   return state.result==="win"?100:state.result==="draw"?50:state.result==="loss"?0:0;
 }
-const api=Object.freeze({VERSION,OBJECTIVES,objectiveFor,eligibleRivals,candidateStats,initial,record,fromSimulatedMatch,reward});
+
+// J13: integração idempotente ao save; sem criar estatísticas de adversários inexistentes.
+function ensureCareer(s){
+  if(s?.mode!=="player"||!s.extras?.playerCareer)return null;
+  const pc=s.extras.playerCareer;
+  const old=pc.fc27PlayerRivalry;
+  if(old?.version===VERSION&&old.season===integer(s.season))return old;
+  const pool=eligibleRivals(s).filter(r=>r.clubId!==String(s.clubId));
+  if(!pool.length)return null;
+  const rival=pool[0];
+  const state=initial({season:s.season,clubId:s.clubId,rivalId:rival.id,position:s.person?.pos});
+  pc.fc27PlayerRivalry={...state,rivalName:rival.name,rivalClubId:rival.clubId,rivalPosition:rival.position,awarded:false};
+  return pc.fc27PlayerRivalry;
+}
+function onCareerMatch(s,m){
+  const current=ensureCareer(s);
+  if(!current)return null;
+  const updated=fromSimulatedMatch(current,m);
+  if(updated!==current){
+    s.extras.playerCareer.fc27PlayerRivalry={...current,...updated};
+  }
+  return s.extras.playerCareer.fc27PlayerRivalry;
+}
+function careerSnapshot(s){
+  const x=s?.extras?.playerCareer?.fc27PlayerRivalry;
+  if(!x)return null;
+  return {...x,processed:[...(x.processed||[])]};
+}
+
+const api=Object.freeze({VERSION,OBJECTIVES,objectiveFor,eligibleRivals,candidateStats,initial,record,fromSimulatedMatch,reward,ensureCareer,onCareerMatch,careerSnapshot});
 root.ProLifePlayerRivalries=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
