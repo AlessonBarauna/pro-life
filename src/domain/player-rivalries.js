@@ -96,7 +96,7 @@ function fromSimulatedMatch(state,m){
 }
 function reward(state){
   if(!state||state.result==="active")return 0;
-  return state.result==="win"?100:state.result==="draw"?50:state.result==="loss"?0:0;
+  return state.result==="win"||state.result==="draw"?90:state.result==="unfinished"?45:0;
 }
 
 // J13: integração idempotente ao save; sem criar estatísticas de adversários inexistentes.
@@ -104,6 +104,13 @@ function ensureCareer(s){
   if(s?.mode!=="player"||!s.clubId||!s.extras)return null;
   const old=s.extras.playerRivalry;
   if(old?.version===VERSION&&old.season===integer(s.season))return old;
+  if(old?.version===VERSION&&old.season!==integer(s.season)){
+    const archived={...old,result:old.result==="active"?"unfinished":old.result};
+    if(!Array.isArray(s.extras.playerRivalryHistory))s.extras.playerRivalryHistory=[];
+    if(!s.extras.playerRivalryHistory.some(x=>x.season===archived.season&&x.rivalId===archived.rivalId))
+      s.extras.playerRivalryHistory.unshift(archived);
+    s.extras.playerRivalryHistory=s.extras.playerRivalryHistory.slice(0,12);
+  }
   const pool=eligibleRivals(s).filter(r=>r.clubId!==String(s.clubId));
   if(!pool.length)return null;
   const rival=pool[0];
@@ -151,12 +158,25 @@ function recordLeagueMatch(s,m){
     q.result=q.hero>q.rival?"win":q.hero<q.rival?"loss":"draw";
   return q;
 }
+// Resgate explícito, idempotente e distribuído igualmente pelos três perfis do FC.
+function claimCareerReward(s){
+ if(s?.mode!=="player"||!s.extras?.playerCareer)return {claimed:false,reason:"Modo incompatível"};
+ const q=s.extras.playerRivalry;
+ if(!q||q.result==="active"||q.result==="loss"||q.awarded)return {claimed:false,reason:"Indisponível ou já resgatado"};
+ const amount=reward(q),each=amount/3;
+ if(!Number.isFinite(each)||each<=0)return {claimed:false,reason:"Sem pontos"};
+ const pc=s.extras.playerCareer;
+ if(!pc.rivalryPointWallet)pc.rivalryPointWallet={maverick:0,virtuoso:0,heartbeat:0};
+ for(const key of ["maverick","virtuoso","heartbeat"])pc.rivalryPointWallet[key]=integer(pc.rivalryPointWallet[key])+each;
+ q.awarded=true;
+ return {claimed:true,amount,wallet:{...pc.rivalryPointWallet}};
+}
 function careerSnapshot(s){
   const q=s?.extras?.playerRivalry;
   if(!q)return null;
   return {...q,processed:[...(q.processed||[])]};
 }
-const api=Object.freeze({VERSION,OBJECTIVES,objectiveFor,eligibleRivals,candidateStats,initial,record,fromSimulatedMatch,reward,ensureCareer,onCareerMatch,recordLeagueMatch,careerSnapshot});
+const api=Object.freeze({VERSION,OBJECTIVES,objectiveFor,eligibleRivals,candidateStats,initial,record,fromSimulatedMatch,reward,ensureCareer,onCareerMatch,recordLeagueMatch,claimCareerReward,careerSnapshot});
 root.ProLifePlayerRivalries=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
