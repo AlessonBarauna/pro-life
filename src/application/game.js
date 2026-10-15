@@ -390,7 +390,7 @@ case "tactic": {
         const loans=s.coachCareer?.loans||[];
         const prefs=s.coachCareer?.offerPreferences||{mode:"all",blockedIds:[],listedIds:[]};
         if(prefs.mode==="none")throw Error("Recebimento de propostas desativado nas preferências.");
-        const eligible=(own.roster||[]).filter(p=>p.id!=="hero"&&!p.injury&&!loans.some(l=>!l.returned&&l.playerId===p.id)&&!(prefs.blockedIds||[]).includes(p.id)&&(prefs.mode!=="listed"||(prefs.listedIds||[]).includes(p.id))&&!s.coachCareer?.saleOffers?.some(o=>o.playerId===p.id&&o.status==="pending"));
+        const eligible=(own.roster||[]).filter(p=>p.id!=="hero"&&!p.injury&&!loans.some(l=>!l.returned&&l.playerId===p.id)&&!(prefs.blockedIds||[]).includes(p.id)&&(prefs.mode!=="listed"||(prefs.listedIds||[]).includes(p.id))&&!s.coachCareer?.saleOffers?.some(o=>o.playerId===p.id&&(o.status==="pending"||o.status==="awaiting_window")));
         if(own.roster.length<=18||!eligible.length||!buyers.length)throw Error("Nenhuma proposta elegível segundo as preferências e elencos atuais.");
         eligible.sort((a,b)=>String(a.id).localeCompare(String(b.id)));
         const p=eligible[(Math.floor(s.day/7)+eligible.length)%eligible.length];
