@@ -101,32 +101,25 @@ function reward(state){
 
 // J13: integração idempotente ao save; sem criar estatísticas de adversários inexistentes.
 function ensureCareer(s){
-  if(s?.mode!=="player"||!s.extras?.playerCareer)return null;
-  const pc=s.extras.playerCareer;
-  const old=pc.fc27PlayerRivalry;
+  if(s?.mode!=="player"||!s.clubId||!s.extras)return null;
+  const old=s.extras.playerRivalry;
   if(old?.version===VERSION&&old.season===integer(s.season))return old;
   const pool=eligibleRivals(s).filter(r=>r.clubId!==String(s.clubId));
   if(!pool.length)return null;
   const rival=pool[0];
-  const state=initial({season:s.season,clubId:s.clubId,rivalId:rival.id,position:s.person?.pos});
-  pc.fc27PlayerRivalry={...state,rivalName:rival.name,rivalClubId:rival.clubId,rivalPosition:rival.position,awarded:false};
-  return pc.fc27PlayerRivalry;
+  s.extras.playerRivalry={...initial({season:s.season,clubId:s.clubId,rivalId:rival.id,position:s.person?.pos}),rivalName:rival.name,rivalClubId:rival.clubId,rivalPosition:rival.position,awarded:false};
+  return s.extras.playerRivalry;
 }
 function onCareerMatch(s,m){
-  const current=ensureCareer(s);
-  if(!current)return null;
-  const updated=fromSimulatedMatch(current,m);
-  if(updated!==current){
-    s.extras.playerCareer.fc27PlayerRivalry={...current,...updated};
-  }
-  return s.extras.playerCareer.fc27PlayerRivalry;
+  const state=ensureCareer(s);if(!state)return null;
+  s.extras.playerRivalry=fromSimulatedMatch(state,m);
+  return s.extras.playerRivalry;
 }
 function careerSnapshot(s){
-  const x=s?.extras?.playerCareer?.fc27PlayerRivalry;
-  if(!x)return null;
-  return {...x,processed:[...(x.processed||[])]};
+  const q=s?.extras?.playerRivalry;
+  if(!q)return null;
+  return {...q,processed:[...(q.processed||[])]};
 }
-
 const api=Object.freeze({VERSION,OBJECTIVES,objectiveFor,eligibleRivals,candidateStats,initial,record,fromSimulatedMatch,reward,ensureCareer,onCareerMatch,careerSnapshot});
 root.ProLifePlayerRivalries=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
