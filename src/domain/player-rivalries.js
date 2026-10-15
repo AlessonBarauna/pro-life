@@ -162,6 +162,13 @@ function recordLeagueMatch(s,m){
     q.result=heroValue>=objective.threshold&&rivalValue>=objective.threshold?"draw":heroValue>=objective.threshold?"win":"loss";
   else if(q.heroGames>=q.targetMatches&&q.rivalGames>=q.targetMatches)
     q.result=q.hero>q.rival?"win":q.hero<q.rival?"loss":"draw";
+  if(q.result!=="active"&&!q.newsPublished){
+    const name=q.rivalName||q.rivalId;
+    const title=q.result==="win"?"Protagonista supera rival na temporada":q.result==="draw"?"Disputa entre atletas termina empatada":"Rival leva a melhor na disputa";
+    const body="A torcida acompanhou a comparação entre "+String(s.person?.name||"o atleta")+" e "+name+". Resultado: "+q.hero+" a "+q.rival+" no objetivo de "+(objective?.label||"desempenho")+".";
+    root.ProLifeCareer?.addArticle?.(s,{category:"RIVALIDADES",title,body,eventId:"fc27-rivalry:"+q.season+":"+q.rivalId+":"+q.objectiveId});
+    q.newsPublished=true;
+  }
   return q;
 }
 // Resgate explícito, idempotente e distribuído igualmente pelos três perfis do FC.
