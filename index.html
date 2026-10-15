@@ -76,7 +76,19 @@
     <script src="src/domain/world-club-competitions.js"></script>
     <script src="src/domain/club-intelligence.js"></script>
     <script src="src/domain/coach-scouting-v2.js"></script>
-    <script src="src/domain/club-economy.js?v=m0411diagnostic3"></script>
+    <script src="src/domain/club-economy.js?v=m0411diagnostic4" onerror="window.ProLifeClubEconomyLoadStatus='erro ao carregar arquivo'"></script>
+    <script>
+      if(!window.ProLifeClubEconomy?.sponsorshipOffers){
+        window.ProLifeClubEconomyLoadStatus=window.ProLifeClubEconomyLoadStatus||'arquivo carregado, mas API ausente';
+        const retry=document.createElement('script');
+        retry.src='src/domain/club-economy.js?v=m0411diagnostic4-retry';
+        retry.onload=function(){
+          window.ProLifeClubEconomyLoadStatus=window.ProLifeClubEconomy?.sponsorshipOffers?'recuperado':'API ausente apos recarga';
+        };
+        retry.onerror=function(){window.ProLifeClubEconomyLoadStatus='arquivo indisponivel na segunda tentativa';};
+        document.head.appendChild(retry);
+      }
+    </script>
     <script src="src/domain/coach-career.js"></script>
     <script src="src/domain/off-field.js"></script>
     <script src="src/domain/season-competition-center.js"></script>
