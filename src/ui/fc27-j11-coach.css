@@ -1,0 +1,19 @@
+/* J11 — relação com o treinador, visual exclusivo de jogador */
+.j11-dashboard{padding:clamp(16px,2.5vw,28px);margin:0 0 18px;background:linear-gradient(120deg,#122632,#111c28);border:1px solid #3b5960;color:#edf3f4;min-width:0}
+.j11-dashboard header>small,.j11-panels article>small{font-weight:900;letter-spacing:.12em;color:#baf13d;font-size:10px}
+.j11-dashboard header h2{font-size:clamp(24px,3vw,35px);margin:10px 0 7px;color:#fff}
+.j11-dashboard header p{font-size:13px;color:#b9cbd1}
+.j11-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:20px 0}
+.j11-metric{background:#203541;border-top:3px solid #b9f13b;padding:16px 12px;display:grid;gap:8px;min-width:0}
+.j11-metric small{font-size:10px;font-weight:900;color:#bdcdd2}
+.j11-metric strong{font-size:clamp(18px,2vw,25px);overflow-wrap:anywhere;color:#fff}
+.j11-metric span{font-size:11px;line-height:1.45;color:#b3c8ce}
+.j11-panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.j11-panels article{padding:20px;background:#10212d;border:1px solid #36515e;min-width:0}
+.j11-panels h3{font-size:18px;color:#fff;margin:12px 0}
+.j11-panels p,.j11-panels li{font-size:12px;line-height:1.6;color:#c6d3d8}
+.j11-panels ul{padding-left:18px}
+.j11-panels button{background:#b9f13b;border:0;color:#172a10;padding:11px 14px;font-weight:900;cursor:pointer}
+.j11-dashboard footer{margin-top:16px;font-size:11px;color:#a7bdc5}
+@media(max-width:920px){.j11-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.j11-panels{grid-template-columns:1fr}}
+@media(max-width:520px){.j11-metrics{grid-template-columns:1fr}}
