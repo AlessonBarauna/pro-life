@@ -8732,7 +8732,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       if (!played || played.date !== state.day) { toast("A partida não pôde ser localizada no calendário deste dia."); return; }
       const home = next.national ? { name:played.homeName || "Brasil" } : D.club(state, played.home);
       const away = next.national ? { name:played.awayName || next.opponent } : D.club(state, played.away);
-      window.ProLifeLiveMatch.start({ match: played, home, away });
+      window.ProLifeLiveMatch.start({ match: played, home, away, mode: state.mode });
       return;
     }
     if (b.dataset.cuView !== undefined) { const l = document.getElementById("cu-list"); if (l) l.hidden = !l.hidden; return; }
