@@ -22,6 +22,8 @@ const files = [
   "src/domain/squad.js",
   "src/domain/coach-match-rating.js",
   "src/domain/coach-scouting-v2.js",
+  "src/domain/competition-zones-v2.js",
+  "src/ui/competition-zones-v2.css",
   "src/ui/coach-match-center-v2.js",
   "src/ui/coach-match-center-v2.css",
   "src/domain/player-positions.js",
