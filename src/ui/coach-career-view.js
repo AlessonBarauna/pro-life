@@ -212,19 +212,19 @@
         const identity='<div class="cc-deal-player"><strong>'+esc(p.name||"Atleta")+'</strong><small>'+esc([p.pos||p.position,Number.isFinite(Number(overall))?"GER "+Math.round(Number(overall)):null,p.age?"Idade "+p.age:null].filter(Boolean).join(" · "))+'</small></div>';
         const origin='<div class="cc-deal-team">'+(free?"":root.ProLifeClubCrests?.render?.(cl.id,{size:"sm"})||"")+'<span>'+esc(free?"Sem clube":cl.name||cl.id)+'</span></div>';
         const inquiry=(c.inquiries||[]).find(x=>x.playerId===p.id&&x.clubId===cl.id&&x.buyerClubId===s.clubId);
-        const inquiryReady=inquiry?.status==="accepted"&&Number(s.day)<=Number(inquiry.expiresDay);
+        const inquiryReady=["accepted","asking_price"].includes(inquiry?.status)&&Number(s.day)<=Number(inquiry.expiresDay);
         const inquiryPending=inquiry?.status==="pending";
         const inquiryRejected=inquiry?.status==="rejected";
         const inquiryStatus=inquiryPending?"Sondagem enviada · resposta prevista em "+careerDate(s,inquiry.responseDay):
-          inquiryReady?"Sondagem aceita · interesse "+({high:"alto",medium:"médio",low:"baixo"}[inquiry.interest]||"confirmado"):
+          inquiryReady?(inquiry.status==="asking_price"?"Clube exige proposta financeira":"Sondagem aceita") +" · interesse "+({high:"alto",medium:"médio",low:"baixo"}[inquiry.interest]||"confirmado"):
           inquiryRejected?"Sondagem recusada · "+(inquiry.playerDecision==="rejected"?"jogador sem interesse":"clube não autoriza"):"";
         const inquiryExplanation=inquiry&&!inquiryPending?
           '<small class="cc-status">Interesse do jogador: '+esc(inquiry.playerInterest??"—")+'/100 · disposição do clube: '+esc(inquiry.clubInterest??"—")+'/100'+
           (Array.isArray(inquiry.reasons)&&inquiry.reasons.length?' · '+esc(inquiry.reasons.slice(0,2).join("; ")):'')+'</small>':"";
         const inquiryFeedback=inquiry&&!inquiryPending?
-          '<div class="cc-inquiry-feedback" role="status"><strong>'+esc(inquiryReady?"Sondagem aceita":inquiryRejected?"Sondagem recusada":"Sondagem expirada")+'</strong>'+
+          '<div class="cc-inquiry-feedback" role="status"><strong>'+esc(inquiryReady?(inquiry.status==="asking_price"?"Clube exige proposta financeira":"Sondagem aceita"):inquiryRejected?"Sondagem recusada":"Sondagem expirada")+'</strong>'+
           '<span>Jogador: '+esc(inquiry.playerDecision==="accepted"?"Aceitou conversar":inquiry.playerDecision==="rejected"?"Sem interesse":"Sem avaliação registrada")+
-          ' · Clube: '+esc(inquiry.clubDecision==="accepted"?"Autorizou negociar":inquiry.clubDecision==="rejected"?"Recusou negociar":"Sem avaliação registrada")+'</span>'+
+          ' · Clube: '+esc(inquiry.clubDecision==="accepted"?"Autorizou negociar":inquiry.clubDecision==="asking_price"?"Exige proposta financeira":inquiry.clubDecision==="rejected"?"Recusou negociar":"Sem avaliação registrada")+'</span>'+
           inquiryExplanation+
           (inquiry.answeredDay!=null?'<small>Resposta recebida em '+careerDate(s,inquiry.answeredDay)+'</small>':'')+'</div>':"";
         const nextInquiryDay=inquiryRejected?Number(inquiry.answeredDay??inquiry.responseDay)+14:null;
