@@ -338,3 +338,20 @@ test("Coach profile uses manager-specific panels without player number or attrib
  assert.ok(app.slice(playerStart).includes('id="shirt-number"'),"player number editor is preserved");
  assert.ok(coach.includes('appearanceFields(p.appearance)'),"manager appearance remains editable");
 });
+
+test("Coach profile tabs render independently and do not alter player profile",()=>{
+ const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+ const start=app.indexOf('// FC27 manager profile:');
+ const end=app.indexOf('if (state.mode === "player") {\n        const P = window.ProLifePlayerProfile.init',start);
+ assert.ok(start>0&&end>start);
+ const coach=app.slice(start,end);
+ for(const tab of ["resumo","desempenho","trajetoria","conquistas","identidade"]){
+   assert.ok(coach.includes('data-coach-profile-tab="'+tab+'"'));
+   assert.ok(coach.includes('coachProfileTab==="'+tab+'"'));
+ }
+ assert.match(app,/coachProfileTab = next;\s*render\(\);/);
+ assert.match(app,/state\?\.mode === "coach" && page === "profile"/);
+ assert.match(coach,/coachProfileTab==="identidade"\?section/);
+ assert.match(coach,/coachProfileTab==="resumo"\?`<div/);
+ assert.ok(app.slice(end).includes('id="shirt-number"'));
+});
