@@ -82,3 +82,6 @@
 /* E04 - formation picker, visible in coach lineup */
 .pl-squad-screen .pl-squad-pitch-head select[data-coach-formation]{appearance:auto;background:#142b34;border:1px solid var(--pl-accent);color:var(--pl-accent);border-radius:7px;padding:6px 10px;font-size:15px;font-weight:800;cursor:pointer}
 .pl-squad-screen .pl-squad-pitch-head select[data-coach-formation]:focus-visible{outline:2px solid var(--pl-accent);outline-offset:3px}
+
+/* E04 completion: positional compatibility notice under the pitch */
+.pl-squad-screen .pl-squad-fit-note{margin:0;padding:9px 12px;border:1px solid rgba(201,244,61,.2);background:rgba(9,27,29,.86);color:var(--pl-text-3);font-size:11px}
