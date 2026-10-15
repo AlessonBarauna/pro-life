@@ -11,7 +11,7 @@ function harness(){
 const fixture={match:{events:[],shots:[2,4],xg:[.4,.8]},home:{name:"Casa",roster:[{ovr:80}]},away:{name:"Fora",roster:[{ovr:68}]}};
 test("coach-only tactical lab is explicitly labelled independent",()=>{
  const h=harness();h.context.ProLifeLiveMatch.start({...fixture,mode:"coach"});h.click({liveTab:"taticas"});
- assert.match(h.view(),/LABORATORIO TATICO/);assert.match(h.view(),/Nenhuma decisao altera esta partida oficial/);
+ assert.match(h.view(),/LABORATORIO TATICO/);assert.match(h.view(),/não alteram o placar oficial nem o save/);
 });
 test("experimental tactics and substitutions change only lab, not official match",()=>{
  const h=harness();let original=JSON.stringify(fixture.match);
