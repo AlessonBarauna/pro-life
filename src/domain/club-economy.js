@@ -68,7 +68,19 @@
       salaryBudgetGap:salaryBudget===null?null:Math.max(0,payroll-salaryBudget),
       revenueConfigured:valid.length>0,readOnly:true};
   }
-  const api={estimate,scenarios,compare,calibration,fundingSnapshot,VERSION:"m04.6"};
+  // M04.7: hypothetical annual media/sponsorship projection; NOT contracted income.
+  function revenueProjection(club){
+    const structure=Math.max(30,Math.min(100,Number(club?.structure??club?.strength??club?.reputation??60)||60));
+    const league=String(club?.leagueId||"").toLowerCase();
+    const tier=league==="seriea"?1:league==="serieb"?.46:league==="seriec"?.18:league==="seried"?.07:.5;
+    const scale=Math.pow(structure/70,2.4);
+    const sponsorshipAnnual=Math.round(12000000*tier*scale/100000)*100000;
+    const broadcastAnnual=Math.round(30000000*tier*scale/100000)*100000;
+    return {clubId:String(club?.id||""),leagueId:String(club?.leagueId||""),
+      sponsorshipAnnual,broadcastAnnual,totalAnnual:sponsorshipAnnual+broadcastAnnual,
+      status:"simulation_only",recognizedRevenue:0,readOnly:true};
+  }
+  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,VERSION:"m04.7"};
   root.ProLifeClubEconomy=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
