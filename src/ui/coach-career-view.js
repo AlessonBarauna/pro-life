@@ -387,7 +387,16 @@
       '<p><b>Necessidade ainda não financiada:</b> '+esc(money(financeGap))+'/mês</p>'+
       fundingDetails+
       '<p class="cc-note">Somente receitas cadastradas e ativas são consideradas. Ausência de cadastro não significa receita real igual a zero. Não inclui patrocínios, bilheteria ou premiações ainda não implementados. Nenhuma receita ou despesa foi lançada.</p></section>';
-    const projectedIncome=root.ProLifeClubEconomy?.revenueProjection?.(own);
+    // Display the forecast even when an older browser session has cached the economy module.
+    const projectedIncome=root.ProLifeClubEconomy?.revenueProjection?.(own)||(()=>{
+      const strength=Math.max(30,Math.min(100,Number(own?.structure??own?.strength??own?.reputation??60)||60));
+      const league=String(own?.leagueId||"").toLowerCase();
+      const tier=league==="seriea"?1:league==="serieb"?.46:league==="seriec"?.18:league==="seried"?.07:.5;
+      const scale=Math.pow(strength/70,2.4);
+      const sponsorshipAnnual=Math.round(12000000*tier*scale/100000)*100000;
+      const broadcastAnnual=Math.round(30000000*tier*scale/100000)*100000;
+      return {sponsorshipAnnual,broadcastAnnual,totalAnnual:sponsorshipAnnual+broadcastAnnual};
+    })();
     const futureRevenuePanel=projectedIncome?'<section class="cc-card" aria-label="Estimativa de patrocinios e transmissoes"><h4>Receitas potenciais — simulação</h4>'+
       '<p><b>Patrocínios anuais estimados:</b> '+esc(money(projectedIncome.sponsorshipAnnual))+
       ' · <b>Transmissão anual estimada:</b> '+esc(money(projectedIncome.broadcastAnnual))+'</p>'+
