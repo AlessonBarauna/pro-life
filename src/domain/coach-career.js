@@ -66,6 +66,24 @@
       }
     }
   }
+  function positionCoverage(s){
+    const catalog=root.ProLifeFC27Positions?.alt||{};
+    const report={total:0,verified:0,suggested:0,unmatched:0,byPosition:{}};
+    for(const club of (s?.clubs||[]))for(const p of (club.roster||[])){
+      if(!p?.id)continue;
+      report.total++;
+      const position=normalizePos(p.pos||p.position)||"UNKNOWN";
+      const row=report.byPosition[position]||={total:0,verified:0,suggested:0,unmatched:0};
+      row.total++;
+      const key=String(p.eaId??(String(p.id).match(/^real_(\\d+)$/)?.[1]||""));
+      const hasSource=Object.prototype.hasOwnProperty.call(catalog,key);
+      const verified=hasSource||p.secondaryPositionsSource==="ea_fc27"||p.secondaryPositionsSource==="verified";
+      const suggested=!verified&&p.secondaryPositionsSource==="suggested";
+      const type=verified?"verified":suggested?"suggested":"unmatched";
+      report[type]++;row[type]++;
+    }
+    return report;
+  }
   function state(s){
     if(!isCoach(s))return null;
     let c=s.coachCareer;
@@ -294,7 +312,7 @@
       focus:c.focus,foci:FOCI,stints:c.stints,totals,license:s.license,reputation:s.reputation};
   }
 
-  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf};
+  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
