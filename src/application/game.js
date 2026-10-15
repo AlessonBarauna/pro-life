@@ -309,7 +309,15 @@ case "tactic": {
           throw Error("Jogador indisponível.");
         let fee = valuation(p);
         if(rules?.marketStrictness==="strict")fee=Math.ceil(fee*1.25/1000)*1000;
-        const plan=rules?.installments==="on"&&data.paymentPlan==="split"?"split":"upfront";
+        const isLoan=data.dealType==="loan";
+        if(isLoan && rules?.loans!=="on")throw Error("Empréstimos não estão habilitados nesta carreira.");
+        const duration=Number(data.loanDays||180);
+        if(isLoan&&![180,365].includes(duration))throw Error("Prazo de empréstimo inválido.");
+        const sellOn=Number(data.sellOn||0);
+        if(!isLoan&&![0,10,20].includes(sellOn))throw Error("Cláusula de revenda inválida.");
+        if(isLoan && (s.coachCareer?.loans||[]).some(l=>l.playerId===p.id&&!l.returned))throw Error("O atleta já está emprestado.");
+        const plan=rules?.installments==="on"&&data.paymentPlan==="split"&&!isLoan?"split":"upfront";
+        if(isLoan)fee=Math.ceil(fee*0.08*(duration/180)/1000)*1000;
         const due=plan==="split"?Math.floor(fee/2):0,upfront=fee-due;
         if (own.budget < upfront) throw Error("Orçamento insuficiente para a entrada.");
         // The deferred half becomes a persistent financial obligation, not free money.
@@ -327,11 +335,18 @@ case "tactic": {
         source.roster = source.roster.filter((x) => x.id !== p.id);
         source.lineup = source.lineup.filter((id) => id !== p.id);
         own.roster.push(p);
+        if(isLoan){
+          s.coachCareer.loans ||= [];
+          s.coachCareer.loans.push({id:"loan_"+s.season+"_"+s.day+"_"+p.id,playerId:p.id,fromClubId:source.id,toClubId:own.id,startDay:Number(s.day)||0,dueDay:(Number(s.day)||0)+duration,fee,returned:false});
+        }else if(sellOn){
+          s.coachCareer.sellOnClauses ||= [];
+          s.coachCareer.sellOnClauses.push({playerId:p.id,buyerClubId:own.id,sellerClubId:source.id,percentage:sellOn,active:true});
+        }
         D.Career.transfer(s, p, source, own, fee);
         s.news.unshift({
           day: s.day,
           season: s.season,
-          title: "Reforço contratado",
+          title: isLoan ? "Jogador contratado por empréstimo" : "Reforço contratado",
           body:
             p.name +
             " foi contratado por R$ " +
