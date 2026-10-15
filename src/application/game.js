@@ -326,6 +326,8 @@ case "tactic": {
       }
       case "toggleCoachShortlist": {
         if(s.mode!=="coach"||!s.clubId)throw Error("Disponível somente ao treinador com clube.");
+        const current=s.coachCareer?.shortlist?.findIndex(x=>x.clubId===data.clubId&&x.playerId===data.playerId)??-1;
+        if(s.mode==="coach"&&current>=0){s.coachCareer.shortlist.splice(current,1);break;}
         const own=D.club(s),seller=D.club(s,data.clubId);
         const player=seller?.roster?.find(p=>p.id===data.playerId)||D.GlobalFootball?.playersByClub?.(s,seller?.id)?.find(p=>p.id===data.playerId);
         if(!own||!seller||seller.id===own.id||!player||player.id==="hero")throw Error("Jogador indisponível.");
