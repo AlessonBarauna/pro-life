@@ -8155,7 +8155,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         ["Início do ano", "01/01 a 28/02"], ["Meio do ano", "01/07 a 31/08"], ["Final do ano", "15/11 a 31/12"],
       ].map(([name, dates]) => `<div class="window-card ${w.name === name ? "open" : ""}"><small>${name}</small><h3>${dates}</h3><b>${w.name === name ? "ABERTA" : ""}</b></div>`).join("")}</div><p class="${w.open ? "good" : "bad"}">${esc(w.name)} · ${w.open ? w.remaining + " dias restantes" : "Próxima abertura em " + w.remaining + " dias"}</p><p class="chart-note">O mercado registra negociações simuladas entre os clubes conforme orçamento, nível do atleta e carências do elenco.</p></section>${worldMarketPanel}${
         state.mode === "coach" && c
-          ? `<section class="card section"><h2>Scouting e contratação</h2><p>Orçamento do clube: <b>${money(c.budget)}</b></p><p class="muted">Valores estimados por nível e idade. Atletas muito acima da estrutura podem recusar; clubes preservam o elenco mínimo.</p><div class="tablewrap"><table><thead><tr><th>Atleta</th><th>Clube</th><th>Pos.</th><th>Idade</th><th>Nível</th><th>Preço</th><th></th></tr></thead><tbody>${state.clubs.filter((x) => x.id !== c.id).flatMap((x) => x.roster.filter((p) => p.pos !== "GOL").slice().sort((a, b) => D.overall(b) - D.overall(a)).slice(0, 3).map((p) => `<tr><td>${esc(p.name)}</td><td>${esc(x.name)}</td><td>${p.pos}</td><td>${p.age}</td><td>${D.overall(p)}</td><td>${money(A.valuation(p))}</td><td><button data-recruit="${p.id}" data-source="${x.id}" ${w.open ? "" : "disabled"}>Contratar</button></td></tr>`)).join("")}</tbody></table></div></section>`
+          ? `<section class="card section"><h2>Scouting e contratação</h2><p>Orçamento do clube: <b>${money(c.budget)}</b></p><p class="muted">Valores estimados por nível e idade. Atletas muito acima da estrutura podem recusar; clubes preservam o elenco mínimo.</p><div class="tablewrap"><table><thead><tr><th>Atleta</th><th>Clube</th><th>Pos.</th><th>Idade</th><th>Nível</th><th>Preço</th><th></th></tr></thead><tbody>${state.clubs.filter((x) => x.id !== c.id).flatMap((x) => x.roster.filter((p) => p.pos !== "GOL").slice().sort((a, b) => D.overall(b) - D.overall(a)).slice(0, 3).map((p) => `<tr><td>${esc(p.name)}</td><td>${esc(x.name)}</td><td>${p.pos}</td><td>${p.age}</td><td>${D.overall(p)}</td><td>${money(A.valuation(p))}</td><td>${state.mode==="coach" && state.coachCareer?.settings?.installments==="on"?`<select data-recruit-plan="${p.id}" aria-label="Pagamento da contratação"><option value="upfront">À vista</option><option value="split">50% agora · 50% em 180 dias</option></select>`:""}<button data-recruit="${p.id}" data-source="${x.id}" ${w.open ? "" : "disabled"}>Contratar</button></td></tr>`)).join("")}</tbody></table></div></section>`
           : ""
       }`;
     },
@@ -8714,6 +8714,7 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
       command("recruit", {
         clubId: b.dataset.source,
         playerId: b.dataset.recruit,
+        paymentPlan: document.querySelector(`[data-recruit-plan="${b.dataset.recruit}"]`)?.value || "upfront",
       });
       return;
     }
