@@ -85,3 +85,8 @@
 
 /* E04 completion: positional compatibility notice under the pitch */
 .pl-squad-screen .pl-squad-fit-note{margin:0;padding:9px 12px;border:1px solid rgba(201,244,61,.2);background:rgba(9,27,29,.86);color:var(--pl-text-3);font-size:11px}
+
+/* E04: visibly distinguish native position from assigned tactical slot. */
+.pl-squad-screen .pl-squad-player.out-of-position{border:2px solid #f1b35b;background:linear-gradient(145deg,rgba(72,45,27,.95),rgba(19,22,27,.97))}
+.pl-squad-screen .pl-squad-improvised{display:block;color:#ffd18d;font-size:7px;font-weight:900;line-height:1.1;white-space:normal}
+.pl-squad-screen .pl-squad-fit-note{color:#efcf9c;line-height:1.5;overflow-wrap:anywhere}
