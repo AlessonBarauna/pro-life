@@ -217,6 +217,7 @@ case "tactic": {
         s.coachCareer||={version:1};
         s.coachCareer.teamTactics={style,pressing,buildup,width,depth};
         club.tactic=style;
+        club.coachTactics={style,pressing,buildup,width,depth};
         break;
       }
       case "coachPlayerRole": {
