@@ -21,16 +21,16 @@
     const line=preview?.lineups?.[session.labSide];
     if(!line||!line.starters.length||!line.bench.length)return '<p class="lm-mc-note">Elenco com reservas indisponivel para troca nominal.</p>';
     const option=id=>{const p=roster.find(x=>String(x.id)===id);return '<option value="'+esc(id)+'">'+esc(p?.name||id)+' · GER '+esc(p?.ovr??p?.overall??"—")+'</option>';};
-    return '<div class="lm-mc-swap"><label>Sai <select data-live-lab-out>'+line.starters.map(option).join("")+'</select></label>'+
-      '<label>Entra <select data-live-lab-in>'+line.bench.map(option).join("")+'</select></label>'+
-      '<button type="button" data-live-lab-swap>Confirmar troca experimental</button></div>';
+    return '<div class="lm-mc-swap"><h4>SUBSTITUIÇÕES · PRÉVIA TÁTICA</h4><label>Jogador que sai <select data-live-lab-out>'+line.starters.map(option).join("")+'</select></label>'+
+      '<label>Reserva que entra <select data-live-lab-in>'+line.bench.map(option).join("")+'</select></label>'+
+      '<button type="button" data-live-lab-swap>Confirmar substituição na prévia</button></div>';
   }
   function laboratory(){
     if(!session?.coach||!root.ProLifeCoachMatchLabV2)return "";
     const lab=root.ProLifeCoachMatchLabV2,preview=session.lab;
     const status=preview?lab.summary(preview):null;
     return '<section class="lm-mc-lab"><h3>LABORATORIO TATICO - EXPERIMENTAL</h3>'+
-      '<p class="lm-mc-note">Simulacao independente. Nenhuma decisao altera esta partida oficial ou o save.</p>'+
+      '<p class="lm-mc-note">Substituições e instruções são testadas numa prévia independente: não alteram o placar oficial nem o save.</p>'+
       (!preview?'<button type="button" data-live-lab-start>Iniciar simulacao paralela</button>':
       '<p class="lm-mc-note">Minuto '+esc(status.minute)+' · Placar hipotetico '+esc(status.score.join(" - "))+' · Chutes '+esc(status.shots.join(" - "))+' · Substituicoes '+esc(status.substitutions[session.labSide])+'/5</p>'+
       '<label>Equipe <select data-live-lab-side><option value="0"'+(session.labSide===0?' selected':'')+'>'+esc(session.home?.name||"Mandante")+'</option><option value="1"'+(session.labSide===1?' selected':'')+'>'+esc(session.away?.name||"Visitante")+'</option></select></label>'+
@@ -61,7 +61,7 @@
       }
       if(b.dataset.liveLabTactic){lab.decision(session.lab,{side:session.labSide,tactic:b.dataset.liveLabTactic});paint();return;}
     }
-    if(b.hasAttribute("data-live-pause")&&session.coach){session.paused=!session.paused;paint();return;}if(b.dataset.liveTab&&session.coach){session.tab=b.dataset.liveTab;paint();return;}if(b.dataset.liveSpeed){session.speed=Number(b.dataset.liveSpeed);paint();return;}if(b.hasAttribute("data-live-finish")){session.minute=94;clearInterval(timer);timer=null;paint();return;}if(b.hasAttribute("data-live-close")&&session.minute>=94)close();});
+    if(b.hasAttribute("data-live-pause")&&session.coach){session.paused=!session.paused;paint();return;}if(b.dataset.liveTab&&session.coach){session.tab=b.dataset.liveTab;if(session.tab==="taticas"&&!session.lab&&root.ProLifeCoachMatchLabV2){session.lab=root.ProLifeCoachMatchLabV2.createPreview(session.home,session.away,1);session.labSide=0;}paint();return;}if(b.dataset.liveSpeed){session.speed=Number(b.dataset.liveSpeed);paint();return;}if(b.hasAttribute("data-live-finish")){session.minute=94;clearInterval(timer);timer=null;paint();return;}if(b.hasAttribute("data-live-close")&&session.minute>=94)close();});
   if(typeof document!=="undefined") document.addEventListener("change",e=>{if(!session?.coach||!session.lab||!e.target?.matches?.("[data-live-lab-side]"))return;session.labSide=e.target.value==="1"?1:0;paint();});
   const API={start,close,scoreAt};if(typeof module!=="undefined"&&module.exports)module.exports=API;root.ProLifeLiveMatch=API;
 })(typeof globalThis!=="undefined"?globalThis:this);
