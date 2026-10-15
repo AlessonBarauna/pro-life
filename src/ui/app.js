@@ -2189,7 +2189,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const coachRelation=managerPanel+coachRelationBody;
       const autoSelection=sq?.selection||(D.Squad?.choose?D.Squad.choose(state,c):null);
       const coachStarters=coach?c.lineup.map(id=>c.roster.find(p=>p.id===id)).filter(Boolean):[];
-      const selection=coach?{starters:coachStarters,bench:c.roster.filter(p=>!c.lineup.includes(p.id)),assignedPositions:autoSelection?.assignedPositions||null}:autoSelection;
+      const selection=coach?{starters:coachStarters,bench:c.roster.filter(p=>!c.lineup.includes(p.id)),assignedPositions:null}:autoSelection;
       const status=(p)=>selection?.starters.includes(p)?"Titular":selection?.bench.includes(p)?"Banco":"Fora";
       const form=(p)=>D.Squad?.formValue?D.Squad.formValue(state,p).toFixed(1):"—";
       const relation = sq ? `<section class="card section"><div class="tag">DISPUTA POR POSIÇÃO</div><div class="split"><div><h2>${esc(state.person.pos)} · ${esc(sq.heroRole)}</h2><p>Minha posição na disputa: <b>${sq.heroRank}º</b> · Confiança do treinador: <b>${Math.round(pc.coachTrust)}/100</b></p></div><span class="pill">${esc(sq.formation)}</span></div><div class="tablewrap"><table><thead><tr><th>#</th><th>Concorrente</th><th>OVR</th><th>Forma</th><th>Condição</th><th>Situação</th></tr></thead><tbody>${sq.rivals.map(r=>`<tr class="${r.id==="hero"?"highlight":""}"><td>${r.rank}</td><td>${esc(r.name)}</td><td>${r.overall}</td><td>${r.form}</td><td>${r.condition}%</td><td>${esc(r.status)}</td></tr>`).join("")}</tbody></table></div><p class="muted">A escalação considera posição, OVR, forma recente, condição, moral e confiança. Status contratual não garante vaga.</p>${pc.matchSelection?`<div class="notice"><b>Última decisão do treinador:</b> ${esc(pc.matchSelection.role)}<br><small>${esc(pc.matchSelection.reason||"")}</small></div>`:""}</section>` : "";
@@ -2212,7 +2212,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       if(coach){
         const saved=state.coachCareer?.pitchSlots;
         const ids=starters.map(p=>p.id);
-        const valid=Array.isArray(saved)&&saved.length===ids.length&&new Set(saved).size===ids.length&&saved.every(id=>ids.includes(id));
+        const valid=state.coachCareer?.pitchFormation===formation&&Array.isArray(saved)&&saved.length===ids.length&&new Set(saved).size===ids.length&&saved.every(id=>ids.includes(id));
         if(valid){
           // All initial players were consumed while constructing rows above.
           // Use the rendered slot count, not the emptied 'remaining' array.
@@ -2225,6 +2225,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         }else if(ids.length===11){
           state.coachCareer ||= {version:1};
           state.coachCareer.pitchSlots=rows.flatMap(row=>row.players.map(p=>p.id));
+          state.coachCareer.pitchFormation=formation;
         }
       }
       if(remaining.length)rows.splice(Math.max(1,rows.length-1),0,{label:"AJUSTE",players:remaining.splice(0)});
@@ -8629,8 +8630,9 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         if(new Set(nextPitch).size===11&&nextPitch.every(id=>chosen.includes(id))){
           state.coachCareer ||= {version:1};
           state.coachCareer.pitchSlots=nextPitch;
-        }else if(state.coachCareer)delete state.coachCareer.pitchSlots;
-      }else if(state.coachCareer)delete state.coachCareer.pitchSlots;
+          state.coachCareer.pitchFormation=club.formation||"4-3-3";
+        }else if(state.coachCareer){delete state.coachCareer.pitchSlots;delete state.coachCareer.pitchFormation;}
+      }else if(state.coachCareer){delete state.coachCareer.pitchSlots;delete state.coachCareer.pitchFormation;}
       persist();squadSelectedId=fromId;render();toast("Posições do XI atualizadas.");
       return true;
     }catch(e){toast(e.message);return false;}
