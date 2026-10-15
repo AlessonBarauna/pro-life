@@ -4,7 +4,7 @@
   // Renderiza a partir de ProLifeCoachCareer.snapshot; os botoes usam data-coach-* e o app.js despacha command().
 
   const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
-  const ui={tab:"central",dealTab:"propostas",selectedDeal:null};
+  const ui={tab:"central",dealTab:"propostas",selectedDeal:null,marketArea:"transferencias",scoutQuery:"",scoutPosition:"all"};
   const TABS=[["central","Central"],["diretoria","Diretoria"],["vestiario","Vestiário"],["treino","Treino coletivo"],["prejogo","Pré-jogo"],["negociacoes","Negociações"],["historico","Histórico"]];
   const STATUS={cumprida:"Cumprida",falhou:"Falhou",em_andamento:"Em andamento"};
 
@@ -126,6 +126,22 @@
   // actions use the existing app command dispatcher and never duplicate market logic.
   function negotiations(s,D){
     const c=s.coachCareer||{};
+    // Market panels are read from the same save used by the existing transfer engine.
+    if(ui.marketArea==="observacao"){
+      const clubs=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])];
+      const needle=ui.scoutQuery.trim().toLocaleLowerCase("pt-BR");
+      const candidates=clubs.filter(cl=>cl.id!==s.clubId && Array.isArray(cl.roster)).flatMap(cl=>cl.roster.map(p=>({p,cl})))
+        .filter(({p})=>p.id!=="hero" && (!needle || String(p.name||"").toLocaleLowerCase("pt-BR").includes(needle))
+          && (ui.scoutPosition==="all" || String(p.pos||p.position||"").toUpperCase().includes(ui.scoutPosition)))
+        .slice(0,40);
+      const shortlist=c.shortlist||[];
+      const rows=candidates.map(({p,cl})=>{
+        const overall=p.overall??p.ovr??D?.overall?.(p);
+        const saved=shortlist.some(x=>x.playerId===p.id&&x.clubId===cl.id);
+        return '<article class="cc-deal"><div class="cc-deal-player"><strong>'+esc(p.name||"Atleta")+'</strong><small>'+esc([p.pos||p.position,Number.isFinite(Number(overall))?"GER "+Math.round(Number(overall)):null,p.age?"Idade "+p.age:null].filter(Boolean).join(" · "))+'</small></div><div class="cc-deal-team">'+(root.ProLifeClubCrests?.render?.(cl.id,{size:"sm"})||"")+'<span>'+esc(cl.name||cl.id)+'</span></div><div class="cc-deal-actions"><button type="button" data-coach-shortlist="'+esc(cl.id)+'" data-coach-player="'+esc(p.id)+'">'+(saved?"Remover da lista":"Adicionar à lista")+'</button><button type="button" data-coach-scout-offer="'+esc(cl.id)+'" data-coach-player="'+esc(p.id)+'">Iniciar negociação</button></div></article>';
+      }).join("");
+      return '<section class="cc-card"><h3>Observação e busca de jogadores</h3><p class="cc-note">Resultados do catálogo dos clubes carregados neste save. Acompanhamento persistido na carreira do treinador.</p><label>Nome do atleta <input data-coach-scout-search placeholder="Buscar jogador..." value="'+esc(ui.scoutQuery)+'"></label><label>Posição <select data-coach-scout-position><option value="all"'+(ui.scoutPosition==="all"?" selected":"")+'>Todas</option>'+["GOL","ZAG","LAT","VOL","MEI","ATA"].map(v=>'<option value="'+v+'"'+(ui.scoutPosition===v?" selected":"")+'>'+v+'</option>').join("")+'</select></label><div class="cc-deal-actions"><button data-coach-scout-apply type="button">Pesquisar</button></div>'+(rows||'<p class="cc-note">Nenhum atleta encontrado.</p>')+'</section>';
+    }
     const money=v=>"R$ "+Math.round(Number(v)||0).toLocaleString("pt-BR");
     const all=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])];
     const club=id=>D?.club?.(s,id)||all.find(x=>x.id===id)||null;
@@ -153,7 +169,7 @@
     const paid=(c.transferDebts||[]).filter(d=>d.paid);
     const finishedLoans=(c.loans||[]).filter(l=>l.returned);
     const transactions=(D?.Career?.init?.(s)?.transfers||[]).filter(x=>x&&x.day!==undefined);
-    const tabs=[["recebidas","Recebidas",sales.length],["propostas","Propostas",pending.length],["emprestimos","Empréstimos",loans.length],["financeiro","Finanças",debts.length],["clausulas","Cláusulas",clauses.length],["historico","Histórico",negotiationHistory.length+paid.length+finishedLoans.length]];
+    const tabs=[["lista","Lista de observação",(c.shortlist||[]).length],["recebidas","Recebidas",sales.length],["propostas","Propostas",pending.length],["emprestimos","Empréstimos",loans.length],["financeiro","Finanças",debts.length],["clausulas","Cláusulas",clauses.length],["historico","Histórico",negotiationHistory.length+paid.length+finishedLoans.length]];
     if(!tabs.some(x=>x[0]===ui.dealTab))ui.dealTab="propostas";
     const wrap=(items,fn,empty)=>items.length?items.map(fn).join(""):'<p class="cc-note">'+esc(empty)+'</p>';
     const selected=pending.find(n=>n.id===ui.selectedDeal)||null;
@@ -176,9 +192,13 @@
       ...finishedLoans.map(l=>({day:l.returnDay??l.purchaseDay??l.dueDay,html:'<div class="cc-deal"><div class="cc-deal-player">'+athlete(l.playerId)+'</div><span>'+(l.purchased?'Compra definitiva':'Empréstimo encerrado')+'</span><small>Dia '+esc(l.returnDay??l.purchaseDay??l.dueDay)+'</small></div>'})),
       ...transactions.slice(0,30).map(t=>({day:t.day,html:'<div class="cc-deal"><span>'+esc(t.player||"Jogador")+' · '+esc(t.from||"Origem")+' → '+esc(t.to||"Destino")+'</span><b>'+esc(money(t.fee))+'</b><small>Dia '+esc(t.day)+'</small></div>'}))
     ].sort((a,b)=>Number(b.day||0)-Number(a.day||0)).slice(0,45).map(x=>x.html).join("")||'<p class="cc-note">Nenhuma movimentação registrada.</p>';
-    const content={recebidas:saleRows,propostas:deals,emprestimos:loanRows,financeiro:debtRows,clausulas:clauseRows,historico:historyRows};
-    const heading={recebidas:"Propostas recebidas pelos seus jogadores",propostas:"Propostas e contrapropostas",emprestimos:"Empréstimos ativos",financeiro:"Obrigações financeiras",clausulas:"Cláusulas de revenda",historico:"Histórico financeiro e de transferências"};
-    return '<div class="cc-strip"><div><b>'+pending.length+'</b><span>Propostas pendentes</span></div><div><b>'+loans.length+'</b><span>Empréstimos ativos</span></div><div><b>'+debts.length+'</b><span>Parcelas a pagar</span></div><div><b>'+clauses.length+'</b><span>Cláusulas de revenda</span></div></div><p class="cc-note">Valores do save atual em BRL · prazos em dias da carreira</p><nav class="cc-deal-nav" aria-label="Categorias de negociações">'+tabs.map(([id,label,count])=>'<button type="button" data-coach-deal-tab="'+id+'" aria-pressed="'+(ui.dealTab===id)+'">'+label+' <small>'+count+'</small></button>').join("")+'</nav><section class="cc-card cc-deal-section"><h3>'+heading[ui.dealTab]+'</h3>'+detail+content[ui.dealTab]+'</section>';
+    const listRows=wrap(c.shortlist||[],x=>{
+      const p=player(x.playerId);
+      return '<article class="cc-deal"><div class="cc-deal-player">'+athlete(x.playerId)+'</div><div>'+team(x.clubId)+'</div><div class="cc-deal-actions"><button type="button" data-coach-scout-offer="'+esc(x.clubId)+'" data-coach-player="'+esc(x.playerId)+'">Negociar contratação</button><button type="button" data-coach-shortlist="'+esc(x.clubId)+'" data-coach-player="'+esc(x.playerId)+'">Remover</button></div></article>';
+    },"Sua lista está vazia. Use Observação para acompanhar jogadores.");
+    const content={lista:listRows,recebidas:saleRows,propostas:deals,emprestimos:loanRows,financeiro:debtRows,clausulas:clauseRows,historico:historyRows};
+    const heading={lista:"Jogadores observados",recebidas:"Propostas recebidas pelos seus jogadores",propostas:"Propostas e contrapropostas",emprestimos:"Empréstimos ativos",financeiro:"Obrigações financeiras",clausulas:"Cláusulas de revenda",historico:"Histórico financeiro e de transferências"};
+    return '<nav class="cc-deal-nav" aria-label="Áreas do mercado"><button type="button" data-coach-market-area="observacao">Observação</button><button type="button" data-coach-market-area="transferencias" aria-current="page">Transferências</button></nav><div class="cc-strip"><div><b>'+pending.length+'</b><span>Propostas pendentes</span></div><div><b>'+loans.length+'</b><span>Empréstimos ativos</span></div><div><b>'+debts.length+'</b><span>Parcelas a pagar</span></div><div><b>'+clauses.length+'</b><span>Cláusulas de revenda</span></div></div><p class="cc-note">Valores do save atual em BRL · prazos em dias da carreira</p><nav class="cc-deal-nav" aria-label="Categorias de negociações">'+tabs.map(([id,label,count])=>'<button type="button" data-coach-deal-tab="'+id+'" aria-pressed="'+(ui.dealTab===id)+'">'+label+' <small>'+count+'</small></button>').join("")+'</nav><section class="cc-card cc-deal-section"><h3>'+heading[ui.dealTab]+'</h3>'+detail+content[ui.dealTab]+'</section>';
   }
 
 
@@ -190,7 +210,7 @@
     return `${css()}<section class="cc-dark"><h2>Carreira do Treinador</h2><small>${esc(sn.club?.name||"Sem clube")} · Temporada ${esc(s.season)} · Nacionalidade: ${esc(s.person?.nationality||"Brasil")} · Reputação ${esc(Math.round(sn.reputation||0))}</small>${tabs()}${body}</section>`;
   }
 
-  const api={render,state:ui,esc,setTab:id=>{if(TABS.some(x=>x[0]===id))ui.tab=id;},setDealTab:id=>{if(["recebidas","propostas","emprestimos","financeiro","clausulas","historico"].includes(id))ui.dealTab=id;},openDeal:id=>{ui.selectedDeal=id;ui.dealTab="propostas";},closeDeal:()=>{ui.selectedDeal=null;}};
+  const api={render,state:ui,esc,setTab:id=>{if(TABS.some(x=>x[0]===id))ui.tab=id;},setDealTab:id=>{if(["lista","recebidas","propostas","emprestimos","financeiro","clausulas","historico"].includes(id))ui.dealTab=id;},openDeal:id=>{ui.selectedDeal=id;ui.dealTab="propostas";},closeDeal:()=>{ui.selectedDeal=null;},setMarketArea:id=>{if(["observacao","transferencias"].includes(id))ui.marketArea=id;},setScoutFilters:(query,pos)=>{ui.scoutQuery=String(query||"").slice(0,80);ui.scoutPosition=["all","GOL","ZAG","LAT","VOL","MEI","ATA"].includes(pos)?pos:"all";}};
   root.ProLifeCoachCareerView=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
