@@ -348,8 +348,9 @@
         (s.clubs||[]).flatMap(x=>x.roster||[]).find(x=>x.id===l.playerId);
       if(!p)return sum;
       const pct=Math.max(0,Math.min(100,Number(l.salaryShare??50)))/100;
-      if(l.toClubId===s.clubId)return sum+loanSalary(p)*pct;
-      if(l.fromClubId===s.clubId)return sum-loanSalary(p)*pct;
+      const inCurrentRoster=payrollPlayers.some(x=>x.id===l.playerId);
+      if(l.toClubId===s.clubId)return sum+loanSalary(p)*(pct-(inCurrentRoster?1:0));
+      if(l.fromClubId===s.clubId)return sum+loanSalary(p)*((1-pct)-(inCurrentRoster?1:0));
       return sum;
     },0);
     const adjustedMonthly=Math.max(0,Math.round(forecastMonthly+loanAdjustment));
