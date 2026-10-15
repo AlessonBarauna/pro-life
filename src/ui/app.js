@@ -8169,7 +8169,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
  const objectives=Career.matchObjectives?.(state)||[];
  const stage=next.stage||next.competitionName||"Próximo jogo";
  return `<section class="pl-j07-stage" aria-label="Pré-jogo"><header class="pl-j07-stage-head"><small>CARREIRA DE JOGADOR · DIA DE JOGO</small><h2>${esc(stage)}</h2><p>${esc(next.competitionName||"Competição")} · ${esc(dayDate(next.date))}</p></header>
- <div class="pl-j07-matchup"><div class="pl-j07-club">${homeId?crest(homeId):""}<strong>${esc(next.home||"Mandante")}</strong><small>CASA</small></div><div class="pl-j07-center"><span>PRÓXIMO CONFRONTO</span><b>VS</b><button class="primary" type="button" data-simulate="nextCommitment">Avançar até próximo jogo</button><button type="button" data-page="lineup">Consultar escalação</button></div><div class="pl-j07-club">${awayId?crest(awayId):""}<strong>${esc(next.away||"Visitante")}</strong><small>FORA</small></div></div>
+ <div class="pl-j07-matchup"><div class="pl-j07-club">${homeId?crest(homeId):""}<strong>${esc(next.home||"Mandante")}</strong><small>CASA</small></div><div class="pl-j07-center"><span>PRÓXIMO CONFRONTO</span><b>VS</b><button class="primary" type="button" data-simulate="nextCommitment">Preparar próximo jogo</button><button class="pl-j07-skip" type="button" data-simulate="nextMatch" ${next.date<=state.day?"disabled":""}>Simular partida · pular jogo</button><button type="button" data-page="lineup">Consultar escalação</button></div><div class="pl-j07-club">${awayId?crest(awayId):""}<strong>${esc(next.away||"Visitante")}</strong><small>FORA</small></div></div>
  <div class="pl-j07-brief"><div><small>SUA SITUAÇÃO</small><strong>${esc(role)}</strong><p>${esc(pc?.matchSelection?.reason||"A comissão técnica define a relação conforme a hierarquia e condição.")}</p></div><div><small>CONDIÇÃO</small><strong>${esc(Math.round(state.person.condition??0))}%</strong><p>Confiança do treinador: ${esc(Math.round(pc?.coachTrust??0))}/100</p></div><div><small>OBJETIVOS</small>${objectives.length?`<ul>${objectives.map(o=>`<li>${esc(o.label)}</li>`).join("")}</ul>`:"<p>Nenhum objetivo registrado.</p>"}</div></div><p class="pl-j07-note">O avanço usa a simulação existente. A participação e os minutos dependem da escalação definida pelo motor.</p></section>`;
 })(state,D,Career,Calendar,esc,dayDate);
       const signed = (value) => `${Number(value || 0) >= 0 ? "+" : ""}${Number(value || 0).toFixed(1)}`;
@@ -8672,6 +8672,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     }
     if (b.dataset.simulate) {
       const mode = b.dataset.simulate;
+      if (mode === "nextMatch" && !confirm("Simular o próximo jogo e avançar a carreira? O placar e as estatísticas serão definidos pelo motor do PRO-LIFE. Esta ação altera o save.")) return;
       if (mode === "season" && !confirm("Simular até o fim da temporada? Decisões cotidianas serão resolvidas conforme o perfil do jogador. Propostas e negociações contratuais sempre interromperão a simulação para sua autorização.")) return;
       const runSim = (fn) => (window.ProLifeShellExtras ? window.ProLifeShellExtras.run(mode === "season" ? "Simulando a temporada…" : "Simulando…", fn) : fn());
       runSim(() => { try {
