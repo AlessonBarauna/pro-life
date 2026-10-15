@@ -340,9 +340,26 @@
     const registeredMonthly=knownSalaries.reduce((total,p)=>total+Number(p.salary),0);
     const estimatedMonthly=missingSalaries.reduce((total,p)=>total+(Number(root.ProLifeApp?.minimumMarketSalaryMonthly?.(p))||0),0);
     const forecastMonthly=registeredMonthly+estimatedMonthly;
+    // M03.8: loan split affects forecasts only; budget remains independent.
+    const activePayrollLoans=(c.loans||[]).filter(l=>!l.returned);
+    const loanSalary=p=>hasWage(p)?Number(p.salary):(Number(root.ProLifeApp?.minimumMarketSalaryMonthly?.(p))||0);
+    const loanAdjustment=activePayrollLoans.reduce((sum,l)=>{
+      const p=payrollPlayers.find(x=>x.id===l.playerId)||
+        (s.clubs||[]).flatMap(x=>x.roster||[]).find(x=>x.id===l.playerId);
+      if(!p)return sum;
+      const pct=Math.max(0,Math.min(100,Number(l.salaryShare??50)))/100;
+      if(l.toClubId===s.clubId)return sum+loanSalary(p)*pct;
+      if(l.fromClubId===s.clubId)return sum-loanSalary(p)*pct;
+      return sum;
+    },0);
+    const adjustedMonthly=Math.max(0,Math.round(forecastMonthly+loanAdjustment));
+    const transferBudget=Number(own?.budget);
+    const wageBudgetProjection={monthly:adjustedMonthly,annual:adjustedMonthly*12,loanAdjustment:Math.round(loanAdjustment),transferBudget};
     const payrollPanel='<section class="cc-card" aria-label="Projeção da folha salarial"><h4>Projeção da folha salarial</h4>'+
       '<p><b>Salários registrados:</b> '+esc(money(registeredMonthly))+'/mês · <b>Estimativas sem contrato:</b> '+esc(money(estimatedMonthly))+'/mês</p>'+
       '<p><b>Folha mensal projetada:</b> '+esc(money(forecastMonthly))+' · <b>Folha anual projetada:</b> '+esc(money(forecastMonthly*12))+'</p>'+
+      '<p><b>Projeção com rateio de empréstimos:</b> '+esc(money(wageBudgetProjection.monthly))+'/mês · <b>Anual:</b> '+esc(money(wageBudgetProjection.annual))+'</p>'+ 
+      '<p class="cc-note">Orçamento de transferências: '+esc(money(wageBudgetProjection.transferBudget))+' · Ajuste líquido de empréstimos: '+esc(money(wageBudgetProjection.loanAdjustment))+'/mês. Orçamento salarial informativo e separado; nenhuma movimentação financeira.</p>'+ 
       '<p class="cc-note">Contratos registrados: '+esc(knownSalaries.length)+' · Salários estimados: '+esc(missingSalaries.length)+
       '. Estimativas calculadas por GER, idade e potencial, não representam salário acordado. Nenhum contrato, save ou orçamento é alterado; empréstimos ainda exigem rateio salarial.</p></section>';
     const payrollForecastEntries=(c.payrollForecast?.clubId===s.clubId?c.payrollForecast.entries:[])||[];
