@@ -138,9 +138,16 @@ function recordLeagueMatch(s,m){
   if(m.date==null||m.home==null||m.away==null)return q;
   const id=[m.season,m.date,m.competitionId||m.leagueId||"",m.round??"",m.home,m.away].join(":");
   if((q.processed||[]).includes(id))return q;
-  const participated=playerId=>Number(m.participation?.[playerId]?.minutes||0)>0||Number.isFinite(Number(m.ratings?.[playerId]));
-  const hero=participated(q.playerId)&&Number(q.heroGames??q.progress)<q.targetMatches;
-  const rival=participated(q.rivalId)&&Number(q.rivalGames??q.progress)<q.targetMatches;
+  // Never treat absent ratings as zero: Number(undefined/null) is not proof of play.
+  const playedFor=(playerId,clubId)=>{
+    if(String(m.home)!==String(clubId)&&String(m.away)!==String(clubId))return false;
+    const minutes=m.participation?.[playerId]?.minutes;
+    const rating=m.ratings?.[playerId];
+    return (minutes!=null&&Number.isFinite(Number(minutes))&&Number(minutes)>0)
+      ||(rating!=null&&rating!==""&&Number.isFinite(Number(rating)));
+  };
+  const hero=playedFor(q.playerId,s.clubId)&&Number(q.heroGames??q.progress)<q.targetMatches;
+  const rival=playedFor(q.rivalId,q.rivalClubId)&&Number(q.rivalGames??q.progress)<q.targetMatches;
   if(!hero&&!rival)return q;
   const objective=OBJECTIVES[q.objectiveId];
   if(!objective)return q;
@@ -151,11 +158,11 @@ function recordLeagueMatch(s,m){
     }
     return (m.events||[]).filter(e=>e.type==="goal"&&String(e[objective.field==="assists"?"assistPlayerId":"playerId"])===String(playerId)).length;
   };
-  const side=id=>String(m.home)===String((s.clubs||[]).find(c=>(c.roster||[]).some(p=>String(p.id)===String(id)))?.id)?0:1;
+  const side=clubId=>String(m.home)===String(clubId)?0:1;
   q.processed=[...(q.processed||[]),id].slice(-500);
   q.heroGames=Number(q.heroGames??q.progress)+(hero?1:0);
   q.rivalGames=Number(q.rivalGames??q.progress)+(rival?1:0);
-  const heroValue=hero?value(q.playerId,side(q.playerId)):0,rivalValue=rival?value(q.rivalId,side(q.rivalId)):0;
+  const heroValue=hero?value(q.playerId,side(s.clubId)):0,rivalValue=rival?value(q.rivalId,side(q.rivalClubId)):0;
   q.hero+=heroValue;q.rival+=rivalValue;
   q.progress=Math.min(q.heroGames,q.rivalGames);
   if(objective.kind==="firstAchievement"&&(heroValue>=objective.threshold||rivalValue>=objective.threshold))
