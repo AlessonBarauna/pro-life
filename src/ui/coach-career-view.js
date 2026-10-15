@@ -222,7 +222,15 @@
     return `${css()}<section class="cc-dark"><h2>Carreira do Treinador</h2><small>${esc(sn.club?.name||"Sem clube")} · Temporada ${esc(s.season)} · Nacionalidade: ${esc(s.person?.nationality||"Brasil")} · Reputação ${esc(Math.round(sn.reputation||0))}</small>${tabs()}${body}</section>`;
   }
 
-  const api={render,state:ui,esc,setTab:id=>{if(TABS.some(x=>x[0]===id))ui.tab=id;},setDealTab:id=>{if(["lista","recebidas","propostas","emprestimos","financeiro","clausulas","historico"].includes(id))ui.dealTab=id;},openDeal:id=>{ui.selectedDeal=id;ui.dealTab="propostas";},closeDeal:()=>{ui.selectedDeal=null;},setMarketArea:id=>{if(["observacao","transferencias"].includes(id))ui.marketArea=id;},setScoutFilters:(query,pos)=>{ui.scoutQuery=String(query||"").slice(0,80);ui.scoutPosition=["all","GOL","ZAG","LAT","VOL","MEI","ATA"].includes(pos)?pos:"all";}};
+  function renderMarket(s,D){
+    if(s?.mode!=="coach")return '<section class="card"><h2>Transferências</h2><p class="muted">Disponível na carreira de treinador.</p></section>';
+    const own=D?.club?.(s,s.clubId);
+    const balance=Number(own?.budget);
+    const budget=Number.isFinite(balance)?"R$ "+Math.round(balance).toLocaleString("pt-BR"):"Não informado";
+    return css()+'<section class="cc-dark cc-market-screen"><div class="cc-market-heading"><small>CENTRAL DE TRANSFERÊNCIAS</small><h2>Mercado de jogadores</h2><p class="cc-note">'+esc(own?.name||"Sem clube")+' · Temporada '+esc(s.season)+' · Orçamento '+esc(budget)+'</p></div>'+negotiations(s,D)+'</section>';
+  }
+
+  const api={render,renderMarket,state:ui,esc,setTab:id=>{if(TABS.some(x=>x[0]===id))ui.tab=id;},setDealTab:id=>{if(["lista","recebidas","propostas","emprestimos","financeiro","clausulas","historico"].includes(id))ui.dealTab=id;},openDeal:id=>{ui.selectedDeal=id;ui.dealTab="propostas";},closeDeal:()=>{ui.selectedDeal=null;},setMarketArea:id=>{if(["observacao","transferencias"].includes(id))ui.marketArea=id;},setScoutFilters:(query,pos)=>{ui.scoutQuery=String(query||"").slice(0,80);ui.scoutPosition=["all","GOL","ZAG","LAT","VOL","MEI","ATA"].includes(pos)?pos:"all";}};
   root.ProLifeCoachCareerView=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
