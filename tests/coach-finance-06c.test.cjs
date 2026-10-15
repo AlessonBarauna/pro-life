@@ -249,3 +249,76 @@ test("Incoming offer rejection survives reload, and transfer UI exposes sale act
  const view=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
  for(const control of ["data-coach-sale-generate","data-coach-sale-accept","data-coach-sale-reject","data-coach-sale-counter"])assert.ok(view.includes(control),control);
 });
+
+
+function saleFixture(windowOpen=true){
+ const root={};root.globalThis=root;
+ root.ProLife={club:(s,id=s.clubId)=>s.clubs.find(c=>c.id===id),overall:p=>p.overall,Career:{windowStatus:()=>({open:windowOpen}),transfer:()=>{}}};
+ vm.runInNewContext(fs.readFileSync(pathModuleForSale(),"utf8"),root,{filename:"game.js"});
+ const roster=Array.from({length:20},(_,i)=>({id:"p"+i,name:"Atleta "+i,age:25,overall:65,pos:"ATA"}));
+ const state={mode:"coach",clubId:"a",day:10,season:2026,news:[],clubs:[
+ {id:"a",name:"Vendedor",budget:500000,roster,lineup:["p0"]},
+ {id:"b",name:"Comprador",budget:3000000,roster:[],lineup:[]},
+ {id:"c",name:"Terceiro",budget:200000,roster:[],lineup:[]}],
+ coachCareer:{settings:{marketStrictness:"normal"},sellOnClauses:[]}};
+ return {root,state};
+}
+function pathModuleForSale(){return path.join(__dirname,"../src/application/game.js");}
+test("Incoming sales: counters persist, cap at three rounds and do not spend before accepting",()=>{
+ const {root,state}=saleFixture();
+ root.ProLifeApp.execute(state,"generateSaleInterest",{});
+ const id=state.coachCareer.saleOffers[0].id, buyerBudget=state.clubs[1].budget;
+ root.ProLifeApp.execute(state,"counterSaleOffer",{id,amount:500000});
+ const reloaded=JSON.parse(JSON.stringify(state));
+ assert.equal(reloaded.coachCareer.saleOffers[0].round,2);
+ assert.equal(reloaded.coachCareer.saleOffers[0].history.length,2);
+ root.ProLifeApp.execute(reloaded,"counterSaleOffer",{id,amount:510000});
+ assert.equal(reloaded.coachCareer.saleOffers[0].round,3);
+ assert.throws(()=>root.ProLifeApp.execute(reloaded,"counterSaleOffer",{id,amount:520000}),/limite de rodadas/);
+ assert.equal(reloaded.clubs[1].budget,buyerBudget);
+});
+test("Incoming sales: buyer cannot be underfunded and duplicate offers have distinct IDs",()=>{
+ const {root,state}=saleFixture();
+ state.clubs[1].budget=1000;state.clubs[2].budget=1000;
+ assert.throws(()=>root.ProLifeApp.execute(state,"generateSaleInterest",{}),/orçamento/);
+ assert.equal(state.coachCareer.saleOffers,undefined);
+ state.clubs[1].budget=3000000;
+ root.ProLifeApp.execute(state,"generateSaleInterest",{});
+ root.ProLifeApp.execute(state,"generateSaleInterest",{});
+ assert.equal(new Set(state.coachCareer.saleOffers.map(o=>o.id)).size,2);
+});
+test("Incoming sales: resale clauses pay beneficiary once, including after reload",()=>{
+ const {root,state}=saleFixture();
+ root.ProLifeApp.execute(state,"generateSaleInterest",{});
+ const offer=state.coachCareer.saleOffers[0];
+ state.coachCareer.sellOnClauses=[{playerId:offer.playerId,buyerClubId:"a",sellerClubId:"c",percentage:20,active:true}];
+ const before=state.clubs.map(c=>c.budget),fee=offer.amount,share=Math.floor(fee*0.2);
+ root.ProLifeApp.execute(state,"acceptSaleOffer",{id:offer.id});
+ assert.equal(state.clubs[0].budget,before[0]+fee-share);
+ assert.equal(state.clubs[1].budget,before[1]-fee);
+ assert.equal(state.clubs[2].budget,before[2]+share);
+ assert.equal(state.coachCareer.sellOnClauses[0].active,false);
+ const reloaded=JSON.parse(JSON.stringify(state));
+ assert.throws(()=>root.ProLifeApp.execute(reloaded,"acceptSaleOffer",{id:offer.id}),/indisponível/);
+ assert.equal(reloaded.clubs[2].budget,before[2]+share);
+});
+test("Incoming sales: closed window and loaned player are blocked without changes",()=>{
+ const closed=saleFixture(false);
+ assert.throws(()=>closed.root.ProLifeApp.execute(closed.state,"generateSaleInterest",{}),/Janela/);
+ const {root,state}=saleFixture();
+ root.ProLifeApp.execute(state,"generateSaleInterest",{});
+ const offer=state.coachCareer.saleOffers[0];
+ state.coachCareer.loans=[{playerId:offer.playerId,returned:false}];
+ const before=JSON.stringify(state.clubs);
+ assert.throws(()=>root.ProLifeApp.execute(state,"acceptSaleOffer",{id:offer.id}),/emprestado/);
+ assert.equal(JSON.stringify(state.clubs),before);
+});
+test("Incoming sales: legacy saves and player career remain isolated",()=>{
+ const {root,state}=saleFixture();
+ delete state.coachCareer.saleOffers;
+ assert.throws(()=>root.ProLifeApp.execute(state,"acceptSaleOffer",{id:"missing"}),/indisponível/);
+ root.ProLifeApp.execute(state,"generateSaleInterest",{});
+ assert.equal(state.coachCareer.saleOffers.length,1);
+ state.mode="player";
+ assert.throws(()=>root.ProLifeApp.execute(state,"acceptSaleOffer",{id:state.coachCareer.saleOffers[0].id}),/Mercado fechado/);
+});
