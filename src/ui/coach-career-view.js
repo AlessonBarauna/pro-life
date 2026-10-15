@@ -273,7 +273,7 @@
     const budget=Number(D?.club?.(s,s.clubId)?.budget);
     const fee=selected?.response==="awaiting_reply"?Number(selected.requested):selected?.finalFee==null?NaN:Number(selected.finalFee);
     const steps=selected?'<div class="cc-market-steps" aria-label="Etapas da negociação"><span>01 · Proposta</span><span>02 · Resposta</span><span>03 · Decisão</span><span>04 · Transferência</span></div>':'';
-    const budgetPreview=selected&&Number.isFinite(budget)&&Number.isFinite(fee)?'<div class="cc-market-budget"><b>Orçamento '+esc(money(budget))+'</b><b>Oferta '+esc(money(fee))+'</b><b>Saldo após taxa e bônus '+esc(money(budget-fee-(selected.contractOffer?.status==="accepted"?Number(selected.contractOffer.bonus)||0:0)))+'</b></div><p class="cc-note">Projeção antes de concluir: não altera o orçamento.</p>':'';
+    const budgetPreview=selected&&Number.isFinite(budget)&&Number.isFinite(fee)?'<div class="cc-market-budget"><b>Orçamento '+esc(money(budget))+'</b><b>Oferta '+esc(money(fee))+'</b><b>Saldo projetado após oferta e bônus '+esc(money(budget-fee-(selected.contractOffer?.status==="accepted"?Number(selected.contractOffer.bonus)||0:0)))+'</b></div><p class="cc-note">Projeção antes de concluir: não altera o orçamento.</p>':'';
     const actionsOpen=selected?.status==="pending"&&selected?.response!=="awaiting_reply"&&Number(s.day)<=Number(selected.expiresDay);
     const offerBase=Math.max(1000,Number(selected?.finalFee>0?selected.finalFee:selected?.requested)||1000);
     const quickOffers=actionsOpen&&selected.response==="counter"&&Number(selected.round||1)<3?'<div class="cc-market-presets"><p class="cc-note">Escolha um valor sugerido e envie sua proposta. O clube responde pelo sistema atual de negociação.</p>'+
