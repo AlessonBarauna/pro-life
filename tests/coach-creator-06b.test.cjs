@@ -349,3 +349,18 @@ test("coach final settings tabs and one-time finance funding use existing club b
  assert.equal(saved.coachCareer.settings.fundingApplied,true);
  assert.equal(saved.coachCareer.settings.funding,10000000);
 });
+
+test("coach club selection displays existing crest markup on cards and selected club",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={document:dom.window.document,FormData:dom.window.FormData,console,globalThis:null,
+  ProLifeClubCrests:{render:id=>'<img src="src/assets/club-crests/'+id+'.webp" alt="Escudo '+id+'">'}};
+ sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ sandbox.ProLifeCoachCreator.mount({D:{create:()=>({clubs:[{id:"a",name:"Clube A",leagueId:"serieA",active:true,budget:10000}]})},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
+ const doc=dom.window.document;
+ assert.ok(doc.querySelector('[data-club-choice="a"] .coach-club-option-crest img'));
+ const form=doc.querySelector("#coach-creation-form");
+ form.elements.clubId.value="a";
+ form.elements.clubId.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
+ assert.ok(doc.querySelector("#coach-club-analysis .coach-club-crest img"));
+});
