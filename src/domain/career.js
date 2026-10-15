@@ -1633,6 +1633,16 @@
     if(s.mode==="coach"&&s.coachCareer?.negotiations?.some(n=>n.status==="awaiting_window")&&windowStatus(s).open){
       root.ProLifeApp?.execute?.(s,"settleCoachWindowDeals",{});
     }
+    // Periodic inbound approaches; preferences and pending-offer limits are respected.
+    if(s.mode==="coach"&&s.clubId&&s.coachCareer){
+      const cc=s.coachCareer,prefs=cc.offerPreferences||{mode:"all"};
+      const pending=(cc.saleOffers||[]).filter(o=>o.status==="pending"&&Number(o.expiresDay)>=Number(s.day));
+      const last=Number(cc.lastSaleInterestDay);
+      if(prefs.mode!=="none"&&pending.length<3&&(!Number.isFinite(last)||Number(s.day)-last>=14)){
+        cc.lastSaleInterestDay=s.day;
+        try{root.ProLifeApp?.execute?.(s,"generateSaleInterest",{});}catch(error){/* No eligible interest this period. */}
+      }
+    }
     // Settle deferred manager transfers once, even after saving/reloading.
     if(s.mode==="coach" && Array.isArray(s.coachCareer?.transferDebts)){
       for(const debt of s.coachCareer.transferDebts){
