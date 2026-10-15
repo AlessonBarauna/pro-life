@@ -10,7 +10,8 @@
     coachSetup = false,
     legacyAwardsOpen = false,
     squadSelectedId = null,
-    squadTab = "lineup";
+    squadTab = "lineup",
+    coachProfileTab = "resumo";
   const $ = (q) => document.querySelector(q),
     esc = (v) =>
       String(v ?? "").replace(
@@ -1924,8 +1925,8 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
             .coach-prof .coach-prof-identity h1{font-size:27px;margin:14px 0 6px}
             .coach-prof .coach-prof-club{display:flex;align-items:center;gap:12px;color:var(--coach-accent);font-weight:700;margin-top:12px}
             .coach-prof .coach-prof-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
-            .coach-prof .coach-prof-tabs a{padding:10px 13px;border:1px solid #354a54;border-radius:6px;color:#eef2f4;text-decoration:none;background:#152530;font-weight:700;font-size:12px}
-            .coach-prof .coach-prof-tabs a:hover,.coach-prof .coach-prof-tabs a:focus{border-color:var(--coach-accent);color:var(--coach-accent)}
+            .coach-prof .coach-prof-tabs button{padding:10px 13px;border:1px solid #354a54;border-radius:6px;color:#eef2f4;text-decoration:none;background:#152530;font-weight:700;font-size:12px}
+            .coach-prof .coach-prof-tabs button:hover,.coach-prof .coach-prof-tabs button:focus,.coach-prof .coach-prof-tabs button.active{border-color:var(--coach-accent);color:var(--coach-accent)}
             .coach-prof .coach-prof-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
             .coach-prof .coach-prof-stat{padding:14px;background:#192b37;border:1px solid #29424c;border-radius:8px}
             .coach-prof .coach-prof-stat small{display:block;color:#9fb0ba;font-size:11px;margin-bottom:5px}
@@ -1939,13 +1940,13 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
             @media(max-width:850px){.coach-prof .coach-prof-hero{grid-template-columns:1fr}.coach-prof .coach-prof-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
           </style>
           <nav class="coach-prof-tabs" aria-label="Perfil do treinador">
-            <a href="#coach-prof-resumo">Visão geral</a>
-            <a href="#coach-prof-desempenho">Desempenho</a>
-            <a href="#coach-prof-trajetoria">Trajetória</a>
-            <a href="#coach-prof-conquistas">Conquistas</a>
-            <a href="#coach-prof-identidade">Identidade e aparência</a>
+            <button type="button" data-coach-profile-tab="resumo" class="${coachProfileTab==="resumo"?"active":""}" aria-current="${coachProfileTab==="resumo"?"page":"false"}">Visão geral</button>
+            <button type="button" data-coach-profile-tab="desempenho" class="${coachProfileTab==="desempenho"?"active":""}" aria-current="${coachProfileTab==="desempenho"?"page":"false"}">Desempenho</button>
+            <button type="button" data-coach-profile-tab="trajetoria" class="${coachProfileTab==="trajetoria"?"active":""}" aria-current="${coachProfileTab==="trajetoria"?"page":"false"}">Trajetória</button>
+            <button type="button" data-coach-profile-tab="conquistas" class="${coachProfileTab==="conquistas"?"active":""}" aria-current="${coachProfileTab==="conquistas"?"page":"false"}">Conquistas</button>
+            <button type="button" data-coach-profile-tab="identidade" class="${coachProfileTab==="identidade"?"active":""}" aria-current="${coachProfileTab==="identidade"?"page":"false"}">Identidade e aparência</button>
           </nav>
-          <div id="coach-prof-resumo" class="coach-prof-hero">
+          ${coachProfileTab==="resumo"?`<div id="coach-prof-resumo" class="coach-prof-hero">
             <section class="coach-prof-identity"><div class="tag">PERFIL DO TREINADOR</div>${avatar(p)}<h1>${esc(p.name)}</h1><p class="muted">${esc(p.age)} anos · ${esc(p.city||"Cidade não informada")} · ${esc(p.nationality||"Brasil")}</p><div class="coach-prof-club">${crest}<span>${esc(c?.name||"Sem clube")}</span></div><p class="muted">Temporada ${esc(state.season)} · ${esc(sn?.license||"Licença não registrada")}</p></section>
             <section class="coach-prof-summary"><div class="tag">VISÃO GERAL DA CARREIRA</div><h2>Seu trabalho à frente do clube</h2><div class="coach-prof-kpis">
               ${item("Reputação",Number.isFinite(Number(sn?.reputation))?Math.round(Number(sn.reputation))+"/100":"—")}
@@ -1955,11 +1956,11 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
               ${item("Partidas registradas",games)}
               ${item("Títulos",titles)}
             </div><p class="muted">Os indicadores refletem os dados registrados no save da carreira de treinador.</p></section>
-          </div>
-          ${section("desempenho","Desempenho profissional",`<div class="coach-prof-kpis">${item("Vitórias",total.w??0)}${item("Empates",total.d??0)}${item("Derrotas",total.l??0)}${item("Aproveitamento de vitórias",pct+"%")}</div><h3>Metas da diretoria</h3>${objectiveHtml}`)}
-          ${section("trajetoria","Histórico de clubes",careerRows)}
-          ${section("conquistas","Títulos e conquistas",`<div class="coach-prof-kpis">${item("Títulos registrados",titles)}${item("Temporadas concluídas",total.seasons??0)}</div><p class="muted">As conquistas serão exibidas conforme forem registradas pelo motor da carreira. Nenhum título fictício é atribuído.</p>`)}
-          ${section("identidade","Identidade e aparência",`<p class="muted">Personalização visual existente preservada. O editor 3D não foi alterado.</p><form id="appearance-editor">${appearanceFields(p.appearance)}<button class="primary" type="submit">Salvar aparência</button></form>`)}
+          </div>`:""}
+          ${coachProfileTab==="desempenho"?section("desempenho","Desempenho profissional",`<div class="coach-prof-kpis">${item("Vitórias",total.w??0)}${item("Empates",total.d??0)}${item("Derrotas",total.l??0)}${item("Aproveitamento de vitórias",pct+"%")}</div><h3>Metas da diretoria</h3>${objectiveHtml}`):""}
+          ${coachProfileTab==="trajetoria"?section("trajetoria","Histórico de clubes",careerRows):""}
+          ${coachProfileTab==="conquistas"?section("conquistas","Títulos e conquistas",`<div class="coach-prof-kpis">${item("Títulos registrados",titles)}${item("Temporadas concluídas",total.seasons??0)}</div><p class="muted">As conquistas serão exibidas conforme forem registradas pelo motor da carreira. Nenhum título fictício é atribuído.</p>`):""}
+          ${coachProfileTab==="identidade"?section("identidade","Identidade e aparência",`<p class="muted">Personalização visual existente preservada. O editor 3D não foi alterado.</p><form id="appearance-editor">${appearanceFields(p.appearance)}<button class="primary" type="submit">Salvar aparência</button></form>`):""}
         </div>`;
       }
       if (state.mode === "player") {
@@ -8324,6 +8325,15 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       toast("Autosave indisponível neste navegador. Use Exportar save.");
   }
   document.addEventListener("click", (event) => {
+    const profileTabButton = event.target.closest?.("[data-coach-profile-tab]");
+    if (profileTabButton && state?.mode === "coach" && page === "profile") {
+      const next = profileTabButton.getAttribute("data-coach-profile-tab");
+      if (["resumo","desempenho","trajetoria","conquistas","identidade"].includes(next)) {
+        coachProfileTab = next;
+        render();
+      }
+      return;
+    }
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
     const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter]");
     if (!el || !state || state.mode !== "coach") return;
