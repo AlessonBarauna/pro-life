@@ -41,7 +41,7 @@
         const primary=normalizePos(p.pos||p.position);
         const alternatives=Array.isArray(p.secondaryPositions)?p.secondaryPositions:[];
         const eaCatalog=root.ProLifeFC27Positions?.alt||{};
-        const eaKey=String(p.eaId??(String(p.id||"").match(/^real_(\\d+)$/)?.[1]||""));
+        const eaKey=String(p.eaId??(String(p.id||"").match(/^real_(\d+)$/)?.[1]||""));
         const knownEntry=Object.prototype.hasOwnProperty.call(eaCatalog,eaKey);
         const eaAlternates=knownEntry?String(eaCatalog[eaKey]||"").split(",").map(normalizePos).filter(x=>x&&x!==primary).slice(0,6):null;
         const verified=p.secondaryPositionsSource==="ea_fc27"||p.secondaryPositionsSource==="verified";
