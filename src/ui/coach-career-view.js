@@ -89,8 +89,14 @@
     const metrics=[["Posse relativa",report.indices.possession],["Criação de chances",report.indices.chanceCreation],["Segurança defensiva",report.indices.defensiveSecurity],["Carga física",report.indices.workload]];
     const stats=metrics.map(([label,value])=>'<div class="cc-row"><span>'+esc(label)+'</span>'+bar(value)+'<b>'+esc(value)+'</b></div>').join("");
     const risks=report.warnings.length?report.warnings.map(x=>'<li class="cc-risk"><b>'+esc(x.label)+'</b></li>').join(""):'<li>Sem alertas táticos elevados neste confronto.</li>';
+    const ratingEngine=root.ProLifeCoachMatchRating;
+    const roster=Array.isArray(own.roster)?own.roster:[];
+    const assessed=ratingEngine?.evaluateRoster?.(roster)||[];
+    const eligible=assessed.filter(row=>row.available).sort((a,b)=>b.effective-a.effective||a.index-b.index);
+    const avg=eligible.length?Math.round(eligible.reduce((sum,row)=>sum+row.effective,0)/eligible.length):null;
+    const readiness=ratingEngine?'<section class="cc-card wide"><small>GER EFETIVO DO ELENCO — T1</small><h3>'+esc(avg??"—")+' <small>média dos disponíveis</small></h3><ul class="cc-list">'+eligible.slice(0,5).map(row=>{const p=roster[row.index]||{};return '<li><span>'+esc(p.name||p.fullName||p.id||"Jogador")+'</span> <b>'+esc(row.base)+' → '+esc(row.effective)+'</b></li>';}).join("")+'</ul><p class="cc-note">Prévia informativa de rendimento. O GER permanente e a escalação não são alterados.</p></section>':'';
     const strengths=report.strengths.length?report.strengths.map(x=>'<li>'+esc(x)+'</li>').join(""):'<li>Equilíbrio tático: observe a evolução da partida.</li>';
-    return '<div class="cc-grid"><section class="cc-card wide"><small>PREPARAÇÃO PARA O PRÓXIMO JOGO</small><h3>'+esc(own.name)+' × '+esc(opp.name)+'</h3><p class="cc-note">'+esc(fixture.competitionName||"Competição")+' · Dia '+esc(fixture.date||s.day)+'</p></section><section class="cc-card"><small>COMPARAÇÃO TÁTICA</small>'+stats+'<p class="cc-note">'+esc(report.note)+'</p></section><section class="cc-card"><small>RISCOS DO PLANO</small><ul class="cc-list">'+risks+'</ul></section><section class="cc-card wide"><small>OPORTUNIDADES CONTRA O ADVERSÁRIO</small><ul class="cc-list">'+strengths+'</ul><p class="cc-note">Relatório informativo. Ajuste as táticas na tela de elenco; não há alteração automática de formação.</p></section></div>';
+    return '<div class="cc-grid">'+readiness+'<section class="cc-card wide"><small>PREPARAÇÃO PARA O PRÓXIMO JOGO</small><h3>'+esc(own.name)+' × '+esc(opp.name)+'</h3><p class="cc-note">'+esc(fixture.competitionName||"Competição")+' · Dia '+esc(fixture.date||s.day)+'</p></section><section class="cc-card"><small>COMPARAÇÃO TÁTICA</small>'+stats+'<p class="cc-note">'+esc(report.note)+'</p></section><section class="cc-card"><small>RISCOS DO PLANO</small><ul class="cc-list">'+risks+'</ul></section><section class="cc-card wide"><small>OPORTUNIDADES CONTRA O ADVERSÁRIO</small><ul class="cc-list">'+strengths+'</ul><p class="cc-note">Relatório informativo. Ajuste as táticas na tela de elenco; não há alteração automática de formação.</p></section></div>';
   }
 
   function history(sn){
