@@ -405,7 +405,7 @@
     const signedRevenue=(c.finance?.revenueContracts||[]).filter(x=>String(x.clubId)===String(s.clubId));
     const revenueContractPanel='<section class="cc-card" aria-label="Contratos de receita registrados"><h4>Contratos de receitas</h4>'+
       (signedRevenue.length?signedRevenue.map(x=>'<p><b>'+esc(x.type==="broadcast"?"Transmissão":"Patrocínio")+
-        ':</b> '+esc(money(x.annualAmount))+'/ano · Início dia '+esc(x.startDay)+' · Término dia '+esc(x.endDay)+
+        ':</b> '+esc(money(x.annualAmount))+'/ano · Início '+careerDate(s,x.startDay)+' · Término '+careerDate(s,x.endDay)+
         ' · Status: '+esc(x.status||"scheduled")+'</p>').join(""):
         '<p class="cc-note">Nenhum contrato de receita cadastrado neste save.</p>')+
       '<p class="cc-note">Registros informativos: pagamentos e créditos ainda não estão habilitados.</p></section>';
