@@ -15,12 +15,16 @@ function setTactic(s,side,tactic){
  if(!s||s.minute>=90||![0,1].includes(side)||!tactics.includes(tactic))return false;
  (side===0?s.home:s.away).tactic=tactic;return true;
 }
-function substitute(s,side,{incomingStrength=70}={}){
+function substitute(s,side,{incomingStrength=70,outgoingStrength=null}={}){
  if(!s||s.minute>=90||![0,1].includes(side))return false;
  const team=side===0?s.home:s.away;
  if(team.subs>=5)return false;
  team.subs++;
- team.strength=clamp(Math.round(team.strength*.91+clamp(finite(incomingStrength,70),1,100)*.09),1,100);
+ const incoming=clamp(finite(incomingStrength,70),1,100);
+ const outgoing=outgoingStrength==null?null:clamp(finite(outgoingStrength,70),1,100);
+ team.strength=outgoing===null
+  ?clamp(Math.round(team.strength*.91+incoming*.09),1,100)
+  :clamp(Math.round((team.strength+(incoming-outgoing)/11)*100)/100,1,100);
  team.freshness=clamp(team.freshness+5,0,100);
  return true;
 }
