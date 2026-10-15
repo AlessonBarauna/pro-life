@@ -31,3 +31,11 @@ test("E08 migration preserves verified empty alternatives and maps defender code
  assert.match(domain,/CB:"ZAG",LB:"LE",RB:"LD"/);
  assert.match(domain,/const primary=normalizePos\(p\.pos\|\|p\.position\)/);
 });
+
+test("Legacy defender dossier shows labeled suggestions when position array is empty",()=>{
+ assert.match(ui,/const primaryPos=String\(positionOf\(selected\)/);
+ assert.match(ui,/const altDefaults=\{GOL:\[\],ZAG:\["VOL"\]/);
+ assert.match(ui,/const alternativesLabel=/);
+ assert.match(ui,/sugeridas \(sem registro oficial\)/);
+ assert.match(ui,/esc\(alternativesLabel\)/);
+});
