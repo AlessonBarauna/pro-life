@@ -311,7 +311,7 @@ case "tactic": {
       case "toggleCoachShortlist": {
         if(s.mode!=="coach"||!s.clubId)throw Error("Disponível somente ao treinador com clube.");
         const own=D.club(s),seller=D.club(s,data.clubId);
-        const player=seller?.roster?.find(p=>p.id===data.playerId);
+        const player=seller?.roster?.find(p=>p.id===data.playerId)||D.GlobalFootball?.playersByClub?.(s,seller?.id)?.find(p=>p.id===data.playerId);
         if(!own||!seller||seller.id===own.id||!player||player.id==="hero")throw Error("Jogador indisponível.");
         s.coachCareer||={version:1};
         const list=s.coachCareer.shortlist||[];
@@ -412,11 +412,17 @@ case "tactic": {
       case "counterRecruit": {
         if(s.mode!=="coach"||!D.Career.windowStatus(s).open)throw Error("Negociação indisponível.");
         const buyer=D.club(s),seller=D.club(s,data.clubId);
-        const p=seller?.roster?.find(x=>x.id===data.playerId);
+        const p=seller?.roster?.find(x=>x.id===data.playerId)||D.GlobalFootball?.playersByClub?.(s,seller?.id)?.find(x=>x.id===data.playerId);
         if(!buyer||!seller||buyer.id===seller.id||!p||p.id==="hero")throw Error("Jogador indisponível.");
         const base=valuation(p)*(s.coachCareer?.settings?.marketStrictness==="strict"?1.25:1);
         const requested=Number(data.offer);
         if(!Number.isFinite(requested)||requested<=0)throw Error("Proposta inválida.");
+        if(!Array.isArray(seller.roster)){
+          const roster=D.GlobalFootball?.playersByClub?.(s,seller.id)||[];
+          if(roster.length<=18)throw Error("Elenco de origem indisponível para negociação.");
+          seller.roster=roster.slice();
+          seller.lineup ||= [];
+        }
         const minimum=Math.ceil(base*0.9/1000)*1000;
         s.coachCareer ||= {version:1};
         s.coachCareer.negotiations ||= [];
@@ -452,7 +458,12 @@ case "tactic": {
           source = D.club(s, data.clubId);
         if (s.mode !== "coach" || !own || !source || source.id === own.id)
           throw Error("Operação inválida.");
-        const p = source.roster.find((p) => p.id === data.playerId);
+        if(source&&!Array.isArray(source.roster)){
+          const roster=D.GlobalFootball?.playersByClub?.(s,source.id)||[];
+          if(roster.length<=18)throw Error("Elenco internacional indisponível.");
+          source.roster=roster.slice();source.lineup||=[];
+        }
+        const p = source?.roster?.find((p) => p.id === data.playerId);
         if (!p || p.id === "hero" || source.roster.length <= 18)
           throw Error("Jogador indisponível.");
         let fee = valuation(p);
@@ -503,6 +514,11 @@ case "tactic": {
         source.roster = source.roster.filter((x) => x.id !== p.id);
         source.lineup = source.lineup.filter((id) => id !== p.id);
         own.roster.push(p);
+        // Keep the global catalog's canonical player and avoid duplicate ownership.
+        if(Array.isArray(s.internationalPlayers)){
+          s.internationalPlayers=s.internationalPlayers.filter(x=>x.id!==p.id);
+        }
+        p.clubId=own.id;p.leagueId=own.leagueId||p.leagueId;
         if(isLoan){
           s.coachCareer.loans ||= [];
           s.coachCareer.loans.push({id:"loan_"+s.season+"_"+s.day+"_"+p.id,playerId:p.id,fromClubId:source.id,toClubId:own.id,startDay:Number(s.day)||0,dueDay:(Number(s.day)||0)+duration,fee,salaryShare,buyOption:optionPrice,nextSalaryDay:(Number(s.day)||0)+30,returned:false});
