@@ -1515,7 +1515,20 @@
     const applies=pendingCoachPlan&&s.mode==="coach"&&pendingCoachPlan.home===homeId&&
       pendingCoachPlan.away===awayId&&pendingCoachPlan.date===s.day;
     if(applies)coachActionPlans.delete(s);
-    const m = simulate(hc, ac, rng, s, applies?pendingCoachPlan.actions:[]);
+    // Validate actions against the actual prepared XI, not the stale pre-match display.
+    const eligibleActions=[];
+    if(applies){
+      const team=s.clubId===homeId?hc:ac,side=s.clubId===homeId?0:1;
+      const onField=new Set(selected(team).map(p=>String(p.id)));
+      const usedBench=new Set();
+      for(const a of pendingCoachPlan.actions.slice().sort((a,b)=>a.minute-b.minute)){
+        const incoming=team.roster.find(p=>String(p.id)===a.inId);
+        if(a.side!==side||!onField.has(a.outId)||onField.has(a.inId)||usedBench.has(a.inId)||
+          !incoming||incoming.injury||incoming.suspension>0||incoming._competitionSuspended||incoming.condition<=35)continue;
+        onField.delete(a.outId);onField.add(a.inId);usedBench.add(a.inId);eligibleActions.push(a);
+      }
+    }
+    const m = simulate(hc, ac, rng, s, eligibleActions);
     if (s.mode === "player") {
       const q=Physical?.init?.(s.person,s.day), a=q?.active, key=a&&`injury:${a.startDay}:${a.type}`;
       if(a&&a.startDay===s.day&&key&&!q.processed.includes(key)){q.processed.push(key);Career.addMessage?.(s,{category:"CARREIRA",sender:"Departamento médico",subject:`Diagnóstico: ${a.name}`,body:`${a.severity}. Previsão inicial: ${a.totalDays} dia(s). A recuperação será acompanhada pelo calendário.`,priority:a.severity==="GRAVE"?"IMPORTANTE":"NORMAL",eventId:key});}
