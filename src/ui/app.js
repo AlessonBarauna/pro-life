@@ -2237,10 +2237,16 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const tacticLabel={balanced:"Equilibrado",possession:"Posse e construção",counter:"Bloco baixo e contra-ataque",attack:"Ataque e risco"}[c.tactic]||c.tactic;
       const comparison=c.roster.filter(p=>p.id!==selected?.id&&positionOf(p)===positionOf(selected)).sort((a,b)=>D.overall(b)-D.overall(a))[0];
       const tabSupplement=squadTab==="tactics"?`<section class="pl-squad-supplement"><div><div class="tag">PLANO TÁTICO</div><h2>${esc(tacticLabel)}</h2><p>${coach?"Ajuste o comportamento coletivo sem alterar o motor de partidas.":"Plano definido pela comissão técnica."}</p></div>${coach?`<label>Estilo<select id="tactic">${opt([["balanced","Equilibrado"],["possession","Posse e construção"],["counter","Bloco baixo e contra-ataque"],["attack","Ataque e risco"]],c.tactic)}</select></label>`:""}<div class="pl-squad-mini-kpis"><span><small>Formação</small><b>${esc(formation)}</b></span><span><small>Elenco</small><b>${c.roster.length}</b></span><span><small>Disponíveis</small><b>${c.roster.filter(p=>!isUnavailable(p)).length}</b></span></div></section>`:squadTab==="roles"?`<section class="pl-squad-supplement"><div><div class="tag">FUNÇÕES</div><h2>Liderança do elenco</h2><p>As funções seguem a hierarquia e os dados reais da carreira.</p></div><div class="pl-squad-mini-kpis"><span><small>Capitão</small><b>${esc(leadership.captain?.name||"—")}</b></span><span><small>Vice</small><b>${esc(leadership.vice?.name||"—")}</b></span><span><small>Jogador selecionado</small><b>${esc(selectionStatus(selected))}</b></span></div></section>`:squadTab==="hierarchy"?`${coachRelation}${relation}`:"";
+      const contractSalary=selected?[selected.salary,selected.monthlySalary,selected.wage,selected.contract?.salary,selected.contract?.monthlySalary].find(v=>v!=null&&Number.isFinite(Number(v))&&Number(v)>0):null;
+      const contractEnd=selected?[selected.contractEndDay,selected.contract?.endDay,selected.contract?.expiresDay].find(v=>v!=null&&Number.isFinite(Number(v))):null;
+      const contractEndYear=selected?[selected.contractUntil,selected.contract?.endYear,selected.contract?.expiryYear].find(v=>v!=null&&Number.isFinite(Number(v))):null;
+      const contractRole=selected?.squadRole||selected?.contract?.role||selected?.contractRole||null;
+      const derivedSalary=selected&&!contractSalary?Math.max(1000,Math.round(((Math.max(0,D.overall(selected))**2*35)/180)/1000)*1000):null;
+      const roleLabel={rotation:"Rotação",important:"Importante",starter:"Titular",star:"Estrela"};
       const contractInfo=selected?'<div class="pl-squad-info-grid">'+
-        '<span><small>Salário mensal</small><b>'+esc(Number.isFinite(Number(selected.salary))&&selected.salary!=null?money(Number(selected.salary)):"Não registrado")+'</b></span>'+
-        '<span><small>Fim do contrato</small><b>'+esc(Number.isFinite(Number(selected.contractEndDay))&&selected.contractEndDay!=null?"Dia "+selected.contractEndDay:"Não registrado")+'</b></span>'+
-        '<span><small>Papel no elenco</small><b>'+esc(selected.squadRole||"Não definido")+'</b></span>'+
+        '<span><small>Salário mensal'+(!contractSalary?' · estimativa':'')+'</small><b>'+esc(money(Number(contractSalary??derivedSalary)))+'</b></span>'+
+        '<span><small>Fim do contrato</small><b>'+esc(contractEnd!=null?dayDate(Number(contractEnd)):contractEndYear!=null?String(contractEndYear):"Não informado no save")+'</b></span>'+
+        '<span><small>Papel no elenco</small><b>'+esc(contractRole?roleLabel[contractRole]||contractRole:(starters.includes(selected)?"Titular atual · não contratual":"Reserva atual · não contratual"))+'</b></span>'+
         '</div>':'';
       const comparisonInfo=selected?'<div class="pl-squad-compare">'+
         '<h3>Comparação na posição</h3>'+
