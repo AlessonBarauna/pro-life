@@ -1092,7 +1092,7 @@
       ) / ps.length
     );
   }
-  function simulate(home, away, rng, context = null) {
+  function simulate(home, away, rng, context = null, coachActions = []) {
     const hp = selected(home),
       ap = selected(away);
     const formFactors = recentMatchFormFactors(context);
@@ -1119,7 +1119,31 @@
       clubs = [home, away],
       tactical = SimulationTactics ? [SimulationTactics.matchup(home, away), SimulationTactics.matchup(away, home)] : [{possession:0,attack:0,defense:0,fatigue:0},{possession:0,attack:0,defense:0,fatigue:0}],
       fatigue = [0, 0];
+    // Pre-authorized coach actions are applied at their exact minute, before
+    // that minute's chance calculation. Default [] preserves legacy matches.
+    const plannedActions=Array.isArray(coachActions)?coachActions.slice().sort((a,b)=>Number(a.minute)-Number(b.minute)):[];
+    const coachSubs=[0,0],usedIncoming=[new Set(),new Set()];
     for (let minute = 1; minute <= 94; minute++) {
+      if(context?.mode==="coach"||!context){
+        for(const action of plannedActions){
+          if(action?.type!=="substitution"||Number(action.minute)!==minute)continue;
+          const side=Number(action.side),club=clubs[side],ps=squads[side];
+          if(![0,1].includes(side)||!club||!ps||coachSubs[side]>=5)continue;
+          const outgoing=ps.find(p=>String(p.id)===String(action.outId));
+          const incoming=club.roster.find(p=>String(p.id)===String(action.inId));
+          if(!outgoing||!incoming||outgoing.id===incoming.id||ps.includes(incoming)||usedIncoming[side].has(incoming.id)||
+             incoming.injury||incoming.suspension>0||incoming._competitionSuspended||incoming.condition<=35)continue;
+          const index=ps.indexOf(outgoing);
+          ps[index]=incoming;coachSubs[side]++;usedIncoming[side].add(incoming.id);
+          if(m.participation[outgoing.id]){
+            m.participation[outgoing.id].exitMinute=minute;
+            m.participation[outgoing.id].minutes=minute-m.participation[outgoing.id].entryMinute;
+          }
+          m.participation[incoming.id]={side,starter:false,entryMinute:minute,exitMinute:94,minutes:94-minute};
+          m.participants[side].push(incoming.id);
+          m.events.push({minute,type:"substitution",side,player:incoming.name,playerId:incoming.id,outPlayer:outgoing.name,outPlayerId:outgoing.id,text:`Substituição: sai ${outgoing.name}, entra ${incoming.name}.`});
+        }
+      }
       const control = squads.map(
         (ps, i) =>
           quality(ps, "pass", formFactors, positionRoles[i]) +
