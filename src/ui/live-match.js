@@ -7,7 +7,13 @@
   function coachPitch(min,home,away){
     const frame=root.ProLifeMatchPitchV2?.frame?.(min,home,away);
     if(!frame)return null;
-    const dots=(list,side)=>list.map(p=>'<i class="lm-player lm-'+(side===0?'home':'away')+'" title="'+esc(p.player?.name||"Jogador "+p.number)+'" style="left:'+p.x.toFixed(2)+'%;top:'+p.y.toFixed(2)+'%">'+esc(p.player?.number||p.number)+'</i>').join("");
+    const dots=(list,side)=>list.map(p=>{
+      const id=root.ProLifeMatchIdentityV2?.identify?.(p.player?.id,home,away);
+      const display=id?.name&&id.player?id.name:(p.player?.name||"");
+      const short=display?root.ProLifeMatchIdentityV2?.short?.(display)||display:"";
+      const number=p.player?.number??p.player?.shirtNumber??p.number;
+      return '<span class="lm-player-wrap lm-'+(side===0?'home':'away')+'" style="left:'+p.x.toFixed(2)+'%;top:'+p.y.toFixed(2)+'%" title="'+esc(display||"Jogador")+'"><i class="lm-player">'+esc(number)+'</i>'+(short?'<small class="lm-player-name">'+esc(short)+'</small>':"")+'</span>';
+    }).join("");
     return dots(frame.home,0)+dots(frame.away,1)+'<span class="lm-ball" style="left:'+frame.ball.x.toFixed(2)+'%;top:'+frame.ball.y.toFixed(2)+'%"></span>';
   }
   function labPlayerSelectors(preview){
