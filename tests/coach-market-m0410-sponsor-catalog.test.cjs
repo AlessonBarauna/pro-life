@@ -23,5 +23,5 @@ test("M04.10 UI labels brands as references, not confirmed sponsors",()=>{
  new vm.Script(src);
  assert.match(src,/Marcas do catálogo — referências/);
  assert.match(src,/não patrocinadores confirmados do clube/);
- assert.match(src,/sponsorCatalogPanel\+revenueContractPanel/);
+ assert.match(src,/sponsorCatalogPanel\+sponsorshipOfferPanel\+revenueContractPanel/);
 });
