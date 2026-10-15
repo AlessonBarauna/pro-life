@@ -33,7 +33,7 @@ function render(ctx){
     <label class="coach-full">Predefinição<select name="preset"><option value="balanced">Equilibrado (padrão)</option><option value="realistic">Realista</option><option value="custom">Personalizado</option></select></label>
     <nav class="coach-settings-tabs coach-full" aria-label="Categorias de configuração"><button type="button" data-settings-tab="general">Geral</button><button type="button" data-settings-tab="finance">Finanças</button><button type="button" data-settings-tab="market">Transferências</button><button type="button" data-settings-tab="management">Gestão</button><button type="button" data-settings-tab="development">Elenco</button><button type="button" data-settings-tab="world">Mundo</button></nav>
     <div class="coach-full coach-settings-pane" data-settings-panel="general"><p>O modo treinador usa o motor de simulação atual; dificuldade e velocidade personalizadas ainda não estão disponíveis.</p></div>
-    <div class="coach-full coach-settings-pane" data-settings-panel="finance"><label>Orçamento adicional inicial<select name="funding"><option value="0">Sem aporte (orçamento original)</option><option value="10000000">+ R$ 10 milhões</option><option value="50000000">+ R$ 50 milhões</option><option value="100000000">+ R$ 100 milhões</option></select></label><p>Aplicado uma única vez ao clube escolhido quando a carreira é criada. Sem clube, não há aporte.</p></div>
+    <div class="coach-full coach-settings-pane" data-settings-panel="finance"><label>Cenário financeiro inicial<select name="financialScenario"><option value="legacy">Original do clube</option><option value="conservative">Conservador (70%)</option><option value="standard">Padrão (100%)</option><option value="ambitious">Ambicioso (150%)</option></select></label><div class="coach-full coach-section-note" id="coach-finance-preview" aria-live="polite"></div><label>Orçamento adicional inicial<select name="funding"><option value="0">Sem aporte (orçamento original)</option><option value="10000000">+ R$ 10 milhões</option><option value="50000000">+ R$ 50 milhões</option><option value="100000000">+ R$ 100 milhões</option></select></label><p>Aplicado uma única vez ao clube escolhido quando a carreira é criada. Sem clube, não há aporte.</p></div>
     <div class="coach-full coach-settings-pane" data-settings-panel="market"><label>Rigor nas contratações<select name="marketStrictness"><option value="normal">Normal — avaliação atual</option><option value="strict">Rigoroso — maior exigência financeira e esportiva</option></select></label><label>Primeira janela de transferências<select name="firstWindow"><option value="on">Ativada</option><option value="off">Desativada — contratações bloqueadas na primeira janela</option></select></label><label>Pagamento parcelado<select name="installments"><option value="off">Desativado — pagamento à vista</option><option value="on">Ativado — permitir entrada e parcela futura</option></select></label><label>Empréstimos de jogadores<select name="loans"><option value="off">Desativados</option><option value="on">Ativados — 180 ou 365 dias</option></select></label><p>Estas escolhas afetam o comando de contratação do treinador; não alteram o mercado do modo jogador.</p></div>
     <div class="coach-full coach-settings-pane" data-settings-panel="management"><p>Metas da diretoria, confiança e demissão continuam seguindo as regras reais já implementadas no modo treinador.</p></div>
     <div class="coach-full coach-settings-pane" data-settings-panel="development"><p>Foco de treino coletivo aplicado ao motor existente:</p></div>
@@ -176,6 +176,19 @@ function render(ctx){
    if(club.leagueName)entries[2]="Competição: "+club.leagueName;
    return entries.join(" · ");
  }
+ function financePreview(){
+  const club=selectedClub(),scenario=form.elements.financialScenario.value;
+  const funding=Number(form.elements.funding.value)||0;
+  if(!club)return "Sem clube escolhido: orçamento inicial será definido quando você assumir um clube. Selecione Original para começar recebendo propostas.";
+  const choices=root.ProLifeClubEconomy?.scenarios?.(club)||[];
+  const found=choices.find(x=>x.id===scenario);
+  const original=Number(club.budget)||0;
+  const selected=found?found.proposedTransferBudget:original;
+  return "Orçamento base: R$ "+selected.toLocaleString("pt-BR")+
+    " · Aporte: R$ "+funding.toLocaleString("pt-BR")+
+    " · Total previsto: R$ "+(selected+funding).toLocaleString("pt-BR")+
+    (found?" · Cenário "+found.label:" · Orçamento original");
+ }
  function review(){appearanceNotice();
   const preview=app.querySelector("#coach-profile-preview");
   if(preview){const skin=form.elements.skin.value,hair=form.elements.hairColor.value,outfit=form.elements.outfit.value;
@@ -200,9 +213,10 @@ function render(ctx){
       }
     }
   }
+  const financial=app.querySelector("#coach-finance-preview");if(financial)financial.textContent=financePreview();
   const detail=app.querySelector("#coach-confirm-details");
   if(detail){
-    detail.textContent="Treinador: "+(form.elements.name.value.trim()||"Não informado")+" · "+(form.elements.nationality.value.trim()||"Brasil")+" · Idade: "+form.elements.age.value+" · Projeto: "+(club?.name||"Propostas de clubes")+" · Aparência: "+form.elements.outfit.options[form.elements.outfit.selectedIndex].text+" · Treino: "+form.elements.focus.value+" · Tática: "+form.elements.tactic.value+" · Base FC 27 · Seed: "+(form.elements.seed.value||"automática");
+    detail.textContent="Treinador: "+(form.elements.name.value.trim()||"Não informado")+" · "+(form.elements.nationality.value.trim()||"Brasil")+" · Idade: "+form.elements.age.value+" · Projeto: "+(club?.name||"Propostas de clubes")+" · Aparência: "+form.elements.outfit.options[form.elements.outfit.selectedIndex].text+" · Treino: "+form.elements.focus.value+" · Tática: "+form.elements.tactic.value+" · "+financePreview()+" · Base FC 27 · Seed: "+(form.elements.seed.value||"automática");
   }
  }
  function validIdentity(){
@@ -229,7 +243,7 @@ function render(ctx){
   const seed=seedRaw!==""?Number(seedRaw):Date.now();
   if(!Number.isFinite(seed)){ctx.toast("Seed invalida.");return;}
   if(f.get("careerType")!=="original"||f.get("coachType")!=="custom"){ctx.toast("Este modo ainda não está disponível.");return;}
-  const config={mode:"coach",catalogVersion:"fc27_v1",name,city,age,nationality:String(f.get("nationality")||"Brasil").trim(),clubId:String(f.get("clubId")||""),appearance:{skin:String(f.get("skin")),hairColor:String(f.get("hairColor")),eyeColor:String(f.get("eyeColor")),hair:String(f.get("hair")),beard:String(f.get("beard")),body:String(f.get("body")),accessory:String(f.get("accessory"))}};
+  const config={mode:"coach",catalogVersion:"fc27_v1",name,city,age,nationality:String(f.get("nationality")||"Brasil").trim(),clubId:String(f.get("clubId")||""),financialScenario:String(f.get("clubId")||"")?String(f.get("financialScenario")||"legacy"):"legacy",appearance:{skin:String(f.get("skin")),hairColor:String(f.get("hairColor")),eyeColor:String(f.get("eyeColor")),hair:String(f.get("hair")),beard:String(f.get("beard")),body:String(f.get("body")),accessory:String(f.get("accessory"))}};
   ctx.busy("Criando carreira de treinador FC 27…",()=>{
    try{
     const fresh=D.create(config,seed);
