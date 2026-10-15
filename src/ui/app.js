@@ -8358,7 +8358,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return;
     }
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
-    const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-shortlist],[data-coach-scout-offer]");
+    const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-shortlist],[data-coach-scout-offer]");
     if (!el || !state || state.mode !== "coach") return;
     const V = window.ProLifeCoachCareerView;
     if (el.hasAttribute("data-coach-tab")) { V?.setTab(el.getAttribute("data-coach-tab")); render(); return; }
@@ -8398,6 +8398,15 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if(el.hasAttribute("data-coach-sale-counter")){
       const id=el.getAttribute("data-coach-sale-counter");
       return command("counterSaleOffer",{id,amount:Number(document.querySelector('[data-coach-sale-amount="'+id+'"]')?.value)});
+    }
+    if(el.hasAttribute("data-coach-deal-preset")){
+      const id=el.getAttribute("data-coach-deal-preset");
+      const input=[...document.querySelectorAll("[data-coach-deal-offer]")].find(x=>x.getAttribute("data-coach-deal-offer")===id);
+      const offer=Number(el.getAttribute("data-coach-preset-value"));
+      if(!input||!Number.isFinite(offer)||offer<1000){toast("Oferta inválida.");return;}
+      input.value=String(offer);
+      input.focus();
+      return;
     }
     if(el.hasAttribute("data-coach-deal-revise")){
       const id=el.getAttribute("data-coach-deal-revise");
