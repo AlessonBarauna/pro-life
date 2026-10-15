@@ -206,7 +206,9 @@
     ].sort((a,b)=>Number(b.day||0)-Number(a.day||0)).slice(0,45).map(x=>x.html).join("")||'<p class="cc-note">Nenhuma movimentação registrada.</p>';
     const listRows=wrap(c.shortlist||[],x=>{
       const p=player(x.playerId);
-      return '<article class="cc-deal"><div class="cc-deal-player">'+athlete(x.playerId)+'</div><div>'+team(x.clubId)+'</div><div class="cc-deal-actions"><button type="button" data-coach-scout-offer="'+esc(x.clubId)+'" data-coach-player="'+esc(x.playerId)+'">Negociar contratação</button><button type="button" data-coach-shortlist="'+esc(x.clubId)+'" data-coach-player="'+esc(x.playerId)+'">Remover</button></div></article>';
+      const owner=p?.clubId||((s.clubs||[]).find(cl=>(cl.roster||[]).some(y=>y.id===x.playerId))?.id)||x.clubId;
+      const moved=owner!==x.clubId;
+      return '<article class="cc-deal"><div class="cc-deal-player">'+athlete(x.playerId)+'</div><div>'+team(owner)+'</div><div class="cc-deal-actions">'+(moved?'<span class="cc-status">'+(owner===s.clubId?"Já está no seu elenco":"Mudou de clube")+'</span>':'<button type="button" data-coach-scout-offer="'+esc(x.clubId)+'" data-coach-player="'+esc(x.playerId)+'">Negociar contratação</button>')+'<button type="button" data-coach-shortlist="'+esc(x.clubId)+'" data-coach-player="'+esc(x.playerId)+'">Remover</button></div></article>';
     },"Sua lista está vazia. Use Observação para acompanhar jogadores.");
     const content={lista:listRows,recebidas:saleRows,propostas:deals,emprestimos:loanRows,financeiro:debtRows,clausulas:clauseRows,historico:historyRows};
     const heading={lista:"Jogadores observados",recebidas:"Propostas recebidas pelos seus jogadores",propostas:"Propostas e contrapropostas",emprestimos:"Empréstimos ativos",financeiro:"Obrigações financeiras",clausulas:"Cláusulas de revenda",historico:"Histórico financeiro e de transferências"};
