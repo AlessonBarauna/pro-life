@@ -417,7 +417,7 @@
       (sponsorOffers.length?sponsorOffers.map(o=>'<article class="cc-deal"><div><b>'+esc(o.brandName)+
         '</b><p class="cc-note">'+esc(o.label)+' · '+esc(money(o.annualAmount))+'/ano · 365 dias</p></div>'+
         '<button type="button" data-coach-sponsor-accept="'+esc(o.id)+'">Aceitar proposta</button></article>').join(''):
-        '<p class="cc-note">Nenhuma nova proposta de patrocínio disponível.</p>')+
+        '<p class="cc-note">'+(root.ProLifeClubEconomy?.sponsorshipOffers?"Nenhuma nova proposta disponível para as categorias atuais.":"Módulo de propostas não carregado. Atualize a página com Ctrl + F5.")+'</p>')+
       '<p class="cc-note">O aceite registra um contrato futuro, sem crédito imediato. Não há pagamento automático nesta etapa.</p></section>';
     const signedRevenue=(c.finance?.revenueContracts||[]).filter(x=>String(x.clubId)===String(s.clubId));
     const revenueContractPanel='<section class="cc-card" aria-label="Contratos de receita registrados"><h4>Contratos de receitas</h4>'+
