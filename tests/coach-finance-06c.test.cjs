@@ -395,3 +395,37 @@ test("Main Transfers Market page routes coach to new scouting centre",()=>{
  assert.match(market,/return window\.ProLifeCoachCareerView\.render\(state, D\)/);
  assert.match(market,/ProLifeWorldLiveMarketView/,"legacy world market fallback remains for player");
 });
+
+test("Global scouting supports international catalog and moves player exactly once",()=>{
+ const srcApp=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"utf8");
+ const root={};root.globalThis=root;
+ root.ProLife={club:(s,id=s.clubId)=>s.clubs.find(c=>c.id===id)||s.globalFootball?.clubs.find(c=>c.id===id),
+ overall:p=>p.overall,
+ GlobalFootball:{playersByClub:(s,id)=>s.internationalPlayers.filter(p=>p.clubId===id)},
+ Career:{windowStatus:()=>({open:true}),transfer:()=>{}}};
+ vm.runInNewContext(srcApp,root,{filename:"game.js"});
+ const overseas=Array.from({length:22},(_,i)=>({id:"intl"+i,name:"International "+i,clubId:"intlclub",age:24,overall:66,pos:"ATA"}));
+ let state={mode:"coach",day:4,season:2026,clubId:"local",news:[],
+ clubs:[{id:"local",name:"Home",roster:[],lineup:[],budget:50000000,structure:90}],
+ internationalPlayers:overseas,
+ globalFootball:{clubs:[{id:"intlclub",name:"Abroad",budget:30000000,structure:70}]},
+ coachCareer:{settings:{marketStrictness:"normal",installments:"off"}}};
+ root.ProLifeApp.execute(state,"toggleCoachShortlist",{clubId:"intlclub",playerId:"intl0"});
+ assert.equal(state.coachCareer.shortlist.length,1);
+ root.ProLifeApp.execute(state,"counterRecruit",{clubId:"intlclub",playerId:"intl0",offer:5000000});
+ assert.equal(state.coachCareer.negotiations.length,1);
+ root.ProLifeApp.execute(state,"recruit",{clubId:"intlclub",playerId:"intl0"});
+ const restored=JSON.parse(JSON.stringify(state));
+ assert.equal(restored.clubs[0].roster.filter(p=>p.id==="intl0").length,1);
+ assert.equal(restored.internationalPlayers.filter(p=>p.id==="intl0").length,0);
+ assert.equal(restored.globalFootball.clubs[0].roster.filter(p=>p.id==="intl0").length,0);
+ assert.equal(restored.clubs[0].roster[0].clubId,"local");
+ assert.throws(()=>root.ProLifeApp.execute(restored,"recruit",{clubId:"intlclub",playerId:"intl0"}),/indisponível/i);
+});
+test("Global observation pulls activePlayers rather than only local rosters",()=>{
+ const ui=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+ assert.match(ui,/gf\?\.activePlayers\?\.\(s\)/);
+ assert.match(ui,/gf\?\.clubById\?\.\(s,p\.clubId\)/);
+ assert.match(app,/GlobalFootball\?\.playerById\?\.\(state,playerId\)/);
+});
