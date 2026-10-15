@@ -611,3 +611,29 @@ test("Offer settings controls are available only on manager transfer screen",()=
  assert.match(view,/Bloquear ofertas/);
  assert.match(view,/Não receber propostas/);
 });
+
+test("Manager receives offer deadlines, negotiates outside window and expires unanswered offers once",()=>{
+ const {root,state}=saleFixture(false);
+ root.ProLifeApp.execute(state,"generateSaleInterest",{});
+ const offer=state.coachCareer.saleOffers[0],original=JSON.stringify(state.clubs);
+ root.ProLifeApp.execute(state,"counterSaleOffer",{id:offer.id,amount:150000});
+ assert.equal(offer.round,2);
+ assert.equal(JSON.stringify(state.clubs),original);
+ const ctx={};ctx.globalThis=ctx;
+ vm.runInNewContext(src,ctx,{filename:"career.js"});
+ const day=offer.expiresDay+1;state.day=day;
+ ctx.ProLifeCareer.daily(state);
+ assert.equal(offer.status,"expired");
+ const count=state.news.filter(n=>n.title==="Proposta de transferência expirada").length;
+ assert.equal(count,1);
+ ctx.ProLifeCareer.daily(state);
+ assert.equal(state.news.filter(n=>n.title==="Proposta de transferência expirada").length,1);
+ assert.equal(JSON.stringify(state.clubs),original);
+});
+test("Received offers show financial dashboard and urgent decision deadlines",()=>{
+ const ui=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ assert.match(ui,/Resumo de propostas recebidas/);
+ assert.match(ui,/Prazo próximo \(até 3 dias\)/);
+ assert.match(ui,/URGENTE/);
+ assert.match(ui,/Valor total oferecido/);
+});
