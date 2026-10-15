@@ -152,3 +152,22 @@ test("Coach central rejection is persistent and prevents accepting closed offer"
  const reloaded=JSON.parse(JSON.stringify(state));
  assert.throws(()=>root.ProLifeApp.execute(reloaded,"acceptCoachDeal",{id:"n"}),/indisponível/);
 });
+
+test("Individual negotiation desk opens and closes without changing save state",()=>{
+ const srcView=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ const root={};root.globalThis=root;vm.runInNewContext(srcView,root);
+ const V=root.ProLifeCoachCareerView;
+ const state={mode:"coach",clubId:"b",day:1,season:2026,person:{nationality:"Brasil"},clubs:[{id:"a",name:"Origem",roster:[{id:"p",name:"Jogador",pos:"ATA",age:24,overall:76}]},{id:"b",name:"Destino",roster:[]}],coachCareer:{negotiations:[{id:"n",playerId:"p",sellerClubId:"a",buyerClubId:"b",status:"pending",requested:12000,finalFee:16000,expiresDay:8}]}};
+ const D={club:(s,id)=>s.clubs.find(c=>c.id===id),CoachCareer:{snapshot:()=>({hasClub:true,club:{name:"Destino"},reputation:50})}};
+ const saved=JSON.stringify(state);
+ V.setTab("negociacoes");V.setDealTab("propostas");V.openDeal("n");
+ let html=V.render(state,D);
+ assert.match(html,/Mesa de negociação/);
+ assert.match(html,/R\$ 12\.000/);
+ assert.match(html,/R\$ 16\.000/);
+ assert.match(html,/data-coach-deal-accept="n"/);
+ V.closeDeal();html=V.render(state,D);
+ assert.doesNotMatch(html,/Mesa de negociação/);
+ assert.equal(JSON.stringify(state),saved);
+ V.setTab("central");
+});
