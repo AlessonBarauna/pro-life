@@ -161,8 +161,10 @@ function recordLeagueMatch(s,m){
 // Resgate explícito, idempotente e distribuído igualmente pelos três perfis do FC.
 function claimCareerReward(s){
  if(s?.mode!=="player"||!s.extras?.playerCareer)return {claimed:false,reason:"Modo incompatível"};
- const q=s.extras.playerRivalry;
- if(!q||q.result==="active"||q.result==="loss"||q.awarded)return {claimed:false,reason:"Indisponível ou já resgatado"};
+ const valid=q=>q&&q.result!=="active"&&q.result!=="loss"&&!q.awarded;
+ const q=valid(s.extras.playerRivalry)?s.extras.playerRivalry:
+   (s.extras.playerRivalryHistory||[]).find(valid);
+ if(!q)return {claimed:false,reason:"Indisponível ou já resgatado"};
  const amount=reward(q),each=amount/3;
  if(!Number.isFinite(each)||each<=0)return {claimed:false,reason:"Sem pontos"};
  const pc=s.extras.playerCareer;
