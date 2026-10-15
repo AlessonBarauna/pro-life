@@ -243,7 +243,7 @@
     const paid=(c.transferDebts||[]).filter(d=>d.paid);
     const finishedLoans=(c.loans||[]).filter(l=>l.returned);
     const transactions=(D?.Career?.init?.(s)?.transfers||[]).filter(x=>x&&x.day!==undefined);
-    const tabs=[["lista","Lista de observação",(c.shortlist||[]).length],["recebidas","Recebidas",sales.length],["propostas","Propostas",pending.length],["emprestimos","Empréstimos",loans.length],["financeiro","Finanças",debts.length],["contratos",(D?.club?.(s,s.clubId)?.roster||[]).length],["clausulas","Cláusulas",clauses.length],["historico","Histórico",negotiationHistory.length+paid.length+finishedLoans.length]];
+    const tabs=[["lista","Lista de observação",(c.shortlist||[]).length],["recebidas","Recebidas",sales.length],["propostas","Propostas",pending.length],["emprestimos","Empréstimos",loans.length],["financeiro","Finanças",debts.length],["contratos","Contratos",(D?.club?.(s,s.clubId)?.roster||[]).length],["clausulas","Cláusulas",clauses.length],["historico","Histórico",negotiationHistory.length+paid.length+finishedLoans.length]];
     if(!tabs.some(x=>x[0]===ui.dealTab))ui.dealTab="propostas";
     const wrap=(items,fn,empty)=>items.length?items.map(fn).join(""):'<p class="cc-note">'+esc(empty)+'</p>';
     const selected=pending.find(n=>n.id===ui.selectedDeal)||null;
