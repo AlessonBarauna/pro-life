@@ -446,3 +446,40 @@ test("Dedicated coach market hides career navigation and preserves full career v
  V.setTab("negociacoes");
  assert.match(V.render(state,D),/aria-label="Seções da carreira"/);
 });
+
+test("Coach signing reveal is queued once, survives reload, and never pays twice",()=>{
+ const {root,state}=saleFixture();
+ state.clubId="b";
+ state.clubs[0].roster=Array.from({length:20},(_,i)=>({id:"p"+i,name:"Atleta "+i,age:23,overall:70,pos:"ATA"}));
+ state.clubs[1].budget=30000000;
+ state.clubs[1].structure=90;
+ state.clubs[0].budget=100000;
+ const budget=state.clubs[1].budget;
+ root.ProLifeApp.execute(state,"recruit",{clubId:"a",playerId:"p0"});
+ assert.equal(state.coachCareer.presentations.length,1);
+ assert.equal(state.coachCareer.presentations[0].playerName,"Atleta 0");
+ assert.equal(state.clubs[1].roster.filter(p=>p.id==="p0").length,1);
+ const spent=state.clubs[1].budget;
+ assert.ok(spent<budget);
+ const loaded=JSON.parse(JSON.stringify(state));
+ const id=loaded.coachCareer.presentations[0].id;
+ root.ProLifeApp.execute(loaded,"ackCoachPresentation",{id});
+ assert.equal(loaded.coachCareer.presentations[0].presented,true);
+ assert.equal(loaded.clubs[1].budget,spent);
+ root.ProLifeApp.execute(loaded,"ackCoachPresentation",{id});
+ assert.equal(loaded.coachCareer.presentations.length,1);
+ assert.equal(loaded.clubs[1].roster.filter(p=>p.id==="p0").length,1);
+});
+test("Signing reveal actions and market presentation stay manager-only",()=>{
+ const ui=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+ const root={};root.globalThis=root;
+ vm.runInNewContext(ui,root);
+ const state={mode:"coach",clubId:"a",season:2026,day:1,clubs:[{id:"a",name:"Clube",budget:100000,roster:[]}],coachCareer:{presentations:[{id:"q1",playerId:"p1",playerName:"Reforço",toClubId:"a",toClubName:"Clube",fromClubName:"Origem",fee:25000,presented:false}]}};
+ const D={club:s=>s.clubs[0]};
+ const html=root.ProLifeCoachCareerView.renderMarket(state,D);
+ for(const attr of ["data-coach-signing-done","data-coach-signing-squad","data-coach-signing-history"])assert.ok(html.includes(attr),attr);
+ assert.match(html,/CONTRATAÇÃO CONFIRMADA/);
+ assert.doesNotMatch(html,/aria-label="Seções da carreira"/);
+ assert.match(app,/ackCoachPresentation/);
+});
