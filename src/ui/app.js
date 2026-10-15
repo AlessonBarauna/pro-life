@@ -2208,6 +2208,19 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const remaining=starters.slice(), assigned=selection?.assignedPositions||{};
       const broad=(role,p)=>role==="GOL"?p.pos==="GOL":["LE","ZAG","LD"].includes(role)?["DEF","LE","ZAG","LD"].includes(p.pos):["PE","CA","PD"].includes(role)?["ATA","PE","CA","PD"].includes(p.pos):["MEI","ME","MC","VOL","MD"].includes(p.pos);
       const rows=(roleRows[formation]||roleRows["4-3-3"]).map(([label,roles])=>({label,players:roles.map(role=>{let at=remaining.findIndex(p=>assigned[p.id]===role);if(at<0)at=remaining.findIndex(p=>broad(role,p));if(at<0&&role!=="GOL")at=remaining.findIndex(p=>p.pos!=="GOL");if(at<0)at=0;return remaining.length?remaining.splice(at,1)[0]:null;}).filter(Boolean)}));
+      // Keep the coach's explicit slot order instead of re-sorting every render.
+      if(coach){
+        const saved=state.coachCareer?.pitchSlots;
+        const ids=starters.map(p=>p.id);
+        const valid=Array.isArray(saved)&&saved.length===ids.length&&new Set(saved).size===ids.length&&saved.every(id=>ids.includes(id));
+        if(valid){
+          let cursor=0;
+          for(const row of rows)row.players=row.players.map(()=>c.roster.find(p=>p.id===saved[cursor++])).filter(Boolean);
+        }else if(ids.length===11){
+          state.coachCareer ||= {version:1};
+          state.coachCareer.pitchSlots=rows.flatMap(row=>row.players.map(p=>p.id));
+        }
+      }
       if(remaining.length)rows.splice(Math.max(1,rows.length-1),0,{label:"AJUSTE",players:remaining.splice(0)});
       const ratings=selected?D.Training.groupRatings(selected.attrs):{};
       const attrs=[["pace","Ritmo"],["finish","Finalização"],["pass","Passes"],["defense","Defesa"],["strength","Força"],["stamina","Resistência"]];
@@ -8577,6 +8590,8 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     const ids=[...(club.lineup||[])],fi=ids.indexOf(fromId),ti=ids.indexOf(toId);
     if(ti<0&&(to.injury||Number(to.suspension)>0)){toast("O reserva escolhido está indisponível.");return false;}
     if(fi<0&&ti<0){toast("Escolha um titular para a troca.");return false;}
+    const saved=state.coachCareer?.pitchSlots;
+    const oldPitch=Array.isArray(saved)&&saved.length===11?[...saved]:null;
     if(fi>=0&&ti>=0){ids[fi]=toId;ids[ti]=fromId;}
     else if(fi>=0){ids[fi]=toId;}
     else {ids[ti]=fromId;}
@@ -8603,7 +8618,14 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     }
     try{
       A.execute(state,"lineup",{ids:chosen});
-      persist();squadSelectedId=fromId;render();toast("Substituição realizada e XI atualizado.");
+      if(oldPitch){
+        const nextPitch=oldPitch.map(id=>id===fromId?toId:id===toId?(fi>=0&&ti>=0?fromId:id):id);
+        if(new Set(nextPitch).size===11&&nextPitch.every(id=>chosen.includes(id))){
+          state.coachCareer ||= {version:1};
+          state.coachCareer.pitchSlots=nextPitch;
+        }else if(state.coachCareer)delete state.coachCareer.pitchSlots;
+      }else if(state.coachCareer)delete state.coachCareer.pitchSlots;
+      persist();squadSelectedId=fromId;render();toast("Posições do XI atualizadas.");
       return true;
     }catch(e){toast(e.message);return false;}
   }
