@@ -37,7 +37,21 @@
       scenarios:scenarios(c)
     }));
   }
-  const api={estimate,scenarios,compare,VERSION:"m04.2"};
+  // M04.3: calibration report only; no budget assignment, no save writes.
+  function calibration(clubs){
+    const rows=compare(clubs).map(row=>{
+      const proposed=row.suggestedTransferBudget;
+      const current=row.currentBudget;
+      const ratio=current!=null&&proposed>0?current/proposed:null;
+      const assessment=ratio==null?"sem_orcamento":
+        ratio<.5?"abaixo_da_referencia":ratio>2?"acima_da_referencia":"dentro_da_faixa";
+      return {...row,ratio,assessment};
+    });
+    const counts={sem_orcamento:0,abaixo_da_referencia:0,acima_da_referencia:0,dentro_da_faixa:0};
+    rows.forEach(row=>{counts[row.assessment]++;});
+    return {rows,counts,total:rows.length,readOnly:true,method:"reference_comparison",version:"m04.3"};
+  }
+  const api={estimate,scenarios,compare,calibration,VERSION:"m04.3"};
   root.ProLifeClubEconomy=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
