@@ -4,7 +4,7 @@ const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
 const css=fs.readFileSync(path.join(__dirname,"../src/ui/fc27-05b-squad.css"),"utf8");
 test("coach pitch preserves explicit position order between renders",()=>{
  assert.match(app,/const saved=state\.coachCareer\?\.pitchSlots/);
- assert.match(app,/const valid=Array\.isArray\(saved\)/);
+ assert.match(app,/const valid=state\.coachCareer\?\.pitchFormation===formation&&Array\.isArray\(saved\)/);
  assert.match(app,/row\.players=saved\.slice\(cursor,cursor\+count\)\.map/);
  assert.match(app,/state\.coachCareer\.pitchSlots=nextPitch/);
 });
