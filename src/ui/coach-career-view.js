@@ -387,6 +387,19 @@
     const payrollHistory=payrollForecastEntries.length?'<section class="cc-card" aria-label="Histórico da previsão salarial"><h4>Histórico de previsões mensais</h4>'+
       payrollForecastEntries.slice(-6).reverse().map(e=>'<p class="cc-note">Registro '+careerDate(s,e.day)+' · Salários informados: '+esc(money(e.monthlyRegistered))+
       ' · Sem salário: '+esc(e.missingCount)+' · Somente previsão, não pago</p>').join("")+'</section>':'';
+    // M03.11: independently classify transfer liabilities and documented receipts.
+    // A transfer fee is not recurring operating revenue.
+    const validDebts=debts.filter(d=>d&&Number.isFinite(Number(d.amount))&&Number(d.amount)>0);
+    const transferDue=validDebts.reduce((sum,d)=>sum+Number(d.amount),0);
+    const overdueDebts=validDebts.filter(d=>Number.isFinite(Number(d.dueDay))&&Number(d.dueDay)<Number(s.day));
+    const hasRevenueEvidence=knownRecurringRevenue.length>0;
+    const financeAudit='<section class="cc-card" aria-label="Auditoria das obrigações financeiras"><h4>Auditoria de entradas e obrigações</h4>'+
+      '<p><b>Parcelas de transferências em aberto:</b> '+esc(money(transferDue))+
+      ' · <b>Parcelas vencidas:</b> '+esc(overdueDebts.length)+'</p>'+
+      '<p><b>Fontes de receitas recorrentes cadastradas:</b> '+esc(knownRecurringRevenue.length)+
+      ' · <b>Empréstimos ativos:</b> '+esc(activePayrollLoans.length)+'</p>'+
+      '<p class="cc-note">'+(hasRevenueEvidence?'Receitas cadastradas exibidas no painel de custeio.':'Nenhuma fonte recorrente cadastrada. Isso não significa ausência de receitas reais.')+
+      ' Transferências, receitas recorrentes e salários são categorias separadas. Nenhum lançamento ou pagamento foi criado.</p></section>';
     const debtRows=wrap(debts,d=>'<article class="cc-deal"><div class="cc-deal-parties">'+team(d.buyerClubId)+'<span aria-hidden="true">→</span>'+team(d.sourceClubId)+'</div><div class="cc-deal-terms"><b>'+esc(money(d.amount))+'</b><small>Vencimento: dia '+esc(d.dueDay)+' · '+esc(d.playerId||"Transferência")+'</small></div><span class="cc-status">A pagar</span></article>',"Nenhuma parcela em aberto.");
     const clauseRows=wrap(clauses,x=>'<article class="cc-deal"><div class="cc-deal-player">'+athlete(x.playerId)+'</div><div class="cc-deal-parties">'+team(x.sellerClubId)+'<span aria-hidden="true">→</span>'+team(x.buyerClubId)+'</div><div class="cc-deal-terms"><b>'+esc(x.percentage)+'% de revenda</b><small>Ativa até uma próxima venda definitiva</small></div></article>',"Nenhuma cláusula ativa.");
     const historyRows=[
@@ -411,7 +424,7 @@
     ];
     const marketOverview='<section class="cc-market-overview" aria-label="Painel de decisões do mercado"><div class="cc-market-overview-heading"><div><small>VISÃO GERAL</small><h3>Decisões do mercado</h3></div><p>Dados atuais da carreira. Selecione uma categoria para continuar.</p></div><div class="cc-market-overview-grid">'+
       summaryCards.map(x=>'<button type="button" class="cc-market-overview-card" data-coach-deal-tab="'+esc(x.tab)+'"><small>'+esc(x.label)+'</small><strong>'+x.value+'</strong><span>'+esc(x.note)+'</span></button>').join("")+'</div></section>';
-    const content={lista:listRows,recebidas:saleRows,propostas:deals,emprestimos:loanRows,financeiro:payrollPanel+financeReadiness+payrollHistory+debtRows,contratos:payrollPanel+contractRows,clausulas:clauseRows,historico:historyRows};
+    const content={lista:listRows,recebidas:saleRows,propostas:deals,emprestimos:loanRows,financeiro:payrollPanel+financeReadiness+financeAudit+payrollHistory+debtRows,contratos:payrollPanel+contractRows,clausulas:clauseRows,historico:historyRows};
     const heading={lista:"Jogadores observados",recebidas:"Propostas recebidas pelos seus jogadores",propostas:"Propostas e contrapropostas",emprestimos:"Empréstimos ativos",financeiro:"Obrigações financeiras",contratos:"Contratos do elenco",clausulas:"Cláusulas de revenda",historico:"Histórico financeiro e de transferências"};
     return '<nav class="cc-deal-nav" aria-label="Áreas do mercado"><button type="button" data-coach-market-area="observacao">Observação</button><button type="button" data-coach-market-area="transferencias" aria-current="page">Transferências</button></nav><div class="cc-strip"><div><b>'+pending.length+'</b><span>Propostas pendentes</span></div><div><b>'+loans.length+'</b><span>Empréstimos ativos</span></div><div><b>'+debts.length+'</b><span>Parcelas a pagar</span></div><div><b>'+clauses.length+'</b><span>Cláusulas de revenda</span></div></div><p class="cc-note">Valores do save atual em BRL · prazos em dias da carreira</p>'+draftPanel+marketOverview+taskPanel+'<nav class="cc-deal-nav" aria-label="Categorias de negociações">'+tabs.map(([id,label,count])=>'<button type="button" data-coach-deal-tab="'+id+'" aria-pressed="'+(ui.dealTab===id)+'">'+label+' <small>'+count+'</small></button>').join("")+'</nav><section class="cc-card cc-deal-section"><h3>'+heading[ui.dealTab]+'</h3>'+detail+content[ui.dealTab]+'</section>';
   }
