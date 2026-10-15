@@ -1645,7 +1645,20 @@
     // Loan return: deterministic, idempotent and isolated from the player career.
     if(s.mode==="coach"&&Array.isArray(s.coachCareer?.loans)){
       for(const loan of s.coachCareer.loans){
-        if(loan.returned||Number(s.day)<Number(loan.dueDay))continue;
+        if(loan.returned)continue;
+        // Monthly wage contribution; persisted nextSalaryDay prevents duplicate charges after reload.
+        const borrowingClub=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])].find(c=>c.id===loan.toClubId);
+        const parentClub=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])].find(c=>c.id===loan.fromClubId);
+        const borrowerPlayer=borrowingClub?.roster?.find(p=>p.id===loan.playerId);
+        if(borrowingClub&&parentClub&&borrowerPlayer&&Number.isFinite(loan.nextSalaryDay)){
+          while(Number(s.day)>=loan.nextSalaryDay&&loan.nextSalaryDay<loan.dueDay){
+            const wage=Math.max(0,Math.round(Number(borrowerPlayer.salary)||2500));
+            const share=Math.round(wage*(Number(loan.salaryShare)||0)/100);
+            if(share){borrowingClub.budget=(Number(borrowingClub.budget)||0)-share;parentClub.budget=(Number(parentClub.budget)||0)+share;}
+            loan.nextSalaryDay+=30;
+          }
+        }
+        if(Number(s.day)<Number(loan.dueDay))continue;
         const all=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])];
         const borrowing=all.find(c=>c.id===loan.toClubId),origin=all.find(c=>c.id===loan.fromClubId);
         if(!borrowing||!origin||!Array.isArray(borrowing.roster)||!Array.isArray(origin.roster))continue;
