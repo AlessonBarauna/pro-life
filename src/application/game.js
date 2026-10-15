@@ -308,6 +308,22 @@ case "tactic": {
         if(!n||s.day>n.expiresDay||n.buyerClubId!==s.clubId)throw Error("Proposta expirada ou indisponível.");
         return execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:data.paymentPlan==="split"?"split":"upfront",dealType:"permanent"});
       }
+      case "toggleCoachShortlist": {
+        if(s.mode!=="coach"||!s.clubId)throw Error("Disponível somente ao treinador com clube.");
+        const own=D.club(s),seller=D.club(s,data.clubId);
+        const player=seller?.roster?.find(p=>p.id===data.playerId);
+        if(!own||!seller||seller.id===own.id||!player||player.id==="hero")throw Error("Jogador indisponível.");
+        s.coachCareer||={version:1};
+        const list=s.coachCareer.shortlist||[];
+        const existing=list.findIndex(x=>x.clubId===seller.id&&x.playerId===player.id);
+        if(existing>=0)list.splice(existing,1);
+        else {
+          if(list.length>=80)throw Error("Lista de observação cheia.");
+          list.push({clubId:seller.id,playerId:player.id,addedDay:s.day});
+        }
+        s.coachCareer.shortlist=list;
+        break;
+      }
       case "generateSaleInterest": {
         if(s.mode!=="coach"||!s.clubId)throw Error("Disponível apenas ao treinador com clube.");
         if(!D.Career.windowStatus(s).open)throw Error("Janela de transferências fechada.");
