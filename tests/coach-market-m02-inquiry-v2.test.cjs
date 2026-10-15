@@ -20,7 +20,7 @@ test("M02 resolves pending inquiries once with bounded deterministic interest",(
  assert.match(domain,/Number\(s\.day\)<Number\(inquiry\.responseDay\)/);
  assert.match(domain,/inquiry\.playerDecision=/);
  assert.match(domain,/inquiry\.clubDecision=/);
- assert.match(domain,/inquiry\.status=inquiry\.playerDecision==="accepted"&&inquiry\.clubDecision==="accepted"/);
+ assert.match(domain,/inquiry\.clubDecision=clubDemand\?"asking_price"/);
  assert.match(domain,/settleInquiries\(s,api\)/);
 });
 test("M02 inquiry button requires acceptance before starting a new offer",()=>{
@@ -29,7 +29,7 @@ test("M02 inquiry button requires acceptance before starting a new offer",()=>{
  assert.match(view,/Sondagem recusada/);
  assert.match(view,/Sondagem aceita/);
  assert.match(app,/command\("coachInquiry"/);
- assert.match(app,/inquiry\.status!=="accepted"/);
+ assert.match(app,/\["accepted","asking_price"\]\.includes\(inquiry\.status\)/);
  assert.match(app,/command\("counterRecruit"/);
 });
 
