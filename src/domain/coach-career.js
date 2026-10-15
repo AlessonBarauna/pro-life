@@ -75,7 +75,7 @@
       const position=normalizePos(p.pos||p.position)||"UNKNOWN";
       const row=report.byPosition[position]||={total:0,verified:0,suggested:0,unmatched:0};
       row.total++;
-      const key=String(p.eaId??(String(p.id).match(/^real_(\\d+)$/)?.[1]||""));
+      const key=String(p.eaId??(String(p.id).match(/^real_(\d+)$/)?.[1]||""));
       const hasSource=Object.prototype.hasOwnProperty.call(catalog,key);
       const verified=hasSource||p.secondaryPositionsSource==="ea_fc27"||p.secondaryPositionsSource==="verified";
       const suggested=!verified&&p.secondaryPositionsSource==="suggested";
