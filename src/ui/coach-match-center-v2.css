@@ -31,3 +31,8 @@
 .lm-mc-ratings article span{min-width:0;display:grid;gap:3px}
 .lm-mc-ratings article small{display:block;color:#94a7b4;font-size:10px}
 .lm-mc-ratings article strong{white-space:nowrap;color:#d6fd41}
+
+/* Coach tactical-view readability: names stay attached to shirt markers. */
+.lm-pitch .lm-player-name{max-width:132px;font-size:13px;font-weight:800;line-height:1.2;padding:4px 7px;letter-spacing:.01em;border:1px solid #ffffff22;box-shadow:0 2px 8px #0009}
+.lm-pitch .lm-player-wrap .lm-player{width:29px;height:29px;font-size:11px}
+@media(max-width:780px){.lm-pitch .lm-player-name{font-size:11px;max-width:98px;padding:3px 5px}}
