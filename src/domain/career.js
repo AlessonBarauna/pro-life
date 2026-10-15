@@ -1629,6 +1629,19 @@
   }
   function daily(s) {
     const e = init(s);
+    // Settle deferred manager transfers once, even after saving/reloading.
+    if(s.mode==="coach" && Array.isArray(s.coachCareer?.transferDebts)){
+      for(const debt of s.coachCareer.transferDebts){
+        if(debt.paid || !Number.isFinite(debt.amount) || debt.amount<=0 || Number(s.day)<Number(debt.dueDay))continue;
+        const buyer=(s.clubs||[]).concat(s.globalFootball?.clubs||[]).find(c=>c.id===debt.buyerClubId);
+        const seller=(s.clubs||[]).concat(s.globalFootball?.clubs||[]).find(c=>c.id===debt.sourceClubId);
+        if(!buyer||!seller)continue;
+        buyer.budget=(Number(buyer.budget)||0)-debt.amount;
+        seller.budget=(Number(seller.budget)||0)+debt.amount;
+        debt.paid=true;debt.paidDay=s.day;
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Parcela de transferência liquidada",body:"Pagamento de R$ "+debt.amount.toLocaleString("pt-BR")+" concluído."});
+      }
+    }
     pruneMessages(s);
     agencyDaily(s);
     if (s.mode === "player" && s.clubId && s.contract > 0) {
