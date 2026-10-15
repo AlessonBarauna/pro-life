@@ -294,6 +294,20 @@ case "tactic": {
         s.reputation = D.clamp(s.reputation + 3, 0, 100);
         break;
       }
+      case "rejectCoachDeal": {
+        if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
+        const n=s.coachCareer?.negotiations?.find(n=>n.id===data.id && n.status==="pending");
+        if(!n)throw Error("Proposta indisponível.");
+        n.status="rejected";n.closedDay=s.day;
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Negociação recusada",body:"Proposta recusada pelo treinador."});
+        break;
+      }
+      case "acceptCoachDeal": {
+        if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
+        const n=s.coachCareer?.negotiations?.find(n=>n.id===data.id && n.status==="pending");
+        if(!n||s.day>n.expiresDay||n.buyerClubId!==s.clubId)throw Error("Proposta expirada ou indisponível.");
+        return execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:"upfront",dealType:"permanent"});
+      }
       case "counterRecruit": {
         if(s.mode!=="coach"||!D.Career.windowStatus(s).open)throw Error("Negociação indisponível.");
         const buyer=D.club(s),seller=D.club(s,data.clubId);
