@@ -329,8 +329,9 @@ test("Coach profile uses manager-specific panels without player number or attrib
  const playerStart=app.indexOf('if (state.mode === "player") {\n        const P = window.ProLifePlayerProfile.init',coachStart);
  assert.ok(coachStart>0&&playerStart>coachStart,"coach profile must be isolated before player profile");
  const coach=app.slice(coachStart,playerStart);
- for(const section of ["coach-prof-resumo","coach-prof-desempenho","coach-prof-trajetoria","coach-prof-conquistas","coach-prof-identidade"]){
-   assert.ok(coach.includes(section),section);
+ for(const section of ["resumo","desempenho","trajetoria","conquistas","identidade"]){
+   assert.ok(coach.includes('data-coach-profile-tab="'+section+'"'),section+" navigation");
+   assert.ok(coach.includes('coachProfileTab==="'+section+'"'),section+" screen");
  }
  for(const forbidden of ['id="shirt-number"','data-action="number"','Charts.radar','D.Training.groupRatings','Comemoração']){
    assert.equal(coach.includes(forbidden),false,forbidden);
