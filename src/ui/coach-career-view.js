@@ -418,7 +418,7 @@
       (sponsorOffers.length?sponsorOffers.map(o=>'<article class="cc-deal"><div><b>'+esc(o.brandName)+
         '</b><p class="cc-note">'+esc(o.label)+' · '+esc(money(o.annualAmount))+'/ano · 365 dias</p></div>'+
         '<div class="cc-deal-actions"><button type="button" data-coach-sponsor-accept="'+esc(o.id)+'">Aceitar</button><button type="button" data-coach-sponsor-reject="'+esc(o.id)+'">Recusar</button><button type="button" data-coach-sponsor-counter="'+esc(o.id)+'" data-coach-sponsor-amount="'+esc(Math.round(o.annualAmount*1.1))+'">Contraproposta +10%</button></div></article>').join(''):
-        '<p class="cc-note">'+(root.ProLifeClubEconomy?.sponsorshipOffers?"Nenhuma nova proposta disponível para as categorias atuais.":"Módulo de propostas não carregado. Atualize a página com Ctrl + F5.")+'</p>')+
+        '<p class="cc-note">'+(root.ProLifeClubEconomy?.sponsorshipOffers?"Nenhuma nova proposta disponível para as categorias atuais.":"Módulo de propostas indisponível (versão econômica: "+esc(root.ProLifeClubEconomy?.VERSION||"ausente")+"). A área de contratos permanece protegida.")+'</p>')+
       (sponsorCounterOffers.length?'<p class="cc-note">Contrapropostas registradas (aguardando sua confirmação):</p>'+sponsorCounterOffers.map(o=>'<article class="cc-deal"><b>'+esc(o.brandName)+' · '+esc(money(o.counterAmount))+'/ano</b><button type="button" data-coach-sponsor-accept="'+esc(o.id)+'">Confirmar contraproposta</button></article>').join(''):'')+
       '<p class="cc-note">O aceite registra um contrato futuro, sem crédito imediato. Contrapropostas não são respostas da marca; o valor é uma simulação negociável.</p></section>';
     const signedRevenue=(c.finance?.revenueContracts||[]).filter(x=>String(x.clubId)===String(s.clubId));
