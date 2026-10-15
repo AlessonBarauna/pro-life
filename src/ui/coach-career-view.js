@@ -171,12 +171,12 @@
       const facts=[p.pos||p.position,Number.isFinite(Number(overall))?'GER '+Math.round(Number(overall)):null,Number.isFinite(Number(p.age))?'Idade '+p.age:null,p.nationality||p.nation].filter(Boolean).join(' · ');
       return '<strong>'+esc(p.name||id)+'</strong><small>'+esc(facts)+'</small>';
     };
-    const pending=(c.negotiations||[]).filter(n=>n.status==="pending");
+    const pending=(c.negotiations||[]).filter(n=>n.status==="pending"||n.status==="awaiting_window");
     const sales=(c.saleOffers||[]).filter(o=>o.status==="pending");
     const loans=(c.loans||[]).filter(l=>!l.returned);
     const debts=(c.transferDebts||[]).filter(d=>!d.paid);
     const clauses=(c.sellOnClauses||[]).filter(x=>x.active);
-    const negotiationHistory=(c.negotiations||[]).filter(n=>n.status!=="pending");
+    const negotiationHistory=(c.negotiations||[]).filter(n=>n.status!=="pending"&&n.status!=="awaiting_window");
     const saleHistory=(c.saleOffers||[]).filter(o=>o.status!=="pending");
     const paid=(c.transferDebts||[]).filter(d=>d.paid);
     const finishedLoans=(c.loans||[]).filter(l=>l.returned);
@@ -191,8 +191,9 @@
       return '<article class="cc-deal"><div class="cc-deal-player">'+athlete(o.playerId)+'</div><div>'+team(o.buyerClubId)+'<small> Interesse em contratar · rodada '+esc(o.round||1)+'/3</small></div><div class="cc-deal-terms"><b>'+esc(money(o.amount))+'</b><small>Até o dia '+esc(o.expiresDay)+'</small></div><div class="cc-deal-actions">'+(expired?'<span class="cc-status">Expirada</span>':'<button type="button" data-coach-sale-accept="'+esc(o.id)+'">Aceitar e vender</button>')+'<button type="button" data-coach-sale-reject="'+esc(o.id)+'">Recusar</button>'+(expired||o.round>=3?'':'<input type="number" min="1000" step="1000" value="'+esc(o.amount)+'" data-coach-sale-amount="'+esc(o.id)+'" aria-label="Valor da contraproposta"><button type="button" data-coach-sale-counter="'+esc(o.id)+'">Contraproposta</button>')+'</div></article>';
     },"Nenhuma proposta de compra recebida.");
     const deals=wrap(pending,n=>{
-      const expired=Number(s.day)>Number(n.expiresDay);
-      return '<article class="cc-deal"><div class="cc-deal-player">'+athlete(n.playerId)+'</div><div class="cc-deal-parties">'+team(n.sellerClubId)+'<span aria-hidden="true">→</span>'+team(n.buyerClubId)+'</div><div class="cc-deal-terms"><b>'+esc(money(n.finalFee))+'</b><small>Proposta: '+esc(money(n.requested))+' · Até dia '+esc(n.expiresDay)+'</small></div><div class="cc-deal-actions"><span class="cc-status">'+(expired?'Expirada':'Aguardando decisão')+'</span>'+(expired?'':'<button type="button" data-coach-deal-accept="'+esc(n.id)+'">Aceitar valor</button>')+'<button type="button" data-coach-deal-reject="'+esc(n.id)+'">Recusar</button><button type="button" data-coach-deal-open="'+esc(n.id)+'">Ver negociação</button></div></article>';
+      const waiting=n.status==="awaiting_window";
+      const expired=!waiting&&Number(s.day)>Number(n.expiresDay);
+      return '<article class="cc-deal"><div class="cc-deal-player">'+athlete(n.playerId)+'</div><div class="cc-deal-parties">'+team(n.sellerClubId)+'<span aria-hidden="true">→</span>'+team(n.buyerClubId)+'</div><div class="cc-deal-terms"><b>'+esc(money(n.finalFee))+'</b><small>Proposta: '+esc(money(n.requested))+' · Até dia '+esc(n.expiresDay)+'</small></div><div class="cc-deal-actions"><span class="cc-status">'+(waiting?(n.lastSettlementError?'Aguardando regularização: '+esc(n.lastSettlementError):'Aguardando abertura da janela'):expired?'Expirada':'Aguardando decisão')+'</span>'+(expired||waiting?'':'<button type="button" data-coach-deal-accept="'+esc(n.id)+'">Aceitar valor</button>')+'<button type="button" data-coach-deal-reject="'+esc(n.id)+'">Recusar</button><button type="button" data-coach-deal-open="'+esc(n.id)+'">Ver negociação</button></div></article>';
     },"Nenhuma contraproposta pendente.");
     const loanRows=wrap(loans,l=>'<article class="cc-deal"><div class="cc-deal-player">'+athlete(l.playerId)+'</div><div class="cc-deal-parties">'+team(l.fromClubId)+'<span aria-hidden="true">→</span>'+team(l.toClubId)+'</div><div class="cc-deal-terms"><b>Até dia '+esc(l.dueDay)+'</b><small>Salário do contratante: '+esc(l.salaryShare??0)+'% · Taxa: '+esc(money(l.fee))+'</small><small>'+(l.buyOption?'Opção de compra '+esc(money(l.buyOption)):'Sem opção de compra')+'</small></div>'+(l.buyOption&&l.toClubId===s.clubId?'<button type="button" data-coach-deal-buy="'+esc(l.id)+'">Comprar jogador</button>':'')+'</article>',"Nenhum empréstimo ativo.");
     const debtRows=wrap(debts,d=>'<article class="cc-deal"><div class="cc-deal-parties">'+team(d.buyerClubId)+'<span aria-hidden="true">→</span>'+team(d.sourceClubId)+'</div><div class="cc-deal-terms"><b>'+esc(money(d.amount))+'</b><small>Vencimento: dia '+esc(d.dueDay)+' · '+esc(d.playerId||"Transferência")+'</small></div><span class="cc-status">A pagar</span></article>',"Nenhuma parcela em aberto.");
