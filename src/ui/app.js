@@ -2295,7 +2295,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         '<p>'+esc(phaseDescription)+'</p><div class="pl-coach-phase-stats"><span><small>FORMAÇÃO</small><b>'+esc(formation)+'</b></span>'+
         '<span><small>'+(squadPhase==="with-ball"?'LARGURA':'PROFUNDIDADE')+'</small><b>'+esc(squadPhase==="with-ball"?(teamTactics.width??50):(teamTactics.depth??50))+'</b></span>'+
         '<span><small>'+(squadPhase==="with-ball"?'CONSTRUÇÃO':'PRESSÃO')+'</small><b>'+esc(squadPhase==="with-ball"?(teamTactics.buildup||"balanced"):(teamTactics.pressing||"balanced"))+'</b></span></div></div>';
-      const tacticSettings=squadTab==="tactics"&&coach?`<section class="pl-squad-supplement pl-team-tactics"><div class="tag">TÁTICAS COLETIVAS</div><h2>Modelo de jogo</h2><p>Estilo coletivo aplicado ao motor de partidas. Pressão, construção, largura e profundidade são preparadas para integração tática posterior.</p>
+      const tacticSettings=squadTab==="tactics"&&coach?`<section class="pl-squad-supplement pl-team-tactics"><div class="tag">TÁTICAS COLETIVAS</div><h2>Modelo de jogo</h2><p>Táticas com bola e sem bola influenciam a simulação em escala moderada; os ajustes não substituem a qualidade dos atletas.</p>
       <div class="pl-team-tactics-grid">
       <label>Estilo<select data-team-tactic-style>${opt([["balanced","Equilibrado"],["possession","Posse e bola"],["counter","Contra-ataque"],["attack","Ofensivo"]],teamTactics.style||c.tactic||"balanced")}</select></label>
       <label>Pressão<select data-team-tactic-pressing>${opt([["low","Bloco baixo"],["balanced","Equilibrada"],["high","Alta"]],teamTactics.pressing||"balanced")}</select></label>
