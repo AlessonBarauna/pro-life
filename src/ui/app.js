@@ -8494,7 +8494,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return;
     }
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
-    const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-shortlist],[data-coach-scout-offer]");
+    const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer]");
     if (!el || !state || state.mode !== "coach") return;
     const V = window.ProLifeCoachCareerView;
     if (el.hasAttribute("data-coach-tab")) { V?.setTab(el.getAttribute("data-coach-tab")); render(); return; }
@@ -8521,10 +8521,18 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return;
     }
     if(el.hasAttribute("data-coach-shortlist")) return command("toggleCoachShortlist",{clubId:el.getAttribute("data-coach-shortlist"),playerId:el.getAttribute("data-coach-player")});
+    if(el.hasAttribute("data-coach-inquire")){
+      return command("coachInquiry",{clubId:el.getAttribute("data-coach-inquire"),playerId:el.getAttribute("data-coach-player")});
+    }
     if(el.hasAttribute("data-coach-scout-offer")){
       const clubId=el.getAttribute("data-coach-scout-offer"),playerId=el.getAttribute("data-coach-player");
       const athlete=D.club(state,clubId)?.roster?.find(p=>p.id===playerId)||D.GlobalFootball?.playerById?.(state,playerId);
       if(!athlete){toast("Jogador indisponível.");return;}
+      const inquiry=state.coachCareer?.inquiries?.find(x=>x.playerId===playerId&&x.clubId===clubId&&x.buyerClubId===state.clubId);
+      if(!inquiry||inquiry.status!=="accepted"||Number(state.day)>Number(inquiry.expiresDay)){
+        toast("Consulte o interesse e aguarde a resposta do clube antes de negociar.");
+        return;
+      }
       V?.setMarketArea("transferencias"); V?.setDealTab("propostas");
       return command("counterRecruit",{clubId,playerId,offer:A.valuation(athlete)});
     }
