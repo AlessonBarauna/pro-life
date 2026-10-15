@@ -111,10 +111,16 @@ function ensureCareer(s){
       s.extras.playerRivalryHistory.unshift(archived);
     s.extras.playerRivalryHistory=s.extras.playerRivalryHistory.slice(0,12);
   }
-  const pool=eligibleRivals(s).filter(r=>r.clubId!==String(s.clubId));
+  const pool=candidateStats(s).filter(r=>r.clubId!==String(s.clubId));
   if(!pool.length)return null;
-  const rival=pool[0];
-  s.extras.playerRivalry={...initial({season:s.season,clubId:s.clubId,rivalId:rival.id,position:s.person?.pos}),rivalName:rival.name,rivalClubId:rival.clubId,rivalPosition:rival.position,awarded:false};
+  const scored=pool.slice().sort((a,b)=>{
+    const playerGoals=integer(s.person?.goals),playerAssists=integer(s.person?.assists);
+    const distance=r=>r.statistics?Math.abs(r.statistics.goals-playerGoals)+Math.abs(r.statistics.assists-playerAssists):1e6;
+    return distance(a)-distance(b)||String(a.clubId).localeCompare(String(b.clubId))||String(a.id).localeCompare(String(b.id));
+  });
+  const rival=scored[0];
+  const objectiveId=String(s.person?.pos||"").toUpperCase()==="ATA"&&integer(s.person?.goals)>=10?"hatTrick":undefined;
+  s.extras.playerRivalry={...initial({season:s.season,clubId:s.clubId,rivalId:rival.id,position:s.person?.pos,objectiveId}),rivalName:rival.name,rivalClubId:rival.clubId,rivalPosition:rival.position,awarded:false};
   return s.extras.playerRivalry;
 }
 function onCareerMatch(s,m){
