@@ -18,6 +18,6 @@ test("M03: settle once, publish answer after waiting, and keep historical deals"
 test("M03: pending offers cannot conclude and show a career date",()=>{
  assert.match(game,/if\(n\.response!=="accepted"\)throw Error\("Aguarde o aceite/);
  assert.match(view,/Aguardando resposta até "\+careerDate\(s,n\.replyDay\)/);
- assert.match(view,/selected\.response!=="awaiting_reply"/);
+ assert.match(view,/selected\.status!=="pending"\|\|selected\.response!=="accepted"/);
  assert.match(view,/Resposta prevista em '\+careerDate\(s,n\.replyDay\)/);
 });
