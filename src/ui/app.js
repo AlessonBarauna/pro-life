@@ -2284,7 +2284,16 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         '<button type="button" data-coach-role-save="'+esc(selected?.id)+'" '+(!allowedRoles.length?'disabled':'')+'>Salvar função</button>'+
         (currentRole?.position===activeRolePosition?'<p class="muted">Função registrada: '+esc(allowedRoles.find(x=>x[0]===currentRole.role)?.[1]||currentRole.role)+'</p>':'')+
         '</section>':'';
-      const tabSupplement=squadTab==="tactics"?`<section class="pl-squad-supplement"><div><div class="tag">PLANO TÁTICO</div><h2>${esc(tacticLabel)}</h2><p>${coach?"Ajuste o comportamento coletivo sem alterar o motor de partidas.":"Plano definido pela comissão técnica."}</p></div>${coach?`<label>Estilo<select id="tactic">${opt([["balanced","Equilibrado"],["possession","Posse e construção"],["counter","Bloco baixo e contra-ataque"],["attack","Ataque e risco"]],c.tactic)}</select></label>`:""}<div class="pl-squad-mini-kpis"><span><small>Formação</small><b>${esc(formation)}</b></span><span><small>Elenco</small><b>${c.roster.length}</b></span><span><small>Disponíveis</small><b>${c.roster.filter(p=>!isUnavailable(p)).length}</b></span></div></section>`:squadTab==="roles"?rolePanel:squadTab==="hierarchy"?`${coachRelation}${relation}`:"";
+      const teamTactics=state.coachCareer?.teamTactics||{};
+      const tacticSettings=squadTab==="tactics"&&coach?`<section class="pl-squad-supplement pl-team-tactics"><div class="tag">TÁTICAS COLETIVAS</div><h2>Modelo de jogo</h2><p>Estilo coletivo aplicado ao motor de partidas. Pressão, construção, largura e profundidade são preparadas para integração tática posterior.</p>
+      <div class="pl-team-tactics-grid">
+      <label>Estilo<select data-team-tactic-style>${opt([["balanced","Equilibrado"],["possession","Posse e bola"],["counter","Contra-ataque"],["attack","Ofensivo"]],teamTactics.style||c.tactic||"balanced")}</select></label>
+      <label>Pressão<select data-team-tactic-pressing>${opt([["low","Bloco baixo"],["balanced","Equilibrada"],["high","Alta"]],teamTactics.pressing||"balanced")}</select></label>
+      <label>Construção<select data-team-tactic-buildup>${opt([["short","Passes curtos"],["balanced","Equilibrada"],["direct","Passe direto"]],teamTactics.buildup||"balanced")}</select></label>
+      <label>Largura <input type="number" min="20" max="80" step="5" data-team-tactic-width value="${teamTactics.width??50}"></label>
+      <label>Profundidade <input type="number" min="20" max="80" step="5" data-team-tactic-depth value="${teamTactics.depth??50}"></label>
+      </div><button type="button" data-team-tactics-save>Salvar táticas</button></section>`:"";
+      const tabSupplement=squadTab==="tactics"?tacticSettings:squadTab==="roles"?rolePanel:squadTab==="hierarchy"?`${coachRelation}${relation}`:"";
       const contractSalary=selected?[selected.salary,selected.monthlySalary,selected.wage,selected.contract?.salary,selected.contract?.monthlySalary].find(v=>v!=null&&Number.isFinite(Number(v))&&Number(v)>0):null;
       const contractEnd=selected?[selected.contractEndDay,selected.contract?.endDay,selected.contract?.expiresDay].find(v=>v!=null&&Number.isFinite(Number(v))):null;
       const contractEndYear=selected?[selected.contractUntil,selected.contract?.endYear,selected.contract?.expiryYear].find(v=>v!=null&&Number.isFinite(Number(v))):null;
@@ -8775,6 +8784,10 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         squadUndo=null;squadSwapSource=null;persist();render();toast("Última troca desfeita.");
       }catch(error){toast(error.message);}
       return;
+    }
+    if(b.hasAttribute("data-team-tactics-save")){
+      const value=name=>document.querySelector('[data-team-tactic-'+name+']')?.value;
+      return command("coachTeamTactics",{style:value("style"),pressing:value("pressing"),buildup:value("buildup"),width:Number(value("width")),depth:Number(value("depth"))});
     }
     if (b.hasAttribute("data-coach-role-save")) {
       const id=b.getAttribute("data-coach-role-save");
