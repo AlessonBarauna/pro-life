@@ -1629,6 +1629,10 @@
   }
   function daily(s) {
     const e = init(s);
+    // Agreements signed outside the window are executed on its first open day.
+    if(s.mode==="coach"&&s.coachCareer?.negotiations?.some(n=>n.status==="awaiting_window")&&windowStatus(s).open){
+      root.ProLifeApp?.execute?.(s,"settleCoachWindowDeals",{});
+    }
     // Settle deferred manager transfers once, even after saving/reloading.
     if(s.mode==="coach" && Array.isArray(s.coachCareer?.transferDebts)){
       for(const debt of s.coachCareer.transferDebts){
