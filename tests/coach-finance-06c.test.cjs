@@ -509,3 +509,36 @@ test("Shortlist indicates transferred player belongs to new club and old target 
  root.ProLifeApp.execute(state,"toggleCoachShortlist",{clubId:"b",playerId:"target"});
  assert.equal(state.coachCareer.shortlist.length,0);
 });
+
+test("Off-window manager deal negotiates, signs, and settles only once after opening",()=>{
+ const {root,state}=saleFixture();
+ state.clubId="b";
+ let open=false;
+ root.ProLife.Career.windowStatus=()=>({open,remaining:12});
+ const before=state.clubs[1].budget;
+ root.ProLifeApp.execute(state,"counterRecruit",{clubId:"a",playerId:"p0",offer:160000});
+ const n=state.coachCareer.negotiations[0];
+ root.ProLifeApp.execute(state,"reviseCoachDeal",{id:n.id,offer:170000});
+ root.ProLifeApp.execute(state,"acceptCoachDeal",{id:n.id,paymentPlan:"upfront"});
+ assert.equal(n.status,"awaiting_window");
+ assert.equal(state.clubs[1].budget,before);
+ assert.equal(state.clubs[1].roster.length,0);
+ let saved=JSON.parse(JSON.stringify(state));
+ assert.throws(()=>root.ProLifeApp.execute(saved,"recruit",{clubId:"a",playerId:"p0"}),/Janela/);
+ open=true;
+ root.ProLifeApp.execute(saved,"settleCoachWindowDeals",{});
+ const paid=saved.clubs[1].budget;
+ assert.equal(saved.coachCareer.negotiations[0].status,"accepted");
+ assert.equal(saved.clubs[1].roster.filter(p=>p.id==="p0").length,1);
+ assert.ok(paid<before);
+ root.ProLifeApp.execute(saved,"settleCoachWindowDeals",{});
+ assert.equal(saved.clubs[1].budget,paid);
+ assert.equal(saved.clubs[1].roster.filter(p=>p.id==="p0").length,1);
+});
+test("Automatic future transfer hook runs from coach daily and UI shows awaiting window",()=>{
+ const career=fs.readFileSync(path.join(__dirname,"../src/domain/career.js"),"utf8");
+ const ui=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ assert.match(career,/settleCoachWindowDeals/);
+ assert.match(ui,/Aguardando abertura da janela/);
+ assert.match(ui,/n.status==="awaiting_window"/);
+});
