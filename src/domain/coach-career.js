@@ -284,20 +284,71 @@
   }
 
   // M02: delayed, deterministic club responses. No funds or player ownership change.
+  const leagueTier=club=>{
+    const name=String(club?.leagueId||club?.league||"").toLowerCase();
+    if(/premier|laliga|seriea_it|bundesliga|ligue1|eng1|esp1|ger1|ita1|fra1|ucl/.test(name))return 5;
+    if(/portugal|eredivisie|belg|turkey|argentina/.test(name))return 3;
+    if(/brasil|brazil|seriea|serie_a/.test(name))return 2.5;
+    return 2;
+  };
+  const prestige=club=>Math.max(1,Math.min(100,Number(club?.reputation??club?.prestige??club?.strength??60)));
+  function inquiryAssessment(s,buyer,seller,p){
+    const reasons=[];
+    const buyerTier=leagueTier(buyer),sellerTier=leagueTier(seller);
+    const diff=prestige(buyer)-prestige(seller);
+    const overall=Number(p?.overall??p?.ovr??75),age=Number(p?.age??26);
+    const years=Math.max(0,(Number(p?.contractEndDay??s.day+730)-Number(s.day))/365);
+    const home=String(p?.nationality||p?.nation||"").toLowerCase();
+    const target=String(buyer?.country||buyer?.nation||buyer?.nationality||"").toLowerCase();
+    const returnHome=!!home&&!!target&&(home===target||home.includes(target));
+    const recent=Number.isFinite(Number(p?.joinedDay))&&Number(s.day)-Number(p.joinedDay)<120;
+    const rival=buyer?.rivalId===seller?.id||seller?.rivalId===buyer?.id;
+    const wages=Number(p?.salary||0);
+    const budget=Number(buyer?.budget||0);
+    const continental=Number(buyer?.continentalLevel||0)-Number(seller?.continentalLevel||0);
+    const eliteGap=diff<=-22&&sellerTier-buyerTier>=2&&overall>=80&&age<33;
+    let playerScore=50+diff*.65+(buyerTier-sellerTier)*11+continental*5+(returnHome?9:0)+(age>=32?12:0)+(years<1?10:0)-(recent?18:0)-(rival?20:0);
+    if(overall>=85&&buyerTier<sellerTier)playerScore-=15;
+    if(wages>0&&budget>0&&budget<Math.max(2000000,wages*12))playerScore-=12;
+    if(eliteGap)playerScore=Math.min(playerScore,12);
+    let clubScore=50+diff*.15+(years<1?15:0)+(age>=32?12:0)-(recent?20:0)-(rival?25:0);
+    if(overall>=85&&age<=30)clubScore-=18;
+    if((seller.roster||[]).length<=18)clubScore-=20;
+    if(eliteGap)clubScore=Math.min(clubScore,35);
+    playerScore=Math.max(2,Math.min(95,Math.round(playerScore)));
+    clubScore=Math.max(2,Math.min(95,Math.round(clubScore)));
+    if(eliteGap)reasons.push("Destino com liga e prestígio muito inferiores ao clube atual");
+    if(recent)reasons.push("Contratação recente");
+    if(rival)reasons.push("Rivalidade entre clubes");
+    if(years<1)reasons.push("Contrato próximo do vencimento");
+    if(returnHome)reasons.push("Possibilidade de atuar no país de origem");
+    if(age>=32)reasons.push("Nova etapa da carreira");
+    if(overall>=85&&age<=30)reasons.push("Jogador importante para o clube vendedor");
+    if(!reasons.length)reasons.push("Avaliação de projeto esportivo, liga e prestígio");
+    return {playerScore,clubScore,reasons};
+  }
   function settleInquiries(s,api){
     const inquiries=s.coachCareer?.inquiries;
     if(!Array.isArray(inquiries))return 0;
     let settled=0;
     for(const inquiry of inquiries){
       if(inquiry.status!=="pending"||Number(s.day)<Number(inquiry.responseDay))continue;
-      const club=(s.clubs||[]).find(c=>c.id===inquiry.clubId)||api?.club?.(s,inquiry.clubId);
-      const player=club?.roster?.find(p=>p.id===inquiry.playerId)||api?.GlobalFootball?.playersByClub?.(s,inquiry.clubId)?.find(p=>p.id===inquiry.playerId);
-      const available=!!player&&player.id!=="hero"&&player.status!=="retired";
-      const interest=available?unit("interest|"+inquiry.clubId+"|"+inquiry.playerId+"|"+inquiry.startDay):1;
-      inquiry.status=available&&interest<0.75?"accepted":"rejected";
+      const seller=(s.clubs||[]).find(c=>c.id===inquiry.clubId)||api?.club?.(s,inquiry.clubId);
+      const buyer=(s.clubs||[]).find(c=>c.id===inquiry.buyerClubId)||api?.club?.(s,inquiry.buyerClubId);
+      const player=seller?.roster?.find(p=>p.id===inquiry.playerId)||api?.GlobalFootball?.playersByClub?.(s,inquiry.clubId)?.find(p=>p.id===inquiry.playerId);
+      const available=!!player&&!!buyer&&!!seller&&player.id!=="hero"&&player.status!=="retired";
+      const result=available?inquiryAssessment(s,buyer,seller,player):{playerScore:0,clubScore:0,reasons:["Jogador indisponível"]};
+      const rollPlayer=unit("player-interest|"+inquiry.id);
+      const rollClub=unit("club-interest|"+inquiry.id);
+      inquiry.playerDecision=available&&rollPlayer<result.playerScore/100?"accepted":"rejected";
+      inquiry.clubDecision=available&&rollClub<result.clubScore/100?"accepted":"rejected";
+      inquiry.status=inquiry.playerDecision==="accepted"&&inquiry.clubDecision==="accepted"?"accepted":"rejected";
       inquiry.answeredDay=Number(s.day)||0;
-      inquiry.interest=interest<0.3?"high":interest<0.6?"medium":"low";
-      (s.news||[]).unshift({day:s.day,season:s.season,title:"Resposta à sondagem",body:(player?.name||"Jogador")+" · "+(inquiry.status==="accepted"?"Clube autoriza iniciar negociação.":"Clube não deseja negociar neste momento.")});
+      inquiry.playerInterest=result.playerScore;
+      inquiry.clubInterest=result.clubScore;
+      inquiry.reasons=result.reasons;
+      inquiry.interest=result.playerScore>=70?"high":result.playerScore>=40?"medium":"low";
+      (s.news||[]).unshift({day:s.day,season:s.season,title:"Resposta à sondagem",body:(player?.name||"Jogador")+" · "+(inquiry.status==="accepted"?"Clube e atleta aceitam abrir negociação.":inquiry.playerDecision!=="accepted"?"O jogador não demonstrou interesse na transferência.":"Clube vendedor recusou a sondagem.")});
       settled++;
     }
     return settled;
@@ -332,7 +383,7 @@
       focus:c.focus,foci:FOCI,stints:c.stints,totals,license:s.license,reputation:s.reputation};
   }
 
-  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,settleInquiries,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf};
+  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,settleInquiries,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
