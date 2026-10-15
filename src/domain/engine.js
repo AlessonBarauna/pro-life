@@ -1492,7 +1492,7 @@
     if(!fixture.home||!fixture.away||!Number.isInteger(fixture.date)||fixture.date<=s.day)return false;
     if(![fixture.home,fixture.away].includes(s.clubId))return false;
     if((s.matches||[]).some(m=>m.home===fixture.home&&m.away===fixture.away&&m.date===fixture.date))return false;
-    if(actions.length>5||actions.some(a=>a?.type!=="substitution"||![0,1].includes(a.side)||
+    if(actions.length>5||actions.some(a=>a?.type!=="substitution"||a.side!==(s.clubId===fixture.home?0:1)||
       !Number.isInteger(a.minute)||a.minute<1||a.minute>90||
       typeof a.outId!=="string"||!a.outId||typeof a.inId!=="string"||!a.inId||a.outId===a.inId))return false;
     const seenOut=new Set(),seenIn=new Set();
