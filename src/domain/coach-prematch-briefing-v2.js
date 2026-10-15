@@ -26,7 +26,17 @@ function analyze(players,slots,selected=[],options={}){
   const mean=available.length?Math.round(available.reduce((sum,line)=>sum+line.effective,0)/available.length):null;
   return {lines,recommended,concerns,averageEffective:mean,ready:concerns.length===0&&lines.length>0};
 }
-const api=Object.freeze({analyze});
+function priorities(result,{max=5}={}){
+  const issues=Array.isArray(result?.concerns)?result.concerns:[];
+  const severity={injury:0,duplicate:1,empty:2,condition:3,form:4};
+  const actionable=issues.map((issue,i)=>{
+    const replacement=result?.lines?.[issue.index]?.recommendedId??null;
+    const action=issue.type==="injury"?"Substituir atleta indisponivel":issue.type==="duplicate"?"Corrigir jogador repetido":issue.type==="empty"?"Preencher posicao":issue.type==="condition"?"Avaliar poupanca ou substituicao":"Rever forma e encaixe";
+    return {type:issue.type,slot:issue.slot,index:issue.index,action,recommendedId:replacement,priority:severity[issue.type]??5,sequence:i};
+  });
+  return actionable.sort((a,b)=>a.priority-b.priority||a.index-b.index||a.sequence-b.sequence).slice(0,Math.max(0,Math.min(20,Number.isFinite(max)?Math.floor(max):5)));
+}
+const api=Object.freeze({analyze,priorities});
 root.ProLifeCoachPrematchBriefing=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
