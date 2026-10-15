@@ -334,7 +334,7 @@
     const loanRows=wrap(loans,l=>'<article class="cc-deal"><div class="cc-deal-player">'+athlete(l.playerId)+'</div><div class="cc-deal-parties">'+team(l.fromClubId)+'<span aria-hidden="true">→</span>'+team(l.toClubId)+'</div><div class="cc-deal-terms"><b>Até dia '+esc(l.dueDay)+'</b><small>Salário do contratante: '+esc(l.salaryShare??0)+'% · Taxa: '+esc(money(l.fee))+'</small><small>'+(l.buyOption?'Opção de compra '+esc(money(l.buyOption)):'Sem opção de compra')+'</small></div>'+(l.buyOption&&l.toClubId===s.clubId?'<button type="button" data-coach-deal-buy="'+esc(l.id)+'">Comprar jogador</button>':'')+'</article>',"Nenhum empréstimo ativo.");
     // M03.5: read-only payroll forecast. Does not debit the transfer budget.
     const payrollPlayers=(own?.roster||[]).filter(p=>p&&p.id!=="hero");
-    const knownSalaries=payrollPlayers.map(p=>Number(p.salary)).filter(v=>Number.isFinite(v)&&v>=0);
+    const knownSalaries=payrollPlayers.filter(p=>p.salary!==null&&p.salary!==undefined&&p.salary!=="").map(p=>Number(p.salary)).filter(v=>Number.isFinite(v)&&v>=0);
     const missingSalaries=payrollPlayers.length-knownSalaries.length;
     const monthlyPayroll=knownSalaries.reduce((sum,v)=>sum+v,0);
     const payrollPanel='<section class="cc-card" aria-label="Projeção da folha salarial"><h4>Projeção da folha salarial</h4>'+
