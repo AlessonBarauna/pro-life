@@ -402,12 +402,15 @@
       ' · <b>Transmissão anual estimada:</b> '+esc(money(projectedIncome.broadcastAnnual))+'</p>'+
       '<p><b>Total anual hipotético:</b> '+esc(money(projectedIncome.totalAnnual))+'</p>'+
       '<p class="cc-note">Projeção baseada na estrutura e divisão do clube. Não são contratos firmados, receitas recebidas nem valores oficiais. Nenhum crédito ou mudança no save.</p></section>':'';
+    const sponsorBrands=Array.isArray(root.ProLifeCommercial?.brands)?root.ProLifeCommercial.brands:[];
     const clubSponsorCandidates=root.ProLifeClubEconomy?.sponsorshipCandidates?.(
-      own,root.ProLifeCommercial?.brands)||[];
+      own,sponsorBrands)||sponsorBrands.filter(b=>b?.id&&b?.name).map(b=>({
+        id:b.id,name:b.name,prestige:Number(b.prestige)||0,readOnly:true
+      })).sort((a,b)=>b.prestige-a.prestige).slice(0,40);
     const sponsorCatalogPanel='<section class="cc-card" aria-label="Marcas disponiveis no catalogo"><h4>Marcas do catálogo — referências</h4>'+
       (clubSponsorCandidates.length?'<p>'+clubSponsorCandidates.slice(0,8).map(b=>esc(b.name)).join(' · ')+
         '</p><p class="cc-note">'+esc(clubSponsorCandidates.length)+' marcas compatíveis com o perfil do clube.</p>':
-        '<p class="cc-note">Catálogo comercial ainda não disponível nesta sessão.</p>')+
+        '<p class="cc-note">As marcas não foram carregadas nesta sessão. Recarregue a página; nenhum contrato foi criado.</p>')+
       '<p class="cc-note">São referências do catálogo comercial do jogo, não patrocinadores confirmados do clube. Nenhum contrato ou receita foi criado.</p></section>';
     const signedRevenue=(c.finance?.revenueContracts||[]).filter(x=>String(x.clubId)===String(s.clubId));
     const revenueContractPanel='<section class="cc-card" aria-label="Contratos de receita registrados"><h4>Contratos de receitas</h4>'+
