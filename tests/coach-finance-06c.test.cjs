@@ -322,3 +322,19 @@ test("Incoming sales: legacy saves and player career remain isolated",()=>{
  state.mode="player";
  assert.throws(()=>root.ProLifeApp.execute(state,"acceptSaleOffer",{id:state.coachCareer.saleOffers[0].id}),/Mercado fechado/);
 });
+
+test("Coach profile uses manager-specific panels without player number or attributes",()=>{
+ const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+ const coachStart=app.indexOf('if (state.mode === "coach") {\n        // FC27 manager profile:');
+ const playerStart=app.indexOf('if (state.mode === "player") {\n        const P = window.ProLifePlayerProfile.init',coachStart);
+ assert.ok(coachStart>0&&playerStart>coachStart,"coach profile must be isolated before player profile");
+ const coach=app.slice(coachStart,playerStart);
+ for(const section of ["coach-prof-resumo","coach-prof-desempenho","coach-prof-trajetoria","coach-prof-conquistas","coach-prof-identidade"]){
+   assert.ok(coach.includes(section),section);
+ }
+ for(const forbidden of ['id="shirt-number"','data-action="number"','Charts.radar','D.Training.groupRatings','Comemoração']){
+   assert.equal(coach.includes(forbidden),false,forbidden);
+ }
+ assert.ok(app.slice(playerStart).includes('id="shirt-number"'),"player number editor is preserved");
+ assert.ok(coach.includes('appearanceFields(p.appearance)'),"manager appearance remains editable");
+});
