@@ -286,7 +286,7 @@
     const contractPanel=selected&&selected.status==="pending"&&selected.response==="accepted"?
       '<section class="cc-card" aria-label="Contrato com o jogador"><h4>Contrato com o jogador</h4>'+
       '<p class="cc-note">Negocie com o agente: salário mensal, prazo, bônus e função no elenco.</p>'+
-      '<label>Salário (R$)<input type="number" min="1000" step="1000" data-coach-contract-salary="'+esc(selected.id)+'" value="'+esc(contract?.salary??Math.max(1000,Number(player(selected.playerId)?.salary)||1000))+'"></label>'+
+      '<label>Salário mensal (R$)<input type="number" min="1000" step="1000" data-coach-contract-salary="'+esc(selected.id)+'" value="'+esc(contract?.salary??Math.max(1000,Number(player(selected.playerId)?.salary)||0,Number(root.ProLifeApp?.minimumMarketSalaryMonthly?.(player(selected.playerId)))||0))+'"></label>'+
       '<label>Duração<select data-coach-contract-years="'+esc(selected.id)+'">'+[1,2,3,4,5].map(v=>'<option value="'+v+'"'+(v===(contract?.years??3)?' selected':'')+'>'+v+' ano(s)</option>').join("")+'</select></label>'+
       '<label>Bônus (R$)<input type="number" min="0" step="1000" data-coach-contract-bonus="'+esc(selected.id)+'" value="'+esc(contract?.bonus??0)+'"></label>'+
       '<label>Função<select data-coach-contract-role="'+esc(selected.id)+'">'+[['rotation','Rotação'],['important','Importante'],['starter','Titular'],['star','Estrela']].map(([v,t])=>'<option value="'+v+'"'+(v===(contract?.role??'important')?' selected':'')+'>'+t+'</option>').join("")+'</select></label>'+
