@@ -102,7 +102,7 @@
     const contracts=state.coachCareer?.finance?.revenueContracts||[];
     const offers=state.coachCareer?.finance?.sponsorshipOffers||[];
     return roles.filter(([role])=>!contracts.some(x=>x.sponsorRole===role&&x.endDay>state.day)&&
-      !offers.some(x=>x.role===role&&["accepted","rejected"].includes(x.status))).map(([role,label,fraction],i)=>{
+      !offers.some(x=>x.role===role&&["accepted","rejected","counter"].includes(x.status))).map(([role,label,fraction],i)=>{
       const available=candidates.filter(b=>role!=="kit"||b.category==="SPORTSWEAR");
       const brand=available[i%available.length];
       if(!brand)return null;
@@ -116,8 +116,8 @@
     if(!state||!club||String(club.id)!==String(state.clubId)||!state.coachCareer)throw Error("Clube invalido.");
     const finance=state.coachCareer.finance||={};
     const existing=(finance.sponsorshipOffers||[]).find(x=>x.id===offerId);
-    if(existing)throw Error("Proposta ja finalizada.");
-    const offer=sponsorshipOffers(state,club,brands).find(x=>x.id===offerId);
+    if(existing&&existing.status!=="counter")throw Error("Proposta ja finalizada.");
+    const offer=existing?.status==="counter"?existing:sponsorshipOffers(state,club,brands).find(x=>x.id===offerId);
     if(!offer)throw Error("Proposta indisponivel.");
     if(Number(state.day)>Number(offer.expiresDay??(Number(state.day)+1)))throw Error("Proposta expirada.");
     const startDay=Number(state.day)+1;
@@ -128,7 +128,8 @@
     });
     signed.brandId=offer.brandId;signed.brandName=offer.brandName;signed.sponsorRole=offer.role;
     finance.sponsorshipOffers||=[];
-    finance.sponsorshipOffers.push({...offer,status:"accepted",acceptedDay:Number(state.day),contractId});
+    if(existing){Object.assign(existing,{status:"accepted",acceptedDay:Number(state.day),contractId});}
+    else finance.sponsorshipOffers.push({...offer,status:"accepted",acceptedDay:Number(state.day),contractId});
     return signed;
   }
   // Rejection and counteroffers are stored without changing the club budget.
