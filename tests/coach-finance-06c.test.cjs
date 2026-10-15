@@ -383,3 +383,15 @@ test("Scouting screens and actions are wired only in coach mode",()=>{
  assert.ok(view.includes("setMarketArea"));
  assert.ok(view.includes("setScoutFilters"));
 });
+
+test("Main Transfers Market page routes coach to new scouting centre",()=>{
+ const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+ const start=app.indexOf("    market() {");
+ const end=app.indexOf("    sponsorships() {",start);
+ assert.ok(start>0&&end>start,"market view exists");
+ const market=app.slice(start,end);
+ assert.match(market,/state\?\.mode === "coach"/);
+ assert.match(market,/ProLifeCoachCareerView\.setTab\("negociacoes"\)/);
+ assert.match(market,/return window\.ProLifeCoachCareerView\.render\(state, D\)/);
+ assert.match(market,/ProLifeWorldLiveMarketView/,"legacy world market fallback remains for player");
+});
