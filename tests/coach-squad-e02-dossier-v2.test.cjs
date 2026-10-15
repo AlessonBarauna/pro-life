@@ -5,10 +5,10 @@ const css=fs.readFileSync(path.join(__dirname,"../src/ui/fc27-05b-squad.css"),"u
 test("E02 detail tabs have real panels and safe navigation",()=>{
  assert.match(source,/squadDetailTab = "attributes"/);
  assert.match(source,/data-squad-detail-tab/);
- assert.match(source,/squadDetailTab==="comparison"\?comparisonInfo/);
- assert.match(source,/squadDetailTab==="contract"\?contractInfo/);
+ assert.match(source,/comparison:comparisonInfo/);
+ assert.match(source,/contract:contractInfo/);
  assert.match(source,/if \(b\.dataset\.squadDetailTab\)/);
- assert.match(source,/\["attributes","comparison","contract"\]\.includes/);
+ assert.match(source,/\["attributes","comparison","fitness","contract","development"\]\.includes/);
 });
 test("E02 contract and comparison use actual player data",()=>{
  assert.match(source,/selected\.contractEndDay/);
