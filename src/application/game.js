@@ -370,6 +370,15 @@ case "tactic": {
         D.CoachCareer.setCaptain(s, D, data.playerId || null);
         break;
       }
+      case "coachAcceptSponsorship": {
+        if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
+        const club=D.club(s);
+        const economy=root.ProLifeClubEconomy;
+        const brands=root.ProLifeCommercial?.brands;
+        if(!economy?.acceptSponsorshipOffer||!Array.isArray(brands))throw Error("Catálogo de patrocínios indisponível.");
+        economy.acceptSponsorshipOffer(s,club,brands,String(data.offerId||""));
+        break;
+      }
       case "coachMarketDifficulty": {
         if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
         const difficulty=String(data.difficulty||"");
