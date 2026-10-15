@@ -391,8 +391,8 @@ test("Main Transfers Market page routes coach to new scouting centre",()=>{
  assert.ok(start>0&&end>start,"market view exists");
  const market=app.slice(start,end);
  assert.match(market,/state\?\.mode === "coach"/);
- assert.match(market,/ProLifeCoachCareerView\.setTab\("negociacoes"\)/);
- assert.match(market,/return window\.ProLifeCoachCareerView\.render\(state, D\)/);
+ assert.match(market,/ProLifeCoachCareerView\?\.renderMarket/);
+ assert.match(market,/return window\.ProLifeCoachCareerView\.renderMarket\(state, D\)/);
  assert.match(market,/ProLifeWorldLiveMarketView/,"legacy world market fallback remains for player");
 });
 
@@ -428,4 +428,20 @@ test("Global observation pulls activePlayers rather than only local rosters",()=
  assert.match(ui,/gf\?\.activePlayers\?\.\(s\)/);
  assert.match(ui,/gf\?\.clubById\?\.\(s,p\.clubId\)/);
  assert.match(app,/GlobalFootball\?\.playerById\?\.\(state,playerId\)/);
+});
+
+test("Dedicated coach market hides career navigation and preserves full career view",()=>{
+ const source=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ const root={};root.globalThis=root;
+ vm.runInNewContext(source,root,{filename:"coach-career-view.js"});
+ const V=root.ProLifeCoachCareerView;
+ const state={mode:"coach",clubId:"a",season:2026,day:10,person:{nationality:"Brasil"},clubs:[{id:"a",name:"Clube",budget:200000,roster:[],lineup:[]}],coachCareer:{settings:{}}};
+ const D={club:(s,id)=>s.clubs.find(c=>c.id===id),CoachCareer:{snapshot:()=>({club:{name:"Clube"},hasClub:true,reputation:50})}};
+ V.setMarketArea("transferencias");
+ const market=V.renderMarket(state,D);
+ assert.match(market,/CENTRAL DE TRANSFERÊNCIAS/);
+ assert.match(market,/Áreas do mercado/);
+ assert.doesNotMatch(market,/aria-label="Seções da carreira"/);
+ assert.doesNotMatch(market,/<h2>Carreira do Treinador<\/h2>/);
+ assert.match(V.render(state,D),/aria-label="Seções da carreira"/);
 });
