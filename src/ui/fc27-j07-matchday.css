@@ -22,3 +22,8 @@
 .pl-j07-brief ul{padding-left:19px}
 .pl-j07-note{color:#a9c3c8;font-size:11px;margin:18px 0 0}
 @media(max-width:720px){.pl-j07-matchup{grid-template-columns:1fr 1fr;gap:10px}.pl-j07-center{grid-column:1/-1;grid-row:2;max-width:340px;width:100%;justify-self:center}.pl-j07-brief{grid-template-columns:1fr}.pl-j07-stage{padding:15px}.pl-j07-club{gap:9px}}
+
+/* J07: action to simulate the upcoming match and skip presentation. */
+.pl-j07-center button.pl-j07-skip{border:1px solid #b9ee2f;background:#253829;color:#d9ff88;font-weight:900}
+.pl-j07-center button.pl-j07-skip:hover:not(:disabled){background:#354b2f}
+.pl-j07-center button.pl-j07-skip:disabled{opacity:.42;cursor:not-allowed}
