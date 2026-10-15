@@ -1,5 +1,5 @@
 (function(root){"use strict";
-const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;',"'":"&#39;"}[c]));
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;',"\u0027":"&#39;"}[c]));
 function render(s){
  if(s?.mode!=="player")return "";
  const R=root.ProLifePlayerRivalries;if(!R)return "";
