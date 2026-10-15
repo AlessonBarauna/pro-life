@@ -554,3 +554,24 @@ test("Manager team management offers drag, drop, and click-to-swap through lineu
  assert.match(app,/swapSquadPlayers\(source,id\)/);
  assert.match(app,/state\?\.mode==="coach"/);
 });
+
+test("Drag substitution repairs a ten-player lineup containing injured goalkeeper",()=>{
+ const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+ const start=app.indexOf("  function swapSquadPlayers("),end=app.indexOf('  document.addEventListener("dragstart"',start);
+ assert.ok(start>0&&end>start);
+ const squad=Array.from({length:12},(_,i)=>({id:"p"+i,name:"Player "+i,pos:i<2?"GOL":"ATA",overall:70+i}));
+ squad[0].injury={days:10};
+ const club={roster:squad,lineup:["p0","p2","p3","p4","p5","p6","p7","p8","p9","p10"]};
+ const ctx={state:{mode:"coach"},squadSelectedId:null,D:{club:()=>club,overall:p=>p.overall},A:{execute:(state,action,data)=>{
+   assert.equal(action,"lineup");
+   assert.equal(data.ids.length,11);
+   assert.ok(data.ids.includes("p1"));
+   assert.ok(!data.ids.includes("p0"));
+   assert.ok(data.ids.includes("p11"));
+   club.lineup=data.ids;
+ }},persist:()=>{},render:()=>{},toast:()=>{}};
+ vm.runInNewContext(app.slice(start,end)+";globalThis.swap=swapSquadPlayers;",ctx);
+ assert.equal(ctx.swap("p11","p10"),true);
+ assert.equal(club.lineup.length,11);
+ assert.ok(club.lineup.includes("p1"));
+});
