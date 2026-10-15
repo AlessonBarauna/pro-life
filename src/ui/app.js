@@ -8481,6 +8481,13 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       }
       return;
     }
+    const difficultySave=event.target.closest?.("[data-coach-market-difficulty-save]");
+    if(difficultySave&&state?.mode==="coach"){
+      const difficulty=document.querySelector("[data-coach-market-difficulty]")?.value;
+      try{A.execute(state,"coachMarketDifficulty",{difficulty});persist();render();}
+      catch(error){toast(error.message);}
+      return;
+    }
     const signingAction=event.target.closest?.("[data-coach-signing-done],[data-coach-signing-squad],[data-coach-signing-history]");
     if(signingAction && state?.mode==="coach"){
       const id=signingAction.getAttribute("data-coach-signing-done")||signingAction.getAttribute("data-coach-signing-squad")||signingAction.getAttribute("data-coach-signing-history");
