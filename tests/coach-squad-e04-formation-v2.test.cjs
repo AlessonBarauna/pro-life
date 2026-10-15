@@ -25,3 +25,10 @@ test("E04 positional fit prefers compatible athletes and reports forced improvis
  assert.match(app,/pl-squad-fit-note/);
  assert.match(app,/pitchSlots=rows\.flatMap/);
 });
+
+test("E04 highlights improvised players in their assigned position",()=>{
+ assert.match(app,/playerTile=\(p,compact=false,slotRole=null\)/);
+ assert.match(app,/playerTile\(p,false,row\.roles\?\.\[i\]\)/);
+ assert.match(app,/pl-squad-improvised/);
+ assert.match(app,/pitchFitWarnings\.map\(x=>x\.p\.name/);
+});
