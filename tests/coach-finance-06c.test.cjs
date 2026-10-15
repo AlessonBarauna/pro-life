@@ -550,7 +550,7 @@ test("Manager team management offers drag, drop, and click-to-swap through lineu
  assert.match(app,/addEventListener\("dragover"/);
  assert.match(app,/addEventListener\("drop"/);
  assert.match(app,/function swapSquadPlayers/);
- assert.match(app,/A\.execute\(state,"lineup",\{ids\}\)/);
+ assert.match(app,/A\.execute\(state,"lineup",\{ids:(?:chosen|ids)\}\)/);
  assert.match(app,/swapSquadPlayers\(source,id\)/);
  assert.match(app,/state\?\.mode==="coach"/);
 });
