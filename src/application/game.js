@@ -3,8 +3,24 @@
   const D =
     root.ProLife ||
     (typeof require === "function" ? require("../domain/engine.js") : null);
+  function queueCoachPresentation(s,p,from,to,fee,type){
+    if(s.mode!=="coach"||to?.id!==s.clubId||!p?.id)return;
+    s.coachCareer||={version:1};
+    const entries=s.coachCareer.presentations||=[];
+    const id=["signing",s.season,s.day,to.id,p.id].join("_");
+    if(entries.some(x=>x.id===id))return;
+    entries.push({id,playerId:p.id,playerName:p.name,fromClubId:from?.id||null,fromClubName:from?.name||"Sem clube",toClubId:to.id,toClubName:to.name,fee,type,day:s.day,season:s.season,overall:p.overall??p.ovr??null,position:p.pos||p.position||null,age:p.age??null,presented:false});
+    s.coachCareer.presentations=entries.slice(-100);
+  }
   function execute(s, action, data = {}) {
     switch (action) {
+      case "ackCoachPresentation": {
+        if(s.mode!=="coach")throw Error("Disponível somente no modo treinador.");
+        const entry=s.coachCareer?.presentations?.find(x=>x.id===data.id&&x.toClubId===s.clubId);
+        if(!entry)throw Error("Apresentação indisponível.");
+        entry.presented=true;entry.presentedDay=s.day;
+        break;
+      }
       case "buy":
         D.Career.buy(s, data.id);
         break;
@@ -445,6 +461,7 @@ case "tactic": {
         buyer.budget-=loan.buyOption;seller.budget=(Number(seller.budget)||0)+loan.buyOption;
         loan.purchased=true;loan.purchaseDay=s.day;loan.returned=true;
         D.Career.transfer(s,player,seller,buyer,loan.buyOption);
+        queueCoachPresentation(s,player,seller,buyer,loan.buyOption,"purchase-option");
         (s.news||[]).unshift({day:s.day,season:s.season,title:"Opção de compra exercida",body:player.name+" foi contratado em definitivo."});
         return s;
       }
@@ -527,6 +544,7 @@ case "tactic": {
           s.coachCareer.sellOnClauses.push({playerId:p.id,buyerClubId:own.id,sellerClubId:source.id,percentage:sellOn,active:true});
         }
         D.Career.transfer(s, p, source, own, fee);
+        queueCoachPresentation(s,p,source,own,fee,isLoan?"loan":"permanent");
         s.news.unshift({
           day: s.day,
           season: s.season,
