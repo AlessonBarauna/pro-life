@@ -51,7 +51,24 @@
     rows.forEach(row=>{counts[row.assessment]++;});
     return {rows,counts,total:rows.length,readOnly:true,method:"reference_comparison",version:"m04.3"};
   }
-  const api={estimate,scenarios,compare,calibration,VERSION:"m04.3"};
+  // M04.6: reporting model only; never creates income, charges wages or changes budgets.
+  function fundingSnapshot(club,finance,monthlyPayroll){
+    const data=finance&&typeof finance==="object"?finance:{};
+    const sources=Array.isArray(data.recurringRevenues)?data.recurringRevenues:[];
+    const valid=sources.filter(x=>x&&x.active===true&&
+      Number.isFinite(Number(x.monthlyAmount))&&Number(x.monthlyAmount)>0);
+    const monthlyRevenue=valid.reduce((sum,x)=>sum+Number(x.monthlyAmount),0);
+    const payroll=Number.isFinite(Number(monthlyPayroll))?Math.max(0,Number(monthlyPayroll)):0;
+    const salaryBudget=Number.isFinite(Number(data.salaryBudget))&&
+      data.salaryBudget!==null&&data.salaryBudget!==""&&Number(data.salaryBudget)>=0?Number(data.salaryBudget):null;
+    const fundingGap=Math.max(0,payroll-monthlyRevenue);
+    return {clubId:String(club?.id||""),monthlyPayroll:payroll,monthlyRevenue,
+      annualRevenue:monthlyRevenue*12,salaryBudget,fundingGap,
+      revenueSourceCount:valid.length,
+      salaryBudgetGap:salaryBudget===null?null:Math.max(0,payroll-salaryBudget),
+      revenueConfigured:valid.length>0,readOnly:true};
+  }
+  const api={estimate,scenarios,compare,calibration,fundingSnapshot,VERSION:"m04.6"};
   root.ProLifeClubEconomy=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
