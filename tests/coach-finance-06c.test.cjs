@@ -619,14 +619,18 @@ test("Manager receives offer deadlines, negotiates outside window and expires un
  root.ProLifeApp.execute(state,"counterSaleOffer",{id:offer.id,amount:150000});
  assert.equal(offer.round,2);
  assert.equal(JSON.stringify(state.clubs),original);
- const ctx={};ctx.globalThis=ctx;
- vm.runInNewContext(src,ctx,{filename:"career.js"});
- const day=offer.expiresDay+1;state.day=day;
- ctx.ProLifeCareer.daily(state);
+ // Isolate the real daily expiry block: this fixture intentionally has no
+ // full career/person setup and must not trigger unrelated career subsystems.
+ const begin=src.indexOf("    // Close expired incoming proposals once");
+ const end=src.indexOf("    // Periodic inbound approaches;",begin);
+ assert.ok(begin>=0&&end>begin);
+ const expire=vm.runInNewContext("(function(s){"+src.slice(begin,end)+"})",{});
+ state.day=offer.expiresDay+1;
+ expire(state);
  assert.equal(offer.status,"expired");
  const count=state.news.filter(n=>n.title==="Proposta de transferência expirada").length;
  assert.equal(count,1);
- ctx.ProLifeCareer.daily(state);
+ expire(state);
  assert.equal(state.news.filter(n=>n.title==="Proposta de transferência expirada").length,1);
  assert.equal(JSON.stringify(state.clubs),original);
 });
