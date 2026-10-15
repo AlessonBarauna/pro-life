@@ -8337,6 +8337,18 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       }
       return;
     }
+    const signingAction=event.target.closest?.("[data-coach-signing-done],[data-coach-signing-squad],[data-coach-signing-history]");
+    if(signingAction && state?.mode==="coach"){
+      const id=signingAction.getAttribute("data-coach-signing-done")||signingAction.getAttribute("data-coach-signing-squad")||signingAction.getAttribute("data-coach-signing-history");
+      try{
+        A.execute(state,"ackCoachPresentation",{id});
+        persist();
+        if(signingAction.hasAttribute("data-coach-signing-squad"))page="squad";
+        else if(signingAction.hasAttribute("data-coach-signing-history")){page="market";window.ProLifeCoachCareerView?.setMarketArea("transferencias");window.ProLifeCoachCareerView?.setDealTab("historico");}
+        render();
+      }catch(error){toast(error.message);}
+      return;
+    }
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
     const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-apply],[data-coach-shortlist],[data-coach-scout-offer]");
     if (!el || !state || state.mode !== "coach") return;
