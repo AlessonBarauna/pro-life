@@ -1109,6 +1109,8 @@
   function seasonRegion(c) {
     const kind = COMP_KIND(c);
     if (kind === "selecao") return "Seleções";
+    const home=window.ProLifeCompetitionZonesV2?.homeCountry?.(seasonCatalog()||[],D.club(state),D.club(state)?.leagueId);
+    if (c.country && c.country===home) return home;
     if (c.country === "Brasil") return "Brasil";
     let cont = "";
     try { const l = D.GlobalFootball?.leagueById?.(state, c.id); cont = normText(l?.continent || ""); } catch { cont = ""; }
@@ -1121,11 +1123,13 @@
     return cat.filter((c) => (!seasonUi.country || c.country === seasonUi.country) && (!seasonUi.kind || COMP_KIND(c) === seasonUi.kind) && (!q || normText(`${c.name} ${c.country || ""}`).includes(q)));
   }
   function seasonListHtml(cat) {
-    const rows = seasonFiltered(cat);
+    const rows = window.ProLifeCompetitionZonesV2?.prioritized?.(seasonFiltered(cat),window.ProLifeCompetitionZonesV2?.homeCountry?.(cat,D.club(state),D.club(state)?.leagueId))||seasonFiltered(cat);
     if (!rows.length) return `<div class="empty">Nenhuma competição encontrada. Ajuste a busca ou os filtros.</div>`;
     const groups = new Map();
     for (const c of rows) { const g = seasonRegion(c); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(c); }
-    return REGION_ORDER.filter((g) => groups.has(g)).map((g) => `<div class="season-group"><div class="tag">${esc(g)} · ${groups.get(g).length}</div>${groups.get(g).map((c) => `<button type="button" class="season-comp ${c.id === seasonUi.comp ? "on" : ""}" data-season-comp="${esc(c.id)}" aria-pressed="${c.id === seasonUi.comp}"><b>${esc(c.name)}</b><small>${esc([c.country, KIND_LABEL[COMP_KIND(c)]].filter(Boolean).join(" · "))}</small></button>`).join("")}</div>`).join("");
+    const home=window.ProLifeCompetitionZonesV2?.homeCountry?.(cat,D.club(state),D.club(state)?.leagueId);
+    const order=[...REGION_ORDER].sort((a,b)=>Number(b===home)-Number(a===home));
+    return order.filter((g) => groups.has(g)).map((g) => `<div class="season-group"><div class="tag">${esc(g)} · ${groups.get(g).length}</div>${groups.get(g).map((c) => `<button type="button" class="season-comp ${c.id === seasonUi.comp ? "on" : ""}" data-season-comp="${esc(c.id)}" aria-pressed="${c.id === seasonUi.comp}"><b>${esc(c.name)}</b><small>${esc([c.country, KIND_LABEL[COMP_KIND(c)]].filter(Boolean).join(" · "))}</small></button>`).join("")}</div>`).join("");
   }
   function stRow(r, i) {
     const gf = r.goalsFor, ga = r.goalsAgainst;
@@ -1141,13 +1145,16 @@
   };
   function seasonTableHtml(ov) {
     const rows = ov.standings.map(stRow), hasForm = rows.some((x) => x.form.length), sel = rows.find((r) => r.id && r.id === seasonUi.club);
-    const body = rows.map((r) => `<tr tabindex="0" data-season-club="${esc(r.id ?? "")}" class="${r.id === state.clubId ? "highlight" : ""} ${r.id && r.id === seasonUi.club ? "selected" : ""}" aria-selected="${r.id === seasonUi.club}"><td class="num">${cell(r.pos)}</td><td class="club">${crestImg(r.id)}${esc(r.name)}${r.id === state.clubId ? ' <span class="pill">VOCÊ</span>' : ""}</td><td class="num pts">${cell(r.pts)}</td><td class="num">${cell(r.j)}</td><td class="num">${cell(r.v)}</td><td class="num">${cell(r.e)}</td><td class="num">${cell(r.d)}</td><td class="num">${cell(r.gp)}</td><td class="num">${cell(r.gc)}</td><td class="num">${sgText(r.sg)}</td>${hasForm ? `<td class="form">${r.form.map((f) => `<i class="f-${esc(f)}">${esc(f)}</i>`).join("")}</td>` : ""}</tr>`).join("");
+    const zones=window.ProLifeCompetitionZonesV2?.zones?.(ov.competition,rows.length)||[];
+    const zoneAt=pos=>window.ProLifeCompetitionZonesV2?.forPosition?.(zones,Number(pos));
+    const body = rows.map((r) => `<tr tabindex="0" data-season-club="${esc(r.id ?? "")}" class="${r.id === state.clubId ? "highlight" : ""} ${r.id && r.id === seasonUi.club ? "selected" : ""} ${zoneAt(r.pos)?`season-zone-${zoneAt(r.pos).key}`:""}" title="${esc(zoneAt(r.pos)?.label||"")}" aria-selected="${r.id === seasonUi.club}"><td class="num">${cell(r.pos)}</td><td class="club">${crestImg(r.id)}${esc(r.name)}${r.id === state.clubId ? ' <span class="pill">VOCÊ</span>' : ""}</td><td class="num pts">${cell(r.pts)}</td><td class="num">${cell(r.j)}</td><td class="num">${cell(r.v)}</td><td class="num">${cell(r.e)}</td><td class="num">${cell(r.d)}</td><td class="num">${cell(r.gp)}</td><td class="num">${cell(r.gc)}</td><td class="num">${sgText(r.sg)}</td>${hasForm ? `<td class="form">${r.form.map((f) => `<i class="f-${esc(f)}">${esc(f)}</i>`).join("")}</td>` : ""}</tr>`).join("");
     const detail = sel ? (() => {
       const involves = (g) => [g.homeId, g.awayId].includes(sel.id);
       const last = (ov.fixtures || []).filter((g) => involves(g) && (g.played || g.status === "PLAYED")).slice(-5).reverse(), next = (ov.fixtures || []).filter((g) => involves(g) && !(g.played || g.status === "PLAYED")).slice(0, 3);
       return `<aside class="card season-club-detail"><div class="tag">CLUBE SELECIONADO</div><h3>${crestImg(sel.id, "lg")}${esc(sel.name)}</h3><div class="stats"><div class="stat"><small>Posição</small><b>${cell(sel.pos)}º</b></div><div class="stat"><small>Pontos</small><b>${cell(sel.pts)}</b></div><div class="stat"><small>Saldo</small><b>${sgText(sel.sg)}</b></div></div>${sel.form.length ? `<p class="muted">Forma: ${sel.form.map((f) => esc(f)).join(" ")}</p>` : ""}${last.length ? `<h3>Últimos resultados</h3>${last.map(gameLine).join("")}` : ""}${next.length ? `<h3>Próximos jogos</h3>${next.map(gameLine).join("")}` : ""}${!last.length && !next.length ? '<p class="muted">Sem mais detalhes disponíveis para este clube nesta competição.</p>' : ""}<button type="button" data-season-club="">Fechar detalhes</button></aside>`;
     })() : "";
-    return `<div class="season-table-wrap ${sel ? "with-detail" : ""}"><div><div class="tablewrap season-scroll" tabindex="0" aria-label="Classificação completa"><table class="season-table"><thead><tr><th class="num">#</th><th class="club">Clube</th><th class="num">PTS</th><th class="num">J</th><th class="num">V</th><th class="num">E</th><th class="num">D</th><th class="num">GP</th><th class="num">GC</th><th class="num">SG</th>${hasForm ? "<th>Forma</th>" : ""}</tr></thead><tbody>${body}</tbody></table></div><p class="muted">Selecione um clube para consultar os detalhes disponíveis.</p></div>${detail}</div>`;
+    const legend=zones.length?`<div class="season-zone-legend" aria-label="Vagas e rebaixamento">${zones.map(z=>`<span class="season-zone-key season-zone-${esc(z.key)}">${esc(z.label)} (${z.from}${z.to!==z.from?"–"+z.to:""}º)</span>`).join("")}</div>`:"";
+    return `<div class="season-table-wrap ${sel ? "with-detail" : ""}"><div><div class="tablewrap season-scroll" tabindex="0" aria-label="Classificação completa"><table class="season-table"><thead><tr><th class="num">#</th><th class="club">Clube</th><th class="num">PTS</th><th class="num">J</th><th class="num">V</th><th class="num">E</th><th class="num">D</th><th class="num">GP</th><th class="num">GC</th><th class="num">SG</th>${hasForm ? "<th>Forma</th>" : ""}</tr></thead><tbody>${body}</tbody></table></div>${legend}<p class="muted">${esc(ov.competition?.country)==="Brasil"&&/série a|serie a/i.test(ov.competition?.name||"")?"Copa do Brasil: classificação por participação na Série A e por competições específicas, não por faixa isolada na tabela. Vagas continentais adicionais dependem dos resultados das copas. ":""}Selecione um clube para consultar os detalhes disponíveis.</p></div>${detail}</div>`;
   }
   const koRounds = (ov) => (ov.rounds || []).filter((r) => r.kind === "knockout" || (!r.kind && /mata|knockout/.test(ov.competition?.format || ""))).filter((r) => (r.fixtures || []).length);
   function seasonBracketHtml(ov) {
