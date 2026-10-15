@@ -78,3 +78,7 @@
 .pl-squad-screen .pl-squad-pitch-tools button{font-size:10px;font-weight:800;white-space:nowrap;padding:7px 10px;border-radius:6px;border:1px solid var(--pl-accent);color:var(--pl-accent);background:rgba(201,244,61,.09)}
 .pl-squad-screen .pl-squad-pitch-tools button:disabled{opacity:.4;cursor:not-allowed;border-color:var(--pl-line);color:var(--pl-text-3)}
 @media(max-width:650px){.pl-squad-screen .pl-squad-pitch-head{height:auto;min-height:50px;align-items:flex-start}.pl-squad-screen .pl-squad-pitch-tools{flex-wrap:wrap}.pl-squad-screen .pl-squad-pitch-tools small{display:none}}
+
+/* E04 - formation picker, visible in coach lineup */
+.pl-squad-screen .pl-squad-pitch-head select[data-coach-formation]{appearance:auto;background:#142b34;border:1px solid var(--pl-accent);color:var(--pl-accent);border-radius:7px;padding:6px 10px;font-size:15px;font-weight:800;cursor:pointer}
+.pl-squad-screen .pl-squad-pitch-head select[data-coach-formation]:focus-visible{outline:2px solid var(--pl-accent);outline-offset:3px}
