@@ -51,3 +51,40 @@ test("J13 integrates one match pipeline, screen, and claim action",()=>{
  assert.match(html,/player-j13-rivalries\.js/);
  assert.match(html,/fc27-j13-rivalries\.css/);
 });
+
+test("J13 does not count an unused substitute with absent rating and minutes",()=>{
+ const s=state();R.ensureCareer(s);
+ const m=match(12,"A","C",["other"],[]);
+ m.participation.hero={};delete m.ratings.hero;
+ R.recordLeagueMatch(s,m);
+ assert.equal(s.extras.playerRivalry.heroGames??0,0);
+ assert.equal(s.extras.playerRivalry.processed.length,0);
+});
+test("J13 does not count a rated athlete if his club did not play",()=>{
+ const s=state();R.ensureCareer(s);
+ const m=match(13,"B","C",["hero","rival"],[]);
+ R.recordLeagueMatch(s,m);
+ assert.equal(s.extras.playerRivalry.heroGames??0,0);
+ assert.equal(s.extras.playerRivalry.rivalGames,1);
+});
+test("J13 clean sheet attributes goals conceded to the actual player's club",()=>{
+ const s=state();s.person.pos="GOL";
+ s.clubs[0].roster[0].pos="GOL";
+ s.clubs[1].roster[0].pos="GOL";
+ s.clubs[2].roster[0].pos="MEI";
+ const q=R.ensureCareer(s);assert.equal(q.objectiveId,"cleanSheets");
+ const m=match(14,"B","A",["hero","rival"],[]);
+ m.hg=2;m.ag=0;
+ R.recordLeagueMatch(s,m);
+ assert.equal(q.hero,0);
+ assert.equal(q.rival,1);
+});
+test("J13 never double counts a match after JSON save reload",()=>{
+ const s=state();R.ensureCareer(s);
+ const m=match(15,"A","C",["hero"],[{type:"goal",playerId:"hero"}]);
+ R.recordLeagueMatch(s,m);
+ const saved=JSON.parse(JSON.stringify(s));
+ R.recordLeagueMatch(saved,m);
+ assert.equal(saved.extras.playerRivalry.heroGames,1);
+ assert.equal(saved.extras.playerRivalry.hero,1);
+});
