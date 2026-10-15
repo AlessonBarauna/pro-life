@@ -2295,6 +2295,11 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         '<p>'+esc(phaseDescription)+'</p><div class="pl-coach-phase-stats"><span><small>FORMAÇÃO</small><b>'+esc(formation)+'</b></span>'+
         '<span><small>'+(squadPhase==="with-ball"?'LARGURA':'PROFUNDIDADE')+'</small><b>'+esc(squadPhase==="with-ball"?(teamTactics.width??50):(teamTactics.depth??50))+'</b></span>'+
         '<span><small>'+(squadPhase==="with-ball"?'CONSTRUÇÃO':'PRESSÃO')+'</small><b>'+esc(squadPhase==="with-ball"?(teamTactics.buildup||"balanced"):(teamTactics.pressing||"balanced"))+'</b></span></div></div>';
+      const presets=state.coachCareer?.tacticPresets?.[c.id]||{};
+      const presetPanel='<div class="pl-coach-presets"><h3>Predefinições táticas</h3><p>Salve ou aplique até três planos para este clube.</p>'+
+        [1,2,3].map(slot=>'<div class="pl-coach-preset-row"><span><b>Plano '+slot+'</b><small>'+esc(presets[slot]?.name||"Vazio")+'</small></span>'+
+          '<button type="button" data-coach-preset-save="'+slot+'">Salvar atual</button>'+
+          '<button type="button" data-coach-preset-load="'+slot+'" '+(presets[slot]?"":"disabled")+'>Aplicar</button></div>').join("")+'</div>';
       const tacticSettings=squadTab==="tactics"&&coach?`<section class="pl-squad-supplement pl-team-tactics"><div class="tag">TÁTICAS COLETIVAS</div><h2>Modelo de jogo</h2><p>Táticas com bola e sem bola influenciam a simulação em escala moderada; os ajustes não substituem a qualidade dos atletas.</p>
       <div class="pl-team-tactics-grid">
       <label>Estilo<select data-team-tactic-style>${opt([["balanced","Equilibrado"],["possession","Posse e bola"],["counter","Contra-ataque"],["attack","Ofensivo"]],teamTactics.style||c.tactic||"balanced")}</select></label>
@@ -2302,7 +2307,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       <label>Construção<select data-team-tactic-buildup>${opt([["short","Passes curtos"],["balanced","Equilibrada"],["direct","Passe direto"]],teamTactics.buildup||"balanced")}</select></label>
       <label>Largura <input type="number" min="20" max="80" step="5" data-team-tactic-width value="${teamTactics.width??50}"></label>
       <label>Profundidade <input type="number" min="20" max="80" step="5" data-team-tactic-depth value="${teamTactics.depth??50}"></label>
-      </div>${phasePreview}<button type="button" data-team-tactics-save>Salvar táticas</button></section>`:"";
+      </div>${phasePreview}${presetPanel}<button type="button" data-team-tactics-save>Salvar táticas</button></section>`:"";
       const tabSupplement=squadTab==="tactics"?tacticSettings:squadTab==="roles"?rolePanel:squadTab==="hierarchy"?`${coachRelation}${relation}`:"";
       const contractSalary=selected?[selected.salary,selected.monthlySalary,selected.wage,selected.contract?.salary,selected.contract?.monthlySalary].find(v=>v!=null&&Number.isFinite(Number(v))&&Number(v)>0):null;
       const contractEnd=selected?[selected.contractEndDay,selected.contract?.endDay,selected.contract?.expiresDay].find(v=>v!=null&&Number.isFinite(Number(v))):null;
@@ -8825,6 +8830,12 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const next=b.getAttribute("data-squad-phase");
       if(next==="with-ball"||next==="without-ball"){squadPhase=next;render();}
       return;
+    }
+    if(b.hasAttribute("data-coach-preset-save")){
+      return command("coachTacticPreset",{operation:"save",slot:Number(b.getAttribute("data-coach-preset-save"))});
+    }
+    if(b.hasAttribute("data-coach-preset-load")){
+      return command("coachTacticPreset",{operation:"load",slot:Number(b.getAttribute("data-coach-preset-load"))});
     }
     if(b.hasAttribute("data-team-tactics-save")){
       const value=name=>document.querySelector('[data-team-tactic-'+name+']')?.value;
