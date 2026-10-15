@@ -443,5 +443,6 @@ test("Dedicated coach market hides career navigation and preserves full career v
  assert.match(market,/Áreas do mercado/);
  assert.doesNotMatch(market,/aria-label="Seções da carreira"/);
  assert.doesNotMatch(market,/<h2>Carreira do Treinador<\/h2>/);
+ V.setTab("negociacoes");
  assert.match(V.render(state,D),/aria-label="Seções da carreira"/);
 });
