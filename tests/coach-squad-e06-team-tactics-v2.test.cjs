@@ -14,5 +14,5 @@ test("E06 team tactics controls are active with a save action",()=>{
  for(const field of ["style","pressing","buildup","width","depth"])assert.ok(app.includes('data-team-tactic-'+field));
  assert.match(app,/data-team-tactics-save/);
  assert.match(app,/command\("coachTeamTactics"/);
- assert.match(app,/Pressão, construção, largura e profundidade são preparadas/);
+ assert.match(app,/Táticas com bola e sem bola influenciam a simulação/);
 });
