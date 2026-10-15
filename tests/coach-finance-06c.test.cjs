@@ -542,3 +542,15 @@ test("Automatic future transfer hook runs from coach daily and UI shows awaiting
  assert.match(ui,/Aguardando abertura da janela/);
  assert.match(ui,/n.status==="awaiting_window"/);
 });
+
+test("Manager team management offers drag, drop, and click-to-swap through lineup validation",()=>{
+ const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+ assert.match(app,/draggable="true" title="Arraste para trocar/);
+ assert.match(app,/addEventListener\("dragstart"/);
+ assert.match(app,/addEventListener\("dragover"/);
+ assert.match(app,/addEventListener\("drop"/);
+ assert.match(app,/function swapSquadPlayers/);
+ assert.match(app,/A\.execute\(state,"lineup",\{ids\}\)/);
+ assert.match(app,/swapSquadPlayers\(source,id\)/);
+ assert.match(app,/state\?\.mode==="coach"/);
+});
