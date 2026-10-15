@@ -23,7 +23,6 @@ function render(state,Squad,Career){
  const competitionHtml=competitors.length?'<ul>'+competitors.map(r=>'<li>'+esc(r.name)+' · GER '+esc(r.overall)+' · '+esc(r.status)+'</li>').join("")+'</ul>':"<p>Nenhum concorrente direto registrado.</p>";
  const recent=x.history.length?x.history.slice(0,4).map(h=>'<li>'+esc(h.source||h.type||h.reason||"Confiança")+' · '+esc(h.delta??h.after??"—")+'</li>').join(""):"<li>Sem alterações recentes disponíveis.</li>";
  const selectionRole=x.competition?.heroRole||"A definir";
- const rivals=Array.isArray(x.competition?.rivals)?x.competition.rivals:[];
  const own=rivals.find(r=>r.id==="hero")||null;
  const ahead=own?rivals.filter(r=>r.id!=="hero"&&Number(r.score)>Number(own.score)): [];
  const top=ahead[0]||rivals.find(r=>r.id!=="hero")||null;
