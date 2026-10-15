@@ -2,6 +2,7 @@
 "use strict";
 // Independent, unsaved manager match laboratory. Never replaces official match results.
 const Engine=root.ProLifeCoachIncrementalMatchV2||(typeof require==="function"?require("../domain/coach-incremental-match-v2.js"):null);
+const Pitch=root.ProLifeMatchPitchV2||(typeof require==="function"?require("./match-pitch-v2.js"):null);
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const strength=club=>{
  const roster=Array.isArray(club?.roster)?club.roster:[];
@@ -10,7 +11,7 @@ const strength=club=>{
 };
 function createPreview(home,away,seed=1){
  if(!Engine)return null;
- return {kind:"experimental",match:Engine.create({seed,homeStrength:strength(home),awayStrength:strength(away)}),actions:[],lineups:[home,away].map(c=>{const roster=(Array.isArray(c?.roster)?c.roster:[]).filter(p=>p&&p.id!=null);return {starters:roster.slice(0,11).map(p=>String(p.id)),bench:roster.slice(11).map(p=>String(p.id))};})};
+ return {kind:"experimental",match:Engine.create({seed,homeStrength:strength(home),awayStrength:strength(away)}),actions:[],lineups:[home,away].map(c=>{const tactical=Pitch?.lineup?.(c);const roster=(Array.isArray(c?.roster)?c.roster:[]).filter(p=>p&&p.id!=null);return {starters:(tactical?.starters||roster.slice(0,11)).filter(Boolean).map(p=>String(p.id)),bench:(tactical?.bench||roster.slice(11)).filter(Boolean).map(p=>String(p.id)),formation:tactical?.formation||"4-3-3"};})};
 }
 function decision(preview,{side=0,tactic,incomingStrength}={}){
  if(!preview||preview.kind!=="experimental")return {ok:false,reason:"Prévia indisponível"};
