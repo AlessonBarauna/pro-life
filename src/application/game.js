@@ -327,6 +327,20 @@ case "tactic": {
           );
         own.budget -= upfront;
         source.budget = (Number(source.budget)||0) + upfront;
+        // Pay the previous selling club its agreed percentage from proceeds
+        // of a later permanent sale. Loan fees do not trigger this clause.
+        if(!isLoan&&Array.isArray(s.coachCareer?.sellOnClauses)){
+          for(const clause of s.coachCareer.sellOnClauses){
+            if(!clause.active||clause.playerId!==p.id||clause.buyerClubId!==source.id)continue;
+            const beneficiary=D.club(s,clause.sellerClubId);
+            if(beneficiary&&beneficiary.id!==source.id&&beneficiary.id!==own.id){
+              const share=Math.floor(fee*clause.percentage/100);
+              source.budget-=share;
+              beneficiary.budget=(Number(beneficiary.budget)||0)+share;
+            }
+            clause.active=false;
+          }
+        }
         if(due){
           if(!s.coachCareer)s.coachCareer={version:1};
           if(!Array.isArray(s.coachCareer.transferDebts))s.coachCareer.transferDebts=[];
