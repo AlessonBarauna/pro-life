@@ -32,3 +32,9 @@ test("M02 inquiry button requires acceptance before starting a new offer",()=>{
  assert.match(app,/inquiry\.status!=="accepted"/);
  assert.match(app,/command\("counterRecruit"/);
 });
+
+test("M02 inquiry response uses the same calendar conversion as the main game",()=>{
+ assert.match(view,/const careerDate=\(s,day\)=>/);
+ assert.match(view,/Date\.UTC\(2026,0,s\?\.world==="legacy"\?5:1\)/);
+ assert.match(view,/resposta prevista em "\+careerDate\(s,inquiry\.responseDay\)/);
+});
