@@ -412,11 +412,18 @@
         '</p><p class="cc-note">'+esc(clubSponsorCandidates.length)+' marcas compatíveis com o perfil do clube.</p>':
         '<p class="cc-note">As marcas não foram carregadas nesta sessão. Recarregue a página; nenhum contrato foi criado.</p>')+
       '<p class="cc-note">São referências do catálogo comercial do jogo, não patrocinadores confirmados do clube. Nenhum contrato ou receita foi criado.</p></section>';
+    const sponsorOffers=root.ProLifeClubEconomy?.sponsorshipOffers?.(s,own,sponsorBrands)||[];
+    const sponsorshipOfferPanel='<section class="cc-card" aria-label="Propostas de patrocinio"><h4>Propostas de patrocínio</h4>'+
+      (sponsorOffers.length?sponsorOffers.map(o=>'<article class="cc-deal"><div><b>'+esc(o.brandName)+
+        '</b><p class="cc-note">'+esc(o.label)+' · '+esc(money(o.annualAmount))+'/ano · 365 dias</p></div>'+
+        '<button type="button" data-coach-sponsor-accept="'+esc(o.id)+'">Aceitar proposta</button></article>').join(''):
+        '<p class="cc-note">Nenhuma nova proposta de patrocínio disponível.</p>')+
+      '<p class="cc-note">O aceite registra um contrato futuro, sem crédito imediato. Não há pagamento automático nesta etapa.</p></section>';
     const signedRevenue=(c.finance?.revenueContracts||[]).filter(x=>String(x.clubId)===String(s.clubId));
     const revenueContractPanel='<section class="cc-card" aria-label="Contratos de receita registrados"><h4>Contratos de receitas</h4>'+
       (signedRevenue.length?signedRevenue.map(x=>'<p><b>'+esc(x.type==="broadcast"?"Transmissão":"Patrocínio")+
         ':</b> '+esc(money(x.annualAmount))+'/ano · Início '+careerDate(s,x.startDay)+' · Término '+careerDate(s,x.endDay)+
-        ' · Status: '+esc(x.status||"scheduled")+'</p>').join(""):
+        ' · Status: '+esc(x.status||"scheduled")+(x.brandName?' · '+esc(x.brandName):'')+'</p>').join(""):
         '<p class="cc-note">Nenhum contrato de receita cadastrado neste save.</p>')+
       '<p class="cc-note">Registros informativos: pagamentos e créditos ainda não estão habilitados.</p></section>';
     const dueRevenue=root.ProLifeClubEconomy?.revenueSchedule?.(s,s.clubId)||[];
@@ -478,7 +485,7 @@
     ];
     const marketOverview='<section class="cc-market-overview" aria-label="Painel de decisões do mercado"><div class="cc-market-overview-heading"><div><small>VISÃO GERAL</small><h3>Decisões do mercado</h3></div><p>Dados atuais da carreira. Selecione uma categoria para continuar.</p></div><div class="cc-market-overview-grid">'+
       summaryCards.map(x=>'<button type="button" class="cc-market-overview-card" data-coach-deal-tab="'+esc(x.tab)+'"><small>'+esc(x.label)+'</small><strong>'+x.value+'</strong><span>'+esc(x.note)+'</span></button>').join("")+'</div></section>';
-    const content={lista:listRows,recebidas:saleRows,propostas:deals,emprestimos:loanRows,financeiro:payrollPanel+financeReadiness+futureRevenuePanel+sponsorCatalogPanel+revenueContractPanel+revenueSchedulePanel+settlementPanel+financeAudit+payrollHistory+debtRows,contratos:payrollPanel+contractRows,clausulas:clauseRows,historico:historyRows};
+    const content={lista:listRows,recebidas:saleRows,propostas:deals,emprestimos:loanRows,financeiro:payrollPanel+financeReadiness+futureRevenuePanel+sponsorCatalogPanel+sponsorshipOfferPanel+revenueContractPanel+revenueSchedulePanel+settlementPanel+financeAudit+payrollHistory+debtRows,contratos:payrollPanel+contractRows,clausulas:clauseRows,historico:historyRows};
     const heading={lista:"Jogadores observados",recebidas:"Propostas recebidas pelos seus jogadores",propostas:"Propostas e contrapropostas",emprestimos:"Empréstimos ativos",financeiro:"Obrigações financeiras",contratos:"Contratos do elenco",clausulas:"Cláusulas de revenda",historico:"Histórico financeiro e de transferências"};
     return '<nav class="cc-deal-nav" aria-label="Áreas do mercado"><button type="button" data-coach-market-area="observacao">Observação</button><button type="button" data-coach-market-area="transferencias" aria-current="page">Transferências</button></nav><div class="cc-strip"><div><b>'+pending.length+'</b><span>Propostas pendentes</span></div><div><b>'+loans.length+'</b><span>Empréstimos ativos</span></div><div><b>'+debts.length+'</b><span>Parcelas a pagar</span></div><div><b>'+clauses.length+'</b><span>Cláusulas de revenda</span></div></div><p class="cc-note">Valores do save atual em BRL · prazos em dias da carreira</p>'+draftPanel+marketOverview+taskPanel+'<nav class="cc-deal-nav" aria-label="Categorias de negociações">'+tabs.map(([id,label,count])=>'<button type="button" data-coach-deal-tab="'+id+'" aria-pressed="'+(ui.dealTab===id)+'">'+label+' <small>'+count+'</small></button>').join("")+'</nav><section class="cc-card cc-deal-section"><h3>'+heading[ui.dealTab]+'</h3>'+detail+content[ui.dealTab]+'</section>';
   }
