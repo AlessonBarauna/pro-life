@@ -428,8 +428,17 @@ case "tactic": {
         break;
       }
       case "acceptSaleOffer": {
-        if(s.mode!=="coach"||!D.Career.windowStatus(s).open)throw Error("Mercado fechado.");
-        const offer=s.coachCareer?.saleOffers?.find(o=>o.id===data.id&&o.status==="pending"&&o.sellerClubId===s.clubId&&s.day<=o.expiresDay);
+        if(s.mode!=="coach")throw Error("Disponível apenas ao treinador.");
+        const open=D.Career.windowStatus(s).open;
+        const offer=s.coachCareer?.saleOffers?.find(o=>o.id===data.id&&o.sellerClubId===s.clubId&&(o.status==="awaiting_window"&&open||o.status==="pending"&&s.day<=o.expiresDay));
+        if(offer&&!open){
+          const seller=D.club(s,offer.sellerClubId),buyer=D.club(s,offer.buyerClubId);
+          const p=seller?.roster?.find(x=>x.id===offer.playerId);
+          if(!p||p.id==="hero"||!buyer||seller.roster.length<=18||(s.coachCareer?.loans||[]).some(l=>!l.returned&&l.playerId===p.id))throw Error("Jogador indisponível para acordo futuro.");
+          offer.status="awaiting_window";offer.agreedDay=s.day;offer.lastSettlementError=null;
+          (s.news||[]).unshift({day:s.day,season:s.season,title:"Venda acordada",body:p.name+" permanece no clube até a próxima janela. A transferência será concluída quando o mercado abrir."});
+          break;
+        }
         if(!offer)throw Error("Proposta indisponível.");
         const seller=D.club(s,offer.sellerClubId),buyer=D.club(s,offer.buyerClubId);
         const p=seller?.roster?.find(x=>x.id===offer.playerId);
@@ -448,6 +457,15 @@ case "tactic": {
         D.Career.transfer(s,p,seller,buyer,fee);
         (s.news||[]).unshift({day:s.day,season:s.season,title:"Venda concluída",body:p.name+" vendido por R$ "+fee.toLocaleString("pt-BR")+"."});
         break;
+      }
+      case "settleCoachWindowSales": {
+        if(s.mode!=="coach"||!D.Career.windowStatus(s).open)return s;
+        for(const offer of s.coachCareer?.saleOffers||[]){
+          if(offer.status!=="awaiting_window"||offer.sellerClubId!==s.clubId)continue;
+          try{execute(s,"acceptSaleOffer",{id:offer.id});}
+          catch(error){offer.lastSettlementError=String(error?.message||error);}
+        }
+        return s;
       }
       case "reviseCoachDeal": {
         if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
