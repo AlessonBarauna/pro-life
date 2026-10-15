@@ -171,3 +171,43 @@ test("Individual negotiation desk opens and closes without changing save state",
  assert.equal(JSON.stringify(state),saved);
  V.setTab("central");
 });
+
+test("Multiround negotiations persist and close after three rounds without spending budget",()=>{
+ const appSource=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"utf8");
+ const root={};root.globalThis=root;
+ root.ProLife={club:(s,id=s.clubId)=>s.clubs.find(c=>c.id===id),overall:p=>p.overall,Career:{windowStatus:()=>({open:true}),transfer:()=>{}}};
+ vm.runInNewContext(appSource,root,{filename:"game.js"});
+ const p={id:"p",name:"Atleta",age:23,overall:70,pos:"ATA"};
+ const source={id:"a",name:"Origem",roster:[p,...Array.from({length:18},(_,i)=>({id:"r"+i}))],budget:100000,structure:90,lineup:["p"]};
+ const buyer={id:"b",name:"Destino",roster:[],budget:2000000,structure:90,lineup:[]};
+ let state={mode:"coach",clubId:"b",day:1,season:2026,news:[],clubs:[source,buyer],coachCareer:{settings:{marketStrictness:"normal",installments:"on"}}};
+ const original=buyer.budget;
+ root.ProLifeApp.execute(state,"counterRecruit",{clubId:"a",playerId:"p",offer:20000});
+ const id=state.coachCareer.negotiations[0].id;
+ state=JSON.parse(JSON.stringify(state));
+ root.ProLifeApp.execute(state,"reviseCoachDeal",{id,offer:30000});
+ assert.equal(state.coachCareer.negotiations[0].round,2);
+ assert.equal(state.coachCareer.negotiations[0].history.length,2);
+ state=JSON.parse(JSON.stringify(state));
+ root.ProLifeApp.execute(state,"reviseCoachDeal",{id,offer:40000});
+ assert.equal(state.coachCareer.negotiations[0].round,3);
+ assert.throws(()=>root.ProLifeApp.execute(state,"reviseCoachDeal",{id,offer:50000}),/três rodadas/);
+ assert.equal(state.clubs[1].budget,original);
+ assert.equal(state.clubs[0].roster.length,19);
+ root.ProLifeApp.execute(state,"acceptCoachDeal",{id,paymentPlan:"split"});
+ assert.equal(state.coachCareer.negotiations[0].status,"accepted");
+ assert.equal(state.coachCareer.transferDebts.length,1);
+ assert.equal(state.clubs[1].roster.length,1);
+ assert.throws(()=>root.ProLifeApp.execute(state,"acceptCoachDeal",{id}),/indisponível/);
+});
+test("Negotiation detail exposes editable terms and round history",()=>{
+ const source=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ const root={};root.globalThis=root;vm.runInNewContext(source,root);
+ const V=root.ProLifeCoachCareerView;
+ V.setTab("negociacoes");V.openDeal("n");
+ const state={mode:"coach",clubId:"b",day:3,season:2026,person:{nationality:"Brasil"},clubs:[{id:"a",name:"Origem",roster:[{id:"p",name:"Atleta",overall:75}]},{id:"b",name:"Destino",roster:[]}],coachCareer:{settings:{installments:"on"},negotiations:[{id:"n",status:"pending",playerId:"p",sellerClubId:"a",buyerClubId:"b",requested:20000,finalFee:25000,expiresDay:10,round:2,history:[{round:1,day:1,offered:20000,response:25000,accepted:false}]}]}};
+ const D={club:(s,id)=>s.clubs.find(c=>c.id===id),CoachCareer:{snapshot:()=>({club:{name:"Destino"},hasClub:true,reputation:60})}};
+ const html=V.render(state,D);
+ for(const marker of ['rodada 2/3','data-coach-deal-revise="n"','data-coach-deal-plan="n"','Rodadas da negociação','50% agora'])assert.ok(html.includes(marker),marker);
+ V.closeDeal();V.setTab("central");
+});
