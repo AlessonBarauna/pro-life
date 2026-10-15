@@ -9,12 +9,12 @@ function role(p){
  if(/^(GK|GOL|GOLEIRO|GR)$/.test(x))return "GK";
  if(/^(RB|LD|LATERALDIREITO)$/.test(x))return "RB";
  if(/^(LB|LE|LATERALESQUERDO)$/.test(x))return "LB";
- if(/^(CB|ZAG|DFC|ZC|ZAGUEIRO|DEF)$/.test(x))return "CB";
+ if(/^(CB|ZAG|DFC|ZC|ZAGUEIRO|DEF|CENTREBACK|CENTERBACK)$/.test(x))return "CB";
  if(/^(DM|VOL|MDC|CDM|VOLANTE)$/.test(x))return "DM";
- if(/^(CM|MC|MEI|MAT|CAM|ME|MD|MLG|MEIOCAMPO)$/.test(x))return "CM";
+ if(/^(CM|MC|MEI|MAT|CAM|ME|MD|MLG|MEIOCAMPO|MID|MF|AM|MEIA)$/.test(x))return "CM";
  if(/^(RW|PD|ED|PONTA DIREITA)$/.test(x))return "RW";
  if(/^(LW|PE|EE|PONTA ESQUERDA)$/.test(x))return "LW";
- if(/^(ST|CF|ATA|AT|CA|SA|SEGUNDOATACANTE|CENTROAVANTE)$/.test(x))return "ST";
+ if(/^(ST|CF|ATA|AT|CA|SA|SEGUNDOATACANTE|CENTROAVANTE|FW|FWD|FORWARD|STRIKER|ATT)$/.test(x))return "ST";
  return "UNKNOWN";
 }
 const score=(actual,wanted)=>actual===wanted?100:actual==="UNKNOWN"?10:actual==="GK"||wanted==="GK"?-200:
@@ -34,21 +34,27 @@ function scheme(club){
  return SCHEMES[raw]?raw:"4-3-3";
 }
 function lineup(club){
- const pool=players(club);
- const requested=Array.isArray(club?.lineup)?club.lineup:[]; 
- const selected=requested.map(item=>pool.find(p=>String(p.id)===String(item?.id??item))).filter((p,i,arr)=>arr.indexOf(p)===i);
+ const pool=players(club),shape=scheme(club),requested=Array.isArray(club?.lineup)?club.lineup:[];
+ const selected=requested.map(item=>pool.find(p=>String(p.id)===String(item?.id??item))).filter((p,i,a)=>a.indexOf(p)===i);
  const startersPool=selected.length>=11?selected.slice(0,11):selected.concat(pool.filter(p=>!selected.includes(p)).slice(0,11-selected.length));
- const available=startersPool.slice(),starters=[],shape=scheme(club);
+ const available=startersPool.slice(),starters=[];
  for(const [wanted] of SCHEMES[shape]){
-   let best=-1,value=-Infinity;
-   for(let i=0;i<available.length;i++){
-     const n=score(role(available[i]),wanted)+(selected.includes(available[i])?15:0);
-     if(n>value){value=n;best=i;}
-   }
-   starters.push(best<0?null:available.splice(best,1)[0]);
+  let best=-1,value=-Infinity;
+  for(let i=0;i<available.length;i++){
+   const n=score(role(available[i]),wanted);
+   if(n>value){value=n;best=i;}
+  }
+  // When the chosen 11 have no defender for a defensive slot, use an eligible
+  // defender from the remaining club roster before placing a striker at centre-back.
+  if(value<0&&["CB","RB","LB","GK"].includes(wanted)){
+   const outside=pool.filter(p=>!starters.includes(p)&&!available.includes(p));
+   const better=outside.map(p=>({p,n:score(role(p),wanted)})).sort((a,b)=>b.n-a.n)[0];
+   if(better&&better.n>value){starters.push(better.p);continue;}
+  }
+  starters.push(best<0?null:available.splice(best,1)[0]);
  }
- const starterSet=new Set(starters.filter(Boolean));
- return {starters,bench:pool.filter(p=>!starterSet.has(p)).slice(0,12),formation:shape};
+ const seen=new Set(starters.filter(Boolean));
+ return {starters,bench:pool.filter(p=>!seen.has(p)).slice(0,12),formation:shape};
 }
 function frame(minute,home,away){
  const t=Math.max(0,Number(minute)||0),possession=Math.floor(t/6)%2,phase=(t*.42)%1;
