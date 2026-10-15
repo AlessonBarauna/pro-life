@@ -62,7 +62,7 @@
     if(!c.locker.cooldowns)c.locker.cooldowns={};
     if(!Array.isArray(c.locker.log))c.locker.log=[];
     if(!FOCI[c.focus])c.focus="equilibrado";
-    fillPlayerRecords(s);
+    if(c.playerDataVersion!==1){fillPlayerRecords(s);c.playerDataVersion=1;}
     return c;
   }
   const clubOf=(s,api)=>api?.club?api.club(s):(s.clubs||[]).find(c=>c.id===s.clubId)||null;
