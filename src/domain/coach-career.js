@@ -29,17 +29,25 @@
     ME:["MD","MC","PE"],MD:["ME","MC","PD"],PE:["PD","ME","ATA"],PD:["PE","MD","ATA"],
     CA:["ATA","PE","PD"],ATA:["CA","PE","PD"]
   };
+  const NORMALIZE_POS={GK:"GOL",CB:"ZAG",LB:"LE",RB:"LD",CDM:"VOL",CM:"MC",CAM:"MEI",LM:"ME",RM:"MD",LW:"PE",RW:"PD",ST:"ATA",CF:"ATA",LWB:"LE",RWB:"LD"};
+  const normalizePos=p=>NORMALIZE_POS[String(p||"").toUpperCase()]||String(p||"").toUpperCase();
   const FOCUS_ATTRIBUTES={equilibrado:["pace","finish","pass","defense","strength","stamina"],velocidade:["pace","stamina"],finalizacao:["finish","pace"],criacao:["pass","finish"],marcacao:["defense","strength"],fisico:["strength","stamina"]};
   function fillPlayerRecords(s){
     if(!isCoach(s))return;
     for(const club of (s.clubs||[])){
       for(const p of (club.roster||[])){
         if(!p||!p.id)continue;
-        if(!Array.isArray(p.secondaryPositions)){
-          p.secondaryPositions=(ALTERNATIVES[String(p.pos||"").toUpperCase()]||[]).slice(0,6);
+        // Empty legacy arrays without provenance mean unknown, not confirmed "no alternatives".
+        const primary=normalizePos(p.pos||p.position);
+        const alternatives=Array.isArray(p.secondaryPositions)?p.secondaryPositions:[];
+        const verified=p.secondaryPositionsSource==="ea_fc27"||p.secondaryPositionsSource==="verified";
+        const normalized=[...new Set(alternatives.map(normalizePos).filter(x=>x&&x!==primary))].slice(0,6);
+        if(normalized.length||verified){
+          p.secondaryPositions=normalized;
+        }else{
+          p.secondaryPositions=(ALTERNATIVES[primary]||[]).filter(x=>x!==primary).slice(0,6);
           p.secondaryPositionsSource="suggested";
         }
-        else p.secondaryPositions=[...new Set(p.secondaryPositions.filter(x=>typeof x==="string"&&x!==p.pos))].slice(0,6);
         if(!Number.isFinite(Number(p.contractEndDay))||p.contractEndDay==null){
           const years=1+Math.floor(unit("contract|"+club.id+"|"+p.id)*4);
           p.contractEndDay=Number(s.day||0)+years*365;
@@ -62,7 +70,7 @@
     if(!c.locker.cooldowns)c.locker.cooldowns={};
     if(!Array.isArray(c.locker.log))c.locker.log=[];
     if(!FOCI[c.focus])c.focus="equilibrado";
-    if(c.playerDataVersion!==1){fillPlayerRecords(s);c.playerDataVersion=1;}
+    if(c.playerDataVersion!==2){fillPlayerRecords(s);c.playerDataVersion=2;}
     return c;
   }
   const clubOf=(s,api)=>api?.club?api.club(s):(s.clubs||[]).find(c=>c.id===s.clubId)||null;
