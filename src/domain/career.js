@@ -1633,6 +1633,9 @@
     if(s.mode==="coach"&&s.coachCareer?.negotiations?.some(n=>n.status==="awaiting_window")&&windowStatus(s).open){
       root.ProLifeApp?.execute?.(s,"settleCoachWindowDeals",{});
     }
+    if(s.mode==="coach"&&s.coachCareer?.saleOffers?.some(o=>o.status==="awaiting_window")&&windowStatus(s).open){
+      root.ProLifeApp?.execute?.(s,"settleCoachWindowSales",{});
+    }
     // Close expired incoming proposals once and announce their outcome.
     if(s.mode==="coach"&&Array.isArray(s.coachCareer?.saleOffers)){
       for(const offer of s.coachCareer.saleOffers){
