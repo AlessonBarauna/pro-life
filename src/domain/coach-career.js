@@ -40,9 +40,16 @@
         // Empty legacy arrays without provenance mean unknown, not confirmed "no alternatives".
         const primary=normalizePos(p.pos||p.position);
         const alternatives=Array.isArray(p.secondaryPositions)?p.secondaryPositions:[];
+        const eaCatalog=root.ProLifeFC27Positions?.alt||{};
+        const eaKey=String(p.eaId??(String(p.id||"").match(/^real_(\\d+)$/)?.[1]||""));
+        const knownEntry=Object.prototype.hasOwnProperty.call(eaCatalog,eaKey);
+        const eaAlternates=knownEntry?String(eaCatalog[eaKey]||"").split(",").map(normalizePos).filter(x=>x&&x!==primary).slice(0,6):null;
         const verified=p.secondaryPositionsSource==="ea_fc27"||p.secondaryPositionsSource==="verified";
         const normalized=[...new Set(alternatives.map(normalizePos).filter(x=>x&&x!==primary))].slice(0,6);
-        if(normalized.length||verified){
+        if(knownEntry){
+          p.secondaryPositions=[...new Set(eaAlternates)];
+          p.secondaryPositionsSource="ea_fc27";
+        }else if(normalized.length||verified){
           p.secondaryPositions=normalized;
         }else{
           p.secondaryPositions=(ALTERNATIVES[primary]||[]).filter(x=>x!==primary).slice(0,6);
@@ -70,7 +77,7 @@
     if(!c.locker.cooldowns)c.locker.cooldowns={};
     if(!Array.isArray(c.locker.log))c.locker.log=[];
     if(!FOCI[c.focus])c.focus="equilibrado";
-    if(c.playerDataVersion!==2){fillPlayerRecords(s);c.playerDataVersion=2;}
+    if(c.playerDataVersion!==3){fillPlayerRecords(s);c.playerDataVersion=3;}
     return c;
   }
   const clubOf=(s,api)=>api?.club?api.club(s):(s.clubs||[]).find(c=>c.id===s.clubId)||null;
