@@ -1176,7 +1176,7 @@
             if (p.archetypeId === "finisher") protagonism *= 1.16;
             else if (p.archetypeId === "nine") protagonism *= 1.09;
           }
-          return Math.max(1, role * relativeQuality * protagonism * (MatchPositions?.factor(p, positionRoles[i]) ?? 1) * (g.finish * 0.5 + g.pace * 0.16 + (p.attrs.positioning ?? (((p.attrs.pass ?? g.pass) + (p.attrs.finish ?? g.finish)) / 2)) * 0.34));
+          return Math.max(1, role * relativeQuality * protagonism * (MatchPositions?.factor(p, positionRoles[i]) ?? 1) * (context?.mode === "player" && p.id === "hero" ? clamp(0.94 + (Number(p.condition ?? 75) - 65) / 600, 0.90, 1.00) : 1) * (g.finish * 0.5 + g.pace * 0.16 + (p.attrs.positioning ?? (((p.attrs.pass ?? g.pass) + (p.attrs.finish ?? g.finish)) / 2)) * 0.34));
         });
         let shooterRoll = rng.next() * shooterWeights.reduce((n, v) => n + v, 0), shooter = candidates[0];
         for (let si = 0; si < candidates.length; si++) { shooterRoll -= shooterWeights[si]; if (shooterRoll <= 0) { shooter = candidates[si]; break; } }
