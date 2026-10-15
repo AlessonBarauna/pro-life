@@ -102,33 +102,51 @@
     const contracts=state.coachCareer?.finance?.revenueContracts||[];
     const offers=state.coachCareer?.finance?.sponsorshipOffers||[];
     return roles.filter(([role])=>!contracts.some(x=>x.sponsorRole===role&&x.endDay>state.day)&&
-      !offers.some(x=>x.role===role&&x.status==="accepted")).map(([role,label,fraction],i)=>{
+      !offers.some(x=>x.role===role&&["accepted","rejected"].includes(x.status))).map(([role,label,fraction],i)=>{
       const available=candidates.filter(b=>role!=="kit"||b.category==="SPORTSWEAR");
       const brand=available[i%available.length];
       if(!brand)return null;
       const annualAmount=Math.max(100000,Math.round(projection*fraction/100000)*100000);
       return {id:"sponsor_"+String(state.clubId)+"_"+role+"_"+String(state.season||0),
         brandId:brand.id,brandName:brand.name,role,label,annualAmount,durationDays:365,
-        status:"proposal",readOnly:true};
+        status:"proposal",expiresDay:Number(state.day)+14,readOnly:true};
     }).filter(Boolean);
   }
   function acceptSponsorshipOffer(state,club,brands,offerId){
     if(!state||!club||String(club.id)!==String(state.clubId)||!state.coachCareer)throw Error("Clube invalido.");
     const finance=state.coachCareer.finance||={};
     const existing=(finance.sponsorshipOffers||[]).find(x=>x.id===offerId);
-    if(existing?.status==="accepted")throw Error("Proposta ja aceita.");
+    if(existing)throw Error("Proposta ja finalizada.");
     const offer=sponsorshipOffers(state,club,brands).find(x=>x.id===offerId);
     if(!offer)throw Error("Proposta indisponivel.");
+    if(Number(state.day)>Number(offer.expiresDay??(Number(state.day)+1)))throw Error("Proposta expirada.");
     const startDay=Number(state.day)+1;
     const contractId="contract_"+offer.id;
     const signed=registerRevenueContract(state,club.id,{
-      id:contractId,type:"sponsorship",annualAmount:offer.annualAmount,startDay,
+      id:contractId,type:"sponsorship",annualAmount:offer.counterAmount||offer.annualAmount,startDay,
       durationDays:offer.durationDays
     });
     signed.brandId=offer.brandId;signed.brandName=offer.brandName;signed.sponsorRole=offer.role;
     finance.sponsorshipOffers||=[];
     finance.sponsorshipOffers.push({...offer,status:"accepted",acceptedDay:Number(state.day),contractId});
     return signed;
+  }
+  // Rejection and counteroffers are stored without changing the club budget.
+  function decideSponsorship(state,club,brands,offerId,decision,amount){
+    if(!["reject","counter"].includes(decision))throw Error("Decisao invalida.");
+    const finance=state?.coachCareer?.finance;
+    if(!finance||String(club?.id)!==String(state?.clubId))throw Error("Clube invalido.");
+    const offer=sponsorshipOffers(state,club,brands).find(x=>x.id===offerId);
+    if(!offer)throw Error("Proposta indisponivel.");
+    const existing=(finance.sponsorshipOffers||[]).find(x=>x.id===offerId);
+    if(existing)throw Error("Proposta ja respondida.");
+    const proposed=Number(amount);
+    if(decision==="counter"&&(!Number.isSafeInteger(proposed)||proposed<offer.annualAmount||
+      proposed>Math.round(offer.annualAmount*1.2)))throw Error("Contraproposta fora do limite.");
+    const record={...offer,status:decision==="reject"?"rejected":"counter",counterAmount:decision==="counter"?proposed:null,answeredDay:Number(state.day)};
+    finance.sponsorshipOffers||=[];
+    finance.sponsorshipOffers.push(record);
+    return record;
   }
   // M04.8: explicit contract registration; no automatic funding or retroactive receivables.
   function registerRevenueContract(state,clubId,input){
@@ -174,7 +192,7 @@
     }
     return events.sort((a,b)=>a.dueDay-b.dueDay||String(a.contractId).localeCompare(String(b.contractId))).slice(0,36);
   }
-  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,registerRevenueContract,revenueContractsSnapshot,revenueSchedule,sponsorshipCandidates,sponsorshipOffers,acceptSponsorshipOffer,VERSION:"m04.11"};
+  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,registerRevenueContract,revenueContractsSnapshot,revenueSchedule,sponsorshipCandidates,sponsorshipOffers,acceptSponsorshipOffer,decideSponsorship,VERSION:"m04.11b"};
   root.ProLifeClubEconomy=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
