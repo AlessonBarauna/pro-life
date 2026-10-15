@@ -598,7 +598,7 @@ case "tactic": {
         n.requested=offer;n.finalFee=null;n.response="awaiting_reply";n.replyDay=Number(s.day)+2;n.pendingOutcome={accepted,finalFee};
         n.expiresDay=s.day+(D.Career.windowStatus(s).open?7:Math.max(7,Number(D.Career.windowStatus(s).remaining)||7)+7);
         n.history.push({round:n.round,day:s.day,offered:offer,status:"sent"});
-        (s.news||[]).unshift({day:s.day,season:s.season,title:accepted?"Oferta aceita pelo clube":"Nova contraproposta do clube",body:p.name+" · "+finalFee.toLocaleString("pt-BR")+"."});
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Contraproposta enviada",body:p.name+" · aguardando resposta do clube vendedor."});
         return s;
       }
       case "coachInquiry": {
@@ -639,7 +639,7 @@ case "tactic": {
         const finalFee=accepted?Math.ceil(requested/1000)*1000:Math.ceil(base/1000)*1000;
         const entry={id:"neg_"+s.season+"_"+s.day+"_"+p.id,day:s.day,playerId:p.id,sellerClubId:seller.id,buyerClubId:buyer.id,requested,finalFee:null,status:"pending",round:1,response:"awaiting_reply",replyDay:Number(s.day)+2,pendingOutcome:{accepted,finalFee},expiresDay:s.day+(D.Career.windowStatus(s).open?10:Math.max(10,Number(D.Career.windowStatus(s).remaining)||10)+10),history:[{round:1,day:s.day,offered:requested,status:"sent"}]};
         s.coachCareer.negotiations.push(entry);
-        (s.news||[]).unshift({day:s.day,season:s.season,title:accepted?"Proposta aceita":"Contraproposta recebida",body:accepted?"O clube aceitou R$ "+finalFee.toLocaleString("pt-BR")+".":"O clube pede R$ "+finalFee.toLocaleString("pt-BR")+" pelo atleta."});
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Proposta enviada",body:"O clube recebeu a oferta. Resposta prevista em dois dias da carreira."});
         return s;
       }
       case "buyLoan": {
