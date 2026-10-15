@@ -8366,6 +8366,11 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (!S.save(state))
       toast("Autosave indisponível neste navegador. Use Exportar save.");
   }
+  document.addEventListener("click",(event)=>{
+    if(!event.target.closest?.("[data-rivalry-claim]")||!state||state.mode!=="player")return;
+    const result=window.ProLifePlayerRivalries?.claimCareerReward?.(state);
+    if(result?.claimed){persist();render();toast("Pontos de personalidade resgatados: "+result.amount);}
+  });
   document.addEventListener("click", (event) => {
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
     const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus]");
