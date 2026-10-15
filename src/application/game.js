@@ -413,7 +413,7 @@ case "tactic": {
         const previous=n.contractOffer;
         if(previous?.status==="accepted")throw Error("Contrato já acordado.");
         if((previous?.round||0)>=3)throw Error("Limite de rodadas contratuais atingido.");
-        const baseline=Math.max(1000,Number(player.salary)||Math.round(valuation(player)/180/1000)*1000);
+        const baseline=Math.max(minimumMarketSalaryMonthly(player),Number(player.salary)||0);
         const seniority=Math.max(0,Number(D.overall(player)||70)-70);
         const expectation=Math.round(baseline*(1+seniority*.007));
         const roleFactor={rotation:0.92,important:1,starter:1.04,star:1.12}[role];
@@ -763,13 +763,22 @@ case "tactic": {
     }
     return s;
   }
+  // Market model v2: BRL nominal values; existing accepted deals retain their stored finalFee.
+  // Calibrated for career-gameplay rather than claimed as official EA/TransferRoom prices.
   function valuation(p) {
-    return (
-      Math.round(
-        (D.overall(p) ** 2 * 35 * (p.age < 23 ? 1.3 : p.age > 30 ? 0.7 : 1)) /
-          1000,
-      ) * 1000
-    );
+    const overall = Math.max(40, Math.min(99, Number(D.overall(p)) || 65));
+    const age = Math.max(14, Math.min(45, Number(p.age) || 26));
+    const potential = Math.max(overall, Math.min(99, Number(p.potential) || overall));
+    const ageFactor = age <= 22 ? 1.22 : age <= 27 ? 1.1 : age <= 30 ? 1 : age <= 33 ? .72 : .45;
+    const potentialFactor = 1 + Math.min(0.35, Math.max(0, potential - overall) * 0.025);
+    const base = 39000000 * Math.pow(overall / 84, 9) * ageFactor * potentialFactor;
+    return Math.max(100000, Math.round(base / 10000) * 10000);
+  }
+  // Salary uses a monthly storage unit for legacy compatibility; the UI may also show weekly.
+  // Newly negotiated contracts use a financially coherent market-level monthly floor.
+  function minimumMarketSalaryMonthly(p) {
+    const weekly = Math.max(750, Math.round(valuation(p) * 0.00085 / 250) * 250);
+    return Math.ceil(weekly * 52 / 12 / 1000) * 1000;
   }
   root.ProLifeApp = { execute, valuation };
   if (typeof module !== "undefined" && module.exports)
