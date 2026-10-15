@@ -8531,6 +8531,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if(from.injury||from.suspension>0){toast("O jogador selecionado está indisponível.");return false;}
     const usable=p=>!p.injury&&!(Number(p.suspension)>0);
     const ids=[...(club.lineup||[])],fi=ids.indexOf(fromId),ti=ids.indexOf(toId);
+    if(ti<0&&(to.injury||Number(to.suspension)>0)){toast("O reserva escolhido está indisponível.");return false;}
     if(fi<0&&ti<0){toast("Escolha um titular para a troca.");return false;}
     if(fi>=0&&ti>=0){ids[fi]=toId;ids[ti]=fromId;}
     else if(fi>=0){ids[fi]=toId;}
