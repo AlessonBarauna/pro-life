@@ -428,6 +428,7 @@ case "tactic": {
         if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
         const n=s.coachCareer?.negotiations?.find(n=>n.id===data.id && n.status==="pending");
         if(!n||s.day>n.expiresDay||n.buyerClubId!==s.clubId)throw Error("Proposta expirada ou indisponível.");
+        if(n.response!=="accepted")throw Error("Aguarde o aceite do clube vendedor antes de concluir.");
         if(n.contractOffer&&n.contractOffer.status!=="accepted")throw Error("Acordo contratual pendente.");
         const plan=data.paymentPlan==="split"?"split":"upfront";
         if(!D.Career.windowStatus(s).open){
@@ -578,6 +579,7 @@ case "tactic": {
         if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
         const n=s.coachCareer?.negotiations?.find(x=>x.id===data.id&&x.status==="pending");
         if(!n||n.buyerClubId!==s.clubId||Number(s.day)>Number(n.expiresDay))throw Error("Negociação expirada ou indisponível.");
+        if(n.response==="awaiting_reply")throw Error("Aguarde a resposta do clube antes de apresentar outra oferta.");
         if((n.round||1)>=3)throw Error("Limite de três rodadas atingido.");
         const buyer=D.club(s,n.buyerClubId),seller=D.club(s,n.sellerClubId);
         const p=seller?.roster?.find(x=>x.id===n.playerId);
@@ -593,9 +595,9 @@ case "tactic": {
         const finalFee=accepted?offer:Math.ceil(base*(1+Math.min(n.round||1,2)*0.025)/1000)*1000;
         n.history ||= [{round:1,day:n.day??s.day,offered:n.requested,response:n.finalFee,accepted:n.requested>=n.finalFee}];
         n.round=(n.round||1)+1;
-        n.requested=offer;n.finalFee=finalFee;n.response=accepted?"accepted":"counter";
+        n.requested=offer;n.finalFee=null;n.response="awaiting_reply";n.replyDay=Number(s.day)+2;n.pendingOutcome={accepted,finalFee};
         n.expiresDay=s.day+(D.Career.windowStatus(s).open?7:Math.max(7,Number(D.Career.windowStatus(s).remaining)||7)+7);
-        n.history.push({round:n.round,day:s.day,offered:offer,response:finalFee,accepted});
+        n.history.push({round:n.round,day:s.day,offered:offer,status:"sent"});
         (s.news||[]).unshift({day:s.day,season:s.season,title:accepted?"Oferta aceita pelo clube":"Nova contraproposta do clube",body:p.name+" · "+finalFee.toLocaleString("pt-BR")+"."});
         return s;
       }
@@ -635,7 +637,7 @@ case "tactic": {
         s.coachCareer.negotiations=s.coachCareer.negotiations.filter(n=>!(n.playerId===p.id&&n.buyerClubId===buyer.id&&n.status==="pending"));
         const accepted=requested>=minimum;
         const finalFee=accepted?Math.ceil(requested/1000)*1000:Math.ceil(base/1000)*1000;
-        const entry={id:"neg_"+s.season+"_"+s.day+"_"+p.id,day:s.day,playerId:p.id,sellerClubId:seller.id,buyerClubId:buyer.id,requested,finalFee,status:"pending",round:1,response:accepted?"accepted":"counter",expiresDay:s.day+(D.Career.windowStatus(s).open?7:Math.max(7,Number(D.Career.windowStatus(s).remaining)||7)+7),history:[{round:1,day:s.day,offered:requested,response:finalFee,accepted}]};
+        const entry={id:"neg_"+s.season+"_"+s.day+"_"+p.id,day:s.day,playerId:p.id,sellerClubId:seller.id,buyerClubId:buyer.id,requested,finalFee:null,status:"pending",round:1,response:"awaiting_reply",replyDay:Number(s.day)+2,pendingOutcome:{accepted,finalFee},expiresDay:s.day+(D.Career.windowStatus(s).open?10:Math.max(10,Number(D.Career.windowStatus(s).remaining)||10)+10),history:[{round:1,day:s.day,offered:requested,status:"sent"}]};
         s.coachCareer.negotiations.push(entry);
         (s.news||[]).unshift({day:s.day,season:s.season,title:accepted?"Proposta aceita":"Contraproposta recebida",body:accepted?"O clube aceitou R$ "+finalFee.toLocaleString("pt-BR")+".":"O clube pede R$ "+finalFee.toLocaleString("pt-BR")+" pelo atleta."});
         return s;
