@@ -1490,8 +1490,8 @@
     s.matches.unshift(m);
     Statistics?.recordMatch(s, m);
     if(s.mode==="player") PlayerRivalries?.ensureCareer?.(s);
-    if(s.mode==="player" && s.extras?.playerRivalry && PlayerRivalries?.fromSimulatedMatch){
-      s.extras.playerRivalry=PlayerRivalries.fromSimulatedMatch(s.extras.playerRivalry,m);
+    if(s.mode==="player" && PlayerRivalries?.recordLeagueMatch){
+      PlayerRivalries.recordLeagueMatch(s,m);
     }
     const heroDevelopment = Training?.matchDevelopment?.(s, m, { overall, clamp });
     if (![homeId, awayId].includes(s.clubId)) { delete m.participation; delete m.playerStats; }
