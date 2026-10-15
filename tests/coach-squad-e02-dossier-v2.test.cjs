@@ -21,3 +21,11 @@ test("E02 player panel retains aside and responsive styling",()=>{
  assert.match(css,/\.pl-squad-screen \.pl-squad-info-grid/);
  assert.match(css,/\.pl-squad-screen \.pl-squad-detail-tabs button\.active/);
 });
+
+test("E02 legacy roster shows honest contract fallbacks",()=>{
+ assert.match(source,/selected\.contract\?\.salary/);
+ assert.match(source,/selected\.contract\?\.endDay/);
+ assert.match(source,/estimativa/);
+ assert.match(source,/Não informado no save/);
+ assert.match(source,/não contratual/);
+});
