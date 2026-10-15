@@ -8529,7 +8529,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const athlete=D.club(state,clubId)?.roster?.find(p=>p.id===playerId)||D.GlobalFootball?.playerById?.(state,playerId);
       if(!athlete){toast("Jogador indisponível.");return;}
       const inquiry=state.coachCareer?.inquiries?.find(x=>x.playerId===playerId&&x.clubId===clubId&&x.buyerClubId===state.clubId);
-      if(!inquiry||inquiry.status!=="accepted"||Number(state.day)>Number(inquiry.expiresDay)){
+      if(!inquiry||!["accepted","asking_price"].includes(inquiry.status)||Number(state.day)>Number(inquiry.expiresDay)){
         toast("Consulte o interesse e aguarde a resposta do clube antes de negociar.");
         return;
       }
