@@ -283,11 +283,31 @@
     return {focus:f,grown};
   }
 
+  // M02: delayed, deterministic club responses. No funds or player ownership change.
+  function settleInquiries(s,api){
+    const inquiries=s.coachCareer?.inquiries;
+    if(!Array.isArray(inquiries))return 0;
+    let settled=0;
+    for(const inquiry of inquiries){
+      if(inquiry.status!=="pending"||Number(s.day)<Number(inquiry.responseDay))continue;
+      const club=(s.clubs||[]).find(c=>c.id===inquiry.clubId)||api?.club?.(s,inquiry.clubId);
+      const player=club?.roster?.find(p=>p.id===inquiry.playerId)||api?.GlobalFootball?.playersByClub?.(s,inquiry.clubId)?.find(p=>p.id===inquiry.playerId);
+      const available=!!player&&player.id!=="hero"&&player.status!=="retired";
+      const interest=available?unit("interest|"+inquiry.clubId+"|"+inquiry.playerId+"|"+inquiry.startDay):1;
+      inquiry.status=available&&interest<0.75?"accepted":"rejected";
+      inquiry.answeredDay=Number(s.day)||0;
+      inquiry.interest=interest<0.3?"high":interest<0.6?"medium":"low";
+      (s.news||[]).unshift({day:s.day,season:s.season,title:"Resposta à sondagem",body:(player?.name||"Jogador")+" · "+(inquiry.status==="accepted"?"Clube autoriza iniciar negociação.":"Clube não deseja negociar neste momento.")});
+      settled++;
+    }
+    return settled;
+  }
   // ---------- agenda diaria ----------
   function daily(s,api,hooks){
     if(!isCoach(s))return null;
     state(s);
     root.ProLifeCoachScoutingV2?.advance?.(s);
+    settleInquiries(s,api);
     if(s.day%7===0&&s.clubId){
       weeklyTraining(s,api);
       return evaluate(s,api,hooks);
@@ -312,7 +332,7 @@
       focus:c.focus,foci:FOCI,stints:c.stints,totals,license:s.license,reputation:s.reputation};
   }
 
-  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf};
+  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,settleInquiries,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
