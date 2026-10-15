@@ -332,6 +332,11 @@
     if(!Array.isArray(inquiries))return 0;
     let settled=0;
     for(const inquiry of inquiries){
+      // Legacy inquiries used a flat 75% roll; reevaluate only if no negotiation has started.
+      if(inquiry.status==="accepted"&&!inquiry.playerDecision){
+        const active=(s.coachCareer?.negotiations||[]).some(n=>n.playerId===inquiry.playerId&&n.buyerClubId===inquiry.buyerClubId);
+        if(!active){inquiry.status="pending";inquiry.responseDay=Math.min(Number(inquiry.responseDay)||Number(s.day),Number(s.day));}
+      }
       if(inquiry.status!=="pending"||Number(s.day)<Number(inquiry.responseDay))continue;
       const seller=(s.clubs||[]).find(c=>c.id===inquiry.clubId)||api?.club?.(s,inquiry.clubId);
       const buyer=(s.clubs||[]).find(c=>c.id===inquiry.buyerClubId)||api?.club?.(s,inquiry.buyerClubId);
