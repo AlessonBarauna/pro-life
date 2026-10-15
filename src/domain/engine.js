@@ -1484,13 +1484,38 @@
       return;
     }
   }
+  // Ephemeral coach-only action queue. Never serialized into career saves.
+  // The matching fixture consumes the queue once, before official simulation.
+  const coachActionPlans=new WeakMap();
+  function scheduleCoachActions(s,fixture,actions){
+    if(!s||typeof s!=="object"||s.mode!=="coach"||!fixture||!Array.isArray(actions))return false;
+    if(!fixture.home||!fixture.away||!Number.isInteger(fixture.date)||fixture.date<=s.day)return false;
+    if(![fixture.home,fixture.away].includes(s.clubId))return false;
+    if((s.matches||[]).some(m=>m.home===fixture.home&&m.away===fixture.away&&m.date===fixture.date))return false;
+    if(actions.length>5||actions.some(a=>a?.type!=="substitution"||![0,1].includes(a.side)||
+      !Number.isInteger(a.minute)||a.minute<1||a.minute>90||
+      typeof a.outId!=="string"||!a.outId||typeof a.inId!=="string"||!a.inId||a.outId===a.inId))return false;
+    const seenOut=new Set(),seenIn=new Set();
+    for(const a of actions){
+      const out=a.side+":"+a.outId,incoming=a.side+":"+a.inId;
+      if(seenOut.has(out)||seenIn.has(incoming))return false;
+      seenOut.add(out);seenIn.add(incoming);
+    }
+    coachActionPlans.set(s,{home:fixture.home,away:fixture.away,date:fixture.date,
+      actions:actions.map(a=>({type:"substitution",side:a.side,minute:a.minute,outId:a.outId,inId:a.inId}))});
+    return true;
+  }
   function registerMatch(s, rng, homeId, awayId, meta, leagueMatch) {
     const hc = club(s, homeId), ac = club(s, awayId);
     const disciplineMeta={...meta,leagueId:leagueMatch?hc.leagueId:null};
     const disciplineKey=prepareDisciplineAvailability(s,hc,disciplineMeta);
     prepareDisciplineAvailability(s,ac,disciplineMeta);
     preparePlayerLineup(s, rng, homeId, awayId);
-    const m = simulate(hc, ac, rng, s);
+    const pendingCoachPlan=coachActionPlans.get(s);
+    const applies=pendingCoachPlan&&s.mode==="coach"&&pendingCoachPlan.home===homeId&&
+      pendingCoachPlan.away===awayId&&pendingCoachPlan.date===s.day;
+    if(applies)coachActionPlans.delete(s);
+    const m = simulate(hc, ac, rng, s, applies?pendingCoachPlan.actions:[]);
     if (s.mode === "player") {
       const q=Physical?.init?.(s.person,s.day), a=q?.active, key=a&&`injury:${a.startDay}:${a.type}`;
       if(a&&a.startDay===s.day&&key&&!q.processed.includes(key)){q.processed.push(key);Career.addMessage?.(s,{category:"CARREIRA",sender:"Departamento médico",subject:`Diagnóstico: ${a.name}`,body:`${a.severity}. Previsão inicial: ${a.totalDays} dia(s). A recuperação será acompanhada pelo calendário.`,priority:a.severity==="GRAVE"?"IMPORTANTE":"NORMAL",eventId:key});}
@@ -2858,6 +2883,7 @@
     isSuspendedFor,
     recordDevelopment,
     simulate,
+    scheduleCoachActions,
     selected,
     overall,
     playerDevelopment: root.ProLifePlayerDevelopment,
