@@ -370,6 +370,15 @@ case "tactic": {
         D.CoachCareer.setCaptain(s, D, data.playerId || null);
         break;
       }
+      case "coachMarketDifficulty": {
+        if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
+        const difficulty=String(data.difficulty||"");
+        if(!["flexible","normal","strict"].includes(difficulty))throw Error("Rigor de negociação inválido.");
+        s.coachCareer||={version:1};
+        s.coachCareer.settings||={};
+        s.coachCareer.settings.marketStrictness=difficulty;
+        break;
+      }
       case "coachFocus": {
         if (s.mode !== "coach") throw Error("Disponível para treinadores.");
         D.CoachCareer.setFocus(s, data.focus);
