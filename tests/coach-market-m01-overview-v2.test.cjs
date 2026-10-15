@@ -17,3 +17,7 @@ test("M01 category shortcuts use existing working tab dispatcher",()=>{
  assert.match(source,/marketOverview\+taskPanel/);
  assert.match(source,/\.cc-market-overview-grid/);
 });
+
+test("M01 market categories have label and count for contracts",()=>{
+ assert.match(source,/\["contratos","Contratos",\(D\?\.club\?\.\(s,s\.clubId\)\?\.roster\|\|\[\]\)\.length\]/);
+});
