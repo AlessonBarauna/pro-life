@@ -2214,8 +2214,14 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         const ids=starters.map(p=>p.id);
         const valid=Array.isArray(saved)&&saved.length===ids.length&&new Set(saved).size===ids.length&&saved.every(id=>ids.includes(id));
         if(valid){
+          // All initial players were consumed while constructing rows above.
+          // Use the rendered slot count, not the emptied 'remaining' array.
           let cursor=0;
-          for(const row of rows)row.players=row.players.map(()=>c.roster.find(p=>p.id===saved[cursor++])).filter(Boolean);
+          for(const row of rows){
+            const count=row.players.length;
+            row.players=saved.slice(cursor,cursor+count).map(id=>c.roster.find(p=>p.id===id)).filter(Boolean);
+            cursor+=count;
+          }
         }else if(ids.length===11){
           state.coachCareer ||= {version:1};
           state.coachCareer.pitchSlots=rows.flatMap(row=>row.players.map(p=>p.id));
