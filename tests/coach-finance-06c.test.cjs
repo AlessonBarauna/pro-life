@@ -575,3 +575,34 @@ test("Drag substitution repairs a ten-player lineup containing injured goalkeepe
  assert.equal(club.lineup.length,11);
  assert.ok(club.lineup.includes("p1"));
 });
+
+test("Manager offer preferences persist and control proposal eligibility",()=>{
+ const {root,state}=saleFixture();
+ const own=state.clubs.find(c=>c.id===state.clubId);
+ const player=own.roster.find(p=>p.id!=="hero");
+ assert.ok(player);
+ root.ProLifeApp.execute(state,"setCoachOfferPreference",{mode:"none"});
+ assert.equal(state.coachCareer.offerPreferences.mode,"none");
+ assert.throws(()=>root.ProLifeApp.execute(state,"generateSaleInterest",{}),/desativado/);
+ root.ProLifeApp.execute(state,"setCoachOfferPreference",{mode:"listed"});
+ assert.throws(()=>root.ProLifeApp.execute(state,"generateSaleInterest",{}),/preferências/);
+ root.ProLifeApp.execute(state,"setCoachPlayerOfferStatus",{playerId:player.id,status:"listed"});
+ assert.ok(state.coachCareer.offerPreferences.listedIds.includes(player.id));
+ root.ProLifeApp.execute(state,"setCoachPlayerOfferStatus",{playerId:player.id,status:"blocked"});
+ assert.equal(state.coachCareer.offerPreferences.listedIds.includes(player.id),false);
+ assert.equal(state.coachCareer.offerPreferences.blockedIds.includes(player.id),true);
+ const saved=JSON.parse(JSON.stringify(state));
+ assert.equal(saved.coachCareer.offerPreferences.mode,"listed");
+ assert.ok(saved.coachCareer.offerPreferences.blockedIds.includes(player.id));
+ root.ProLifeApp.execute(saved,"setCoachPlayerOfferStatus",{playerId:player.id,status:"available"});
+ assert.ok(!saved.coachCareer.offerPreferences.blockedIds.includes(player.id));
+});
+test("Offer settings controls are available only on manager transfer screen",()=>{
+ const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+ const view=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ assert.match(app,/setCoachOfferPreference/);
+ assert.match(app,/setCoachPlayerOfferStatus/);
+ assert.match(view,/Preferências de propostas/);
+ assert.match(view,/Bloquear ofertas/);
+ assert.match(view,/Não receber propostas/);
+});
