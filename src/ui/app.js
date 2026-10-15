@@ -8544,16 +8544,23 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if(e.dataTransfer)e.dataTransfer.effectAllowed="move";
   });
   document.addEventListener("dragover",e=>{
-    if(state?.mode!=="coach"||!squadSwapSource||!e.target.closest?.("[data-squad-player]"))return;
+    if(state?.mode!=="coach"||!squadSwapSource||!e.target.closest?.("[data-squad-player],.pl-squad-pitch"))return;
     e.preventDefault();
     if(e.dataTransfer)e.dataTransfer.dropEffect="move";
   });
   document.addEventListener("drop",e=>{
     const target=e.target.closest?.("[data-squad-player]");
-    if(!target||!squadSwapSource||state?.mode!=="coach")return;
+    if(!squadSwapSource||state?.mode!=="coach")return;
+    if(!target&&!e.target.closest?.(".pl-squad-pitch"))return;
     e.preventDefault();
     const source=squadSwapSource;squadSwapSource=null;
-    swapSquadPlayers(source,target.dataset.squadPlayer);
+    if(target){swapSquadPlayers(source,target.dataset.squadPlayer);return;}
+    const club=D.club(state),ids=[...(club?.lineup||[])];
+    if(!ids.includes(source)&&ids.length<11){
+      try{A.execute(state,"lineup",{ids:[...ids,source]});persist();render();toast("Titular incluído.");}
+      catch(error){toast(error.message);}
+    }else toast("Arraste sobre um jogador para trocar.");
+  
   });
   document.addEventListener("dragend",()=>{squadSwapSource=null;});
   document.addEventListener("click", (e) => {
