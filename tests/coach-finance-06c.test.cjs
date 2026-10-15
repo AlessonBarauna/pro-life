@@ -641,3 +641,42 @@ test("Received offers show financial dashboard and urgent decision deadlines",()
  assert.match(ui,/URGENTE/);
  assert.match(ui,/Valor total oferecido/);
 });
+
+test("Manager signs outgoing sale outside window and settlement is idempotent after reload",()=>{
+ const {root,state}=saleFixture(false);
+ let open=false;
+ root.ProLife.Career.windowStatus=()=>({open});
+ root.ProLifeApp.execute(state,"generateSaleInterest",{});
+ const offer=state.coachCareer.saleOffers[0],playerId=offer.playerId;
+ const funds=[state.clubs[0].budget,state.clubs[1].budget];
+ const rosters=JSON.stringify(state.clubs.map(c=>c.roster));
+ root.ProLifeApp.execute(state,"acceptSaleOffer",{id:offer.id});
+ assert.equal(offer.status,"awaiting_window");
+ assert.equal(JSON.stringify(state.clubs.map(c=>c.roster)),rosters);
+ assert.deepEqual([state.clubs[0].budget,state.clubs[1].budget],funds);
+ const saved=JSON.parse(JSON.stringify(state));
+ open=true;
+ root.ProLifeApp.execute(saved,"settleCoachWindowSales",{});
+ const sold=saved.coachCareer.saleOffers[0];
+ assert.equal(sold.status,"accepted");
+ assert.equal(saved.clubs[0].roster.some(p=>p.id===playerId),false);
+ assert.equal(saved.clubs[1].roster.filter(p=>p.id===playerId).length,1);
+ const after=JSON.stringify(saved.clubs);
+ root.ProLifeApp.execute(saved,"settleCoachWindowSales",{});
+ assert.equal(JSON.stringify(saved.clubs),after);
+ assert.throws(()=>root.ProLifeApp.execute(saved,"acceptSaleOffer",{id:offer.id}),/indisponível/);
+});
+test("Outgoing sale cannot be settled until the window opens; manager UI reports agreement",()=>{
+ const {root,state}=saleFixture(false);
+ root.ProLifeApp.execute(state,"generateSaleInterest",{});
+ const id=state.coachCareer.saleOffers[0].id;
+ root.ProLifeApp.execute(state,"acceptSaleOffer",{id});
+ const before=JSON.stringify(state.clubs);
+ root.ProLifeApp.execute(state,"settleCoachWindowSales",{});
+ assert.equal(JSON.stringify(state.clubs),before);
+ const ui=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ const career=fs.readFileSync(path.join(__dirname,"../src/domain/career.js"),"utf8");
+ assert.match(ui,/Venda programada/);
+ assert.match(ui,/Aceitar acordo futuro/);
+ assert.match(career,/settleCoachWindowSales/);
+});
