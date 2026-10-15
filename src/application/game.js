@@ -295,6 +295,9 @@ case "tactic": {
         break;
       }
       case "recruit": {
+        const rules=s.mode==="coach"?s.coachCareer?.settings:null;
+        if(rules?.firstWindow==="off" && Number(s.day||0)>=Number(rules.firstWindowStartDay||0) && Number(s.day||0)<59)
+          throw Error("Primeira janela de transferências desativada nas configurações da carreira.");
         if (!D.Career.windowStatus(s).open)
           throw Error("Janela de transferências fechada.");
         const own = D.club(s),
@@ -305,8 +308,9 @@ case "tactic": {
         if (!p || p.id === "hero" || source.roster.length <= 18)
           throw Error("Jogador indisponível.");
         let fee = valuation(p);
+        if(rules?.marketStrictness==="strict")fee=Math.ceil(fee*1.25/1000)*1000;
         if (own.budget < fee) throw Error("Orçamento insuficiente.");
-        if (D.overall(p) > own.structure + 14)
+        if (D.overall(p) > own.structure + (rules?.marketStrictness==="strict"?7:14))
           throw Error(
             "O jogador recusou: busca um projeto com maior estrutura.",
           );
