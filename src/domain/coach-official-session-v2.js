@@ -24,13 +24,25 @@ function begin(state,fixture){
 function record(session,action){
  if(!session||session.kind!=="coach-official-pending"||session.status!=="pending")return false;
  if(!action||!["substitution","tactic"].includes(action.type)||!Number.isInteger(action.minute)||action.minute<session.minute||action.minute>90)return false;
+ if(action.type==="substitution"){
+  if(typeof action.outId!=="string"||!action.outId||typeof action.inId!=="string"||!action.inId||action.outId===action.inId)return false;
+  if(![0,1].includes(action.side))return false;
+  if(session.actions.filter(a=>a.type==="substitution"&&a.side===action.side).length>=5)return false;
+  if(session.actions.some(a=>a.type==="substitution"&&a.side===action.side&&(a.outId===action.outId||a.inId===action.inId||a.outId===action.inId)))return false;
+ }
  session.minute=action.minute;session.actions.push({...action});return true;
 }
 function complete(session){
  if(!session||session.kind!=="coach-official-pending"||session.status!=="pending")return false;
  session.status="simulation_complete";return true;
 }
-const API=Object.freeze({isCommitted,canBegin,begin,record,complete});
+// Called only after the official result has actually been saved and the table updated.
+// This function does not alter standings: it marks the external commit as observed.
+function acknowledgeCommit(state,session){
+ if(!session||session.status!=="simulation_complete"||!isCommitted(state,session.fixture))return false;
+ session.status="committed";return true;
+}
+const API=Object.freeze({isCommitted,canBegin,begin,record,complete,acknowledgeCommit});
 root.ProLifeCoachOfficialSessionV2=API;
 if(typeof module!=="undefined"&&module.exports)module.exports=API;
 })(typeof globalThis!=="undefined"?globalThis:this);
