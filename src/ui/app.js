@@ -8262,13 +8262,20 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
   }
   document.addEventListener("click", (event) => {
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
-    const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise]");
+    const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter]");
     if (!el || !state || state.mode !== "coach") return;
     const V = window.ProLifeCoachCareerView;
     if (el.hasAttribute("data-coach-tab")) { V?.setTab(el.getAttribute("data-coach-tab")); render(); return; }
     if (el.hasAttribute("data-coach-deal-tab")) { V?.setDealTab(el.getAttribute("data-coach-deal-tab")); render(); return; }
     if (el.hasAttribute("data-coach-deal-open")) { V?.openDeal(el.getAttribute("data-coach-deal-open")); render(); return; }
     if (el.hasAttribute("data-coach-deal-close")) { V?.closeDeal(); render(); return; }
+    if(el.hasAttribute("data-coach-sale-generate")) return command("generateSaleInterest",{});
+    if(el.hasAttribute("data-coach-sale-accept")) return command("acceptSaleOffer",{id:el.getAttribute("data-coach-sale-accept")});
+    if(el.hasAttribute("data-coach-sale-reject")) return command("rejectSaleOffer",{id:el.getAttribute("data-coach-sale-reject")});
+    if(el.hasAttribute("data-coach-sale-counter")){
+      const id=el.getAttribute("data-coach-sale-counter");
+      return command("counterSaleOffer",{id,amount:Number(document.querySelector('[data-coach-sale-amount="'+id+'"]')?.value)});
+    }
     if(el.hasAttribute("data-coach-deal-revise")){
       const id=el.getAttribute("data-coach-deal-revise");
       return command("reviseCoachDeal",{id,offer:Number(document.querySelector('[data-coach-deal-offer="'+id+'"]')?.value)});
