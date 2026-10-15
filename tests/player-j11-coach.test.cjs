@@ -29,3 +29,9 @@ test("J11: no custom trust or selection mutation",()=>{
  assert.match(html,/src\/ui\/player-j11-coach\.js/);
  assert.match(html,/src\/ui\/fc27-j11-coach\.css/);
 });
+
+test("J11/J11.3: module syntax remains valid after composing history panel",()=>{
+ const cp=require("node:child_process");
+ const result=cp.spawnSync(process.execPath,["--check","src/ui/player-j11-coach.js"],{encoding:"utf8"});
+ assert.equal(result.status,0,result.stderr);
+});
