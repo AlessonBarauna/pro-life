@@ -1,26 +1,55 @@
 (function(root){"use strict";
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const positions=[[7,50],[22,14],[22,38],[22,62],[22,86],[45,22],[43,50],[45,78],[69,20],[76,50],[69,80]];
-function players(club){const roster=Array.isArray(club?.roster)?club.roster:[];return roster.filter(p=>p&&p.status!=="retired");}
-function lineup(club){const pool=players(club), starters=pool.slice(0,11);return {starters,bench:pool.slice(11,20)};}
+const slots=[
+ ["GK",7,50],["RB",23,84],["CB",22,61],["CB",22,39],["LB",23,16],
+ ["CM",46,75],["DM",41,50],["CM",46,25],["RW",71,78],["ST",77,50],["LW",71,22]
+];
+function role(p){
+ const x=String(p?.position||p?.pos||p?.primaryPosition||p?.role||"").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Z]/g,"");
+ if(/^(GK|GOL|GOLEIRO|GR)$/.test(x))return "GK";
+ if(/^(RB|LD|LATERALDIREITO)$/.test(x))return "RB";
+ if(/^(LB|LE|LATERALESQUERDO)$/.test(x))return "LB";
+ if(/^(CB|ZAG|DFC|ZC|ZAGUEIRO|DEF)$/.test(x))return "CB";
+ if(/^(DM|VOL|MDC|CDM|VOLANTE)$/.test(x))return "DM";
+ if(/^(CM|MC|MEI|MAT|CAM|ME|MD|MLG|MEIOCAMPO)$/.test(x))return "CM";
+ if(/^(RW|PD|ED|PONTA DIREITA)$/.test(x))return "RW";
+ if(/^(LW|PE|EE|PONTA ESQUERDA)$/.test(x))return "LW";
+ if(/^(ST|CF|ATA|AT|CA|SA|SEGUNDOATACANTE|CENTROAVANTE)$/.test(x))return "ST";
+ return "UNKNOWN";
+}
+const score=(actual,wanted)=>actual===wanted?100:actual==="UNKNOWN"?10:actual==="GK"||wanted==="GK"?-200:
+ (["CB","RB","LB"].includes(actual)&&["CB","RB","LB"].includes(wanted)?55:
+ ["DM","CM"].includes(actual)&&["DM","CM"].includes(wanted)?65:
+ ["ST","RW","LW"].includes(actual)&&["ST","RW","LW"].includes(wanted)?70:
+ ["CM","DM"].includes(actual)&&["ST","RW","LW"].includes(wanted)?12:-25);
+function players(club){return (Array.isArray(club?.roster)?club.roster:[]).filter(p=>p&&p.status!=="retired");}
+function lineup(club){
+ const pool=players(club);
+ const selected=Array.isArray(club?.lineup)?club.lineup.map(id=>pool.find(p=>String(p.id)===String(id))).filter(Boolean):[];
+ const candidates=[...selected,...pool.filter(p=>!selected.includes(p))];
+ const available=candidates.slice(),starters=[];
+ for(const [wanted] of slots){
+  let best=-1,value=-Infinity;
+  for(let i=0;i<available.length;i++){const n=score(role(available[i]),wanted)+(selected.includes(available[i])?15:0);
+   if(n>value){value=n;best=i;}}
+  starters.push(best<0?null:available.splice(best,1)[0]);
+ }
+ return {starters,bench:available.slice(0,12)};
+}
 function frame(minute,home,away){
- const t=Math.max(0,Number(minute)||0);
- const possession=Math.floor(t/6)%2;
- const wave=Math.sin(t*.27),phase=(t*.42)%1;
+ const t=Math.max(0,Number(minute)||0),possession=Math.floor(t/6)%2,phase=(t*.42)%1;
  const ball={x:clamp(10+phase*80,8,92),y:clamp(50+Math.sin(t*.39)*27,9,91)};
- const make=(club,side)=>{
-  const formation=lineup(club).starters;
-  return positions.map(([x,y],i)=>{
-    let px=side===0?x:100-x,py=y;
-    const shift=possession===side?8:-6;
-    px=clamp(px+(side===0?shift:-shift)+Math.sin(t*.37+i*1.73)*3.8,4,96);
-    py=clamp(py+Math.cos(t*.42+i*.87)*5+(ball.y-py)*(i>4?.10:.03),6,94);
-    return {x:px,y:py,number:i+1,player:formation[i]||null};
-  });
- };
+ const make=(club,side)=>slots.map(([position,x,y],i)=>{
+  const player=lineupCache[side].starters[i];let px=side===0?x:100-x,py=y;
+  const offset=possession===side?5:-3;
+  px=clamp(px+(side===0?offset:-offset)+Math.sin(t*.37+i*1.73)*2.2,4,96);
+  py=clamp(py+Math.cos(t*.42+i*.87)*3,6,94);
+  return {x:px,y:py,number:i+1,position,player};
+ });
+ const lineupCache=[lineup(home),lineup(away)];
  return {home:make(home,0),away:make(away,1),ball,possession};
 }
-const api=Object.freeze({players,lineup,frame});
+const api=Object.freeze({players,lineup,frame,role});
 root.ProLifeMatchPitchV2=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
