@@ -1505,6 +1505,7 @@
       const trustBefore = s.mode === "player" ? Number(Career.init(s).playerCareer?.coachTrust || 0) : 0;
       const reputationBefore = Number(s.reputation || 0), roleBefore=s.mode === "player" ? Career.init(s).playerCareer?.squadRole : null;
       Career.match(s, m);
+      if (s.mode === "player") root.ProLifePlayerRivalries?.onCareerMatch?.(s,m);
       if (s.mode === "player") {
         const pc = Career.init(s).playerCareer, perf = m.playerStats?.hero, played = !!m.ratings?.hero;
         const importanceFactor=Number(m.importance?.factor||1), rawTrust=Number(pc.coachTrust||0)-trustBefore;
