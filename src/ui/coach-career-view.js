@@ -4,7 +4,7 @@
   // Renderiza a partir de ProLifeCoachCareer.snapshot; os botoes usam data-coach-* e o app.js despacha command().
 
   const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
-  const ui={tab:"central",dealTab:"propostas",selectedDeal:null,marketArea:"transferencias",scoutQuery:"",scoutPosition:"all",scoutClub:"all",scoutCountry:"all",scoutAge:"all",scoutCategory:"all"};
+  const ui={tab:"central",dealTab:"propostas",selectedDeal:null,marketArea:"transferencias",scoutQuery:"",scoutPosition:"all",scoutClub:"",scoutCompetition:"",scoutCountry:"all",scoutAge:"all",scoutCategory:"all"};
   const TABS=[["central","Central"],["diretoria","Diretoria"],["vestiario","Vestiário"],["treino","Treino coletivo"],["prejogo","Pré-jogo"],["negociacoes","Negociações"],["historico","Histórico"]];
   const STATUS={cumprida:"Cumprida",falhou:"Falhou",em_andamento:"Em andamento"};
 
@@ -146,6 +146,10 @@
       const gf=D?.GlobalFootball||root.ProLifeGlobalFootball;
       const clubs=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])];
       const clubIndex=new Map(clubs.map(cl=>[cl.id,cl]));
+      const leagueIndex=new Map([...(s.leagues||[]),...(s.globalFootball?.leagues||[])].filter(x=>x?.id).map(x=>[String(x.id),x]));
+      const competitionName=cl=>{const id=String(cl?.leagueId||"");return String(leagueIndex.get(id)?.name||leagueIndex.get(id)?.label||id);};
+      const normalizeText=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR");
+      const clubNeedle=normalizeText(ui.scoutClub.trim()),competitionNeedle=normalizeText(ui.scoutCompetition.trim());
       const needle=ui.scoutQuery.trim().toLocaleLowerCase("pt-BR");
       // International athletes are stored in internationalPlayers, not global clubs' rosters.
       const pool=gf?.activePlayers?.(s)||[...clubs.flatMap(cl=>cl.roster||[]),...(s.internationalPlayers||[])];
@@ -159,7 +163,9 @@
         const free=!p.clubId,age=Number(p.age);
         if(free&&ui.scoutCategory!=="free")continue;
         if(!free&&ui.scoutCategory==="free")continue;
-        if(ui.scoutClub!=="all"&&p.clubId!==ui.scoutClub)continue;
+        const currentClub=clubIndex.get(p.clubId)||gf?.clubById?.(s,p.clubId);
+        if(clubNeedle&&!normalizeText(currentClub?.name).includes(clubNeedle))continue;
+        if(competitionNeedle&&!normalizeText(competitionName(currentClub)).includes(competitionNeedle))continue;
         if(ui.scoutCountry!=="all"&&norm(p.nationality||p.nation)!==norm(ui.scoutCountry))continue;
         if(ui.scoutAge==="under18"&&!(age<=18))continue;
         if(ui.scoutAge==="under21"&&!(age<=21))continue;
@@ -178,8 +184,10 @@
       const opt=(v,t,current)=>'<option value="'+esc(v)+'"'+(String(v)===String(current)?' selected':'')+'>'+esc(t)+'</option>';
       const nations=[...new Set(pool.map(p=>String(p.nationality||p.nation||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
       const availableClubs=clubs.filter(cl=>cl.id&&cl.active!==false).slice().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
+      const competitionOptions=[...new Set(availableClubs.map(competitionName).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
       const advanced='<div class="cc-scout-filters">'+
-        '<label>Clube<select data-coach-scout-club>'+opt("all","Todos os clubes",ui.scoutClub)+availableClubs.map(cl=>opt(cl.id,cl.name||cl.id,ui.scoutClub)).join("")+'</select></label>'+
+        '<label>Clube<input type="search" data-coach-scout-club list="cc-scout-club-options" placeholder="Digite o nome do clube" value="'+esc(ui.scoutClub)+'"><datalist id="cc-scout-club-options">'+availableClubs.map(cl=>'<option value="'+esc(cl.name||cl.id)+'"></option>').join("")+'</datalist></label>'+ 
+        '<label>Competição<input type="search" data-coach-scout-competition list="cc-scout-competition-options" placeholder="Digite a competição ou liga" value="'+esc(ui.scoutCompetition)+'"><datalist id="cc-scout-competition-options">'+competitionOptions.map(name=>'<option value="'+esc(name)+'"></option>').join("")+'</datalist></label>'+
         '<label>País / nacionalidade<select data-coach-scout-country>'+opt("all","Todos os países",ui.scoutCountry)+nations.map(n=>opt(n,n,ui.scoutCountry)).join("")+'</select></label>'+
         '<label>Idade<select data-coach-scout-age>'+[["all","Todas"],["under18","Até 18 anos"],["under21","Até 21 anos"],["under23","Até 23 anos"],["23to29","23 a 29 anos"],["30plus","30 anos ou mais"]].map(([v,t])=>opt(v,t,ui.scoutAge)).join("")+'</select></label>'+
         '<label>Categoria<select data-coach-scout-category>'+[["all","Todos vinculados"],["promises","Jovens promessas (até 21, potencial 80+)"],["free","Agentes livres"],["listed","Na lista de transferências"]].map(([v,t])=>opt(v,t,ui.scoutCategory)).join("")+'</select></label></div>';
@@ -351,7 +359,7 @@
     return css()+marketCss()+'<section class="cc-dark cc-market-screen"><div class="cc-market-heading"><small>CENTRAL DE TRANSFERÊNCIAS</small><h2>Mercado de jogadores</h2><p class="cc-note">'+esc(own?.name||"Sem clube")+' · Temporada '+esc(s.season)+' · Orçamento '+esc(budget)+'</p></div>'+intro+negotiations(s,D)+'</section>';
   }
 
-  const api={render,renderMarket,state:ui,esc,setTab:id=>{if(TABS.some(x=>x[0]===id))ui.tab=id;},setDealTab:id=>{if(["lista","recebidas","propostas","emprestimos","financeiro","contratos","clausulas","historico"].includes(id))ui.dealTab=id;},openDeal:id=>{ui.selectedDeal=id;ui.dealTab="propostas";},closeDeal:()=>{ui.selectedDeal=null;},setMarketArea:id=>{if(["observacao","transferencias"].includes(id))ui.marketArea=id;},setScoutFilters:(query,pos,filters={})=>{ui.scoutQuery=String(query||"").slice(0,80);ui.scoutPosition=["all","GOL","ZAG","LAT","VOL","MEI","ATA"].includes(pos)?pos:"all";ui.scoutClub=String(filters.club||"all");ui.scoutCountry=String(filters.country||"all");ui.scoutAge=["all","under18","under21","under23","23to29","30plus"].includes(filters.age)?filters.age:"all";ui.scoutCategory=["all","promises","free","listed"].includes(filters.category)?filters.category:"all";}};
+  const api={render,renderMarket,state:ui,esc,setTab:id=>{if(TABS.some(x=>x[0]===id))ui.tab=id;},setDealTab:id=>{if(["lista","recebidas","propostas","emprestimos","financeiro","contratos","clausulas","historico"].includes(id))ui.dealTab=id;},openDeal:id=>{ui.selectedDeal=id;ui.dealTab="propostas";},closeDeal:()=>{ui.selectedDeal=null;},setMarketArea:id=>{if(["observacao","transferencias"].includes(id))ui.marketArea=id;},setScoutFilters:(query,pos,filters={})=>{ui.scoutQuery=String(query||"").slice(0,80);ui.scoutPosition=["all","GOL","ZAG","LAT","VOL","MEI","ATA"].includes(pos)?pos:"all";ui.scoutClub=String(filters.club||"").slice(0,100);ui.scoutCompetition=String(filters.competition||"").slice(0,100);ui.scoutCountry=String(filters.country||"all");ui.scoutAge=["all","under18","under21","under23","23to29","30plus"].includes(filters.age)?filters.age:"all";ui.scoutCategory=["all","promises","free","listed"].includes(filters.category)?filters.category:"all";}};
   root.ProLifeCoachCareerView=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
