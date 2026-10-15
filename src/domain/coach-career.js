@@ -315,6 +315,11 @@
     if(overall>=85&&age<=30)clubScore-=18;
     if((seller.roster||[]).length<=18)clubScore-=20;
     if(eliteGap)clubScore=Math.min(clubScore,35);
+    // Flexible mode encourages negotiation, without overriding squad availability.
+    if(s.coachCareer?.settings?.marketStrictness==="flexible"&&!eliteGap){
+      playerScore+=22;
+      clubScore+=20;
+    }
     playerScore=Math.max(2,Math.min(95,Math.round(playerScore)));
     clubScore=Math.max(2,Math.min(95,Math.round(clubScore)));
     if(eliteGap)reasons.push("Destino com liga e prestígio muito inferiores ao clube atual");
