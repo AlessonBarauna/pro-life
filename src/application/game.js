@@ -361,14 +361,37 @@ case "tactic": {
         s.coachCareer.shortlist=list;
         break;
       }
+      case "setCoachOfferPreference": {
+        if(s.mode!=="coach"||!D.club(s))throw Error("Preferências disponíveis apenas ao treinador.");
+        const mode=String(data.mode||"");
+        if(!["all","listed","none"].includes(mode))throw Error("Preferência inválida.");
+        s.coachCareer||={version:1};
+        s.coachCareer.offerPreferences||={mode:"all",blockedIds:[],listedIds:[]};
+        s.coachCareer.offerPreferences.mode=mode;
+        break;
+      }
+      case "setCoachPlayerOfferStatus": {
+        if(s.mode!=="coach")throw Error("Disponível apenas ao treinador.");
+        const club=D.club(s),player=club?.roster?.find(p=>p.id===data.playerId);
+        if(!player||player.id==="hero")throw Error("Atleta indisponível.");
+        if(!["available","listed","blocked"].includes(data.status))throw Error("Status inválido.");
+        s.coachCareer||={version:1};
+        const prefs=s.coachCareer.offerPreferences||={mode:"all",blockedIds:[],listedIds:[]};
+        prefs.blockedIds=(prefs.blockedIds||[]).filter(id=>id!==player.id);
+        prefs.listedIds=(prefs.listedIds||[]).filter(id=>id!==player.id);
+        if(data.status==="blocked")prefs.blockedIds.push(player.id);
+        if(data.status==="listed")prefs.listedIds.push(player.id);
+        break;
+      }
       case "generateSaleInterest": {
         if(s.mode!=="coach"||!s.clubId)throw Error("Disponível apenas ao treinador com clube.");
-        if(!D.Career.windowStatus(s).open)throw Error("Janela de transferências fechada.");
         const own=D.club(s),clubs=(s.clubs||[]).concat(s.globalFootball?.clubs||[]);
         const buyers=clubs.filter(c=>c.id!==own.id&&c.active!==false&&Array.isArray(c.roster)&&Number.isFinite(Number(c.budget))&&Number(c.budget)>0&&D.club(s,c.id)===c);
         const loans=s.coachCareer?.loans||[];
-        const eligible=(own.roster||[]).filter(p=>p.id!=="hero"&&!loans.some(l=>!l.returned&&l.playerId===p.id)&&!s.coachCareer?.saleOffers?.some(o=>o.playerId===p.id&&o.status==="pending"));
-        if(own.roster.length<=18||!eligible.length||!buyers.length)throw Error("Nenhum interesse disponível neste momento.");
+        const prefs=s.coachCareer?.offerPreferences||{mode:"all",blockedIds:[],listedIds:[]};
+        if(prefs.mode==="none")throw Error("Recebimento de propostas desativado nas preferências.");
+        const eligible=(own.roster||[]).filter(p=>p.id!=="hero"&&!p.injury&&!loans.some(l=>!l.returned&&l.playerId===p.id)&&!(prefs.blockedIds||[]).includes(p.id)&&(prefs.mode!=="listed"||(prefs.listedIds||[]).includes(p.id))&&!s.coachCareer?.saleOffers?.some(o=>o.playerId===p.id&&o.status==="pending"));
+        if(own.roster.length<=18||!eligible.length||!buyers.length)throw Error("Nenhuma proposta elegível segundo as preferências e elencos atuais.");
         eligible.sort((a,b)=>String(a.id).localeCompare(String(b.id)));
         const p=eligible[(Math.floor(s.day/7)+eligible.length)%eligible.length];
         const price=valuation(p);
