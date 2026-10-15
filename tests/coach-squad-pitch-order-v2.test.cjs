@@ -34,3 +34,10 @@ test("render regression: slot restore must not depend on exhausted remaining pla
  assert.equal(rows.flatMap(row=>row.players).length,11);
  assert.deepEqual(rows.flatMap(row=>row.players.map(p=>p.id)),saved);
 });
+
+test("E01 resets pitch slots when formation changes and avoids automatic reassignment",()=>{
+ assert.match(app,/pitchFormation===formation&&Array\.isArray\(saved\)/);
+ assert.match(app,/state\.coachCareer\.pitchFormation=formation/);
+ assert.match(app,/state\.coachCareer\.pitchFormation=club\.formation/);
+ assert.match(app,/assignedPositions:null/);
+});
