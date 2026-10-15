@@ -49,3 +49,24 @@ test("Manager recruitment includes loan and sell-on terms",()=>{
  assert.match(ui,/data-loan-days/);
  assert.match(ui,/data-sell-on/);
 });
+
+test("Reloaded loan salary shares settle once and keep the purchase option",()=>{
+ const root={};root.globalThis=root;vm.runInNewContext(src,root,{filename:"career.js"});
+ const C=root.ProLifeCareer;
+ const initial={mode:"coach",day:29,season:2026,person:{name:"Treinador",condition:100},news:[],
+ clubs:[{id:"a",name:"Origem",budget:100000,roster:[],lineup:[]},{id:"b",name:"Destino",budget:100000,roster:[{id:"p1",name:"Atleta",salary:20000}],lineup:["p1"]}],
+ coachCareer:{loans:[{id:"l1",playerId:"p1",fromClubId:"a",toClubId:"b",dueDay:180,nextSalaryDay:30,salaryShare:50,buyOption:300000,returned:false}]}};
+ let s=JSON.parse(JSON.stringify(initial));s.day=30;C.daily(s);
+ assert.equal(s.clubs[0].budget,110000);assert.equal(s.clubs[1].budget,90000);
+ s=JSON.parse(JSON.stringify(s));C.daily(s);
+ assert.equal(s.clubs[0].budget,110000);assert.equal(s.clubs[1].budget,90000);
+ assert.equal(s.coachCareer.loans[0].buyOption,300000);
+ s.day=60;C.daily(s);assert.equal(s.clubs[0].budget,120000);
+ C.daily(s);assert.equal(s.clubs[0].budget,120000);
+});
+test("Coach market offers loan buy-out and counterproposal commands",()=>{
+ const actions=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"utf8");
+ const ui=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+ for(const action of ['case "buyLoan"','case "counterRecruit"'])assert.ok(actions.includes(action));
+ for(const control of ["data-loan-buy","data-counter-recruit","data-salary-share","data-buy-option"])assert.ok(ui.includes(control));
+});
