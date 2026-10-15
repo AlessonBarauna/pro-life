@@ -28,7 +28,7 @@ function record(session,action){
   if(typeof action.outId!=="string"||!action.outId||typeof action.inId!=="string"||!action.inId||action.outId===action.inId)return false;
   if(![0,1].includes(action.side??0))return false;
   if(session.actions.filter(a=>a.type==="substitution"&&(a.side??0)===(action.side??0)).length>=5)return false;
-  if(session.actions.some(a=>a.type==="substitution"&&a.side===action.side&&(a.outId===action.outId||a.inId===action.inId||a.outId===action.inId)))return false;
+  if(session.actions.some(a=>a.type==="substitution"&&(a.side??0)===(action.side??0)&&(a.outId===action.outId||a.inId===action.inId||a.outId===action.inId)))return false;
  }
  session.minute=action.minute;session.actions.push({...action,side:action.side??0});return true;
 }
