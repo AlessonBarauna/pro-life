@@ -318,10 +318,37 @@ case "tactic": {
         (s.news||[]).unshift({day:s.day,season:s.season,title:"Negociação recusada",body:"Proposta recusada pelo treinador."});
         break;
       }
+      case "negotiateCoachContract": {
+        if(s.mode!=="coach")throw Error("Disponível apenas ao treinador.");
+        const n=s.coachCareer?.negotiations?.find(x=>x.id===data.id&&x.buyerClubId===s.clubId&&x.status==="pending");
+        if(!n||Number(s.day)>Number(n.expiresDay))throw Error("Negociação indisponível.");
+        if(n.response!=="accepted")throw Error("Acerte primeiro a transferência com o clube.");
+        const seller=D.club(s,n.sellerClubId);
+        const player=seller?.roster?.find(x=>x.id===n.playerId)||D.GlobalFootball?.playerById?.(s,n.playerId);
+        if(!player)throw Error("Jogador indisponível.");
+        const years=Number(data.years),salary=Number(data.salary),bonus=Number(data.bonus);
+        const role=String(data.role||"rotation");
+        if(!Number.isSafeInteger(years)||years<1||years>5||!Number.isSafeInteger(salary)||salary<1000||salary>100000000||!Number.isSafeInteger(bonus)||bonus<0||bonus>100000000||!["rotation","important","starter","star"].includes(role))
+          throw Error("Condições contratuais inválidas.");
+        const previous=n.contractOffer;
+        if(previous?.status==="accepted")throw Error("Contrato já acordado.");
+        if((previous?.round||0)>=3)throw Error("Limite de rodadas contratuais atingido.");
+        const baseline=Math.max(1000,Number(player.salary)||Math.round(valuation(player)/180/1000)*1000);
+        const seniority=Math.max(0,Number(D.overall(player)||70)-70);
+        const expectation=Math.round(baseline*(1+seniority*.007));
+        const roleFactor={rotation:0.92,important:1,starter:1.04,star:1.12}[role];
+        const required=Math.ceil(expectation*roleFactor/1000)*1000;
+        const accepted=salary+Math.floor(bonus/Math.max(1,years*12))>=required;
+        const round=(previous?.round||0)+1;
+        n.contractOffer={round,status:accepted?"accepted":round>=3?"rejected":"counter",salary,years,bonus,role,requiredSalary:required,history:[...(previous?.history||[]),{round,day:s.day,salary,years,bonus,role,accepted}]};
+        (s.news||[]).unshift({day:s.day,season:s.season,title:accepted?"Contrato acordado":"Resposta do agente",body:accepted?"O jogador aceitou as condições apresentadas.":"O agente solicita salário e bônus mais competitivos."});
+        return s;
+      }
       case "acceptCoachDeal": {
         if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
         const n=s.coachCareer?.negotiations?.find(n=>n.id===data.id && n.status==="pending");
         if(!n||s.day>n.expiresDay||n.buyerClubId!==s.clubId)throw Error("Proposta expirada ou indisponível.");
+        if(n.contractOffer&&n.contractOffer.status!=="accepted")throw Error("Acordo contratual pendente.");
         const plan=data.paymentPlan==="split"?"split":"upfront";
         if(!D.Career.windowStatus(s).open){
           n.status="awaiting_window";n.paymentPlan=plan;n.agreedDay=s.day;n.expiresDay=null;
@@ -563,15 +590,17 @@ case "tactic": {
         if(isLoan)fee=Math.ceil(fee*0.08*(duration/180)/1000)*1000;
         const negotiation=!isLoan?s.coachCareer?.negotiations?.find(n=>n.playerId===p.id&&n.sellerClubId===source.id&&n.buyerClubId===own.id&&(n.status==="pending"||n.status==="awaiting_window")&&(n.expiresDay==null||n.expiresDay>=s.day)):null;
         if(negotiation)fee=negotiation.finalFee;
+        const agreedContract=negotiation?.contractOffer?.status==="accepted"?negotiation.contractOffer:null;
+        const contractBonus=!isLoan&&agreedContract?agreedContract.bonus:0;
         const due=plan==="split"?Math.floor(fee/2):0,upfront=fee-due;
-        if (own.budget < upfront) throw Error("Orçamento insuficiente para a entrada.");
+        if (own.budget < upfront+contractBonus) throw Error("Orçamento insuficiente para a entrada e bônus contratual.");
         // The deferred half becomes a persistent financial obligation, not free money.
         if (D.overall(p) > own.structure + (rules?.marketStrictness==="strict"?7:14))
           throw Error(
             "O jogador recusou: busca um projeto com maior estrutura.",
           );
         if(negotiation)negotiation.status="accepted";
-        own.budget -= upfront;
+        own.budget -= upfront+contractBonus;
         source.budget = (Number(source.budget)||0) + upfront;
         // Pay the previous selling club its agreed percentage from proceeds
         // of a later permanent sale. Loan fees do not trigger this clause.
@@ -600,6 +629,13 @@ case "tactic": {
           s.internationalPlayers=s.internationalPlayers.filter(x=>x.id!==p.id);
         }
         p.clubId=own.id;p.leagueId=own.leagueId||p.leagueId;
+        if(!isLoan&&agreedContract){
+          p.salary=agreedContract.salary;
+          p.contractEndDay=Number(s.day)+agreedContract.years*365;
+          p.squadRole=agreedContract.role;
+          p.lastSigningBonus=contractBonus;
+          p.lastContractSignedDay=Number(s.day);
+        }
         if(isLoan){
           s.coachCareer.loans ||= [];
           s.coachCareer.loans.push({id:"loan_"+s.season+"_"+s.day+"_"+p.id,playerId:p.id,fromClubId:source.id,toClubId:own.id,startDay:Number(s.day)||0,dueDay:(Number(s.day)||0)+duration,fee,salaryShare,buyOption:optionPrice,nextSalaryDay:(Number(s.day)||0)+30,returned:false});
