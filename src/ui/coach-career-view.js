@@ -371,7 +371,13 @@
     const monthlyRevenue=knownRecurringRevenue.reduce((sum,x)=>sum+Number(x.monthlyAmount),0);
     const financeGap=Math.max(0,wageBudgetProjection.monthly-monthlyRevenue);
     const financeCoverage=wageBudgetProjection.monthly>0?Math.min(100,Math.floor(monthlyRevenue/wageBudgetProjection.monthly*100)):100;
-    const fundingSnapshot=root.ProLifeClubEconomy?.fundingSnapshot?.(own,c.finance,wageBudgetProjection.monthly);
+    // Keep the finance summary visible even when an older page cache lacks club-economy.js.
+    const fundingSnapshot=root.ProLifeClubEconomy?.fundingSnapshot?.(own,c.finance,wageBudgetProjection.monthly)||{
+      salaryBudget:c.finance?.salaryBudget!=null&&c.finance?.salaryBudget!==""&&
+        Number.isFinite(Number(c.finance.salaryBudget))&&Number(c.finance.salaryBudget)>=0?
+        Number(c.finance.salaryBudget):null,
+      annualRevenue:monthlyRevenue*12
+    };
     const fundingDetails=fundingSnapshot?'<p><b>Orçamento salarial independente:</b> '+
       (fundingSnapshot.salaryBudget===null?'Ainda não configurado':esc(money(fundingSnapshot.salaryBudget))+'/mês')+
       ' · <b>Receita anual documentada:</b> '+esc(money(fundingSnapshot.annualRevenue))+'</p>'+
