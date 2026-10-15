@@ -1,0 +1,24 @@
+/* J07: pre-match screen inspired by the user's provided football game reference. */
+.pl-j07-stage{margin:0 0 22px;background:radial-gradient(ellipse at 85% 75%,#24636c65,transparent 52%),linear-gradient(115deg,#121925,#232635);color:#f1f6f8;padding:clamp(18px,3vw,44px);border:1px solid #394a59;min-width:0}
+.pl-j07-stage-head{text-align:center;margin-bottom:22px}
+.pl-j07-stage-head small{font-size:11px;font-weight:900;letter-spacing:.17em;color:#60f4f3}
+.pl-j07-stage-head h2{font-size:clamp(29px,4vw,56px);font-weight:900;color:#40f4ee;text-transform:uppercase;line-height:1.1;margin:11px 0}
+.pl-j07-stage-head p{color:#c8d8df;font-size:13px}
+.pl-j07-matchup{display:grid;grid-template-columns:minmax(0,1fr) minmax(175px,.7fr) minmax(0,1fr);gap:18px;align-items:center;min-height:280px}
+.pl-j07-club{display:flex;align-items:center;flex-direction:column;text-align:center;gap:18px;min-width:0}
+.pl-j07-club img,.pl-j07-club .club-crest{height:clamp(80px,11vw,145px);width:clamp(80px,11vw,145px);object-fit:contain}
+.pl-j07-club strong{font-size:clamp(18px,2.1vw,28px);text-transform:uppercase;font-weight:900;line-height:1.13;overflow-wrap:anywhere}
+.pl-j07-club small{color:#8cb1c0;letter-spacing:.14em;font-weight:800}
+.pl-j07-center{display:flex;align-items:stretch;flex-direction:column;gap:11px;min-width:0;text-align:center}
+.pl-j07-center>span{font-size:10px;font-weight:900;letter-spacing:.12em;color:#a9c2c9}
+.pl-j07-center>b{font-weight:900;font-size:36px;color:#e6f5f6}
+.pl-j07-center button{width:100%;min-height:44px;padding:12px 14px;border:1px solid #637b86;background:#344551;color:#f6fcfd;font-weight:800;border-radius:30px;white-space:normal}
+.pl-j07-center button.primary{border-color:#35e8e8;background:linear-gradient(90deg,#2379bc,#3a64ca);color:#fff}
+.pl-j07-brief{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:30px}
+.pl-j07-brief>div{padding:17px;background:#121c29d9;border:1px solid #40515e;min-width:0}
+.pl-j07-brief small{font-size:10px;font-weight:900;letter-spacing:.1em;color:#55edeb}
+.pl-j07-brief strong{display:block;font-size:19px;margin:10px 0;color:#fff;overflow-wrap:anywhere}
+.pl-j07-brief p,.pl-j07-brief li{color:#c6d3dd;font-size:12px;line-height:1.5}
+.pl-j07-brief ul{padding-left:19px}
+.pl-j07-note{color:#a9c3c8;font-size:11px;margin:18px 0 0}
+@media(max-width:720px){.pl-j07-matchup{grid-template-columns:1fr 1fr;gap:10px}.pl-j07-center{grid-column:1/-1;grid-row:2;max-width:340px;width:100%;justify-self:center}.pl-j07-brief{grid-template-columns:1fr}.pl-j07-stage{padding:15px}.pl-j07-club{gap:9px}}
