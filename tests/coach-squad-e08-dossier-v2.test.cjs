@@ -9,7 +9,7 @@ test("E08 has real fitness and development tabs in the player panel",()=>{
  assert.match(ui,/detailPanels\[squadDetailTab\]\|\|attributeInfo/);
 });
 test("E08 shows existing records and discloses missing information",()=>{
- for(const field of ["selected.condition","selected.attrs?.stamina","selected.morale","selected.potential","selected.secondaryPositions","selected.developmentPlan?.name"])assert.ok(ui.includes(field),field);
+ for(const field of ["selected.condition","selected.attrs?.stamina","selected.morale","selected.potential","selected.secondaryPositions","selected.developmentPlan?.focus"])assert.ok(ui.includes(field),field);
  assert.match(ui,/Não registrado/);
  assert.match(ui,/Sem lesão registrada/);
  assert.match(ui,/Sem suspensão/);
