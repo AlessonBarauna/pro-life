@@ -38,3 +38,13 @@ test("M02 inquiry response uses the same calendar conversion as the main game",(
  assert.match(view,/Date\.UTC\(2026,0,s\?\.world==="legacy"\?5:1\)/);
  assert.match(view,/resposta prevista em "\+careerDate\(s,inquiry\.responseDay\)/);
 });
+
+test("M02 declined inquiries show player and club decisions with reasons and cooldown",()=>{
+ assert.match(view,/const inquiryFeedback=/);
+ assert.match(view,/inquiry\.playerDecision==="rejected"/);
+ assert.match(view,/inquiry\.clubDecision==="rejected"/);
+ assert.match(view,/inquiryExplanation\+/);
+ assert.match(view,/careerDate\(s,inquiry\.answeredDay\)/);
+ assert.match(view,/inquiryCooldown/);
+ assert.match(view,/inquiryReady\?inquiryFeedback/);
+});
