@@ -1127,6 +1127,17 @@
       clubs = [home, away],
       tactical = SimulationTactics ? [SimulationTactics.matchup(home, away), SimulationTactics.matchup(away, home)] : [{possession:0,attack:0,defense:0,fatigue:0},{possession:0,attack:0,defense:0,fatigue:0}],
       fatigue = [0, 0];
+    // Coach-only collective controls. Neutral values preserve existing match balance.
+    for(let side=0;side<2;side++){
+      const t=clubs[side]?.coachTactics;
+      if(!t)continue;
+      const safe=(value)=>Math.max(20,Math.min(80,Number(value)||50));
+      const width=(safe(t.width)-50)/30,depth=(safe(t.depth)-50)/30;
+      tactical[side].possession+=(t.buildup==="short"?2:t.buildup==="direct"?-1:0)+width;
+      tactical[side].attack+=(t.buildup==="direct"?2:t.buildup==="short"?-1:0)+depth;
+      tactical[side].defense+=(t.pressing==="low"?2:t.pressing==="high"?-1:0)-depth;
+      tactical[side].fatigue+=t.pressing==="high"?0.025:t.pressing==="low"?-0.01:0;
+    }
     // Pre-authorized coach actions are applied at their exact minute, before
     // that minute's chance calculation. Default [] preserves legacy matches.
     const plannedActions=Array.isArray(coachActions)?coachActions:[];
