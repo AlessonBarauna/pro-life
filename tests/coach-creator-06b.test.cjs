@@ -364,3 +364,23 @@ test("coach club selection displays existing crest markup on cards and selected 
  form.elements.clubId.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
  assert.ok(doc.querySelector("#coach-club-analysis .coach-club-crest img"));
 });
+
+test("coach financial and transfer settings persist into a new save",()=>{
+ const dom=new JSDOM("<!doctype html><html><body><div id='app'></div></body></html>",{url:"http://localhost"});
+ const sandbox={window:dom.window,document:dom.window.document,FormData:dom.window.FormData,globalThis:null,console};sandbox.globalThis=sandbox;
+ vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
+ let saved;
+ const D={create:c=>c.name?{mode:"coach",day:0,clubId:"a",clubs:[{id:"a",budget:7000000}],coachCareer:{version:1}}:{clubs:[{id:"a",name:"Clube A",budget:7000000}]},club:(s,id)=>s.clubs.find(c=>c.id===id)};
+ sandbox.ProLifeCoachCreator.mount({D,esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:s=>{saved=s},onBack:()=>{}});
+ const form=dom.window.document.querySelector("#coach-creation-form");
+ form.elements.name.value="Treinador";form.elements.city.value="Mogi";form.elements.clubId.value="a";
+ form.elements.funding.value="10000000";form.elements.marketStrictness.value="strict";form.elements.firstWindow.value="off";
+ form.dispatchEvent(new dom.window.Event("submit",{bubbles:true,cancelable:true}));
+ assert.equal(saved.clubs[0].budget,17000000);
+ assert.equal(saved.coachCareer.settings.marketStrictness,"strict");
+ assert.equal(saved.coachCareer.settings.firstWindow,"off");
+ assert.equal(saved.coachCareer.settings.firstWindowStartDay,0);
+ const actions=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"utf8");
+ assert.match(actions,/rules\?\.firstWindow==="off"/);
+ assert.match(actions,/rules\?\.marketStrictness==="strict"/);
+});
