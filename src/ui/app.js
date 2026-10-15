@@ -121,7 +121,7 @@
     };
     const route=routes[stop.type] || {page:stop.page||"inbox",anchor:stop.anchor||"",label:"Ir para decisão"};
     const el=document.createElement("div"); el.id="simulation-stop-modal"; el.className="simulation-stop-backdrop";
-    el.innerHTML=`<section class="simulation-stop-dialog" role="dialog" aria-modal="true"><div class="tag">SIMULAÇÃO INTERROMPIDA</div><h2>${esc(title)}</h2>${decisionMeta(decision)}<p>${esc(decision?.body || stop.message || "Existe uma ação importante aguardando sua resposta.")}</p>${directChoices}<p class="chart-note">Ao clicar em Agora não, decisões pessoais são resolvidas automaticamente com uma opção disponível.</p><div class="actions"><button class="primary" data-stop-go="${esc(route.page)}" data-stop-anchor="${esc(route.anchor)}">${esc(route.label)}</button><button data-stop-close>Agora não</button></div></section>`;
+    el.innerHTML=`<section class="simulation-stop-dialog" role="dialog" aria-modal="true"><div class="tag">SIMULAÇÃO INTERROMPIDA</div><h2>${esc(title)}</h2>${decisionMeta(decision)}<p>${esc(decision?.body || stop.message || "Existe uma ação importante aguardando sua resposta.")}</p>${directChoices}${decision?.choices?.length?'<p class="chart-note">Agora não: o jogo escolhe uma opção e registra as consequências.</p>':""}<div class="actions"><button class="primary" data-stop-go="${esc(route.page)}" data-stop-anchor="${esc(route.anchor)}">${esc(route.label)}</button><button data-stop-close>Agora não</button></div></section>`;
     document.body.appendChild(el);
   }
   const C = ProLifeCharacter,
