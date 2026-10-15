@@ -1,7 +1,7 @@
 (function(root){
 "use strict";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const number=v=>Number.isFinite(Number(v))?Number(v):null;
+const number=v=>v===null||v===undefined||v===""?null:Number.isFinite(Number(v))?Number(v):null;
 const fmt=v=>v===null?"—":String(v);
 function model(report){
  if(!report||typeof report!=="object")return null;
