@@ -8488,6 +8488,13 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       render();
       return;
     }
+    const sponsorAccept=event.target.closest?.("[data-coach-sponsor-accept]");
+    if(sponsorAccept&&state?.mode==="coach"){
+      const offerId=sponsorAccept.getAttribute("data-coach-sponsor-accept");
+      try{A.execute(state,"coachAcceptSponsorship",{offerId});persist();render();}
+      catch(error){toast(error.message);}
+      return;
+    }
     const difficultySave=event.target.closest?.("[data-coach-market-difficulty-save]");
     if(difficultySave&&state?.mode==="coach"){
       const difficulty=document.querySelector("[data-coach-market-difficulty]")?.value;
