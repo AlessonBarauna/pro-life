@@ -25,7 +25,30 @@
     const modifier=contributions.reduce((sum,x)=>sum+x.value,0);
     return {base,effective:clamp(base+modifier,1,100),modifier,contributions,available:!injury,condition,form,morale};
   }
-  const api=Object.freeze({evaluate});
+  function evaluateRoster(players,contextForPlayer){
+    if(!Array.isArray(players))return [];
+    return players.map((player,index)=>{
+      const context=typeof contextForPlayer==="function"?contextForPlayer(player,index):contextForPlayer||{};
+      const rating=evaluate(player,context);
+      return {id:player?.id??null,index,...rating};
+    });
+  }
+  function recovery(player,{days=1,trainingLoad=0,playedMinutes=0}={}){
+    const p=player||{};
+    const oldCondition=clamp(number(p.condition,100),0,100);
+    const oldFatigue=clamp(number(p.physical?.fatigue,0),0,100);
+    const n=clamp(Math.floor(number(days,1)),0,30);
+    const load=clamp(number(trainingLoad,0),0,100);
+    const minutes=clamp(number(playedMinutes,0),0,120);
+    const gain=Math.round(n*(8-load*.04));
+    const exertion=Math.round(minutes*.18);
+    return {
+      condition:clamp(oldCondition+gain-exertion,0,100),
+      fatigue:clamp(oldFatigue-n*10+Math.round(load*.07)+Math.round(minutes*.25),0,100),
+      days:n
+    };
+  }
+  const api=Object.freeze({evaluate,evaluateRoster,recovery});
   root.ProLifeCoachMatchRating=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
