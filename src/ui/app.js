@@ -8161,6 +8161,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         list = own.length ? own : state.matches;
       const m = list[0];
       const report = state.mode === "player" ? Career.init(state).playerCareer?.lastMatchReport : null;
+      const j13Rivalry = state.mode==="player"?(window.ProLifeJ13View?.render?.(state)||""):"";
       const j07PreMatch = (function j07View(state,D,Career,Calendar,esc,dayDate){
  if(state.mode!=="player")return "";
  const h=window.ProLifeHomeDashboard?.snapshot?.(state,D,Calendar),next=h?.next,pc=Career.init(state).playerCareer;
@@ -8178,8 +8179,8 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
 })(state,D,Career,Calendar,esc,dayDate);
       const postMatch = report && window.ProLifePostMatchJ09 ? window.ProLifePostMatchJ09.render(report) : "";
       if (!m)
-        return `${j07PreMatch}${postMatch}${empty("Avance até a primeira rodada para ver os relatórios.")}`;
-      return `${j07PreMatch}${postMatch}<div class="grid"><section class="card"><div class="tag">${esc(m.competitionName || leagueName(m.leagueId))} · Etapa ${m.round} · Temporada ${m.season}</div><h2 class="section">${(window.ProLifeClubCrests&&window.ProLifeClubCrests.inline?window.ProLifeClubCrests.inline(m.home,"sm"):"")}${esc(D.club(state, m.home).name)}<br>${(window.ProLifeClubCrests&&window.ProLifeClubCrests.inline?window.ProLifeClubCrests.inline(m.away,"sm"):"")}${esc(D.club(state, m.away).name)}</h2><div class="score">${m.hg} × ${m.ag}</div>${m.penalties ? `<p class="good">Pênaltis: ${m.penalties[0]} × ${m.penalties[1]}</p>` : ""}<p>${esc(m.summary)}</p><table><thead><tr><th>Indicador</th><th>Casa</th><th>Fora</th></tr></thead><tbody><tr><td>Posse</td><td>${m.possession}%</td><td>${100 - m.possession}%</td></tr>${[
+        return `${j13Rivalry}${j07PreMatch}${postMatch}${empty("Avance até a primeira rodada para ver os relatórios.")}`;
+      return `${j13Rivalry}${j07PreMatch}${postMatch}<div class="grid"><section class="card"><div class="tag">${esc(m.competitionName || leagueName(m.leagueId))} · Etapa ${m.round} · Temporada ${m.season}</div><h2 class="section">${(window.ProLifeClubCrests&&window.ProLifeClubCrests.inline?window.ProLifeClubCrests.inline(m.home,"sm"):"")}${esc(D.club(state, m.home).name)}<br>${(window.ProLifeClubCrests&&window.ProLifeClubCrests.inline?window.ProLifeClubCrests.inline(m.away,"sm"):"")}${esc(D.club(state, m.away).name)}</h2><div class="score">${m.hg} × ${m.ag}</div>${m.penalties ? `<p class="good">Pênaltis: ${m.penalties[0]} × ${m.penalties[1]}</p>` : ""}<p>${esc(m.summary)}</p><table><thead><tr><th>Indicador</th><th>Casa</th><th>Fora</th></tr></thead><tbody><tr><td>Posse</td><td>${m.possession}%</td><td>${100 - m.possession}%</td></tr>${[
         ["shots", "Finalizações"],
         ["target", "No alvo"],
         ["xg", "xG estimado"],
