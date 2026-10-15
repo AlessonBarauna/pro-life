@@ -201,6 +201,14 @@ case "tactic": {
         c.tactic = data.value;
         break;
       }
+      case "coachFormation": {
+        const c=D.club(s);
+        if(s.mode!=="coach"||!c)throw Error("Formação exclusiva do treinador.");
+        if(!["4-3-3","4-4-2","4-2-3-1"].includes(data.value))throw Error("Formação inválida.");
+        c.formation=data.value;
+        if(s.coachCareer){delete s.coachCareer.pitchSlots;delete s.coachCareer.pitchFormation;}
+        break;
+      }
       case "lineup": {
         const c = D.club(s);
         if (s.mode !== "coach" || !c)
