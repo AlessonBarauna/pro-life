@@ -2329,11 +2329,19 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         '<span><small>Lesão</small><b>'+esc(selected.injury?"Lesionado":"Sem lesão registrada")+'</b></span>'+
         '<span><small>Suspensão</small><b>'+esc(Number(selected.suspension)>0?String(selected.suspension)+" jogo(s)":"Sem suspensão")+'</b></span>'+
         '</div>':'';
+      // Do not depend on an already-migrated save or on legacy defensive position codes.
+      const positionAliases={GK:"GOL",CB:"ZAG",LB:"LE",RB:"LD",CDM:"VOL",CM:"MC",CAM:"MEI",LM:"ME",RM:"MD",LW:"PE",RW:"PD",ST:"ATA",CF:"ATA",LWB:"LE",RWB:"LD"};
+      const altDefaults={GOL:[],ZAG:["VOL"],DEF:["ZAG","LE","LD"],LE:["LD","DEF"],LD:["LE","DEF"],VOL:["MC","ZAG"],MC:["VOL","MEI"],MEI:["MC","VOL"],ME:["MD","MC"],MD:["ME","MC"],PE:["PD","ME"],PD:["PE","MD"],ATA:["PE","PD"],CA:["PE","PD"]};
+      const primaryPos=String(positionOf(selected)||selected?.pos||"").toUpperCase();
+      const normalizedPrimary=positionAliases[primaryPos]||primaryPos;
+      const storedAlternates=Array.isArray(selected?.secondaryPositions)?selected.secondaryPositions.filter(Boolean):[];
+      const suggestedAlternates=storedAlternates.length?storedAlternates:(selected?.secondaryPositionsSource==="verified"||selected?.secondaryPositionsSource==="ea_fc27"?[]:(altDefaults[normalizedPrimary]||[]));
+      const alternativesLabel=suggestedAlternates.length?suggestedAlternates.join(", ")+(storedAlternates.length?(selected.secondaryPositionsSource==="suggested"?" · sugeridas":""):" · sugeridas (sem registro oficial)"):"Nenhuma posição alternativa registrada";
       const developmentInfo=selected?'<div class="pl-squad-info-grid">'+
         '<span><small>GER atual</small><b>'+esc(D.overall(selected))+'</b></span>'+
         '<span><small>Potencial registrado</small><b>'+esc(fmtMetric(selected.potential))+'</b></span>'+
         '<span><small>Idade</small><b>'+esc(selected.age??"Não registrada")+'</b></span>'+
-        '<span><small>Posições alternativas</small><b>'+esc(Array.isArray(selected.secondaryPositions)&&selected.secondaryPositions.length?selected.secondaryPositions.join(", ")+(selected.secondaryPositionsSource==="suggested"?" · sugeridas":""):"Não registradas")+'</b></span>'+
+        '<span><small>Posições alternativas</small><b>'+esc(alternativesLabel)+'</b></span>'+
         '<span><small>Plano de desenvolvimento</small><b>'+esc(({equilibrado:"Equilibrado",velocidade:"Velocidade",finalizacao:"Finalização",criacao:"Criação",marcacao:"Marcação",fisico:"Físico"}[selected.developmentPlan?.focus])||"Não registrado")+'</b></span>'+
         '<span><small>Estado na equipe</small><b>'+esc(selectionStatus(selected))+'</b></span>'+
         '</div>'+ (coach?'<div class="pl-squad-development-editor"><label>Foco individual<select data-player-development-focus>'+opt([["equilibrado","Equilibrado"],["velocidade","Velocidade"],["finalizacao","Finalização"],["criacao","Criação"],["marcacao","Marcação"],["fisico","Físico"]],selected.developmentPlan?.focus||"equilibrado")+'</select></label><button type="button" data-save-player-development="'+esc(selected.id)+'">Salvar plano</button><p>O foco direciona os atributos quando o treino coletivo promove evolução. Não garante aumento semanal.</p></div>':''):'';
