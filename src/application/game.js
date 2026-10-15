@@ -589,8 +589,8 @@ case "tactic": {
         const currentInquiry=s.coachCareer?.inquiries?.find(x=>x.playerId===p.id&&x.clubId===seller.id&&x.buyerClubId===buyer.id);
         if(currentInquiry&&(!["accepted","asking_price"].includes(currentInquiry.status)||Number(s.day)>Number(currentInquiry.expiresDay)))
           throw Error("Clube e jogador ainda não autorizaram esta negociação.");
-        const base=valuation(p)*(s.coachCareer?.settings?.marketStrictness==="strict"?1.25:1);
-        const threshold=Math.ceil(base*(0.9+Math.min(n.round||1,2)*0.025)/1000)*1000;
+        const base=valuation(p)*(s.coachCareer?.settings?.marketStrictness==="strict"?1.25:s.coachCareer?.settings?.marketStrictness==="flexible"?0.85:1);
+        const threshold=Math.ceil(base*((s.coachCareer?.settings?.marketStrictness==="flexible"?0.78:0.9)+Math.min(n.round||1,2)*0.025)/1000)*1000;
         const accepted=offer>=threshold;
         const finalFee=accepted?offer:Math.ceil(base*(1+Math.min(n.round||1,2)*0.025)/1000)*1000;
         n.history ||= [{round:1,day:n.day??s.day,offered:n.requested,response:n.finalFee,accepted:n.requested>=n.finalFee}];
@@ -622,7 +622,7 @@ case "tactic": {
         const buyer=D.club(s),seller=D.club(s,data.clubId);
         const p=seller?.roster?.find(x=>x.id===data.playerId)||D.GlobalFootball?.playersByClub?.(s,seller?.id)?.find(x=>x.id===data.playerId);
         if(!buyer||!seller||buyer.id===seller.id||!p||p.id==="hero")throw Error("Jogador indisponível.");
-        const base=valuation(p)*(s.coachCareer?.settings?.marketStrictness==="strict"?1.25:1);
+        const base=valuation(p)*(s.coachCareer?.settings?.marketStrictness==="strict"?1.25:s.coachCareer?.settings?.marketStrictness==="flexible"?0.85:1);
         const requested=Number(data.offer);
         if(!Number.isFinite(requested)||requested<=0)throw Error("Proposta inválida.");
         if(!Array.isArray(seller.roster)){
@@ -631,7 +631,7 @@ case "tactic": {
           seller.roster=roster.slice();
           seller.lineup ||= [];
         }
-        const minimum=Math.ceil(base*0.9/1000)*1000;
+        const minimum=Math.ceil(base*(s.coachCareer?.settings?.marketStrictness==="flexible"?0.78:0.9)/1000)*1000;
         s.coachCareer ||= {version:1};
         s.coachCareer.negotiations ||= [];
         s.coachCareer.negotiations=s.coachCareer.negotiations.filter(n=>!(n.playerId===p.id&&n.buyerClubId===buyer.id&&n.status==="pending"));
@@ -696,7 +696,7 @@ case "tactic": {
         const due=plan==="split"?Math.floor(fee/2):0,upfront=fee-due;
         if (own.budget < upfront+contractBonus) throw Error("Orçamento insuficiente para a entrada e bônus contratual.");
         // The deferred half becomes a persistent financial obligation, not free money.
-        if (D.overall(p) > own.structure + (rules?.marketStrictness==="strict"?7:14))
+        if (D.overall(p) > own.structure + (rules?.marketStrictness==="strict"?7:rules?.marketStrictness==="flexible"?25:14))
           throw Error(
             "O jogador recusou: busca um projeto com maior estrutura.",
           );
