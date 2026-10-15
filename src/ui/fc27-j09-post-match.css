@@ -1,0 +1,18 @@
+/* J09 — avaliação pós-jogo exclusiva do modo jogador */
+.j09-report{margin:0 0 22px;padding:clamp(16px,2.5vw,32px);background:linear-gradient(135deg,#162531,#101b26);border:1px solid #3c525d;color:#edf5f6}
+.j09-head{border-bottom:1px solid #3a4b56;padding-bottom:18px;margin-bottom:18px}
+.j09-head small,.j09-block>small,.j09-stat small{color:#a9ef40;letter-spacing:.1em;font-size:10px;font-weight:900}
+.j09-head h2{margin:9px 0;color:#fff;font-size:clamp(26px,3vw,38px)}
+.j09-head p{font-size:13px;color:#bed0d7;margin:0}
+.j09-stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:17px}
+.j09-stat{min-width:0;background:#203341;border-top:3px solid #b8ec37;padding:16px 9px;display:flex;flex-direction:column;gap:9px}
+.j09-stat strong{color:#fff;font-size:clamp(18px,2vw,27px);overflow-wrap:anywhere}
+.j09-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.j09-block{background:#0e1d29;border:1px solid #384e5b;min-width:0;padding:20px}
+.j09-block h3{font-size:20px;margin:13px 0 10px;color:#fff;overflow-wrap:anywhere}
+.j09-block p{font-size:13px;line-height:1.6;color:#c4d5dc;overflow-wrap:anywhere}
+.j09-foot{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;border-top:1px solid #3a4b56;margin-top:18px;padding-top:16px}
+.j09-foot span{color:#b5c6cd;font-size:11px}
+.j09-foot button{background:#b9ee37;color:#102007;font-weight:900;padding:12px 16px;border:0;cursor:pointer}
+@media(max-width:900px){.j09-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.j09-grid{grid-template-columns:1fr}}
+@media(max-width:550px){.j09-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.j09-foot button{width:100%}}
