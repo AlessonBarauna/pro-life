@@ -1128,7 +1128,7 @@
     const groups = new Map();
     for (const c of rows) { const g = seasonRegion(c); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(c); }
     const home=window.ProLifeCompetitionZonesV2?.homeCountry?.(cat,D.club(state),D.club(state)?.leagueId);
-    const order=[...REGION_ORDER].sort((a,b)=>Number(b===home)-Number(a===home));
+    const order=[...new Set([home,...REGION_ORDER,...groups.keys()].filter(Boolean))];
     return order.filter((g) => groups.has(g)).map((g) => `<div class="season-group"><div class="tag">${esc(g)} · ${groups.get(g).length}</div>${groups.get(g).map((c) => `<button type="button" class="season-comp ${c.id === seasonUi.comp ? "on" : ""}" data-season-comp="${esc(c.id)}" aria-pressed="${c.id === seasonUi.comp}"><b>${esc(c.name)}</b><small>${esc([c.country, KIND_LABEL[COMP_KIND(c)]].filter(Boolean).join(" · "))}</small></button>`).join("")}</div>`).join("");
   }
   function stRow(r, i) {
