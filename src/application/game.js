@@ -405,7 +405,7 @@ case "tactic": {
         break;
       }
       case "counterSaleOffer": {
-        if(s.mode!=="coach"||!D.Career.windowStatus(s).open)throw Error("Mercado fechado.");
+        if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
         const offer=s.coachCareer?.saleOffers?.find(o=>o.id===data.id&&o.status==="pending"&&o.sellerClubId===s.clubId&&s.day<=o.expiresDay);
         if(!offer||offer.round>=3)throw Error("Negociação indisponível ou limite de rodadas atingido.");
         const amount=Number(data.amount),buyer=D.club(s,offer.buyerClubId);
@@ -417,12 +417,14 @@ case "tactic": {
         offer.expiresDay=s.day+7;
         offer.history||=[];
         offer.history.push({day:s.day,round:offer.round,offer:amount,response:offer.amount});
+        (s.news||[]).unshift({day:s.day,season:s.season,title:offer.response==="accepted"?"Contraproposta aceita":"Clube apresentou contraproposta",body:"Oferta por "+(D.club(s)?.roster||[]).find(p=>p.id===offer.playerId)?.name+" · R$ "+offer.amount.toLocaleString("pt-BR")+". Responda até o dia "+offer.expiresDay+"."});
         break;
       }
       case "rejectSaleOffer": {
         const offer=s.coachCareer?.saleOffers?.find(o=>o.id===data.id&&o.status==="pending"&&o.sellerClubId===s.clubId);
         if(s.mode!=="coach"||!offer)throw Error("Proposta indisponível.");
         offer.status="rejected";offer.closedDay=s.day;
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Proposta recusada",body:"Você recusou a oferta recebida. O jogador permanece no clube."});
         break;
       }
       case "acceptSaleOffer": {
