@@ -5,7 +5,7 @@
 
   const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
   const ui={tab:"central"};
-  const TABS=[["central","Central"],["diretoria","Diretoria"],["vestiario","Vestiário"],["treino","Treino coletivo"],["prejogo","Pré-jogo"],["historico","Histórico"]];
+  const TABS=[["central","Central"],["diretoria","Diretoria"],["vestiario","Vestiário"],["treino","Treino coletivo"],["prejogo","Pré-jogo"],["negociacoes","Negociações"],["historico","Histórico"]];
   const STATUS={cumprida:"Cumprida",falhou:"Falhou",em_andamento:"Em andamento"};
 
   function bar(value,tone){
@@ -115,16 +115,41 @@
       .cc-talk{display:grid;grid-template-columns:1fr minmax(0,240px) auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--cc-line)}.cc-talk p{margin:2px 0 0}.cc-dark select{max-width:100%;margin:6px 0}.cc-card button:disabled{opacity:.5;cursor:not-allowed}
       .cc-foci{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:10px}.cc-focus{display:flex;flex-direction:column;gap:6px;text-align:left;background:transparent;border:1px solid var(--cc-line);border-radius:10px;padding:12px;color:var(--cc-text);cursor:pointer}.cc-focus span{color:var(--cc-muted);font-size:12px}.cc-focus.active{border-color:var(--cc-gold);background:rgba(216,180,91,.08)}
       .cc-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}.cc-strip b{display:block;font-size:24px}.cc-strip span{color:var(--cc-muted);font-size:12px}.cc-table{width:100%;border-collapse:collapse;font-size:13px}.cc-table th,.cc-table td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--cc-line)}.cc-table th{color:var(--cc-muted);font-weight:600}
+      .cc-deal-grid{margin-top:14px}.cc-deal{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--cc-line)}.cc-deal strong,.cc-deal b{font-size:14px}.cc-deal-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cc-deal-actions button,.cc-deal button{background:rgba(216,180,91,.12);border:1px solid var(--cc-gold);color:var(--cc-text);padding:8px 12px;border-radius:7px;cursor:pointer}.cc-status{font-size:12px;color:var(--cc-muted)}.cc-deal small{color:var(--cc-muted)}
       .cc-dark button:focus-visible,.cc-dark select:focus-visible{outline:2px solid var(--cc-gold);outline-offset:2px}
       @media(max-width:900px){.cc-dark{padding:16px}.cc-grid{grid-template-columns:1fr}.cc-row{grid-template-columns:110px 1fr 32px}.cc-talk{grid-template-columns:1fr}.cc-strip{grid-template-columns:repeat(2,1fr)}}
     </style>`;
+  }
+
+  // Career-facing deal centre. Read-only lists follow persisted financial records;
+  // actions use the existing app command dispatcher and never duplicate market logic.
+  function negotiations(s,D){
+    const c=s.coachCareer||{},cl=id=>D?.club?.(s,id)?.name||id||"Clube";
+    const money=v=>"R$ "+Math.round(Number(v)||0).toLocaleString("pt-BR");
+    const pending=(c.negotiations||[]).filter(n=>n.status==="pending");
+    const loans=(c.loans||[]).filter(l=>!l.returned);
+    const debts=(c.transferDebts||[]).filter(d=>!d.paid);
+    const clauses=(c.sellOnClauses||[]).filter(x=>x.active);
+    const closed=(c.negotiations||[]).filter(n=>n.status!=="pending");
+    const name=id=>{for(const club of [...(s.clubs||[]),...(s.globalFootball?.clubs||[])]){const p=club.roster?.find(p=>p.id===id);if(p)return p.name;}return id||"Jogador";};
+    const item=(heading,content)=>'<section class="cc-card"><h3>'+heading+'</h3>'+content+'</section>';
+    const empty=message=>'<p class="cc-note">'+message+'</p>';
+    const pendingHtml=pending.length?pending.map(n=>{
+      const expired=Number(s.day)>Number(n.expiresDay);
+      return '<div class="cc-deal"><div><strong>'+esc(name(n.playerId))+'</strong><p class="cc-note">'+esc(cl(n.sellerClubId))+' → '+esc(cl(n.buyerClubId))+' · Vencimento: dia '+esc(n.expiresDay)+'</p><b>'+esc(money(n.finalFee))+'</b></div><div class="cc-deal-actions"><span class="cc-status">'+(expired?'Expirada':'Aguardando decisão')+'</span>'+(expired?'':'<button type="button" data-coach-deal-accept="'+esc(n.id)+'">Aceitar valor</button>')+'<button type="button" data-coach-deal-reject="'+esc(n.id)+'">Recusar</button></div></div>';
+    }).join(""):empty("Nenhuma contraproposta pendente.");
+    const loanHtml=loans.length?loans.map(l=>'<div class="cc-deal"><div><strong>'+esc(name(l.playerId))+'</strong><p class="cc-note">'+esc(cl(l.fromClubId))+' → '+esc(cl(l.toClubId))+' · Término: dia '+esc(l.dueDay)+' · Salário: '+esc(l.salaryShare??0)+'%</p><b>'+(l.buyOption?'Opção de compra '+esc(money(l.buyOption)):'Sem opção de compra')+'</b></div>'+((l.buyOption&&l.toClubId===s.clubId)?'<button type="button" data-coach-deal-buy="'+esc(l.id)+'">Comprar jogador</button>':'')+'</div>').join(""):empty("Nenhum empréstimo ativo.");
+    const debtHtml=debts.length?debts.map(d=>'<div class="cc-deal"><span>'+esc(cl(d.buyerClubId))+' → '+esc(cl(d.sourceClubId))+'</span><strong>'+esc(money(d.amount))+'</strong><small>Dia '+esc(d.dueDay)+'</small></div>').join(""):empty("Nenhuma parcela em aberto.");
+    const historyHtml=closed.length?closed.slice().reverse().slice(0,20).map(n=>'<div class="cc-deal"><strong>'+esc(name(n.playerId))+'</strong><span>'+esc(money(n.finalFee))+'</span><small>'+esc(n.status)+'</small></div>').join(""):empty("Nenhuma negociação concluída ou recusada.");
+    const clausesHtml=clauses.length?clauses.map(x=>'<div class="cc-deal"><span>'+esc(name(x.playerId))+' · '+esc(cl(x.sellerClubId))+'</span><b>'+esc(x.percentage)+'% de revenda</b></div>').join(""):empty("Nenhuma cláusula ativa.");
+    return '<div class="cc-strip"><div><b>'+pending.length+'</b><span>Propostas pendentes</span></div><div><b>'+loans.length+'</b><span>Empréstimos ativos</span></div><div><b>'+debts.length+'</b><span>Parcelas a pagar</span></div><div><b>'+clauses.length+'</b><span>Cláusulas de revenda</span></div></div><p class="cc-note">Negociações e finanças do clube · valores em BRL · prazos em dias da carreira</p><div class="cc-grid cc-deal-grid">'+item("Propostas e contrapropostas",pendingHtml)+item("Empréstimos ativos",loanHtml)+item("Obrigações financeiras",debtHtml)+item("Cláusulas de revenda",clausesHtml)+item("Histórico de negociações",historyHtml)+'</div>';
   }
 
   function render(s,D){
     const C=D?.CoachCareer||root.ProLifeCoachCareer;
     if(!C||s?.mode!=="coach")return `<section class="card"><h2>Carreira do Treinador</h2><p class="muted">Disponível apenas no modo treinador.</p></section>`;
     const sn=C.snapshot(s,D);
-    const body=ui.tab==="central"?central(s,D,sn):ui.tab==="vestiario"?locker(sn):ui.tab==="treino"?(sn.hasClub?training(sn):`<section class="cc-card"><p class="muted">Assine com um clube para definir o treino.</p></section>`):ui.tab==="historico"?history(sn):ui.tab==="prejogo"?prematch(s,D,sn):(sn.hasClub?board(sn):`<section class="cc-card"><p class="muted">Você está sem clube. Aceite uma proposta na aba Propostas para voltar a trabalhar.</p></section>`);
+    const body=ui.tab==="central"?central(s,D,sn):ui.tab==="vestiario"?locker(sn):ui.tab==="treino"?(sn.hasClub?training(sn):`<section class="cc-card"><p class="muted">Assine com um clube para definir o treino.</p></section>`):ui.tab==="historico"?history(sn):ui.tab==="negociacoes"?negotiations(s,D):ui.tab==="prejogo"?prematch(s,D,sn):(sn.hasClub?board(sn):`<section class="cc-card"><p class="muted">Você está sem clube. Aceite uma proposta na aba Propostas para voltar a trabalhar.</p></section>`);
     return `${css()}<section class="cc-dark"><h2>Carreira do Treinador</h2><small>${esc(sn.club?.name||"Sem clube")} · Temporada ${esc(s.season)} · Nacionalidade: ${esc(s.person?.nationality||"Brasil")} · Reputação ${esc(Math.round(sn.reputation||0))}</small>${tabs()}${body}</section>`;
   }
 
