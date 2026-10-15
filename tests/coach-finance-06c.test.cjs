@@ -115,3 +115,28 @@ test("Loan purchase persists after reload, charges once, and prevents automatic 
  assert.equal(state.clubs[0].roster.length,0);
  assert.equal(state.clubs[1].budget,250000);
 });
+
+test("Coach negotiation centre renders five real finance sections from persisted save",()=>{
+ const viewSource=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ const root={};root.globalThis=root;
+ vm.runInNewContext(viewSource,root,{filename:"coach-career-view.js"});
+ const V=root.ProLifeCoachCareerView;
+ V.setTab("negociacoes");
+ const state={mode:"coach",clubId:"b",season:2026,day:6,person:{nationality:"Brasil"},clubs:[{id:"a",name:"Origem",roster:[]},{id:"b",name:"Destino",roster:[]}],
+ coachCareer:{negotiations:[{id:"n1",playerId:"p1",sellerClubId:"a",buyerClubId:"b",status:"pending",expiresDay:10,finalFee:10000}],loans:[{id:"l1",playerId:"p2",fromClubId:"a",toClubId:"b",returned:false,dueDay:180,buyOption:50000,salaryShare:50}],transferDebts:[{id:"d1",buyerClubId:"b",sourceClubId:"a",amount:4000,dueDay:180,paid:false}],sellOnClauses:[{playerId:"p3",sellerClubId:"a",percentage:20,active:true}]}};
+ const D={club:(s,id)=>s.clubs.find(x=>x.id===id),CoachCareer:{snapshot:()=>({club:{name:"Destino"},reputation:50,hasClub:true})}};
+ const html=V.render(state,D);
+ for(const x of ["Propostas e contrapropostas","Empréstimos ativos","Obrigações financeiras","Cláusulas de revenda","Histórico de negociações","data-coach-deal-accept","data-coach-deal-reject","data-coach-deal-buy"])assert.ok(html.includes(x),x);
+ V.setTab("central");
+});
+test("Coach central rejection is persistent and prevents accepting closed offer",()=>{
+ const appSource=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"utf8");
+ const root={};root.globalThis=root;
+ root.ProLife={club:(s,id=s.clubId)=>s.clubs.find(c=>c.id===id),overall:p=>p.overall,Career:{windowStatus:()=>({open:true}),transfer:()=>{}}};
+ vm.runInNewContext(appSource,root,{filename:"game.js"});
+ const state={mode:"coach",clubId:"b",day:1,season:2026,news:[],clubs:[{id:"a",name:"Origem",roster:[]},{id:"b",name:"Destino",roster:[]}],coachCareer:{negotiations:[{id:"n",status:"pending",expiresDay:7,playerId:"p",sellerClubId:"a",buyerClubId:"b"}]}};
+ root.ProLifeApp.execute(state,"rejectCoachDeal",{id:"n"});
+ assert.equal(state.coachCareer.negotiations[0].status,"rejected");
+ const reloaded=JSON.parse(JSON.stringify(state));
+ assert.throws(()=>root.ProLifeApp.execute(reloaded,"acceptCoachDeal",{id:"n"}),/indisponível/);
+});
