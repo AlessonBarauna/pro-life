@@ -325,7 +325,7 @@
     if(age>=32)reasons.push("Nova etapa da carreira");
     if(overall>=85&&age<=30)reasons.push("Jogador importante para o clube vendedor");
     if(!reasons.length)reasons.push("Avaliação de projeto esportivo, liga e prestígio");
-    return {playerScore,clubScore,reasons};
+    return {playerScore,clubScore,reasons,eliteGap,rival};
   }
   function settleInquiries(s,api){
     const inquiries=s.coachCareer?.inquiries;
@@ -347,13 +347,18 @@
       const rollClub=unit("club-interest|"+inquiry.id);
       inquiry.playerDecision=available&&rollPlayer<result.playerScore/100?"accepted":"rejected";
       inquiry.clubDecision=available&&rollClub<result.clubScore/100?"accepted":"rejected";
-      inquiry.status=inquiry.playerDecision==="accepted"&&inquiry.clubDecision==="accepted"?"accepted":"rejected";
+      // A willing player can receive a price demand even when the club will not release him outright.
+      const clubDemand=available&&inquiry.playerDecision==="accepted"&&inquiry.clubDecision==="rejected"&&
+        !result.eliteGap&&!result.rival&&result.clubScore>=30;
+      inquiry.status=inquiry.playerDecision!=="accepted"?"rejected":
+        inquiry.clubDecision==="accepted"?"accepted":clubDemand?"asking_price":"rejected";
+      inquiry.clubDecision=clubDemand?"asking_price":inquiry.clubDecision;
       inquiry.answeredDay=Number(s.day)||0;
       inquiry.playerInterest=result.playerScore;
       inquiry.clubInterest=result.clubScore;
       inquiry.reasons=result.reasons;
       inquiry.interest=result.playerScore>=70?"high":result.playerScore>=40?"medium":"low";
-      (s.news||[]).unshift({day:s.day,season:s.season,title:"Resposta à sondagem",body:(player?.name||"Jogador")+" · "+(inquiry.status==="accepted"?"Clube e atleta aceitam abrir negociação.":inquiry.playerDecision!=="accepted"?"O jogador não demonstrou interesse na transferência.":"Clube vendedor recusou a sondagem.")});
+      (s.news||[]).unshift({day:s.day,season:s.season,title:"Resposta à sondagem",body:(player?.name||"Jogador")+" · "+(inquiry.status==="accepted"?"Clube e atleta aceitam abrir negociação.":inquiry.status==="asking_price"?"O atleta aceita conversar; o clube exige proposta financeira.":inquiry.playerDecision!=="accepted"?"O jogador não demonstrou interesse na transferência.":"Clube vendedor recusou a sondagem.")});
       settled++;
     }
     return settled;
