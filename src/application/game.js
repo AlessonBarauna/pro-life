@@ -780,7 +780,7 @@ case "tactic": {
     const weekly = Math.max(750, Math.round(valuation(p) * 0.00085 / 250) * 250);
     return Math.ceil(weekly * 52 / 12 / 1000) * 1000;
   }
-  root.ProLifeApp = { execute, valuation };
+  root.ProLifeApp = { execute, valuation, minimumMarketSalaryMonthly };
   if (typeof module !== "undefined" && module.exports)
     module.exports = root.ProLifeApp;
 })(typeof globalThis !== "undefined" ? globalThis : this);
