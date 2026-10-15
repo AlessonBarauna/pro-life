@@ -1,8 +1,8 @@
 const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const engine=fs.readFileSync(path.join(__dirname,"../src/domain/engine.js"),"utf8");
 const ui=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
-test("capitania prioriza longevidade e experiencia",()=>{
- assert.match(engine,/years\*7 \+ experience\*2\.1/);
+test("capitania considera longevidade e experiencia com pesos atuais",()=>{
+ assert.match(engine,/Math\.min\(years,8\)\*1\.6 \+ experience\*\.7/);
  assert.match(engine,/heroYears/);
 });
 test("capitao da partida precisa estar no XI",()=>{
