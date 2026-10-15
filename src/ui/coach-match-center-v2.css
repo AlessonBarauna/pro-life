@@ -7,3 +7,16 @@
 .lm-mc-stat-row b{text-align:center;font-size:12px}.lm-mc-stat-row span:first-child{text-align:left}.lm-mc-stat-row span:last-child{text-align:right}
 .lm-mc-note{color:#a5b6c1;font-size:12px;line-height:1.6;margin:12px 0}
 @media(max-width:760px){.lm-mc-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.lm-mc-tabs button{font-size:10px;padding:8px 3px}}
+
+/* Tactical view: clearer movement and substitution controls */
+.lm-pitch .lm-player{transition:left .6s ease-in-out,top .6s ease-in-out;box-shadow:0 2px 7px #0009;z-index:2}
+.lm-pitch .lm-ball{transition:left .6s linear,top .6s linear;z-index:4;box-shadow:0 0 0 3px #fff4}
+.lm-mc-lab{margin-top:16px;padding:14px;border:1px solid #344454;background:#101b28;border-radius:8px}
+.lm-mc-lab h3{font-size:12px;letter-spacing:.1em;color:#c9f832}
+.lm-mc-lab-actions{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.lm-mc-lab-actions button,.lm-mc-swap button{background:#1e3240;border:1px solid #47606f;color:#e7eff5;padding:9px 12px;border-radius:5px;cursor:pointer}
+.lm-mc-lab-actions button:hover,.lm-mc-swap button:hover{border-color:#d3fc3a}
+.lm-mc-swap{display:grid;gap:9px;margin-top:14px}
+.lm-mc-swap label{display:flex;flex-direction:column;gap:5px;color:#bbc9d2;font-size:12px}
+.lm-mc-swap select{width:100%;max-width:100%;background:#091725;color:#f5f8fa;border:1px solid #47606f;border-radius:5px;padding:9px}
+.lm-mc-swap button{background:#d3fc3a;color:#101b28;font-weight:800}
