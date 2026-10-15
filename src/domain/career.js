@@ -1668,7 +1668,7 @@
         if(Array.isArray(borrowing.lineup))borrowing.lineup=borrowing.lineup.filter(id=>id!==loan.playerId);
         if(!origin.roster.some(x=>x.id===loan.playerId))origin.roster.push(p);
         loan.returned=true;loan.returnDay=s.day;
-        (s.news||[]).unshift({day:s.day,season:s.season,title:"Retorno de empréstimo",body:p.name+" voltou ao "+(origin.name||"clube de origem")+".");
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Retorno de empréstimo",body:p.name+" voltou ao "+(origin.name||"clube de origem")+"."});
       }
     }
     pruneMessages(s);
