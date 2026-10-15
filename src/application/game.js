@@ -322,7 +322,26 @@ case "tactic": {
         if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
         const n=s.coachCareer?.negotiations?.find(n=>n.id===data.id && n.status==="pending");
         if(!n||s.day>n.expiresDay||n.buyerClubId!==s.clubId)throw Error("Proposta expirada ou indisponível.");
-        return execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:data.paymentPlan==="split"?"split":"upfront",dealType:"permanent"});
+        const plan=data.paymentPlan==="split"?"split":"upfront";
+        if(!D.Career.windowStatus(s).open){
+          n.status="awaiting_window";n.paymentPlan=plan;n.agreedDay=s.day;n.expiresDay=null;
+          (s.news||[]).unshift({day:s.day,season:s.season,title:"Contratação acordada",body:"Transferência programada para a próxima janela. Nenhum pagamento antecipado."});
+          return s;
+        }
+        return execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:plan,dealType:"permanent"});
+      }
+      case "settleCoachWindowDeals": {
+        if(s.mode!=="coach"||!D.Career.windowStatus(s).open)return s;
+        for(const n of s.coachCareer?.negotiations||[]){
+          if(n.status!=="awaiting_window"||n.buyerClubId!==s.clubId)continue;
+          try{
+            execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:n.paymentPlan||"upfront",dealType:"permanent"});
+          }catch(error){
+            n.lastSettlementError=String(error.message||error);
+            // Retain agreed deal so the manager can address a budget or availability problem.
+          }
+        }
+        return s;
       }
       case "toggleCoachShortlist": {
         if(s.mode!=="coach"||!s.clubId)throw Error("Disponível somente ao treinador com clube.");
@@ -406,7 +425,7 @@ case "tactic": {
         break;
       }
       case "reviseCoachDeal": {
-        if(s.mode!=="coach"||!D.Career.windowStatus(s).open)throw Error("Mercado de transferências fechado.");
+        if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
         const n=s.coachCareer?.negotiations?.find(x=>x.id===data.id&&x.status==="pending");
         if(!n||n.buyerClubId!==s.clubId||Number(s.day)>Number(n.expiresDay))throw Error("Negociação expirada ou indisponível.");
         if((n.round||1)>=3)throw Error("Limite de três rodadas atingido.");
@@ -422,7 +441,7 @@ case "tactic": {
         n.history ||= [{round:1,day:n.day??s.day,offered:n.requested,response:n.finalFee,accepted:n.requested>=n.finalFee}];
         n.round=(n.round||1)+1;
         n.requested=offer;n.finalFee=finalFee;n.response=accepted?"accepted":"counter";
-        n.expiresDay=s.day+7;
+        n.expiresDay=s.day+(D.Career.windowStatus(s).open?7:Math.max(7,Number(D.Career.windowStatus(s).remaining)||7)+7);
         n.history.push({round:n.round,day:s.day,offered:offer,response:finalFee,accepted});
         (s.news||[]).unshift({day:s.day,season:s.season,title:accepted?"Oferta aceita pelo clube":"Nova contraproposta do clube",body:p.name+" · "+finalFee.toLocaleString("pt-BR")+"."});
         return s;
@@ -499,7 +518,7 @@ case "tactic": {
         const optionPrice=isLoan&&data.buyOption==="on"?Math.ceil(valuation(p)*1.1/1000)*1000:0;
         const plan=rules?.installments==="on"&&data.paymentPlan==="split"&&!isLoan?"split":"upfront";
         if(isLoan)fee=Math.ceil(fee*0.08*(duration/180)/1000)*1000;
-        const negotiation=!isLoan?s.coachCareer?.negotiations?.find(n=>n.playerId===p.id&&n.sellerClubId===source.id&&n.buyerClubId===own.id&&n.status==="pending"&&n.expiresDay>=s.day):null;
+        const negotiation=!isLoan?s.coachCareer?.negotiations?.find(n=>n.playerId===p.id&&n.sellerClubId===source.id&&n.buyerClubId===own.id&&(n.status==="pending"||n.status==="awaiting_window")&&(n.expiresDay==null||n.expiresDay>=s.day)):null;
         if(negotiation)fee=negotiation.finalFee;
         const due=plan==="split"?Math.floor(fee/2):0,upfront=fee-due;
         if (own.budget < upfront) throw Error("Orçamento insuficiente para a entrada.");
