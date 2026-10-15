@@ -220,6 +220,17 @@ case "tactic": {
         club.coachTactics={style,pressing,buildup,width,depth};
         break;
       }
+      case "coachDevelopmentPlan": {
+        const club=D.club(s);
+        if(s.mode!=="coach"||!club)throw Error("Plano disponível apenas ao treinador.");
+        const p=club.roster?.find(x=>x.id===data.playerId);
+        if(!p)throw Error("Jogador indisponível.");
+        const focus=String(data.focus||"");
+        const plans=["equilibrado","velocidade","finalizacao","criacao","marcacao","fisico"];
+        if(!plans.includes(focus))throw Error("Plano de desenvolvimento inválido.");
+        p.developmentPlan={focus,startDay:Number(s.day)||0,source:"manager"};
+        break;
+      }
       case "coachPlayerRole": {
         const club=D.club(s);
         if(s.mode!=="coach"||!club)throw Error("Funções disponíveis apenas ao treinador.");
