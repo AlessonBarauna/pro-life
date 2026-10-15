@@ -201,6 +201,26 @@ case "tactic": {
         c.tactic = data.value;
         break;
       }
+      case "coachTacticPreset": {
+        const club=D.club(s);
+        if(s.mode!=="coach"||!club)throw Error("Predefinições exclusivas do treinador.");
+        const slot=Number(data.slot);
+        if(!Number.isInteger(slot)||slot<1||slot>3)throw Error("Slot tático inválido.");
+        s.coachCareer||={version:1};
+        const presets=s.coachCareer.tacticPresets||={};
+        const clubPresets=presets[club.id]||={};
+        if(data.operation==="save"){
+          const settings=club.coachTactics||s.coachCareer.teamTactics;
+          if(!settings)throw Error("Salve primeiro uma tática.");
+          const name=String(data.name||"Plano "+slot).trim().slice(0,30);
+          clubPresets[slot]={name,settings:{...settings}};
+        }else if(data.operation==="load"){
+          const saved=clubPresets[slot];
+          if(!saved)throw Error("Predefinição não encontrada.");
+          execute(s,"coachTeamTactics",{...saved.settings});
+        }else throw Error("Operação inválida.");
+        break;
+      }
       case "coachTeamTactics": {
         const club=D.club(s);
         if(s.mode!=="coach"||!club)throw Error("Táticas exclusivas do treinador.");
