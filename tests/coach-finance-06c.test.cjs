@@ -95,3 +95,23 @@ test("Manager negotiations survive JSON reload and failed purchases do not consu
  assert.equal(state.clubs[1].roster.length,1);
  assert.equal(state.clubs[0].roster.length,18);
 });
+
+test("Loan purchase persists after reload, charges once, and prevents automatic return",()=>{
+ const appSource=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"utf8");
+ const root={};root.globalThis=root;
+ root.ProLife={club:(s,id=s.clubId)=>s.clubs.find(c=>c.id===id),Career:{transfer:()=>{},windowStatus:()=>({open:true})},overall:p=>p.overall};
+ vm.runInNewContext(appSource,root,{filename:"game.js"});
+ vm.runInNewContext(src,root,{filename:"career.js"});
+ const C=root.ProLifeCareer,p={id:"p",name:"Jogador",salary:20000};
+ let state={mode:"coach",day:30,season:2026,clubId:"b",person:{name:"Treinador",condition:100},news:[],
+ clubs:[{id:"a",name:"Origem",budget:0,roster:[],lineup:[]},{id:"b",name:"Destino",budget:500000,roster:[p],lineup:["p"]}],
+ coachCareer:{loans:[{id:"l",fromClubId:"a",toClubId:"b",playerId:"p",dueDay:180,returned:false,purchased:false,buyOption:250000,nextSalaryDay:60,salaryShare:50}]}};
+ root.ProLifeApp.execute(state,"buyLoan",{loanId:"l"});
+ assert.equal(state.clubs[1].budget,250000);
+ assert.equal(state.clubs[0].budget,250000);
+ assert.throws(()=>root.ProLifeApp.execute(state,"buyLoan",{loanId:"l"}),/indisponível/);
+ state=JSON.parse(JSON.stringify(state));state.day=180;C.daily(state);C.daily(state);
+ assert.equal(state.clubs[1].roster.length,1);
+ assert.equal(state.clubs[0].roster.length,0);
+ assert.equal(state.clubs[1].budget,250000);
+});
