@@ -402,6 +402,13 @@
       ' · <b>Transmissão anual estimada:</b> '+esc(money(projectedIncome.broadcastAnnual))+'</p>'+
       '<p><b>Total anual hipotético:</b> '+esc(money(projectedIncome.totalAnnual))+'</p>'+
       '<p class="cc-note">Projeção baseada na estrutura e divisão do clube. Não são contratos firmados, receitas recebidas nem valores oficiais. Nenhum crédito ou mudança no save.</p></section>':'';
+    const clubSponsorCandidates=root.ProLifeClubEconomy?.sponsorshipCandidates?.(
+      own,root.ProLifeCommercial?.brands)||[];
+    const sponsorCatalogPanel='<section class="cc-card" aria-label="Marcas disponiveis no catalogo"><h4>Marcas do catálogo — referências</h4>'+
+      (clubSponsorCandidates.length?'<p>'+clubSponsorCandidates.slice(0,8).map(b=>esc(b.name)).join(' · ')+
+        '</p><p class="cc-note">'+esc(clubSponsorCandidates.length)+' marcas compatíveis com o perfil do clube.</p>':
+        '<p class="cc-note">Catálogo comercial ainda não disponível nesta sessão.</p>')+
+      '<p class="cc-note">São referências do catálogo comercial do jogo, não patrocinadores confirmados do clube. Nenhum contrato ou receita foi criado.</p></section>';
     const signedRevenue=(c.finance?.revenueContracts||[]).filter(x=>String(x.clubId)===String(s.clubId));
     const revenueContractPanel='<section class="cc-card" aria-label="Contratos de receita registrados"><h4>Contratos de receitas</h4>'+
       (signedRevenue.length?signedRevenue.map(x=>'<p><b>'+esc(x.type==="broadcast"?"Transmissão":"Patrocínio")+
@@ -468,7 +475,7 @@
     ];
     const marketOverview='<section class="cc-market-overview" aria-label="Painel de decisões do mercado"><div class="cc-market-overview-heading"><div><small>VISÃO GERAL</small><h3>Decisões do mercado</h3></div><p>Dados atuais da carreira. Selecione uma categoria para continuar.</p></div><div class="cc-market-overview-grid">'+
       summaryCards.map(x=>'<button type="button" class="cc-market-overview-card" data-coach-deal-tab="'+esc(x.tab)+'"><small>'+esc(x.label)+'</small><strong>'+x.value+'</strong><span>'+esc(x.note)+'</span></button>').join("")+'</div></section>';
-    const content={lista:listRows,recebidas:saleRows,propostas:deals,emprestimos:loanRows,financeiro:payrollPanel+financeReadiness+futureRevenuePanel+revenueContractPanel+revenueSchedulePanel+settlementPanel+financeAudit+payrollHistory+debtRows,contratos:payrollPanel+contractRows,clausulas:clauseRows,historico:historyRows};
+    const content={lista:listRows,recebidas:saleRows,propostas:deals,emprestimos:loanRows,financeiro:payrollPanel+financeReadiness+futureRevenuePanel+sponsorCatalogPanel+revenueContractPanel+revenueSchedulePanel+settlementPanel+financeAudit+payrollHistory+debtRows,contratos:payrollPanel+contractRows,clausulas:clauseRows,historico:historyRows};
     const heading={lista:"Jogadores observados",recebidas:"Propostas recebidas pelos seus jogadores",propostas:"Propostas e contrapropostas",emprestimos:"Empréstimos ativos",financeiro:"Obrigações financeiras",contratos:"Contratos do elenco",clausulas:"Cláusulas de revenda",historico:"Histórico financeiro e de transferências"};
     return '<nav class="cc-deal-nav" aria-label="Áreas do mercado"><button type="button" data-coach-market-area="observacao">Observação</button><button type="button" data-coach-market-area="transferencias" aria-current="page">Transferências</button></nav><div class="cc-strip"><div><b>'+pending.length+'</b><span>Propostas pendentes</span></div><div><b>'+loans.length+'</b><span>Empréstimos ativos</span></div><div><b>'+debts.length+'</b><span>Parcelas a pagar</span></div><div><b>'+clauses.length+'</b><span>Cláusulas de revenda</span></div></div><p class="cc-note">Valores do save atual em BRL · prazos em dias da carreira</p>'+draftPanel+marketOverview+taskPanel+'<nav class="cc-deal-nav" aria-label="Categorias de negociações">'+tabs.map(([id,label,count])=>'<button type="button" data-coach-deal-tab="'+id+'" aria-pressed="'+(ui.dealTab===id)+'">'+label+' <small>'+count+'</small></button>').join("")+'</nav><section class="cc-card cc-deal-section"><h3>'+heading[ui.dealTab]+'</h3>'+detail+content[ui.dealTab]+'</section>';
   }
