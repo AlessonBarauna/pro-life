@@ -4,7 +4,7 @@
   // Renderiza a partir de ProLifeCoachCareer.snapshot; os botoes usam data-coach-* e o app.js despacha command().
 
   const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[char]);
-  const ui={tab:"central",dealTab:"propostas",selectedDeal:null,marketArea:"transferencias",scoutQuery:"",scoutPosition:"all"};
+  const ui={tab:"central",dealTab:"propostas",selectedDeal:null,marketArea:"transferencias",scoutQuery:"",scoutPosition:"all",scoutClub:"all",scoutCountry:"all",scoutAge:"all",scoutCategory:"all"};
   const TABS=[["central","Central"],["diretoria","Diretoria"],["vestiario","Vestiário"],["treino","Treino coletivo"],["prejogo","Pré-jogo"],["negociacoes","Negociações"],["historico","Histórico"]];
   const STATUS={cumprida:"Cumprida",falhou:"Falhou",em_andamento:"Em andamento"};
 
@@ -150,17 +150,39 @@
       // International athletes are stored in internationalPlayers, not global clubs' rosters.
       const pool=gf?.activePlayers?.(s)||[...clubs.flatMap(cl=>cl.roster||[]),...(s.internationalPlayers||[])];
       const seen=new Set(),candidates=[];
+      const norm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+      const listed=p=>p.transferListed===true||p.listedForTransfer===true||p.onTransferList===true||p.marketStatus==="transfer_listed";
       for(const p of pool){
         if(!p?.id||p.id==="hero"||seen.has(p.id)||p.active===false||p.status==="retired")continue;
         seen.add(p.id);
-        if(!p.clubId||p.clubId===s.clubId)continue;
+        if(p.clubId===s.clubId)continue;
+        const free=!p.clubId,age=Number(p.age);
+        if(free&&ui.scoutCategory!=="free")continue;
+        if(!free&&ui.scoutCategory==="free")continue;
+        if(ui.scoutClub!=="all"&&p.clubId!==ui.scoutClub)continue;
+        if(ui.scoutCountry!=="all"&&norm(p.nationality||p.nation)!==norm(ui.scoutCountry))continue;
+        if(ui.scoutAge==="under18"&&!(age<=18))continue;
+        if(ui.scoutAge==="under21"&&!(age<=21))continue;
+        if(ui.scoutAge==="under23"&&!(age<=23))continue;
+        if(ui.scoutAge==="23to29"&&!(age>=23&&age<=29))continue;
+        if(ui.scoutAge==="30plus"&&!(age>=30))continue;
+        if(ui.scoutCategory==="promises"&&!(age<=21&&Number(p.potential)>=80))continue;
+        if(ui.scoutCategory==="listed"&&!listed(p))continue;
         if(needle&&!String(p.name||"").toLocaleLowerCase("pt-BR").includes(needle))continue;
         if(ui.scoutPosition!=="all"&&!String(p.pos||p.position||"").toUpperCase().includes(ui.scoutPosition))continue;
         const cl=clubIndex.get(p.clubId)||gf?.clubById?.(s,p.clubId);
-        if(!cl||cl.active===false)continue;
-        candidates.push({p,cl});
+        if(!free&&(!cl||cl.active===false))continue;
+        candidates.push({p,cl,free});
         if(candidates.length>=80)break;
       }
+      const opt=(v,t,current)=>'<option value="'+esc(v)+'"'+(String(v)===String(current)?' selected':'')+'>'+esc(t)+'</option>';
+      const nations=[...new Set(pool.map(p=>String(p.nationality||p.nation||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+      const availableClubs=clubs.filter(cl=>cl.id&&cl.active!==false).slice().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"pt-BR"));
+      const advanced='<div class="cc-scout-filters">'+
+        '<label>Clube<select data-coach-scout-club>'+opt("all","Todos os clubes",ui.scoutClub)+availableClubs.map(cl=>opt(cl.id,cl.name||cl.id,ui.scoutClub)).join("")+'</select></label>'+
+        '<label>País / nacionalidade<select data-coach-scout-country>'+opt("all","Todos os países",ui.scoutCountry)+nations.map(n=>opt(n,n,ui.scoutCountry)).join("")+'</select></label>'+
+        '<label>Idade<select data-coach-scout-age>'+[["all","Todas"],["under18","Até 18 anos"],["under21","Até 21 anos"],["under23","Até 23 anos"],["23to29","23 a 29 anos"],["30plus","30 anos ou mais"]].map(([v,t])=>opt(v,t,ui.scoutAge)).join("")+'</select></label>'+
+        '<label>Categoria<select data-coach-scout-category>'+[["all","Todos vinculados"],["promises","Jovens promessas (até 21, potencial 80+)"],["free","Agentes livres"],["listed","Na lista de transferências"]].map(([v,t])=>opt(v,t,ui.scoutCategory)).join("")+'</select></label></div>';
       const scouting=root.ProLifeCoachScoutingV2;
       const missions=Array.isArray(c.scoutingV2?.missions)?c.scoutingV2.missions:[];
       const playerLookup=new Map(pool.filter(p=>p?.id!=null).map(p=>[String(p.id),p]));
@@ -175,12 +197,16 @@
       }).join("");
       const missionPanel='<section class="cc-card"><small>REDE DE OBSERVACAO - T2</small><h3>Missoes e relatorios</h3><p class="cc-note">A qualidade das estimativas melhora com os dias de observacao. Missoes sao registradas no save do treinador.</p>'+(missionRows||'<p class="cc-note">Nenhuma missao cadastrada.</p>')+'</section>';
       const shortlist=c.shortlist||[];
-      const rows=candidates.map(({p,cl})=>{
+      const rows=candidates.map(({p,cl,free})=>{
         const overall=p.overall??p.ovr??D?.overall?.(p);
-        const saved=shortlist.some(x=>x.playerId===p.id&&x.clubId===cl.id);
-        return '<article class="cc-deal"><div class="cc-deal-player"><strong>'+esc(p.name||"Atleta")+'</strong><small>'+esc([p.pos||p.position,Number.isFinite(Number(overall))?"GER "+Math.round(Number(overall)):null,p.age?"Idade "+p.age:null].filter(Boolean).join(" · "))+'</small></div><div class="cc-deal-team">'+(root.ProLifeClubCrests?.render?.(cl.id,{size:"sm"})||"")+'<span>'+esc(cl.name||cl.id)+'</span></div><div class="cc-deal-actions"><button type="button" data-coach-shortlist="'+esc(cl.id)+'" data-coach-player="'+esc(p.id)+'">'+(saved?"Remover da lista":"Adicionar à lista")+'</button><button type="button" data-coach-start-scout="'+esc(p.id)+'" data-coach-region="'+esc(cl.leagueId||cl.country||"Brasil")+'">Observar atleta</button><button type="button" data-coach-scout-offer="'+esc(cl.id)+'" data-coach-player="'+esc(p.id)+'">Iniciar negociação</button></div></article>';
+        const saved=!free&&shortlist.some(x=>x.playerId===p.id&&x.clubId===cl.id);
+        const identity='<div class="cc-deal-player"><strong>'+esc(p.name||"Atleta")+'</strong><small>'+esc([p.pos||p.position,Number.isFinite(Number(overall))?"GER "+Math.round(Number(overall)):null,p.age?"Idade "+p.age:null].filter(Boolean).join(" · "))+'</small></div>';
+        const origin='<div class="cc-deal-team">'+(free?"":root.ProLifeClubCrests?.render?.(cl.id,{size:"sm"})||"")+'<span>'+esc(free?"Sem clube":cl.name||cl.id)+'</span></div>';
+        const actions=free?'<div class="cc-deal-actions"><span class="cc-status">Agente livre · contratação direta ainda não disponível</span></div>':
+          '<div class="cc-deal-actions"><button type="button" data-coach-shortlist="'+esc(cl.id)+'" data-coach-player="'+esc(p.id)+'">'+(saved?"Remover da lista":"Adicionar à lista")+'</button><button type="button" data-coach-start-scout="'+esc(p.id)+'" data-coach-region="'+esc(cl.leagueId||cl.country||"Brasil")+'">Observar atleta</button><button type="button" data-coach-scout-offer="'+esc(cl.id)+'" data-coach-player="'+esc(p.id)+'">Iniciar negociação</button></div>';
+        return '<article class="cc-deal">'+identity+origin+actions+'</article>';
       }).join("");
-      return '<nav class="cc-deal-nav" aria-label="Áreas do mercado"><button type="button" data-coach-market-area="observacao" aria-current="page">Observação</button><button type="button" data-coach-market-area="transferencias">Transferências</button></nav><section class="cc-card"><h3>Observação e busca de jogadores</h3><p class="cc-note">Resultados do catálogo dos clubes carregados neste save. Acompanhamento persistido na carreira do treinador.</p><label>Duração da observação <select data-coach-scout-duration><option value="7">7 dias</option><option value="14" selected>14 dias</option><option value="28">28 dias</option></select></label><p class="cc-note">Custo padrão: R$ 0 nesta etapa experimental. Missões duram dias da carreira.</p><label>Nome do atleta <input data-coach-scout-search placeholder="Buscar jogador..." value="'+esc(ui.scoutQuery)+'"></label><label>Posição <select data-coach-scout-position><option value="all"'+(ui.scoutPosition==="all"?" selected":"")+'>Todas</option>'+["GOL","ZAG","LAT","VOL","MEI","ATA"].map(v=>'<option value="'+v+'"'+(ui.scoutPosition===v?" selected":"")+'>'+v+'</option>').join("")+'</select></label><div class="cc-deal-actions"><button data-coach-scout-apply type="button">Pesquisar</button></div>'+(rows||'<p class="cc-note">Nenhum atleta encontrado.</p>')+'</section>'+missionPanel;
+      return '<nav class="cc-deal-nav" aria-label="Áreas do mercado"><button type="button" data-coach-market-area="observacao" aria-current="page">Observação</button><button type="button" data-coach-market-area="transferencias">Transferências</button></nav><section class="cc-card"><h3>Observação e busca de jogadores</h3><p class="cc-note">Resultados do catálogo dos clubes carregados neste save. Acompanhamento persistido na carreira do treinador.</p><label>Duração da observação <select data-coach-scout-duration><option value="7">7 dias</option><option value="14" selected>14 dias</option><option value="28">28 dias</option></select></label><p class="cc-note">Custo padrão: R$ 0 nesta etapa experimental. Missões duram dias da carreira.</p><label>Nome do atleta <input data-coach-scout-search placeholder="Buscar jogador..." value="'+esc(ui.scoutQuery)+'"></label><label>Posição <select data-coach-scout-position><option value="all"'+(ui.scoutPosition==="all"?" selected":"")+'>Todas</option>'+["GOL","ZAG","LAT","VOL","MEI","ATA"].map(v=>'<option value="'+v+'"'+(ui.scoutPosition===v?" selected":"")+'>'+v+'</option>').join("")+'</select></label>'+advanced+'<div class="cc-deal-actions"><button data-coach-scout-apply type="button">Pesquisar</button></div>'+(rows||'<p class="cc-note">Nenhum atleta encontrado.</p>')+'</section>'+missionPanel;
     }
     const money=v=>"R$ "+Math.round(Number(v)||0).toLocaleString("pt-BR");
     const all=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])];
@@ -325,7 +351,7 @@
     return css()+marketCss()+'<section class="cc-dark cc-market-screen"><div class="cc-market-heading"><small>CENTRAL DE TRANSFERÊNCIAS</small><h2>Mercado de jogadores</h2><p class="cc-note">'+esc(own?.name||"Sem clube")+' · Temporada '+esc(s.season)+' · Orçamento '+esc(budget)+'</p></div>'+intro+negotiations(s,D)+'</section>';
   }
 
-  const api={render,renderMarket,state:ui,esc,setTab:id=>{if(TABS.some(x=>x[0]===id))ui.tab=id;},setDealTab:id=>{if(["lista","recebidas","propostas","emprestimos","financeiro","contratos","clausulas","historico"].includes(id))ui.dealTab=id;},openDeal:id=>{ui.selectedDeal=id;ui.dealTab="propostas";},closeDeal:()=>{ui.selectedDeal=null;},setMarketArea:id=>{if(["observacao","transferencias"].includes(id))ui.marketArea=id;},setScoutFilters:(query,pos)=>{ui.scoutQuery=String(query||"").slice(0,80);ui.scoutPosition=["all","GOL","ZAG","LAT","VOL","MEI","ATA"].includes(pos)?pos:"all";}};
+  const api={render,renderMarket,state:ui,esc,setTab:id=>{if(TABS.some(x=>x[0]===id))ui.tab=id;},setDealTab:id=>{if(["lista","recebidas","propostas","emprestimos","financeiro","contratos","clausulas","historico"].includes(id))ui.dealTab=id;},openDeal:id=>{ui.selectedDeal=id;ui.dealTab="propostas";},closeDeal:()=>{ui.selectedDeal=null;},setMarketArea:id=>{if(["observacao","transferencias"].includes(id))ui.marketArea=id;},setScoutFilters:(query,pos,filters={})=>{ui.scoutQuery=String(query||"").slice(0,80);ui.scoutPosition=["all","GOL","ZAG","LAT","VOL","MEI","ATA"].includes(pos)?pos:"all";ui.scoutClub=String(filters.club||"all");ui.scoutCountry=String(filters.country||"all");ui.scoutAge=["all","under18","under21","under23","23to29","30plus"].includes(filters.age)?filters.age:"all";ui.scoutCategory=["all","promises","free","listed"].includes(filters.category)?filters.category:"all";}};
   root.ProLifeCoachCareerView=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
