@@ -8352,7 +8352,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if(el.hasAttribute("data-coach-shortlist")) return command("toggleCoachShortlist",{clubId:el.getAttribute("data-coach-shortlist"),playerId:el.getAttribute("data-coach-player")});
     if(el.hasAttribute("data-coach-scout-offer")){
       const clubId=el.getAttribute("data-coach-scout-offer"),playerId=el.getAttribute("data-coach-player");
-      const athlete=D.club(state,clubId)?.roster?.find(p=>p.id===playerId);
+      const athlete=D.club(state,clubId)?.roster?.find(p=>p.id===playerId)||D.GlobalFootball?.playerById?.(state,playerId);
       if(!athlete){toast("Jogador indisponível.");return;}
       V?.setMarketArea("transferencias"); V?.setDealTab("propostas");
       return command("counterRecruit",{clubId,playerId,offer:A.valuation(athlete)});
