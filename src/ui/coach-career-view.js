@@ -430,7 +430,7 @@
     const marketDifficultyPanel='<section class="cc-card" aria-label="Rigor das negociações"><h4>Rigor das negociações</h4>'+
       '<p class="cc-note">Escolha o rigor das próximas sondagens e propostas. Acordos enviados e respostas já recebidas não são recalculados.</p>'+
       '<label>Negociações <select data-coach-market-difficulty>'+
-      [['flexible','Flexível — negocções mais fáceis'],['normal','Normal — avaliação atual'],['strict','Rigoroso — maiores exigências']].map(([value,label])=>
+      [['flexible','Flexível — negociações mais fáceis'],['normal','Normal — avaliação atual'],['strict','Rigoroso — maiores exigências']].map(([value,label])=>
         '<option value="'+value+'"'+(difficulty===value?' selected':'')+'>'+label+'</option>').join('')+
       '</select></label><button type="button" data-coach-market-difficulty-save>Aplicar rigor</button></section>';
     const marketOverview='<section class="cc-market-overview" aria-label="Painel de decisões do mercado"><div class="cc-market-overview-heading"><div><small>VISÃO GERAL</small><h3>Decisões do mercado</h3></div><p>Dados atuais da carreira. Selecione uma categoria para continuar.</p></div><div class="cc-market-overview-grid">'+
