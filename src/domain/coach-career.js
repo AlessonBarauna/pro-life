@@ -358,12 +358,34 @@
     }
     return settled;
   }
+  function settleTransferReplies(s){
+    const deals=s.coachCareer?.negotiations;
+    if(!Array.isArray(deals))return 0;
+    let count=0;
+    for(const n of deals){
+      if(n.status!=="pending"||n.response!=="awaiting_reply"||Number(s.day)<Number(n.replyDay))continue;
+      const result=n.pendingOutcome;
+      if(!result)continue;
+      n.response=result.accepted?"accepted":"counter";
+      n.finalFee=result.finalFee;
+      n.answeredDay=Number(s.day);
+      const history=Array.isArray(n.history)?n.history:[];
+      const last=history[history.length-1];
+      if(last&&last.status==="sent"){last.status="answered";last.response=result.finalFee;last.accepted=!!result.accepted;last.answeredDay=Number(s.day);}
+      delete n.pendingOutcome;
+      delete n.replyDay;
+      (s.news||[]).unshift({day:s.day,season:s.season,title:result.accepted?"Oferta aceita pelo clube":"Contraproposta recebida",body:"Resposta à proposta por "+String(n.playerId||"jogador")+". Valor: R$ "+Number(result.finalFee||0).toLocaleString("pt-BR")});
+      count++;
+    }
+    return count;
+  }
   // ---------- agenda diaria ----------
   function daily(s,api,hooks){
     if(!isCoach(s))return null;
     state(s);
     root.ProLifeCoachScoutingV2?.advance?.(s);
     settleInquiries(s,api);
+    settleTransferReplies(s);
     if(s.day%7===0&&s.clubId){
       weeklyTraining(s,api);
       return evaluate(s,api,hooks);
@@ -388,7 +410,7 @@
       focus:c.focus,foci:FOCI,stints:c.stints,totals,license:s.license,reputation:s.reputation};
   }
 
-  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,settleInquiries,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf};
+  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,settleInquiries,settleTransferReplies,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
