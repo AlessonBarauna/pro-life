@@ -1093,6 +1093,14 @@
     );
   }
   function simulate(home, away, rng, context = null, coachActions = []) {
+    const runner=simulateSteps(home,away,rng,context,coachActions);
+    let step=runner.next();
+    while(!step.done)step=runner.next();
+    return step.value;
+  }
+  // Resumable official simulation core: each next() completes exactly one minute.
+  // The caller must NOT commit the result until this generator finishes.
+  function* simulateSteps(home, away, rng, context = null, coachActions = []) {
     const hp = selected(home),
       ap = selected(away);
     const formFactors = recentMatchFormFactors(context);
@@ -1121,7 +1129,7 @@
       fatigue = [0, 0];
     // Pre-authorized coach actions are applied at their exact minute, before
     // that minute's chance calculation. Default [] preserves legacy matches.
-    const plannedActions=Array.isArray(coachActions)?coachActions.slice().sort((a,b)=>Number(a.minute)-Number(b.minute)):[];
+    const plannedActions=Array.isArray(coachActions)?coachActions:[];
     const coachSubs=[0,0],usedIncoming=[new Set(),new Set()];
     for (let minute = 1; minute <= 94; minute++) {
       if(context?.mode==="coach"||!context){
@@ -1337,7 +1345,10 @@
         }
         }
       }
+      yield {minute,match:m};
     }
+    // A caller may inspect the score/events after each completed minute.
+    // No standings or match statistics have been committed yet.
     for (const [id,part] of Object.entries(m.participation)) {
       const p=clubs[part.side].roster.find(x=>x.id===id); if(!p)continue;
       const minutes=Math.max(0,Math.min(94,Number(part.exitMinute??94)-Number(part.entryMinute??0)));part.minutes=minutes;
@@ -2896,6 +2907,7 @@
     isSuspendedFor,
     recordDevelopment,
     simulate,
+    simulateSteps,
     scheduleCoachActions,
     selected,
     overall,
