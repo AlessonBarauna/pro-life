@@ -304,7 +304,12 @@ test("Incoming sales: resale clauses pay beneficiary once, including after reloa
 });
 test("Incoming sales: closed window and loaned player are blocked without changes",()=>{
  const closed=saleFixture(false);
- assert.throws(()=>closed.root.ProLifeApp.execute(closed.state,"generateSaleInterest",{}),/Janela/);
+ closed.root.ProLifeApp.execute(closed.state,"generateSaleInterest",{});
+ assert.equal(closed.state.coachCareer.saleOffers.length,1);
+ const future=closed.state.coachCareer.saleOffers[0];
+ const unchanged=JSON.stringify(closed.state.clubs);
+ assert.throws(()=>closed.root.ProLifeApp.execute(closed.state,"acceptSaleOffer",{id:future.id}),/Mercado fechado/);
+ assert.equal(JSON.stringify(closed.state.clubs),unchanged);
  const {root,state}=saleFixture();
  root.ProLifeApp.execute(state,"generateSaleInterest",{});
  const offer=state.coachCareer.saleOffers[0];
