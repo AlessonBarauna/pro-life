@@ -8488,6 +8488,15 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       render();
       return;
     }
+    const sponsorDecision=event.target.closest?.("[data-coach-sponsor-reject],[data-coach-sponsor-counter]");
+    if(sponsorDecision&&state?.mode==="coach"){
+      const counter=sponsorDecision.hasAttribute("data-coach-sponsor-counter");
+      const offerId=sponsorDecision.getAttribute(counter?"data-coach-sponsor-counter":"data-coach-sponsor-reject");
+      const amount=counter?Number(sponsorDecision.getAttribute("data-coach-sponsor-amount")):null;
+      try{A.execute(state,"coachDecideSponsorship",{offerId,decision:counter?"counter":"reject",amount});persist();render();}
+      catch(error){toast(error.message);}
+      return;
+    }
     const sponsorAccept=event.target.closest?.("[data-coach-sponsor-accept]");
     if(sponsorAccept&&state?.mode==="coach"){
       const offerId=sponsorAccept.getAttribute("data-coach-sponsor-accept");
