@@ -13,6 +13,7 @@
     squadTab = "lineup",
     squadDetailTab = "attributes",
     squadSwapSource = null,
+    squadUndo = null,
     coachProfileTab = "resumo";
   const $ = (q) => document.querySelector(q),
     esc = (v) =>
@@ -2196,6 +2197,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const relation = sq ? `<section class="card section"><div class="tag">DISPUTA POR POSIÇÃO</div><div class="split"><div><h2>${esc(state.person.pos)} · ${esc(sq.heroRole)}</h2><p>Minha posição na disputa: <b>${sq.heroRank}º</b> · Confiança do treinador: <b>${Math.round(pc.coachTrust)}/100</b></p></div><span class="pill">${esc(sq.formation)}</span></div><div class="tablewrap"><table><thead><tr><th>#</th><th>Concorrente</th><th>OVR</th><th>Forma</th><th>Condição</th><th>Situação</th></tr></thead><tbody>${sq.rivals.map(r=>`<tr class="${r.id==="hero"?"highlight":""}"><td>${r.rank}</td><td>${esc(r.name)}</td><td>${r.overall}</td><td>${r.form}</td><td>${r.condition}%</td><td>${esc(r.status)}</td></tr>`).join("")}</tbody></table></div><p class="muted">A escalação considera posição, OVR, forma recente, condição, moral e confiança. Status contratual não garante vaga.</p>${pc.matchSelection?`<div class="notice"><b>Última decisão do treinador:</b> ${esc(pc.matchSelection.role)}<br><small>${esc(pc.matchSelection.reason||"")}</small></div>`:""}</section>` : "";
       const starters=selection?.starters||[], bench=selection?.bench||c.roster.filter(p=>!starters.includes(p));
       const formation=sq?.formation||c.formation||autoSelection?.formation||"4-3-3";
+      const canUndo=coach&&squadUndo?.clubId===c.id&&squadUndo?.day===state.day;
       const selected=c.roster.find(p=>p.id===squadSelectedId)||c.roster.find(p=>p.id==="hero")||starters[0]||c.roster[0];
       squadSelectedId=selected?.id||null;
       const positionOf=(p)=>window.ProLifePlayerPositions?.normalize?.(p)?.primaryPosition||p?.pos||"—";
@@ -2254,7 +2256,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         '</div>':'';
       const attributeInfo='<div class="pl-squad-ratings"><div class="pl-squad-radar">'+(selected?Charts.radar(ratings):"")+'<small>'+(comparison?'Comparação da posição: '+esc(shortName(comparison.name))+' · '+D.overall(comparison)+' GER':"Sem concorrente direto")+'</small></div><div class="pl-squad-attrs">'+attrs.map(([key,label])=>'<span><small>'+label+'</small><i><em style="width:'+Math.round(ratings[key]||0)+'%"></em></i><b>'+Math.round(ratings[key]||0)+'</b></span>').join("")+'</div></div>';
       const detailBody=squadDetailTab==="comparison"?comparisonInfo:squadDetailTab==="contract"?contractInfo:attributeInfo;
-      return `<div class="pl-squad-screen"><header class="pl-squad-header"><div class="pl-squad-club">${crest}<div><div class="tag">ELENCO PRINCIPAL</div><h1>${esc(c.name)}</h1><p>${esc(formation)} · ${c.roster.length} atletas · ${esc(tacticLabel)}</p></div></div><div class="pl-squad-head-status"><span><small>XI DEFINIDO</small><b>${starters.length}/11</b></span><span><small>INDISPONÍVEIS</small><b>${c.roster.filter(isUnavailable).length}</b></span></div></header><nav class="pl-squad-tabs" aria-label="Áreas do elenco">${[["lineup","Escalação"],["tactics","Táticas"],["roles","Funções"],["hierarchy","Hierarquia"]].map(([id,label])=>`<button type="button" data-squad-tab="${id}" class="${squadTab===id?"active":""}" ${squadTab===id?'aria-current="page"':""}>${label}</button>`).join("")}</nav><div class="pl-squad-workspace"><section class="pl-squad-left"><div class="pl-squad-pitch-head"><div><small>FORMAÇÃO ATIVA</small><b>${esc(formation)}</b></div><span>${coach?(squadSwapSource?"Escolha o segundo jogador para trocar":"Arraste ou selecione dois jogadores para trocar posições"):"Decisão da comissão técnica"}</span></div><div class="pl-squad-pitch" aria-label="Campo tático · formação ${esc(formation)}"><div class="pl-pitch-lines" aria-hidden="true"><i></i><i></i><i></i></div>${rows.map(row=>`<div class="pl-squad-row" data-row="${esc(row.label)}">${row.players.map(p=>playerTile(p)).join("")}</div>`).join("")}</div><section class="pl-squad-bench"><header><div><small>ELENCO</small><h2>Reservas e relacionados</h2></div><span>${bench.length} atletas</span></header><div class="pl-squad-bench-scroll">${bench.map(p=>playerTile(p,true)).join("")||'<p class="muted">Nenhum reserva disponível.</p>'}</div></section></section><aside class="pl-squad-detail"><div class="pl-squad-detail-hero"><div class="pl-squad-detail-copy"><span>${esc(positionOf(selected))}</span><h2>${esc(selected?.name||"Jogador")}</h2><div class="pl-squad-overall"><b>${selected?D.overall(selected):"—"}</b><small>GER</small></div></div><div class="pl-squad-portrait"><span>${esc(initials(selected?.name))}</span></div>${crest}</div><div class="pl-squad-vitals"><span><small>Condição</small><b>${Math.round(selected?.condition||0)}%</b><i><em style="width:${Math.round(selected?.condition||0)}%"></em></i></span><span><small>Moral</small><b>${esc(moraleLabel(selected?.morale||0))}</b><i><em style="width:${Math.round(selected?.morale||0)}%"></em></i></span><span><small>Situação</small><b>${esc(isUnavailable(selected)?selected.injury?"Lesionado":"Suspenso":selectionStatus(selected))}</b></span></div><div class="pl-squad-detail-tabs">${[["attributes","Atributos"],["comparison","Comparação"],["contract","Contrato"]].map(([id,label])=>`<button type="button" data-squad-detail-tab="${id}" class="${squadDetailTab===id?"active":""}" aria-pressed="${squadDetailTab===id}">${label}</button>`).join("")}</div>${detailBody}<footer><span><small>Forma</small><b>${esc(form(selected))}</b></span><span><small>Idade</small><b>${selected?.age||"—"}</b></span><span><small>Posição</small><b>${esc(positionOf(selected))}</b></span></footer></aside></div>${tabSupplement}<footer class="pl-squad-actions"><button type="button" data-page="home">Voltar à Central</button><button type="button" data-squad-tab="tactics">Plano tático</button>${coach?'<button type="button" class="primary" data-action="lineup">Salvar os 11 titulares</button>':'<button type="button" class="primary" data-page="lineup">Escalação do próximo jogo</button>'}</footer></div>`;
+      return `<div class="pl-squad-screen"><header class="pl-squad-header"><div class="pl-squad-club">${crest}<div><div class="tag">ELENCO PRINCIPAL</div><h1>${esc(c.name)}</h1><p>${esc(formation)} · ${c.roster.length} atletas · ${esc(tacticLabel)}</p></div></div><div class="pl-squad-head-status"><span><small>XI DEFINIDO</small><b>${starters.length}/11</b></span><span><small>INDISPONÍVEIS</small><b>${c.roster.filter(isUnavailable).length}</b></span></div></header><nav class="pl-squad-tabs" aria-label="Áreas do elenco">${[["lineup","Escalação"],["tactics","Táticas"],["roles","Funções"],["hierarchy","Hierarquia"]].map(([id,label])=>`<button type="button" data-squad-tab="${id}" class="${squadTab===id?"active":""}" ${squadTab===id?'aria-current="page"':""}>${label}</button>`).join("")}</nav><div class="pl-squad-workspace"><section class="pl-squad-left"><div class="pl-squad-pitch-head"><div><small>FORMAÇÃO ATIVA</small><b>${esc(formation)}</b></div><span class="pl-squad-pitch-tools">${coach?`<button type="button" data-squad-undo ${canUndo?"":"disabled"} title="Desfazer a última troca do elenco">Desfazer troca</button>`:""}<small>${coach?(squadSwapSource?"Escolha o segundo jogador para trocar":"Arraste ou selecione dois jogadores para trocar posições"):"Decisão da comissão técnica"}</small></span></div><div class="pl-squad-pitch" aria-label="Campo tático · formação ${esc(formation)}"><div class="pl-pitch-lines" aria-hidden="true"><i></i><i></i><i></i></div>${rows.map(row=>`<div class="pl-squad-row" data-row="${esc(row.label)}">${row.players.map(p=>playerTile(p)).join("")}</div>`).join("")}</div><section class="pl-squad-bench"><header><div><small>ELENCO</small><h2>Reservas e relacionados</h2></div><span>${bench.length} atletas</span></header><div class="pl-squad-bench-scroll">${bench.map(p=>playerTile(p,true)).join("")||'<p class="muted">Nenhum reserva disponível.</p>'}</div></section></section><aside class="pl-squad-detail"><div class="pl-squad-detail-hero"><div class="pl-squad-detail-copy"><span>${esc(positionOf(selected))}</span><h2>${esc(selected?.name||"Jogador")}</h2><div class="pl-squad-overall"><b>${selected?D.overall(selected):"—"}</b><small>GER</small></div></div><div class="pl-squad-portrait"><span>${esc(initials(selected?.name))}</span></div>${crest}</div><div class="pl-squad-vitals"><span><small>Condição</small><b>${Math.round(selected?.condition||0)}%</b><i><em style="width:${Math.round(selected?.condition||0)}%"></em></i></span><span><small>Moral</small><b>${esc(moraleLabel(selected?.morale||0))}</b><i><em style="width:${Math.round(selected?.morale||0)}%"></em></i></span><span><small>Situação</small><b>${esc(isUnavailable(selected)?selected.injury?"Lesionado":"Suspenso":selectionStatus(selected))}</b></span></div><div class="pl-squad-detail-tabs">${[["attributes","Atributos"],["comparison","Comparação"],["contract","Contrato"]].map(([id,label])=>`<button type="button" data-squad-detail-tab="${id}" class="${squadDetailTab===id?"active":""}" aria-pressed="${squadDetailTab===id}">${label}</button>`).join("")}</div>${detailBody}<footer><span><small>Forma</small><b>${esc(form(selected))}</b></span><span><small>Idade</small><b>${selected?.age||"—"}</b></span><span><small>Posição</small><b>${esc(positionOf(selected))}</b></span></footer></aside></div>${tabSupplement}<footer class="pl-squad-actions"><button type="button" data-page="home">Voltar à Central</button><button type="button" data-squad-tab="tactics">Plano tático</button>${coach?'<button type="button" class="primary" data-action="lineup">Salvar os 11 titulares</button>':'<button type="button" class="primary" data-page="lineup">Escalação do próximo jogo</button>'}</footer></div>`;
     },
     training() {
       if (state.mode === "coach") {
@@ -8642,6 +8644,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return false;
     }
     try{
+      const previous={clubId:club.id,day:state.day,lineup:[...(club.lineup||[])],pitchSlots:Array.isArray(state.coachCareer?.pitchSlots)?[...state.coachCareer.pitchSlots]:null,pitchFormation:state.coachCareer?.pitchFormation||null};
       A.execute(state,"lineup",{ids:chosen});
       if(oldPitch){
         const nextPitch=oldPitch.map(id=>id===fromId?toId:id===toId?(fi>=0&&ti>=0?fromId:id):id);
@@ -8651,7 +8654,8 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
           state.coachCareer.pitchFormation=club.formation||"4-3-3";
         }else if(state.coachCareer){delete state.coachCareer.pitchSlots;delete state.coachCareer.pitchFormation;}
       }else if(state.coachCareer){delete state.coachCareer.pitchSlots;delete state.coachCareer.pitchFormation;}
-      persist();squadSelectedId=fromId;render();toast("Posições do XI atualizadas.");
+      squadUndo=previous;
+      persist();squadSelectedId=fromId;render();toast("Posições do XI atualizadas. Você pode desfazer.");
       return true;
     }catch(e){toast(e.message);return false;}
   }
@@ -8703,6 +8707,18 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         squadDetailTab=b.dataset.squadDetailTab;
         render();
       }
+      return;
+    }
+    if (b.hasAttribute("data-squad-undo")) {
+      const club=D.club(state),undo=squadUndo;
+      if(state?.mode!=="coach"||!undo||!club||undo.clubId!==club.id||undo.day!==state.day){toast("Nenhuma troca disponível para desfazer.");return;}
+      try{
+        A.execute(state,"lineup",{ids:[...undo.lineup]});
+        state.coachCareer ||= {version:1};
+        if(undo.pitchSlots){state.coachCareer.pitchSlots=[...undo.pitchSlots];state.coachCareer.pitchFormation=undo.pitchFormation;}
+        else{delete state.coachCareer.pitchSlots;delete state.coachCareer.pitchFormation;}
+        squadUndo=null;squadSwapSource=null;persist();render();toast("Última troca desfeita.");
+      }catch(error){toast(error.message);}
       return;
     }
     if (b.dataset.squadTab) {
