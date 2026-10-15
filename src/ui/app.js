@@ -121,7 +121,7 @@
     };
     const route=routes[stop.type] || {page:stop.page||"inbox",anchor:stop.anchor||"",label:"Ir para decisão"};
     const el=document.createElement("div"); el.id="simulation-stop-modal"; el.className="simulation-stop-backdrop";
-    el.innerHTML=`<section class="simulation-stop-dialog" role="dialog" aria-modal="true"><div class="tag">SIMULAÇÃO INTERROMPIDA</div><h2>${esc(title)}</h2>${decisionMeta(decision)}<p>${esc(decision?.body || stop.message || "Existe uma ação importante aguardando sua resposta.")}</p>${directChoices}<div class="actions"><button class="primary" data-stop-go="${esc(route.page)}" data-stop-anchor="${esc(route.anchor)}">${esc(route.label)}</button><button data-stop-close>Agora não</button></div></section>`;
+    el.innerHTML=`<section class="simulation-stop-dialog" role="dialog" aria-modal="true"><div class="tag">SIMULAÇÃO INTERROMPIDA</div><h2>${esc(title)}</h2>${decisionMeta(decision)}<p>${esc(decision?.body || stop.message || "Existe uma ação importante aguardando sua resposta.")}</p>${directChoices}<p class="chart-note">Ao clicar em Agora não, decisões pessoais são resolvidas automaticamente com uma opção disponível.</p><div class="actions"><button class="primary" data-stop-go="${esc(route.page)}" data-stop-anchor="${esc(route.anchor)}">${esc(route.label)}</button><button data-stop-close>Agora não</button></div></section>`;
     document.body.appendChild(el);
   }
   const C = ProLifeCharacter,
@@ -8745,7 +8745,14 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (b.dataset.cuView !== undefined) { const l = document.getElementById("cu-list"); if (l) l.hidden = !l.hidden; return; }
     if (b.dataset.cuGo) { ackCallup(b.dataset.cuGo, true); return; }
     if (b.dataset.cuContinue) { ackCallup(b.dataset.cuContinue, false); return; }
-    if (b.dataset.stopClose !== undefined) { closeSimulationStop(); return; }
+    if (b.dataset.stopClose !== undefined) {
+      if (state?.decision?.choices?.length) {
+        const choices=state.decision.choices.filter(c=>Array.isArray(c)&&typeof c[0]==="string");
+        const preferred=choices.find(c=>/equilibr|fam[ií]lia|descans|visitar|aproveitar|passar tempo/i.test(String(c[1]||"")))||choices[0];
+        if(preferred){closeSimulationStop();command("decide",{choice:preferred[0]});return;}
+      }
+      closeSimulationStop();return;
+    }
     if (b.dataset.stopGo) {
       const anchor=b.dataset.stopAnchor || "", destination=b.dataset.stopGo;
       closeSimulationStop();
