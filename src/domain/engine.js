@@ -1138,6 +1138,17 @@
       tactical[side].defense+=(t.pressing==="low"?2:t.pressing==="high"?-1:0)-depth;
       tactical[side].fatigue+=t.pressing==="high"?0.025:t.pressing==="low"?-0.01:0;
     }
+    // E10: small bonuses for selected starters with an individual role.
+    // Absent role data leaves the established simulator unchanged.
+    for(let side=0;side<2;side++){
+      const roles=clubs[side]?.coachPlayerRoles;
+      if(!roles)continue;
+      const active=squads[side].map(p=>roles[p.id]?.role).filter(Boolean);
+      const offensive=active.filter(role=>["poacher","false_nine","inside_forward","playmaker","advanced","shadow","winger","wide_playmaker","target"].includes(role)).length;
+      const defensive=active.filter(role=>["defender","stopper","holding","fullback","sweeper"].includes(role)).length;
+      tactical[side].attack+=Math.min(2,offensive*0.3);
+      tactical[side].defense+=Math.min(2,defensive*0.3);
+    }
     // Pre-authorized coach actions are applied at their exact minute, before
     // that minute's chance calculation. Default [] preserves legacy matches.
     const plannedActions=Array.isArray(coachActions)?coachActions:[];
