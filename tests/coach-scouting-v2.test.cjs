@@ -1,0 +1,8 @@
+const test=require("node:test");const assert=require("node:assert/strict");
+const S=require("../src/domain/coach-scouting-v2.js");
+const fresh=()=>({mode:"coach",day:10,clubId:"a",clubs:[{id:"a",budget:1000}]});
+test("T2 scouting enforces coach mode and valid targets",()=>{assert.equal(S.start({mode:"player"},{playerId:"p"}).ok,false);assert.equal(S.start(fresh(),{}).ok,false);});
+test("T2 mission debits once and blocks duplicate active missions",()=>{const s=fresh();assert.equal(S.start(s,{playerId:"p",cost:150}).ok,true);assert.equal(s.clubs[0].budget,850);assert.equal(S.start(s,{playerId:"p",cost:150}).ok,false);assert.equal(s.clubs[0].budget,850);});
+test("T2 missions progress with game days and never repeat",()=>{const s=fresh();S.start(s,{playerId:"p",duration:10});s.day=15;assert.equal(S.advance(s)[0].progress,.5);assert.deepEqual(S.advance(s),[]);s.day=20;assert.equal(S.advance(s)[0].status,"complete");s.day=22;assert.deepEqual(S.advance(s),[]);});
+test("T2 reports gradually reveal narrow ranges",()=>{const s=fresh();const m=S.start(s,{playerId:"p",duration:10,scoutQuality:80}).mission;const p={id:"p",ovr:71,potential:86};const early=S.report(s,m.id,p);s.day=20;S.advance(s);const late=S.report(s,m.id,p);assert.ok(late.certainty>early.certainty);assert.ok(late.potentialRange[1]-late.potentialRange[0]<=early.potentialRange[1]-early.potentialRange[0]);assert.equal(late.exactOverall,71);});
+test("T2 persisted mission remains completed after reload",()=>{const s=fresh();const m=S.start(s,{playerId:"p",duration:3}).mission;s.day=13;S.advance(s);const copy=JSON.parse(JSON.stringify(s));assert.equal(S.report(copy,m.id,{id:"p",overall:75}).status,"complete");});
