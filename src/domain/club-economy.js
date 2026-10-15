@@ -15,7 +15,29 @@
       currentBudget:Number.isFinite(budget)&&club?.budget!=null?budget:null,
       rosterSize:size,source:"pro_life_estimate",readOnly:true};
   }
-  const api={estimate,VERSION:"m04.1"};
+  // M04.2: side-by-side economic scenarios, never mutate a club.
+  function scenarios(club){
+    const base=estimate(club);
+    const levels=[
+      {id:"conservative",label:"Conservador",multiplier:.7},
+      {id:"standard",label:"Padrão",multiplier:1},
+      {id:"ambitious",label:"Ambicioso",multiplier:1.5}
+    ];
+    return levels.map(level=>({
+      id:level.id,label:level.label,clubId:base.clubId,
+      estimatedClubValue:base.economicValue,
+      proposedTransferBudget:Math.round(base.suggestedTransferBudget*level.multiplier/100000)*100000,
+      existingBudget:base.currentBudget,
+      readOnly:true,source:"pro_life_scenario"
+    }));
+  }
+  function compare(clubs){
+    return (Array.isArray(clubs)?clubs:[]).filter(c=>c&&c.id).map(c=>({
+      clubId:c.id,leagueId:c.leagueId||null,...estimate(c),
+      scenarios:scenarios(c)
+    }));
+  }
+  const api={estimate,scenarios,compare,VERSION:"m04.2"};
   root.ProLifeClubEconomy=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
