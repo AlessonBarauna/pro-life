@@ -8366,7 +8366,12 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (el.hasAttribute("data-coach-deal-open")) { V?.openDeal(el.getAttribute("data-coach-deal-open")); render(); return; }
     if (el.hasAttribute("data-coach-deal-close")) { V?.closeDeal(); render(); return; }
     if(el.hasAttribute("data-coach-market-area")) { V?.setMarketArea(el.getAttribute("data-coach-market-area")); render(); return; }
-    if(el.hasAttribute("data-coach-scout-apply")) { V?.setScoutFilters(document.querySelector("[data-coach-scout-search]")?.value, document.querySelector("[data-coach-scout-position]")?.value); render(); return; }
+    if(el.hasAttribute("data-coach-scout-apply")) { V?.setScoutFilters(document.querySelector("[data-coach-scout-search]")?.value, document.querySelector("[data-coach-scout-position]")?.value, {
+      club:document.querySelector("[data-coach-scout-club]")?.value,
+      country:document.querySelector("[data-coach-scout-country]")?.value,
+      age:document.querySelector("[data-coach-scout-age]")?.value,
+      category:document.querySelector("[data-coach-scout-category]")?.value
+    }); render(); return; }
     if(el.hasAttribute("data-coach-start-scout")){
       const scout=window.ProLifeCoachScoutingV2;
       if(!scout?.start){toast("Sistema de observacao indisponivel.");return;}
