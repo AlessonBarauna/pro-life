@@ -1606,6 +1606,17 @@
     const bench=available.slice().sort((x,y)=>(rank.get(String(x.id))??99999)-(rank.get(String(y.id))??99999)).slice(0,7);
     const benchIds=new Set(bench.map(p=>String(p.id)));
     if(actions.some(a=>!benchIds.has(a.inId)))return false;
+    const byId=new Map(team.roster.map(p=>[String(p.id),p]));
+    // Every substitution must remove a currently playing player.
+    // Prevent accidentally deploying a goalkeeper in an outfield slot, or vice versa.
+    const active=new Set(starters);
+    for(const a of actions.slice().sort((x,y)=>x.minute-y.minute)){
+      if(!active.has(a.outId)||active.has(a.inId))return false;
+      const outgoing=byId.get(a.outId),incoming=byId.get(a.inId);
+      if(!outgoing||!incoming||outgoing.injury||Number(outgoing.suspension)>0)return false;
+      if((String(outgoing.pos)==="GOL")!==(String(incoming.pos)==="GOL"))return false;
+      active.delete(a.outId);active.add(a.inId);
+    }
     const seenOut=new Set(),seenIn=new Set();
     for(const a of actions){
       const out=a.side+":"+a.outId,incoming=a.side+":"+a.inId;
@@ -1615,6 +1626,10 @@
     coachActionPlans.set(s,{home:fixture.home,away:fixture.away,date:fixture.date,
       actions:actions.map(a=>({type:"substitution",side:a.side,minute:a.minute,outId:a.outId,inId:a.inId}))});
     return true;
+  }
+  function coachActionPlan(s){
+    const plan=s&&coachActionPlans.get(s);
+    return plan?{home:plan.home,away:plan.away,date:plan.date,actions:plan.actions.map(a=>({...a}))}:null;
   }
   function registerMatch(s, rng, homeId, awayId, meta, leagueMatch) {
     const hc = club(s, homeId), ac = club(s, awayId);
@@ -3010,6 +3025,7 @@
     simulateSteps,
     createCoachLiveController,
     scheduleCoachActions,
+    coachActionPlan,
     selected,
     overall,
     playerDevelopment: root.ProLifePlayerDevelopment,
