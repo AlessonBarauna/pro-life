@@ -9226,11 +9226,11 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         const home=D.club(state,next.home),away=D.club(state,next.away);
         const side=state.clubId===next.home?0:1;
         const rng=new D.Random(state.rng);
-        const live=D.createCoachLiveController(home,away,rng,state);
-        if(!live){toast("Prévia da partida indisponível.");return;}
         const existingPlan=D.coachActionPlan?.(state);
         const existingActions=existingPlan?.home===next.home&&existingPlan?.away===next.away&&existingPlan.date===next.date?
           existingPlan.actions:[];
+        const live=D.createCoachLiveController(home,away,rng,state,existingActions);
+        if(!live){toast("Prévia da partida indisponível.");return;}
         window.ProLifeLiveMatch.start({match:{events:[],participants:[],competitionName:next.competitionName||"Partida"},
           home,away,mode:"coach",officialControl:live,officialSide:side,
           onOfficialFinish:(actions)=>{
