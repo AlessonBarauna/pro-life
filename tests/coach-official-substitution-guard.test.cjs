@@ -17,3 +17,10 @@ test("Existing official simulation still records substitution participation",()=
  assert.match(src,/m\.participation\[incoming\.id\]/);
  assert.match(src,/type:"substitution"/);
 });
+
+test("Official queue verifies active XI, goalkeeper role and offers a read-only planning snapshot",()=>{
+ assert.match(src,/if\(!active\.has\(a\.outId\)\|\|active\.has\(a\.inId\)\)return false/);
+ assert.match(src,/String\(outgoing\.pos\)==="GOL"/);
+ assert.match(src,/function coachActionPlan\(s\)/);
+ assert.match(src,/actions:plan\.actions\.map\(a=>\(\{\.\.\.a\}\)\)/);
+});
