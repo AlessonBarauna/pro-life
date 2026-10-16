@@ -1575,6 +1575,29 @@
         used[side].add(String(inId));windows[side]=nextWindows;substitutions[side]++;
         return true;
       },
+      snapshot(side){
+        if(![0,1].includes(side))return null;
+        const field=side===0?home:away;
+        const roster=Array.isArray(field?.roster)?field.roster:[];
+        const participation=last?.participation||{};
+        const starters=new Set((field.lineup||[]).map(String));
+        const incoming=new Set(actions.filter(a=>a.side===side).map(a=>a.inId));
+        const outgoing=new Set(actions.filter(a=>a.side===side).map(a=>a.outId));
+        const onField=new Set([...starters,...incoming].filter(id=>!outgoing.has(id)));
+        const rank=new Map((context?.coachCareer?.benchOrder||[]).map((id,i)=>[String(id),i]));
+        const reserved=roster.filter(p=>p&&!starters.has(String(p.id))&&!p.injury&&
+          !(Number(p.suspension)>0)&&!p._competitionSuspended&&Number(p.condition??100)>35)
+          .sort((a,b)=>(rank.get(String(a.id))??99999)-(rank.get(String(b.id))??99999)).slice(0,7);
+        return {minute,side,players:roster.filter(p=>onField.has(String(p.id))).map(p=>({
+            id:String(p.id),name:String(p.name||p.id),pos:String(p.pos||""),
+            condition:Number(p.condition??100),rating:Number(last?.ratings?.[p.id]??0),
+            minutes:participation[p.id]?.minutes??0
+          })),bench:reserved.filter(p=>!used[side].has(String(p.id))).map(p=>({
+            id:String(p.id),name:String(p.name||p.id),pos:String(p.pos||""),
+            condition:Number(p.condition??100)
+          })),substitutions:substitutions[side],windows:windows[side].size,
+          history:actions.filter(a=>a.side===side).map(a=>({...a}))};
+      },
       get minute(){return minute;},get finished(){return finished;},
       get result(){return finished?result:null;},
       get actions(){return actions.map(a=>({...a}));},
