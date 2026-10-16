@@ -1618,7 +1618,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       if(state.offers?.length)taskItems.push(`<article class="central-v3-task central-v3-task-urgent"><small>MERCADO · AÇÃO NECESSÁRIA</small><b>${state.offers.length} proposta${state.offers.length>1?"s":""} aguardando análise</b><span>Resposta pendente</span><button data-page="proposals">Analisar</button></article>`);
       if(taskItems.length<4)taskItems.push(`<article class="central-v3-task"><small>TREINO</small><b>${esc(H.training.focus||"Rotina diária")}</b><span>${esc(H.training.next||"Disponível")}</span><button data-page="training">Abrir treino</button></article>`);
       const decisionTask=state.decision?`<article class="central-v3-task central-v3-decision" role="status"><small>DECISÃO URGENTE</small><b>${esc(state.decision.title)}</b><span>${esc(state.decision.body)}</span><div class="actions">${state.decision.choices.map(([id,label])=>`<button data-choice="${id}">${esc(label)}</button>`).join("")}</div></article>`:"";
-      const nextActions=next?`<div class="central-v3-actions"><button class="primary central-v3-action-main" data-live-match>Acompanhar partida</button><button class="central-v3-action-secondary" data-simulate="nextCommitment">Simular até o jogo</button><button class="central-v3-action-quiet" data-advance="1">Avançar 1 dia</button></div>`:`<div class="central-v3-actions"><button class="primary central-v3-action-main" data-page="calendar">Abrir calendário</button><button class="central-v3-action-quiet" data-advance="1">Avançar 1 dia</button></div>`;
+      const nextActions=next?`<div class="central-v3-actions"><button class="primary central-v3-action-main" data-live-match>Acompanhar partida</button>${state.mode==="coach"?'<button class="central-v3-action-secondary" data-coach-plan-official-sub>Planejar substituição oficial</button>':""}<button class="central-v3-action-secondary" data-simulate="nextCommitment">Simular até o jogo</button><button class="central-v3-action-quiet" data-advance="1">Avançar 1 dia</button></div>`:`<div class="central-v3-actions"><button class="primary central-v3-action-main" data-page="calendar">Abrir calendário</button><button class="central-v3-action-quiet" data-advance="1">Avançar 1 dia</button></div>`;
       return `<div class="career-dashboard career-central-v3">
         <header class="central-v3-header"><div><span>TEMPORADA ${safe(state.season)}</span><time>${dayDate(state.day)}</time><h1>Central</h1></div><p>${esc(next?.competitionName||H.table.league||"Temporada atual")} <b>·</b> ${esc(next?.stage||"Visão geral")}</p></header>
         <section class="central-v3-hero central-main-match">
@@ -9175,6 +9175,48 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       box.hidden=false; return;
     }
     if (b.hasAttribute("data-close-match-detail")) { const box=document.getElementById("recent-match-detail"); if(box) box.hidden=true; document.querySelectorAll("[data-recent-match]").forEach(el=>el.setAttribute("aria-expanded","false")); return; }
+    if(b.hasAttribute("data-coach-plan-official-sub")){
+      if(state?.mode!=="coach")return;
+      const next=D.nextCommitment(state),club=D.club(state);
+      if(!next||!club||next.date!==state.day+1||next.national){
+        toast("O planejamento oficial fica disponível na véspera de um jogo do clube.");return;
+      }
+      const ids=(club.lineup||[]).map(String);
+      const valid=p=>p&&!p.injury&&!(Number(p.suspension)>0)&&Number(p.condition??100)>35;
+      const starters=ids.map(id=>club.roster.find(p=>String(p.id)===id)).filter(valid);
+      const order=state.coachCareer?.benchOrder||[],rank=new Map(order.map((id,i)=>[String(id),i]));
+      const bench=club.roster.filter(p=>valid(p)&&!ids.includes(String(p.id)))
+        .sort((a,b)=>(rank.get(String(a.id))??99999)-(rank.get(String(b.id))??99999)).slice(0,7);
+      if(starters.length!==11||!bench.length){toast("Defina um XI válido e reservas disponíveis antes do jogo.");return;}
+      const option=p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+' · '+esc(p.pos)+' · GER '+D.overall(p)+'</option>';
+      const old=document.getElementById("coach-official-sub-planner");old?.remove();
+      const modal=document.createElement("div");modal.id="coach-official-sub-planner";modal.className="simulation-stop-backdrop";
+      modal.innerHTML='<section class="simulation-stop-dialog" role="dialog" aria-modal="true" aria-label="Planejar substituição oficial">'+
+        '<div class="tag">PARTIDA OFICIAL · PRÉ-JOGO</div><h2>Planejar substituição</h2>'+
+        '<p>A troca será aplicada ao resultado oficial no minuto escolhido. Esta tela não permite editar a partida depois de iniciada.</p>'+
+        '<label>Jogador que sai <select data-official-sub-out>'+starters.map(option).join("")+'</select></label>'+
+        '<label>Jogador que entra <select data-official-sub-in>'+bench.map(option).join("")+'</select></label>'+
+        '<label>Minuto <input type="number" data-official-sub-minute min="1" max="90" value="65"></label>'+
+        '<div class="actions"><button type="button" class="primary" data-official-sub-save>Agendar troca</button>'+
+        '<button type="button" data-official-sub-close>Cancelar</button></div></section>';
+      document.body.appendChild(modal);return;
+    }
+    if(b.hasAttribute("data-official-sub-close")){
+      document.getElementById("coach-official-sub-planner")?.remove();return;
+    }
+    if(b.hasAttribute("data-official-sub-save")){
+      const next=D.nextCommitment(state),modal=document.getElementById("coach-official-sub-planner");
+      const outId=modal?.querySelector("[data-official-sub-out]")?.value;
+      const inId=modal?.querySelector("[data-official-sub-in]")?.value;
+      const minute=Number(modal?.querySelector("[data-official-sub-minute]")?.value);
+      if(!next||next.date!==state.day+1||!Number.isInteger(minute)||minute<1||minute>90||outId===inId){
+        toast("Jogadores ou minuto inválidos.");return;
+      }
+      const side=state.clubId===next.home?0:1;
+      const ok=D.scheduleCoachActions?.(state,next,[{type:"substitution",side,minute,outId,inId}]);
+      if(!ok){toast("Não foi possível agendar a substituição oficial.");return;}
+      modal.remove();toast("Troca oficial agendada para "+minute+"'. Agora acompanhe ou simule o jogo.");return;
+    }
     if (b.hasAttribute("data-live-match")) {
       const next = D.nextCommitment(state);
       if (!next) { toast("Não há próximo jogo agendado."); return; }
