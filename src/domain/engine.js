@@ -1591,7 +1591,7 @@
         return {minute,side,players:roster.filter(p=>onField.has(String(p.id))).map(p=>({
             id:String(p.id),name:String(p.name||p.id),pos:String(p.pos||""),
             condition:Number(p.condition??100),rating:Number(last?.ratings?.[p.id]??0),
-            minutes:participation[p.id]?.minutes??0
+            minutes:Math.max(0,minute-Number(participation[p.id]?.entryMinute??0))
           })),bench:reserved.filter(p=>!used[side].has(String(p.id))).map(p=>({
             id:String(p.id),name:String(p.name||p.id),pos:String(p.pos||""),
             condition:Number(p.condition??100)
