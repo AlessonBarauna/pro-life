@@ -9234,14 +9234,23 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         window.ProLifeLiveMatch.start({match:{events:[],participants:[],competitionName:next.competitionName||"Partida"},
           home,away,mode:"coach",officialControl:live,officialSide:side,
           onOfficialFinish:(actions)=>{
-            const all=[...existingActions,...actions].sort((a,b)=>a.minute-b.minute);
-            if(all.length&&!D.scheduleCoachActions(state,next,all)){
-              toast("Substituições inválidas. A partida não foi confirmada.");return false;
+            if(!live.finished||!live.result){
+              toast("A partida ainda não terminou.");return false;
+            }
+            if(!D.stageCoachLiveResult?.(state,next,live)){
+              toast("Resultado oficial indisponível. Nenhuma partida foi confirmada.");return false;
             }
             const prior=(state.matches||[]).length;
             try{D.advance(state,1);}
-            catch(error){toast("Erro ao concluir a partida: "+error.message);return false;}
-            if((state.matches||[]).length===prior){toast("Partida não registrada no calendário. Confira os resultados.");}
+            catch(error){
+              D.discardCoachLiveResult?.(state);
+              toast("Erro ao concluir a partida: "+error.message);return false;
+            }
+            D.discardCoachLiveResult?.(state);
+            const played=(state.matches||[]).find(m=>m.date===state.day&&m.home===next.home&&m.away===next.away);
+            if(!played||(state.matches||[]).length===prior){
+              toast("Partida não registrada no calendário. Confira os resultados.");return false;
+            }
             persist();render();return true;
           }});
         return;
