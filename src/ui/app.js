@@ -100,7 +100,7 @@
     if(!economy?.sponsorshipOffers||!club||!Array.isArray(brands))return;
     const offers=economy.sponsorshipOffers(state,club,brands);
     const replies=(state.coachCareer?.finance?.sponsorshipOffers||[])
-      .filter(o=>["brand_accepted","brand_rejected"].includes(o.status));
+      .filter(o=>["brand_accepted","brand_rejected","brand_countered"].includes(o.status));
     const notification=replies.map(o=>({id:o.id+":response",offer:o,response:true}))
       .concat(offers.map(o=>({id:o.id,offer:o,response:false})));
     const entry=notification.find(x=>!coachSponsorPopupSeen.has(x.id));
@@ -8598,6 +8598,13 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         }
       }
       try{A.execute(state,"coachDecideSponsorship",{offerId,decision:counter?"counter":"reject",amount});persist();render();}
+      catch(error){toast(error.message);}
+      return;
+    }
+    const sponsorDecline=event.target.closest?.("[data-coach-sponsor-decline]");
+    if(sponsorDecline&&state?.mode==="coach"){
+      const id=sponsorDecline.getAttribute("data-coach-sponsor-decline");
+      try{window.ProLifeClubEconomy.rejectBrandCounter(state,id);persist();render();}
       catch(error){toast(error.message);}
       return;
     }
