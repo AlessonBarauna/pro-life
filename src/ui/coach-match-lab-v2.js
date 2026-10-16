@@ -22,11 +22,43 @@ function decision(preview,{side=0,tactic,incomingStrength,outgoingStrength}={}){
  preview.actions.push({minute:preview.match.minute,side,tactic:tactic??null,incomingStrength:incomingStrength??null});
  return {ok:true};
 }
+function substitutionsStatus(preview,side){
+ const m=preview?.match;
+ const actions=(preview?.actions||[]).filter(a=>a.side===side&&a.inId!=null);
+ const windows=[...new Set(actions.filter(a=>a.minute!==45).map(a=>a.minute))];
+ const used=side===0?Number(m?.home?.subs||0):Number(m?.away?.subs||0);
+ return {used,remaining:Math.max(0,5-used),windowsUsed:windows.length,
+   windowsRemaining:Math.max(0,3-windows.length),history:actions.map(a=>({
+      minute:a.minute,outId:a.outId,inId:a.inId
+   }))};
+}
+function suggestedSubstitutions(preview,side,roster){
+ const line=preview?.lineups?.[side],minute=Number(preview?.match?.minute||0);
+ if(!line||!Array.isArray(roster))return [];
+ const byId=id=>roster.find(p=>String(p.id)===String(id));
+ const fitness=p=>Math.max(0,Math.min(100,Number(p?.condition??p?.fitness??100)));
+ const rating=p=>Number(p?.ovr??p?.overall??70);
+ return line.starters.map(id=>byId(id)).filter(Boolean).map(out=>{
+   const available=line.bench.map(byId).filter(p=>p&&!p.injury&&!(Number(p.suspension)>0)&&
+     (String(p.pos||"")===String(out.pos||"")));
+   const incoming=available.sort((a,b)=>rating(b)-rating(a))[0];
+   if(!incoming)return null;
+   const fatigue=Math.max(0,minute-45)*.35;
+   const condition=fitness(out)-fatigue;
+   return {outId:String(out.id),inId:String(incoming.id),
+     reason:condition<65?"Cansaço / condição física":rating(incoming)>rating(out)+5?"Opção de maior GER":"Rotação",
+     urgency:Math.max(0,75-condition)+Math.max(0,rating(incoming)-rating(out))};
+ }).filter(x=>x&&x.urgency>4).sort((a,b)=>b.urgency-a.urgency).slice(0,3);
+}
 function swapPlayer(preview,side,outId,inId,roster){
  if(!preview||!([0,1].includes(side)))return {ok:false,reason:"Equipe indisponivel"};
  const line=preview.lineups?.[side];
  if(!line||!Array.isArray(roster))return {ok:false,reason:"Elenco indisponivel"};
  const oi=line.starters.indexOf(String(outId)),bi=line.bench.indexOf(String(inId));
+ const status=substitutionsStatus(preview,side);
+ if(status.remaining<=0)return {ok:false,reason:"Cinco substituicoes utilizadas"};
+ if(status.windowsRemaining<=0&&!status.history.some(x=>x.minute===preview.match.minute)&&preview.match.minute!==45)
+   return {ok:false,reason:"Tres janelas de substituicao utilizadas"};
  if(oi<0||bi<0||String(outId)===String(inId))return {ok:false,reason:"Troca invalida"};
  const incoming=roster.find(p=>String(p.id)===String(inId));
  const outgoing=roster.find(p=>String(p.id)===String(outId));
@@ -48,7 +80,7 @@ function summary(preview){
  if(!m)return null;
  return {experimental:true,minute:m.minute,score:m.score.slice(),shots:m.shots.slice(),tactics:[m.home.tactic,m.away.tactic],substitutions:[m.home.subs,m.away.subs],actions:preview.actions.length};
 }
-const api=Object.freeze({createPreview,decision,swapPlayer,advance,summary,strength});
+const api=Object.freeze({createPreview,decision,swapPlayer,advance,summary,strength,substitutionsStatus,suggestedSubstitutions});
 root.ProLifeCoachMatchLabV2=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
