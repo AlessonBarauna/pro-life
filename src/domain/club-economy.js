@@ -175,6 +175,14 @@
     }
     return resolved;
   }
+  function rejectBrandCounter(state,offerId){
+    const offers=state?.coachCareer?.finance?.sponsorshipOffers;
+    const offer=Array.isArray(offers)?offers.find(x=>x.id===offerId):null;
+    if(!offer||offer.status!=="brand_countered")throw Error("Resposta de marca indisponivel.");
+    offer.status="rejected";
+    offer.rejectedDay=Number(state.day);
+    return offer;
+  }
   // M04.8: explicit contract registration; no automatic funding or retroactive receivables.
   function registerRevenueContract(state,clubId,input){
     if(!state||!state.coachCareer||String(state.clubId)!==String(clubId))throw Error("Clube da carreira invalido.");
@@ -219,7 +227,7 @@
     }
     return events.sort((a,b)=>a.dueDay-b.dueDay||String(a.contractId).localeCompare(String(b.contractId))).slice(0,36);
   }
-  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,registerRevenueContract,revenueContractsSnapshot,revenueSchedule,sponsorshipCandidates,sponsorshipOffers,acceptSponsorshipOffer,decideSponsorship,settleSponsorshipReplies,VERSION:"m04.12"};
+  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,registerRevenueContract,revenueContractsSnapshot,revenueSchedule,sponsorshipCandidates,sponsorshipOffers,acceptSponsorshipOffer,decideSponsorship,settleSponsorshipReplies,rejectBrandCounter,VERSION:"m04.14"};
   root.ProLifeClubEconomy=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
