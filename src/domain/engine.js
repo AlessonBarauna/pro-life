@@ -1531,6 +1531,49 @@
       return;
     }
   }
+  // Unsaved official-simulator controller. Caller may submit decisions between minutes.
+  // A completed result must be committed through the existing registerMatch pipeline,
+  // never directly from this controller.
+  function createCoachLiveController(home,away,rng,context){
+    if(!home||!away||!rng||context?.mode!=="coach")return null;
+    const actions=[],runner=simulateSteps(home,away,rng,context,actions);
+    let minute=0,finished=false,result=null,last=null;
+    const used=[new Set(),new Set()],windows=[new Set(),new Set()];
+    const substitutions=[0,0];
+    return {
+      advanceTo(target){
+        if(finished||!Number.isInteger(target)||target<minute||target>94)return null;
+        while(minute<target&&!finished){
+          const next=runner.next();
+          if(next.done){finished=true;result=next.value;break;}
+          minute=next.value.minute;last=next.value.match;
+        }
+        return {minute,finished,score:[last?.hg||0,last?.ag||0]};
+      },
+      substitute(side,outId,inId){
+        if(finished||minute>=90||![0,1].includes(side))return false;
+        const field=(side===0?home:away);
+        if(!field||substitutions[side]>=5||used[side].has(String(inId)))return false;
+        const windowMinute=minute+1;
+        const nextWindows=new Set(windows[side]);if(windowMinute!==46)nextWindows.add(windowMinute);
+        if(nextWindows.size>3)return false;
+        const outgoing=field.roster?.find(p=>String(p.id)===String(outId));
+        const incoming=field.roster?.find(p=>String(p.id)===String(inId));
+        const participants=(last?.participation||{});
+        if(!outgoing||!incoming||!participants[outId]||participants[outId].exitMinute<minute||
+          participants[inId]||incoming.injury||Number(incoming.suspension)>0||
+          incoming._competitionSuspended||Number(incoming.condition??100)<=35)return false;
+        actions.push({type:"substitution",side,minute:windowMinute,outId:String(outId),inId:String(inId)});
+        used[side].add(String(inId));windows[side]=nextWindows;substitutions[side]++;
+        return true;
+      },
+      get minute(){return minute;},get finished(){return finished;},
+      get result(){return finished?result:null;},
+      get actions(){return actions.map(a=>({...a}));},
+      get substitutionCounts(){return substitutions.slice();},
+      get windowCounts(){return windows.map(w=>w.size);}
+    };
+  }
   // Ephemeral coach-only action queue. Never serialized into career saves.
   // The matching fixture consumes the queue once, before official simulation.
   const coachActionPlans=new WeakMap();
@@ -2957,6 +3000,7 @@
     recordDevelopment,
     simulate,
     simulateSteps,
+    createCoachLiveController,
     scheduleCoachActions,
     selected,
     overall,
