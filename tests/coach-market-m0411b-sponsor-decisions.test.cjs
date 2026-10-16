@@ -18,10 +18,15 @@ test("M04.11b rejection blocks repeat and never creates a contract",()=>{
 test("M04.11b counteroffer persists and acceptance creates one future contract",()=>{
  const s=state(),o=E.sponsorshipOffers(s,s.clubs[0],C.brands)[0];
  assert.throws(()=>E.decideSponsorship(s,s.clubs[0],C.brands,o.id,"counter",o.annualAmount*2));
- E.decideSponsorship(s,s.clubs[0],C.brands,o.id,"counter",o.annualAmount);
+ const counter=E.decideSponsorship(s,s.clubs[0],C.brands,o.id,"counter",o.annualAmount);
+ assert.equal(counter.status,"awaiting_brand");
+ assert.throws(()=>E.acceptSponsorshipOffer(s,s.clubs[0],C.brands,o.id));
+ s.day=128;
+ E.settleSponsorshipReplies(s);
+ assert.equal(counter.status,"brand_accepted");
  const contract=E.acceptSponsorshipOffer(s,s.clubs[0],C.brands,o.id);
  assert.equal(contract.postedAmount,0);
- assert.equal(contract.startDay,126);
+ assert.equal(contract.startDay,129);
  assert.equal(s.coachCareer.finance.revenueContracts.length,1);
  assert.throws(()=>E.acceptSponsorshipOffer(s,s.clubs[0],C.brands,o.id));
  assert.equal(s.clubs[0].budget,112665000);
