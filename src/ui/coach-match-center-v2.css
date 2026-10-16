@@ -36,3 +36,12 @@
 .lm-pitch .lm-player-name{max-width:132px;font-size:13px;font-weight:800;line-height:1.2;padding:4px 7px;letter-spacing:.01em;border:1px solid #ffffff22;box-shadow:0 2px 8px #0009}
 .lm-pitch .lm-player-wrap .lm-player{width:29px;height:29px;font-size:11px}
 @media(max-width:780px){.lm-pitch .lm-player-name{font-size:11px;max-width:98px;padding:3px 5px}}
+
+/* Official live-match squad swap */
+.lm-coach-squad h4{color:#d6efed;font-size:11px;letter-spacing:.08em;margin:15px 0 8px}
+.lm-squad-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.lm-squad-chip{display:flex;flex-direction:column;text-align:left;gap:5px;min-width:0;padding:10px;border-radius:6px;border:1px solid #47606f;background:#142635;color:#fff;cursor:pointer}
+.lm-squad-chip small{font-size:10px;color:#a8bac5}.lm-squad-chip b{font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.lm-squad-chip.bench{border-color:#a0c441}.lm-squad-chip:hover,.lm-squad-chip:focus-visible{outline:2px solid #d3fc3a}
+.lm-squad-chip:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:420px){.lm-squad-list{grid-template-columns:1fr 1fr}.lm-squad-chip{padding:8px}}
