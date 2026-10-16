@@ -99,24 +99,30 @@
     const club=D.club?.(state);
     if(!economy?.sponsorshipOffers||!club||!Array.isArray(brands))return;
     const offers=economy.sponsorshipOffers(state,club,brands);
-    const pending=offers.find(o=>!coachSponsorPopupSeen.has(o.id));
-    if(!pending)return;
+    const replies=(state.coachCareer?.finance?.sponsorshipOffers||[])
+      .filter(o=>["brand_accepted","brand_rejected"].includes(o.status));
+    const notification=replies.map(o=>({id:o.id+":response",offer:o,response:true}))
+      .concat(offers.map(o=>({id:o.id,offer:o,response:false})));
+    const entry=notification.find(x=>!coachSponsorPopupSeen.has(x.id));
+    if(!entry)return;
+    const pending=entry.offer;
     // Wait until the player/coach pending-decision queue has had a chance to show its popup.
     // Never mark a proposal as shown while another modal is in front of it.
     clearTimeout(coachSponsorPopupTimer);
     coachSponsorPopupTimer=setTimeout(()=>{
       if(!state||state.mode!=="coach"||document.getElementById("simulation-stop-modal")||
         document.getElementById("callup-modal")||document.querySelector(".cine-backdrop"))return;
-      if(coachSponsorPopupSeen.has(pending.id))return;
+      if(coachSponsorPopupSeen.has(entry.id))return;
       const nowClub=D.club?.(state);
       const current=window.ProLifeClubEconomy?.sponsorshipOffers?.(
         state,nowClub,window.ProLifeCommercial?.brands||[])||[];
-      if(!current.some(o=>o.id===pending.id))return;
+      if(!entry.response&&!current.some(o=>o.id===pending.id))return;
+      if(entry.response&&!(state.coachCareer?.finance?.sponsorshipOffers||[]).some(o=>o.id===pending.id&&o.status===pending.status))return;
       showSimulationStop({type:"coach-sponsor",id:pending.id,
-        title:"Nova proposta de patrocínio — "+pending.brandName,
-        message:pending.label+" · R$ "+pending.annualAmount.toLocaleString("pt-BR")+
+        title:entry.response?"Resposta de patrocínio — "+pending.brandName:"Nova proposta de patrocínio — "+pending.brandName,
+        message:entry.response?pending.brandResponse:pending.label+" · R$ "+pending.annualAmount.toLocaleString("pt-BR")+
           " por ano. Analise a proposta na área financeira do clube."});
-      coachSponsorPopupSeen.add(pending.id);
+      coachSponsorPopupSeen.add(entry.id);
     },150);
   }
   function ensurePendingDecisionPopup(force=false) {
