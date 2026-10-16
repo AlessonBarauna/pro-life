@@ -9222,6 +9222,30 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const next = D.nextCommitment(state);
       if (!next) { toast("Não há próximo jogo agendado."); return; }
       if (next.date !== state.day + 1) { toast("Use Simular até o jogo primeiro. O acompanhamento abre na véspera da partida."); return; }
+      if(state.mode==="coach"&&!next.national&&D.createCoachLiveController){
+        const home=D.club(state,next.home),away=D.club(state,next.away);
+        const side=state.clubId===next.home?0:1;
+        const rng=new D.Random(state.rng);
+        const live=D.createCoachLiveController(home,away,rng,state);
+        if(!live){toast("Prévia da partida indisponível.");return;}
+        const existingPlan=D.coachActionPlan?.(state);
+        const existingActions=existingPlan?.home===next.home&&existingPlan?.away===next.away&&existingPlan.date===next.date?
+          existingPlan.actions:[];
+        window.ProLifeLiveMatch.start({match:{events:[],participants:[],competitionName:next.competitionName||"Partida"},
+          home,away,mode:"coach",officialControl:live,officialSide:side,
+          onOfficialFinish:(actions)=>{
+            const all=[...existingActions,...actions].sort((a,b)=>a.minute-b.minute);
+            if(all.length&&!D.scheduleCoachActions(state,next,all)){
+              toast("Substituições inválidas. A partida não foi confirmada.");return false;
+            }
+            const prior=(state.matches||[]).length;
+            try{D.advance(state,1);}
+            catch(error){toast("Erro ao concluir a partida: "+error.message);return false;}
+            if((state.matches||[]).length===prior){toast("Partida não registrada no calendário. Confira os resultados.");}
+            persist();render();return true;
+          }});
+        return;
+      }
       const before = next.national ? null : new Set(state.matches.map((m) => `${m.season}:${m.date}:${m.home}:${m.away}:${m.competitionId||m.leagueId||""}`));
       D.advance(state, 1);
       const played = next.national
