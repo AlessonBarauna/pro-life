@@ -1534,12 +1534,19 @@
   // Unsaved official-simulator controller. Caller may submit decisions between minutes.
   // A completed result must be committed through the existing registerMatch pipeline,
   // never directly from this controller.
-  function createCoachLiveController(home,away,rng,context){
+  function createCoachLiveController(home,away,rng,context,initialActions=[]){
     if(!home||!away||!rng||context?.mode!=="coach")return null;
-    const actions=[],runner=simulateSteps(home,away,rng,context,actions);
+    const actions=Array.isArray(initialActions)?initialActions.map(a=>({...a})):[];
+    const runner=simulateSteps(home,away,rng,context,actions);
     let minute=0,finished=false,result=null,last=null;
     const used=[new Set(),new Set()],windows=[new Set(),new Set()];
     const substitutions=[0,0];
+    for(const a of actions){
+      if(![0,1].includes(a.side))continue;
+      used[a.side].add(String(a.inId));
+      if(a.minute!==46)windows[a.side].add(a.minute);
+      substitutions[a.side]++;
+    }
     return {
       advanceTo(target){
         if(finished||!Number.isInteger(target)||target<minute||target>94)return null;
@@ -1581,8 +1588,8 @@
         const roster=Array.isArray(field?.roster)?field.roster:[];
         const participation=last?.participation||{};
         const starters=new Set((field.lineup||[]).map(String));
-        const incoming=new Set(actions.filter(a=>a.side===side).map(a=>a.inId));
-        const outgoing=new Set(actions.filter(a=>a.side===side).map(a=>a.outId));
+        const incoming=new Set(actions.filter(a=>a.side===side&&a.minute<=minute).map(a=>a.inId));
+        const outgoing=new Set(actions.filter(a=>a.side===side&&a.minute<=minute).map(a=>a.outId));
         const onField=new Set([...starters,...incoming].filter(id=>!outgoing.has(id)));
         const rank=new Map((context?.coachCareer?.benchOrder||[]).map((id,i)=>[String(id),i]));
         const reserved=roster.filter(p=>p&&!starters.has(String(p.id))&&!p.injury&&
@@ -1596,7 +1603,7 @@
             id:String(p.id),name:String(p.name||p.id),pos:String(p.pos||""),
             condition:Number(p.condition??100)
           })),substitutions:substitutions[side],windows:windows[side].size,
-          history:actions.filter(a=>a.side===side).map(a=>({...a}))};
+          history:actions.filter(a=>a.side===side&&a.minute<=minute).map(a=>({...a}))};
       },
       get minute(){return minute;},get finished(){return finished;},
       get result(){return finished?result:null;},
