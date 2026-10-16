@@ -45,7 +45,7 @@
     const side=session.officialSide,snap=live.snapshot(side);
     if(!snap)return "";
     const status=snap.substitutions+"/5 mudanças · "+snap.windows+"/3 janelas";
-    const canChange=snap.minute>0&&snap.minute<90&&snap.substitutions<5&&snap.windows<3&&snap.bench.length>0;
+    const canChange=snap.minute>0&&snap.minute<90&&snap.substitutions<5&&snap.bench.length>0;
     const entry=(p,kind)=>{
       const selectable=canChange&&(kind==="bench"||snap.bench.some(x=>(x.pos==="GOL")===(p.pos==="GOL")));
       return '<button type="button" class="lm-squad-chip '+kind+'" data-coach-squad="'+kind+'" data-coach-player="'+esc(p.id)+'" draggable="'+selectable+'" '+(!selectable?'disabled':'')+'><b>'+esc(p.name)+'</b><small>'+esc(p.pos)+' · Condição '+esc(p.condition)+'%'+(p.rating?' · Nota '+esc(p.rating):'')+'</small></button>';
