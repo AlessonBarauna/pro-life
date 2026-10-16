@@ -1593,7 +1593,7 @@
         const bench=new Set(eligible.sort((a,b)=>(orderRank.get(String(a.id))??99999)-(orderRank.get(String(b.id))??99999))
           .slice(0,7).map(p=>String(p.id)));
         const participants=(last?.participation||{});
-        if(!outgoing||!incoming||!bench.has(String(inId))||!participants[outId]||participants[outId].exitMinute<minute||
+        if(!outgoing||!incoming||((String(outgoing.pos)==="GOL")!==(String(incoming.pos)==="GOL"))||!bench.has(String(inId))||!participants[outId]||participants[outId].exitMinute<minute||
           participants[inId]||incoming.injury||Number(incoming.suspension)>0||
           incoming._competitionSuspended||Number(incoming.condition??100)<=35)return false;
         actions.push({type:"substitution",side,minute:windowMinute,outId:String(outId),inId:String(inId)});
