@@ -13,4 +13,6 @@ test("Official live controller rejects invalid and excessive substitutions",()=>
  assert.match(src,/nextWindows\.size>3/);
  assert.match(src,/incoming\.injury\|\|Number\(incoming\.suspension\)>0/);
  assert.match(src,/actions\.push\(\{type:"substitution"/);
+ assert.match(src,/bench\.has\(String\(inId\)\)/);
+ assert.match(src,/const reserveOrder=context\?\.coachCareer\?\.benchOrder/);
 });
