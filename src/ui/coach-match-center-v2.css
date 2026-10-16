@@ -45,3 +45,5 @@
 .lm-squad-chip.bench{border-color:#a0c441}.lm-squad-chip:hover,.lm-squad-chip:focus-visible{outline:2px solid #d3fc3a}
 .lm-squad-chip:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:420px){.lm-squad-list{grid-template-columns:1fr 1fr}.lm-squad-chip{padding:8px}}
+
+.lm-finish-error{margin:12px 0;padding:12px;border:1px solid #ff9a72;border-radius:6px;background:#3a2027;color:#fff;font-size:13px;line-height:1.5}
