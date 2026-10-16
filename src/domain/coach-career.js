@@ -439,6 +439,7 @@
     root.ProLifeCoachScoutingV2?.advance?.(s);
     settleInquiries(s,api);
     settleTransferReplies(s);
+    root.ProLifeClubEconomy?.settleSponsorshipReplies?.(s);
     recordPayrollForecast(s,api);
     if(s.day%7===0&&s.clubId){
       weeklyTraining(s,api);
