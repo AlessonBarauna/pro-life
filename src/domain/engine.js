@@ -1542,6 +1542,19 @@
     if(actions.length>5||actions.some(a=>a?.type!=="substitution"||a.side!==(s.clubId===fixture.home?0:1)||
       !Number.isInteger(a.minute)||a.minute<1||a.minute>90||
       typeof a.outId!=="string"||!a.outId||typeof a.inId!=="string"||!a.inId||a.outId===a.inId))return false;
+    // Maximum three substitution windows outside the half-time interval.
+    // Multiple changes in the same minute consume one window.
+    const windows=new Set(actions.filter(a=>a.minute!==45).map(a=>a.minute));
+    if(windows.size>3)return false;
+    const team=club(s,s.clubId);
+    if(!team||!Array.isArray(team.roster))return false;
+    const starters=new Set((team.lineup||[]).map(String));
+    const available=team.roster.filter(p=>p&&!starters.has(String(p.id))&&!p.injury&&
+      !(Number(p.suspension)>0)&&!p._competitionSuspended&&Number(p.condition??100)>35);
+    const rank=new Map((s.coachCareer?.benchOrder||[]).map((id,i)=>[String(id),i]));
+    const bench=available.slice().sort((x,y)=>(rank.get(String(x.id))??99999)-(rank.get(String(y.id))??99999)).slice(0,7);
+    const benchIds=new Set(bench.map(p=>String(p.id)));
+    if(actions.some(a=>!benchIds.has(a.inId)))return false;
     const seenOut=new Set(),seenIn=new Set();
     for(const a of actions){
       const out=a.side+":"+a.outId,incoming=a.side+":"+a.inId;
