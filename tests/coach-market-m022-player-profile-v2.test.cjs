@@ -16,3 +16,10 @@ test("M02 profile reuses scouting and transfer actions without changing save dat
  assert.match(source,/const selectedCooldown=/);
  assert.match(source,/cc-market-detail-actions/);
 });
+
+test("profile displays actual attributes and optional contract data",()=>{
+ assert.match(source,/const technical=selectedPlayer\?\.attrs/);
+ assert.match(source,/const contractItems=/);
+ assert.match(source,/Não informado/);
+ assert.match(source,/cc-market-detail-section/);
+});
