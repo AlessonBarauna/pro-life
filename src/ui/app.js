@@ -8529,7 +8529,19 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if(sponsorDecision&&state?.mode==="coach"){
       const counter=sponsorDecision.hasAttribute("data-coach-sponsor-counter");
       const offerId=sponsorDecision.getAttribute(counter?"data-coach-sponsor-counter":"data-coach-sponsor-reject");
-      const amount=counter?Number(sponsorDecision.getAttribute("data-coach-sponsor-amount")):null;
+      const base=Number(sponsorDecision.getAttribute("data-coach-sponsor-base"));
+      let amount=null;
+      if(counter){
+        const max=Math.round(base*1.2);
+        const answer=window.prompt("Proposta anual (R$). Informe um valor entre "+base.toLocaleString("pt-BR")+" e "+max.toLocaleString("pt-BR")+".",String(Math.round(base*1.1)));
+        if(answer===null)return;
+        const digits=answer.trim().replace(/[.\\s]/g,"").replace(",",".");
+        amount=Number(digits);
+        if(!Number.isSafeInteger(amount)||amount<base||amount>max){
+          toast("Valor inválido. Escolha um valor entre R$ "+base.toLocaleString("pt-BR")+" e R$ "+max.toLocaleString("pt-BR")+".");
+          return;
+        }
+      }
       try{A.execute(state,"coachDecideSponsorship",{offerId,decision:counter?"counter":"reject",amount});persist();render();}
       catch(error){toast(error.message);}
       return;
