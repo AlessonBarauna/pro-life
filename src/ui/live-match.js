@@ -38,14 +38,51 @@
       '<button type="button" data-live-lab-next '+(status.minute>=90?'disabled':'')+'>Avancar 10 min</button></div>'+labPlayerSelectors(preview))+'<div class="lm-mc-note"><b>Histórico da prévia:</b> '+(lab.substitutionsStatus(preview,session.labSide).history.map(h=>h.minute+"\u0027 "+(session.labSide===0?session.home:session.away)?.roster?.find(p=>String(p.id)===h.outId)?.name+" → "+(session.labSide===0?session.home:session.away)?.roster?.find(p=>String(p.id)===h.inId)?.name).join(" · ")||"Nenhuma troca")+'</div>'+
       '<div class="lm-mc-note"><b>Sugestões:</b> '+(lab.suggestedSubstitutions(preview,session.labSide,(session.labSide===0?session.home:session.away)?.roster||[]).map(x=>esc(x.reason)).join(" · ")||"Nenhuma no momento")+'</div></section>';
   }
-  function paint(){if(!session)return;const {match:m,home,away}=session,min=session.minute,[hg,ag]=scoreAt(m,min),heroPart=m.participation?.hero,hero=heroPart?min>=Number(heroPart.entryMinute||0)&&min<=Number(heroPart.exitMinute??94):m.participants?.flat().includes("hero"),heroRating=m.ratings?.hero;const visible=(m.events||[]).filter(e=>e.minute<=min).slice().sort((a,b)=>b.minute-a.minute).slice(0,9);const el=document.getElementById("live-match-overlay");if(!el)return;
-    el.innerHTML=`<div class="lm-shell"><header class="lm-header"><div><small>${esc(m.competitionName||"PARTIDA")}</small><b>${esc(home.name)} <strong>${hg} - ${ag}</strong> ${esc(away.name)}</b></div><div class="lm-clock">${min<46?"1º TEMPO":min<91?"2º TEMPO":"ACRÉSCIMOS"}<strong>${Math.min(min,94)}'</strong></div><button data-live-close ${min<94?'disabled':''}>${min<94?'EM JOGO':'CONTINUAR'}</button></header><main class="lm-layout"><section class="lm-pitch"><div class="lm-half"></div><div class="lm-circle"></div>${session.coach&&root.ProLifeMatchPitchV2?coachPitch(min,home,away):`${Array.from({length:11},(_,i)=>dot(i,0,min)).join("")}${Array.from({length:11},(_,i)=>dot(i,1,min)).join("")}<span class="lm-ball" style="left:${48+Math.sin(min*.41)*30}%;top:${48+Math.cos(min*.29)*31}%"></span>`}</section><aside class="lm-panel"><div class="lm-score"><span>${esc(home.name)}</span><strong>${hg} - ${ag}</strong><span>${esc(away.name)}</span></div>${hero?`<div class="lm-hero"><small>SEU JOGADOR</small><b>Nota ${heroRating||"—"}</b><span>${(m.offensiveStats?.hero?.goals||0)} gol(s) · ${(m.playerStats?.hero?.assists||0)} assist. · ${m.playerStats?.hero?.minutes||0} min</span></div>`:""}${session.coach&&root.ProLifeCoachMatchCenterV2?root.ProLifeCoachMatchCenterV2.tabs(session.tab)+root.ProLifeCoachMatchCenterV2.panel(m,min,session.tab,{home,away})+(session.tab==="taticas"?laboratory():""):`<h3>ACONTECIMENTOS</h3><div class="lm-feed">${visible.length?visible.map(e=>`<article class="${e.type}"><b>${e.minute}'</b><span>${esc(e.text)}</span></article>`).join(""):'<p>A partida começou. As equipes estudam os espaços.</p>'}</div>`}</aside></main><footer class="lm-controls"><button data-live-speed="1" class="${session.speed===1?'active':''}">1x</button><button data-live-speed="2" class="${session.speed===2?'active':''}">2x</button><button data-live-speed="4" class="${session.speed===4?'active':''}">4x</button><button data-live-finish>Simular restante</button>${session.coach?`<button data-live-pause aria-pressed="${session.paused}">${session.paused?"Retomar":"Pausar"}</button>`:""}<span>${min>=94?`Finalizações ${m.shots?.[0]||0} - ${m.shots?.[1]||0} · xG ${m.xg?.[0]||0} - ${m.xg?.[1]||0}`:"Estatísticas completas após o apito final"}</span></footer></div>`;
+  // Manager-only live decision session. Does not write a match or save on its own.
+  function interactiveControls(){
+    const live=session?.officialControl;
+    if(!live)return "";
+    const side=session.officialSide;
+    const snap=live.snapshot(side);
+    if(!snap)return "";
+    const status=snap.substitutions+"/5 mudanças · "+snap.windows+"/3 janelas";
+    const players=snap.players.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+' · '+esc(p.pos)+' · '+esc(p.condition)+'%</option>').join("");
+    const bench=snap.bench.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+' · '+esc(p.pos)+' · '+esc(p.condition)+'%</option>').join("");
+    const canChange=snap.minute>0&&snap.minute<90&&snap.substitutions<5&&snap.bench.length>0;
+    return '<section class="lm-mc-lab" aria-label="Substituições da partida"><h3>DECISÕES DO TREINADOR · '+esc(status)+'</h3>'+
+      '<p class="lm-mc-note">As decisões serão aplicadas ao motor oficial no encerramento. O placar definitivo será confirmado somente depois do processamento do calendário.</p>'+
+      (canChange?'<label>Sai<select data-official-live-out>'+players+'</select></label>'+
+        '<label>Entra<select data-official-live-in>'+bench+'</select></label>'+
+        '<button type="button" data-official-live-sub>Registrar substituição neste minuto</button>':
+        '<p class="lm-mc-note">Nenhuma troca disponível neste minuto.</p>')+
+      '<p class="lm-mc-note">'+(snap.history.map(a=>esc(a.minute)+"\u0027 "+esc(a.outId)+" → "+esc(a.inId)).join(" · ")||"Nenhuma troca registrada")+'</p></section>';
   }
-  function tick(){if(session?.paused)return;if(!session||session.minute>=94){clearInterval(timer);timer=null;if(session)session.minute=94;paint();return;}session.minute=Math.min(94,session.minute+session.speed);paint();}
+  function paint(){if(!session)return;const {match:m,home,away}=session,min=session.minute,[hg,ag]=scoreAt(m,min),heroPart=m.participation?.hero,hero=heroPart?min>=Number(heroPart.entryMinute||0)&&min<=Number(heroPart.exitMinute??94):m.participants?.flat().includes("hero"),heroRating=m.ratings?.hero;const visible=(m.events||[]).filter(e=>e.minute<=min).slice().sort((a,b)=>b.minute-a.minute).slice(0,9);const el=document.getElementById("live-match-overlay");if(!el)return;
+    el.innerHTML=`<div class="lm-shell"><header class="lm-header"><div><small>${esc(m.competitionName||"PARTIDA")}</small><b>${esc(home.name)} <strong>${hg} - ${ag}</strong> ${esc(away.name)}</b></div><div class="lm-clock">${min<46?"1º TEMPO":min<91?"2º TEMPO":"ACRÉSCIMOS"}<strong>${Math.min(min,94)}'</strong></div><button data-live-close ${min<94?'disabled':''}>${min<94?'EM JOGO':'CONTINUAR'}</button></header><main class="lm-layout"><section class="lm-pitch"><div class="lm-half"></div><div class="lm-circle"></div>${session.coach&&root.ProLifeMatchPitchV2?coachPitch(min,home,away):`${Array.from({length:11},(_,i)=>dot(i,0,min)).join("")}${Array.from({length:11},(_,i)=>dot(i,1,min)).join("")}<span class="lm-ball" style="left:${48+Math.sin(min*.41)*30}%;top:${48+Math.cos(min*.29)*31}%"></span>`}</section><aside class="lm-panel"><div class="lm-score"><span>${esc(home.name)}</span><strong>${hg} - ${ag}</strong><span>${esc(away.name)}</span></div>${hero?`<div class="lm-hero"><small>SEU JOGADOR</small><b>Nota ${heroRating||"—"}</b><span>${(m.offensiveStats?.hero?.goals||0)} gol(s) · ${(m.playerStats?.hero?.assists||0)} assist. · ${m.playerStats?.hero?.minutes||0} min</span></div>`:""}${session.coach&&root.ProLifeCoachMatchCenterV2?root.ProLifeCoachMatchCenterV2.tabs(session.tab)+root.ProLifeCoachMatchCenterV2.panel(m,min,session.tab,{home,away})+(session.officialControl?interactiveControls():(session.tab==="taticas"?laboratory():"")):`<h3>ACONTECIMENTOS</h3><div class="lm-feed">${visible.length?visible.map(e=>`<article class="${e.type}"><b>${e.minute}'</b><span>${esc(e.text)}</span></article>`).join(""):'<p>A partida começou. As equipes estudam os espaços.</p>'}</div>`}</aside></main><footer class="lm-controls"><button data-live-speed="1" class="${session.speed===1?'active':''}">1x</button><button data-live-speed="2" class="${session.speed===2?'active':''}">2x</button><button data-live-speed="4" class="${session.speed===4?'active':''}">4x</button><button data-live-finish>Simular restante</button>${session.coach?`<button data-live-pause aria-pressed="${session.paused}">${session.paused?"Retomar":"Pausar"}</button>`:""}<span>${min>=94?`Finalizações ${m.shots?.[0]||0} - ${m.shots?.[1]||0} · xG ${m.xg?.[0]||0} - ${m.xg?.[1]||0}`:"Estatísticas completas após o apito final"}</span></footer></div>`;
+  }
+  function tick(){
+    if(session?.paused)return;
+    if(!session||session.minute>=94){clearInterval(timer);timer=null;if(session)session.minute=94;paint();return;}
+    if(session.officialControl){
+      const next=session.officialControl.advanceTo(Math.min(94,session.minute+session.speed));
+      if(!next){session.paused=true;paint();return;}
+      session.minute=next.minute;
+      if(session.minute>=94){clearInterval(timer);timer=null;session.paused=true;}
+    }else session.minute=Math.min(94,session.minute+session.speed);
+    paint();
+  }
   function restart(){clearInterval(timer);timer=setInterval(tick,700);}
-  function start(opts){close();session={...opts,minute:0,speed:1,paused:false,tab:"acontecimentos",coach:opts?.mode==="coach",lab:null,labSide:0};const el=document.createElement("div");el.id="live-match-overlay";el.className="live-match-overlay";document.body.appendChild(el);paint();restart();}
+  function start(opts){close();session={...opts,minute:0,speed:1,paused:false,tab:"acontecimentos",coach:opts?.mode==="coach",lab:null,labSide:0,
+    officialControl:opts?.officialControl||null,officialSide:opts?.officialSide??0,onOfficialFinish:opts?.onOfficialFinish||null};const el=document.createElement("div");el.id="live-match-overlay";el.className="live-match-overlay";document.body.appendChild(el);paint();restart();}
   function close(){clearInterval(timer);timer=null;document.getElementById("live-match-overlay")?.remove();session=null;}
-  if (typeof document !== "undefined") document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!session)return;if(session.coach&&b.hasAttribute("data-live-lab-start")){
+  if (typeof document !== "undefined") document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!session)return;if(session.officialControl&&b.hasAttribute("data-official-live-sub")){
+      const out=document.querySelector("[data-official-live-out]")?.value;
+      const incoming=document.querySelector("[data-official-live-in]")?.value;
+      const ok=session.officialControl.substitute(session.officialSide,out,incoming);
+      if(ok)session.paused=true;
+      paint();return;
+    }
+    if(session.coach&&b.hasAttribute("data-live-lab-start")){
       const lab=root.ProLifeCoachMatchLabV2;
       if(!session.lab&&lab){session.lab=lab.createPreview(session.home,session.away,1);session.labSide=0;}
       paint();return;
@@ -62,7 +99,13 @@
       }
       if(b.dataset.liveLabTactic){lab.decision(session.lab,{side:session.labSide,tactic:b.dataset.liveLabTactic});paint();return;}
     }
-    if(b.hasAttribute("data-live-pause")&&session.coach){session.paused=!session.paused;paint();return;}if(b.dataset.liveTab&&session.coach){session.tab=b.dataset.liveTab;if(session.tab==="taticas"&&!session.lab&&root.ProLifeCoachMatchLabV2){session.lab=root.ProLifeCoachMatchLabV2.createPreview(session.home,session.away,1);session.labSide=0;}paint();return;}if(b.dataset.liveSpeed){session.speed=Number(b.dataset.liveSpeed);paint();return;}if(b.hasAttribute("data-live-finish")){session.minute=94;clearInterval(timer);timer=null;paint();return;}if(b.hasAttribute("data-live-close")&&session.minute>=94)close();});
+    if(b.hasAttribute("data-live-pause")&&session.coach){session.paused=!session.paused;paint();return;}if(b.dataset.liveTab&&session.coach){session.tab=b.dataset.liveTab;if(session.tab==="taticas"&&!session.lab&&root.ProLifeCoachMatchLabV2){session.lab=root.ProLifeCoachMatchLabV2.createPreview(session.home,session.away,1);session.labSide=0;}paint();return;}if(b.dataset.liveSpeed){session.speed=Number(b.dataset.liveSpeed);paint();return;}if(b.hasAttribute("data-live-finish")){session.minute=94;clearInterval(timer);timer=null;paint();return;}if(b.hasAttribute("data-live-close")&&session.minute>=94){
+      if(session.officialControl&&session.onOfficialFinish){
+        const done=session.onOfficialFinish(session.officialControl.actions);
+        if(done===false)return;
+      }
+      close();
+    }});
   if(typeof document!=="undefined") document.addEventListener("change",e=>{if(!session?.coach||!session.lab||!e.target?.matches?.("[data-live-lab-side]"))return;session.labSide=e.target.value==="1"?1:0;paint();});
   const API={start,close,scoreAt};if(typeof module!=="undefined"&&module.exports)module.exports=API;root.ProLifeLiveMatch=API;
 })(typeof globalThis!=="undefined"?globalThis:this);
