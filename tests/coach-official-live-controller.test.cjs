@@ -21,6 +21,6 @@ test("Official live controller rejects invalid and excessive substitutions",()=>
 test("Controller exposes read-only XI, bench, condition and minute-specific substitution history",()=>{
  assert.match(src,/snapshot\(side\)\{/);
  assert.match(src,/players:roster\.filter\(p=>onField\.has\(String\(p\.id\)\)\)/);
- assert.match(src,/history:actions\.filter\(a=>a\.side===side&&a\.minute<=minute\)/);
+ assert.match(src,/history:actions\.filter\(a=>a\.side===side&&a\.type==="substitution"&&a\.minute<=minute\)/);
  assert.match(src,/substitutions:substitutions\[side\],windows:windows\[side\]\.size/);
 });
