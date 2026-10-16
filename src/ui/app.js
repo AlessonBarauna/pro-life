@@ -2288,7 +2288,11 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const status=(p)=>selection?.starters.includes(p)?"Titular":selection?.bench.includes(p)?"Banco":"Fora";
       const form=(p)=>D.Squad?.formValue?D.Squad.formValue(state,p).toFixed(1):"—";
       const relation = sq ? `<section class="card section"><div class="tag">DISPUTA POR POSIÇÃO</div><div class="split"><div><h2>${esc(state.person.pos)} · ${esc(sq.heroRole)}</h2><p>Minha posição na disputa: <b>${sq.heroRank}º</b> · Confiança do treinador: <b>${Math.round(pc.coachTrust)}/100</b></p></div><span class="pill">${esc(sq.formation)}</span></div><div class="tablewrap"><table><thead><tr><th>#</th><th>Concorrente</th><th>OVR</th><th>Forma</th><th>Condição</th><th>Situação</th></tr></thead><tbody>${sq.rivals.map(r=>`<tr class="${r.id==="hero"?"highlight":""}"><td>${r.rank}</td><td>${esc(r.name)}</td><td>${r.overall}</td><td>${r.form}</td><td>${r.condition}%</td><td>${esc(r.status)}</td></tr>`).join("")}</tbody></table></div><p class="muted">A escalação considera posição, OVR, forma recente, condição, moral e confiança. Status contratual não garante vaga.</p>${pc.matchSelection?`<div class="notice"><b>Última decisão do treinador:</b> ${esc(pc.matchSelection.role)}<br><small>${esc(pc.matchSelection.reason||"")}</small></div>`:""}</section>` : "";
-      const starters=selection?.starters||[], bench=selection?.bench||c.roster.filter(p=>!starters.includes(p));
+      const starters=selection?.starters||[];
+      const reservePool=selection?.bench||c.roster.filter(p=>!starters.includes(p));
+      const benchOrder=coach&&Array.isArray(state.coachCareer?.benchOrder)?state.coachCareer.benchOrder:[];
+      const rank=new Map(benchOrder.map((id,i)=>[id,i]));
+      const bench=coach?[...reservePool].sort((a,b)=>(rank.get(a.id)??99999)-(rank.get(b.id)??99999)):reservePool;
       const formation=coach?(c.formation||"4-3-3"):(sq?.formation||c.formation||autoSelection?.formation||"4-3-3");
       const canUndo=coach&&squadUndo?.clubId===c.id&&squadUndo?.day===state.day;
       const selected=c.roster.find(p=>p.id===squadSelectedId)||c.roster.find(p=>p.id==="hero")||starters[0]||c.roster[0];
@@ -8868,7 +8872,26 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     const usable=p=>!p.injury&&!(Number(p.suspension)>0);
     const ids=[...(club.lineup||[])],fi=ids.indexOf(fromId),ti=ids.indexOf(toId);
     if(ti<0&&(to.injury||Number(to.suspension)>0)){toast("O reserva escolhido está indisponível.");return false;}
-    if(fi<0&&ti<0){toast("Escolha um titular para a troca.");return false;}
+    if(fi<0&&ti<0){
+      // Swapping two reserves changes the bench/related squad order, not the starting XI.
+      const reserves=club.roster.filter(p=>!ids.includes(p.id));
+      const order=Array.isArray(state.coachCareer?.benchOrder)?state.coachCareer.benchOrder:[];
+      const rank=new Map(order.map((id,i)=>[id,i]));
+      const sorted=[...reserves].sort((a,b)=>(rank.get(a.id)??99999)-(rank.get(b.id)??99999));
+      const ordered=sorted.map(p=>p.id);
+      const a=ordered.indexOf(fromId),b=ordered.indexOf(toId);
+      if(a<0||b<0)return false;
+      const previous={clubId:club.id,day:state.day,lineup:[...ids],
+        benchOrder:Array.isArray(state.coachCareer?.benchOrder)?[...state.coachCareer.benchOrder]:null,
+        pitchSlots:Array.isArray(state.coachCareer?.pitchSlots)?[...state.coachCareer.pitchSlots]:null,
+        pitchFormation:state.coachCareer?.pitchFormation||null};
+      [ordered[a],ordered[b]]=[ordered[b],ordered[a]];
+      state.coachCareer||={version:1};
+      state.coachCareer.benchOrder=ordered;
+      squadUndo=previous;squadSwapSource=null;
+      persist();render();toast("Reservas e relacionados reorganizados. Pode desfazer.");
+      return true;
+    }
     const saved=state.coachCareer?.pitchSlots;
     const oldPitch=Array.isArray(saved)&&saved.length===11?[...saved]:null;
     if(fi>=0&&ti>=0){ids[fi]=toId;ids[ti]=fromId;}
