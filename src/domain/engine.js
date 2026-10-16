@@ -1163,12 +1163,25 @@
       tactical[side].attack+=Math.min(2,offensive*0.3);
       tactical[side].defense+=Math.min(2,defensive*0.3);
     }
+    const tacticBaseline=tactical.map(t=>({possession:t.possession,attack:t.attack,defense:t.defense}));
     // Pre-authorized coach actions are applied at their exact minute, before
     // that minute's chance calculation. Default [] preserves legacy matches.
     const plannedActions=Array.isArray(coachActions)?coachActions:[];
     const coachSubs=[0,0],usedIncoming=[new Set(),new Set()];
     for (let minute = 1; minute <= 94; minute++) {
       if(context?.mode==="coach"||!context){
+        for(const action of plannedActions){
+          if(action?.type!=="tactic"||Number(action.minute)!==minute)continue;
+          const side=Number(action.side);
+          if(![0,1].includes(side))continue;
+          const posture=String(action.posture||"");
+          const levels={equilibrado:[0,0,0],ofensivo:[-1,5,-2],defensivo:[2,-4,5]};
+          if(!levels[posture])continue;
+          const baseline=tacticBaseline[side];
+          tactical[side].possession=baseline.possession+levels[posture][0];
+          tactical[side].attack=baseline.attack+levels[posture][1];
+          tactical[side].defense=baseline.defense+levels[posture][2];
+        }
         for(const action of plannedActions){
           if(action?.type!=="substitution"||Number(action.minute)!==minute)continue;
           const side=Number(action.side),club=clubs[side],ps=squads[side];
@@ -1558,6 +1571,11 @@
         if(minute===94&&!finished){const end=runner.next();if(end.done){finished=true;result=end.value;}}
         return {minute,finished,score:[last?.hg||0,last?.ag||0]};
       },
+      setTactic(side,posture){
+        if(finished||minute>=90||![0,1].includes(side)||!["equilibrado","ofensivo","defensivo"].includes(posture))return false;
+        actions.push({type:"tactic",side,minute:minute+1,posture});
+        return true;
+      },
       substitute(side,outId,inId){
         if(finished||minute>=90||![0,1].includes(side))return false;
         const field=(side===0?home:away);
@@ -1603,7 +1621,8 @@
             id:String(p.id),name:String(p.name||p.id),pos:String(p.pos||""),
             condition:Number(p.condition??100)
           })),substitutions:substitutions[side],windows:windows[side].size,
-          history:actions.filter(a=>a.side===side&&a.minute<=minute).map(a=>({...a}))};
+          history:actions.filter(a=>a.side===side&&a.type==="substitution"&&a.minute<=minute).map(a=>({...a})),
+          tactic:actions.filter(a=>a.side===side&&a.type==="tactic"&&a.minute<=minute).slice(-1)[0]?.posture||"equilibrado"};
       },
       get minute(){return minute;},get finished(){return finished;},
       get match(){return finished?result:last;},
