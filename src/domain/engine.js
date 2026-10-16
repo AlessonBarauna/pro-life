@@ -1654,6 +1654,18 @@
     const plan=s&&coachActionPlans.get(s);
     return plan?{home:plan.home,away:plan.away,date:plan.date,actions:plan.actions.map(a=>({...a}))}:null;
   }
+  // Only the completed interactive official match may be committed, once.
+  // Never persist a partially simulated match or a second set of career effects.
+  const coachLiveResults=new WeakMap();
+  function stageCoachLiveResult(s,fixture,controller){
+    if(!s||s.mode!=="coach"||!fixture||!controller?.finished||!controller.result)return false;
+    if(fixture.date!==s.day+1||![fixture.home,fixture.away].includes(s.clubId))return false;
+    if(controller.result.home!==fixture.home||controller.result.away!==fixture.away)return false;
+    if(coachLiveResults.has(s))return false;
+    coachLiveResults.set(s,{home:fixture.home,away:fixture.away,date:fixture.date,result:controller.result});
+    return true;
+  }
+  function discardCoachLiveResult(s){coachLiveResults.delete(s);}
   function registerMatch(s, rng, homeId, awayId, meta, leagueMatch) {
     const hc = club(s, homeId), ac = club(s, awayId);
     const disciplineMeta={...meta,leagueId:leagueMatch?hc.leagueId:null};
@@ -1677,7 +1689,11 @@
         onField.delete(a.outId);onField.add(a.inId);usedBench.add(a.inId);eligibleActions.push(a);
       }
     }
-    const m = simulate(hc, ac, rng, s, eligibleActions);
+    const staged=coachLiveResults.get(s);
+    const useLive=staged&&s.mode==="coach"&&staged.date===s.day&&
+      staged.home===homeId&&staged.away===awayId;
+    if(useLive)coachLiveResults.delete(s);
+    const m = useLive ? staged.result : simulate(hc, ac, rng, s, eligibleActions);
     if (s.mode === "player") {
       const q=Physical?.init?.(s.person,s.day), a=q?.active, key=a&&`injury:${a.startDay}:${a.type}`;
       if(a&&a.startDay===s.day&&key&&!q.processed.includes(key)){q.processed.push(key);Career.addMessage?.(s,{category:"CARREIRA",sender:"Departamento médico",subject:`Diagnóstico: ${a.name}`,body:`${a.severity}. Previsão inicial: ${a.totalDays} dia(s). A recuperação será acompanhada pelo calendário.`,priority:a.severity==="GRAVE"?"IMPORTANTE":"NORMAL",eventId:key});}
@@ -3045,6 +3061,8 @@
     isSuspendedFor,
     recordDevelopment,
     simulate,
+    stageCoachLiveResult,
+    discardCoachLiveResult,
     simulateSteps,
     createCoachLiveController,
     scheduleCoachActions,
