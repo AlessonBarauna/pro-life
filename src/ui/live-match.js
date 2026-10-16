@@ -42,20 +42,29 @@
   function interactiveControls(){
     const live=session?.officialControl;
     if(!live)return "";
-    const side=session.officialSide;
-    const snap=live.snapshot(side);
+    const side=session.officialSide,snap=live.snapshot(side);
     if(!snap)return "";
     const status=snap.substitutions+"/5 mudanças · "+snap.windows+"/3 janelas";
-    const players=snap.players.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+' · '+esc(p.pos)+' · '+esc(p.condition)+'%</option>').join("");
-    const bench=snap.bench.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+' · '+esc(p.pos)+' · '+esc(p.condition)+'%</option>').join("");
-    const canChange=snap.minute>0&&snap.minute<90&&snap.substitutions<5&&snap.bench.length>0;
-    return '<section class="lm-mc-lab" aria-label="Substituições da partida"><h3>DECISÕES DO TREINADOR · '+esc(status)+'</h3>'+
-      '<p class="lm-mc-note">As substituições são processadas pelo motor oficial durante o jogo. O registro da carreira acontece após o apito final.</p>'+
-      (canChange?'<label>Sai<select data-official-live-out>'+players+'</select></label>'+
-        '<label>Entra<select data-official-live-in>'+bench+'</select></label>'+
-        '<button type="button" data-official-live-sub>Registrar substituição neste minuto</button>':
-        '<p class="lm-mc-note">Nenhuma troca disponível neste minuto.</p>')+
+    const canChange=snap.minute>0&&snap.minute<90&&snap.substitutions<5&&snap.windows<3&&snap.bench.length>0;
+    const entry=(p,kind)=>{
+      const selectable=canChange&&(kind==="bench"||snap.bench.some(x=>(x.pos==="GOL")===(p.pos==="GOL")));
+      return '<button type="button" class="lm-squad-chip '+kind+'" data-coach-squad="'+kind+'" data-coach-player="'+esc(p.id)+'" draggable="'+selectable+'" '+(!selectable?'disabled':'')+'><b>'+esc(p.name)+'</b><small>'+esc(p.pos)+' · Condição '+esc(p.condition)+'%'+(p.rating?' · Nota '+esc(p.rating):'')+'</small></button>';
+    };
+    return '<section class="lm-mc-lab lm-coach-squad" aria-label="Substituições da partida"><h3>ESCALAÇÃO AO VIVO · '+esc(status)+'</h3>'+
+      '<p class="lm-mc-note">Pause e arraste um reserva sobre o titular que deseja retirar. No celular, toque primeiro no reserva e depois no titular.</p>'+
+      '<p class="lm-mc-note" data-coach-swap-status>'+(session.selectedBench?'Reserva selecionado: '+esc(snap.bench.find(p=>p.id===session.selectedBench)?.name||session.selectedBench):'Nenhum reserva selecionado')+'</p>'+
+      (session.swapMessage?'<p class="lm-mc-note">'+esc(session.swapMessage)+'</p>':'')+'<h4>EM CAMPO</h4><div class="lm-squad-list">'+snap.players.map(p=>entry(p,"field")).join("")+'</div>'+
+      '<h4>RESERVAS</h4><div class="lm-squad-list">'+snap.bench.map(p=>entry(p,"bench")).join("")+'</div>'+
+      (!canChange?'<p class="lm-mc-note">Trocas indisponíveis neste minuto ou limite de janelas atingido.</p>':'')+
       '<p class="lm-mc-note">'+(snap.history.map(a=>esc(a.minute)+"\u0027 "+esc(a.outId)+" → "+esc(a.inId)).join(" · ")||"Nenhuma troca registrada")+'</p></section>';
+  }
+  function officialSwap(outId,inId){
+    if(!session?.officialControl||!outId||!inId)return;
+    const ok=session.officialControl.substitute(session.officialSide,outId,inId);
+    session.paused=true;
+    session.selectedBench=null;
+    session.swapMessage=ok?"Troca confirmada para o próximo minuto.":"Troca recusada: confira posição, condição, banco e janelas disponíveis.";
+    paint();
   }
   function tacticalControls(){
     if(!session?.officialControl)return "";
@@ -81,7 +90,7 @@
     paint();
   }
   function restart(){clearInterval(timer);timer=setInterval(tick,700);}
-  function start(opts){close();session={...opts,minute:0,speed:1,paused:false,tab:"acontecimentos",coach:opts?.mode==="coach",lab:null,labSide:0,
+  function start(opts){close();session={...opts,minute:0,speed:1,paused:false,selectedBench:null,swapMessage:"",tab:"acontecimentos",coach:opts?.mode==="coach",lab:null,labSide:0,
     officialControl:opts?.officialControl||null,officialSide:opts?.officialSide??0,onOfficialFinish:opts?.onOfficialFinish||null};const el=document.createElement("div");el.id="live-match-overlay";el.className="live-match-overlay";document.body.appendChild(el);paint();restart();}
   function close(){clearInterval(timer);timer=null;document.getElementById("live-match-overlay")?.remove();session=null;}
   if (typeof document !== "undefined") document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!session)return;if(session.officialControl&&b.hasAttribute("data-official-tactic")){
@@ -120,6 +129,32 @@
       }
       close();
     }});
+  if(typeof document!=="undefined"){
+    document.addEventListener("dragstart",e=>{
+      const chip=e.target?.closest?.("[data-coach-squad=bench]");
+      if(!chip||!session?.officialControl)return;
+      session.paused=true;session.selectedBench=chip.dataset.coachPlayer;
+      e.dataTransfer?.setData("text/plain",session.selectedBench);
+      if(e.dataTransfer)e.dataTransfer.effectAllowed="move";
+    });
+    document.addEventListener("dragover",e=>{
+      if(session?.selectedBench&&e.target?.closest?.("[data-coach-squad=field]"))e.preventDefault();
+    });
+    document.addEventListener("drop",e=>{
+      const target=e.target?.closest?.("[data-coach-squad=field]");
+      if(!target||!session?.selectedBench)return;
+      e.preventDefault();officialSwap(target.dataset.coachPlayer,session.selectedBench);
+    });
+    document.addEventListener("click",e=>{
+      const chip=e.target?.closest?.("[data-coach-squad]");
+      if(!chip||!session?.officialControl)return;
+      session.paused=true;
+      if(chip.dataset.coachSquad==="bench"){
+        session.selectedBench=chip.dataset.coachPlayer;paint();return;
+      }
+      if(session.selectedBench)officialSwap(chip.dataset.coachPlayer,session.selectedBench);
+    });
+  }
   if(typeof document!=="undefined") document.addEventListener("change",e=>{if(!session?.coach||!session.lab||!e.target?.matches?.("[data-live-lab-side]"))return;session.labSide=e.target.value==="1"?1:0;paint();});
   const API={start,close,scoreAt};if(typeof module!=="undefined"&&module.exports)module.exports=API;root.ProLifeLiveMatch=API;
 })(typeof globalThis!=="undefined"?globalThis:this);
