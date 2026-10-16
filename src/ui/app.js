@@ -9235,21 +9235,21 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
           home,away,mode:"coach",officialControl:live,officialSide:side,
           onOfficialFinish:(actions)=>{
             if(!live.finished||!live.result){
-              toast("A partida ainda não terminou.");return false;
+              return "A partida ainda não terminou.";
             }
             if(!D.stageCoachLiveResult?.(state,next,live)){
-              toast("Resultado oficial indisponível. Nenhuma partida foi confirmada.");return false;
+              return "Resultado oficial indisponível. Nenhuma partida foi confirmada.";
             }
             const prior=(state.matches||[]).length;
             try{D.advance(state,1);}
             catch(error){
               D.discardCoachLiveResult?.(state);
-              toast("Erro ao concluir a partida: "+error.message);return false;
+              return "Erro ao concluir a partida: "+error.message;
             }
             D.discardCoachLiveResult?.(state);
             const played=(state.matches||[]).find(m=>m.date===state.day&&m.home===next.home&&m.away===next.away);
             if(!played||(state.matches||[]).length===prior){
-              toast("Partida não registrada no calendário. Confira os resultados.");return false;
+              return "Partida não registrada no calendário. Confira os resultados.";
             }
             persist();render();return true;
           }});
