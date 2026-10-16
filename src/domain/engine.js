@@ -1588,7 +1588,7 @@
         const reserved=roster.filter(p=>p&&!starters.has(String(p.id))&&!p.injury&&
           !(Number(p.suspension)>0)&&!p._competitionSuspended&&Number(p.condition??100)>35)
           .sort((a,b)=>(rank.get(String(a.id))??99999)-(rank.get(String(b.id))??99999)).slice(0,7);
-        return {minute,side,players:roster.filter(p=>onField.has(String(p.id))).map(p=>({
+        return {minute,side,score:[Number(last?.hg||0),Number(last?.ag||0)],events:(last?.events||[]).map(e=>({...e})),players:roster.filter(p=>onField.has(String(p.id))).map(p=>({
             id:String(p.id),name:String(p.name||p.id),pos:String(p.pos||""),
             condition:Number(p.condition??100),rating:Number(last?.ratings?.[p.id]??0),
             minutes:Math.max(0,minute-Number(participation[p.id]?.entryMinute??0))
