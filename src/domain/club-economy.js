@@ -101,11 +101,14 @@
     const roles=[["main","Patrocinador principal",.6],["kit","Material esportivo",.25],["partner","Parceiro comercial",.15]];
     const contracts=state.coachCareer?.finance?.revenueContracts||[];
     const offers=state.coachCareer?.finance?.sponsorshipOffers||[];
+    const occupiedBrands=new Set(contracts.filter(x=>Number(x.endDay)>Number(state.day)).map(x=>String(x.brandId||x.brandName||"")));
+    for(const o of offers){if(o.status!=="rejected"&&o.status!=="brand_rejected")occupiedBrands.add(String(o.brandId||o.brandName||""));}
     return roles.filter(([role])=>!contracts.some(x=>x.sponsorRole===role&&x.endDay>state.day)&&
-      !offers.some(x=>x.role===role&&["accepted","rejected","counter","awaiting_brand","brand_accepted","brand_rejected"].includes(x.status))).map(([role,label,fraction],i)=>{
-      const available=candidates.filter(b=>role!=="kit"||b.category==="SPORTSWEAR");
-      const brand=available[i%available.length];
+      !offers.some(x=>x.role===role&&["accepted","rejected","counter","awaiting_brand","brand_accepted","brand_rejected"].includes(x.status))).map(([role,label,fraction])=>{
+      const available=candidates.filter(b=>(role!=="kit"||b.category==="SPORTSWEAR")&&!occupiedBrands.has(b.id));
+      const brand=available[0];
       if(!brand)return null;
+      occupiedBrands.add(brand.id);
       const annualAmount=Math.max(100000,Math.round(projection*fraction/100000)*100000);
       return {id:"sponsor_"+String(state.clubId)+"_"+role+"_"+String(state.season||0),
         brandId:brand.id,brandName:brand.name,role,label,annualAmount,durationDays:365,
