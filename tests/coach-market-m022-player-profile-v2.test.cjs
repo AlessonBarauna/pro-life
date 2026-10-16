@@ -23,3 +23,11 @@ test("profile displays actual attributes and optional contract data",()=>{
  assert.match(source,/Não informado/);
  assert.match(source,/cc-market-detail-section/);
 });
+
+test("scout progress hides unconfirmed attributes and distinguishes estimates",()=>{
+ assert.match(source,/const reportComplete=reportReady&&detailReport\.status==="complete"/);
+ assert.match(source,/reportReady\?detailReport\.estimatedOverall/);
+ assert.match(source,/reportComplete\?\(attrsPanel/);
+ assert.match(source,/Não descoberto/);
+ assert.match(source,/cc-scout-progress/);
+});
