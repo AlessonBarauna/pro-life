@@ -5,7 +5,6 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const num=n=>Number.isFinite(Number(n))?Number(n):0;
 function eventList(m,minute){return (m?.events||[]).filter(e=>num(e.minute)<=minute).slice().sort((a,b)=>num(b.minute)-num(a.minute));}
 function metrics(m,minute){
- const done=minute>=94;
  const data=[
   ["Gols",null,null,"events"],
   ["Finalizações",m?.shots?.[0],m?.shots?.[1],"full"],
@@ -17,13 +16,13 @@ function metrics(m,minute){
  }
  return data.map(([label,a,b,kind])=>{
   if(kind==="events"){const g=label==="Gols"?(recorded?.goals||[0,0]):[a,b];return {label,home:g[0],away:g[1]};}
-  const format=v=>v==null?"—":!done?"—":kind==="xg"?Number(v).toFixed(2):Math.round(Number(v));
+  const format=v=>v==null?"—":kind==="xg"?Number(v).toFixed(2):Math.round(Number(v));
   return {label,home:format(a),away:format(b)};
  });
 }
 function panel(m,minute,tab,{home,away}={}){
  const events=eventList(m,minute);
- if(tab==="estatisticas")return '<h3>ESTATÍSTICAS DA PARTIDA</h3><div class="lm-mc-stat">'+metrics(m,minute).map(x=>'<div class="lm-mc-stat-row"><span>'+esc(x.home)+'</span><b>'+esc(x.label)+'</b><span>'+esc(x.away)+'</span></div>').join("")+'</div><p class="lm-mc-note">Gols e eventos: registro até o minuto atual. Finalizações e xG: valores oficiais disponíveis após o término. Posse, passes e desarmes não aparecem porque o motor atual não registra esses dados.</p>';
+ if(tab==="estatisticas")return '<h3>ESTATÍSTICAS DA PARTIDA</h3><div class="lm-mc-stat">'+metrics(m,minute).map(x=>'<div class="lm-mc-stat-row"><span>'+esc(x.home)+'</span><b>'+esc(x.label)+'</b><span>'+esc(x.away)+'</span></div>').join("")+'</div><p class="lm-mc-note">Dados oficiais acumulados até o minuto atual. Posse, passes e desarmes ainda não são medidos pelo motor.</p>';
  if(tab==="desempenho"){
   const identity=root.ProLifeMatchIdentityV2;
   const ratings=Object.entries(m?.ratings||{}).sort((a,b)=>num(b[1])-num(a[1])).slice(0,30);
@@ -34,7 +33,7 @@ function panel(m,minute,tab,{home,away}={}){
    return '<article><span><b>'+esc(label)+'</b>'+(meta?'<small>'+esc(meta)+'</small>':"")+'</span><strong>Nota '+esc(v)+'</strong></article>';
   }).join("")+'</div>':'<p class="lm-mc-note">Ainda não há notas individuais disponíveis.</p>');
  }
- if(tab==="taticas")return '<h3>INSTRUÇÕES TÁTICAS</h3><p class="lm-mc-note">A partida oficial foi calculada antes da exibição. As decisões do laboratório abaixo são experimentais e não alteram o resultado oficial.</p>';
+ if(tab==="taticas")return '<h3>INSTRUÇÕES TÁTICAS</h3><p class="lm-mc-note">Gerencie as substituições oficiais no painel Decisões do Treinador abaixo. Pause a partida para analisar o elenco e realizar trocas; elas afetam os minutos seguintes.</p>';
  return '<h3>ACONTECIMENTOS</h3><div class="lm-feed">'+(events.length?events.slice(0,12).map(e=>'<article class="'+esc(e.type||"")+'"><b>'+esc(e.minute)+"'"+'</b><span>'+esc(e.text)+'</span></article>').join(""):'<p>A partida começou. As equipes estudam os espaços.</p>')+'</div>';
 }
 function tabs(active){return '<nav class="lm-mc-tabs" aria-label="Painéis da partida">'+[["acontecimentos","Acontecimentos"],["estatisticas","Estatísticas"],["desempenho","Desempenho"],["taticas","Táticas"]].map(([id,label])=>'<button type="button" data-live-tab="'+id+'" aria-current="'+(active===id?'page':'false')+'" class="'+(active===id?'active':'')+'">'+label+'</button>').join("")+'</nav>';}
