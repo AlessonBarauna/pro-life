@@ -1606,6 +1606,7 @@
           history:actions.filter(a=>a.side===side&&a.minute<=minute).map(a=>({...a}))};
       },
       get minute(){return minute;},get finished(){return finished;},
+      get match(){return finished?result:last;},
       get result(){return finished?result:null;},
       get actions(){return actions.map(a=>({...a}));},
       get substitutionCounts(){return substitutions.slice();},
