@@ -26,12 +26,25 @@ function panel(m,minute,tab,{home,away}={}){
  if(tab==="desempenho"){
   const identity=root.ProLifeMatchIdentityV2;
   const ratings=Object.entries(m?.ratings||{}).sort((a,b)=>num(b[1])-num(a[1])).slice(0,30);
+  const contributions=Object.entries(m?.participation||{}).filter(([id,p])=>num(p.entryMinute)<=minute).map(([id,p])=>{
+   const entries=events.filter(e=>String(e.playerId||"")===String(id));
+   const goals=entries.filter(e=>e.type==="goal").length;
+   const saves=entries.filter(e=>e.type==="save").length;
+   const assists=events.filter(e=>e.type==="goal"&&String(e.assistPlayerId||"")===String(id)).length;
+   return {id,goals,saves,assists,minutes:Math.max(0,Math.min(minute,num(p.exitMinute??94))-num(p.entryMinute))};
+  }).filter(p=>p.minutes>0).sort((a,b)=>(b.goals*4+b.assists*2+b.saves)-(a.goals*4+a.assists*2+a.saves)).slice(0,22);
+  const contributionsPanel='<div class="lm-feed lm-mc-ratings">'+contributions.map(p=>{
+    const identified=identity?.identify?.(p.id,home,away);
+    const roster=[...(home?.roster||[]),...(away?.roster||[])].find(x=>String(x.id)===p.id);
+    const name=identified?.name||roster?.name||p.id;
+    return '<article><span><b>'+esc(name)+'</b><small>'+p.minutes+' min · '+p.goals+' gols · '+p.assists+' assist. · '+p.saves+' defesas</small></span></article>';
+  }).join("")+'</div>';
   return '<h3>DESEMPENHO DOS JOGADORES</h3>'+(ratings.length?'<div class="lm-feed lm-mc-ratings">'+ratings.map(([id,v])=>{
    const p=identity?.identify?.(id,home,away);
    const label=p?.name||(!/^(real_|fc27_)/i.test(id)?id:"Jogador não identificado");
    const meta=[p?.position,p?.number!=null?"#"+p.number:null].filter(Boolean).join(" · ");
    return '<article><span><b>'+esc(label)+'</b>'+(meta?'<small>'+esc(meta)+'</small>':"")+'</span><strong>Nota '+esc(v)+'</strong></article>';
-  }).join("")+'</div>':'<p class="lm-mc-note">Ainda não há notas individuais disponíveis.</p>');
+  }).join("")+'</div>':'<p class="lm-mc-note">Notas oficiais calculadas após o término. Participações parciais até agora:</p>'+contributionsPanel);
  }
  if(tab==="taticas")return '<h3>INSTRUÇÕES TÁTICAS</h3><p class="lm-mc-note">Gerencie as substituições oficiais no painel Decisões do Treinador abaixo. Pause a partida para analisar o elenco e realizar trocas; elas afetam os minutos seguintes.</p>';
  return '<h3>ACONTECIMENTOS</h3><div class="lm-feed">'+(events.length?events.slice(0,12).map(e=>'<article class="'+esc(e.type||"")+'"><b>'+esc(e.minute)+"'"+'</b><span>'+esc(e.text)+'</span></article>').join(""):'<p>A partida começou. As equipes estudam os espaços.</p>')+'</div>';
