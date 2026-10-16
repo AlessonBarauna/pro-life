@@ -102,7 +102,7 @@
     const contracts=state.coachCareer?.finance?.revenueContracts||[];
     const offers=state.coachCareer?.finance?.sponsorshipOffers||[];
     return roles.filter(([role])=>!contracts.some(x=>x.sponsorRole===role&&x.endDay>state.day)&&
-      !offers.some(x=>x.role===role&&["accepted","rejected","counter"].includes(x.status))).map(([role,label,fraction],i)=>{
+      !offers.some(x=>x.role===role&&["accepted","rejected","counter","awaiting_brand","brand_accepted","brand_rejected"].includes(x.status))).map(([role,label,fraction],i)=>{
       const available=candidates.filter(b=>role!=="kit"||b.category==="SPORTSWEAR");
       const brand=available[i%available.length];
       if(!brand)return null;
@@ -116,8 +116,8 @@
     if(!state||!club||String(club.id)!==String(state.clubId)||!state.coachCareer)throw Error("Clube invalido.");
     const finance=state.coachCareer.finance||={};
     const existing=(finance.sponsorshipOffers||[]).find(x=>x.id===offerId);
-    if(existing&&existing.status!=="counter")throw Error("Proposta ja finalizada.");
-    const offer=existing?.status==="counter"?existing:sponsorshipOffers(state,club,brands).find(x=>x.id===offerId);
+    if(existing&&existing.status!=="brand_accepted")throw Error("Proposta ja finalizada.");
+    const offer=existing?.status==="brand_accepted"?existing:sponsorshipOffers(state,club,brands).find(x=>x.id===offerId);
     if(!offer)throw Error("Proposta indisponivel.");
     if(Number(state.day)>Number(offer.expiresDay??(Number(state.day)+1)))throw Error("Proposta expirada.");
     const startDay=Number(state.day)+1;
@@ -135,8 +135,8 @@
   // Rejection and counteroffers are stored without changing the club budget.
   function decideSponsorship(state,club,brands,offerId,decision,amount){
     if(!["reject","counter"].includes(decision))throw Error("Decisao invalida.");
-    const finance=state?.coachCareer?.finance;
-    if(!finance||String(club?.id)!==String(state?.clubId))throw Error("Clube invalido.");
+    if(!state?.coachCareer||String(club?.id)!==String(state?.clubId))throw Error("Clube invalido.");
+    const finance=state.coachCareer.finance||={};
     const offer=sponsorshipOffers(state,club,brands).find(x=>x.id===offerId);
     if(!offer)throw Error("Proposta indisponivel.");
     const existing=(finance.sponsorshipOffers||[]).find(x=>x.id===offerId);
@@ -144,10 +144,30 @@
     const proposed=Number(amount);
     if(decision==="counter"&&(!Number.isSafeInteger(proposed)||proposed<offer.annualAmount||
       proposed>Math.round(offer.annualAmount*1.2)))throw Error("Contraproposta fora do limite.");
-    const record={...offer,status:decision==="reject"?"rejected":"counter",counterAmount:decision==="counter"?proposed:null,answeredDay:Number(state.day)};
+    const record={...offer,status:decision==="reject"?"rejected":"awaiting_brand",counterAmount:decision==="counter"?proposed:null,answeredDay:Number(state.day),replyDay:decision==="counter"?Number(state.day)+3:null};
     finance.sponsorshipOffers||=[];
     finance.sponsorshipOffers.push(record);
     return record;
+  }
+  // M04.12: brand decisions occur only on career-day progression, never on render.
+  function settleSponsorshipReplies(state){
+    const offers=state?.coachCareer?.finance?.sponsorshipOffers;
+    if(!Array.isArray(offers))return [];
+    const resolved=[];
+    for(const o of offers){
+      if(o.status!=="awaiting_brand"&&o.status!=="counter")continue;
+      const due=Number.isSafeInteger(o.replyDay)?o.replyDay:Number(o.answeredDay||state.day)+3;
+      if(Number(state.day)<due)continue;
+      // Deterministic, stable brand response: modest increases are more likely to succeed.
+      const premium=Number(o.counterAmount)/Number(o.annualAmount||1);
+      const approved=Number.isFinite(premium)&&premium<=1.12;
+      o.status=approved?"brand_accepted":"brand_rejected";
+      o.replyDay=due;
+      o.respondedDay=Number(state.day);
+      o.brandResponse=approved?"Contraproposta aceita pela marca. Confirme para assinar.":"Marca recusou a contraproposta.";
+      resolved.push(o);
+    }
+    return resolved;
   }
   // M04.8: explicit contract registration; no automatic funding or retroactive receivables.
   function registerRevenueContract(state,clubId,input){
@@ -193,7 +213,7 @@
     }
     return events.sort((a,b)=>a.dueDay-b.dueDay||String(a.contractId).localeCompare(String(b.contractId))).slice(0,36);
   }
-  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,registerRevenueContract,revenueContractsSnapshot,revenueSchedule,sponsorshipCandidates,sponsorshipOffers,acceptSponsorshipOffer,decideSponsorship,VERSION:"m04.11b"};
+  const api={estimate,scenarios,compare,calibration,fundingSnapshot,revenueProjection,registerRevenueContract,revenueContractsSnapshot,revenueSchedule,sponsorshipCandidates,sponsorshipOffers,acceptSponsorshipOffer,decideSponsorship,settleSponsorshipReplies,VERSION:"m04.12"};
   root.ProLifeClubEconomy=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
