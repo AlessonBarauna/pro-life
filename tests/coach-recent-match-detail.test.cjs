@@ -5,5 +5,5 @@ test("coach recent-match detail uses team summary, player uses participation",()
  new vm.Script(source);
  assert.match(source,/const matchSummary=state\.mode==="coach"\?/);
  assert.match(source,/\$\{matchSummary\}\$\{tieBox\}/);
- assert.match(source,/:"\s*"?hero;/);
+ assert.match(source,/:hero;/);
 });
