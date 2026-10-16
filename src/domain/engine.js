@@ -1560,8 +1560,15 @@
         if(nextWindows.size>3)return false;
         const outgoing=field.roster?.find(p=>String(p.id)===String(outId));
         const incoming=field.roster?.find(p=>String(p.id)===String(inId));
+        const lineupIds=new Set((field.lineup||[]).map(String));
+        const reserveOrder=context?.coachCareer?.benchOrder||[];
+        const orderRank=new Map(reserveOrder.map((id,i)=>[String(id),i]));
+        const eligible=(field.roster||[]).filter(p=>p&&!lineupIds.has(String(p.id))&&!p.injury&&
+          !(Number(p.suspension)>0)&&!p._competitionSuspended&&Number(p.condition??100)>35);
+        const bench=new Set(eligible.sort((a,b)=>(orderRank.get(String(a.id))??99999)-(orderRank.get(String(b.id))??99999))
+          .slice(0,7).map(p=>String(p.id)));
         const participants=(last?.participation||{});
-        if(!outgoing||!incoming||!participants[outId]||participants[outId].exitMinute<minute||
+        if(!outgoing||!incoming||!bench.has(String(inId))||!participants[outId]||participants[outId].exitMinute<minute||
           participants[inId]||incoming.injury||Number(incoming.suspension)>0||
           incoming._competitionSuspended||Number(incoming.condition??100)<=35)return false;
         actions.push({type:"substitution",side,minute:windowMinute,outId:String(outId),inId:String(inId)});
