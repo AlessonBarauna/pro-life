@@ -18,11 +18,14 @@ test("counteroffer waits three career days before brand answer; no cash credited
  assert.equal(engine.settleSponsorshipReplies(s).length,0);
  assert.equal(s.coachCareer.finance.revenueContracts,undefined);
 });
-test("rejected brand response cannot be signed; accepted response can be signed only once",()=>{
+test("high demand triggers brand counter and can be declined; other offer signs only once",()=>{
  const s=make(),offer=engine.sponsorshipOffers(s,club,brands)[0];
  const c=engine.decideSponsorship(s,club,brands,offer.id,"counter",Math.round(offer.annualAmount*1.2));
  s.day=203;engine.settleSponsorshipReplies(s);
- assert.equal(c.status,"brand_rejected");
+ assert.equal(c.status,"brand_countered");
+ assert.equal(s.coachCareer.finance.revenueContracts,undefined);
+ engine.rejectBrandCounter(s,offer.id);
+ assert.equal(c.status,"rejected");
  assert.throws(()=>engine.acceptSponsorshipOffer(s,club,brands,offer.id));
  const remaining=engine.sponsorshipOffers(s,club,brands);
  const other=remaining.find(o=>o.id!==offer.id);
