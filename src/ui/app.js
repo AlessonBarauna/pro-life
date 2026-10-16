@@ -8919,7 +8919,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return false;
     }
     try{
-      const previous={clubId:club.id,day:state.day,lineup:[...(club.lineup||[])],pitchSlots:Array.isArray(state.coachCareer?.pitchSlots)?[...state.coachCareer.pitchSlots]:null,pitchFormation:state.coachCareer?.pitchFormation||null};
+      const previous={clubId:club.id,day:state.day,lineup:[...(club.lineup||[])],pitchSlots:Array.isArray(state.coachCareer?.pitchSlots)?[...state.coachCareer.pitchSlots]:null,pitchFormation:state.coachCareer?.pitchFormation||null,benchOrder:Array.isArray(state.coachCareer?.benchOrder)?[...state.coachCareer.benchOrder]:null};
       A.execute(state,"lineup",{ids:chosen});
       if(oldPitch){
         const nextPitch=oldPitch.map(id=>id===fromId?toId:id===toId?(fi>=0&&ti>=0?fromId:id):id);
@@ -9044,6 +9044,10 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       try{
         A.execute(state,"lineup",{ids:[...undo.lineup]});
         state.coachCareer ||= {version:1};
+        if(Object.prototype.hasOwnProperty.call(undo,"benchOrder")){
+          if(undo.benchOrder)state.coachCareer.benchOrder=[...undo.benchOrder];
+          else delete state.coachCareer.benchOrder;
+        }
         if(undo.pitchSlots){state.coachCareer.pitchSlots=[...undo.pitchSlots];state.coachCareer.pitchFormation=undo.pitchFormation;}
         else{delete state.coachCareer.pitchSlots;delete state.coachCareer.pitchFormation;}
         squadUndo=null;squadSwapSource=null;persist();render();toast("Última troca desfeita.");
