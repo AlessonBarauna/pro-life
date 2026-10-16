@@ -1548,6 +1548,7 @@
           if(next.done){finished=true;result=next.value;break;}
           minute=next.value.minute;last=next.value.match;
         }
+        if(minute===94&&!finished){const end=runner.next();if(end.done){finished=true;result=end.value;}}
         return {minute,finished,score:[last?.hg||0,last?.ag||0]};
       },
       substitute(side,outId,inId){
