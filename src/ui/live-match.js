@@ -133,8 +133,8 @@
             paint();return;
           }
           const done=session.onOfficialFinish(session.officialControl.actions);
-          if(done===false){
-            session.finishError="Nao foi possivel registrar o resultado oficial. Confira a mensagem de erro e tente novamente.";
+          if(done===false||typeof done==="string"){
+            session.finishError=typeof done==="string"?done:"Nao foi possivel registrar o resultado oficial. Confira a mensagem de erro e tente novamente.";
             paint();return;
           }
         }catch(error){
