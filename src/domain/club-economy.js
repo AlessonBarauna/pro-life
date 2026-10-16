@@ -104,7 +104,7 @@
     const occupiedBrands=new Set(contracts.filter(x=>Number(x.endDay)>Number(state.day)).map(x=>String(x.brandId||x.brandName||"")));
     for(const o of offers){if(o.status!=="rejected"&&o.status!=="brand_rejected")occupiedBrands.add(String(o.brandId||o.brandName||""));}
     return roles.filter(([role])=>!contracts.some(x=>x.sponsorRole===role&&x.endDay>state.day)&&
-      !offers.some(x=>x.role===role&&["accepted","rejected","counter","awaiting_brand","brand_accepted","brand_rejected"].includes(x.status))).map(([role,label,fraction])=>{
+      !offers.some(x=>x.role===role&&["accepted","rejected","counter","awaiting_brand","brand_accepted","brand_rejected","brand_countered"].includes(x.status))).map(([role,label,fraction])=>{
       const available=candidates.filter(b=>(role!=="kit"||b.category==="SPORTSWEAR")&&!occupiedBrands.has(b.id));
       const brand=available[0];
       if(!brand)return null;
@@ -119,14 +119,14 @@
     if(!state||!club||String(club.id)!==String(state.clubId)||!state.coachCareer)throw Error("Clube invalido.");
     const finance=state.coachCareer.finance||={};
     const existing=(finance.sponsorshipOffers||[]).find(x=>x.id===offerId);
-    if(existing&&existing.status!=="brand_accepted")throw Error("Proposta ja finalizada.");
-    const offer=existing?.status==="brand_accepted"?existing:sponsorshipOffers(state,club,brands).find(x=>x.id===offerId);
+    if(existing&&!["brand_accepted","brand_countered"].includes(existing.status))throw Error("Proposta ja finalizada.");
+    const offer=existing&&["brand_accepted","brand_countered"].includes(existing.status)?existing:sponsorshipOffers(state,club,brands).find(x=>x.id===offerId);
     if(!offer)throw Error("Proposta indisponivel.");
-    if(Number(state.day)>Number(offer.expiresDay??(Number(state.day)+1)))throw Error("Proposta expirada.");
+    if(Number(state.day)>Number(existing?.responseExpiresDay??offer.expiresDay??(Number(state.day)+1)))throw Error("Proposta expirada.");
     const startDay=Number(state.day)+1;
     const contractId="contract_"+offer.id;
     const signed=registerRevenueContract(state,club.id,{
-      id:contractId,type:"sponsorship",annualAmount:offer.counterAmount||offer.annualAmount,startDay,
+      id:contractId,type:"sponsorship",annualAmount:existing?.status==="brand_countered"?existing.brandCounterAmount:(offer.counterAmount||offer.annualAmount),startDay,
       durationDays:offer.durationDays
     });
     signed.brandId=offer.brandId;signed.brandName=offer.brandName;signed.sponsorRole=offer.role;
@@ -164,10 +164,13 @@
       // Deterministic, stable brand response: modest increases are more likely to succeed.
       const premium=Number(o.counterAmount)/Number(o.annualAmount||1);
       const approved=Number.isFinite(premium)&&premium<=1.12;
-      o.status=approved?"brand_accepted":"brand_rejected";
+      const negotiable=Number.isFinite(premium)&&premium>1.12&&premium<=1.2;
+      o.status=approved?"brand_accepted":negotiable?"brand_countered":"brand_rejected";
+      if(negotiable)o.brandCounterAmount=Math.round((Number(o.annualAmount)*1.08)/1000)*1000;
+      if(approved||negotiable)o.responseExpiresDay=Number(state.day)+7;
       o.replyDay=due;
       o.respondedDay=Number(state.day);
-      o.brandResponse=approved?"Contraproposta aceita pela marca. Confirme para assinar.":"Marca recusou a contraproposta.";
+      o.brandResponse=approved?"Contraproposta aceita pela marca. Confirme para assinar.":negotiable?"A marca enviou uma nova oferta de R$ "+o.brandCounterAmount.toLocaleString("pt-BR")+" por ano. Você tem 7 dias para responder.":"Marca recusou a contraproposta.";
       resolved.push(o);
     }
     return resolved;
