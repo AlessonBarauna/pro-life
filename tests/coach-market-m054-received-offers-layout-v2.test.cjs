@@ -3,9 +3,9 @@ const test=require("node:test"),assert=require("node:assert/strict"),fs=require(
 const source=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
 test("Received offers place urgent deals above collapsible preferences",()=>{
  assert.match(source,/cc-inbox-preferences/);
- assert.match(source,/<details class=\\?"cc-card cc-inbox-preferences/);
+ assert.ok(source.includes('<details class="cc-card cc-inbox-preferences"'));
  assert.match(source,/cc-inbox-urgent/);
- assert.match(source,/Nenhuma proposta de compra recebida\.\s*"?\)\+offerSettings/);
+ assert.ok(source.includes('"Nenhuma proposta de compra recebida.")+offerSettings'));
 });
 test("Received offers keep commands and responsive labels",()=>{
  assert.match(source,/data-coach-offer-player-save/);
