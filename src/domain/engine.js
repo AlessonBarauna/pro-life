@@ -13,6 +13,7 @@
   const ChampionsSeason=root.ProLifeChampionsSeason||(typeof require==="function"?require("./champions-season.js"):null);
   const NationalCallups=root.ProLifeNationalCallups||(typeof require==="function"?require("./national-callups.js"):null);
   const OffField=root.ProLifeOffField||(typeof require==="function"?require("./off-field.js"):null);
+  const ClubEconomy=root.ProLifeClubEconomy||(typeof require==="function"?require("./club-economy.js"):null);
   const CoachCareer=root.ProLifeCoachCareer||(typeof require==="function"?require("./coach-career.js"):null);
   const WorldLiveMarket=root.ProLifeWorldLiveMarket||(typeof require==="function"?require("./world-live-market.js"):null);
   const SeasonCompetitionCenter=root.ProLifeSeasonCompetitionCenter||(typeof require==="function"?require("./season-competition-center.js"):null);
@@ -420,7 +421,7 @@
         .trim()
         .slice(0, 60),
       city: String(config.city || "Mogi das Cruzes").slice(0, 60),
-      nationality: GlobalFootball?.resolveNationality?.(config.nationality,"Brasil") || "Brasil",
+      nationality: mode === "coach" ? (GlobalFootball?.resolveNationality?.(config.nationality,null) || String(config.nationality||"Brasil").trim().slice(0,60) || "Brasil") : (GlobalFootball?.resolveNationality?.(config.nationality,"Brasil") || "Brasil"),
       age: plan ? plan.age : clamp(
         Number(config.age) || (mode === "coach" ? 35 : (origin.age || 16)),
         mode === "coach" ? 25 : 14,
@@ -525,10 +526,23 @@
     WorldLiveMarket?.init?.(s);
     NationalTeam?.init(s);
     World2?.init(s, API, seed);
+    // M04.4: opt-in only at new coach career creation; existing saves untouched.
+    if(mode==="coach"&&config.financialScenario!=null&&config.financialScenario!=="legacy"){
+      const allowed=["conservative","standard","ambitious"];
+      if(!allowed.includes(config.financialScenario))throw Error("Cenario financeiro desconhecido.");
+      if(!ClubEconomy?.scenarios)throw Error("Modulo de economia de clubes indisponivel.");
+      const target=(s.clubs||[]).find(c=>c.id===config.clubId)||
+        (s.globalFootball?.clubs||[]).find(c=>c.id===config.clubId);
+      if(!target)throw Error("Selecione um clube para configurar o orcamento inicial.");
+      const option=ClubEconomy.scenarios(target).find(o=>o.id===config.financialScenario);
+      target.budget=option.proposedTransferBudget;
+      s.coachInitialFinance={version:1,clubId:target.id,scenario:option.id,
+        initialTransferBudget:option.proposedTransferBudget};
+    }
     if (plan) Creation.applyContext(s, plan);
     s.offers = plan ? Creation.opportunities(s, rng, API, plan) : weightedCareerOffers(s, rng, mode === "player" ? Math.min(5, 3 + (origin.offerBoost || 0)) : 3);
     if (plan && config.clubId) Creation.accept(s, config.clubId, API);
-    else if (config.clubId && clubs.some((c) => c.id === config.clubId)) {
+    else if (config.clubId && (clubs.some((c) => c.id === config.clubId) || (mode === "coach" && (s.globalFootball?.clubs || []).some(c => c.id === config.clubId && c.generated !== true && c.active !== false)))) {
       movePlayerToClub(s, config.clubId);
       if (mode === "player") {
         const initialOffer = s.offers.find((o) => o.clubId === config.clubId);
@@ -1092,7 +1106,15 @@
       ) / ps.length
     );
   }
-  function simulate(home, away, rng, context = null) {
+  function simulate(home, away, rng, context = null, coachActions = []) {
+    const runner=simulateSteps(home,away,rng,context,coachActions);
+    let step=runner.next();
+    while(!step.done)step=runner.next();
+    return step.value;
+  }
+  // Resumable official simulation core: each next() completes exactly one minute.
+  // The caller must NOT commit the result until this generator finishes.
+  function* simulateSteps(home, away, rng, context = null, coachActions = []) {
     const hp = selected(home),
       ap = selected(away);
     const formFactors = recentMatchFormFactors(context);
@@ -1119,7 +1141,66 @@
       clubs = [home, away],
       tactical = SimulationTactics ? [SimulationTactics.matchup(home, away), SimulationTactics.matchup(away, home)] : [{possession:0,attack:0,defense:0,fatigue:0},{possession:0,attack:0,defense:0,fatigue:0}],
       fatigue = [0, 0];
+    // Coach-only collective controls. Neutral values preserve existing match balance.
+    for(let side=0;side<2;side++){
+      const t=clubs[side]?.coachTactics;
+      if(!t)continue;
+      const safe=(value)=>Math.max(20,Math.min(80,Number(value)||50));
+      const width=(safe(t.width)-50)/30,depth=(safe(t.depth)-50)/30;
+      tactical[side].possession+=(t.buildup==="short"?2:t.buildup==="direct"?-1:0)+width;
+      tactical[side].attack+=(t.buildup==="direct"?2:t.buildup==="short"?-1:0)+depth;
+      tactical[side].defense+=(t.pressing==="low"?2:t.pressing==="high"?-1:0)-depth;
+      tactical[side].fatigue+=t.pressing==="high"?0.025:t.pressing==="low"?-0.01:0;
+    }
+    // E10: small bonuses for selected starters with an individual role.
+    // Absent role data leaves the established simulator unchanged.
+    for(let side=0;side<2;side++){
+      const roles=clubs[side]?.coachPlayerRoles;
+      if(!roles)continue;
+      const active=squads[side].map(p=>roles[p.id]?.role).filter(Boolean);
+      const offensive=active.filter(role=>["poacher","false_nine","inside_forward","playmaker","advanced","shadow","winger","wide_playmaker","target"].includes(role)).length;
+      const defensive=active.filter(role=>["defender","stopper","holding","fullback","sweeper"].includes(role)).length;
+      tactical[side].attack+=Math.min(2,offensive*0.3);
+      tactical[side].defense+=Math.min(2,defensive*0.3);
+    }
+    const tacticBaseline=tactical.map(t=>({possession:t.possession,attack:t.attack,defense:t.defense}));
+    // Pre-authorized coach actions are applied at their exact minute, before
+    // that minute's chance calculation. Default [] preserves legacy matches.
+    const plannedActions=Array.isArray(coachActions)?coachActions:[];
+    const coachSubs=[0,0],usedIncoming=[new Set(),new Set()];
     for (let minute = 1; minute <= 94; minute++) {
+      if(context?.mode==="coach"||!context){
+        for(const action of plannedActions){
+          if(action?.type!=="tactic"||Number(action.minute)!==minute)continue;
+          const side=Number(action.side);
+          if(![0,1].includes(side))continue;
+          const posture=String(action.posture||"");
+          const levels={equilibrado:[0,0,0],ofensivo:[-1,5,-2],defensivo:[2,-4,5]};
+          if(!levels[posture])continue;
+          const baseline=tacticBaseline[side];
+          tactical[side].possession=baseline.possession+levels[posture][0];
+          tactical[side].attack=baseline.attack+levels[posture][1];
+          tactical[side].defense=baseline.defense+levels[posture][2];
+        }
+        for(const action of plannedActions){
+          if(action?.type!=="substitution"||Number(action.minute)!==minute)continue;
+          const side=Number(action.side),club=clubs[side],ps=squads[side];
+          if(![0,1].includes(side)||!club||!ps||coachSubs[side]>=5)continue;
+          const outgoing=ps.find(p=>String(p.id)===String(action.outId));
+          const incoming=club.roster.find(p=>String(p.id)===String(action.inId));
+          if(!outgoing||!incoming||outgoing.id===incoming.id||ps.includes(incoming)||usedIncoming[side].has(incoming.id)||
+             incoming.injury||incoming.suspension>0||incoming._competitionSuspended||incoming.condition<=35)continue;
+          const index=ps.indexOf(outgoing);
+          ps[index]=incoming;coachSubs[side]++;usedIncoming[side].add(incoming.id);
+          if(m.participation[outgoing.id]){
+            m.participation[outgoing.id].exitMinute=minute;
+            m.participation[outgoing.id].minutes=minute-m.participation[outgoing.id].entryMinute;
+          }
+          m.participation[incoming.id]={side,starter:false,entryMinute:minute,exitMinute:94,minutes:94-minute};
+          m.participants[side].push(incoming.id);
+          m.events.push({minute,type:"substitution",side,player:incoming.name,playerId:incoming.id,outPlayer:outgoing.name,outPlayerId:outgoing.id,text:`Substituição: sai ${outgoing.name}, entra ${incoming.name}.`});
+        }
+      }
       const control = squads.map(
         (ps, i) =>
           quality(ps, "pass", formFactors, positionRoles[i]) +
@@ -1313,7 +1394,10 @@
         }
         }
       }
+      yield {minute,match:m};
     }
+    // A caller may inspect the score/events after each completed minute.
+    // No standings or match statistics have been committed yet.
     for (const [id,part] of Object.entries(m.participation)) {
       const p=clubs[part.side].roster.find(x=>x.id===id); if(!p)continue;
       const minutes=Math.max(0,Math.min(94,Number(part.exitMinute??94)-Number(part.entryMinute??0)));part.minutes=minutes;
@@ -1460,13 +1544,183 @@
       return;
     }
   }
+  // Unsaved official-simulator controller. Caller may submit decisions between minutes.
+  // A completed result must be committed through the existing registerMatch pipeline,
+  // never directly from this controller.
+  function createCoachLiveController(home,away,rng,context,initialActions=[]){
+    if(!home||!away||!rng||context?.mode!=="coach")return null;
+    const actions=Array.isArray(initialActions)?initialActions.map(a=>({...a})):[];
+    const runner=simulateSteps(home,away,rng,context,actions);
+    let minute=0,finished=false,result=null,last=null;
+    const used=[new Set(),new Set()],windows=[new Set(),new Set()];
+    const substitutions=[0,0];
+    for(const a of actions){
+      if(![0,1].includes(a.side))continue;
+      used[a.side].add(String(a.inId));
+      if(a.minute!==46)windows[a.side].add(a.minute);
+      substitutions[a.side]++;
+    }
+    return {
+      advanceTo(target){
+        if(finished||!Number.isInteger(target)||target<minute||target>94)return null;
+        while(minute<target&&!finished){
+          const next=runner.next();
+          if(next.done){finished=true;result=next.value;break;}
+          minute=next.value.minute;last=next.value.match;
+        }
+        if(minute===94&&!finished){const end=runner.next();if(end.done){finished=true;result=end.value;}}
+        return {minute,finished,score:[last?.hg||0,last?.ag||0]};
+      },
+      setTactic(side,posture){
+        if(finished||minute>=90||![0,1].includes(side)||!["equilibrado","ofensivo","defensivo"].includes(posture))return false;
+        actions.push({type:"tactic",side,minute:minute+1,posture});
+        return true;
+      },
+      substitute(side,outId,inId){
+        if(finished||minute>=90||![0,1].includes(side))return false;
+        const field=(side===0?home:away);
+        if(!field||substitutions[side]>=5||used[side].has(String(inId)))return false;
+        const windowMinute=minute+1;
+        const nextWindows=new Set(windows[side]);if(windowMinute!==46)nextWindows.add(windowMinute);
+        if(nextWindows.size>3)return false;
+        const outgoing=field.roster?.find(p=>String(p.id)===String(outId));
+        const incoming=field.roster?.find(p=>String(p.id)===String(inId));
+        const lineupIds=new Set((field.lineup||[]).map(String));
+        const reserveOrder=context?.coachCareer?.benchOrder||[];
+        const orderRank=new Map(reserveOrder.map((id,i)=>[String(id),i]));
+        const eligible=(field.roster||[]).filter(p=>p&&!lineupIds.has(String(p.id))&&!p.injury&&
+          !(Number(p.suspension)>0)&&!p._competitionSuspended&&Number(p.condition??100)>35);
+        const bench=new Set(eligible.sort((a,b)=>(orderRank.get(String(a.id))??99999)-(orderRank.get(String(b.id))??99999))
+          .slice(0,7).map(p=>String(p.id)));
+        const participants=(last?.participation||{});
+        if(!outgoing||!incoming||((String(outgoing.pos)==="GOL")!==(String(incoming.pos)==="GOL"))||!bench.has(String(inId))||!participants[outId]||participants[outId].exitMinute<minute||
+          participants[inId]||incoming.injury||Number(incoming.suspension)>0||
+          incoming._competitionSuspended||Number(incoming.condition??100)<=35)return false;
+        actions.push({type:"substitution",side,minute:windowMinute,outId:String(outId),inId:String(inId)});
+        used[side].add(String(inId));windows[side]=nextWindows;substitutions[side]++;
+        return true;
+      },
+      snapshot(side){
+        if(![0,1].includes(side))return null;
+        const field=side===0?home:away;
+        const roster=Array.isArray(field?.roster)?field.roster:[];
+        const participation=last?.participation||{};
+        const starters=new Set((field.lineup||[]).map(String));
+        const incoming=new Set(actions.filter(a=>a.side===side&&a.minute<=minute).map(a=>a.inId));
+        const outgoing=new Set(actions.filter(a=>a.side===side&&a.minute<=minute).map(a=>a.outId));
+        const onField=new Set([...starters,...incoming].filter(id=>!outgoing.has(id)));
+        const rank=new Map((context?.coachCareer?.benchOrder||[]).map((id,i)=>[String(id),i]));
+        const reserved=roster.filter(p=>p&&!starters.has(String(p.id))&&!p.injury&&
+          !(Number(p.suspension)>0)&&!p._competitionSuspended&&Number(p.condition??100)>35)
+          .sort((a,b)=>(rank.get(String(a.id))??99999)-(rank.get(String(b.id))??99999)).slice(0,7);
+        return {minute,side,score:[Number(last?.hg||0),Number(last?.ag||0)],events:(last?.events||[]).map(e=>({...e})),players:roster.filter(p=>onField.has(String(p.id))).map(p=>({
+            id:String(p.id),name:String(p.name||p.id),pos:String(p.pos||""),
+            condition:Number(p.condition??100),rating:Number(last?.ratings?.[p.id]??0),
+            minutes:Math.max(0,minute-Number(participation[p.id]?.entryMinute??0))
+          })),bench:reserved.filter(p=>!used[side].has(String(p.id))).map(p=>({
+            id:String(p.id),name:String(p.name||p.id),pos:String(p.pos||""),
+            condition:Number(p.condition??100)
+          })),substitutions:substitutions[side],windows:windows[side].size,
+          history:actions.filter(a=>a.side===side&&a.type==="substitution"&&a.minute<=minute).map(a=>({...a})),
+          tactic:actions.filter(a=>a.side===side&&a.type==="tactic"&&a.minute<=minute).slice(-1)[0]?.posture||"equilibrado"};
+      },
+      get minute(){return minute;},get finished(){return finished;},
+      get match(){return finished?result:last;},
+      get result(){return finished?result:null;},
+      get actions(){return actions.map(a=>({...a}));},
+      get substitutionCounts(){return substitutions.slice();},
+      get windowCounts(){return windows.map(w=>w.size);}
+    };
+  }
+  // Ephemeral coach-only action queue. Never serialized into career saves.
+  // The matching fixture consumes the queue once, before official simulation.
+  const coachActionPlans=new WeakMap();
+  function scheduleCoachActions(s,fixture,actions){
+    if(!s||typeof s!=="object"||s.mode!=="coach"||!fixture||!Array.isArray(actions))return false;
+    if(!fixture.home||!fixture.away||!Number.isInteger(fixture.date)||fixture.date<=s.day)return false;
+    if(![fixture.home,fixture.away].includes(s.clubId))return false;
+    if((s.matches||[]).some(m=>m.home===fixture.home&&m.away===fixture.away&&m.date===fixture.date))return false;
+    if(actions.length>5||actions.some(a=>a?.type!=="substitution"||a.side!==(s.clubId===fixture.home?0:1)||
+      !Number.isInteger(a.minute)||a.minute<1||a.minute>90||
+      typeof a.outId!=="string"||!a.outId||typeof a.inId!=="string"||!a.inId||a.outId===a.inId))return false;
+    // Maximum three substitution windows outside the half-time interval.
+    // Multiple changes in the same minute consume one window.
+    const windows=new Set(actions.filter(a=>a.minute!==45).map(a=>a.minute));
+    if(windows.size>3)return false;
+    const team=club(s,s.clubId);
+    if(!team||!Array.isArray(team.roster))return false;
+    const starters=new Set((team.lineup||[]).map(String));
+    const available=team.roster.filter(p=>p&&!starters.has(String(p.id))&&!p.injury&&
+      !(Number(p.suspension)>0)&&!p._competitionSuspended&&Number(p.condition??100)>35);
+    const rank=new Map((s.coachCareer?.benchOrder||[]).map((id,i)=>[String(id),i]));
+    const bench=available.slice().sort((x,y)=>(rank.get(String(x.id))??99999)-(rank.get(String(y.id))??99999)).slice(0,7);
+    const benchIds=new Set(bench.map(p=>String(p.id)));
+    if(actions.some(a=>!benchIds.has(a.inId)))return false;
+    const byId=new Map(team.roster.map(p=>[String(p.id),p]));
+    // Every substitution must remove a currently playing player.
+    // Prevent accidentally deploying a goalkeeper in an outfield slot, or vice versa.
+    const active=new Set(starters);
+    for(const a of actions.slice().sort((x,y)=>x.minute-y.minute)){
+      if(!active.has(a.outId)||active.has(a.inId))return false;
+      const outgoing=byId.get(a.outId),incoming=byId.get(a.inId);
+      if(!outgoing||!incoming||outgoing.injury||Number(outgoing.suspension)>0)return false;
+      if((String(outgoing.pos)==="GOL")!==(String(incoming.pos)==="GOL"))return false;
+      active.delete(a.outId);active.add(a.inId);
+    }
+    const seenOut=new Set(),seenIn=new Set();
+    for(const a of actions){
+      const out=a.side+":"+a.outId,incoming=a.side+":"+a.inId;
+      if(seenOut.has(out)||seenIn.has(incoming))return false;
+      seenOut.add(out);seenIn.add(incoming);
+    }
+    coachActionPlans.set(s,{home:fixture.home,away:fixture.away,date:fixture.date,
+      actions:actions.map(a=>({type:"substitution",side:a.side,minute:a.minute,outId:a.outId,inId:a.inId}))});
+    return true;
+  }
+  function coachActionPlan(s){
+    const plan=s&&coachActionPlans.get(s);
+    return plan?{home:plan.home,away:plan.away,date:plan.date,actions:plan.actions.map(a=>({...a}))}:null;
+  }
+  // Only the completed interactive official match may be committed, once.
+  // Never persist a partially simulated match or a second set of career effects.
+  const coachLiveResults=new WeakMap();
+  function stageCoachLiveResult(s,fixture,controller){
+    if(!s||s.mode!=="coach"||!fixture||!controller?.finished||!controller.result)return false;
+    if(fixture.date!==s.day+1||![fixture.home,fixture.away].includes(s.clubId))return false;
+    if(controller.result.home!==fixture.home||controller.result.away!==fixture.away)return false;
+    if(coachLiveResults.has(s))return false;
+    coachLiveResults.set(s,{home:fixture.home,away:fixture.away,date:fixture.date,result:controller.result});
+    return true;
+  }
+  function discardCoachLiveResult(s){coachLiveResults.delete(s);}
   function registerMatch(s, rng, homeId, awayId, meta, leagueMatch) {
     const hc = club(s, homeId), ac = club(s, awayId);
     const disciplineMeta={...meta,leagueId:leagueMatch?hc.leagueId:null};
     const disciplineKey=prepareDisciplineAvailability(s,hc,disciplineMeta);
     prepareDisciplineAvailability(s,ac,disciplineMeta);
     preparePlayerLineup(s, rng, homeId, awayId);
-    const m = simulate(hc, ac, rng, s);
+    const pendingCoachPlan=coachActionPlans.get(s);
+    const applies=pendingCoachPlan&&s.mode==="coach"&&pendingCoachPlan.home===homeId&&
+      pendingCoachPlan.away===awayId&&pendingCoachPlan.date===s.day;
+    if(applies)coachActionPlans.delete(s);
+    // Validate actions against the actual prepared XI, not the stale pre-match display.
+    const eligibleActions=[];
+    if(applies){
+      const team=s.clubId===homeId?hc:ac,side=s.clubId===homeId?0:1;
+      const onField=new Set(selected(team).map(p=>String(p.id)));
+      const usedBench=new Set();
+      for(const a of pendingCoachPlan.actions.slice().sort((a,b)=>a.minute-b.minute)){
+        const incoming=team.roster.find(p=>String(p.id)===a.inId);
+        if(a.side!==side||!onField.has(a.outId)||onField.has(a.inId)||usedBench.has(a.inId)||
+          !incoming||incoming.injury||incoming.suspension>0||incoming._competitionSuspended||incoming.condition<=35)continue;
+        onField.delete(a.outId);onField.add(a.inId);usedBench.add(a.inId);eligibleActions.push(a);
+      }
+    }
+    const staged=coachLiveResults.get(s);
+    const useLive=staged&&s.mode==="coach"&&staged.date===s.day&&
+      staged.home===homeId&&staged.away===awayId;
+    if(useLive)coachLiveResults.delete(s);
+    const m = useLive ? staged.result : simulate(hc, ac, rng, s, eligibleActions);
     if (s.mode === "player") {
       const q=Physical?.init?.(s.person,s.day), a=q?.active, key=a&&`injury:${a.startDay}:${a.type}`;
       if(a&&a.startDay===s.day&&key&&!q.processed.includes(key)){q.processed.push(key);Career.addMessage?.(s,{category:"CARREIRA",sender:"Departamento médico",subject:`Diagnóstico: ${a.name}`,body:`${a.severity}. Previsão inicial: ${a.totalDays} dia(s). A recuperação será acompanhada pelo calendário.`,priority:a.severity==="GRAVE"?"IMPORTANTE":"NORMAL",eventId:key});}
@@ -2834,6 +3088,12 @@
     isSuspendedFor,
     recordDevelopment,
     simulate,
+    stageCoachLiveResult,
+    discardCoachLiveResult,
+    simulateSteps,
+    createCoachLiveController,
+    scheduleCoachActions,
+    coachActionPlan,
     selected,
     overall,
     playerDevelopment: root.ProLifePlayerDevelopment,

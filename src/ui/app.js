@@ -7,9 +7,15 @@
     page = "home",
     setup = false,
     classicForm = false,
+    coachSetup = false,
     legacyAwardsOpen = false,
     squadSelectedId = null,
-    squadTab = "lineup";
+    squadTab = "lineup",
+    squadDetailTab = "attributes",
+    squadPhase = "with-ball",
+    squadSwapSource = null,
+    squadUndo = null,
+    coachProfileTab = "resumo";
   const $ = (q) => document.querySelector(q),
     esc = (v) =>
       String(v ?? "").replace(
@@ -84,6 +90,41 @@
         : "Existe uma decisão importante aguardando sua resposta."
     };
   }
+  // Coach sponsorship alerts reuse the existing player-career decision popup.
+  const coachSponsorPopupSeen=new Set();
+  let coachSponsorPopupTimer=null;
+  function ensureCoachSponsorPopup(){
+    if(!state||state.mode!=="coach"||setup||document.getElementById("simulation-stop-modal"))return;
+    const economy=window.ProLifeClubEconomy,brands=window.ProLifeCommercial?.brands;
+    const club=D.club?.(state);
+    if(!economy?.sponsorshipOffers||!club||!Array.isArray(brands))return;
+    const offers=economy.sponsorshipOffers(state,club,brands);
+    const replies=(state.coachCareer?.finance?.sponsorshipOffers||[])
+      .filter(o=>["brand_accepted","brand_rejected","brand_countered"].includes(o.status));
+    const notification=replies.map(o=>({id:o.id+":response",offer:o,response:true}))
+      .concat(offers.map(o=>({id:o.id,offer:o,response:false})));
+    const entry=notification.find(x=>!coachSponsorPopupSeen.has(x.id));
+    if(!entry)return;
+    const pending=entry.offer;
+    // Wait until the player/coach pending-decision queue has had a chance to show its popup.
+    // Never mark a proposal as shown while another modal is in front of it.
+    clearTimeout(coachSponsorPopupTimer);
+    coachSponsorPopupTimer=setTimeout(()=>{
+      if(!state||state.mode!=="coach"||document.getElementById("simulation-stop-modal")||
+        document.getElementById("callup-modal")||document.querySelector(".cine-backdrop"))return;
+      if(coachSponsorPopupSeen.has(entry.id))return;
+      const nowClub=D.club?.(state);
+      const current=window.ProLifeClubEconomy?.sponsorshipOffers?.(
+        state,nowClub,window.ProLifeCommercial?.brands||[])||[];
+      if(!entry.response&&!current.some(o=>o.id===pending.id))return;
+      if(entry.response&&!(state.coachCareer?.finance?.sponsorshipOffers||[]).some(o=>o.id===pending.id&&o.status===pending.status))return;
+      showSimulationStop({type:"coach-sponsor",id:pending.id,
+        title:entry.response?"Resposta de patrocínio — "+pending.brandName:"Nova proposta de patrocínio — "+pending.brandName,
+        message:entry.response?pending.brandResponse:pending.label+" · R$ "+pending.annualAmount.toLocaleString("pt-BR")+
+          " por ano. Analise a proposta na área financeira do clube."});
+      coachSponsorPopupSeen.add(entry.id);
+    },150);
+  }
   function ensurePendingDecisionPopup(force=false) {
     clearTimeout(popupCheckTimer);
     popupCheckTimer=setTimeout(()=>{
@@ -114,11 +155,12 @@
       offer:{page:"proposals",anchor:`transfer-offer-${stop.id}`,label:"Ir para proposta"},
       decision:{page:"life",anchor:"current-decision",label:"Ir para decisão"},
       commercial:{page:"sponsorships",anchor:`commercial-proposal-${stop.id}`,label:"Ir para proposta"},
+      "coach-sponsor":{page:"market",anchor:"",label:"Ver proposta de patrocínio"},
       "commercial-event":{page:"sponsorships",anchor:`commercial-event-${stop.id}`,label:"Ir para campanha"}
     };
     const route=routes[stop.type] || {page:stop.page||"inbox",anchor:stop.anchor||"",label:"Ir para decisão"};
     const el=document.createElement("div"); el.id="simulation-stop-modal"; el.className="simulation-stop-backdrop";
-    el.innerHTML=`<section class="simulation-stop-dialog" role="dialog" aria-modal="true"><div class="tag">SIMULAÇÃO INTERROMPIDA</div><h2>${esc(title)}</h2>${decisionMeta(decision)}<p>${esc(decision?.body || stop.message || "Existe uma ação importante aguardando sua resposta.")}</p>${directChoices}<div class="actions"><button class="primary" data-stop-go="${esc(route.page)}" data-stop-anchor="${esc(route.anchor)}">${esc(route.label)}</button><button data-stop-close>Agora não</button></div></section>`;
+    el.innerHTML=`<section class="simulation-stop-dialog" role="dialog" aria-modal="true"><div class="tag">SIMULAÇÃO INTERROMPIDA</div><h2>${esc(title)}</h2>${decisionMeta(decision)}<p>${esc(decision?.body || stop.message || "Existe uma ação importante aguardando sua resposta.")}</p>${directChoices}${decision?.choices?.length?'<p class="chart-note">Agora não: o jogo escolhe uma opção e registra as consequências.</p>':""}<div class="actions"><button class="primary" data-stop-go="${esc(route.page)}" data-stop-anchor="${esc(route.anchor)}">${esc(route.label)}</button><button data-stop-close>Agora não</button></div></section>`;
     document.body.appendChild(el);
   }
   const C = ProLifeCharacter,
@@ -434,12 +476,13 @@
     };
     const clubCrest = c?.id && window.ProLifeClubCrests ? window.ProLifeClubCrests.render(c.id, { size:"sm" }) : "";
     $("#app").innerHTML =
-      `<div class="game-shell"><header class="game-nav"><button type="button" class="brand" data-page="home" aria-label="PRO LIFE · Central">PRO<span>LIFE</span></button><nav aria-label="Navegação principal">${quickNav.map(navButton).join("")}</nav><details class="global-more"><summary aria-label="Mais áreas">•••</summary><div><button type="button" data-page="national">Seleção</button><button type="button" data-page="history">Mundo</button><button type="button" data-page="save">Saves</button></div></details><div class="club-chip">${clubCrest ? `<span class="club-chip-crest">${clubCrest}</span>` : ""}<span><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b><span class="sx-line">${esc(window.ProLifeShellExtras?.chipLine(state)||"")}</span></span></div>${window.ProLifeShellExtras?window.ProLifeShellExtras.bell(window.ProLifeShellExtras.pending(state,D)):""}</header><div class="game-subnav" role="navigation" aria-label="Navegação da área">${subnav.map(([id,label])=>`<button type="button" data-page="${id}" class="${page===id?"active":""}" ${page===id?'aria-current="page"':""}>${esc(label)}${id==="proposals" && offerCount ? ` <i>${offerCount}</i>`:""}</button>`).join("")}</div><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${page === "conference" ? "UEFA Conference League · classificação, rodadas e fase eliminatória" : page === "europa" ? "UEFA Europa League · classificação, rodadas e fase eliminatória" : page === "champions" ? "UEFA Champions League · classificação, rodadas e fase eliminatória" : (topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado")}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
+      `<div class="game-shell"><header class="game-nav"><button type="button" class="brand" data-page="home" aria-label="PRO LIFE · Central">PRO<span>LIFE</span></button><nav aria-label="Navegação principal">${quickNav.map(navButton).join("")}</nav><details class="global-more"><summary aria-label="Mais áreas">•••</summary><div><button type="button" data-page="national">Seleção</button><button type="button" data-page="history">Mundo</button><button type="button" data-page="save">Saves</button>${state.mode==="coach"?'<button type="button" data-coach-settings-open>Configurações da carreira</button>':""}</div></details><div class="club-chip">${clubCrest ? `<span class="club-chip-crest">${clubCrest}</span>` : ""}<span><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b><span class="sx-line">${esc(window.ProLifeShellExtras?.chipLine(state)||"")}</span></span></div>${window.ProLifeShellExtras?window.ProLifeShellExtras.bell(window.ProLifeShellExtras.pending(state,D)):""}</header><div class="game-subnav" role="navigation" aria-label="Navegação da área">${subnav.map(([id,label])=>`<button type="button" data-page="${id}" class="${page===id?"active":""}" ${page===id?'aria-current="page"':""}>${esc(label)}${id==="proposals" && offerCount ? ` <i>${offerCount}</i>`:""}</button>`).join("")}</div><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${page === "conference" ? "UEFA Conference League · classificação, rodadas e fase eliminatória" : page === "europa" ? "UEFA Europa League · classificação, rodadas e fase eliminatória" : page === "champions" ? "UEFA Champions League · classificação, rodadas e fase eliminatória" : (topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado")}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
     mountInternationalOfferPreference();
     window.ProLifeTargetClubSelector?.mount?.(state,D,Career);
     mountAvatar();
     revealActiveTab();
     ensurePendingDecisionPopup();
+    ensureCoachSponsorPopup();
     cineAutoPresent();
     mountCine();
   }
@@ -547,6 +590,13 @@
   }
   function landing() {
     if (!setup) { careerHub(); return; }
+    if (coachSetup && window.ProLifeCoachCreator) {
+      window.ProLifeCoachCreator.mount({ D, esc, toast, busy: withBusy,
+        onBack: () => { coachSetup = false; setup = false; render(); },
+        onStart: (fresh) => startCareer(fresh),
+      });
+      return;
+    }
     if (window.ProLifeCreator && !classicForm) {
       window.ProLifeCreator.mount({
         $, esc, opt, D, C, Charts, avatar, appearanceFields, toast, busy: withBusy,
@@ -595,7 +645,7 @@
         .clubs.map((c) => `<option value="${c.id}">${c.name}</option>`)
         .join(
           "",
-        )}</select></label><label>Estilo de jogo<select name="style">${opt(["Técnico", "Velocista", "Organizador", "Combativo"], "Técnico")}</select></label><label>Comemoração (perfil)<select name="celebration">${opt(C.celebrations, "Braços abertos")}</select></label></div><div id="career-identity" class="notice">Escolha uma origem e um arquétipo. A origem altera contexto inicial, reputação e pequenos bônus; o arquétipo define sua identidade de desenvolvimento.</div><p class="muted">Potencial e sucesso não são garantidos. Treinador usa reputação e licenças; os atributos abaixo são futebolísticos.</p><h3>Distribua até 30 pontos adicionais</h3><div id="points">${D.attrs.map((k) => `<label class="attribute">${D.labels[k]}<input name="point_${k}" type="number" min="0" max="20" value="5" required></label>`).join("")}</div><small id="points-total">30 / 30 pontos</small><div id="initial-radar">${Charts.radar(Object.fromEntries(D.attrs.map((k) => [k, 45])))}</div></section><section class="card"><h2>PERSONALIZAR PERSONAGEM</h2><div id="preview">${avatar({ appearance: {} })}</div><div class="kit-caption"><b id="kit-name">UNIFORME DE TREINO</b><small>O uniforme acompanha o clube escolhido.</small></div>${appearanceFields({})}<div class="notice">Brasil 2026: Séries A, B, C e D, 80 clubes e 38 rodadas por liga. A/B têm referência completa; C/D possuem cobertura parcial. Atributos e resultados são simulados.</div><label>Seed do mundo (opcional)<input name="seed" type="number" placeholder="Um número para reproduzir o mesmo universo"></label><button class="primary" type="submit">Iniciar minha carreira →</button><div class="section"><button type="button" data-action="import">Importar carreira salva</button></div></section></div></form><p class="footer">Sem contas ou pagamentos reais. Base de nomes de 2026; carreira simulada. Leia LEIA_PRIMEIRO.txt para começar.</p></div>`;
+        )}</select></label><label>Orçamento inicial do treinador<select name="financialScenario"><option value="legacy" selected>Original do clube</option><option value="conservative">Conservador (70%)</option><option value="standard">Padrão (100%)</option><option value="ambitious">Ambicioso (150%)</option></select><small>Válido apenas para uma nova carreira de treinador com clube inicial escolhido. Não altera carreiras salvas.</small></label><label>Estilo de jogo<select name="style">${opt(["Técnico", "Velocista", "Organizador", "Combativo"], "Técnico")}</select></label><label>Comemoração (perfil)<select name="celebration">${opt(C.celebrations, "Braços abertos")}</select></label></div><div id="career-identity" class="notice">Escolha uma origem e um arquétipo. A origem altera contexto inicial, reputação e pequenos bônus; o arquétipo define sua identidade de desenvolvimento.</div><p class="muted">Potencial e sucesso não são garantidos. Treinador usa reputação e licenças; os atributos abaixo são futebolísticos.</p><h3>Distribua até 30 pontos adicionais</h3><div id="points">${D.attrs.map((k) => `<label class="attribute">${D.labels[k]}<input name="point_${k}" type="number" min="0" max="20" value="5" required></label>`).join("")}</div><small id="points-total">30 / 30 pontos</small><div id="initial-radar">${Charts.radar(Object.fromEntries(D.attrs.map((k) => [k, 45])))}</div></section><section class="card"><h2>PERSONALIZAR PERSONAGEM</h2><div id="preview">${avatar({ appearance: {} })}</div><div class="kit-caption"><b id="kit-name">UNIFORME DE TREINO</b><small>O uniforme acompanha o clube escolhido.</small></div>${appearanceFields({})}<div class="notice">Brasil 2026: Séries A, B, C e D, 80 clubes e 38 rodadas por liga. A/B têm referência completa; C/D possuem cobertura parcial. Atributos e resultados são simulados.</div><label>Seed do mundo (opcional)<input name="seed" type="number" placeholder="Um número para reproduzir o mesmo universo"></label><button class="primary" type="submit">Iniciar minha carreira →</button><div class="section"><button type="button" data-action="import">Importar carreira salva</button></div></section></div></form><p class="footer">Sem contas ou pagamentos reais. Base de nomes de 2026; carreira simulada. Leia LEIA_PRIMEIRO.txt para começar.</p></div>`;
     mountAvatar();
     $("#creator").addEventListener("input", (e) => {
       const birth=$("#birthDate");
@@ -1099,6 +1149,8 @@
   function seasonRegion(c) {
     const kind = COMP_KIND(c);
     if (kind === "selecao") return "Seleções";
+    const home=window.ProLifeCompetitionZonesV2?.homeCountry?.(seasonCatalog()||[],D.club(state),D.club(state)?.leagueId);
+    if (c.country && c.country===home) return home;
     if (c.country === "Brasil") return "Brasil";
     let cont = "";
     try { const l = D.GlobalFootball?.leagueById?.(state, c.id); cont = normText(l?.continent || ""); } catch { cont = ""; }
@@ -1111,11 +1163,13 @@
     return cat.filter((c) => (!seasonUi.country || c.country === seasonUi.country) && (!seasonUi.kind || COMP_KIND(c) === seasonUi.kind) && (!q || normText(`${c.name} ${c.country || ""}`).includes(q)));
   }
   function seasonListHtml(cat) {
-    const rows = seasonFiltered(cat);
+    const rows = window.ProLifeCompetitionZonesV2?.prioritized?.(seasonFiltered(cat),window.ProLifeCompetitionZonesV2?.homeCountry?.(cat,D.club(state),D.club(state)?.leagueId))||seasonFiltered(cat);
     if (!rows.length) return `<div class="empty">Nenhuma competição encontrada. Ajuste a busca ou os filtros.</div>`;
     const groups = new Map();
     for (const c of rows) { const g = seasonRegion(c); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(c); }
-    return REGION_ORDER.filter((g) => groups.has(g)).map((g) => `<div class="season-group"><div class="tag">${esc(g)} · ${groups.get(g).length}</div>${groups.get(g).map((c) => `<button type="button" class="season-comp ${c.id === seasonUi.comp ? "on" : ""}" data-season-comp="${esc(c.id)}" aria-pressed="${c.id === seasonUi.comp}"><b>${esc(c.name)}</b><small>${esc([c.country, KIND_LABEL[COMP_KIND(c)]].filter(Boolean).join(" · "))}</small></button>`).join("")}</div>`).join("");
+    const home=window.ProLifeCompetitionZonesV2?.homeCountry?.(cat,D.club(state),D.club(state)?.leagueId);
+    const order=[...new Set([home,...REGION_ORDER,...groups.keys()].filter(Boolean))];
+    return order.filter((g) => groups.has(g)).map((g) => `<div class="season-group"><div class="tag">${esc(g)} · ${groups.get(g).length}</div>${groups.get(g).map((c) => `<button type="button" class="season-comp ${c.id === seasonUi.comp ? "on" : ""}" data-season-comp="${esc(c.id)}" aria-pressed="${c.id === seasonUi.comp}"><b>${esc(c.name)}</b><small>${esc([c.country, KIND_LABEL[COMP_KIND(c)]].filter(Boolean).join(" · "))}</small></button>`).join("")}</div>`).join("");
   }
   function stRow(r, i) {
     const gf = r.goalsFor, ga = r.goalsAgainst;
@@ -1131,13 +1185,16 @@
   };
   function seasonTableHtml(ov) {
     const rows = ov.standings.map(stRow), hasForm = rows.some((x) => x.form.length), sel = rows.find((r) => r.id && r.id === seasonUi.club);
-    const body = rows.map((r) => `<tr tabindex="0" data-season-club="${esc(r.id ?? "")}" class="${r.id === state.clubId ? "highlight" : ""} ${r.id && r.id === seasonUi.club ? "selected" : ""}" aria-selected="${r.id === seasonUi.club}"><td class="num">${cell(r.pos)}</td><td class="club">${crestImg(r.id)}${esc(r.name)}${r.id === state.clubId ? ' <span class="pill">VOCÊ</span>' : ""}</td><td class="num pts">${cell(r.pts)}</td><td class="num">${cell(r.j)}</td><td class="num">${cell(r.v)}</td><td class="num">${cell(r.e)}</td><td class="num">${cell(r.d)}</td><td class="num">${cell(r.gp)}</td><td class="num">${cell(r.gc)}</td><td class="num">${sgText(r.sg)}</td>${hasForm ? `<td class="form">${r.form.map((f) => `<i class="f-${esc(f)}">${esc(f)}</i>`).join("")}</td>` : ""}</tr>`).join("");
+    const zones=window.ProLifeCompetitionZonesV2?.zones?.(ov.competition,rows.length)||[];
+    const zoneAt=pos=>window.ProLifeCompetitionZonesV2?.forPosition?.(zones,Number(pos));
+    const body = rows.map((r) => `<tr tabindex="0" data-season-club="${esc(r.id ?? "")}" class="${r.id === state.clubId ? "highlight" : ""} ${r.id && r.id === seasonUi.club ? "selected" : ""} ${zoneAt(r.pos)?`season-zone-${zoneAt(r.pos).key}`:""}" title="${esc(zoneAt(r.pos)?.label||"")}" aria-selected="${r.id === seasonUi.club}"><td class="num">${cell(r.pos)}</td><td class="club">${crestImg(r.id)}${esc(r.name)}${r.id === state.clubId ? ' <span class="pill">VOCÊ</span>' : ""}</td><td class="num pts">${cell(r.pts)}</td><td class="num">${cell(r.j)}</td><td class="num">${cell(r.v)}</td><td class="num">${cell(r.e)}</td><td class="num">${cell(r.d)}</td><td class="num">${cell(r.gp)}</td><td class="num">${cell(r.gc)}</td><td class="num">${sgText(r.sg)}</td>${hasForm ? `<td class="form">${r.form.map((f) => `<i class="f-${esc(f)}">${esc(f)}</i>`).join("")}</td>` : ""}</tr>`).join("");
     const detail = sel ? (() => {
       const involves = (g) => [g.homeId, g.awayId].includes(sel.id);
       const last = (ov.fixtures || []).filter((g) => involves(g) && (g.played || g.status === "PLAYED")).slice(-5).reverse(), next = (ov.fixtures || []).filter((g) => involves(g) && !(g.played || g.status === "PLAYED")).slice(0, 3);
       return `<aside class="card season-club-detail"><div class="tag">CLUBE SELECIONADO</div><h3>${crestImg(sel.id, "lg")}${esc(sel.name)}</h3><div class="stats"><div class="stat"><small>Posição</small><b>${cell(sel.pos)}º</b></div><div class="stat"><small>Pontos</small><b>${cell(sel.pts)}</b></div><div class="stat"><small>Saldo</small><b>${sgText(sel.sg)}</b></div></div>${sel.form.length ? `<p class="muted">Forma: ${sel.form.map((f) => esc(f)).join(" ")}</p>` : ""}${last.length ? `<h3>Últimos resultados</h3>${last.map(gameLine).join("")}` : ""}${next.length ? `<h3>Próximos jogos</h3>${next.map(gameLine).join("")}` : ""}${!last.length && !next.length ? '<p class="muted">Sem mais detalhes disponíveis para este clube nesta competição.</p>' : ""}<button type="button" data-season-club="">Fechar detalhes</button></aside>`;
     })() : "";
-    return `<div class="season-table-wrap ${sel ? "with-detail" : ""}"><div><div class="tablewrap season-scroll" tabindex="0" aria-label="Classificação completa"><table class="season-table"><thead><tr><th class="num">#</th><th class="club">Clube</th><th class="num">PTS</th><th class="num">J</th><th class="num">V</th><th class="num">E</th><th class="num">D</th><th class="num">GP</th><th class="num">GC</th><th class="num">SG</th>${hasForm ? "<th>Forma</th>" : ""}</tr></thead><tbody>${body}</tbody></table></div><p class="muted">Selecione um clube para consultar os detalhes disponíveis.</p></div>${detail}</div>`;
+    const legend=zones.length?`<div class="season-zone-legend" aria-label="Vagas e rebaixamento">${zones.map(z=>`<span class="season-zone-key season-zone-${esc(z.key)}">${esc(z.label)} (${z.from}${z.to!==z.from?"–"+z.to:""}º)</span>`).join("")}</div>`:"";
+    return `<div class="season-table-wrap ${sel ? "with-detail" : ""}"><div><div class="tablewrap season-scroll" tabindex="0" aria-label="Classificação completa"><table class="season-table"><thead><tr><th class="num">#</th><th class="club">Clube</th><th class="num">PTS</th><th class="num">J</th><th class="num">V</th><th class="num">E</th><th class="num">D</th><th class="num">GP</th><th class="num">GC</th><th class="num">SG</th>${hasForm ? "<th>Forma</th>" : ""}</tr></thead><tbody>${body}</tbody></table></div>${legend}<p class="muted">${esc(ov.competition?.country)==="Brasil"&&/série a|serie a/i.test(ov.competition?.name||"")?"Copa do Brasil: classificação por participação na Série A e por competições específicas, não por faixa isolada na tabela. Vagas continentais adicionais dependem dos resultados das copas. ":""}Selecione um clube para consultar os detalhes disponíveis.</p></div>${detail}</div>`;
   }
   const koRounds = (ov) => (ov.rounds || []).filter((r) => r.kind === "knockout" || (!r.kind && /mata|knockout/.test(ov.competition?.format || ""))).filter((r) => (r.fixtures || []).length);
   function seasonBracketHtml(ov) {
@@ -1561,7 +1618,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       if(state.offers?.length)taskItems.push(`<article class="central-v3-task central-v3-task-urgent"><small>MERCADO · AÇÃO NECESSÁRIA</small><b>${state.offers.length} proposta${state.offers.length>1?"s":""} aguardando análise</b><span>Resposta pendente</span><button data-page="proposals">Analisar</button></article>`);
       if(taskItems.length<4)taskItems.push(`<article class="central-v3-task"><small>TREINO</small><b>${esc(H.training.focus||"Rotina diária")}</b><span>${esc(H.training.next||"Disponível")}</span><button data-page="training">Abrir treino</button></article>`);
       const decisionTask=state.decision?`<article class="central-v3-task central-v3-decision" role="status"><small>DECISÃO URGENTE</small><b>${esc(state.decision.title)}</b><span>${esc(state.decision.body)}</span><div class="actions">${state.decision.choices.map(([id,label])=>`<button data-choice="${id}">${esc(label)}</button>`).join("")}</div></article>`:"";
-      const nextActions=next?`<div class="central-v3-actions"><button class="primary central-v3-action-main" data-live-match>Acompanhar partida</button><button class="central-v3-action-secondary" data-simulate="nextCommitment">Simular até o jogo</button><button class="central-v3-action-quiet" data-advance="1">Avançar 1 dia</button></div>`:`<div class="central-v3-actions"><button class="primary central-v3-action-main" data-page="calendar">Abrir calendário</button><button class="central-v3-action-quiet" data-advance="1">Avançar 1 dia</button></div>`;
+      const nextActions=next?`<div class="central-v3-actions"><button class="primary central-v3-action-main" data-live-match>Acompanhar partida</button>${state.mode==="coach"?'<button class="central-v3-action-secondary" data-coach-plan-official-sub>Planejar substituição oficial</button>':""}<button class="central-v3-action-secondary" data-simulate="nextCommitment">Simular até o jogo</button><button class="central-v3-action-quiet" data-advance="1">Avançar 1 dia</button></div>`:`<div class="central-v3-actions"><button class="primary central-v3-action-main" data-page="calendar">Abrir calendário</button><button class="central-v3-action-quiet" data-advance="1">Avançar 1 dia</button></div>`;
       return `<div class="career-dashboard career-central-v3">
         <header class="central-v3-header"><div><span>TEMPORADA ${safe(state.season)}</span><time>${dayDate(state.day)}</time><h1>Central</h1></div><p>${esc(next?.competitionName||H.table.league||"Temporada atual")} <b>·</b> ${esc(next?.stage||"Visão geral")}</p></header>
         <section class="central-v3-hero central-main-match">
@@ -1891,6 +1948,69 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         c = D.club(state);
       const career = Career.init(state), pc = career.playerCareer, ct = pc?.contract, interests = pc?.interests || [], advice = state.mode === "player" ? Career.agentAdvice(state) : null, strategy = pc?.agentStrategy || { priority: "balanced", stance: "open" }, prefs = career.offerPreferences || { leagues: ["serieA", "serieB", "serieC", "serieD"], clubLevel: "any", international: true }, remaining = ct ? Math.max(0, ct.endDay - state.day) : 0;
       const contractAgent = state.mode !== "player" ? "" : `<section class="card section" id="contract-agent"><div class="split"><div><div class="tag">CONTRATO E AGENTE</div><h2>Sua carreira profissional</h2></div><span class="pill">${ct ? `${Math.ceil(remaining / 30)} mês(es)` : "SEM VÃNCULO"}</span></div><div class="stats"><div class="stat"><small>Valor de mercado</small><b>${money(pc.marketValue || 0)}</b></div><div class="stat"><small>Salário</small><b>${money(state.salary)}/mês</b></div><div class="stat"><small>Papel no elenco</small><b>${esc(ct?.role || pc.squadRole || "—")}</b></div><div class="stat"><small>Contrato</small><b>${ct ? dayDate(ct.endDay) : "Sem contrato"}</b></div></div>${ct && remaining <= 180 ? `<div class="notice"><b>Seu contrato está perto do fim.</b><p>Restam aproximadamente ${Math.ceil(remaining / 30)} mês(es). Acompanhe as conversas com a diretoria e defina os próximos passos com seu agente.</p></div>` : ""}<div class="grid"><div><div class="tag">MEU AGENTE</div><h3>${esc(pc.agent?.name || "Agente PRO-LIFE")}</h3><p>${esc(pc.agent?.agency || "Agência independente")} · reputação ${pc.agent?.reputation||50}/100 · comissão ${pc.agent?.commission||5}%<br>Rede: ${esc(pc.agent?.network||"Nacional")} · negociação ${pc.agent?.negotiation||50}/100</p><h3>${esc(advice?.action || "Planejamento de carreira")}</h3><p>${esc(advice?.reason || "Seu agente está analisando o próximo passo.")}</p><label>Prioridade<select id="agent-priority"><option value="balanced" ${strategy.priority === "balanced" ? "selected" : ""}>Equilíbrio</option><option value="playtime" ${strategy.priority === "playtime" ? "selected" : ""}>Tempo de jogo</option><option value="salary" ${strategy.priority === "salary" ? "selected" : ""}>Salário</option><option value="prestige" ${strategy.priority === "prestige" ? "selected" : ""}>Prestígio</option><option value="development" ${strategy.priority === "development" ? "selected" : ""}>Desenvolvimento</option></select></label><label>Postura<select id="agent-stance"><option value="stay" ${strategy.stance === "stay" ? "selected" : ""}>Quero permanecer</option><option value="open" ${strategy.stance === "open" ? "selected" : ""}>Aberto a propostas</option><option value="loan" ${strategy.stance === "loan" ? "selected" : ""}>Buscar empréstimo</option><option value="leave" ${strategy.stance === "leave" ? "selected" : ""}>Buscar saída</option></select></label><button class="primary" data-action="agent-strategy">Atualizar estratégia</button><div class="actions">${Career.agencies.map(a=>`<button data-hire-agency="${a.id}" ${pc.agent?.id===a.id?"disabled":""}>${pc.agent?.id===a.id?"Agência atual":`Contratar ${esc(a.name)}`}</button>`).join("")}</div></div><div><div class="tag">SITUAÇÃO CONTRATUAL</div>${ct ? `<p><b>Clube:</b> ${esc(c?.name || "—")}<br><b>Vínculo:</b> ${ct.type === "loan" ? "Empréstimo" : "Definitivo"}<br><b>Término:</b> ${dayDate(ct.endDay)}<br><b>Tempo restante:</b> ${Math.ceil(remaining / 30)} mês(es)</p>` : `<p>Você está sem contrato ativo.</p>`}<p><b>Interesses:</b><br>${interests.length ? interests.slice(0, 5).map(x => `${esc(D.club(state, x.clubId)?.name || "Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhuma sondagem ativa."}</p>${!pc.renewalOffer && ct && remaining <= 365 ? `<button class="primary" data-action="request-renewal">Pedir ao agente para renovar</button>` : ""}</div></div>${pc.renewalOffer ? `<article class="news offer section"><time>NEGOCIAÇÃO DE RENOVAÇÃO</time><h3>${esc(c?.name || "Clube atual")}</h3><p>Proposta atual: ${Math.round(pc.renewalOffer.durationDays / 365)} ano(s) · ${money(pc.renewalOffer.salary)}/mês · luvas ${money(pc.renewalOffer.signingBonus)} · bônus ${money(pc.renewalOffer.performanceBonus || 0)} · papel ${esc(pc.renewalOffer.role || pc.squadRole)}</p><div class="grid3"><label>Salário desejado<input id="renew-salary" type="number" min="0" step="100" value="${pc.renewalOffer.salary}"></label><label>Anos<input id="renew-years" type="number" min="1" max="5" value="${Math.round(pc.renewalOffer.durationDays / 365)}"></label><label>Luvas<input id="renew-bonus" type="number" min="0" step="100" value="${pc.renewalOffer.signingBonus}"></label><label>Bônus desempenho<input id="renew-performance" type="number" min="0" step="100" value="${pc.renewalOffer.performanceBonus || 0}"></label><label>Papel<select id="renew-role">${["Rotação", "Titular", "Importante", "Estrela"].map(r => `<option ${r === (pc.renewalOffer.role || pc.squadRole) ? "selected" : ""}>${r}</option>`).join("")}</select></label></div><div class="actions"><button class="primary" data-action="accept-renewal">Aceitar renovação</button><button data-action="counter-renewal">Pedir meus termos</button><button data-action="reject-renewal">Recusar</button></div></article>` : ""}<details class="section"><summary><b>Preferências de propostas</b></summary><p class="muted">Defina o tipo de oportunidade que seu agente deve priorizar.</p>${state.world === "brazil2026" ? `<div class="offer-pref-leagues">${[["serieA", "Série A"], ["serieB", "Série B"], ["serieC", "Série C"], ["serieD", "Série D"]].map(([id, label]) => `<label><input type="checkbox" class="offer-league" value="${id}" ${prefs.leagues.includes(id) ? "checked" : ""}> ${label}</label>`).join("")}</div>` : ""}<label><input id="offer-international" type="checkbox" ${prefs.international!==false?"checked":""}> Clubes internacionais</label><p class="chart-note">Mercado internacional ${prefs.international!==false?"habilitado":"desabilitado"}.</p><label>Nível dos clubes<select id="offer-club-level"><option value="any" ${prefs.clubLevel === "any" ? "selected" : ""}>Qualquer clube</option><option value="elite" ${prefs.clubLevel === "elite" ? "selected" : ""}>Somente clubes de elite</option><option value="competitive" ${prefs.clubLevel === "competitive" ? "selected" : ""}>Clubes competitivos</option><option value="intermediate" ${prefs.clubLevel === "intermediate" ? "selected" : ""}>Clubes intermediários</option><option value="small" ${prefs.clubLevel === "small" ? "selected" : ""}>Clubes menores</option></select></label><button class="primary" data-action="offer-prefs">Salvar preferências</button></details></section>`;
+      if (state.mode === "coach") {
+        // FC27 manager profile: display verified career data; no player-only stats.
+        const sn = D.CoachCareer?.snapshot?.(state,D) || window.ProLifeCoachCareer?.snapshot?.(state,D);
+        const total = sn?.totals || {};
+        const stints = Array.isArray(sn?.stints) ? sn.stints : [];
+        const records = stints.slice().reverse();
+        const games = Number(total.w||0)+Number(total.d||0)+Number(total.l||0);
+        const pct = games ? Math.round(100*Number(total.w||0)/games) : 0;
+        const crest = c?.id && window.ProLifeClubCrests?.render ? window.ProLifeClubCrests.render(c.id,{size:"sm"}) : "";
+        const item = (label,value) => `<div class="coach-prof-stat"><small>${esc(label)}</small><strong>${esc(value)}</strong></div>`;
+        const section = (id,title,body) => `<section id="coach-prof-${id}" class="card coach-prof-section"><h2>${esc(title)}</h2>${body}</section>`;
+        const empty = '<p class="muted">Ainda não há registros nesta carreira.</p>';
+        const careerRows = records.length ? records.map(st=>`<article class="coach-prof-stint"><b>${esc(st.club||st.clubId||"Clube")}</b><small>${esc(st.fromSeason||state.season)} ${st.exit?"— "+esc(st.toSeason||state.season):"— Atual"}</small><p>${esc(st.exit ? st.reason||st.exit : "Vínculo em andamento")}</p></article>`).join("") : empty;
+        const titles = Number(total.titles||0);
+        const objectiveList = sn?.goals?.items || [];
+        const objectiveHtml = objectiveList.length ? `<ul class="coach-prof-goals">${objectiveList.map(g=>`<li><span>${esc(g.label)}</span><b>${esc(g.status==="cumprida"?"Cumprida":g.status==="falhou"?"Não cumprida":"Em andamento")}</b></li>`).join("")}</ul>` : empty;
+        return `<div class="coach-prof">
+          <style>
+            .coach-prof{--coach-accent:#c8f62e;color:#eaf0f3;max-width:1440px;margin:auto}
+            .coach-prof .coach-prof-hero{display:grid;grid-template-columns:minmax(260px, .9fr) minmax(0, 1.1fr);gap:18px}
+            .coach-prof .coach-prof-identity,.coach-prof .coach-prof-summary{background:#111e28;border:1px solid #283b46;border-radius:12px;padding:22px;min-width:0}
+            .coach-prof .coach-prof-identity .avatar{max-height:350px}
+            .coach-prof .coach-prof-identity h1{font-size:27px;margin:14px 0 6px}
+            .coach-prof .coach-prof-club{display:flex;align-items:center;gap:12px;color:var(--coach-accent);font-weight:700;margin-top:12px}
+            .coach-prof .coach-prof-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+            .coach-prof .coach-prof-tabs button{padding:10px 13px;border:1px solid #354a54;border-radius:6px;color:#eef2f4;text-decoration:none;background:#152530;font-weight:700;font-size:12px}
+            .coach-prof .coach-prof-tabs button:hover,.coach-prof .coach-prof-tabs button:focus,.coach-prof .coach-prof-tabs button.active{border-color:var(--coach-accent);color:var(--coach-accent)}
+            .coach-prof .coach-prof-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
+            .coach-prof .coach-prof-stat{padding:14px;background:#192b37;border:1px solid #29424c;border-radius:8px}
+            .coach-prof .coach-prof-stat small{display:block;color:#9fb0ba;font-size:11px;margin-bottom:5px}
+            .coach-prof .coach-prof-stat strong{font-size:22px;color:#f4f7f9}
+            .coach-prof .coach-prof-section{margin:18px 0;background:#101e28;border:1px solid #293d49;padding:22px;border-radius:12px;scroll-margin-top:65px}
+            .coach-prof .coach-prof-section h2{border-left:3px solid var(--coach-accent);padding-left:12px;margin:0 0 20px}
+            .coach-prof .coach-prof-goals{padding:0;list-style:none}.coach-prof .coach-prof-goals li{display:flex;justify-content:space-between;gap:20px;padding:12px 4px;border-bottom:1px solid #30434e}
+            .coach-prof .coach-prof-stint{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;padding:14px 0;border-bottom:1px solid #30434e}
+            .coach-prof .coach-prof-stint small{color:#9fb0ba}.coach-prof .coach-prof-stint p{width:100%;margin:0;color:#a7b7c0}
+            .coach-prof #appearance-editor{max-width:900px}
+            @media(max-width:850px){.coach-prof .coach-prof-hero{grid-template-columns:1fr}.coach-prof .coach-prof-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+          </style>
+          <nav class="coach-prof-tabs" aria-label="Perfil do treinador">
+            <button type="button" data-coach-profile-tab="resumo" class="${coachProfileTab==="resumo"?"active":""}" aria-current="${coachProfileTab==="resumo"?"page":"false"}">Visão geral</button>
+            <button type="button" data-coach-profile-tab="desempenho" class="${coachProfileTab==="desempenho"?"active":""}" aria-current="${coachProfileTab==="desempenho"?"page":"false"}">Desempenho</button>
+            <button type="button" data-coach-profile-tab="trajetoria" class="${coachProfileTab==="trajetoria"?"active":""}" aria-current="${coachProfileTab==="trajetoria"?"page":"false"}">Trajetória</button>
+            <button type="button" data-coach-profile-tab="conquistas" class="${coachProfileTab==="conquistas"?"active":""}" aria-current="${coachProfileTab==="conquistas"?"page":"false"}">Conquistas</button>
+            <button type="button" data-coach-profile-tab="identidade" class="${coachProfileTab==="identidade"?"active":""}" aria-current="${coachProfileTab==="identidade"?"page":"false"}">Identidade e aparência</button>
+          </nav>
+          ${coachProfileTab==="resumo"?`<div id="coach-prof-resumo" class="coach-prof-hero">
+            <section class="coach-prof-identity"><div class="tag">PERFIL DO TREINADOR</div>${avatar(p)}<h1>${esc(p.name)}</h1><p class="muted">${esc(p.age)} anos · ${esc(p.city||"Cidade não informada")} · ${esc(p.nationality||"Brasil")}</p><div class="coach-prof-club">${crest}<span>${esc(c?.name||"Sem clube")}</span></div><p class="muted">Temporada ${esc(state.season)} · ${esc(sn?.license||"Licença não registrada")}</p></section>
+            <section class="coach-prof-summary"><div class="tag">VISÃO GERAL DA CARREIRA</div><h2>Seu trabalho à frente do clube</h2><div class="coach-prof-kpis">
+              ${item("Reputação",Number.isFinite(Number(sn?.reputation))?Math.round(Number(sn.reputation))+"/100":"—")}
+              ${item("Confiança da diretoria",Number.isFinite(Number(sn?.board))?Math.round(Number(sn.board))+"/100":"—")}
+              ${item("Clube atual",c?.name||"Sem clube")}
+              ${item("Temporadas",total.seasons??0)}
+              ${item("Partidas registradas",games)}
+              ${item("Títulos",titles)}
+            </div><p class="muted">Os indicadores refletem os dados registrados no save da carreira de treinador.</p></section>
+          </div>`:""}
+          ${coachProfileTab==="desempenho"?section("desempenho","Desempenho profissional",`<div class="coach-prof-kpis">${item("Vitórias",total.w??0)}${item("Empates",total.d??0)}${item("Derrotas",total.l??0)}${item("Aproveitamento de vitórias",pct+"%")}</div><h3>Metas da diretoria</h3>${objectiveHtml}`):""}
+          ${coachProfileTab==="trajetoria"?section("trajetoria","Histórico de clubes",careerRows):""}
+          ${coachProfileTab==="conquistas"?section("conquistas","Títulos e conquistas",`<div class="coach-prof-kpis">${item("Títulos registrados",titles)}${item("Temporadas concluídas",total.seasons??0)}</div><p class="muted">As conquistas serão exibidas conforme forem registradas pelo motor da carreira. Nenhum título fictício é atribuído.</p>`):""}
+          ${coachProfileTab==="identidade"?section("identidade","Identidade e aparência",`<p class="muted">Personalização visual existente preservada. O editor 3D não foi alterado.</p><form id="appearance-editor">${appearanceFields(p.appearance)}<button class="primary" type="submit">Salvar aparência</button></form>`):""}
+        </div>`;
+      }
       if (state.mode === "player") {
         const P = window.ProLifePlayerProfile.init(state, D), I=P.identity, S=P.season, CS=P.careerStats;
         const attrClass=(v)=>v>=80?"elite":v>=65?"solid":"develop";
@@ -2108,13 +2228,73 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       })() : "";
       const coachRelation=managerPanel+coachRelationBody;
       const autoSelection=sq?.selection||(D.Squad?.choose?D.Squad.choose(state,c):null);
+      // Automatic recovery for incomplete/invalid coach XI; preserve every valid manual XI.
+      if(coach&&Array.isArray(c.roster)){
+        const validPlayers=(c.lineup||[]).map(id=>c.roster.find(p=>p.id===id));
+        const unique=new Set(c.lineup||[]);
+        const eligible=p=>p&&!p.injury&&!(Number(p.suspension)>0);
+        const gk=p=>String(p?.pos||"").toUpperCase()==="GOL";
+        const validXI=validPlayers.length===11&&unique.size===11&&validPlayers.every(eligible)&&validPlayers.filter(gk).length===1;
+        if(!validXI){
+          const layouts={"4-3-3":["PE","CA","PD","MC","VOL","MC","LE","ZAG","ZAG","LD","GOL"],
+            "4-4-2":["CA","CA","ME","MC","MC","MD","LE","ZAG","ZAG","LD","GOL"],
+            "4-2-3-1":["CA","PE","MEI","PD","VOL","VOL","LE","ZAG","ZAG","LD","GOL"]};
+          const roles=layouts[c.formation]||layouts["4-3-3"];
+          const pool=c.roster.filter(eligible),used=new Set(),chosen=[];
+          const original=new Set((c.lineup||[]).filter(id=>pool.some(p=>p.id===id)));
+          const rating=(role,p)=>{
+            const positions=[p.pos,...(Array.isArray(p.secondaryPositions)?p.secondaryPositions:[])]
+              .map(x=>String(x||"").toUpperCase());
+            if(role==="GOL")return gk(p)?10000:-100000;
+            if(gk(p))return -100000;
+            if(positions.includes(role))return 1000;
+            const nearby={ZAG:["DEF"],LE:["LD","LAT","DEF"],LD:["LE","LAT","DEF"],
+              MC:["VOL","MEI","ME","MD"],VOL:["MC","MEI"],ME:["PE","MC","MEI"],
+              MD:["PD","MC","MEI"],PE:["ME","ATA"],PD:["MD","ATA"],
+              CA:["ATA","PE","PD"],MEI:["MC","VOL"]};
+            return (nearby[role]||[]).some(x=>positions.includes(x))?300:0;
+          };
+          if(pool.length>=11&&pool.some(gk)){
+            for(const role of roles){
+              const best=pool.filter(p=>!used.has(p.id))
+                .sort((a,b)=>(rating(role,b)+(original.has(b.id)?100:0)+Number(D.overall(b)))-
+                  (rating(role,a)+(original.has(a.id)?100:0)+Number(D.overall(a))))[0];
+              if(!best||rating(role,best)<-1000)break;
+              chosen.push(best.id);used.add(best.id);
+            }
+            if(chosen.length===11&&new Set(chosen).size===11){
+              try{
+                A.execute(state,"lineup",{ids:chosen});
+                state.coachCareer||={version:1};
+                state.coachCareer.pitchSlots=[...chosen];
+                state.coachCareer.pitchFormation=c.formation||"4-3-3";
+                persist();
+              }catch(error){console.warn("XI automatico nao aplicado:",error);}
+            }
+          }
+        }else{
+          // An old pitch-slot mapping can place a goalkeeper in an outfield slot.
+          const slots=state.coachCareer?.pitchSlots;
+          if(Array.isArray(slots)&&slots.length===11&&
+            slots.some((id,i)=>gk(c.roster.find(p=>p.id===id))!== (i===10))){
+            delete state.coachCareer.pitchSlots;
+            delete state.coachCareer.pitchFormation;
+            persist();
+          }
+        }
+      }
       const coachStarters=coach?c.lineup.map(id=>c.roster.find(p=>p.id===id)).filter(Boolean):[];
-      const selection=coach?{starters:coachStarters,bench:c.roster.filter(p=>!c.lineup.includes(p.id)),assignedPositions:autoSelection?.assignedPositions||null}:autoSelection;
+      const selection=coach?{starters:coachStarters,bench:c.roster.filter(p=>!c.lineup.includes(p.id)),assignedPositions:null}:autoSelection;
       const status=(p)=>selection?.starters.includes(p)?"Titular":selection?.bench.includes(p)?"Banco":"Fora";
       const form=(p)=>D.Squad?.formValue?D.Squad.formValue(state,p).toFixed(1):"—";
       const relation = sq ? `<section class="card section"><div class="tag">DISPUTA POR POSIÇÃO</div><div class="split"><div><h2>${esc(state.person.pos)} · ${esc(sq.heroRole)}</h2><p>Minha posição na disputa: <b>${sq.heroRank}º</b> · Confiança do treinador: <b>${Math.round(pc.coachTrust)}/100</b></p></div><span class="pill">${esc(sq.formation)}</span></div><div class="tablewrap"><table><thead><tr><th>#</th><th>Concorrente</th><th>OVR</th><th>Forma</th><th>Condição</th><th>Situação</th></tr></thead><tbody>${sq.rivals.map(r=>`<tr class="${r.id==="hero"?"highlight":""}"><td>${r.rank}</td><td>${esc(r.name)}</td><td>${r.overall}</td><td>${r.form}</td><td>${r.condition}%</td><td>${esc(r.status)}</td></tr>`).join("")}</tbody></table></div><p class="muted">A escalação considera posição, OVR, forma recente, condição, moral e confiança. Status contratual não garante vaga.</p>${pc.matchSelection?`<div class="notice"><b>Última decisão do treinador:</b> ${esc(pc.matchSelection.role)}<br><small>${esc(pc.matchSelection.reason||"")}</small></div>`:""}</section>` : "";
-      const starters=selection?.starters||[], bench=selection?.bench||c.roster.filter(p=>!starters.includes(p));
-      const formation=sq?.formation||c.formation||autoSelection?.formation||"4-3-3";
+      const starters=selection?.starters||[];
+      const reservePool=selection?.bench||c.roster.filter(p=>!starters.includes(p));
+      const benchOrder=coach&&Array.isArray(state.coachCareer?.benchOrder)?state.coachCareer.benchOrder:[];
+      const rank=new Map(benchOrder.map((id,i)=>[id,i]));
+      const bench=coach?[...reservePool].sort((a,b)=>(rank.get(a.id)??99999)-(rank.get(b.id)??99999)):reservePool;
+      const formation=coach?(c.formation||"4-3-3"):(sq?.formation||c.formation||autoSelection?.formation||"4-3-3");
+      const canUndo=coach&&squadUndo?.clubId===c.id&&squadUndo?.day===state.day;
       const selected=c.roster.find(p=>p.id===squadSelectedId)||c.roster.find(p=>p.id==="hero")||starters[0]||c.roster[0];
       squadSelectedId=selected?.id||null;
       const positionOf=(p)=>window.ProLifePlayerPositions?.normalize?.(p)?.primaryPosition||p?.pos||"—";
@@ -2123,20 +2303,152 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const isUnavailable=(p)=>p.injury||p.suspension>0;
       const selectionStatus=(p)=>starters.includes(p)?"Titular":bench.includes(p)?"Banco":"Fora";
       const moraleLabel=(value)=>value>=78?"Alta":value>=55?"Estável":"Baixa";
-      const playerTile=(p,compact=false)=>`<article class="pl-squad-player ${p.id===selected?.id?"selected":""} ${p.id==="hero"?"hero":""} ${isUnavailable(p)?"unavailable":""}" data-squad-player="${esc(p.id)}" role="button" tabindex="0" aria-label="Selecionar ${esc(p.name)}"><span class="pl-squad-face" aria-hidden="true">${esc(initials(p.name))}</span><span class="pl-squad-player-copy"><small>${esc(positionOf(p))}</small><b>${esc(shortName(p.name))}</b><i><em style="width:${Math.max(0,Math.min(100,Math.round(p.condition??0)))}%"></em></i></span><strong>${D.overall(p)}</strong><span class="pl-squad-morale ${Number(p.morale||0)>=55?"good":"low"}" title="Moral ${Math.round(p.morale||0)}">${Number(p.morale||0)>=55?"●":"◆"}</span>${coach?`<label class="pl-xi-toggle" title="Incluir no XI"><input type="checkbox" class="lineup" value="${esc(p.id)}" ${c.lineup.includes(p.id)?"checked":""} ${isUnavailable(p)?"disabled":""}><span>XI</span></label>`:""}${p.injury?'<span class="pl-squad-alert">LESÃO</span>':p.suspension>0?'<span class="pl-squad-alert">SUSPENSO</span>':""}</article>`;
+      const playerTile=(p,compact=false,slotRole=null)=>`<article class="pl-squad-player ${p.id===selected?.id?"selected":""} ${p.id===squadSwapSource?"swap-source":""} ${slotRole&&fit(slotRole,p)<2?"out-of-position":""} ${p.id==="hero"?"hero":""} ${isUnavailable(p)?"unavailable":""}" data-squad-player="${esc(p.id)}" ${coach?'draggable="true" title="Arraste para trocar ou clique em dois jogadores para substituir"':""} role="button" tabindex="0" aria-label="Selecionar ${esc(p.name)}"><span class="pl-squad-face" aria-hidden="true">${esc(initials(p.name))}</span><span class="pl-squad-player-copy"><small>${esc(slotRole||positionOf(p))}${slotRole&&fit(slotRole,p)<2?" · !":""}</small><b>${esc(shortName(p.name))}</b>${slotRole&&fit(slotRole,p)<2?`<span class="pl-squad-improvised" title="Posição original: ${esc(positionOf(p))}">IMPROVISADO · ${esc(positionOf(p))}</span>`:""}<i><em style="width:${Math.max(0,Math.min(100,Math.round(p.condition??0)))}%"></em></i></span><strong>${D.overall(p)}</strong><span class="pl-squad-morale ${Number(p.morale||0)>=55?"good":"low"}" title="Moral ${Math.round(p.morale||0)}">${Number(p.morale||0)>=55?"●":"◆"}</span>${coach?`<label class="pl-xi-toggle" title="Incluir no XI"><input type="checkbox" class="lineup" value="${esc(p.id)}" ${c.lineup.includes(p.id)?"checked":""} ${isUnavailable(p)?"disabled":""}><span>XI</span></label>`:""}${p.injury?'<span class="pl-squad-alert">LESÃO</span>':p.suspension>0?'<span class="pl-squad-alert">SUSPENSO</span>':""}</article>`;
       const roleRows={"4-2-3-1":[["ATA",["CA"]],["MEI",["PE","MEI","PD"]],["VOL",["VOL","VOL"]],["DEF",["LE","ZAG","ZAG","LD"]],["GOL",["GOL"]]],"4-4-2":[["ATA",["CA","CA"]],["MEI",["ME","MC","MC","MD"]],["DEF",["LE","ZAG","ZAG","LD"]],["GOL",["GOL"]]],"4-3-3":[["ATA",["PE","CA","PD"]],["MEI",["MC","VOL","MC"]],["DEF",["LE","ZAG","ZAG","LD"]],["GOL",["GOL"]]]};
       const remaining=starters.slice(), assigned=selection?.assignedPositions||{};
-      const broad=(role,p)=>role==="GOL"?p.pos==="GOL":["LE","ZAG","LD"].includes(role)?["DEF","LE","ZAG","LD"].includes(p.pos):["PE","CA","PD"].includes(role)?["ATA","PE","CA","PD"].includes(p.pos):["MEI","ME","MC","VOL","MD"].includes(p.pos);
-      const rows=(roleRows[formation]||roleRows["4-3-3"]).map(([label,roles])=>({label,players:roles.map(role=>{let at=remaining.findIndex(p=>assigned[p.id]===role);if(at<0)at=remaining.findIndex(p=>broad(role,p));if(at<0&&role!=="GOL")at=remaining.findIndex(p=>p.pos!=="GOL");if(at<0)at=0;return remaining.length?remaining.splice(at,1)[0]:null;}).filter(Boolean)}));
+      const fit=(role,p)=>{
+        const native=positionOf(p).toUpperCase(),raw=String(p.pos||"").toUpperCase();
+        const all=[native,raw,...(Array.isArray(p.secondaryPositions)?p.secondaryPositions:[])].map(x=>String(x).toUpperCase());
+        if(all.includes(role))return 3;
+        const groups={GOL:["GOL"],ZAG:["DEF","ZAG"],LE:["LAT","LE","LD","DEF"],LD:["LAT","LD","LE","DEF"],VOL:["VOL","MC","MEI"],MC:["MC","MEI","VOL","ME","MD"],ME:["ME","MEI","MC","PE"],MD:["MD","MEI","MC","PD"],MEI:["MEI","MC","VOL"],PE:["PE","ATA","ME"],PD:["PD","ATA","MD"],CA:["CA","ATA"]};
+        if((groups[role]||[role]).some(x=>all.includes(x)))return 2;
+        if(role==="GOL"||all.includes("GOL"))return 0;
+        return 1;
+      };
+      const slots=(roleRows[formation]||roleRows["4-3-3"]);
+      const rows=slots.map(([label,roles])=>({label,roles,players:roles.map(role=>{
+        if(!remaining.length)return null;
+        let at=remaining.findIndex(p=>assigned[p.id]===role);
+        if(at<0){
+          let best=-1;
+          for(let k=0;k<remaining.length;k++){
+            const score=fit(role,remaining[k]);
+            if(score>best){best=score;at=k;}
+          }
+        }
+        return remaining.splice(Math.max(0,at),1)[0];
+      }).filter(Boolean)}));
+      // Keep the coach's explicit slot order instead of re-sorting every render.
+      if(coach){
+        const saved=state.coachCareer?.pitchSlots;
+        const ids=starters.map(p=>p.id);
+        const valid=state.coachCareer?.pitchFormation===formation&&Array.isArray(saved)&&saved.length===ids.length&&new Set(saved).size===ids.length&&saved.every(id=>ids.includes(id));
+        if(valid){
+          // All initial players were consumed while constructing rows above.
+          // Use the rendered slot count, not the emptied 'remaining' array.
+          let cursor=0;
+          for(const row of rows){
+            const count=row.players.length;
+            row.players=saved.slice(cursor,cursor+count).map(id=>c.roster.find(p=>p.id===id)).filter(Boolean);
+            cursor+=count;
+          }
+        }else if(ids.length===11){
+          state.coachCareer ||= {version:1};
+          state.coachCareer.pitchSlots=rows.flatMap(row=>row.players.map(p=>p.id));
+          state.coachCareer.pitchFormation=formation;
+        }
+      }
       if(remaining.length)rows.splice(Math.max(1,rows.length-1),0,{label:"AJUSTE",players:remaining.splice(0)});
+      const pitchFitWarnings=coach?rows.flatMap(row=>row.players.map((p,i)=>({p,role:row.roles?.[i],grade:fit(row.roles?.[i],p)}))).filter(x=>x.grade<2):[];
       const ratings=selected?D.Training.groupRatings(selected.attrs):{};
       const attrs=[["pace","Ritmo"],["finish","Finalização"],["pass","Passes"],["defense","Defesa"],["strength","Força"],["stamina","Resistência"]];
       const crest=window.ProLifeClubCrests?.inline?window.ProLifeClubCrests.inline(c.id,"lg"):"";
       const leadership=D.captaincy?.(state,c)||{};
       const tacticLabel={balanced:"Equilibrado",possession:"Posse e construção",counter:"Bloco baixo e contra-ataque",attack:"Ataque e risco"}[c.tactic]||c.tactic;
       const comparison=c.roster.filter(p=>p.id!==selected?.id&&positionOf(p)===positionOf(selected)).sort((a,b)=>D.overall(b)-D.overall(a))[0];
-      const tabSupplement=squadTab==="tactics"?`<section class="pl-squad-supplement"><div><div class="tag">PLANO TÁTICO</div><h2>${esc(tacticLabel)}</h2><p>${coach?"Ajuste o comportamento coletivo sem alterar o motor de partidas.":"Plano definido pela comissão técnica."}</p></div>${coach?`<label>Estilo<select id="tactic">${opt([["balanced","Equilibrado"],["possession","Posse e construção"],["counter","Bloco baixo e contra-ataque"],["attack","Ataque e risco"]],c.tactic)}</select></label>`:""}<div class="pl-squad-mini-kpis"><span><small>Formação</small><b>${esc(formation)}</b></span><span><small>Elenco</small><b>${c.roster.length}</b></span><span><small>Disponíveis</small><b>${c.roster.filter(p=>!isUnavailable(p)).length}</b></span></div></section>`:squadTab==="roles"?`<section class="pl-squad-supplement"><div><div class="tag">FUNÇÕES</div><h2>Liderança do elenco</h2><p>As funções seguem a hierarquia e os dados reais da carreira.</p></div><div class="pl-squad-mini-kpis"><span><small>Capitão</small><b>${esc(leadership.captain?.name||"—")}</b></span><span><small>Vice</small><b>${esc(leadership.vice?.name||"—")}</b></span><span><small>Jogador selecionado</small><b>${esc(selectionStatus(selected))}</b></span></div></section>`:squadTab==="hierarchy"?`${coachRelation}${relation}`:"";
-      return `<div class="pl-squad-screen"><header class="pl-squad-header"><div class="pl-squad-club">${crest}<div><div class="tag">ELENCO PRINCIPAL</div><h1>${esc(c.name)}</h1><p>${esc(formation)} · ${c.roster.length} atletas · ${esc(tacticLabel)}</p></div></div><div class="pl-squad-head-status"><span><small>XI DEFINIDO</small><b>${starters.length}/11</b></span><span><small>INDISPONÍVEIS</small><b>${c.roster.filter(isUnavailable).length}</b></span></div></header><nav class="pl-squad-tabs" aria-label="Áreas do elenco">${[["lineup","Escalação"],["tactics","Táticas"],["roles","Funções"],["hierarchy","Hierarquia"]].map(([id,label])=>`<button type="button" data-squad-tab="${id}" class="${squadTab===id?"active":""}" ${squadTab===id?'aria-current="page"':""}>${label}</button>`).join("")}</nav><div class="pl-squad-workspace"><section class="pl-squad-left"><div class="pl-squad-pitch-head"><div><small>FORMAÇÃO ATIVA</small><b>${esc(formation)}</b></div><span>${coach?"Selecione exatamente 11 atletas":"Decisão da comissão técnica"}</span></div><div class="pl-squad-pitch" aria-label="Campo tático · formação ${esc(formation)}"><div class="pl-pitch-lines" aria-hidden="true"><i></i><i></i><i></i></div>${rows.map(row=>`<div class="pl-squad-row" data-row="${esc(row.label)}">${row.players.map(p=>playerTile(p)).join("")}</div>`).join("")}</div><section class="pl-squad-bench"><header><div><small>ELENCO</small><h2>Reservas e relacionados</h2></div><span>${bench.length} atletas</span></header><div class="pl-squad-bench-scroll">${bench.map(p=>playerTile(p,true)).join("")||'<p class="muted">Nenhum reserva disponível.</p>'}</div></section></section><aside class="pl-squad-detail"><div class="pl-squad-detail-hero"><div class="pl-squad-detail-copy"><span>${esc(positionOf(selected))}</span><h2>${esc(selected?.name||"Jogador")}</h2><div class="pl-squad-overall"><b>${selected?D.overall(selected):"—"}</b><small>GER</small></div></div><div class="pl-squad-portrait"><span>${esc(initials(selected?.name))}</span></div>${crest}</div><div class="pl-squad-vitals"><span><small>Condição</small><b>${Math.round(selected?.condition||0)}%</b><i><em style="width:${Math.round(selected?.condition||0)}%"></em></i></span><span><small>Moral</small><b>${esc(moraleLabel(selected?.morale||0))}</b><i><em style="width:${Math.round(selected?.morale||0)}%"></em></i></span><span><small>Situação</small><b>${esc(isUnavailable(selected)?selected.injury?"Lesionado":"Suspenso":selectionStatus(selected))}</b></span></div><div class="pl-squad-detail-tabs"><button class="active">Atributos</button><button>Comparação</button><button>Contrato</button></div><div class="pl-squad-ratings"><div class="pl-squad-radar">${selected?Charts.radar(ratings):""}<small>${comparison?`Comparação da posição: ${esc(shortName(comparison.name))} · ${D.overall(comparison)} GER`:"Sem concorrente direto"}</small></div><div class="pl-squad-attrs">${attrs.map(([key,label])=>`<span><small>${label}</small><i><em style="width:${Math.round(ratings[key]||0)}%"></em></i><b>${Math.round(ratings[key]||0)}</b></span>`).join("")}</div></div><footer><span><small>Forma</small><b>${esc(form(selected))}</b></span><span><small>Idade</small><b>${selected?.age||"—"}</b></span><span><small>Posição</small><b>${esc(positionOf(selected))}</b></span></footer></aside></div>${tabSupplement}<footer class="pl-squad-actions"><button type="button" data-page="home">Voltar à Central</button><button type="button" data-squad-tab="tactics">Plano tático</button>${coach?'<button type="button" class="primary" data-action="lineup">Salvar os 11 titulares</button>':'<button type="button" class="primary" data-page="lineup">Escalação do próximo jogo</button>'}</footer></div>`;
+      const roleOptions={
+        GOL:[["traditional","Goleiro tradicional"],["sweeper","Goleiro líbero"]],
+        ZAG:[["defender","Zagueiro clássico"],["ball_playing","Construtor"],["stopper","Combativo"]],
+        LE:[["fullback","Lateral equilibrado"],["wingback","Ala ofensivo"],["inverted","Lateral invertido"]],
+        LD:[["fullback","Lateral equilibrado"],["wingback","Ala ofensivo"],["inverted","Lateral invertido"]],
+        DEF:[["defender","Defensor"],["ball_playing","Construtor"],["stopper","Combativo"]],
+        VOL:[["holding","Volante marcador"],["deep_playmaker","Armador recuado"],["box_to_box","Área a área"]],
+        MC:[["box_to_box","Área a área"],["playmaker","Organizador"],["holding","Marcador"]],
+        MEI:[["playmaker","Armador"],["advanced","Meia avançado"],["shadow","Infiltrador"]],
+        ME:[["wide","Meia aberto"],["winger","Ponta"],["playmaker","Organizador"]],
+        MD:[["wide","Meia aberto"],["winger","Ponta"],["playmaker","Organizador"]],
+        PE:[["winger","Ponta aberto"],["inside_forward","Ponta interior"],["wide_playmaker","Armador aberto"]],
+        PD:[["winger","Ponta aberto"],["inside_forward","Ponta interior"],["wide_playmaker","Armador aberto"]],
+        ATA:[["poacher","Finalizador"],["false_nine","Falso nove"],["target","Referência"]],
+        CA:[["poacher","Finalizador"],["false_nine","Falso nove"],["target","Referência"]]
+      };
+      const selectedSlot=rows.flatMap(row=>row.players.map((p,i)=>({id:p.id,position:row.roles?.[i]}))).find(x=>x.id===selected?.id);
+      const activeRolePosition=selectedSlot?.position||positionOf(selected);
+      const allowedRoles=roleOptions[activeRolePosition]||roleOptions[selected?.pos]||[];
+      const currentRole=state.coachCareer?.playerRoles?.[selected?.id];
+      const rolePanel=coach?'<section class="pl-squad-supplement"><div><div class="tag">FUNÇÕES INDIVIDUAIS</div><h2>'+esc(selected?.name||"Jogador")+'</h2><p>Função para '+esc(activeRolePosition)+'. Selecione o atleta no campo antes de configurar. As funções são salvas na carreira e ainda não alteram o motor da partida.</p></div>'+
+        '<label>Papel tático<select data-coach-player-role data-player-id="'+esc(selected?.id)+'" data-position="'+esc(activeRolePosition)+'">'+allowedRoles.map(([id,label])=>'<option value="'+esc(id)+'"'+(currentRole?.position===activeRolePosition&&currentRole?.role===id?' selected':'')+'>'+esc(label)+'</option>').join("")+'</select></label>'+
+        '<button type="button" data-coach-role-save="'+esc(selected?.id)+'" '+(!allowedRoles.length?'disabled':'')+'>Salvar função</button>'+
+        (currentRole?.position===activeRolePosition?'<p class="muted">Função registrada: '+esc(allowedRoles.find(x=>x[0]===currentRole.role)?.[1]||currentRole.role)+'</p>':'')+
+        '</section>':'';
+      const teamTactics=state.coachCareer?.teamTactics||{};
+      const phaseDescription=squadPhase==="with-ball"?
+        "Com bola: construção "+({short:"curta",balanced:"equilibrada",direct:"direta"}[teamTactics.buildup]||"equilibrada")+", largura "+(teamTactics.width??50)+" e estilo "+tacticLabel+".":
+        "Sem bola: pressão "+({low:"bloco baixo",balanced:"equilibrada",high:"alta"}[teamTactics.pressing]||"equilibrada")+", profundidade "+(teamTactics.depth??50)+".";
+      const phasePreview='<div class="pl-coach-phase"><div class="pl-coach-phase-tabs">'+
+        '<button type="button" data-squad-phase="with-ball"'+(squadPhase==="with-ball"?' aria-pressed="true" class="active"':' aria-pressed="false"')+'>Com bola</button>'+
+        '<button type="button" data-squad-phase="without-ball"'+(squadPhase==="without-ball"?' aria-pressed="true" class="active"':' aria-pressed="false"')+'>Sem bola</button></div>'+
+        '<p>'+esc(phaseDescription)+'</p><div class="pl-coach-phase-stats"><span><small>FORMAÇÃO</small><b>'+esc(formation)+'</b></span>'+
+        '<span><small>'+(squadPhase==="with-ball"?'LARGURA':'PROFUNDIDADE')+'</small><b>'+esc(squadPhase==="with-ball"?(teamTactics.width??50):(teamTactics.depth??50))+'</b></span>'+
+        '<span><small>'+(squadPhase==="with-ball"?'CONSTRUÇÃO':'PRESSÃO')+'</small><b>'+esc(squadPhase==="with-ball"?(teamTactics.buildup||"balanced"):(teamTactics.pressing||"balanced"))+'</b></span></div></div>';
+      const presets=state.coachCareer?.tacticPresets?.[c.id]||{};
+      const presetPanel='<div class="pl-coach-presets"><h3>Predefinições táticas</h3><p>Salve ou aplique até três planos para este clube.</p>'+
+        [1,2,3].map(slot=>'<div class="pl-coach-preset-row"><span><b>Plano '+slot+'</b><small>'+esc(presets[slot]?.name||"Vazio")+'</small></span>'+
+          '<button type="button" data-coach-preset-save="'+slot+'">Salvar atual</button>'+
+          '<button type="button" data-coach-preset-load="'+slot+'" '+(presets[slot]?"":"disabled")+'>Aplicar</button></div>').join("")+'</div>';
+      const tacticSettings=squadTab==="tactics"&&coach?`<section class="pl-squad-supplement pl-team-tactics"><div class="tag">TÁTICAS COLETIVAS</div><h2>Modelo de jogo</h2><p>Táticas com bola e sem bola influenciam a simulação em escala moderada; os ajustes não substituem a qualidade dos atletas.</p>
+      <div class="pl-team-tactics-grid">
+      <label>Estilo<select data-team-tactic-style>${opt([["balanced","Equilibrado"],["possession","Posse e bola"],["counter","Contra-ataque"],["attack","Ofensivo"]],teamTactics.style||c.tactic||"balanced")}</select></label>
+      <label>Pressão<select data-team-tactic-pressing>${opt([["low","Bloco baixo"],["balanced","Equilibrada"],["high","Alta"]],teamTactics.pressing||"balanced")}</select></label>
+      <label>Construção<select data-team-tactic-buildup>${opt([["short","Passes curtos"],["balanced","Equilibrada"],["direct","Passe direto"]],teamTactics.buildup||"balanced")}</select></label>
+      <label>Largura <input type="number" min="20" max="80" step="5" data-team-tactic-width value="${teamTactics.width??50}"></label>
+      <label>Profundidade <input type="number" min="20" max="80" step="5" data-team-tactic-depth value="${teamTactics.depth??50}"></label>
+      </div>${phasePreview}${presetPanel}<button type="button" data-team-tactics-save>Salvar táticas</button></section>`:"";
+      const tabSupplement=squadTab==="tactics"?tacticSettings:squadTab==="roles"?rolePanel:squadTab==="hierarchy"?`${coachRelation}${relation}`:"";
+      const contractSalary=selected?[selected.salary,selected.monthlySalary,selected.wage,selected.contract?.salary,selected.contract?.monthlySalary].find(v=>v!=null&&Number.isFinite(Number(v))&&Number(v)>0):null;
+      const contractEnd=selected?[selected.contractEndDay,selected.contract?.endDay,selected.contract?.expiresDay].find(v=>v!=null&&Number.isFinite(Number(v))):null;
+      const contractEndYear=selected?[selected.contractUntil,selected.contract?.endYear,selected.contract?.expiryYear].find(v=>v!=null&&Number.isFinite(Number(v))):null;
+      const contractRole=selected?.squadRole||selected?.contract?.role||selected?.contractRole||null;
+      const derivedSalary=selected&&!contractSalary?Math.max(1000,Math.round(((Math.max(0,D.overall(selected))**2*35)/180)/1000)*1000):null;
+      const roleLabel={rotation:"Rotação",important:"Importante",starter:"Titular",star:"Estrela"};
+      const contractInfo=selected?'<div class="pl-squad-info-grid">'+
+        '<span><small>Salário mensal'+(!contractSalary?' · estimativa':'')+'</small><b>'+esc(money(Number(contractSalary??derivedSalary)))+'</b></span>'+
+        '<span><small>Fim do contrato</small><b>'+esc(contractEnd!=null?dayDate(Number(contractEnd))+(selected.contractEndSource==="generated_game"?" · prazo gerado no jogo":""):contractEndYear!=null?String(contractEndYear):"Não informado no save")+'</b></span>'+
+        '<span><small>Papel no elenco</small><b>'+esc(contractRole?roleLabel[contractRole]||contractRole:(starters.includes(selected)?"Titular atual · não contratual":"Reserva atual · não contratual"))+'</b></span>'+
+        '</div>':'';
+      const comparisonInfo=selected?'<div class="pl-squad-compare">'+
+        '<h3>Comparação na posição</h3>'+
+        (comparison?'<div class="pl-squad-info-grid"><span><small>Selecionado</small><b>'+esc(selected.name)+' · '+esc(D.overall(selected))+' GER</b></span><span><small>Concorrente</small><b>'+esc(comparison.name)+' · '+esc(D.overall(comparison))+' GER</b></span></div>':'<p class="muted">Nenhum concorrente direto disponível.</p>')+
+        '</div>':'';
+      const attributeInfo='<div class="pl-squad-ratings"><div class="pl-squad-radar">'+(selected?Charts.radar(ratings):"")+'<small>'+(comparison?'Comparação da posição: '+esc(shortName(comparison.name))+' · '+D.overall(comparison)+' GER':"Sem concorrente direto")+'</small></div><div class="pl-squad-attrs">'+attrs.map(([key,label])=>'<span><small>'+label+'</small><i><em style="width:'+Math.round(ratings[key]||0)+'%"></em></i><b>'+Math.round(ratings[key]||0)+'</b></span>').join("")+'</div></div>';
+      const fmtMetric=(value,suffix="")=>value!=null&&Number.isFinite(Number(value))?String(Math.round(Number(value)*10)/10)+suffix:"Não registrado";
+      const fitnessInfo=selected?'<div class="pl-squad-info-grid">'+
+        '<span><small>Condição física</small><b>'+esc(fmtMetric(selected.condition,"%"))+'</b></span>'+
+        '<span><small>Resistência</small><b>'+esc(fmtMetric(selected.attrs?.stamina))+'</b></span>'+
+        '<span><small>Forma recente</small><b>'+esc(form(selected))+'</b></span>'+
+        '<span><small>Moral</small><b>'+esc(fmtMetric(selected.morale))+'</b></span>'+
+        '<span><small>Lesão</small><b>'+esc(selected.injury?"Lesionado":"Sem lesão registrada")+'</b></span>'+
+        '<span><small>Suspensão</small><b>'+esc(Number(selected.suspension)>0?String(selected.suspension)+" jogo(s)":"Sem suspensão")+'</b></span>'+
+        '</div>':'';
+      // Do not depend on an already-migrated save or on legacy defensive position codes.
+      const positionAliases={GK:"GOL",CB:"ZAG",LB:"LE",RB:"LD",CDM:"VOL",CM:"MC",CAM:"MEI",LM:"ME",RM:"MD",LW:"PE",RW:"PD",ST:"ATA",CF:"ATA",LWB:"LE",RWB:"LD"};
+      const altDefaults={GOL:[],ZAG:["VOL"],DEF:["ZAG","LE","LD"],LE:["LD","DEF"],LD:["LE","DEF"],VOL:["MC","ZAG"],MC:["VOL","MEI"],MEI:["MC","VOL"],ME:["MD","MC"],MD:["ME","MC"],PE:["PD","ME"],PD:["PE","MD"],ATA:["PE","PD"],CA:["PE","PD"]};
+      const primaryPos=String(positionOf(selected)||selected?.pos||"").toUpperCase();
+      const normalizedPrimary=positionAliases[primaryPos]||primaryPos;
+      const storedAlternates=Array.isArray(selected?.secondaryPositions)?selected.secondaryPositions.filter(Boolean):[];
+      const suggestedAlternates=storedAlternates.length?storedAlternates:(selected?.secondaryPositionsSource==="verified"||selected?.secondaryPositionsSource==="ea_fc27"?[]:(altDefaults[normalizedPrimary]||[]));
+      const alternativesLabel=suggestedAlternates.length?suggestedAlternates.join(", ")+(storedAlternates.length?(selected.secondaryPositionsSource==="suggested"?" · sugeridas":""):" · sugeridas (sem registro oficial)"):"Nenhuma posição alternativa registrada";
+      const developmentInfo=selected?'<div class="pl-squad-info-grid">'+
+        '<span><small>GER atual</small><b>'+esc(D.overall(selected))+'</b></span>'+
+        '<span><small>Potencial registrado</small><b>'+esc(fmtMetric(selected.potential))+'</b></span>'+
+        '<span><small>Idade</small><b>'+esc(selected.age??"Não registrada")+'</b></span>'+
+        '<span><small>Posições alternativas</small><b>'+esc(alternativesLabel)+'</b></span>'+
+        '<span><small>Plano de desenvolvimento</small><b>'+esc(({equilibrado:"Equilibrado",velocidade:"Velocidade",finalizacao:"Finalização",criacao:"Criação",marcacao:"Marcação",fisico:"Físico"}[selected.developmentPlan?.focus])||"Não registrado")+'</b></span>'+
+        '<span><small>Estado na equipe</small><b>'+esc(selectionStatus(selected))+'</b></span>'+
+        '</div>'+ (coach?'<div class="pl-squad-development-editor"><label>Foco individual<select data-player-development-focus>'+opt([["equilibrado","Equilibrado"],["velocidade","Velocidade"],["finalizacao","Finalização"],["criacao","Criação"],["marcacao","Marcação"],["fisico","Físico"]],selected.developmentPlan?.focus||"equilibrado")+'</select></label><button type="button" data-save-player-development="'+esc(selected.id)+'">Salvar plano</button><p>O foco direciona os atributos quando o treino coletivo promove evolução. Não garante aumento semanal.</p></div>':''):'';
+      const detailPanels={attributes:attributeInfo,comparison:comparisonInfo,contract:contractInfo,fitness:fitnessInfo,development:developmentInfo};
+      const detailBody=detailPanels[squadDetailTab]||attributeInfo;
+      return `<div class="pl-squad-screen"><header class="pl-squad-header"><div class="pl-squad-club">${crest}<div><div class="tag">ELENCO PRINCIPAL</div><h1>${esc(c.name)}</h1><p>${esc(formation)} · ${c.roster.length} atletas · ${esc(tacticLabel)}</p></div></div><div class="pl-squad-head-status"><span><small>XI DEFINIDO</small><b>${starters.length}/11</b></span><span><small>INDISPONÍVEIS</small><b>${c.roster.filter(isUnavailable).length}</b></span></div></header><nav class="pl-squad-tabs" aria-label="Áreas do elenco">${[["lineup","Escalação"],["tactics","Táticas"],["roles","Funções"],["hierarchy","Hierarquia"]].map(([id,label])=>`<button type="button" data-squad-tab="${id}" class="${squadTab===id?"active":""}" ${squadTab===id?'aria-current="page"':""}>${label}</button>`).join("")}</nav><div class="pl-squad-workspace"><section class="pl-squad-left"><div class="pl-squad-pitch-head"><div><small>FORMAÇÃO ATIVA</small>${coach?`<select data-coach-formation aria-label="Alterar formação">${opt([["4-3-3","4-3-3"],["4-4-2","4-4-2"],["4-2-3-1","4-2-3-1"]],formation)}</select>`:`<b>${esc(formation)}</b>`}</div><span class="pl-squad-pitch-tools">${coach?`<button type="button" data-squad-undo ${canUndo?"":"disabled"} title="Desfazer a última troca do elenco">Desfazer troca</button>`:""}<small>${coach?(squadSwapSource?"Escolha o segundo jogador para trocar":"Arraste ou selecione dois jogadores para trocar posições"):"Decisão da comissão técnica"}</small></span></div><div class="pl-squad-pitch" aria-label="Campo tático · formação ${esc(formation)}"><div class="pl-pitch-lines" aria-hidden="true"><i></i><i></i><i></i></div>${rows.map(row=>`<div class="pl-squad-row" data-row="${esc(row.label)}">${row.players.map((p,i)=>playerTile(p,false,row.roles?.[i])).join("")}</div>`).join("")}</div>${coach?'<p class="pl-squad-fit-note">'+(pitchFitWarnings.length?pitchFitWarnings.length+' improvisado(s): '+pitchFitWarnings.map(x=>x.p.name+' ('+positionOf(x.p)+' em '+x.role+')').join('; '):'Todos os titulares estão em posições compatíveis.')+'</p>':''}<section class="pl-squad-bench"><header><div><small>ELENCO</small><h2>Reservas e relacionados</h2></div><span>${bench.length} atletas</span></header><div class="pl-squad-bench-groups"><div class="pl-squad-bench-group"><div class="pl-squad-bench-group-title"><b>BANCO DE RESERVAS</b><small>Primeiras 7 opções · selecione ou arraste para trocar</small></div><div class="pl-squad-bench-grid">${bench.slice(0,7).map(p=>playerTile(p,true)).join("")||'<p class="muted">Nenhum reserva disponível.</p>'}</div></div>${bench.length>7?'<details class="pl-squad-extra-reserves"><summary>DEMAIS RELACIONADOS · '+(bench.length-7)+' atletas <span>Expandir lista</span></summary><div class="pl-squad-bench-grid">'+bench.slice(7).map(p=>playerTile(p,true)).join("")+'</div></details>':''}</div></section></section><aside class="pl-squad-detail"><div class="pl-squad-detail-hero"><div class="pl-squad-detail-copy"><span>${esc(positionOf(selected))}</span><h2>${esc(selected?.name||"Jogador")}</h2><div class="pl-squad-overall"><b>${selected?D.overall(selected):"—"}</b><small>GER</small></div></div><div class="pl-squad-portrait"><span>${esc(initials(selected?.name))}</span></div>${crest}</div><div class="pl-squad-vitals"><span><small>Condição</small><b>${Math.round(selected?.condition||0)}%</b><i><em style="width:${Math.round(selected?.condition||0)}%"></em></i></span><span><small>Moral</small><b>${esc(moraleLabel(selected?.morale||0))}</b><i><em style="width:${Math.round(selected?.morale||0)}%"></em></i></span><span><small>Situação</small><b>${esc(isUnavailable(selected)?selected.injury?"Lesionado":"Suspenso":selectionStatus(selected))}</b></span></div><div class="pl-squad-detail-tabs">${[["attributes","Atributos"],["comparison","Comparação"],["fitness","Físico"],["contract","Contrato"],["development","Evolução"]].map(([id,label])=>`<button type="button" data-squad-detail-tab="${id}" class="${squadDetailTab===id?"active":""}" aria-pressed="${squadDetailTab===id}">${label}</button>`).join("")}</div>${detailBody}<footer><span><small>Forma</small><b>${esc(form(selected))}</b></span><span><small>Idade</small><b>${selected?.age||"—"}</b></span><span><small>Posição</small><b>${esc(positionOf(selected))}</b></span></footer></aside></div>${tabSupplement}<footer class="pl-squad-actions"><button type="button" data-page="home">Voltar à Central</button><button type="button" data-squad-tab="tactics">Plano tático</button>${coach?'<button type="button" class="primary" data-action="lineup">Salvar os 11 titulares</button>':'<button type="button" class="primary" data-page="lineup">Escalação do próximo jogo</button>'}</footer></div>`;
     },
     training() {
       if (state.mode === "coach") {
@@ -8125,6 +8437,9 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return `<div class="grid"><section class="card"><div class="tag">CAIXA DE ENTRADA</div><h2>Mensagens da carreira</h2><p class="muted">Propostas, decisões e comunicados importantes ficam concentrados aqui.</p>${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life" data-target="current-decision">Responder agora</button></article>` : ""}${cineBanner()}${offersSection(offers) || empty(state.day < state.careerTransferAvailableDay ? "Você já assinou nesta janela. Novas propostas chegam na próxima janela." : "Nenhuma proposta pendente no momento.")}</section>${state.mode==="player"?(()=>{const pc=e.playerCareer,tc=pc.targetClub,ta=tc?Career.interestAssessment(state,tc.clubId):null,clubs=state.clubs.filter(x=>x.id!==state.clubId).sort((a,b)=>b.structure-a.structure);return `<section class="card section"><div class="tag">CLUBE-ALVO</div><h2>Planeje sua próxima transferência</h2><p class="muted">Escolher um alvo não garante proposta. Seu agente acompanha o clube e o interesse evolui conforme nível, desempenho, reputação e janela.</p><label>Clube desejado<select id="target-club"><option value="">Escolha um clube</option>${clubs.map(x=>`<option value="${x.id}" ${tc?.clubId===x.id?"selected":""}>${esc(x.name)} · ${esc(leagueName(x.leagueId))}</option>`).join("")}</select></label><div class="actions"><button class="primary" data-action="target-club">Definir clube-alvo</button>${tc?`<button data-action="clear-target-club">Remover alvo</button>`:""}</div>${ta?`<div class="notice"><h3>${esc(D.club(state,ta.clubId)?.name||"Clube")} · Interesse ${esc(ta.label)}</h3><p>Concorrência: <b>${esc(ta.competition)}</b> · OVR recomendado: <b>${ta.recommendedOverall}</b> · seu OVR: <b>${D.overall(state.person)}</b></p><p>Pipeline: <b>${esc((pc.interests||[]).find(x=>x.clubId===ta.clubId)?.stage||"Monitoramento")}</b></p></div>`:""}</section>`})():""}<section class="card"><div class="tag">PREFERÊNCIAS DO AGENTE</div><h2>Quais propostas quero receber?</h2><p class="muted">As preferências são usadas na geração das próximas propostas, não apenas na tela.</p>${state.mode === "player" ? (() => { const pc=e.playerCareer, ct=pc.contract, interests=pc.interests||[], advice=Career.agentAdvice(state), strategy=pc.agentStrategy||{priority:"balanced",stance:"open"}; return `<div class="notice"><div class="tag">MEU AGENTE</div><h3>${esc(pc.agent?.name || "Agente PRO-LIFE")}</h3><p>${esc(pc.agent?.agency || "Agência independente")} · reputação ${pc.agent?.reputation||50}/100 · comissão ${pc.agent?.commission||5}%<br>Rede: ${esc(pc.agent?.network||"Nacional")} · negociação ${pc.agent?.negotiation||50}/100</p><h3>${esc(advice?.action || "Planejamento de carreira")}</h3><p>${esc(advice?.reason || "Seu agente está analisando o próximo passo.")}</p><label>Prioridade<select id="agent-priority"><option value="balanced" ${strategy.priority==="balanced"?"selected":""}>Equilíbrio</option><option value="playtime" ${strategy.priority==="playtime"?"selected":""}>Tempo de jogo</option><option value="salary" ${strategy.priority==="salary"?"selected":""}>Salário</option><option value="prestige" ${strategy.priority==="prestige"?"selected":""}>Prestígio</option><option value="development" ${strategy.priority==="development"?"selected":""}>Desenvolvimento</option></select></label><label>Postura<select id="agent-stance"><option value="stay" ${strategy.stance==="stay"?"selected":""}>Quero permanecer</option><option value="open" ${strategy.stance==="open"?"selected":""}>Aberto a propostas</option><option value="loan" ${strategy.stance==="loan"?"selected":""}>Buscar empréstimo</option><option value="leave" ${strategy.stance==="leave"?"selected":""}>Buscar saída</option></select></label><button class="primary" data-action="agent-strategy">Atualizar estratégia</button><div class="actions">${Career.agencies.map(a=>`<button data-hire-agency="${a.id}" ${pc.agent?.id===a.id?"disabled":""}>${pc.agent?.id===a.id?"Agência atual":`Contratar ${esc(a.name)}`}</button>`).join("")}</div><p><b>Pipeline de mercado:</b><br>${interests.length ? interests.slice(0,5).map(x=>`${esc(D.club(state,x.clubId)?.name||"Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhum interesse ativo."}</p></div><div class="notice"><div class="tag">CARREIRA PROFISSIONAL</div><h3>Valor de mercado: ${money(pc.marketValue || 0)}</h3>${ct ? `<p><b>Contrato atual:</b> ${Math.max(0, Math.ceil((ct.endDay-state.day)/30))} mês(es) restantes<br><b>Salário:</b> ${money(state.salary)}/mês · <b>Papel:</b> ${esc(ct.role || pc.squadRole)}<br><b>Vínculo:</b> ${ct.type === "loan" ? "Empréstimo" : "Definitivo"}</p>` : `<p>Sem contrato ativo.</p>`}<p><b>Clubes interessados:</b><br>${interests.length ? interests.slice(0,5).map(x=>`${esc(D.club(state,x.clubId)?.name||"Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhuma sondagem ativa."}</p>${pc.renewalOffer ? `<div class="news" id="renewal-offer"><b>Renovação disponível</b><br>${Math.round(pc.renewalOffer.durationDays/365)} anos · ${money(pc.renewalOffer.salary)}/mês · luvas ${money(pc.renewalOffer.signingBonus)} · bônus ${money(pc.renewalOffer.performanceBonus||0)} · papel ${esc(pc.renewalOffer.role||pc.squadRole)}<div class="grid3"><label>Salário desejado<input id="renew-salary" type="number" min="0" step="100" value="${pc.renewalOffer.salary}"></label><label>Anos<input id="renew-years" type="number" min="1" max="5" value="${Math.round(pc.renewalOffer.durationDays/365)}"></label><label>Luvas<input id="renew-bonus" type="number" min="0" step="100" value="${pc.renewalOffer.signingBonus}"></label><label>Bônus desempenho<input id="renew-performance" type="number" min="0" step="100" value="${pc.renewalOffer.performanceBonus||0}"></label><label>Papel<select id="renew-role">${["Rotação","Titular","Importante","Estrela"].map(r=>`<option ${r===(pc.renewalOffer.role||pc.squadRole)?"selected":""}>${r}</option>`).join("")}</select></label></div><div class="actions"><button class="primary" data-action="accept-renewal">Aceitar renovação</button><button data-action="counter-renewal">Pedir meus termos</button><button data-action="reject-renewal">Recusar</button></div></div>` : (ct && Math.max(0,ct.endDay-state.day)<=365 ? `<button class="primary" data-action="request-renewal">Pedir ao agente para renovar</button>` : "")}</div>`; })() : ""}${state.mode === "player" && state.clubId ? (() => { const pc=e.playerCareer, objectives=Career.matchObjectives(state); return `<div class="notice"><div class="tag">RELAÇÃO COM O TÉCNICO</div><h3>${esc(pc.squadRole)} · ${Math.round(pc.coachTrust)}/100</h3>${bar("Confiança do técnico",pc.coachTrust)}<p><b>Objetivos da próxima partida:</b><br>${objectives.map(o=>"• "+esc(o.label)).join("<br>")}</p><small>Cumpridos na carreira: ${pc.objectivesMet}/${pc.objectivesTotal}${pc.lastEvaluation ? ` · última nota ${pc.lastEvaluation.rating}` : ""}</small></div>`; })() : ""}${state.world === "brazil2026" ? `<h3>Divisões</h3><div class="offer-pref-leagues">${leagueOptions.map(([id, label]) => `<label><input type="checkbox" class="offer-league" value="${id}" ${prefs.leagues.includes(id) ? "checked" : ""}> ${label}</label>`).join("")}</div>` : ""}<label>Nível dos clubes<select id="offer-club-level"><option value="any" ${prefs.clubLevel === "any" ? "selected" : ""}>Qualquer clube</option><option value="elite" ${prefs.clubLevel === "elite" ? "selected" : ""}>Somente clubes de elite</option><option value="competitive" ${prefs.clubLevel === "competitive" ? "selected" : ""}>Clubes competitivos</option><option value="intermediate" ${prefs.clubLevel === "intermediate" ? "selected" : ""}>Clubes intermediários</option><option value="small" ${prefs.clubLevel === "small" ? "selected" : ""}>Clubes menores</option></select></label><button class="primary" data-action="offer-prefs">Salvar preferências</button></section></div>`;
     },
     market() {
+      if (state?.mode === "coach" && window.ProLifeCoachCareerView?.renderMarket) {
+        return window.ProLifeCoachCareerView.renderMarket(state, D);
+      }
       const c = D.club(state),
         w = Career.windowStatus(state),
         e = Career.init(state),
@@ -8147,7 +8462,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         ["Início do ano", "01/01 a 28/02"], ["Meio do ano", "01/07 a 31/08"], ["Final do ano", "15/11 a 31/12"],
       ].map(([name, dates]) => `<div class="window-card ${w.name === name ? "open" : ""}"><small>${name}</small><h3>${dates}</h3><b>${w.name === name ? "ABERTA" : ""}</b></div>`).join("")}</div><p class="${w.open ? "good" : "bad"}">${esc(w.name)} · ${w.open ? w.remaining + " dias restantes" : "Próxima abertura em " + w.remaining + " dias"}</p><p class="chart-note">O mercado registra negociações simuladas entre os clubes conforme orçamento, nível do atleta e carências do elenco.</p></section>${worldMarketPanel}${
         state.mode === "coach" && c
-          ? `<section class="card section"><h2>Scouting e contratação</h2><p>Orçamento do clube: <b>${money(c.budget)}</b></p><p class="muted">Valores estimados por nível e idade. Atletas muito acima da estrutura podem recusar; clubes preservam o elenco mínimo.</p><div class="tablewrap"><table><thead><tr><th>Atleta</th><th>Clube</th><th>Pos.</th><th>Idade</th><th>Nível</th><th>Preço</th><th></th></tr></thead><tbody>${state.clubs.filter((x) => x.id !== c.id).flatMap((x) => x.roster.filter((p) => p.pos !== "GOL").slice().sort((a, b) => D.overall(b) - D.overall(a)).slice(0, 3).map((p) => `<tr><td>${esc(p.name)}</td><td>${esc(x.name)}</td><td>${p.pos}</td><td>${p.age}</td><td>${D.overall(p)}</td><td>${money(A.valuation(p))}</td><td><button data-recruit="${p.id}" data-source="${x.id}" ${w.open ? "" : "disabled"}>Contratar</button></td></tr>`)).join("")}</tbody></table></div></section>`
+          ? `<section class="card section"><h2>Scouting e contratação</h2><p>Orçamento do clube: <b>${money(c.budget)}</b></p><p class="muted">Valores estimados por nível e idade. Atletas muito acima da estrutura podem recusar; clubes preservam o elenco mínimo.</p><div class="tablewrap"><table><thead><tr><th>Atleta</th><th>Clube</th><th>Pos.</th><th>Idade</th><th>Nível</th><th>Preço</th><th></th></tr></thead><tbody>${state.clubs.filter((x) => x.id !== c.id).flatMap((x) => x.roster.filter((p) => p.pos !== "GOL").slice().sort((a, b) => D.overall(b) - D.overall(a)).slice(0, 3).map((p) => `<tr><td>${esc(p.name)}</td><td>${esc(x.name)}</td><td>${p.pos}</td><td>${p.age}</td><td>${D.overall(p)}</td><td>${money(A.valuation(p))}</td><td>${state.mode==="coach" && state.coachCareer?.settings?.installments==="on"?`<select data-recruit-plan="${p.id}" aria-label="Pagamento da contratação"><option value="upfront">À vista</option><option value="split">50% agora · 50% em 180 dias</option></select>`:""}${state.mode==="coach"?`<select data-deal-type="${p.id}" aria-label="Tipo da negociação"><option value="permanent">Compra definitiva</option>${state.coachCareer?.settings?.loans==="on"?`<option value="loan">Empréstimo</option>`:""}</select><select data-loan-days="${p.id}" aria-label="Duração do empréstimo"><option value="180">180 dias</option><option value="365">365 dias</option></select><select data-sell-on="${p.id}" aria-label="Cláusula de revenda"><option value="0">Sem cláusula</option><option value="10">10% sobre venda futura</option><option value="20">20% sobre venda futura</option></select>`:""}${state.mode==="coach"?`<select data-salary-share="${p.id}"><option value="50">50% do salário</option><option value="0">0% do salário</option><option value="100">100% do salário</option></select><select data-buy-option="${p.id}"><option value="off">Sem opção de compra</option><option value="on">Com opção de compra</option></select><input type="number" min="1000" step="1000" value="${A.valuation(p)}" data-counter-fee="${p.id}" aria-label="Valor da contraproposta"><button type="button" data-counter-recruit="${p.id}" data-source="${x.id}">Negociar</button>`:""}<button data-recruit="${p.id}" data-source="${x.id}" ${w.open ? "" : "disabled"}>Contratar</button></td></tr>`)).join("")}</tbody></table>${state.mode==="coach"?(state.coachCareer?.loans||[]).filter(l=>!l.returned&&l.toClubId===state.clubId).map(l=>`<p>Empréstimo: ${esc(l.playerId)} · Vence no dia ${l.dueDay} · ${l.buyOption?`Compra: ${money(l.buyOption)} <button type="button" data-loan-buy="${esc(l.id)}">Comprar em definitivo</button>`:"Sem opção de compra"}</p>`).join(""):""}</div></section>`
           : ""
       }`;
     },
@@ -8253,11 +8568,179 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       toast("Autosave indisponível neste navegador. Use Exportar save.");
   }
   document.addEventListener("click", (event) => {
+    const profileTabButton = event.target.closest?.("[data-coach-profile-tab]");
+    if (profileTabButton && state?.mode === "coach" && page === "profile") {
+      const next = profileTabButton.getAttribute("data-coach-profile-tab");
+      if (["resumo","desempenho","trajetoria","conquistas","identidade"].includes(next)) {
+        coachProfileTab = next;
+        render();
+      }
+      return;
+    }
+    const openCoachSettings=event.target.closest?.("[data-coach-settings-open]");
+    if(openCoachSettings&&state?.mode==="coach"){
+      page="coachCareer";
+      window.ProLifeCoachCareerView?.setTab("configuracoes");
+      render();
+      return;
+    }
+    const sponsorDecision=event.target.closest?.("[data-coach-sponsor-reject],[data-coach-sponsor-counter]");
+    if(sponsorDecision&&state?.mode==="coach"){
+      const counter=sponsorDecision.hasAttribute("data-coach-sponsor-counter");
+      const offerId=sponsorDecision.getAttribute(counter?"data-coach-sponsor-counter":"data-coach-sponsor-reject");
+      const base=Number(sponsorDecision.getAttribute("data-coach-sponsor-base"));
+      let amount=null;
+      if(counter){
+        const max=Math.round(base*1.2);
+        const answer=window.prompt("Proposta anual (R$). Informe um valor entre "+base.toLocaleString("pt-BR")+" e "+max.toLocaleString("pt-BR")+".",String(Math.round(base*1.1)));
+        if(answer===null)return;
+        const digits=answer.trim().replace(/[.\\s]/g,"").replace(",",".");
+        amount=Number(digits);
+        if(!Number.isSafeInteger(amount)||amount<base||amount>max){
+          toast("Valor inválido. Escolha um valor entre R$ "+base.toLocaleString("pt-BR")+" e R$ "+max.toLocaleString("pt-BR")+".");
+          return;
+        }
+      }
+      try{A.execute(state,"coachDecideSponsorship",{offerId,decision:counter?"counter":"reject",amount});persist();render();}
+      catch(error){toast(error.message);}
+      return;
+    }
+    const sponsorDecline=event.target.closest?.("[data-coach-sponsor-decline]");
+    if(sponsorDecline&&state?.mode==="coach"){
+      const id=sponsorDecline.getAttribute("data-coach-sponsor-decline");
+      try{window.ProLifeClubEconomy.rejectBrandCounter(state,id);persist();render();}
+      catch(error){toast(error.message);}
+      return;
+    }
+    const sponsorAccept=event.target.closest?.("[data-coach-sponsor-accept]");
+    if(sponsorAccept&&state?.mode==="coach"){
+      const offerId=sponsorAccept.getAttribute("data-coach-sponsor-accept");
+      try{A.execute(state,"coachAcceptSponsorship",{offerId});persist();render();}
+      catch(error){toast(error.message);}
+      return;
+    }
+    const difficultySave=event.target.closest?.("[data-coach-market-difficulty-save]");
+    if(difficultySave&&state?.mode==="coach"){
+      const difficulty=document.querySelector("[data-coach-market-difficulty]")?.value;
+      try{A.execute(state,"coachMarketDifficulty",{difficulty});persist();render();}
+      catch(error){toast(error.message);}
+      return;
+    }
+    const signingAction=event.target.closest?.("[data-coach-signing-done],[data-coach-signing-squad],[data-coach-signing-history]");
+    if(signingAction && state?.mode==="coach"){
+      const id=signingAction.getAttribute("data-coach-signing-done")||signingAction.getAttribute("data-coach-signing-squad")||signingAction.getAttribute("data-coach-signing-history");
+      try{
+        A.execute(state,"ackCoachPresentation",{id});
+        persist();
+        if(signingAction.hasAttribute("data-coach-signing-squad"))page="squad";
+        else if(signingAction.hasAttribute("data-coach-signing-history")){page="market";window.ProLifeCoachCareerView?.setMarketArea("transferencias");window.ProLifeCoachCareerView?.setDealTab("historico");}
+        render();
+      }catch(error){toast(error.message);}
+      return;
+    }
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
-    const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus]");
+    const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-signing-squad],[data-coach-signing-open],[data-coach-signing-close],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-screen],[data-coach-scout-select],[data-coach-scout-page],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-save-priority],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer],[data-coach-submit-offer],[data-coach-cancel-offer]");
     if (!el || !state || state.mode !== "coach") return;
     const V = window.ProLifeCoachCareerView;
     if (el.hasAttribute("data-coach-tab")) { V?.setTab(el.getAttribute("data-coach-tab")); render(); return; }
+    if (el.hasAttribute("data-coach-deal-tab")) { V?.setDealTab(el.getAttribute("data-coach-deal-tab")); render(); return; }
+    if (el.hasAttribute("data-coach-signing-squad")) { page="squad"; render(); return; }
+    if (el.hasAttribute("data-coach-signing-open")) { V?.openSigning(el.getAttribute("data-coach-signing-open")); render(); return; }
+    if (el.hasAttribute("data-coach-signing-close")) { V?.closeSigning(); render(); return; }
+    if (el.hasAttribute("data-coach-deal-open")) { V?.openDeal(el.getAttribute("data-coach-deal-open")); render(); return; }
+    if (el.hasAttribute("data-coach-deal-close")) { V?.closeDeal(); render(); return; }
+    if(el.hasAttribute("data-coach-market-area")) { V?.setMarketArea(el.getAttribute("data-coach-market-area")); render(); return; }
+    if(el.hasAttribute("data-coach-scout-screen")) { V?.setScoutScreen(el.getAttribute("data-coach-scout-screen")); render(); return; }
+    if(el.hasAttribute("data-coach-scout-select")) { V?.selectScoutPlayer(el.getAttribute("data-coach-scout-select")); render(); return; }
+    if(el.hasAttribute("data-coach-scout-page")) { V?.setScoutPage(el.getAttribute("data-coach-scout-page")); render(); return; }
+    if(el.hasAttribute("data-coach-scout-apply")) { V?.setScoutFilters(document.querySelector("[data-coach-scout-search]")?.value, document.querySelector("[data-coach-scout-position]")?.value, {
+      club:document.querySelector("[data-coach-scout-club]")?.value,
+      competition:document.querySelector("[data-coach-scout-competition]")?.value,
+      country:document.querySelector("[data-coach-scout-country]")?.value,
+      age:document.querySelector("[data-coach-scout-age]")?.value,
+      category:document.querySelector("[data-coach-scout-category]")?.value
+    }); render(); return; }
+    if(el.hasAttribute("data-coach-start-scout")){
+      const scout=window.ProLifeCoachScoutingV2;
+      if(!scout?.start){toast("Sistema de observacao indisponivel.");return;}
+      const playerId=el.getAttribute("data-coach-start-scout");
+      const chosenRegion=document.querySelector("[data-coach-scout-region]")?.value||"auto";
+      const region=chosenRegion==="auto"?(el.getAttribute("data-coach-region")||"Brasil"):chosenRegion;
+      const specialty=document.querySelector("[data-coach-scout-specialty]")?.value||"geral";
+      const duration=Number(document.querySelector("[data-coach-scout-duration]")?.value||14);
+      const outcome=scout.start(state,{playerId,region,duration,scoutQuality:50,cost:0,specialty});
+      if(!outcome.ok){toast(outcome.error||"Falha ao iniciar observacao.");return;}
+      persist();render();toast("Observacao iniciada. Relatorio evolui ao avancar os dias.");
+      return;
+    }
+    if(el.hasAttribute("data-coach-save-priority")){
+      const playerId=el.getAttribute("data-coach-save-priority");
+      const clubId=el.getAttribute("data-coach-club");
+      const selects=document.querySelectorAll("[data-coach-target-priority]");
+      const control=Array.from(selects).find(x=>x.getAttribute("data-coach-player")===playerId&&x.getAttribute("data-coach-club")===clubId);
+      return command("setCoachTargetPriority",{playerId,clubId,priority:control?.value||"media"});
+    }
+    if(el.hasAttribute("data-coach-shortlist")) return command("toggleCoachShortlist",{clubId:el.getAttribute("data-coach-shortlist"),playerId:el.getAttribute("data-coach-player")});
+    if(el.hasAttribute("data-coach-inquire")){
+      return command("coachInquiry",{clubId:el.getAttribute("data-coach-inquire"),playerId:el.getAttribute("data-coach-player")});
+    }
+    if(el.hasAttribute("data-coach-scout-offer")){
+      const clubId=el.getAttribute("data-coach-scout-offer"),playerId=el.getAttribute("data-coach-player");
+      const athlete=D.club(state,clubId)?.roster?.find(p=>p.id===playerId)||D.GlobalFootball?.playerById?.(state,playerId);
+      if(!athlete){toast("Jogador indisponível.");return;}
+      const inquiry=state.coachCareer?.inquiries?.find(x=>x.playerId===playerId&&x.clubId===clubId&&x.buyerClubId===state.clubId);
+      if(!inquiry||!["accepted","asking_price"].includes(inquiry.status)||Number(state.day)>Number(inquiry.expiresDay)){
+        toast("Consulte o interesse e aguarde a resposta do clube antes de negociar.");
+        return;
+      }
+      V?.startOffer(clubId,playerId,Math.max(1000,Math.round(A.valuation(athlete)/1000)*1000));render();return;
+    }
+    if(el.hasAttribute("data-coach-cancel-offer")){V?.clearOffer();render();return;}
+    if(el.hasAttribute("data-coach-submit-offer")){
+      const draft=V?.state?.draftOffer,offer=Number(document.querySelector("[data-coach-new-offer]")?.value);
+      if(!draft||!Number.isFinite(offer)||offer<1000){toast("Informe um valor válido antes de enviar.");return;}
+      const {clubId,playerId}=draft;
+      V?.clearOffer();
+      return command("counterRecruit",{clubId,playerId,offer});
+    }
+    if(el.hasAttribute("data-coach-offer-save")) return command("setCoachOfferPreference",{mode:document.querySelector("[data-coach-offer-mode]")?.value});
+    if(el.hasAttribute("data-coach-offer-player-save")){
+      const playerId=el.getAttribute("data-coach-offer-player-save");
+      const status=[...document.querySelectorAll("[data-coach-player-offer]")].find(x=>x.getAttribute("data-coach-player-offer")===playerId)?.value;
+      return command("setCoachPlayerOfferStatus",{playerId,status});
+    }
+    if(el.hasAttribute("data-coach-sale-generate")) return command("generateSaleInterest",{});
+    if(el.hasAttribute("data-coach-sale-accept")) return command("acceptSaleOffer",{id:el.getAttribute("data-coach-sale-accept")});
+    if(el.hasAttribute("data-coach-sale-reject")) return command("rejectSaleOffer",{id:el.getAttribute("data-coach-sale-reject")});
+    if(el.hasAttribute("data-coach-sale-counter")){
+      const id=el.getAttribute("data-coach-sale-counter");
+      return command("counterSaleOffer",{id,amount:Number(document.querySelector('[data-coach-sale-amount="'+id+'"]')?.value)});
+    }
+    if(el.hasAttribute("data-coach-deal-preset")){
+      const id=el.getAttribute("data-coach-deal-preset");
+      const input=[...document.querySelectorAll("[data-coach-deal-offer]")].find(x=>x.getAttribute("data-coach-deal-offer")===id);
+      const offer=Number(el.getAttribute("data-coach-preset-value"));
+      if(!input||!Number.isFinite(offer)||offer<1000){toast("Oferta inválida.");return;}
+      input.value=String(offer);
+      input.focus();
+      return;
+    }
+    if(el.hasAttribute("data-coach-contract-negotiate")){
+      const id=el.getAttribute("data-coach-contract-negotiate");
+      const value=attr=>document.querySelector('[data-coach-contract-'+attr+'="'+id+'"]')?.value;
+      return command("negotiateCoachContract",{id,salary:Number(value("salary")),years:Number(value("years")),bonus:Number(value("bonus")),role:value("role")});
+    }
+    if(el.hasAttribute("data-coach-deal-revise")){
+      const id=el.getAttribute("data-coach-deal-revise");
+      return command("reviseCoachDeal",{id,offer:Number(document.querySelector('[data-coach-deal-offer="'+id+'"]')?.value)});
+    }
+    if (el.hasAttribute("data-coach-deal-accept")) {
+      const id=el.getAttribute("data-coach-deal-accept");
+      return command("acceptCoachDeal",{id,paymentPlan:document.querySelector('[data-coach-deal-plan="'+id+'"]')?.value||"upfront"});
+    }
+    if (el.hasAttribute("data-coach-deal-reject")) return command("rejectCoachDeal",{id:el.getAttribute("data-coach-deal-reject")});
+    if (el.hasAttribute("data-coach-deal-buy")) return command("buyLoan",{loanId:el.getAttribute("data-coach-deal-buy")});
+
     if (el.hasAttribute("data-coach-focus")) return command("coachFocus", { focus: el.getAttribute("data-coach-focus") });
     if (el.hasAttribute("data-coach-setcaptain")) return command("coachCaptain", { playerId: document.querySelector("[data-coach-captain]")?.value || null });
     const kind = el.getAttribute("data-coach-talk");
@@ -8394,16 +8877,224 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     });
     input.click();
   }
+  function swapSquadPlayers(fromId,toId){
+    if(state?.mode!=="coach"||!fromId||!toId||fromId===toId)return false;
+    const club=D.club(state);
+    if(!club?.roster)return false;
+    const from=club.roster.find(p=>p.id===fromId),to=club.roster.find(p=>p.id===toId);
+    if(!from||!to)return false;
+    if(from.injury||from.suspension>0){toast("O jogador selecionado está indisponível.");return false;}
+    const usable=p=>!p.injury&&!(Number(p.suspension)>0);
+    const ids=[...(club.lineup||[])],fi=ids.indexOf(fromId),ti=ids.indexOf(toId);
+    if(ti<0&&(to.injury||Number(to.suspension)>0)){toast("O reserva escolhido está indisponível.");return false;}
+    if(fi<0&&ti<0){
+      // Swapping two reserves changes the bench/related squad order, not the starting XI.
+      const reserves=club.roster.filter(p=>!ids.includes(p.id));
+      const order=Array.isArray(state.coachCareer?.benchOrder)?state.coachCareer.benchOrder:[];
+      const rank=new Map(order.map((id,i)=>[id,i]));
+      const sorted=[...reserves].sort((a,b)=>(rank.get(a.id)??99999)-(rank.get(b.id)??99999));
+      const ordered=sorted.map(p=>p.id);
+      const a=ordered.indexOf(fromId),b=ordered.indexOf(toId);
+      if(a<0||b<0)return false;
+      const previous={clubId:club.id,day:state.day,lineup:[...ids],
+        benchOrder:Array.isArray(state.coachCareer?.benchOrder)?[...state.coachCareer.benchOrder]:null,
+        pitchSlots:Array.isArray(state.coachCareer?.pitchSlots)?[...state.coachCareer.pitchSlots]:null,
+        pitchFormation:state.coachCareer?.pitchFormation||null};
+      [ordered[a],ordered[b]]=[ordered[b],ordered[a]];
+      state.coachCareer||={version:1};
+      state.coachCareer.benchOrder=ordered;
+      squadUndo=previous;squadSwapSource=null;
+      persist();render();toast("Reservas e relacionados reorganizados. Pode desfazer.");
+      return true;
+    }
+    const saved=state.coachCareer?.pitchSlots;
+    const oldPitch=Array.isArray(saved)&&saved.length===11?[...saved]:null;
+    if(fi>=0&&ti>=0){ids[fi]=toId;ids[ti]=fromId;}
+    else if(fi>=0){ids[fi]=toId;}
+    else {ids[ti]=fromId;}
+    // Old saves can contain injured starters, or an incomplete XI.
+    // Repair only invalid and vacant slots, never displace a healthy selected player.
+    const chosen=[],seen=new Set();
+    for(const id of ids){
+      const p=club.roster.find(x=>x.id===id);
+      if(p&&usable(p)&&!seen.has(id)){chosen.push(id);seen.add(id);}
+    }
+    const pool=club.roster.filter(p=>usable(p)&&!seen.has(p.id)).sort((a,b)=>(D.overall(b)||0)-(D.overall(a)||0));
+    const hasGoalkeeper=()=>chosen.some(id=>club.roster.some(p=>p.id===id&&p.pos==="GOL"));
+    if(!hasGoalkeeper()){
+      const gk=pool.find(p=>p.pos==="GOL");
+      if(gk){chosen.push(gk.id);seen.add(gk.id);}
+    }
+    for(const p of pool){
+      if(chosen.length>=11)break;
+      if(!seen.has(p.id)){chosen.push(p.id);seen.add(p.id);}
+    }
+    if(chosen.length!==11||!hasGoalkeeper()){
+      toast("Não há 11 atletas disponíveis com goleiro. Complete a escalação manualmente.");
+      return false;
+    }
+    try{
+      const previous={clubId:club.id,day:state.day,lineup:[...(club.lineup||[])],pitchSlots:Array.isArray(state.coachCareer?.pitchSlots)?[...state.coachCareer.pitchSlots]:null,pitchFormation:state.coachCareer?.pitchFormation||null,benchOrder:Array.isArray(state.coachCareer?.benchOrder)?[...state.coachCareer.benchOrder]:null};
+      A.execute(state,"lineup",{ids:chosen});
+      if(oldPitch){
+        const nextPitch=oldPitch.map(id=>id===fromId?toId:id===toId?(fi>=0&&ti>=0?fromId:id):id);
+        if(new Set(nextPitch).size===11&&nextPitch.every(id=>chosen.includes(id))){
+          state.coachCareer ||= {version:1};
+          state.coachCareer.pitchSlots=nextPitch;
+          state.coachCareer.pitchFormation=club.formation||"4-3-3";
+        }else if(state.coachCareer){delete state.coachCareer.pitchSlots;delete state.coachCareer.pitchFormation;}
+      }else if(state.coachCareer){delete state.coachCareer.pitchSlots;delete state.coachCareer.pitchFormation;}
+      squadUndo=previous;
+      persist();squadSelectedId=fromId;render();toast("Posições do XI atualizadas. Você pode desfazer.");
+      return true;
+    }catch(e){toast(e.message);return false;}
+  }
+  document.addEventListener("click",e=>{
+    if(!e.target.closest?.("[data-squad-repair]")||state?.mode!=="coach")return;
+    const club=D.club(state);
+    if(!club||!Array.isArray(club.roster))return;
+    const formations={
+      "4-3-3":["PE","CA","PD","MC","VOL","MC","LE","ZAG","ZAG","LD","GOL"],
+      "4-4-2":["CA","CA","ME","MC","MC","MD","LE","ZAG","ZAG","LD","GOL"],
+      "4-2-3-1":["CA","PE","MEI","PD","VOL","VOL","LE","ZAG","ZAG","LD","GOL"]
+    };
+    const roles=formations[club.formation]||formations["4-3-3"];
+    const players=club.roster.filter(p=>!p.injury&&!(Number(p.suspension)>0));
+    if(players.length<11||!players.some(p=>String(p.pos).toUpperCase()==="GOL")){
+      toast("Não há 11 atletas disponíveis com goleiro.");return;
+    }
+    const oldIds=new Set(club.lineup||[]);
+    const used=new Set(),chosen=[];
+    const score=(role,p)=>{
+      const native=String(p.pos||"").toUpperCase();
+      const positions=[native,...(Array.isArray(p.secondaryPositions)?p.secondaryPositions:[])].map(x=>String(x).toUpperCase());
+      if(role==="GOL")return positions.includes("GOL")?10000:-100000;
+      if(positions.includes("GOL"))return -100000;
+      if(positions.includes(role))return 1000;
+      const related={ZAG:["DEF"],LE:["LD","LAT","DEF"],LD:["LE","LAT","DEF"],MC:["VOL","MEI","ME","MD"],VOL:["MC","MEI"],ME:["PE","MC","MEI"],MD:["PD","MC","MEI"],PE:["ME","ATA"],PD:["MD","ATA"],CA:["ATA","PE","PD"],MEI:["MC","VOL"]};
+      return (related[role]||[]).some(x=>positions.includes(x))?300:0;
+    };
+    for(const role of roles){
+      const best=players.filter(p=>!used.has(p.id)).sort((a,b)=>
+        (score(role,b)+(oldIds.has(b.id)?20:0)+Number(D.overall(b)))-
+        (score(role,a)+(oldIds.has(a.id)?20:0)+Number(D.overall(a))))[0];
+      if(!best||score(role,best)<-1000){toast("Não foi possível preencher a formação.");return;}
+      used.add(best.id);chosen.push(best.id);
+    }
+    if(chosen.length!==11||new Set(chosen).size!==11)return;
+    try{
+      const previous={clubId:club.id,day:state.day,lineup:[...(club.lineup||[])],
+        pitchSlots:Array.isArray(state.coachCareer?.pitchSlots)?[...state.coachCareer.pitchSlots]:null,
+        pitchFormation:state.coachCareer?.pitchFormation||null};
+      A.execute(state,"lineup",{ids:chosen});
+      state.coachCareer||={version:1};
+      state.coachCareer.pitchSlots=[...chosen];
+      state.coachCareer.pitchFormation=club.formation||"4-3-3";
+      squadUndo=previous;squadSwapSource=null;
+      persist();render();toast("XI recomposto por posição. Pode desfazer a alteração.");
+    }catch(error){toast(error.message);}
+  });
+  document.addEventListener("change",e=>{
+    if(!e.target.matches?.("[data-coach-formation]"))return;
+    if(state?.mode!=="coach")return;
+    try{
+      A.execute(state,"coachFormation",{value:e.target.value});
+      squadUndo=null;squadSwapSource=null;persist();render();
+      toast("Formação atualizada. Confira a distribuição dos jogadores.");
+    }catch(error){toast(error.message);render();}
+  });
+  document.addEventListener("dragstart", e=>{
+    const tile=e.target.closest?.("[data-squad-player][draggable]");
+    if(!tile||state?.mode!=="coach")return;
+    squadSwapSource=tile.dataset.squadPlayer;
+    e.dataTransfer?.setData("text/plain",squadSwapSource);
+    if(e.dataTransfer)e.dataTransfer.effectAllowed="move";
+  });
+  document.addEventListener("dragover",e=>{
+    if(state?.mode!=="coach"||!squadSwapSource||!e.target.closest?.("[data-squad-player],.pl-squad-pitch"))return;
+    e.preventDefault();
+    if(e.dataTransfer)e.dataTransfer.dropEffect="move";
+  });
+  document.addEventListener("drop",e=>{
+    const target=e.target.closest?.("[data-squad-player]");
+    if(!squadSwapSource||state?.mode!=="coach")return;
+    if(!target&&!e.target.closest?.(".pl-squad-pitch"))return;
+    e.preventDefault();
+    const source=squadSwapSource;squadSwapSource=null;
+    if(target){swapSquadPlayers(source,target.dataset.squadPlayer);return;}
+    const club=D.club(state),ids=[...(club?.lineup||[])];
+    if(!ids.includes(source)&&ids.length<11){
+      try{A.execute(state,"lineup",{ids:[...ids,source]});persist();render();toast("Titular incluído.");}
+      catch(error){toast(error.message);}
+    }else toast("Arraste sobre um jogador para trocar.");
+  
+  });
+  document.addEventListener("dragend",()=>{squadSwapSource=null;});
   document.addEventListener("click", (e) => {
     const squadPlayer = e.target.closest?.("[data-squad-player]");
     if (squadPlayer && !e.target.closest(".pl-xi-toggle")) {
-      squadSelectedId = squadPlayer.dataset.squadPlayer;
+      const id=squadPlayer.dataset.squadPlayer;
+      if(state?.mode==="coach"&&squadSwapSource&&squadSwapSource!==id){
+        const source=squadSwapSource;squadSwapSource=null;
+        swapSquadPlayers(source,id);return;
+      }
+      squadSwapSource=state?.mode==="coach"?(squadSwapSource===id?null:id):null;
+      squadSelectedId=id;
       render();
       return;
     }
     const b = e.target.closest("button");
     if (!b) return;
 
+    if (b.dataset.squadDetailTab) {
+      if(["attributes","comparison","fitness","contract","development"].includes(b.dataset.squadDetailTab)){
+        squadDetailTab=b.dataset.squadDetailTab;
+        render();
+      }
+      return;
+    }
+    if (b.hasAttribute("data-squad-undo")) {
+      const club=D.club(state),undo=squadUndo;
+      if(state?.mode!=="coach"||!undo||!club||undo.clubId!==club.id||undo.day!==state.day){toast("Nenhuma troca disponível para desfazer.");return;}
+      try{
+        A.execute(state,"lineup",{ids:[...undo.lineup]});
+        state.coachCareer ||= {version:1};
+        if(Object.prototype.hasOwnProperty.call(undo,"benchOrder")){
+          if(undo.benchOrder)state.coachCareer.benchOrder=[...undo.benchOrder];
+          else delete state.coachCareer.benchOrder;
+        }
+        if(undo.pitchSlots){state.coachCareer.pitchSlots=[...undo.pitchSlots];state.coachCareer.pitchFormation=undo.pitchFormation;}
+        else{delete state.coachCareer.pitchSlots;delete state.coachCareer.pitchFormation;}
+        squadUndo=null;squadSwapSource=null;persist();render();toast("Última troca desfeita.");
+      }catch(error){toast(error.message);}
+      return;
+    }
+    if(b.hasAttribute("data-squad-phase")){
+      const next=b.getAttribute("data-squad-phase");
+      if(next==="with-ball"||next==="without-ball"){squadPhase=next;render();}
+      return;
+    }
+    if(b.hasAttribute("data-coach-preset-save")){
+      return command("coachTacticPreset",{operation:"save",slot:Number(b.getAttribute("data-coach-preset-save"))});
+    }
+    if(b.hasAttribute("data-coach-preset-load")){
+      return command("coachTacticPreset",{operation:"load",slot:Number(b.getAttribute("data-coach-preset-load"))});
+    }
+    if(b.hasAttribute("data-team-tactics-save")){
+      const value=name=>document.querySelector('[data-team-tactic-'+name+']')?.value;
+      return command("coachTeamTactics",{style:value("style"),pressing:value("pressing"),buildup:value("buildup"),width:Number(value("width")),depth:Number(value("depth"))});
+    }
+    if(b.hasAttribute("data-save-player-development")){
+      const playerId=b.getAttribute("data-save-player-development");
+      const focus=document.querySelector("[data-player-development-focus]")?.value;
+      return command("coachDevelopmentPlan",{playerId,focus});
+    }
+    if (b.hasAttribute("data-coach-role-save")) {
+      const id=b.getAttribute("data-coach-role-save");
+      const input=document.querySelector('[data-coach-player-role]');
+      if(!input||input.dataset.playerId!==id)return;
+      return command("coachPlayerRole",{playerId:id,position:input.dataset.position,role:input.value});
+    }
     if (b.dataset.squadTab) {
       squadTab = b.dataset.squadTab;
       render();
@@ -8494,15 +9185,91 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const goals=x.national&&!Array.isArray(x.goals)?`<p class="muted">Autores dos gols não disponíveis neste registro.</p>`:x.goals?.length ? x.goals.map(g=>`<div class="match-detail-event"><b>${g.minute}' ${esc(g.scorer||(x.national?"Autor não identificado":"Jogador"))}${x.national?` <small>(${g.side===1?esc(x.away):esc(x.home)})</small>`:""}</b>${g.assist?`<small>Assistência: ${esc(g.assist)}</small>`:""}</div>`).join("") : `<p class="muted">Sem gols na partida.</p>`;
       const entry=x.hero?.entryMinute!==null&&x.hero?.entryMinute!==undefined?`Entrou aos ${x.hero.entryMinute}'`:"Entrou durante a partida";
       const hero=x.hero?.played ? `<div class="match-detail-hero"><b>${x.national?"Seu jogo pela Seleção":"Seu jogo"}</b><span>${x.hero.starter?"Titular":entry} · ${x.hero.minutes} min · ${x.hero.goals} gol${x.hero.goals===1?"":"s"} · ${x.hero.assists} assist. ${x.hero.rating!==null?`· Nota ${x.hero.rating}`:""}</span></div>` : `<div class="match-detail-hero"><b>Seu jogo</b><span>Não participou desta partida.</span></div>`;
+      const matchSummary=state.mode==="coach"?`<div class="match-detail-hero"><b>Resumo da partida</b><span>${esc(x.home)} ${esc(x.score)} ${esc(x.away)} · ${esc(x.competition||"Competição")}</span></div>`:hero;
       const tieBox=x.tie?(()=>{const t=x.tie,nm=id=>esc(D.club(state,id)?.name||"Clube"),a=t.aggregate||[0,0],parts=[`Agregado ${a[0]}–${a[1]}`];if(t.extraTime)parts.push(`prorrogação ${t.extraTime[0]}–${t.extraTime[1]}`);if(t.penalties)parts.push(`pênaltis ${t.penalties.score[0]}–${t.penalties.score[1]}`);return `<div class="match-detail-hero match-detail-tie"><b>Classificação do confronto</b><span>${parts.join(" · ")} · ${nm(t.winnerId)} avança${t.decidedBy==="penalties"?" nos pênaltis":t.decidedBy==="extra_time"?" na prorrogação":""}</span></div>`;})():"";
-      box.innerHTML=`<div class="match-detail-head"><div><small>${x.national?`SELEÇÃO ${esc(String(x.teamName||x.home||"").toUpperCase())} · `:""}${esc(x.competition)}</small><b>${esc(x.home)} ${esc(x.score)} ${esc(x.away)}</b></div><button type="button" data-close-match-detail aria-label="Fechar">×</button></div>${hero}${tieBox}<div class="match-detail-grid"><div><small>Gols e assistências</small>${goals}</div><div><small>Melhor da partida</small>${x.motm?`<p><b>${esc(x.motm.name)}</b>${x.national?` <small>(${x.motm.side===1?esc(x.away):esc(x.home)})</small>`:""}<br>Nota ${x.motm.rating}</p>`:x.national?`<p class="muted">Informação não disponível neste registro.</p>`:`<p class="muted">Sem avaliação registrada.</p>`}</div></div>`;
+      box.innerHTML=`<div class="match-detail-head"><div><small>${x.national?`SELEÇÃO ${esc(String(x.teamName||x.home||"").toUpperCase())} · `:""}${esc(x.competition)}</small><b>${esc(x.home)} ${esc(x.score)} ${esc(x.away)}</b></div><button type="button" data-close-match-detail aria-label="Fechar">×</button></div>${matchSummary}${tieBox}<div class="match-detail-grid"><div><small>Gols e assistências</small>${goals}</div><div><small>Melhor da partida</small>${x.motm?`<p><b>${esc(x.motm.name)}</b>${x.national?` <small>(${x.motm.side===1?esc(x.away):esc(x.home)})</small>`:""}<br>Nota ${x.motm.rating}</p>`:x.national?`<p class="muted">Informação não disponível neste registro.</p>`:`<p class="muted">Sem avaliação registrada.</p>`}</div></div>`;
       box.hidden=false; return;
     }
     if (b.hasAttribute("data-close-match-detail")) { const box=document.getElementById("recent-match-detail"); if(box) box.hidden=true; document.querySelectorAll("[data-recent-match]").forEach(el=>el.setAttribute("aria-expanded","false")); return; }
+    if(b.hasAttribute("data-coach-plan-official-sub")){
+      if(state?.mode!=="coach")return;
+      const next=D.nextCommitment(state),club=D.club(state);
+      if(!next||!club||next.date!==state.day+1||next.national){
+        toast("O planejamento oficial fica disponível na véspera de um jogo do clube.");return;
+      }
+      const ids=(club.lineup||[]).map(String);
+      const valid=p=>p&&!p.injury&&!(Number(p.suspension)>0)&&Number(p.condition??100)>35;
+      const starters=ids.map(id=>club.roster.find(p=>String(p.id)===id)).filter(valid);
+      const order=state.coachCareer?.benchOrder||[],rank=new Map(order.map((id,i)=>[String(id),i]));
+      const bench=club.roster.filter(p=>valid(p)&&!ids.includes(String(p.id)))
+        .sort((a,b)=>(rank.get(String(a.id))??99999)-(rank.get(String(b.id))??99999)).slice(0,7);
+      if(starters.length!==11||!bench.length){toast("Defina um XI válido e reservas disponíveis antes do jogo.");return;}
+      const option=p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+' · '+esc(p.pos)+' · GER '+D.overall(p)+'</option>';
+      const old=document.getElementById("coach-official-sub-planner");old?.remove();
+      const modal=document.createElement("div");modal.id="coach-official-sub-planner";modal.className="simulation-stop-backdrop";
+      modal.innerHTML='<section class="simulation-stop-dialog" role="dialog" aria-modal="true" aria-label="Planejar substituição oficial">'+
+        '<div class="tag">PARTIDA OFICIAL · PRÉ-JOGO</div><h2>Planejar substituição</h2>'+
+        '<p>A troca será aplicada ao resultado oficial no minuto escolhido. Esta tela não permite editar a partida depois de iniciada.</p>'+
+        '<label>Jogador que sai <select data-official-sub-out>'+starters.map(option).join("")+'</select></label>'+
+        '<label>Jogador que entra <select data-official-sub-in>'+bench.map(option).join("")+'</select></label>'+
+        '<label>Minuto <input type="number" data-official-sub-minute min="1" max="90" value="65"></label>'+
+        '<div class="actions"><button type="button" class="primary" data-official-sub-save>Agendar troca</button>'+
+        '<button type="button" data-official-sub-close>Cancelar</button></div></section>';
+      document.body.appendChild(modal);return;
+    }
+    if(b.hasAttribute("data-official-sub-close")){
+      document.getElementById("coach-official-sub-planner")?.remove();return;
+    }
+    if(b.hasAttribute("data-official-sub-save")){
+      const next=D.nextCommitment(state),modal=document.getElementById("coach-official-sub-planner");
+      const outId=modal?.querySelector("[data-official-sub-out]")?.value;
+      const inId=modal?.querySelector("[data-official-sub-in]")?.value;
+      const minute=Number(modal?.querySelector("[data-official-sub-minute]")?.value);
+      if(!next||next.date!==state.day+1||!Number.isInteger(minute)||minute<1||minute>90||outId===inId){
+        toast("Jogadores ou minuto inválidos.");return;
+      }
+      const side=state.clubId===next.home?0:1;
+      const ok=D.scheduleCoachActions?.(state,next,[{type:"substitution",side,minute,outId,inId}]);
+      if(!ok){toast("Não foi possível agendar a substituição oficial.");return;}
+      modal.remove();toast("Troca oficial agendada para "+minute+"'. Agora acompanhe ou simule o jogo.");return;
+    }
     if (b.hasAttribute("data-live-match")) {
       const next = D.nextCommitment(state);
       if (!next) { toast("Não há próximo jogo agendado."); return; }
       if (next.date !== state.day + 1) { toast("Use Simular até o jogo primeiro. O acompanhamento abre na véspera da partida."); return; }
+      if(state.mode==="coach"&&!next.national&&D.createCoachLiveController){
+        const home=D.club(state,next.home),away=D.club(state,next.away);
+        const side=state.clubId===next.home?0:1;
+        const rng=new D.Random(state.rng);
+        const existingPlan=D.coachActionPlan?.(state);
+        const existingActions=existingPlan?.home===next.home&&existingPlan?.away===next.away&&existingPlan.date===next.date?
+          existingPlan.actions:[];
+        const live=D.createCoachLiveController(home,away,rng,state,existingActions);
+        if(!live){toast("Prévia da partida indisponível.");return;}
+        window.ProLifeLiveMatch.start({match:{events:[],participants:[],competitionName:next.competitionName||"Partida"},
+          home,away,mode:"coach",officialControl:live,officialSide:side,
+          onOfficialFinish:(actions)=>{
+            if(!live.finished||!live.result){
+              return "A partida ainda não terminou.";
+            }
+            if(!D.stageCoachLiveResult?.(state,next,live)){
+              return "Resultado oficial indisponível. Nenhuma partida foi confirmada.";
+            }
+            const prior=(state.matches||[]).length;
+            try{D.advance(state,1);}
+            catch(error){
+              D.discardCoachLiveResult?.(state);
+              return "Erro ao concluir a partida: "+error.message;
+            }
+            D.discardCoachLiveResult?.(state);
+            const played=(state.matches||[]).find(m=>m.date===state.day&&m.home===next.home&&m.away===next.away);
+            if(!played||(state.matches||[]).length===prior){
+              return "Partida não registrada no calendário. Confira os resultados.";
+            }
+            persist();render();return true;
+          }});
+        return;
+      }
       const before = next.national ? null : new Set(state.matches.map((m) => `${m.season}:${m.date}:${m.home}:${m.away}:${m.competitionId||m.leagueId||""}`));
       D.advance(state, 1);
       const played = next.national
@@ -8513,13 +9280,20 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       if (!played || played.date !== state.day) { toast("A partida não pôde ser localizada no calendário deste dia."); return; }
       const home = next.national ? { name:played.homeName || "Brasil" } : D.club(state, played.home);
       const away = next.national ? { name:played.awayName || next.opponent } : D.club(state, played.away);
-      window.ProLifeLiveMatch.start({ match: played, home, away });
+      window.ProLifeLiveMatch.start({ match: played, home, away, mode: state.mode });
       return;
     }
     if (b.dataset.cuView !== undefined) { const l = document.getElementById("cu-list"); if (l) l.hidden = !l.hidden; return; }
     if (b.dataset.cuGo) { ackCallup(b.dataset.cuGo, true); return; }
     if (b.dataset.cuContinue) { ackCallup(b.dataset.cuContinue, false); return; }
-    if (b.dataset.stopClose !== undefined) { closeSimulationStop(); return; }
+    if (b.dataset.stopClose !== undefined) {
+      if (state?.decision?.choices?.length) {
+        const choices=state.decision.choices.filter(c=>Array.isArray(c)&&typeof c[0]==="string");
+        const preferred=choices.find(c=>/equilibr|fam[ií]lia|descans|visitar|aproveitar|passar tempo/i.test(String(c[1]||"")))||choices[0];
+        if(preferred){closeSimulationStop();command("decide",{choice:preferred[0]});return;}
+      }
+      closeSimulationStop();return;
+    }
     if (b.dataset.stopGo) {
       const anchor=b.dataset.stopAnchor || "", destination=b.dataset.stopGo;
       closeSimulationStop();
@@ -8534,6 +9308,14 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
           setTimeout(()=>target.classList.remove("popup-decision-target"),2200);
         } else window.scrollTo(0,0);
       });
+      return;
+    }
+    if(b.dataset.stopGo==="market"&&state?.mode==="coach"){
+      closeSimulationStop();
+      page="market";
+      window.ProLifeCoachCareerView?.setMarketArea("transferencias");
+      window.ProLifeCoachCareerView?.setDealTab("financeiro");
+      render();
       return;
     }
     if (b.dataset.stopChoice) { command("decide", { choice:b.dataset.stopChoice }); closeSimulationStop(); return; }
@@ -8702,10 +9484,25 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
         return;
       }
     }
+    if (b.dataset.counterRecruit) {
+      command("counterRecruit", {
+        clubId: b.dataset.source,
+        playerId: b.dataset.counterRecruit,
+        offer: Number(document.querySelector('[data-counter-fee="'+b.dataset.counterRecruit+'"]')?.value)
+      });
+      return;
+    }
+    if (b.dataset.loanBuy) { command("buyLoan",{loanId:b.dataset.loanBuy}); return; }
     if (b.dataset.recruit) {
       command("recruit", {
         clubId: b.dataset.source,
         playerId: b.dataset.recruit,
+        paymentPlan: document.querySelector(`[data-recruit-plan="${b.dataset.recruit}"]`)?.value || "upfront",
+        dealType: document.querySelector(`[data-deal-type="${b.dataset.recruit}"]`)?.value || "permanent",
+        loanDays: Number(document.querySelector(`[data-loan-days="${b.dataset.recruit}"]`)?.value || 180),
+        sellOn: Number(document.querySelector(`[data-sell-on="${b.dataset.recruit}"]`)?.value || 0),
+        salaryShare: Number(document.querySelector(`[data-salary-share="${b.dataset.recruit}"]`)?.value || 50),
+        buyOption: document.querySelector(`[data-buy-option="${b.dataset.recruit}"]`)?.value || "off",
       });
       return;
     }
@@ -8754,22 +9551,24 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
         importSave();
         break;
       case "guided":
+        coachSetup = false;
         classicForm = false;
         window.ProLifeCreator?.reset();
         render();
         break;
       case "new":
       case "new-player":
+        coachSetup = false;
         classicForm = false;
         window.ProLifeCreator?.reset();
         setup = true;
         render();
         break;
       case "new-coach":
-        classicForm = true;
+        coachSetup = true;
+        classicForm = false;
         setup = true;
         render();
-        setTimeout(()=>{const mode=document.getElementById("mode");if(mode){mode.value="coach";mode.dispatchEvent(new Event("change",{bubbles:true}));}},0);
         break;
       case "careers":
         state = null; setup = false; S.clearActive?.(); render(); break;

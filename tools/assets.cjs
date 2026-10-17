@@ -20,6 +20,16 @@ const files = [
   "src/domain/career.js",
   "src/domain/commercial.js",
   "src/domain/squad.js",
+  "src/domain/coach-match-rating.js",
+  "src/domain/coach-scouting-v2.js",
+  "src/domain/competition-zones-v2.js",
+  "src/ui/competition-zones-v2.css",
+  "src/domain/coach-incremental-match-v2.js",
+  "src/ui/coach-match-lab-v2.js",
+  "src/ui/match-pitch-v2.js",
+  "src/ui/match-identity-v2.js",
+  "src/ui/coach-match-center-v2.js",
+  "src/ui/coach-match-center-v2.css",
   "src/domain/player-positions.js",
   "src/domain/player-position-overlay.js",
   "src/domain/squad-position-selection.js",
@@ -86,6 +96,10 @@ const files = [
   "src/ui/home-dashboard.js",
   "src/ui/live-match.js",
   "src/ui/creator.js",
+  "src/ui/coach-glb.js",
+  "src/assets/coach3d/coach-base.glb",
+  "src/ui/coach-avatar-3d.js",
+  "src/ui/coach-creator.js",
   "src/ui/club-browser.js",
   "src/ui/world-competitions-view.js",
   "src/ui/world-live-market-view.js",
@@ -101,6 +115,7 @@ const files = [
   "src/ui/fc27-05b-squad.css",
   "src/ui/fc27-05c-player.css",
   "src/ui/fc27-05d-calendar.css",
+  "src/ui/fc27-06b-coach-creation.css",
   "src/assets/fc27-stadium-04j.svg",
   "src/assets/fc27-stadium-original.svg",
     "src/domain/europa-draw.js",
@@ -121,6 +136,7 @@ const files = [
   "src/domain/world-stats.js",
   "src/domain/club-history.js",
   "src/domain/club-intelligence.js",
+  "src/domain/club-economy.js",
   "src/domain/coach-career.js",
   "src/domain/off-field.js",
   "src/data/fc27/fc27-manifest-v1.js",
@@ -166,6 +182,11 @@ const files = [
   "src/ui/club-crests-data.js",
   "src/ui/club-crests.js","src/ui/national-crests.js",
 ];
+// Optional large CC0 Vitruvian assets are installed locally from the supplied ZIP.
+for (const name of ["vitruvian_body.glb","vitruvian_head.glb","vitruvian_hair.glb"]) {
+ const file = "src/assets/coach3d-realistic/" + name;
+ if (require("fs").existsSync(require("path").join(__dirname, "..", file))) files.push(file);
+}
 // 04E: escudos instalados (somente imagens; manifestos ficam fora da publicacao).
 try { const d = require("path").join(__dirname, "..", "src/assets/club-crests"); for (const f of require("fs").readdirSync(d).sort()) if (/^[a-zA-Z0-9_-]+\.(png|svg|webp)$/.test(f)) files.push("src/assets/club-crests/" + f); } catch (e) { /* sem escudos */ }
 try { const d = require("path").join(__dirname, "..", "src/assets/national-crests"); for (const f of require("fs").readdirSync(d).sort()) if (/^nt_[A-Z]{3}\.png$/.test(f)) files.push("src/assets/national-crests/" + f); } catch (e) { /* sem escudos de selecoes */ }

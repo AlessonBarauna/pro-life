@@ -156,7 +156,7 @@ test("Etapa 14: assistente na interface percorre os 6 passos, volta sem perder e
   const base = path.join(__dirname, "..") + path.sep;
   const dom = new JSDOM(fs.readFileSync(base + "index.html", "utf8"), { runScripts: "outside-only", url: "https://offline-test.invalid" }), w = dom.window;
   w.confirm = () => true; w.scrollTo = () => {};
-  const order = fs.readFileSync(base + "index.html", "utf8").match(/src="(src\/[^"]+\.js)"/g).map((x) => x.slice(5, -1)).filter((f) => !/update\.js|avatar/.test(f));
+  const order = [...fs.readFileSync(base + "index.html", "utf8").matchAll(/src="(src\/[^"]+\.js)(?:\?[^"]*)?"/g)].map((x) => x[1]).filter((f) => !/update\.js|avatar/.test(f));
   for (const f of order) w.eval(fs.readFileSync(base + f, "utf8"));
   const q = (s) => w.document.querySelector(s), click = (s) => { const el = q(s); assert.ok(el, s); el.click(); };
   // 34F.15: a criação é só FC 27; criar o mundo leva alguns segundos, com carregamento assíncrono.

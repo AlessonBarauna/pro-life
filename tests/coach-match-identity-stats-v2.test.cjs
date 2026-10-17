@@ -1,0 +1,9 @@
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const I=require("../src/ui/match-identity-v2.js"),C=require("../src/ui/coach-match-center-v2.js");
+const home={roster:[{id:"real_26628",name:"Lucas Moura",number:7,pos:"ATA"},{id:"fc27_p_1",name:"Rafael",shirtNumber:1}]};
+const away={roster:[{id:"real_21695",name:"Matheus",number:8}]};
+test("match identity resolves internal ids to real roster names",()=>{assert.equal(I.identify("real_26628",home,away).name,"Lucas Moura");assert.equal(I.identify("real_21695",home,away).name,"Matheus");assert.equal(I.short("Lucas Moura"),"Moura");});
+test("unknown internal identifiers never leak into displayed player names",()=>{assert.equal(I.identify("fc27_p_5999",home,away).name,"Jogador não identificado");});
+test("match performance displays readable name and rating",()=>{global.ProLifeMatchIdentityV2=I;const html=C.panel({ratings:{"real_26628":7.1,"real_21695":6.7}},94,"desempenho",{home,away});assert.match(html,/Lucas Moura/);assert.match(html,/Matheus/);assert.doesNotMatch(html,/real_26628/);delete global.ProLifeMatchIdentityV2;});
+test("statistics show recorded goal events and defer unavailable total shots",()=>{global.ProLifeMatchIdentityV2=I;const m={shots:[9,11],xg:[1.25,1.69],events:[{type:"goal",minute:12,side:0},{type:"goal",minute:70,side:1}]};const early=C.panel(m,23,"estatisticas");assert.match(early,/Gols/);assert.match(early,/—/);assert.doesNotMatch(early,/1\.25/);const full=C.panel(m,94,"estatisticas");assert.match(full,/1\.25/);delete global.ProLifeMatchIdentityV2;});
+test("browser loads identity and renders explicit field labels",()=>{const root=path.join(__dirname,"..");const live=fs.readFileSync(path.join(root,"src/ui/live-match.js"),"utf8");const html=fs.readFileSync(path.join(root,"index.html"),"utf8");assert.match(live,/lm-player-name/);assert.match(html,/match-identity-v2\.js/);});

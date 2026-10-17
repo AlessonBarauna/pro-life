@@ -25,3 +25,113 @@
 @media(max-width:900px){.pl-squad-workspace{grid-template-columns:1fr}.pl-squad-left{border-right:0;padding:12px}.pl-squad-detail{border-top:1px solid var(--pl-line)}.pl-squad-detail-hero{min-height:230px}.pl-squad-ratings{grid-template-columns:minmax(150px,.7fr) minmax(220px,1.3fr)}.pl-squad-radar{display:flex}.pl-squad-pitch{height:570px}.pl-squad-supplement{grid-template-columns:1fr}}
 @media(max-width:620px){.pl-squad-header{align-items:flex-start;padding:12px}.pl-squad-head-status{display:none}.pl-squad-club h1{font-size:25px}.pl-squad-tabs{padding:0;overflow-x:auto}.pl-squad-tabs button{flex:1;min-width:105px;padding:0 10px}.pl-squad-pitch-head>span{display:none}.pl-squad-pitch{height:520px;padding:28px 5px 20px}.pl-squad-pitch::before,.pl-pitch-lines{inset:8px}.pl-squad-pitch::after{left:8px;right:8px}.pl-squad-player{width:72px;min-height:52px;grid-template-columns:24px minmax(0,1fr);padding:6px 4px;gap:3px}.pl-squad-face{width:23px;height:32px}.pl-squad-player>strong{position:absolute;right:3px;top:3px;font-size:11px}.pl-squad-player-copy b{font-size:7px}.pl-squad-morale{display:none}.pl-xi-toggle{right:-2px}.pl-squad-detail-hero{grid-template-columns:1fr 1fr}.pl-squad-detail-copy{padding-left:18px}.pl-squad-ratings{grid-template-columns:1fr}.pl-squad-radar{display:none}.pl-squad-attrs>span{grid-template-columns:80px 1fr 26px}.pl-squad-actions{padding:8px 12px;flex-wrap:wrap}.pl-squad-actions button{flex:1 1 140px}.pl-squad-actions .primary{margin-left:0}.pl-squad-supplement{margin:10px 12px}.pl-squad-mini-kpis{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.pl-squad-player{transition:none}}
+
+/* Manager formation editing: persistent selection and clearer drop targets. */
+.pl-squad-player.swap-source{border:2px solid var(--pl-accent);background:linear-gradient(140deg,rgba(72,95,29,.97),rgba(18,32,23,.97));box-shadow:0 0 0 3px rgba(201,244,61,.22),0 10px 22px rgba(0,0,0,.42)}
+.pl-squad-screen .pl-squad-player[draggable="true"]{touch-action:manipulation}
+.pl-squad-pitch-head>span{font-size:clamp(10px,.8vw,12px);font-weight:700;color:#d3e2e0}
+.pl-squad-bench-scroll{scroll-padding-inline:16px}
+.pl-squad-player:focus-visible{outline:2px solid var(--pl-accent);outline-offset:2px}
+
+/* FC-style coach lineup workspace: readable pitch and responsive player detail. */
+.pl-squad-screen .pl-squad-workspace{grid-template-columns:minmax(0,1.55fr) minmax(300px,.85fr);min-width:0}
+.pl-squad-screen .pl-squad-left,.pl-squad-screen .pl-squad-detail{min-width:0}
+.pl-squad-screen .pl-squad-pitch{height:clamp(480px,58vh,650px);padding-inline:clamp(10px,2vw,36px);grid-template-rows:repeat(5,minmax(0,1fr))}
+.pl-squad-screen .pl-squad-row{width:100%;justify-content:space-around;gap:clamp(2px,.5vw,10px)}
+.pl-squad-screen .pl-squad-row .pl-squad-player{flex:0 1 124px;width:min(124px,100%);min-width:0}
+.pl-squad-screen .pl-squad-player{border-radius:9px;border-color:rgba(198,238,225,.25)}
+.pl-squad-screen .pl-squad-detail-hero{grid-template-columns:minmax(0,1fr) minmax(90px,.75fr)}
+.pl-squad-screen .pl-squad-detail-copy{min-width:0;overflow-wrap:anywhere}
+.pl-squad-screen .pl-squad-detail-hero h2{font-size:clamp(20px,2vw,32px);overflow-wrap:anywhere}
+@media(max-width:1100px){
+ .pl-squad-screen .pl-squad-workspace{grid-template-columns:minmax(0,1fr)}
+ .pl-squad-screen .pl-squad-left{padding:16px}
+ .pl-squad-screen .pl-squad-detail{border-top:1px solid var(--pl-line)}
+ .pl-squad-screen .pl-squad-pitch{height:clamp(470px,62vh,640px)}
+}
+@media(max-width:560px){
+ .pl-squad-screen .pl-squad-pitch{padding:22px 7px 12px;min-height:460px}
+ .pl-squad-screen .pl-squad-player{grid-template-columns:1fr;justify-items:center;padding:4px 2px;min-height:55px;gap:2px}
+ .pl-squad-screen .pl-squad-face{display:none}
+ .pl-squad-screen .pl-squad-player-copy b{font-size:8px}
+ .pl-squad-screen .pl-squad-player>strong{font-size:14px}
+ .pl-squad-screen .pl-squad-row{gap:2px}
+ .pl-squad-screen .pl-squad-head-status span{min-width:65px}
+}
+
+/* E02 - legible player dossier and FC-inspired management workspace */
+.pl-squad-screen .pl-squad-detail-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:10px 12px;border-bottom:1px solid var(--pl-line)}
+.pl-squad-screen .pl-squad-detail-tabs button{min-width:0;padding:12px 4px;border:1px solid transparent;border-radius:6px;background:rgba(255,255,255,.04);color:var(--pl-text-3);font-weight:700;font-size:11px}
+.pl-squad-screen .pl-squad-detail-tabs button.active{background:rgba(201,244,61,.12);border-color:var(--pl-accent);color:var(--pl-accent)}
+.pl-squad-screen .pl-squad-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:18px}
+.pl-squad-screen .pl-squad-info-grid span{min-width:0;background:rgba(15,33,39,.8);border:1px solid var(--pl-line);border-radius:8px;padding:12px;display:grid;gap:7px}
+.pl-squad-screen .pl-squad-info-grid small{color:var(--pl-text-3);font-size:10px}
+.pl-squad-screen .pl-squad-info-grid b{color:var(--pl-text);overflow-wrap:anywhere;font-size:clamp(12px,1.2vw,16px)}
+.pl-squad-screen .pl-squad-compare h3{margin:18px 18px 0;font-size:16px}
+.pl-squad-screen .pl-squad-compare p{padding:12px 18px}
+.pl-squad-screen .pl-squad-bench-scroll{scrollbar-width:thin}
+@media(max-width:580px){.pl-squad-screen .pl-squad-info-grid{grid-template-columns:1fr;padding:12px}}
+
+/* E03 - squad interaction toolbar */
+.pl-squad-screen .pl-squad-pitch-tools{display:flex;align-items:center;gap:10px;justify-content:flex-end;min-width:0}
+.pl-squad-screen .pl-squad-pitch-tools small{font-size:10px;color:var(--pl-text-3);line-height:1.3}
+.pl-squad-screen .pl-squad-pitch-tools button{font-size:10px;font-weight:800;white-space:nowrap;padding:7px 10px;border-radius:6px;border:1px solid var(--pl-accent);color:var(--pl-accent);background:rgba(201,244,61,.09)}
+.pl-squad-screen .pl-squad-pitch-tools button:disabled{opacity:.4;cursor:not-allowed;border-color:var(--pl-line);color:var(--pl-text-3)}
+@media(max-width:650px){.pl-squad-screen .pl-squad-pitch-head{height:auto;min-height:50px;align-items:flex-start}.pl-squad-screen .pl-squad-pitch-tools{flex-wrap:wrap}.pl-squad-screen .pl-squad-pitch-tools small{display:none}}
+
+/* E04 - formation picker, visible in coach lineup */
+.pl-squad-screen .pl-squad-pitch-head select[data-coach-formation]{appearance:auto;background:#142b34;border:1px solid var(--pl-accent);color:var(--pl-accent);border-radius:7px;padding:6px 10px;font-size:15px;font-weight:800;cursor:pointer}
+.pl-squad-screen .pl-squad-pitch-head select[data-coach-formation]:focus-visible{outline:2px solid var(--pl-accent);outline-offset:3px}
+
+/* E04 completion: positional compatibility notice under the pitch */
+.pl-squad-screen .pl-squad-fit-note{margin:0;padding:9px 12px;border:1px solid rgba(201,244,61,.2);background:rgba(9,27,29,.86);color:var(--pl-text-3);font-size:11px}
+
+/* E04: visibly distinguish native position from assigned tactical slot. */
+.pl-squad-screen .pl-squad-player.out-of-position{border:2px solid #f1b35b;background:linear-gradient(145deg,rgba(72,45,27,.95),rgba(19,22,27,.97))}
+.pl-squad-screen .pl-squad-improvised{display:block;color:#ffd18d;font-size:7px;font-weight:900;line-height:1.1;white-space:normal}
+.pl-squad-screen .pl-squad-fit-note{color:#efcf9c;line-height:1.5;overflow-wrap:anywhere}
+
+/* E06 - collective tactical settings */
+.pl-squad-screen .pl-team-tactics{display:grid;gap:12px}
+.pl-squad-screen .pl-team-tactics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.pl-squad-screen .pl-team-tactics-grid label{display:grid;gap:6px;color:var(--pl-text-3);font-size:11px}
+.pl-squad-screen .pl-team-tactics-grid select,.pl-squad-screen .pl-team-tactics-grid input{width:100%;box-sizing:border-box;background:#142b34;border:1px solid var(--pl-line);color:var(--pl-text);border-radius:6px;padding:10px}
+.pl-squad-screen .pl-team-tactics button[data-team-tactics-save]{justify-self:start;border:1px solid var(--pl-accent);border-radius:7px;background:rgba(201,244,61,.12);color:var(--pl-accent);padding:10px 16px;font-weight:800}
+
+/* E07 tactical phase preview */
+.pl-squad-screen .pl-coach-phase{padding:16px;border-radius:10px;border:1px solid var(--pl-line);background:rgba(8,27,29,.9)}
+.pl-squad-screen .pl-coach-phase-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.pl-squad-screen .pl-coach-phase-tabs button{border:1px solid var(--pl-line);border-radius:6px;padding:9px 14px;background:#10242a;color:var(--pl-text-3)}
+.pl-squad-screen .pl-coach-phase-tabs button.active{border-color:var(--pl-accent);color:var(--pl-accent);background:rgba(201,244,61,.1)}
+.pl-squad-screen .pl-coach-phase-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pl-squad-screen .pl-coach-phase-stats span{padding:10px;border:1px solid var(--pl-line);border-radius:6px;display:grid;gap:5px;overflow-wrap:anywhere}
+.pl-squad-screen .pl-coach-phase-stats small{font-size:9px;color:var(--pl-text-3)}
+@media(max-width:650px){.pl-squad-screen .pl-coach-phase-stats{grid-template-columns:1fr}}
+
+/* E08 five accessible player dossier sections */
+.pl-squad-screen .pl-squad-detail-tabs{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+.pl-squad-screen .pl-squad-detail-tabs button{font-size:clamp(9px,.8vw,11px);padding:10px 2px;overflow-wrap:anywhere}
+@media(max-width:620px){.pl-squad-screen .pl-squad-detail-tabs{display:flex;flex-wrap:wrap}.pl-squad-screen .pl-squad-detail-tabs button{flex:1 1 28%;min-width:90px}}
+
+/* E09 - tactical preset controls */
+.pl-squad-screen .pl-coach-presets{display:grid;gap:9px;padding:14px;border:1px solid var(--pl-line);border-radius:9px}
+.pl-squad-screen .pl-coach-presets h3,.pl-squad-screen .pl-coach-presets p{margin:0}
+.pl-squad-screen .pl-coach-preset-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;border-top:1px solid var(--pl-line);padding-top:10px}
+.pl-squad-screen .pl-coach-preset-row span{display:grid;gap:2px;flex:1 1 150px}
+.pl-squad-screen .pl-coach-preset-row small{color:var(--pl-text-3)}
+.pl-squad-screen .pl-coach-preset-row button{padding:8px 12px;border:1px solid var(--pl-line);border-radius:6px}
+.pl-squad-screen .pl-coach-preset-row button:disabled{opacity:.35;cursor:not-allowed}
+
+/* Manager squad reserves: FC-inspired readable bench and accessible second group. */
+.pl-squad-screen .pl-squad-bench-groups{padding:12px;display:grid;gap:12px;min-width:0}
+.pl-squad-screen .pl-squad-bench-group-title{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px;margin:0 0 10px}
+.pl-squad-screen .pl-squad-bench-group-title b{font-size:10px;letter-spacing:.08em;color:var(--pl-text-1)}
+.pl-squad-screen .pl-squad-bench-group-title small{font-size:10px;color:var(--pl-text-3)}
+.pl-squad-screen .pl-squad-bench-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;min-width:0}
+.pl-squad-screen .pl-squad-bench-grid .pl-squad-player{width:auto;max-width:none;min-width:0;min-height:66px;flex:none;cursor:grab}
+.pl-squad-screen .pl-squad-bench-grid .pl-squad-player:active{cursor:grabbing}
+.pl-squad-screen .pl-squad-extra-reserves{border-top:1px solid var(--pl-line);padding-top:9px}
+.pl-squad-screen .pl-squad-extra-reserves summary{cursor:pointer;padding:10px 7px;color:var(--pl-text-1);font-size:10px;letter-spacing:.06em;display:flex;justify-content:space-between;gap:10px}
+.pl-squad-screen .pl-squad-extra-reserves summary span{font-size:10px;letter-spacing:0;color:var(--pl-text-3)}
+.pl-squad-screen .pl-squad-extra-reserves[open] summary{margin-bottom:8px}
+@media(max-width:650px){.pl-squad-screen .pl-squad-bench-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

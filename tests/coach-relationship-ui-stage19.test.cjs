@@ -46,7 +46,7 @@ test("19B: UI reutiliza objetivos canonicos da carreira",()=>{
 test("19B: painel de relacao aparece antes da disputa por posicao",()=>{
   assert.match(
     appSource,
-    /\$\{coachRelation\}\$\{relation\}<section/
+    /squadTab==="hierarchy"\?`\$\{coachRelation\}\$\{relation\}`/
   );
 });
 

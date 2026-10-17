@@ -1,0 +1,41 @@
+"use strict";
+const test=require("node:test");
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const vm=require("node:vm");
+const path=require("node:path");
+const E=require("../src/domain/club-economy.js");
+const C=require("../src/domain/commercial.js");
+const state=()=>({mode:"coach",clubId:"sp",day:125,season:2026,coachCareer:{finance:{}},clubs:[{id:"sp",leagueId:"serieA",structure:80,budget:112665000}]});
+test("M04.11b rejection blocks repeat and never creates a contract",()=>{
+ const s=state(),o=E.sponsorshipOffers(s,s.clubs[0],C.brands)[0];
+ const out=E.decideSponsorship(s,s.clubs[0],C.brands,o.id,"reject");
+ assert.equal(out.status,"rejected");
+ assert.equal(s.coachCareer.finance.revenueContracts?.length||0,0);
+ assert.equal(s.clubs[0].budget,112665000);
+ assert.throws(()=>E.acceptSponsorshipOffer(s,s.clubs[0],C.brands,o.id));
+});
+test("M04.11b counteroffer persists and acceptance creates one future contract",()=>{
+ const s=state(),o=E.sponsorshipOffers(s,s.clubs[0],C.brands)[0];
+ assert.throws(()=>E.decideSponsorship(s,s.clubs[0],C.brands,o.id,"counter",o.annualAmount*2));
+ const counter=E.decideSponsorship(s,s.clubs[0],C.brands,o.id,"counter",o.annualAmount);
+ assert.equal(counter.status,"awaiting_brand");
+ assert.throws(()=>E.acceptSponsorshipOffer(s,s.clubs[0],C.brands,o.id));
+ s.day=128;
+ E.settleSponsorshipReplies(s);
+ assert.equal(counter.status,"brand_accepted");
+ const contract=E.acceptSponsorshipOffer(s,s.clubs[0],C.brands,o.id);
+ assert.equal(contract.postedAmount,0);
+ assert.equal(contract.startDay,129);
+ assert.equal(s.coachCareer.finance.revenueContracts.length,1);
+ assert.throws(()=>E.acceptSponsorshipOffer(s,s.clubs[0],C.brands,o.id));
+ assert.equal(s.clubs[0].budget,112665000);
+});
+test("M04.11b script integration compiles and actions exist",()=>{
+ const ui=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+ const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+ new vm.Script(ui);new vm.Script(app);
+ assert.match(ui,/data-coach-sponsor-reject/);
+ assert.match(ui,/data-coach-sponsor-counter/);
+ assert.match(app,/coachDecideSponsorship/);
+});
