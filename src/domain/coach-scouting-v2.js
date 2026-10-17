@@ -12,7 +12,7 @@ function state(save){
  if(!Number.isInteger(o.nextId)||o.nextId<1)o.nextId=1;
  return o;
 }
-function start(save,{playerId,region="Brasil",duration=14,scoutQuality=50,cost=0}={}){
+function start(save,{playerId,region="Brasil",duration=14,scoutQuality=50,cost=0,specialty="geral"}={}){
  const s=state(save);if(!s)return {ok:false,error:"Somente treinador"};
  if(playerId===undefined||playerId===null||String(playerId).length===0)return {ok:false,error:"Jogador obrigatorio"};
  const day=Math.floor(num(save.day,0));
@@ -23,7 +23,7 @@ function start(save,{playerId,region="Brasil",duration=14,scoutQuality=50,cost=0
  if(!club)return {ok:false,error:"Clube indisponivel"};
  if(fee>num(club.budget,0))return {ok:false,error:"Orcamento insuficiente"};
  if(fee)club.budget-=fee;
- const mission={id:s.nextId++,playerId:String(playerId),region:String(region).slice(0,60),startDay:day,duration:d,quality:clamp(Math.round(num(scoutQuality,50)),1,100),cost:fee,status:"active",progress:0,lastDay:day};
+ const mission={id:s.nextId++,playerId:String(playerId),region:String(region).slice(0,60),startDay:day,duration:d,quality:clamp(Math.round(num(scoutQuality,50)),1,100),specialty:["geral","jovens","defesa","meio","ataque","goleiros"].includes(specialty)?specialty:"geral",cost:fee,status:"active",progress:0,lastDay:day};
  s.missions.push(mission);
  return {ok:true,mission};
 }
