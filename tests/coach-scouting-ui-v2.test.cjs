@@ -3,7 +3,8 @@ const root=path.join(__dirname,"..");
 test("T2 observation menu renders persistent scouting mission progress",()=>{
  const ui=fs.readFileSync(path.join(root,"src/ui/coach-career-view.js"),"utf8");
  assert.match(ui,/REDE DE OBSERVAÇÃO/);
- assert.match(ui,/Relatórios de olheiros/);
+ assert.match(ui,/Central de olheiros/);
+ assert.match(ui,/cc-scout-mission-hub/);
  assert.match(ui,/scoutingV2\?\.missions/);
  assert.match(ui,/scouting\?\.report/);
  assert.match(ui,/missionPanel/);
