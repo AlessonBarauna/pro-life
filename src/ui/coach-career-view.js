@@ -211,7 +211,7 @@
         const reported=info?.available&&Array.isArray(info.estimatedOverall)&&Array.isArray(info.potentialRange);
         const stats=reported?'<span>GER '+esc(info.estimatedOverall.join("–"))+' · POT '+esc(info.potentialRange.join("–"))+'</span>':'<span>Relatório indisponível neste save</span>';
         return '<article class="cc-scout-mission"><div class="cc-scout-mission-heading"><div><b>'+esc(player?.name||m.playerId)+'</b><small>'+esc(m.region||"Região não informada")+' · Qualidade do olheiro '+esc(m.quality??"—")+'/100 · Especialidade: '+esc(m.specialty||"geral")+'</small></div><strong class="'+(finished?'done':'')+'">'+(finished?'Concluído':"Em andamento")+'</strong></div>'+
-          '<div class="cc-scout-mission-data">'+stats+'<span>'+esc(reported?info.certainty+"% de confiança":"Sem estimativa")+'</span></div>'+
+          '<div class="cc-scout-mission-data">'+stats+'<span>'+esc(reported?info.certainty+"% de confiança"+(info.specialtyFit?" · Foco compatível +"+info.specialistBonus:""):"Sem estimativa")+'</span></div>'+
           '<div class="cc-scout-progress" role="progressbar" aria-label="Progresso da observação de '+esc(player?.name||m.playerId)+'" aria-valuenow="'+progress+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+progress+'%"></i></div>'+
           '<div class="cc-scout-mission-footer"><span>'+progress+'% concluído</span><span>'+ (finished?'Relatório finalizado em '+careerDate(s,expiryDay):'Previsão: '+careerDate(s,expiryDay)+' · Faltam '+remaining+' dia(s)')+'</span></div></article>';
       }).join("");
@@ -251,7 +251,8 @@
         '<div class="cc-scout-progress" role="progressbar" aria-valuenow="'+reportPercent+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+reportPercent+'%"></i></div>'+
         '<dl class="cc-market-player-fields"><div><dt>GER estimado</dt><dd>'+esc(reportComplete?detailReport.exactOverall??estimatedGer:estimatedGer)+'</dd></div>'+
         '<div><dt>Potencial estimado</dt><dd>'+esc(reportReady?(detailReport.exactPotential??estimatedPotential):"Não descoberto")+'</dd></div>'+
-        '<div><dt>Confiança do olheiro</dt><dd>'+esc(reportReady?detailReport.certainty+"%":"—")+'</dd></div></dl>'+
+        '<div><dt>Confiança do olheiro</dt><dd>'+esc(reportReady?detailReport.certainty+"%":"—")+'</dd></div>'+
+        '<div><dt>Especialidade</dt><dd>'+esc(reportReady?(detailReport.specialtyFit?"Compatível · +"+detailReport.specialistBonus+" confiança":"Sem bônus específico"):"Ainda não avaliada")+'</dd></div></dl>'+
         '<p>'+(reportComplete?'Avaliação concluída.':'As faixas são estimativas; aumentam em precisão com o tempo de observação.')+'</p></section>';
       const scoutDetailPanel=reportSummary+'<section class="cc-market-detail-section"><h4>AVALIAÇÃO TÉCNICA</h4>'+(reportComplete?(attrsPanel||'<p>Sem atributos detalhados disponíveis neste save.</p>'):'<p>Atributos detalhados disponíveis após a conclusão da observação.</p>')+'</section>'+
         '<section class="cc-market-detail-section"><h4>CONTRATO E MERCADO</h4><dl class="cc-market-player-fields">'+contractPanel+'</dl></section>';
