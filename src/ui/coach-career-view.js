@@ -210,7 +210,7 @@
         const remaining=Math.max(0,Math.ceil(expiryDay-Number(s.day)));
         const reported=info?.available&&Array.isArray(info.estimatedOverall)&&Array.isArray(info.potentialRange);
         const stats=reported?'<span>GER '+esc(info.estimatedOverall.join("–"))+' · POT '+esc(info.potentialRange.join("–"))+'</span>':'<span>Relatório indisponível neste save</span>';
-        return '<article class="cc-scout-mission"><div class="cc-scout-mission-heading"><div><b>'+esc(player?.name||m.playerId)+'</b><small>'+esc(m.region||"Região não informada")+' · Qualidade do olheiro '+esc(m.quality??"—")+'/100</small></div><strong class="'+(finished?'done':'')+'">'+(finished?'Concluído':"Em andamento")+'</strong></div>'+
+        return '<article class="cc-scout-mission"><div class="cc-scout-mission-heading"><div><b>'+esc(player?.name||m.playerId)+'</b><small>'+esc(m.region||"Região não informada")+' · Qualidade do olheiro '+esc(m.quality??"—")+'/100 · Especialidade: '+esc(m.specialty||"geral")+'</small></div><strong class="'+(finished?'done':'')+'">'+(finished?'Concluído':"Em andamento")+'</strong></div>'+
           '<div class="cc-scout-mission-data">'+stats+'<span>'+esc(reported?info.certainty+"% de confiança":"Sem estimativa")+'</span></div>'+
           '<div class="cc-scout-progress" role="progressbar" aria-label="Progresso da observação de '+esc(player?.name||m.playerId)+'" aria-valuenow="'+progress+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+progress+'%"></i></div>'+
           '<div class="cc-scout-mission-footer"><span>'+progress+'% concluído</span><span>'+ (finished?'Relatório finalizado em '+careerDate(s,expiryDay):'Previsão: '+careerDate(s,expiryDay)+' · Faltam '+remaining+' dia(s)')+'</span></div></article>';
