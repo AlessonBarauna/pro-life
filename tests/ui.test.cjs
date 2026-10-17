@@ -295,11 +295,15 @@ for (const mode of ["player", "coach"]) {
     assert.equal(w.document.querySelectorAll(".pl-player-summary > article").length, 4, "Temporada, evolução, contrato e conquistas devem formar o resumo");
     assert.ok(w.document.querySelector("#appearance-editor"), "A edição de aparência existente deve ser preservada");
   }
-  const chart = w.document.querySelector("#chart-key");
-  assert.ok(chart, "O relatorio de desenvolvimento deve existir no perfil");
-  chart.value = "all";
-  chart.dispatchEvent(new w.Event("change", { bubbles: true }));
-  assert.equal(w.document.querySelectorAll(".chart-legend span").length, 6);
+  if (mode === "player") {
+    const chart = w.document.querySelector("#chart-key");
+    assert.ok(chart, "O relatorio de desenvolvimento deve existir no perfil do jogador");
+    chart.value = "all";
+    chart.dispatchEvent(new w.Event("change", { bubbles: true }));
+    assert.equal(w.document.querySelectorAll(".chart-legend span").length, 6);
+  } else {
+    assert.equal(w.document.querySelector("#chart-key"), null, "O perfil do treinador não usa relatório de atributos do jogador");
+  }
   click(w, '[data-page="league"]');
   const league = w.document.querySelector("#league-key");
   league.value = "serieB";
