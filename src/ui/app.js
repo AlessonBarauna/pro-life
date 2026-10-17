@@ -8660,9 +8660,11 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const scout=window.ProLifeCoachScoutingV2;
       if(!scout?.start){toast("Sistema de observacao indisponivel.");return;}
       const playerId=el.getAttribute("data-coach-start-scout");
-      const region=el.getAttribute("data-coach-region")||"Brasil";
+      const chosenRegion=document.querySelector("[data-coach-scout-region]")?.value||"auto";
+      const region=chosenRegion==="auto"?(el.getAttribute("data-coach-region")||"Brasil"):chosenRegion;
+      const specialty=document.querySelector("[data-coach-scout-specialty]")?.value||"geral";
       const duration=Number(document.querySelector("[data-coach-scout-duration]")?.value||14);
-      const outcome=scout.start(state,{playerId,region,duration,scoutQuality:50,cost:0});
+      const outcome=scout.start(state,{playerId,region,duration,scoutQuality:50,cost:0,specialty});
       if(!outcome.ok){toast(outcome.error||"Falha ao iniciar observacao.");return;}
       persist();render();toast("Observacao iniciada. Relatorio evolui ao avancar os dias.");
       return;
