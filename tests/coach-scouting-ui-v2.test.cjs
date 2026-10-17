@@ -11,7 +11,7 @@ test("T2 observation menu renders persistent scouting mission progress",()=>{
 });
 test("T2 scouting module loads before coach-career daily engine",()=>{
  const html=fs.readFileSync(path.join(root,"index.html"),"utf8");
- const a=html.indexOf('src="src/domain/coach-scouting-v2.js"');
+ const a=html.search(/src="src\/domain\/coach-scouting-v2\.js(?:\?[^"]*)?"/);
  const b=html.indexOf('src="src/domain/coach-career.js"');
  assert.ok(a>=0&&b>a);
 });
