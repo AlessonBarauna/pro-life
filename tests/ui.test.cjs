@@ -267,9 +267,15 @@ for (const mode of ["player", "coach"]) {
     assert.equal(choiceButton, null, "Nao deve aparecer escolha sem decisao pendente");
   }
   click(w, '[data-page="profile"]');
-  w.document.querySelector("#shirt-number").value = "27";
-  click(w, '[data-action="number"]');
-  assert.equal(get(w).extras.number, 27);
+  if (mode === "player") {
+    const shirtNumber = w.document.querySelector("#shirt-number");
+    assert.ok(shirtNumber, "O Modo Jogador deve manter a edição do número da camisa");
+    shirtNumber.value = "27";
+    click(w, '[data-action="number"]');
+    assert.equal(get(w).extras.number, 27);
+  } else {
+    assert.equal(w.document.querySelector("#shirt-number"), null, "O Modo Treinador não deve exibir número de camisa");
+  }
   if (mode === "player") click(w, '[data-simulate="30days"]');
   click(w, '[data-page="home"]');
   assert.ok(w.document.querySelector(".central-main-match"), "A Central deve manter o próximo compromisso");
