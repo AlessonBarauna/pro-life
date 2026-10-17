@@ -8639,7 +8639,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return;
     }
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
-    const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-select],[data-coach-scout-page],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer],[data-coach-submit-offer],[data-coach-cancel-offer]");
+    const el = event.target.closest?.("[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-select],[data-coach-scout-page],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-save-priority],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer],[data-coach-submit-offer],[data-coach-cancel-offer]");
     if (!el || !state || state.mode !== "coach") return;
     const V = window.ProLifeCoachCareerView;
     if (el.hasAttribute("data-coach-tab")) { V?.setTab(el.getAttribute("data-coach-tab")); render(); return; }
@@ -8668,6 +8668,13 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       if(!outcome.ok){toast(outcome.error||"Falha ao iniciar observacao.");return;}
       persist();render();toast("Observacao iniciada. Relatorio evolui ao avancar os dias.");
       return;
+    }
+    if(el.hasAttribute("data-coach-save-priority")){
+      const playerId=el.getAttribute("data-coach-save-priority");
+      const clubId=el.getAttribute("data-coach-club");
+      const selects=document.querySelectorAll("[data-coach-target-priority]");
+      const control=Array.from(selects).find(x=>x.getAttribute("data-coach-player")===playerId&&x.getAttribute("data-coach-club")===clubId);
+      return command("setCoachTargetPriority",{playerId,clubId,priority:control?.value||"media"});
     }
     if(el.hasAttribute("data-coach-shortlist")) return command("toggleCoachShortlist",{clubId:el.getAttribute("data-coach-shortlist"),playerId:el.getAttribute("data-coach-player")});
     if(el.hasAttribute("data-coach-inquire")){
