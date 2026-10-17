@@ -39,17 +39,30 @@ function advance(save){
  }
  return changed;
 }
+function specialtyMatches(specialty,player){
+ const position=String(player?.pos??player?.position??"").toUpperCase();
+ const age=Number(player?.age);
+ if(specialty==="jovens")return Number.isFinite(age)&&age<=21;
+ if(specialty==="defesa")return /^(ZAG|LAT|LE|LD|CB|LB|RB|LWB|RWB|DEF)/.test(position);
+ if(specialty==="meio")return /^(VOL|MEI|MC|MD|ME|CDM|CM|CAM|LM|RM)/.test(position);
+ if(specialty==="ataque")return /^(ATA|PE|PD|CA|ST|CF|LW|RW|AC)/.test(position);
+ if(specialty==="goleiros")return /^(GOL|GK)/.test(position);
+ return false;
+}
 function report(save,missionId,player){
  const s=state(save),m=s?.missions.find(x=>String(x.id)===String(missionId));
  if(!m)return null;
  const base={missionId:m.id,playerId:m.playerId,status:m.status,progress:m.progress,region:m.region};
  if(!player||String(player.id)!==m.playerId)return {...base,available:false};
- const certainty=clamp(Math.floor(15+m.progress*(60+m.quality*.25)),15,100);
+ const specialty=m.specialty||"geral";
+ const specialtyFit=specialtyMatches(specialty,player);
+ const specialistBonus=specialtyFit?Math.round(12*m.progress):0;
+ const certainty=clamp(Math.floor(15+m.progress*(60+m.quality*.25))+specialistBonus,15,100);
  const trueOvr=clamp(Math.round(num(player.ovr??player.overall,50)),1,100);
  const potential=clamp(Math.round(num(player.potential,trueOvr)),trueOvr,100);
  const variance=Math.ceil((100-certainty)/9);
  const offset=(hash(m.playerId+"|"+m.id)%3)-1;
- return {...base,available:true,certainty,estimatedOverall:[clamp(trueOvr-variance,1,100),clamp(trueOvr+variance,1,100)],
+ return {...base,available:true,certainty,specialty,specialtyFit,specialistBonus,estimatedOverall:[clamp(trueOvr-variance,1,100),clamp(trueOvr+variance,1,100)],
  potentialRange:[clamp(potential-variance+offset,1,100),clamp(potential+variance+offset,1,100)],
  exactOverall:m.status==="complete"?trueOvr:null,
  exactPotential:m.status==="complete"&&m.quality>=90?potential:null};
