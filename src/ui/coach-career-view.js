@@ -200,7 +200,8 @@
       const missions=Array.isArray(c.scoutingV2?.missions)?c.scoutingV2.missions:[];
       const playerLookup=new Map(pool.filter(p=>p?.id!=null).map(p=>[String(p.id),p]));
       const recommendations=scouting?.recommend?.(s,pool,5)||[];
-      const recommendationRows=recommendations.map(x=>'<article class="cc-scout-mission"><div class="cc-scout-mission-heading"><div><b>'+esc(x.name)+'</b><small>'+esc(x.position)+' · '+esc(x.reason)+'</small></div><strong>'+esc(x.score)+' PTS</strong></div><div class="cc-scout-mission-data"><span>GER '+esc(x.overallRange.join("–"))+' · POT '+esc(x.potentialRange.join("–"))+'</span><span>Confiança '+esc(x.certainty)+'%</span></div></article>').join("");
+      const savedRecommendations=new Set((c.shortlist||[]).map(x=>String(x.playerId)+"|"+String(x.clubId)));
+      const recommendationRows=recommendations.map(x=>'<article class="cc-scout-mission"><div class="cc-scout-mission-heading"><div><b>'+esc(x.name)+'</b><small>'+esc(x.position)+' · '+esc(x.reason)+'</small></div><strong>'+esc(x.score)+' PTS</strong></div><div class="cc-scout-mission-data"><span>GER '+esc(x.overallRange.join("–"))+' · POT '+esc(x.potentialRange.join("–"))+'</span><span>Confiança '+esc(x.certainty)+'%</span></div><div class="cc-target-actions">'+(x.clubId==null?'<small>Clube indisponível</small>':savedRecommendations.has(String(x.playerId)+"|"+String(x.clubId))?'<small>Já está na lista</small>':'<button type="button" data-coach-shortlist="'+esc(x.clubId)+'" data-coach-player="'+esc(x.playerId)+'">Adicionar à lista</button>')+'</div></article>').join("");
       const recommendationsPanel='<section class="cc-card cc-fc27-reports cc-scout-recommendations"><small>ANÁLISE DA REDE</small><h3>Jogadores recomendados</h3><p class="cc-note">Classificação informativa baseada em relatórios concluídos e posições carentes do elenco. Nenhuma contratação automática.</p>'+(recommendationRows||'<p class="cc-note">Conclua uma missão de observação para receber recomendações.</p>')+'</section>';
       const activeMissions=missions.filter(m=>m.status==="active").length;
       const doneMissions=missions.filter(m=>m.status==="complete").length;
@@ -228,7 +229,8 @@
       const selectedClub=selectedCandidate?.cl||null;
       const scoutingReport=selectedPlayer?missions.find(m=>String(m.playerId)===String(selectedPlayer.id)):null;
       const detailReport=scoutingReport?scouting?.report?.(s,scoutingReport.id,selectedPlayer):null;
-      const targetRows=shortlist.map((entry,index)=>{
+      const rankedTargets=shortlist.slice().sort((a,b)=>({alta:0,media:1,baixa:2}[a.priority||"media"]??1)-({alta:0,media:1,baixa:2}[b.priority||"media"]??1));
+      const targetRows=rankedTargets.map((entry,index)=>{
         const player=playerLookup.get(String(entry.playerId));
         const club=clubIndex.get(entry.clubId)||gf?.clubById?.(s,entry.clubId);
         const mission=missions.slice().reverse().find(m=>String(m.playerId)===String(entry.playerId));
