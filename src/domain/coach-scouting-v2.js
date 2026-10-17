@@ -67,7 +67,33 @@ function report(save,missionId,player){
  exactOverall:m.status==="complete"?trueOvr:null,
  exactPotential:m.status==="complete"&&m.quality>=90?potential:null};
 }
-const api=Object.freeze({state,start,advance,report});
+function recommend(save,players,limit=5){
+ if(save?.mode!=="coach")return [];
+ const missions=save.coachCareer?.scoutingV2?.missions||[];
+ const club=(save.clubs||[]).find(x=>String(x.id)===String(save.clubId));
+ const buckets=p=>{const pos=String(p?.pos??p?.position??"").toUpperCase();
+  if(/^(GOL|GK)/.test(pos))return "goleiros";
+  if(/^(ZAG|LAT|LE|LD|CB|LB|RB|DEF)/.test(pos))return "defesa";
+  if(/^(VOL|MEI|MC|MD|ME|CDM|CM|CAM|LM|RM)/.test(pos))return "meio";
+  return "ataque";};
+ const count={goleiros:0,defesa:0,meio:0,ataque:0};
+ for(const p of club?.roster||[])count[buckets(p)]++;
+ const targets={goleiros:3,defesa:7,meio:6,ataque:5};
+ const lookup=new Map((players||[]).filter(x=>x?.id!=null).map(x=>[String(x.id),x]));
+ const out=[];
+ for(const m of missions){
+  if(m.status!=="complete")continue;
+  const p=lookup.get(String(m.playerId));if(!p||p.clubId===save.clubId)continue;
+  const info=report(save,m.id,p);if(!info?.available)continue;
+  const position=buckets(p),shortfall=Math.max(0,targets[position]-count[position]);
+  const potential=info.potentialRange?.[0]??0,overall=info.estimatedOverall?.[0]??0;
+  const youth=Number(p.age)<=21?5:0;
+  const score=shortfall*12+potential*.35+overall*.3+youth+info.certainty*.1;
+  out.push({playerId:String(p.id),clubId:p.clubId??null,name:String(p.name||"Atleta"),position,score:Math.round(score),shortfall,certainty:info.certainty,overallRange:info.estimatedOverall,potentialRange:info.potentialRange,reason:shortfall?"Carência no elenco: "+position:youth?"Jovem com potencial observado":"Destaque do relatório"});
+ }
+ return out.sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name,"pt-BR")).slice(0,Math.max(0,Math.min(20,Math.floor(num(limit,5)))));
+}
+const api=Object.freeze({state,start,advance,report,recommend});
 root.ProLifeCoachScoutingV2=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
