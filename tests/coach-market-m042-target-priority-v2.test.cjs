@@ -13,7 +13,8 @@ test("M04.2 allows saved targets to have a validated priority",()=>{
  assert.match(game,/entry\.priority=priority/);
 });
 test("M04.2 preserves existing shortlist actions",()=>{
- assert.match(view,/const targetRows=shortlist\.map/);
+ assert.match(view,/const rankedTargets=shortlist\.slice\(\)\.sort/);
+ assert.match(view,/const targetRows=rankedTargets\.map/);
  assert.match(view,/data-coach-shortlist/);
  assert.match(view,/data-coach-scout-select/);
 });
