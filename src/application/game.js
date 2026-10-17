@@ -495,6 +495,15 @@ case "tactic": {
         s.coachCareer.shortlist=list;
         break;
       }
+      case "setCoachTargetPriority": {
+        if(s.mode!=="coach"||!s.clubId)throw Error("Disponível apenas ao treinador com clube.");
+        const priority=String(data.priority||"");
+        if(!["alta","media","baixa"].includes(priority))throw Error("Prioridade inválida.");
+        const entry=s.coachCareer?.shortlist?.find(x=>String(x.clubId)===String(data.clubId)&&String(x.playerId)===String(data.playerId));
+        if(!entry)throw Error("Alvo não encontrado na lista.");
+        entry.priority=priority;
+        break;
+      }
       case "setCoachOfferPreference": {
         if(s.mode!=="coach"||!D.club(s))throw Error("Preferências disponíveis apenas ao treinador.");
         const mode=String(data.mode||"");
