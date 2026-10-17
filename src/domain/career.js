@@ -1629,6 +1629,73 @@
   }
   function daily(s) {
     const e = init(s);
+    // Agreements signed outside the window are executed on its first open day.
+    if(s.mode==="coach"&&s.coachCareer?.negotiations?.some(n=>n.status==="awaiting_window")&&windowStatus(s).open){
+      root.ProLifeApp?.execute?.(s,"settleCoachWindowDeals",{});
+    }
+    if(s.mode==="coach"&&s.coachCareer?.saleOffers?.some(o=>o.status==="awaiting_window")&&windowStatus(s).open){
+      root.ProLifeApp?.execute?.(s,"settleCoachWindowSales",{});
+    }
+    // Close expired incoming proposals once and announce their outcome.
+    if(s.mode==="coach"&&Array.isArray(s.coachCareer?.saleOffers)){
+      for(const offer of s.coachCareer.saleOffers){
+        if(offer.status!=="pending"||!Number.isFinite(Number(offer.expiresDay))||Number(s.day)<=Number(offer.expiresDay))continue;
+        offer.status="expired";offer.closedDay=s.day;
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Proposta de transferência expirada",body:"A oferta por "+(s.clubs||[]).flatMap(c=>c.roster||[]).find(p=>p.id===offer.playerId)?.name+" expirou sem resposta."});
+      }
+    }
+    // Periodic inbound approaches; preferences and pending-offer limits are respected.
+    if(s.mode==="coach"&&s.clubId&&s.coachCareer){
+      const cc=s.coachCareer,prefs=cc.offerPreferences||{mode:"all"};
+      const pending=(cc.saleOffers||[]).filter(o=>o.status==="pending"&&Number(o.expiresDay)>=Number(s.day));
+      const last=Number(cc.lastSaleInterestDay);
+      if(prefs.mode!=="none"&&pending.length<3&&(!Number.isFinite(last)||Number(s.day)-last>=14)){
+        cc.lastSaleInterestDay=s.day;
+        try{root.ProLifeApp?.execute?.(s,"generateSaleInterest",{});}catch(error){/* No eligible interest this period. */}
+      }
+    }
+    // Settle deferred manager transfers once, even after saving/reloading.
+    if(s.mode==="coach" && Array.isArray(s.coachCareer?.transferDebts)){
+      for(const debt of s.coachCareer.transferDebts){
+        if(debt.paid || !Number.isFinite(debt.amount) || debt.amount<=0 || Number(s.day)<Number(debt.dueDay))continue;
+        const buyer=(s.clubs||[]).concat(s.globalFootball?.clubs||[]).find(c=>c.id===debt.buyerClubId);
+        const seller=(s.clubs||[]).concat(s.globalFootball?.clubs||[]).find(c=>c.id===debt.sourceClubId);
+        if(!buyer||!seller)continue;
+        buyer.budget=(Number(buyer.budget)||0)-debt.amount;
+        seller.budget=(Number(seller.budget)||0)+debt.amount;
+        debt.paid=true;debt.paidDay=s.day;
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Parcela de transferência liquidada",body:"Pagamento de R$ "+debt.amount.toLocaleString("pt-BR")+" concluído."});
+      }
+    }
+    // Loan return: deterministic, idempotent and isolated from the player career.
+    if(s.mode==="coach"&&Array.isArray(s.coachCareer?.loans)){
+      for(const loan of s.coachCareer.loans){
+        if(loan.returned)continue;
+        // Monthly wage contribution; persisted nextSalaryDay prevents duplicate charges after reload.
+        const borrowingClub=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])].find(c=>c.id===loan.toClubId);
+        const parentClub=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])].find(c=>c.id===loan.fromClubId);
+        const borrowerPlayer=borrowingClub?.roster?.find(p=>p.id===loan.playerId);
+        if(borrowingClub&&parentClub&&borrowerPlayer&&Number.isFinite(loan.nextSalaryDay)){
+          while(Number(s.day)>=loan.nextSalaryDay&&loan.nextSalaryDay<loan.dueDay){
+            const wage=Math.max(0,Math.round(Number(borrowerPlayer.salary)||2500));
+            const share=Math.round(wage*(Number(loan.salaryShare)||0)/100);
+            if(share){borrowingClub.budget=(Number(borrowingClub.budget)||0)-share;parentClub.budget=(Number(parentClub.budget)||0)+share;}
+            loan.nextSalaryDay+=30;
+          }
+        }
+        if(Number(s.day)<Number(loan.dueDay))continue;
+        const all=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])];
+        const borrowing=all.find(c=>c.id===loan.toClubId),origin=all.find(c=>c.id===loan.fromClubId);
+        if(!borrowing||!origin||!Array.isArray(borrowing.roster)||!Array.isArray(origin.roster))continue;
+        const p=borrowing.roster.find(p=>p.id===loan.playerId);
+        if(!p)continue;
+        borrowing.roster=borrowing.roster.filter(x=>x.id!==loan.playerId);
+        if(Array.isArray(borrowing.lineup))borrowing.lineup=borrowing.lineup.filter(id=>id!==loan.playerId);
+        if(!origin.roster.some(x=>x.id===loan.playerId))origin.roster.push(p);
+        loan.returned=true;loan.returnDay=s.day;
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Retorno de empréstimo",body:p.name+" voltou ao "+(origin.name||"clube de origem")+"."});
+      }
+    }
     pruneMessages(s);
     agencyDaily(s);
     if (s.mode === "player" && s.clubId && s.contract > 0) {

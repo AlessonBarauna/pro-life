@@ -1,0 +1,12 @@
+/* Country-aware standings qualification stripes; purely presentational. */
+.season-table tbody tr[class*="season-zone-"] td:first-child{position:relative}
+.season-table tbody tr[class*="season-zone-"] td:first-child:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--zone-color,#6d7780)}
+.season-zone-libertadores{--zone-color:#3285ff}
+.season-zone-libertadores-playoff{--zone-color:#40a9c3}
+.season-zone-sulamericana{--zone-color:#f0a82b}
+.season-zone-rebaixamento{--zone-color:#e45057}
+.season-zone-acesso{--zone-color:#33b96e}
+.season-zone-legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:12px 0;font-size:11px;color:#b8c8d2}
+.season-zone-key{display:inline-flex;align-items:center;gap:7px}
+.season-zone-key:before{content:"";height:12px;width:5px;border-radius:2px;background:var(--zone-color,#889)}
+.season-table tbody tr[class*="season-zone-"]:hover td:first-child:before{width:5px}

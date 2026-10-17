@@ -19,9 +19,12 @@
     <link rel="stylesheet" href="src/ui/fc27-04j-approved.css" />
     <link rel="stylesheet" href="src/ui/fc27-cinematic.css" />
     <link rel="stylesheet" href="src/ui/fc27-05a-design-system.css" />
-    <link rel="stylesheet" href="src/ui/fc27-05b-squad.css" />
+    <link rel="stylesheet" href="src/ui/fc27-05b-squad.css?v=bench-swap2" />
     <link rel="stylesheet" href="src/ui/fc27-05c-player.css" />
     <link rel="stylesheet" href="src/ui/fc27-05d-calendar.css" />
+    <link rel="stylesheet" href="src/ui/fc27-06b-coach-creation.css" />
+    <link rel="stylesheet" href="src/ui/coach-match-center-v2.css?v=coach-continue-fix2" />
+    <link rel="stylesheet" href="src/ui/competition-zones-v2.css" />
   </head>
   <body>
     <div id="app"></div>
@@ -72,6 +75,20 @@
     <script src="src/domain/world-live-market.js"></script>
     <script src="src/domain/world-club-competitions.js"></script>
     <script src="src/domain/club-intelligence.js"></script>
+    <script src="src/domain/coach-scouting-v2.js?v=scout-m034-recommend"></script>
+    <script src="src/domain/club-economy.js?v=m0414brand" onerror="window.ProLifeClubEconomyLoadStatus='erro ao carregar arquivo'"></script>
+    <script>
+      if(!window.ProLifeClubEconomy?.sponsorshipOffers){
+        window.ProLifeClubEconomyLoadStatus=window.ProLifeClubEconomyLoadStatus||'arquivo carregado, mas API ausente';
+        const retry=document.createElement('script');
+        retry.src='src/domain/club-economy.js?v=m0414brandbrands-retry';
+        retry.onload=function(){
+          window.ProLifeClubEconomyLoadStatus=window.ProLifeClubEconomy?.sponsorshipOffers?'recuperado':'API ausente apos recarga';
+        };
+        retry.onerror=function(){window.ProLifeClubEconomyLoadStatus='arquivo indisponivel na segunda tentativa';};
+        document.head.appendChild(retry);
+      }
+    </script>
     <script src="src/domain/coach-career.js"></script>
     <script src="src/domain/off-field.js"></script>
     <script src="src/domain/season-competition-center.js"></script>
@@ -120,12 +137,12 @@
 <script src="src/domain/conference-live.js"></script>
 <script src="src/domain/match-position-effects.js"></script>
 <script src="src/domain/player-position-overlay.js"></script>
-<script src="src/domain/engine.js"></script>
+<script src="src/domain/engine.js?v=coach-swap-20261016"></script>
 <script src="src/domain/current-overall.js"></script>
 <script src="src/domain/player-development.js"></script>
 <script src="src/domain/dynamic-potential.js"></script>
     <script src="src/domain/player-profile.js"></script>
-    <script src="src/application/game.js"></script>
+    <script src="src/application/game.js?v=target-priority-m042"></script>
     <script src="src/infrastructure/codec.js"></script>
     <script src="src/infrastructure/validate-expansion.js"></script>
     <script src="src/domain/statistics-compact.js"></script>
@@ -133,16 +150,26 @@
 <script src="src/infrastructure/save.js"></script>
     <script src="src/ui/expansion.js"></script>
     <script src="src/ui/calendar.js"></script>
-    <script src="src/ui/home-dashboard.js"></script>
-    <script src="src/ui/live-match.js"></script>
+    <script src="src/ui/home-dashboard.js?v=standings-unified-20261017"></script>
+    <script src="src/domain/competition-zones-v2.js"></script>
+    <script src="src/domain/coach-incremental-match-v2.js"></script>
+    <script src="src/ui/match-pitch-v2.js?v=pitch-subs2"></script>
+    <script src="src/ui/coach-match-lab-v2.js?v=subs1"></script>
+    <script src="src/ui/match-identity-v2.js"></script>
+    <script src="src/ui/coach-match-center-v2.js?v=coach-swap-20261016"></script>
+    <script src="src/ui/live-match.js?v=pitch-subs2"></script>
     <script src="src/ui/creator.js"></script>
+    <script src="src/ui/coach-glb.js"></script>
+    <script src="src/ui/coach-avatar-3d.js"></script>
+    <script src="src/ui/coach-creator.js"></script>
     <script src="src/ui/club-crests-data.js"></script>
     <script src="src/ui/club-crests.js"></script>
     <script src="src/ui/national-crests.js"></script>
     <script src="src/ui/club-browser.js"></script>
     <script src="src/ui/world-competitions-view.js"></script>
     <script src="src/ui/youth-academy-view.js"></script>
-    <script src="src/ui/coach-career-view.js"></script>
+    <script src="src/domain/coach-match-rating.js"></script>
+    <script src="src/ui/coach-career-view.js?v=coach-market-m059"></script>
     <script src="src/ui/shell-extras.js"></script>
     <script src="src/ui/off-field-view.js"></script>
     <script src="src/ui/world-awards-view.js"></script>
@@ -162,6 +189,6 @@
 <script src="src/ui/europa-league-view.js"></script>
 <script src="src/ui/conference-league-view.js"></script>
 <script src="src/ui/fc27-motion.js"></script>
-<script src="src/ui/app.js"></script>
+<script src="src/ui/app.js?v=coach-market-m058"></script>
   </body>
 </html>

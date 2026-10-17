@@ -31,7 +31,7 @@ function browser({history=false,mode="player"}={}){
   w.eval(fs.readFileSync(path.join(base,"src/ui/app.js"),"utf8"));w.document.querySelector(`[data-load-slot="${id}"]`).click();
   return dom;
 }
-function openSquad(w){w.document.querySelector('[data-page="league"]').click();w.document.querySelector('[data-page="squad"]').click();}
+function openSquad(w){w.document.querySelector('[data-page="league"]').click();w.document.querySelector('[data-page="squad"]').click();const hierarchy=w.document.querySelector('[data-squad-tab="hierarchy"]');assert.ok(hierarchy,"aba Hierarquia existe no elenco");hierarchy.click();}
 
 test("21 UI: painel mostra identidade, arquétipo, estilo e formação",()=>{
   const dom=browser(),w=dom.window;openSquad(w);

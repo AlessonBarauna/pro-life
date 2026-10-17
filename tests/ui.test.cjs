@@ -267,9 +267,15 @@ for (const mode of ["player", "coach"]) {
     assert.equal(choiceButton, null, "Nao deve aparecer escolha sem decisao pendente");
   }
   click(w, '[data-page="profile"]');
-  w.document.querySelector("#shirt-number").value = "27";
-  click(w, '[data-action="number"]');
-  assert.equal(get(w).extras.number, 27);
+  if (mode === "player") {
+    const shirtNumber = w.document.querySelector("#shirt-number");
+    assert.ok(shirtNumber, "O Modo Jogador deve manter a edição do número da camisa");
+    shirtNumber.value = "27";
+    click(w, '[data-action="number"]');
+    assert.equal(get(w).extras.number, 27);
+  } else {
+    assert.equal(w.document.querySelector("#shirt-number"), null, "O Modo Treinador não deve exibir número de camisa");
+  }
   if (mode === "player") click(w, '[data-simulate="30days"]');
   click(w, '[data-page="home"]');
   assert.ok(w.document.querySelector(".central-main-match"), "A Central deve manter o próximo compromisso");
@@ -289,11 +295,15 @@ for (const mode of ["player", "coach"]) {
     assert.equal(w.document.querySelectorAll(".pl-player-summary > article").length, 4, "Temporada, evolução, contrato e conquistas devem formar o resumo");
     assert.ok(w.document.querySelector("#appearance-editor"), "A edição de aparência existente deve ser preservada");
   }
-  const chart = w.document.querySelector("#chart-key");
-  assert.ok(chart, "O relatorio de desenvolvimento deve existir no perfil");
-  chart.value = "all";
-  chart.dispatchEvent(new w.Event("change", { bubbles: true }));
-  assert.equal(w.document.querySelectorAll(".chart-legend span").length, 6);
+  if (mode === "player") {
+    const chart = w.document.querySelector("#chart-key");
+    assert.ok(chart, "O relatorio de desenvolvimento deve existir no perfil do jogador");
+    chart.value = "all";
+    chart.dispatchEvent(new w.Event("change", { bubbles: true }));
+    assert.equal(w.document.querySelectorAll(".chart-legend span").length, 6);
+  } else {
+    assert.equal(w.document.querySelector("#chart-key"), null, "O perfil do treinador não usa relatório de atributos do jogador");
+  }
   click(w, '[data-page="league"]');
   const league = w.document.querySelector("#league-key");
   league.value = "serieB";

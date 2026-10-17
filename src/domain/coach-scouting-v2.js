@@ -1,0 +1,99 @@
+(function(root){
+"use strict";
+// T2 scouting missions: deterministic progression, persisted only in coach saves.
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const num=(v,d)=>Number.isFinite(Number(v))?Number(v):d;
+const hash=s=>{let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
+function state(save){
+ if(save?.mode!=="coach")return null;
+ const c=save.coachCareer||(save.coachCareer={});
+ const o=c.scoutingV2||(c.scoutingV2={version:1,nextId:1,missions:[]});
+ if(!Array.isArray(o.missions))o.missions=[];
+ if(!Number.isInteger(o.nextId)||o.nextId<1)o.nextId=1;
+ return o;
+}
+function start(save,{playerId,region="Brasil",duration=14,scoutQuality=50,cost=0,specialty="geral"}={}){
+ const s=state(save);if(!s)return {ok:false,error:"Somente treinador"};
+ if(playerId===undefined||playerId===null||String(playerId).length===0)return {ok:false,error:"Jogador obrigatorio"};
+ const day=Math.floor(num(save.day,0));
+ const d=clamp(Math.floor(num(duration,14)),3,60);
+ const fee=Math.max(0,Math.floor(num(cost,0)));
+ if(s.missions.some(m=>m.playerId===String(playerId)&&m.status==="active"))return {ok:false,error:"Jogador ja observado"};
+ const club=(save.clubs||[]).find(c=>String(c.id)===String(save.clubId));
+ if(!club)return {ok:false,error:"Clube indisponivel"};
+ if(fee>num(club.budget,0))return {ok:false,error:"Orcamento insuficiente"};
+ if(fee)club.budget-=fee;
+ const mission={id:s.nextId++,playerId:String(playerId),region:String(region).slice(0,60),startDay:day,duration:d,quality:clamp(Math.round(num(scoutQuality,50)),1,100),specialty:["geral","jovens","defesa","meio","ataque","goleiros"].includes(specialty)?specialty:"geral",cost:fee,status:"active",progress:0,lastDay:day};
+ s.missions.push(mission);
+ return {ok:true,mission};
+}
+function advance(save){
+ const s=state(save);if(!s)return [];
+ const now=Math.floor(num(save.day,0));
+ const changed=[];
+ for(const m of s.missions){
+  if(m.status!=="active"||now<=m.lastDay)continue;
+  m.lastDay=now;m.progress=clamp((now-m.startDay)/m.duration,0,1);
+  if(m.progress>=1)m.status="complete";
+  changed.push({id:m.id,status:m.status,progress:m.progress});
+ }
+ return changed;
+}
+function specialtyMatches(specialty,player){
+ const position=String(player?.pos??player?.position??"").toUpperCase();
+ const age=Number(player?.age);
+ if(specialty==="jovens")return Number.isFinite(age)&&age<=21;
+ if(specialty==="defesa")return /^(ZAG|LAT|LE|LD|CB|LB|RB|LWB|RWB|DEF)/.test(position);
+ if(specialty==="meio")return /^(VOL|MEI|MC|MD|ME|CDM|CM|CAM|LM|RM)/.test(position);
+ if(specialty==="ataque")return /^(ATA|PE|PD|CA|ST|CF|LW|RW|AC)/.test(position);
+ if(specialty==="goleiros")return /^(GOL|GK)/.test(position);
+ return false;
+}
+function report(save,missionId,player){
+ const s=state(save),m=s?.missions.find(x=>String(x.id)===String(missionId));
+ if(!m)return null;
+ const base={missionId:m.id,playerId:m.playerId,status:m.status,progress:m.progress,region:m.region};
+ if(!player||String(player.id)!==m.playerId)return {...base,available:false};
+ const specialty=m.specialty||"geral";
+ const specialtyFit=specialtyMatches(specialty,player);
+ const specialistBonus=specialtyFit?Math.round(12*m.progress):0;
+ const certainty=clamp(Math.floor(15+m.progress*(60+m.quality*.25))+specialistBonus,15,100);
+ const trueOvr=clamp(Math.round(num(player.ovr??player.overall,50)),1,100);
+ const potential=clamp(Math.round(num(player.potential,trueOvr)),trueOvr,100);
+ const variance=Math.ceil((100-certainty)/9);
+ const offset=(hash(m.playerId+"|"+m.id)%3)-1;
+ return {...base,available:true,certainty,specialty,specialtyFit,specialistBonus,estimatedOverall:[clamp(trueOvr-variance,1,100),clamp(trueOvr+variance,1,100)],
+ potentialRange:[clamp(potential-variance+offset,1,100),clamp(potential+variance+offset,1,100)],
+ exactOverall:m.status==="complete"?trueOvr:null,
+ exactPotential:m.status==="complete"&&m.quality>=90?potential:null};
+}
+function recommend(save,players,limit=5){
+ if(save?.mode!=="coach")return [];
+ const missions=save.coachCareer?.scoutingV2?.missions||[];
+ const club=(save.clubs||[]).find(x=>String(x.id)===String(save.clubId));
+ const buckets=p=>{const pos=String(p?.pos??p?.position??"").toUpperCase();
+  if(/^(GOL|GK)/.test(pos))return "goleiros";
+  if(/^(ZAG|LAT|LE|LD|CB|LB|RB|DEF)/.test(pos))return "defesa";
+  if(/^(VOL|MEI|MC|MD|ME|CDM|CM|CAM|LM|RM)/.test(pos))return "meio";
+  return "ataque";};
+ const count={goleiros:0,defesa:0,meio:0,ataque:0};
+ for(const p of club?.roster||[])count[buckets(p)]++;
+ const targets={goleiros:3,defesa:7,meio:6,ataque:5};
+ const lookup=new Map((players||[]).filter(x=>x?.id!=null).map(x=>[String(x.id),x]));
+ const out=[];
+ for(const m of missions){
+  if(m.status!=="complete")continue;
+  const p=lookup.get(String(m.playerId));if(!p||p.clubId===save.clubId)continue;
+  const info=report(save,m.id,p);if(!info?.available)continue;
+  const position=buckets(p),shortfall=Math.max(0,targets[position]-count[position]);
+  const potential=info.potentialRange?.[0]??0,overall=info.estimatedOverall?.[0]??0;
+  const youth=Number(p.age)<=21?5:0;
+  const score=shortfall*12+potential*.35+overall*.3+youth+info.certainty*.1;
+  out.push({playerId:String(p.id),clubId:p.clubId??null,name:String(p.name||"Atleta"),position,score:Math.round(score),shortfall,certainty:info.certainty,overallRange:info.estimatedOverall,potentialRange:info.potentialRange,reason:shortfall?"Carência no elenco: "+position:youth?"Jovem com potencial observado":"Destaque do relatório"});
+ }
+ return out.sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name,"pt-BR")).slice(0,Math.max(0,Math.min(20,Math.floor(num(limit,5)))));
+}
+const api=Object.freeze({state,start,advance,report,recommend});
+root.ProLifeCoachScoutingV2=api;
+if(typeof module!=="undefined"&&module.exports)module.exports=api;
+})(typeof globalThis!=="undefined"?globalThis:this);

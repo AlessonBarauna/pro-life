@@ -76,7 +76,15 @@
   }
   function tableWindow(s, D) {
     const c = D.club(s); if (!c) return { rows: [], position: 0, league: "" };
-    const table = D.table(s), index = table.findIndex((x)=>x.id===c.id);
+    // Use the same authoritative standings as the full Competitions screen.
+    // D.table(s) may contain older cumulative league statistics in migrated saves.
+    const overview=D.seasonCompetitionOverview?.(s,c.leagueId);
+    const official=Array.isArray(overview?.standings)?overview.standings:[];
+    const table=official.length?official.map(row=>({
+      id:row.clubId,name:row.clubName,
+      stats:{played:row.played,w:row.wins,d:row.draws,l:row.losses,gf:row.goalsFor,ga:row.goalsAgainst,points:row.points}
+    })):D.table(s);
+    const index = table.findIndex((x)=>x.id===c.id);
     if (index < 0) return worldTableWindow(s, c);
     const start = Math.max(0, Math.min(index - 2, table.length - 5));
     return { rows: table.slice(start, start + 5).map((row,i)=>({...row, position:start+i+1})), position:index+1, league:s.leagues.find((l)=>l.id===c.leagueId)?.name || (root.ProLifeNames?root.ProLifeNames.league(s,c.leagueId):c.leagueId) };

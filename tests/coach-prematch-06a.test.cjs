@@ -1,0 +1,20 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm"),path=require("node:path");
+const source=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+const tactics=require("../src/domain/simulation-tactics.js");
+test("06A coach pre-match shows canonical opponent and scouting, no save mutation",()=>{
+ const ctx={ProLifeSimulationTactics:tactics};ctx.globalThis=ctx;
+ vm.runInNewContext(source,ctx,{filename:"coach-career-view.js"});
+ const state={mode:"coach",clubId:"home",day:7,season:2026};
+ const clubs={home:{id:"home",name:"Mandante",tacticalPlan:{...tactics.PRESETS.highPress}},away:{id:"away",name:"Visitante",tacticalPlan:{...tactics.PRESETS.counter}}};
+ const snapshot={enabled:true,hasClub:true,club:{id:"home",name:"Mandante"},board:65,risk:{id:"estavel",label:"Estavel"},detail:{},history:[],breakdown:null,goals:{items:[]},locker:null,focus:"equilibrado",foci:{},stints:[],totals:{w:0,d:0,l:0,titles:0,seasons:0},license:"C",reputation:35};
+ const D={CoachCareer:{snapshot:()=>snapshot},nextCommitment:()=>({home:"home",away:"away",date:9,competitionName:"Campeonato"}),club:(_s,id)=>clubs[id]};
+ const before=JSON.stringify({state,clubs});
+ ctx.ProLifeCoachCareerView.setTab("prejogo");
+ const html=ctx.ProLifeCoachCareerView.render(state,D);
+ assert.match(html,/Mandante × Visitante/);
+ assert.match(html,/Carga física/);
+ assert.match(html,/RISCOS DO PLANO/);
+ assert.match(html,/linha alta/i);
+ assert.equal(JSON.stringify({state,clubs}),before);
+});
