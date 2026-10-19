@@ -35,7 +35,12 @@
     const assigned = toCode(assignedPosition);
     if (!isSpecific(assigned)) return null;
     const valid = eligible(player);
-    if (valid.includes(assigned)) return {kind: assigned===valid[0]?'PRIMARY':'SECONDARY', multiplier:1};
+    if (valid.includes(assigned)) {
+      if (assigned===valid[0]) return {kind:'PRIMARY',multiplier:1};
+      const suggested=player?.secondaryPositionsSource==='suggested';
+      if (!suggested) return {kind:'SECONDARY',multiplier:1};
+      return {kind:'SUGGESTED',multiplier:group(assigned)===group(valid[0])?0.94:0.85};
+    }
     const legacy = group(player?.pos);
     // Sem posicao especifica nos saves antigos, nao aplicar penalidade artificial.
     if (!valid.length && legacy === group(assigned)) return {kind:'LEGACY_UNKNOWN',multiplier:1};

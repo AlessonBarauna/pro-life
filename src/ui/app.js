@@ -2303,17 +2303,17 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const isUnavailable=(p)=>p.injury||p.suspension>0;
       const selectionStatus=(p)=>starters.includes(p)?"Titular":bench.includes(p)?"Banco":"Fora";
       const moraleLabel=(value)=>value>=78?"Alta":value>=55?"Estável":"Baixa";
-      const playerTile=(p,compact=false,slotRole=null)=>`<article class="pl-squad-player ${p.id===selected?.id?"selected":""} ${p.id===squadSwapSource?"swap-source":""} ${slotRole&&fit(slotRole,p)<2?"out-of-position":""} ${p.id==="hero"?"hero":""} ${isUnavailable(p)?"unavailable":""}" data-squad-player="${esc(p.id)}" ${coach?'draggable="true" title="Arraste para trocar ou clique em dois jogadores para substituir"':""} role="button" tabindex="0" aria-label="Selecionar ${esc(p.name)}"><span class="pl-squad-face" aria-hidden="true">${esc(initials(p.name))}</span><span class="pl-squad-player-copy"><small>${esc(slotRole||positionOf(p))}${slotRole&&fit(slotRole,p)<2?" · !":""}</small><b>${esc(shortName(p.name))}</b>${slotRole&&fit(slotRole,p)<2?`<span class="pl-squad-improvised" title="Posição original: ${esc(positionOf(p))}">IMPROVISADO · ${esc(positionOf(p))}</span>`:""}<i><em style="width:${Math.max(0,Math.min(100,Math.round(p.condition??0)))}%"></em></i></span><strong>${D.overall(p)}</strong><span class="pl-squad-morale ${Number(p.morale||0)>=55?"good":"low"}" title="Moral ${Math.round(p.morale||0)}">${Number(p.morale||0)>=55?"●":"◆"}</span>${coach?`<label class="pl-xi-toggle" title="Incluir no XI"><input type="checkbox" class="lineup" value="${esc(p.id)}" ${c.lineup.includes(p.id)?"checked":""} ${isUnavailable(p)?"disabled":""}><span>XI</span></label>`:""}${p.injury?'<span class="pl-squad-alert">LESÃO</span>':p.suspension>0?'<span class="pl-squad-alert">SUSPENSO</span>':""}</article>`;
+      const playerTile=(p,compact=false,slotRole=null)=>`<article class="pl-squad-player ${p.id===selected?.id?"selected":""} ${p.id===squadSwapSource?"swap-source":""} ${slotRole&&fit(slotRole,p)===0?"out-of-position":slotRole&&fit(slotRole,p)===1?"adapted-position":""} ${p.id==="hero"?"hero":""} ${isUnavailable(p)?"unavailable":""}" data-squad-player="${esc(p.id)}" ${coach?'draggable="true" title="Arraste para trocar ou clique em dois jogadores para substituir"':""} role="button" tabindex="0" aria-label="Selecionar ${esc(p.name)}"><span class="pl-squad-face" aria-hidden="true">${esc(initials(p.name))}</span><span class="pl-squad-player-copy"><small>${esc(slotRole||positionOf(p))}${slotRole&&fit(slotRole,p)<2?" · !":""}</small><b>${esc(shortName(p.name))}</b>${slotRole&&fit(slotRole,p)<2?`<span class="pl-squad-improvised" title="Posição original: ${esc(positionOf(p))}">${fit(slotRole,p)===0?"IMPROVISADO":"ADAPTADO"} · ${esc(positionOf(p))}</span>`:""}<i><em style="width:${Math.max(0,Math.min(100,Math.round(p.condition??0)))}%"></em></i></span><strong>${D.overall(p)}</strong><span class="pl-squad-morale ${Number(p.morale||0)>=55?"good":"low"}" title="Moral ${Math.round(p.morale||0)}">${Number(p.morale||0)>=55?"●":"◆"}</span>${coach?`<label class="pl-xi-toggle" title="Incluir no XI"><input type="checkbox" class="lineup" value="${esc(p.id)}" ${c.lineup.includes(p.id)?"checked":""} ${isUnavailable(p)?"disabled":""}><span>XI</span></label>`:""}${p.injury?'<span class="pl-squad-alert">LESÃO</span>':p.suspension>0?'<span class="pl-squad-alert">SUSPENSO</span>':""}</article>`;
       const roleRows={"4-2-3-1":[["ATA",["CA"]],["MEI",["PE","MEI","PD"]],["VOL",["VOL","VOL"]],["DEF",["LE","ZAG","ZAG","LD"]],["GOL",["GOL"]]],"4-4-2":[["ATA",["CA","CA"]],["MEI",["ME","MC","MC","MD"]],["DEF",["LE","ZAG","ZAG","LD"]],["GOL",["GOL"]]],"4-3-3":[["ATA",["PE","CA","PD"]],["MEI",["MC","VOL","MC"]],["DEF",["LE","ZAG","ZAG","LD"]],["GOL",["GOL"]]]};
       const remaining=starters.slice(), assigned=selection?.assignedPositions||{};
       const fit=(role,p)=>{
-        const native=positionOf(p).toUpperCase(),raw=String(p.pos||"").toUpperCase();
-        const all=[native,raw,...(Array.isArray(p.secondaryPositions)?p.secondaryPositions:[])].map(x=>String(x).toUpperCase());
-        if(all.includes(role))return 3;
-        const groups={GOL:["GOL"],ZAG:["DEF","ZAG"],LE:["LAT","LE","LD","DEF"],LD:["LAT","LD","LE","DEF"],VOL:["VOL","MC","MEI"],MC:["MC","MEI","VOL","ME","MD"],ME:["ME","MEI","MC","PE"],MD:["MD","MEI","MC","PD"],MEI:["MEI","MC","VOL"],PE:["PE","ATA","ME"],PD:["PD","ATA","MD"],CA:["CA","ATA"]};
-        if((groups[role]||[role]).some(x=>all.includes(x)))return 2;
-        if(role==="GOL"||all.includes("GOL"))return 0;
-        return 1;
+        const api=window.ProLifePlayerPositions;
+        const kind=api?.suitability?.(p,role)?.kind;
+        if(kind==='PRIMARY'||kind==='SECONDARY')return 3;
+        if(kind==='LEGACY_UNKNOWN')return 2;
+        if(kind==='RELATED'||kind==='SUGGESTED')return 1;
+        if(kind==='OUT_OF_POSITION')return 0;
+        return 0;
       };
       const slots=(roleRows[formation]||roleRows["4-3-3"]);
       const rows=slots.map(([label,roles])=>({label,roles,players:roles.map(role=>{
@@ -2349,7 +2349,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         }
       }
       if(remaining.length)rows.splice(Math.max(1,rows.length-1),0,{label:"AJUSTE",players:remaining.splice(0)});
-      const pitchFitWarnings=coach?rows.flatMap(row=>row.players.map((p,i)=>({p,role:row.roles?.[i],grade:fit(row.roles?.[i],p)}))).filter(x=>x.grade<2):[];
+      const pitchFitWarnings=coach?rows.flatMap(row=>row.players.map((p,i)=>({p,role:row.roles?.[i],grade:fit(row.roles?.[i],p)}))).filter(x=>x.grade===0):[];
       const ratings=selected?D.Training.groupRatings(selected.attrs):{};
       const attrs=[["pace","Ritmo"],["finish","Finalização"],["pass","Passes"],["defense","Defesa"],["strength","Força"],["stamina","Resistência"]];
       const crest=window.ProLifeClubCrests?.inline?window.ProLifeClubCrests.inline(c.id,"lg"):"";

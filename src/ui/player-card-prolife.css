@@ -1,0 +1,17 @@
+.pl-pro-card{position:relative;max-width:330px;margin:0 auto 15px;isolation:isolate;overflow:hidden;border:2px solid #cfa95d;border-radius:18px 18px 27px 27px;padding:16px 15px 14px;color:#f4e9b9;background:linear-gradient(137deg,#0a2135,#132c42 48%,#07141f);box-shadow:inset 0 0 0 2px #283e36,0 10px 24px #0005;text-align:center}.pl-pro-card:before{content:"";position:absolute;z-index:-1;inset:8px;border:1px solid #c9eb37;border-radius:10px 10px 20px 20px;opacity:.5;pointer-events:none}.pl-pro-rating{position:absolute;z-index:1;left:25px;top:18px;display:grid;text-align:left}.pl-pro-rating b{font-size:37px;line-height:1;color:#ebce82}.pl-pro-rating small{font-size:13px;color:#e8e3ce;font-weight:800}.pl-pro-face{width:145px;height:152px;object-fit:contain;display:block;margin:6px auto 5px;border-radius:10px}.pl-pro-name{display:block;overflow-wrap:anywhere;font-size:19px;color:#f5d78c;text-transform:uppercase}.pl-pro-meta{display:grid;gap:5px;margin:7px 0;padding:8px 0;border-top:1px solid #c9eb3766;border-bottom:1px solid #c9eb3766;font-size:12px;color:#eff4e9}.pl-pro-club{display:flex;align-items:center;justify-content:center;gap:5px}.pl-pro-club .club-crest,.pl-pro-club img{width:24px;height:24px;object-fit:contain}.pl-pro-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.pl-pro-stats span{display:flex;justify-content:center;gap:5px;align-items:center}.pl-pro-stats small{font-size:11px;color:#d3dfcf;font-weight:800}.pl-pro-stats b{font-size:16px;color:#efcf81}@media(max-width:460px){.pl-pro-card{max-width:100%;padding:12px 10px}.pl-pro-face{width:126px;height:132px}.pl-pro-rating b{font-size:30px}}
+
+/* PRO-LIFE: evitar dados duplicados */
+.cc-market-detail-portrait:has(.pl-pro-card) > small,
+.cc-market-detail-portrait:has(.pl-pro-card) > h3,
+.cc-market-detail-portrait:has(.pl-pro-card) > p {
+  display: none;
+}
+
+.cc-market-detail-portrait:has(.pl-pro-card) {
+  padding-bottom: 14px;
+}
+
+.pl-pro-card {
+  box-sizing: border-box;
+  width: 100%;
+}

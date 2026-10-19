@@ -98,6 +98,8 @@ const files = [
   "src/ui/creator.js",
   "src/ui/coach-glb.js",
   "src/assets/coach3d/coach-base.glb",
+  "src/ui/player-card-prolife.js",
+  "src/ui/player-card-prolife.css",
   "src/ui/coach-avatar-3d.js",
   "src/ui/coach-creator.js",
   "src/ui/club-browser.js",

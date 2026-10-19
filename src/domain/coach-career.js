@@ -38,21 +38,21 @@
       for(const p of (club.roster||[])){
         if(!p||!p.id)continue;
         // Empty legacy arrays without provenance mean unknown, not confirmed "no alternatives".
-        const primary=normalizePos(p.pos||p.position);
+        const primary=normalizePos(p.primaryPosition||p.specificPosition||p.pos||p.position);
         const alternatives=Array.isArray(p.secondaryPositions)?p.secondaryPositions:[];
         const eaCatalog=root.ProLifeFC27Positions?.alt||{};
         const eaKey=String(p.eaId??(String(p.id||"").match(/^real_(\d+)$/)?.[1]||""));
         const knownEntry=Object.prototype.hasOwnProperty.call(eaCatalog,eaKey);
-        const eaAlternates=knownEntry?String(eaCatalog[eaKey]||"").split(",").map(normalizePos).filter(x=>x&&x!==primary).slice(0,6):null;
+        const eaAlternates=knownEntry?String(eaCatalog[eaKey]||"").split(",").map(normalizePos).filter(x=>x&&x!==primary&&root.ProLifePlayerPositions?.isSpecific(x)).slice(0,6):null;
         const verified=p.secondaryPositionsSource==="ea_fc27"||p.secondaryPositionsSource==="verified";
-        const normalized=[...new Set(alternatives.map(normalizePos).filter(x=>x&&x!==primary))].slice(0,6);
+        const normalized=[...new Set(alternatives.map(normalizePos).filter(x=>x&&x!==primary&&root.ProLifePlayerPositions?.isSpecific(x)))].slice(0,6);
         if(knownEntry){
           p.secondaryPositions=[...new Set(eaAlternates)];
           p.secondaryPositionsSource="ea_fc27";
         }else if(normalized.length||verified){
           p.secondaryPositions=normalized;
         }else{
-          p.secondaryPositions=(ALTERNATIVES[primary]||[]).filter(x=>x!==primary).slice(0,6);
+          p.secondaryPositions=(ALTERNATIVES[primary]||[]).filter(x=>x!==primary&&root.ProLifePlayerPositions?.isSpecific(x)).slice(0,6);
           p.secondaryPositionsSource="suggested";
         }
         if(!Number.isFinite(Number(p.contractEndDay))||p.contractEndDay==null){
