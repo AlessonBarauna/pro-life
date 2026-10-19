@@ -12,8 +12,10 @@
     squadSelectedId = null,
     squadTab = "lineup",
     squadDetailTab = "attributes",
+    squadRolePanelOpen = false,
     squadPhase = "with-ball",
     squadSwapSource = null,
+    squadPositionSource = null,
     squadUndo = null,
     coachProfileTab = "resumo";
   const $ = (q) => document.querySelector(q),
@@ -428,7 +430,7 @@
             ["inbox", "Caixa", [["inbox", "Mensagens"]]],
             ["profile", "Meu jogador", [["profile", "Perfil e carreira"], ["contract", "Contrato"], ["training", "Treinamento"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["agency", "Empresário e Agência"], ["legacy", "Evolução e legado"], ["story", "Objetivos e História"]]],
             ["market", "Mercado", [["market", "Central do mercado"], ["proposals", "Minhas propostas"]]],
-            ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["champions", "Champions League"], ["europa", "Europa League"], ["conference", "Conference League"], ["panorama", "Panorama"], ["squad", "Elenco"]]],
+            ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["champions", "Champions League"], ["europa", "Europa League"], ["conference", "Conference League"], ["libertadores", "Libertadores"], ["sudamericana", "Sul-Americana"], ["panorama", "Panorama"], ["squad", "Elenco"]]],
             ["national", "Seleção", []],
             ["history", "Mundo", [["history", "Mundo vivo"], ["worldCompetitions", "Competições Mundiais"], ["youth", "Base e Craques"], ["clubs", "Clubes"], ["life", "Perfil e Vida"], ["offField", "Vida profissional"], ["finance", "Finanças"], ["sponsorships", "Patrocínios"]]],
             ["save", "Saves", [["save", "Gerenciar saves"]]],
@@ -438,7 +440,7 @@
             ["inbox", "Caixa", [["inbox", "Mensagens"]]],
             ["profile", "Treinador", [["profile", "Perfil"], ["coachCareer", "Carreira e Vestiário"], ["training", "Desenvolvimento"], ["finance", "Diretoria"]]],
             ["market", "Transferências", [["market", "Mercado"], ["proposals", "Propostas"]]],
-            ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["champions", "Champions League"], ["europa", "Europa League"], ["conference", "Conference League"], ["panorama", "Panorama"], ["squad", "Elenco e tática"], ["statistics", "Estatísticas"], ["awards", "Prêmios"]]],
+            ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["champions", "Champions League"], ["europa", "Europa League"], ["conference", "Conference League"], ["libertadores", "Libertadores"], ["sudamericana", "Sul-Americana"], ["panorama", "Panorama"], ["squad", "Elenco e tática"], ["statistics", "Estatísticas"], ["awards", "Prêmios"]]],
             ["history", "Mundo", [["history", "Mundo vivo"], ["worldCompetitions", "Competições Mundiais"], ["youth", "Base e Craques"], ["clubs", "Clubes"], ["life", "Decisões"], ["offField", "Vida profissional"]]],
             ["save", "Saves", [["save", "Gerenciar saves"]]],
           ],
@@ -453,7 +455,7 @@
           ["profile", "Meu Jogador", "◉", ["profile", "contract", "statistics", "awards", "agency", "legacy", "story"]],
           ["squad", "Elenco", "⬡", ["squad", "lineup"]],
           ["calendar", "Calendário", "□", ["calendar", "matches"]],
-          ["competitions", "Competições", "◇", ["league", "competitions", "champions", "europa", "conference", "panorama", "worldCompetitions"]],
+          ["competitions", "Competições", "◇", ["league", "competitions", "champions", "europa", "conference", "libertadores", "sudamericana", "panorama", "worldCompetitions"]],
           ["market", "Mercado", "↔", ["market", "proposals", "clubs"]],
           ["training", "Treinamento", "▲", ["training"]],
           ["life", "Vida", "＋", ["life", "offField", "finance", "sponsorships", "history", "youth"]],
@@ -464,7 +466,7 @@
           ["profile", "Treinador", "◉", ["profile", "coachCareer"]],
           ["squad", "Elenco", "⬡", ["squad", "lineup"]],
           ["calendar", "Calendário", "□", ["calendar", "matches"]],
-          ["competitions", "Competições", "◇", ["league", "competitions", "champions", "europa", "conference", "panorama", "worldCompetitions", "statistics", "awards"]],
+          ["competitions", "Competições", "◇", ["league", "competitions", "champions", "europa", "conference", "libertadores", "sudamericana", "panorama", "worldCompetitions", "statistics", "awards"]],
           ["market", "Mercado", "↔", ["market", "proposals", "clubs"]],
           ["training", "Treinamento", "▲", ["training"]],
           ["life", "Vida", "＋", ["life", "offField", "finance", "history", "youth"]],
@@ -476,7 +478,7 @@
     };
     const clubCrest = c?.id && window.ProLifeClubCrests ? window.ProLifeClubCrests.render(c.id, { size:"sm" }) : "";
     $("#app").innerHTML =
-      `<div class="game-shell"><header class="game-nav"><button type="button" class="brand" data-page="home" aria-label="PRO LIFE · Central">PRO<span>LIFE</span></button><nav aria-label="Navegação principal">${quickNav.map(navButton).join("")}</nav><details class="global-more"><summary aria-label="Mais áreas">•••</summary><div><button type="button" data-page="national">Seleção</button><button type="button" data-page="history">Mundo</button><button type="button" data-page="save">Saves</button>${state.mode==="coach"?'<button type="button" data-coach-settings-open>Configurações da carreira</button>':""}</div></details><div class="club-chip">${clubCrest ? `<span class="club-chip-crest">${clubCrest}</span>` : ""}<span><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b><span class="sx-line">${esc(window.ProLifeShellExtras?.chipLine(state)||"")}</span></span></div>${window.ProLifeShellExtras?window.ProLifeShellExtras.bell(window.ProLifeShellExtras.pending(state,D)):""}</header><div class="game-subnav" role="navigation" aria-label="Navegação da área">${subnav.map(([id,label])=>`<button type="button" data-page="${id}" class="${page===id?"active":""}" ${page===id?'aria-current="page"':""}>${esc(label)}${id==="proposals" && offerCount ? ` <i>${offerCount}</i>`:""}</button>`).join("")}</div><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${page === "conference" ? "UEFA Conference League · classificação, rodadas e fase eliminatória" : page === "europa" ? "UEFA Europa League · classificação, rodadas e fase eliminatória" : page === "champions" ? "UEFA Champions League · classificação, rodadas e fase eliminatória" : (topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado")}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
+      `<div class="game-shell"><header class="game-nav"><button type="button" class="brand" data-page="home" aria-label="PRO LIFE · Central">PRO<span>LIFE</span></button><nav aria-label="Navegação principal">${quickNav.map(navButton).join("")}</nav><details class="global-more"><summary aria-label="Mais áreas">•••</summary><div><button type="button" data-page="national">Seleção</button><button type="button" data-page="history">Mundo</button><button type="button" data-page="save">Saves</button>${state.mode==="coach"?'<button type="button" data-coach-settings-open>Configurações da carreira</button>':""}</div></details><div class="club-chip">${clubCrest ? `<span class="club-chip-crest">${clubCrest}</span>` : ""}<span><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b><span class="sx-line">${esc(window.ProLifeShellExtras?.chipLine(state,D)||"")}</span></span></div>${window.ProLifeShellExtras?window.ProLifeShellExtras.bell(window.ProLifeShellExtras.pending(state,D)):""}</header><div class="game-subnav" role="navigation" aria-label="Navegação da área">${subnav.map(([id,label])=>`<button type="button" data-page="${id}" class="${page===id?"active":""}" ${page===id?'aria-current="page"':""}>${esc(label)}${id==="proposals" && offerCount ? ` <i>${offerCount}</i>`:""}</button>`).join("")}</div><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${page === "sudamericana" ? "CONMEBOL Sul-Americana · grupos, playoffs e fase eliminatória" : page === "libertadores" ? "CONMEBOL Libertadores · grupos e fase eliminatória" : page === "conference" ? "UEFA Conference League · classificação, rodadas e fase eliminatória" : page === "europa" ? "UEFA Europa League · classificação, rodadas e fase eliminatória" : page === "champions" ? "UEFA Champions League · classificação, rodadas e fase eliminatória" : (topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado")}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${views[page]()}<div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
     mountInternationalOfferPreference();
     window.ProLifeTargetClubSelector?.mount?.(state,D,Career);
     mountAvatar();
@@ -539,6 +541,11 @@
       render(); window.scrollTo(0, 0);
       return true;
     }).catch((err) => { toast(err.message); return false; });
+  }
+  function prepareLoadedCompetitions(loaded) {
+    if (!loaded) return { prepared: 0, competitions: [] };
+    try { return D.prepareConmebolSeason?.(loaded) || { prepared: 0, competitions: [] }; }
+    catch { return { prepared: 0, competitions: [] }; }
   }
   // 34F.15: falha ao salvar nova carreira — explica o motivo real, nunca apaga nem substitui nada e oferece exportar.
   function exportSlot(id) {
@@ -1179,9 +1186,9 @@
   // 04E: escudo real pequeno (somente quando verificado para o clubId); sem fallback para nao poluir tabelas.
   const crestImg = (id, size = "sm") => { const h = id && window.ProLifeClubCrests ? window.ProLifeClubCrests.render(id, { size }) : ""; return h.startsWith("<img") ? h + " " : ""; };
   const gameLine = (g) => {
-    const played = g.played === true || g.status === "PLAYED", score = played ? (g.score || `${g.homeScore} x ${g.awayScore}`).replace(" x ", " × ") : "×";
+    const played = g.played === true || g.status === "PLAYED", stateLabel = { ARCHIVED: "resultado arquivado", POSTPONED: "adiado", CANCELED: "cancelado" }[g.status] || "", score = played ? (g.score || `${g.homeScore} x ${g.awayScore}`).replace(" x ", " × ") : stateLabel || "×";
     const mine = [g.homeId, g.awayId].includes(state.clubId);
-    return `<div class="season-game ${mine ? "mine" : ""} ${played ? "played" : ""}"><time>${hasVal(g.day) ? esc(dayDate(g.day)) : "—"}</time><span>${crestImg(g.homeId)}${esc(g.home ?? g.homeId ?? "—")}</span><b>${esc(score)}</b><span>${crestImg(g.awayId)}${esc(g.away ?? g.awayId ?? "—")}</span>${g.stage ? `<small>${esc(g.stage)}${g.penalties ? " · pên. " + esc(typeof g.penalties === "object" ? Object.values(g.penalties).join("-") : g.penalties) : ""}</small>` : ""}</div>`;
+    return `<div class="season-game ${mine ? "mine" : ""} ${played ? "played" : ""} ${g.status ? `status-${String(g.status).toLowerCase()}` : ""}"><time>${hasVal(g.day) ? esc(dayDate(g.day)) : "—"}</time><span>${crestImg(g.homeId)}${esc(g.home ?? g.homeId ?? "—")}</span><b>${esc(score)}</b><span>${crestImg(g.awayId)}${esc(g.away ?? g.awayId ?? "—")}</span>${g.stage || stateLabel ? `<small>${esc([g.stage, stateLabel].filter(Boolean).join(" · "))}${g.penalties ? " · pên. " + esc(typeof g.penalties === "object" ? Object.values(g.penalties).join("-") : g.penalties) : ""}</small>` : ""}</div>`;
   };
   function seasonTableHtml(ov) {
     const rows = ov.standings.map(stRow), hasForm = rows.some((x) => x.form.length), sel = rows.find((r) => r.id && r.id === seasonUi.club);
@@ -1190,7 +1197,7 @@
     const body = rows.map((r) => `<tr tabindex="0" data-season-club="${esc(r.id ?? "")}" class="${r.id === state.clubId ? "highlight" : ""} ${r.id && r.id === seasonUi.club ? "selected" : ""} ${zoneAt(r.pos)?`season-zone-${zoneAt(r.pos).key}`:""}" title="${esc(zoneAt(r.pos)?.label||"")}" aria-selected="${r.id === seasonUi.club}"><td class="num">${cell(r.pos)}</td><td class="club">${crestImg(r.id)}${esc(r.name)}${r.id === state.clubId ? ' <span class="pill">VOCÊ</span>' : ""}</td><td class="num pts">${cell(r.pts)}</td><td class="num">${cell(r.j)}</td><td class="num">${cell(r.v)}</td><td class="num">${cell(r.e)}</td><td class="num">${cell(r.d)}</td><td class="num">${cell(r.gp)}</td><td class="num">${cell(r.gc)}</td><td class="num">${sgText(r.sg)}</td>${hasForm ? `<td class="form">${r.form.map((f) => `<i class="f-${esc(f)}">${esc(f)}</i>`).join("")}</td>` : ""}</tr>`).join("");
     const detail = sel ? (() => {
       const involves = (g) => [g.homeId, g.awayId].includes(sel.id);
-      const last = (ov.fixtures || []).filter((g) => involves(g) && (g.played || g.status === "PLAYED")).slice(-5).reverse(), next = (ov.fixtures || []).filter((g) => involves(g) && !(g.played || g.status === "PLAYED")).slice(0, 3);
+      const last = (ov.fixtures || []).filter((g) => involves(g) && (g.played || g.status === "PLAYED")).slice(-5).reverse(), next = (ov.fixtures || []).filter((g) => involves(g) && ["SCHEDULED", "POSTPONED"].includes(g.status)).slice(0, 3);
       return `<aside class="card season-club-detail"><div class="tag">CLUBE SELECIONADO</div><h3>${crestImg(sel.id, "lg")}${esc(sel.name)}</h3><div class="stats"><div class="stat"><small>Posição</small><b>${cell(sel.pos)}º</b></div><div class="stat"><small>Pontos</small><b>${cell(sel.pts)}</b></div><div class="stat"><small>Saldo</small><b>${sgText(sel.sg)}</b></div></div>${sel.form.length ? `<p class="muted">Forma: ${sel.form.map((f) => esc(f)).join(" ")}</p>` : ""}${last.length ? `<h3>Últimos resultados</h3>${last.map(gameLine).join("")}` : ""}${next.length ? `<h3>Próximos jogos</h3>${next.map(gameLine).join("")}` : ""}${!last.length && !next.length ? '<p class="muted">Sem mais detalhes disponíveis para este clube nesta competição.</p>' : ""}<button type="button" data-season-club="">Fechar detalhes</button></aside>`;
     })() : "";
     const legend=zones.length?`<div class="season-zone-legend" aria-label="Vagas e rebaixamento">${zones.map(z=>`<span class="season-zone-key season-zone-${esc(z.key)}">${esc(z.label)} (${z.from}${z.to!==z.from?"–"+z.to:""}º)</span>`).join("")}</div>`:"";
@@ -2303,7 +2310,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const isUnavailable=(p)=>p.injury||p.suspension>0;
       const selectionStatus=(p)=>starters.includes(p)?"Titular":bench.includes(p)?"Banco":"Fora";
       const moraleLabel=(value)=>value>=78?"Alta":value>=55?"Estável":"Baixa";
-      const playerTile=(p,compact=false,slotRole=null)=>`<article class="pl-squad-player ${p.id===selected?.id?"selected":""} ${p.id===squadSwapSource?"swap-source":""} ${slotRole&&fit(slotRole,p)===0?"out-of-position":slotRole&&fit(slotRole,p)===1?"adapted-position":""} ${p.id==="hero"?"hero":""} ${isUnavailable(p)?"unavailable":""}" data-squad-player="${esc(p.id)}" ${coach?'draggable="true" title="Arraste para trocar ou clique em dois jogadores para substituir"':""} role="button" tabindex="0" aria-label="Selecionar ${esc(p.name)}"><span class="pl-squad-face" aria-hidden="true">${esc(initials(p.name))}</span><span class="pl-squad-player-copy"><small>${esc(slotRole||positionOf(p))}${slotRole&&fit(slotRole,p)<2?" · !":""}</small><b>${esc(shortName(p.name))}</b>${slotRole&&fit(slotRole,p)<2?`<span class="pl-squad-improvised" title="Posição original: ${esc(positionOf(p))}">${fit(slotRole,p)===0?"IMPROVISADO":"ADAPTADO"} · ${esc(positionOf(p))}</span>`:""}<i><em style="width:${Math.max(0,Math.min(100,Math.round(p.condition??0)))}%"></em></i></span><strong>${D.overall(p)}</strong><span class="pl-squad-morale ${Number(p.morale||0)>=55?"good":"low"}" title="Moral ${Math.round(p.morale||0)}">${Number(p.morale||0)>=55?"●":"◆"}</span>${coach?`<label class="pl-xi-toggle" title="Incluir no XI"><input type="checkbox" class="lineup" value="${esc(p.id)}" ${c.lineup.includes(p.id)?"checked":""} ${isUnavailable(p)?"disabled":""}><span>XI</span></label>`:""}${p.injury?'<span class="pl-squad-alert">LESÃO</span>':p.suspension>0?'<span class="pl-squad-alert">SUSPENSO</span>':""}</article>`;
+      const playerTile=(p,compact=false,slotRole=null)=>`<article class="pl-squad-player ${p.id===selected?.id?"selected":""} ${p.id===squadSwapSource?"swap-source":""} ${slotRole&&fit(slotRole,p)===0?"out-of-position":slotRole&&fit(slotRole,p)===1?"adapted-position":""} ${p.id==="hero"?"hero":""} ${isUnavailable(p)?"unavailable":""}" data-squad-player="${esc(p.id)}" ${coach?'draggable="true" title="Arraste para trocar ou clique em dois jogadores para substituir"':""} role="button" tabindex="0" aria-label="Selecionar ${esc(p.name)}"><span class="pl-squad-face" aria-hidden="true">${window.ProLifePlayerCard?.portrait ? `<img src="${window.ProLifePlayerCard.portrait(p)}" alt="" draggable="false" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">` : esc(initials(p.name))}</span><span class="pl-squad-player-copy"><small>${esc(slotRole||positionOf(p))}${slotRole&&fit(slotRole,p)<2?" · !":""}</small><b>${esc(shortName(p.name))}</b>${slotRole&&fit(slotRole,p)<2?`<span class="pl-squad-improvised" title="Posição original: ${esc(positionOf(p))}">${fit(slotRole,p)===0?"IMPROVISADO":"ADAPTADO"} · ${esc(positionOf(p))}</span>`:""}<i><em style="width:${Math.max(0,Math.min(100,Math.round(p.condition??0)))}%"></em></i></span><strong>${D.overall(p)}</strong><span class="pl-squad-morale ${Number(p.morale||0)>=55?"good":"low"}" title="Moral ${Math.round(p.morale||0)}">${Number(p.morale||0)>=55?"●":"◆"}</span>${coach?`<label class="pl-xi-toggle" title="Incluir no XI"><input type="checkbox" class="lineup" value="${esc(p.id)}" ${c.lineup.includes(p.id)?"checked":""} ${isUnavailable(p)?"disabled":""}><span>XI</span></label>`:""}${p.injury?'<span class="pl-squad-alert">LESÃO</span>':p.suspension>0?'<span class="pl-squad-alert">SUSPENSO</span>':""}</article>`;
       const roleRows={"4-2-3-1":[["ATA",["CA"]],["MEI",["PE","MEI","PD"]],["VOL",["VOL","VOL"]],["DEF",["LE","ZAG","ZAG","LD"]],["GOL",["GOL"]]],"4-4-2":[["ATA",["CA","CA"]],["MEI",["ME","MC","MC","MD"]],["DEF",["LE","ZAG","ZAG","LD"]],["GOL",["GOL"]]],"4-3-3":[["ATA",["PE","CA","PD"]],["MEI",["MC","VOL","MC"]],["DEF",["LE","ZAG","ZAG","LD"]],["GOL",["GOL"]]]};
       const remaining=starters.slice(), assigned=selection?.assignedPositions||{};
       const fit=(role,p)=>{
@@ -2373,6 +2380,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         CA:[["poacher","Finalizador"],["false_nine","Falso nove"],["target","Referência"]]
       };
       const selectedSlot=rows.flatMap(row=>row.players.map((p,i)=>({id:p.id,position:row.roles?.[i]}))).find(x=>x.id===selected?.id);
+      const selectedDisplayPosition=selectedSlot?.position||positionOf(selected);
       const activeRolePosition=selectedSlot?.position||positionOf(selected);
       const allowedRoles=roleOptions[activeRolePosition]||roleOptions[selected?.pos]||[];
       const currentRole=state.coachCareer?.playerRoles?.[selected?.id];
@@ -2381,6 +2389,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         '<button type="button" data-coach-role-save="'+esc(selected?.id)+'" '+(!allowedRoles.length?'disabled':'')+'>Salvar função</button>'+
         (currentRole?.position===activeRolePosition?'<p class="muted">Função registrada: '+esc(allowedRoles.find(x=>x[0]===currentRole.role)?.[1]||currentRole.role)+'</p>':'')+
         '</section>':'';
+      const inlineRolePanel=coach&&squadRolePanelOpen?`<section class="pl-squad-inline-role" style="padding:14px;margin:10px 0;border:1px solid rgba(255,255,255,.18);border-radius:12px"><div class="tag">FUNCAO TATICA</div><h3>${esc(selected?.name||"Jogador")} · ${esc(activeRolePosition)}</h3><p>Escolha o papel deste jogador na posicao atual.</p><label>Papel tatico<select data-coach-player-role data-player-id="${esc(selected?.id)}" data-position="${esc(activeRolePosition)}">${allowedRoles.map(([id,label])=>`<option value="${esc(id)}" ${currentRole?.position===activeRolePosition&&currentRole?.role===id?"selected":""}>${esc(label)}</option>`).join("")}</select></label>${currentRole?.position===activeRolePosition?`<p class="muted">Registrado: ${esc(allowedRoles.find(x=>x[0]===currentRole.role)?.[1]||currentRole.role)}</p>`:""}<div class="actions"><button type="button" class="primary" data-coach-role-save="${esc(selected?.id)}" ${allowedRoles.length?"":"disabled"}>Salvar funcao</button><button type="button" data-squad-role-close>Fechar</button></div><small>A funcao e registrada na carreira, mas ainda nao altera o motor da partida.</small></section>`:"";
       const teamTactics=state.coachCareer?.teamTactics||{};
       const phaseDescription=squadPhase==="with-ball"?
         "Com bola: construção "+({short:"curta",balanced:"equilibrada",direct:"direta"}[teamTactics.buildup]||"equilibrada")+", largura "+(teamTactics.width??50)+" e estilo "+tacticLabel+".":
@@ -2448,7 +2457,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         '</div>'+ (coach?'<div class="pl-squad-development-editor"><label>Foco individual<select data-player-development-focus>'+opt([["equilibrado","Equilibrado"],["velocidade","Velocidade"],["finalizacao","Finalização"],["criacao","Criação"],["marcacao","Marcação"],["fisico","Físico"]],selected.developmentPlan?.focus||"equilibrado")+'</select></label><button type="button" data-save-player-development="'+esc(selected.id)+'">Salvar plano</button><p>O foco direciona os atributos quando o treino coletivo promove evolução. Não garante aumento semanal.</p></div>':''):'';
       const detailPanels={attributes:attributeInfo,comparison:comparisonInfo,contract:contractInfo,fitness:fitnessInfo,development:developmentInfo};
       const detailBody=detailPanels[squadDetailTab]||attributeInfo;
-      return `<div class="pl-squad-screen"><header class="pl-squad-header"><div class="pl-squad-club">${crest}<div><div class="tag">ELENCO PRINCIPAL</div><h1>${esc(c.name)}</h1><p>${esc(formation)} · ${c.roster.length} atletas · ${esc(tacticLabel)}</p></div></div><div class="pl-squad-head-status"><span><small>XI DEFINIDO</small><b>${starters.length}/11</b></span><span><small>INDISPONÍVEIS</small><b>${c.roster.filter(isUnavailable).length}</b></span></div></header><nav class="pl-squad-tabs" aria-label="Áreas do elenco">${[["lineup","Escalação"],["tactics","Táticas"],["roles","Funções"],["hierarchy","Hierarquia"]].map(([id,label])=>`<button type="button" data-squad-tab="${id}" class="${squadTab===id?"active":""}" ${squadTab===id?'aria-current="page"':""}>${label}</button>`).join("")}</nav><div class="pl-squad-workspace"><section class="pl-squad-left"><div class="pl-squad-pitch-head"><div><small>FORMAÇÃO ATIVA</small>${coach?`<select data-coach-formation aria-label="Alterar formação">${opt([["4-3-3","4-3-3"],["4-4-2","4-4-2"],["4-2-3-1","4-2-3-1"]],formation)}</select>`:`<b>${esc(formation)}</b>`}</div><span class="pl-squad-pitch-tools">${coach?`<button type="button" data-squad-undo ${canUndo?"":"disabled"} title="Desfazer a última troca do elenco">Desfazer troca</button>`:""}<small>${coach?(squadSwapSource?"Escolha o segundo jogador para trocar":"Arraste ou selecione dois jogadores para trocar posições"):"Decisão da comissão técnica"}</small></span></div><div class="pl-squad-pitch" aria-label="Campo tático · formação ${esc(formation)}"><div class="pl-pitch-lines" aria-hidden="true"><i></i><i></i><i></i></div>${rows.map(row=>`<div class="pl-squad-row" data-row="${esc(row.label)}">${row.players.map((p,i)=>playerTile(p,false,row.roles?.[i])).join("")}</div>`).join("")}</div>${coach?'<p class="pl-squad-fit-note">'+(pitchFitWarnings.length?pitchFitWarnings.length+' improvisado(s): '+pitchFitWarnings.map(x=>x.p.name+' ('+positionOf(x.p)+' em '+x.role+')').join('; '):'Todos os titulares estão em posições compatíveis.')+'</p>':''}<section class="pl-squad-bench"><header><div><small>ELENCO</small><h2>Reservas e relacionados</h2></div><span>${bench.length} atletas</span></header><div class="pl-squad-bench-groups"><div class="pl-squad-bench-group"><div class="pl-squad-bench-group-title"><b>BANCO DE RESERVAS</b><small>Primeiras 7 opções · selecione ou arraste para trocar</small></div><div class="pl-squad-bench-grid">${bench.slice(0,7).map(p=>playerTile(p,true)).join("")||'<p class="muted">Nenhum reserva disponível.</p>'}</div></div>${bench.length>7?'<details class="pl-squad-extra-reserves"><summary>DEMAIS RELACIONADOS · '+(bench.length-7)+' atletas <span>Expandir lista</span></summary><div class="pl-squad-bench-grid">'+bench.slice(7).map(p=>playerTile(p,true)).join("")+'</div></details>':''}</div></section></section><aside class="pl-squad-detail"><div class="pl-squad-detail-hero"><div class="pl-squad-detail-copy"><span>${esc(positionOf(selected))}</span><h2>${esc(selected?.name||"Jogador")}</h2><div class="pl-squad-overall"><b>${selected?D.overall(selected):"—"}</b><small>GER</small></div></div><div class="pl-squad-portrait"><span>${esc(initials(selected?.name))}</span></div>${crest}</div><div class="pl-squad-vitals"><span><small>Condição</small><b>${Math.round(selected?.condition||0)}%</b><i><em style="width:${Math.round(selected?.condition||0)}%"></em></i></span><span><small>Moral</small><b>${esc(moraleLabel(selected?.morale||0))}</b><i><em style="width:${Math.round(selected?.morale||0)}%"></em></i></span><span><small>Situação</small><b>${esc(isUnavailable(selected)?selected.injury?"Lesionado":"Suspenso":selectionStatus(selected))}</b></span></div><div class="pl-squad-detail-tabs">${[["attributes","Atributos"],["comparison","Comparação"],["fitness","Físico"],["contract","Contrato"],["development","Evolução"]].map(([id,label])=>`<button type="button" data-squad-detail-tab="${id}" class="${squadDetailTab===id?"active":""}" aria-pressed="${squadDetailTab===id}">${label}</button>`).join("")}</div>${detailBody}<footer><span><small>Forma</small><b>${esc(form(selected))}</b></span><span><small>Idade</small><b>${selected?.age||"—"}</b></span><span><small>Posição</small><b>${esc(positionOf(selected))}</b></span></footer></aside></div>${tabSupplement}<footer class="pl-squad-actions"><button type="button" data-page="home">Voltar à Central</button><button type="button" data-squad-tab="tactics">Plano tático</button>${coach?'<button type="button" class="primary" data-action="lineup">Salvar os 11 titulares</button>':'<button type="button" class="primary" data-page="lineup">Escalação do próximo jogo</button>'}</footer></div>`;
+      return `<div class="pl-squad-screen"><header class="pl-squad-header"><div class="pl-squad-club">${crest}<div><div class="tag">ELENCO PRINCIPAL</div><h1>${esc(c.name)}</h1><p>${esc(formation)} · ${c.roster.length} atletas · ${esc(tacticLabel)}</p></div></div><div class="pl-squad-head-status"><span><small>XI DEFINIDO</small><b>${starters.length}/11</b></span><span><small>INDISPONÍVEIS</small><b>${c.roster.filter(isUnavailable).length}</b></span></div></header><nav class="pl-squad-tabs" aria-label="Áreas do elenco">${[["lineup","Escalação"],["tactics","Táticas"],["roles","Funções"],["hierarchy","Hierarquia"]].map(([id,label])=>`<button type="button" data-squad-tab="${id}" class="${squadTab===id?"active":""}" ${squadTab===id?'aria-current="page"':""}>${label}</button>`).join("")}</nav><div class="pl-squad-workspace"><section class="pl-squad-left"><div class="pl-squad-pitch-head"><div><small>FORMAÇÃO ATIVA</small>${coach?`<select data-coach-formation aria-label="Alterar formação">${opt([["4-3-3","4-3-3"],["4-4-2","4-4-2"],["4-2-3-1","4-2-3-1"]],formation)}</select>`:`<b>${esc(formation)}</b>`}</div><span class="pl-squad-pitch-tools">${coach?`<button type="button" data-squad-undo ${canUndo?"":"disabled"} title="Desfazer a última troca do elenco">Desfazer troca</button>${squadSwapSource?`<button type="button" data-squad-swap-cancel>Cancelar troca</button>`:""}${squadPositionSource?`<button type="button" data-squad-position-cancel>Cancelar mudança</button>`:""}`:""}<small>${coach?(squadSwapSource?"Escolha o segundo jogador para trocar":"Selecione um jogador para ver suas ações. Para trocar, use o menu ou arraste."):"Decisão da comissão técnica"}</small></span></div><div class="pl-squad-pitch" aria-label="Campo tático · formação ${esc(formation)}"><div class="pl-pitch-lines" aria-hidden="true"><i></i><i></i><i></i></div>${rows.map(row=>`<div class="pl-squad-row" data-row="${esc(row.label)}">${row.players.map((p,i)=>playerTile(p,false,row.roles?.[i])).join("")}</div>`).join("")}</div>${coach?'<p class="pl-squad-fit-note">'+(pitchFitWarnings.length?pitchFitWarnings.length+' improvisado(s): '+pitchFitWarnings.map(x=>x.p.name+' ('+positionOf(x.p)+' em '+x.role+')').join('; '):'Todos os titulares estão em posições compatíveis.')+'</p>':''}<section class="pl-squad-bench"><header><div><small>ELENCO</small><h2>Reservas e relacionados</h2></div><span>${bench.length} atletas</span></header><div class="pl-squad-bench-groups"><div class="pl-squad-bench-group"><div class="pl-squad-bench-group-title"><b>BANCO DE RESERVAS</b><small>Primeiras 7 opções · selecione ou arraste para trocar</small></div><div class="pl-squad-bench-grid">${bench.slice(0,7).map(p=>playerTile(p,true)).join("")||'<p class="muted">Nenhum reserva disponível.</p>'}</div></div>${bench.length>7?'<details class="pl-squad-extra-reserves"><summary>DEMAIS RELACIONADOS · '+(bench.length-7)+' atletas <span>Expandir lista</span></summary><div class="pl-squad-bench-grid">'+bench.slice(7).map(p=>playerTile(p,true)).join("")+'</div></details>':''}</div></section></section><aside class="pl-squad-detail"><div class="pl-squad-detail-hero"><div class="pl-squad-detail-copy"><span>${esc(selectedDisplayPosition)}</span><h2>${esc(selected?.name||"Jogador")}</h2><div class="pl-squad-overall"><b>${selected?D.overall(selected):"—"}</b><small>GER</small></div></div><div class="pl-squad-portrait">${selected&&window.ProLifePlayerCard?.portrait?`<img src="${window.ProLifePlayerCard.portrait(selected)}" alt="" draggable="false" style="width:100%;height:100%;object-fit:contain;display:block">`:`<span>${esc(initials(selected?.name))}</span>`}</div>${crest}</div><div class="pl-squad-vitals"><span><small>Condição</small><b>${Math.round(selected?.condition||0)}%</b><i><em style="width:${Math.round(selected?.condition||0)}%"></em></i></span><span><small>Moral</small><b>${esc(moraleLabel(selected?.morale||0))}</b><i><em style="width:${Math.round(selected?.morale||0)}%"></em></i></span><span><small>Situação</small><b>${esc(isUnavailable(selected)?selected.injury?"Lesionado":"Suspenso":selectionStatus(selected))}</b></span></div>${coach?`<details class="pl-squad-quick-actions" open><summary>ACOES DO JOGADOR</summary><div class="pl-squad-quick-actions-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px 0"><button type="button" data-squad-swap-start="${esc(selected?.id)}">Trocar jogador</button><button type="button" data-squad-role-open="${esc(selected?.id)}">Funcao tatica</button><button type="button" data-squad-detail-tab="development">Desenvolvimento</button><button type="button" data-squad-detail-tab="attributes">Detalhes</button></div></details>`:""}${inlineRolePanel}<div class="pl-squad-detail-tabs">${[["attributes","Atributos"],["comparison","Comparação"],["fitness","Físico"],["contract","Contrato"],["development","Evolução"]].map(([id,label])=>`<button type="button" data-squad-detail-tab="${id}" class="${squadDetailTab===id?"active":""}" aria-pressed="${squadDetailTab===id}">${label}</button>`).join("")}</div>${detailBody}<footer><span><small>Forma</small><b>${esc(form(selected))}</b></span><span><small>Idade</small><b>${selected?.age||"—"}</b></span><span><small>Posição</small><b>${esc(positionOf(selected))}</b></span></footer></aside></div>${tabSupplement}<footer class="pl-squad-actions"><button type="button" data-page="home">Voltar à Central</button><button type="button" data-squad-tab="tactics">Plano tático</button>${coach?'<button type="button" class="primary" data-action="lineup">Salvar os 11 titulares</button>':'<button type="button" class="primary" data-page="lineup">Escalação do próximo jogo</button>'}</footer></div>`;
     },
     training() {
       if (state.mode === "coach") {
@@ -2479,6 +2488,12 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     },
     conference() {
       return window.ProLifeConferenceUI?.renderEmbedded?.(state) || `<section class="card"><h2>Conference League</h2><p>Interface nao carregada.</p></section>`;
+    },
+    libertadores() {
+      return window.ProLifeConmebolUI?.renderEmbedded?.(state,"lib") || `<section class="card"><h2>Libertadores</h2><p>Interface não carregada.</p></section>`;
+    },
+    sudamericana() {
+      return window.ProLifeConmebolUI?.renderEmbedded?.(state,"sud") || `<section class="card"><h2>Sul-Americana</h2><p>Interface não carregada.</p></section>`;
     },
     statistics() {
       if (statisticsKey && statisticsKeyClub !== state.clubId) statisticsKey = "";
@@ -8434,7 +8449,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const offers = state.offers.filter(o=>o.expires>=state.day),
         prefs = e.offerPreferences || { leagues: ["serieA", "serieB", "serieC", "serieD"], clubLevel: "any", international: true },
         leagueOptions = [["serieA", "Série A"], ["serieB", "Série B"], ["serieC", "Série C"], ["serieD", "Série D"]];
-      return `<div class="grid"><section class="card"><div class="tag">CAIXA DE ENTRADA</div><h2>Mensagens da carreira</h2><p class="muted">Propostas, decisões e comunicados importantes ficam concentrados aqui.</p>${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life" data-target="current-decision">Responder agora</button></article>` : ""}${cineBanner()}${offersSection(offers) || empty(state.day < state.careerTransferAvailableDay ? "Você já assinou nesta janela. Novas propostas chegam na próxima janela." : "Nenhuma proposta pendente no momento.")}</section>${state.mode==="player"?(()=>{const pc=e.playerCareer,tc=pc.targetClub,ta=tc?Career.interestAssessment(state,tc.clubId):null,clubs=state.clubs.filter(x=>x.id!==state.clubId).sort((a,b)=>b.structure-a.structure);return `<section class="card section"><div class="tag">CLUBE-ALVO</div><h2>Planeje sua próxima transferência</h2><p class="muted">Escolher um alvo não garante proposta. Seu agente acompanha o clube e o interesse evolui conforme nível, desempenho, reputação e janela.</p><label>Clube desejado<select id="target-club"><option value="">Escolha um clube</option>${clubs.map(x=>`<option value="${x.id}" ${tc?.clubId===x.id?"selected":""}>${esc(x.name)} · ${esc(leagueName(x.leagueId))}</option>`).join("")}</select></label><div class="actions"><button class="primary" data-action="target-club">Definir clube-alvo</button>${tc?`<button data-action="clear-target-club">Remover alvo</button>`:""}</div>${ta?`<div class="notice"><h3>${esc(D.club(state,ta.clubId)?.name||"Clube")} · Interesse ${esc(ta.label)}</h3><p>Concorrência: <b>${esc(ta.competition)}</b> · OVR recomendado: <b>${ta.recommendedOverall}</b> · seu OVR: <b>${D.overall(state.person)}</b></p><p>Pipeline: <b>${esc((pc.interests||[]).find(x=>x.clubId===ta.clubId)?.stage||"Monitoramento")}</b></p></div>`:""}</section>`})():""}<section class="card"><div class="tag">PREFERÊNCIAS DO AGENTE</div><h2>Quais propostas quero receber?</h2><p class="muted">As preferências são usadas na geração das próximas propostas, não apenas na tela.</p>${state.mode === "player" ? (() => { const pc=e.playerCareer, ct=pc.contract, interests=pc.interests||[], advice=Career.agentAdvice(state), strategy=pc.agentStrategy||{priority:"balanced",stance:"open"}; return `<div class="notice"><div class="tag">MEU AGENTE</div><h3>${esc(pc.agent?.name || "Agente PRO-LIFE")}</h3><p>${esc(pc.agent?.agency || "Agência independente")} · reputação ${pc.agent?.reputation||50}/100 · comissão ${pc.agent?.commission||5}%<br>Rede: ${esc(pc.agent?.network||"Nacional")} · negociação ${pc.agent?.negotiation||50}/100</p><h3>${esc(advice?.action || "Planejamento de carreira")}</h3><p>${esc(advice?.reason || "Seu agente está analisando o próximo passo.")}</p><label>Prioridade<select id="agent-priority"><option value="balanced" ${strategy.priority==="balanced"?"selected":""}>Equilíbrio</option><option value="playtime" ${strategy.priority==="playtime"?"selected":""}>Tempo de jogo</option><option value="salary" ${strategy.priority==="salary"?"selected":""}>Salário</option><option value="prestige" ${strategy.priority==="prestige"?"selected":""}>Prestígio</option><option value="development" ${strategy.priority==="development"?"selected":""}>Desenvolvimento</option></select></label><label>Postura<select id="agent-stance"><option value="stay" ${strategy.stance==="stay"?"selected":""}>Quero permanecer</option><option value="open" ${strategy.stance==="open"?"selected":""}>Aberto a propostas</option><option value="loan" ${strategy.stance==="loan"?"selected":""}>Buscar empréstimo</option><option value="leave" ${strategy.stance==="leave"?"selected":""}>Buscar saída</option></select></label><button class="primary" data-action="agent-strategy">Atualizar estratégia</button><div class="actions">${Career.agencies.map(a=>`<button data-hire-agency="${a.id}" ${pc.agent?.id===a.id?"disabled":""}>${pc.agent?.id===a.id?"Agência atual":`Contratar ${esc(a.name)}`}</button>`).join("")}</div><p><b>Pipeline de mercado:</b><br>${interests.length ? interests.slice(0,5).map(x=>`${esc(D.club(state,x.clubId)?.name||"Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhum interesse ativo."}</p></div><div class="notice"><div class="tag">CARREIRA PROFISSIONAL</div><h3>Valor de mercado: ${money(pc.marketValue || 0)}</h3>${ct ? `<p><b>Contrato atual:</b> ${Math.max(0, Math.ceil((ct.endDay-state.day)/30))} mês(es) restantes<br><b>Salário:</b> ${money(state.salary)}/mês · <b>Papel:</b> ${esc(ct.role || pc.squadRole)}<br><b>Vínculo:</b> ${ct.type === "loan" ? "Empréstimo" : "Definitivo"}</p>` : `<p>Sem contrato ativo.</p>`}<p><b>Clubes interessados:</b><br>${interests.length ? interests.slice(0,5).map(x=>`${esc(D.club(state,x.clubId)?.name||"Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhuma sondagem ativa."}</p>${pc.renewalOffer ? `<div class="news" id="renewal-offer"><b>Renovação disponível</b><br>${Math.round(pc.renewalOffer.durationDays/365)} anos · ${money(pc.renewalOffer.salary)}/mês · luvas ${money(pc.renewalOffer.signingBonus)} · bônus ${money(pc.renewalOffer.performanceBonus||0)} · papel ${esc(pc.renewalOffer.role||pc.squadRole)}<div class="grid3"><label>Salário desejado<input id="renew-salary" type="number" min="0" step="100" value="${pc.renewalOffer.salary}"></label><label>Anos<input id="renew-years" type="number" min="1" max="5" value="${Math.round(pc.renewalOffer.durationDays/365)}"></label><label>Luvas<input id="renew-bonus" type="number" min="0" step="100" value="${pc.renewalOffer.signingBonus}"></label><label>Bônus desempenho<input id="renew-performance" type="number" min="0" step="100" value="${pc.renewalOffer.performanceBonus||0}"></label><label>Papel<select id="renew-role">${["Rotação","Titular","Importante","Estrela"].map(r=>`<option ${r===(pc.renewalOffer.role||pc.squadRole)?"selected":""}>${r}</option>`).join("")}</select></label></div><div class="actions"><button class="primary" data-action="accept-renewal">Aceitar renovação</button><button data-action="counter-renewal">Pedir meus termos</button><button data-action="reject-renewal">Recusar</button></div></div>` : (ct && Math.max(0,ct.endDay-state.day)<=365 ? `<button class="primary" data-action="request-renewal">Pedir ao agente para renovar</button>` : "")}</div>`; })() : ""}${state.mode === "player" && state.clubId ? (() => { const pc=e.playerCareer, objectives=Career.matchObjectives(state); return `<div class="notice"><div class="tag">RELAÇÃO COM O TÉCNICO</div><h3>${esc(pc.squadRole)} · ${Math.round(pc.coachTrust)}/100</h3>${bar("Confiança do técnico",pc.coachTrust)}<p><b>Objetivos da próxima partida:</b><br>${objectives.map(o=>"• "+esc(o.label)).join("<br>")}</p><small>Cumpridos na carreira: ${pc.objectivesMet}/${pc.objectivesTotal}${pc.lastEvaluation ? ` · última nota ${pc.lastEvaluation.rating}` : ""}</small></div>`; })() : ""}${state.world === "brazil2026" ? `<h3>Divisões</h3><div class="offer-pref-leagues">${leagueOptions.map(([id, label]) => `<label><input type="checkbox" class="offer-league" value="${id}" ${prefs.leagues.includes(id) ? "checked" : ""}> ${label}</label>`).join("")}</div>` : ""}<label>Nível dos clubes<select id="offer-club-level"><option value="any" ${prefs.clubLevel === "any" ? "selected" : ""}>Qualquer clube</option><option value="elite" ${prefs.clubLevel === "elite" ? "selected" : ""}>Somente clubes de elite</option><option value="competitive" ${prefs.clubLevel === "competitive" ? "selected" : ""}>Clubes competitivos</option><option value="intermediate" ${prefs.clubLevel === "intermediate" ? "selected" : ""}>Clubes intermediários</option><option value="small" ${prefs.clubLevel === "small" ? "selected" : ""}>Clubes menores</option></select></label><button class="primary" data-action="offer-prefs">Salvar preferências</button></section></div>`;
+      return `<div class="grid proposals-layout ${negUi.open ? "has-open-negotiation" : ""}"><section class="card"><div class="tag">CAIXA DE ENTRADA</div><h2>Mensagens da carreira</h2><p class="muted">Propostas, decisões e comunicados importantes ficam concentrados aqui.</p>${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life" data-target="current-decision">Responder agora</button></article>` : ""}${cineBanner()}${offersSection(offers) || empty(state.day < state.careerTransferAvailableDay ? "Você já assinou nesta janela. Novas propostas chegam na próxima janela." : "Nenhuma proposta pendente no momento.")}</section>${state.mode==="player"?(()=>{const pc=e.playerCareer,tc=pc.targetClub,ta=tc?Career.interestAssessment(state,tc.clubId):null,clubs=state.clubs.filter(x=>x.id!==state.clubId).sort((a,b)=>b.structure-a.structure);return `<section class="card section"><div class="tag">CLUBE-ALVO</div><h2>Planeje sua próxima transferência</h2><p class="muted">Escolher um alvo não garante proposta. Seu agente acompanha o clube e o interesse evolui conforme nível, desempenho, reputação e janela.</p><label>Clube desejado<select id="target-club"><option value="">Escolha um clube</option>${clubs.map(x=>`<option value="${x.id}" ${tc?.clubId===x.id?"selected":""}>${esc(x.name)} · ${esc(leagueName(x.leagueId))}</option>`).join("")}</select></label><div class="actions"><button class="primary" data-action="target-club">Definir clube-alvo</button>${tc?`<button data-action="clear-target-club">Remover alvo</button>`:""}</div>${ta?`<div class="notice"><h3>${esc(D.club(state,ta.clubId)?.name||"Clube")} · Interesse ${esc(ta.label)}</h3><p>Concorrência: <b>${esc(ta.competition)}</b> · OVR recomendado: <b>${ta.recommendedOverall}</b> · seu OVR: <b>${D.overall(state.person)}</b></p><p>Pipeline: <b>${esc((pc.interests||[]).find(x=>x.clubId===ta.clubId)?.stage||"Monitoramento")}</b></p></div>`:""}</section>`})():""}<section class="card"><div class="tag">PREFERÊNCIAS DO AGENTE</div><h2>Quais propostas quero receber?</h2><p class="muted">As preferências são usadas na geração das próximas propostas, não apenas na tela.</p>${state.mode === "player" ? (() => { const pc=e.playerCareer, ct=pc.contract, interests=pc.interests||[], advice=Career.agentAdvice(state), strategy=pc.agentStrategy||{priority:"balanced",stance:"open"}; return `<div class="notice"><div class="tag">MEU AGENTE</div><h3>${esc(pc.agent?.name || "Agente PRO-LIFE")}</h3><p>${esc(pc.agent?.agency || "Agência independente")} · reputação ${pc.agent?.reputation||50}/100 · comissão ${pc.agent?.commission||5}%<br>Rede: ${esc(pc.agent?.network||"Nacional")} · negociação ${pc.agent?.negotiation||50}/100</p><h3>${esc(advice?.action || "Planejamento de carreira")}</h3><p>${esc(advice?.reason || "Seu agente está analisando o próximo passo.")}</p><label>Prioridade<select id="agent-priority"><option value="balanced" ${strategy.priority==="balanced"?"selected":""}>Equilíbrio</option><option value="playtime" ${strategy.priority==="playtime"?"selected":""}>Tempo de jogo</option><option value="salary" ${strategy.priority==="salary"?"selected":""}>Salário</option><option value="prestige" ${strategy.priority==="prestige"?"selected":""}>Prestígio</option><option value="development" ${strategy.priority==="development"?"selected":""}>Desenvolvimento</option></select></label><label>Postura<select id="agent-stance"><option value="stay" ${strategy.stance==="stay"?"selected":""}>Quero permanecer</option><option value="open" ${strategy.stance==="open"?"selected":""}>Aberto a propostas</option><option value="loan" ${strategy.stance==="loan"?"selected":""}>Buscar empréstimo</option><option value="leave" ${strategy.stance==="leave"?"selected":""}>Buscar saída</option></select></label><button class="primary" data-action="agent-strategy">Atualizar estratégia</button><div class="actions">${Career.agencies.map(a=>`<button data-hire-agency="${a.id}" ${pc.agent?.id===a.id?"disabled":""}>${pc.agent?.id===a.id?"Agência atual":`Contratar ${esc(a.name)}`}</button>`).join("")}</div><p><b>Pipeline de mercado:</b><br>${interests.length ? interests.slice(0,5).map(x=>`${esc(D.club(state,x.clubId)?.name||"Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhum interesse ativo."}</p></div><div class="notice"><div class="tag">CARREIRA PROFISSIONAL</div><h3>Valor de mercado: ${money(pc.marketValue || 0)}</h3>${ct ? `<p><b>Contrato atual:</b> ${Math.max(0, Math.ceil((ct.endDay-state.day)/30))} mês(es) restantes<br><b>Salário:</b> ${money(state.salary)}/mês · <b>Papel:</b> ${esc(ct.role || pc.squadRole)}<br><b>Vínculo:</b> ${ct.type === "loan" ? "Empréstimo" : "Definitivo"}</p>` : `<p>Sem contrato ativo.</p>`}<p><b>Clubes interessados:</b><br>${interests.length ? interests.slice(0,5).map(x=>`${esc(D.club(state,x.clubId)?.name||"Clube")} · ${esc(x.stage)}`).join("<br>") : "Nenhuma sondagem ativa."}</p>${pc.renewalOffer ? `<div class="news" id="renewal-offer"><b>Renovação disponível</b><br>${Math.round(pc.renewalOffer.durationDays/365)} anos · ${money(pc.renewalOffer.salary)}/mês · luvas ${money(pc.renewalOffer.signingBonus)} · bônus ${money(pc.renewalOffer.performanceBonus||0)} · papel ${esc(pc.renewalOffer.role||pc.squadRole)}<div class="grid3"><label>Salário desejado<input id="renew-salary" type="number" min="0" step="100" value="${pc.renewalOffer.salary}"></label><label>Anos<input id="renew-years" type="number" min="1" max="5" value="${Math.round(pc.renewalOffer.durationDays/365)}"></label><label>Luvas<input id="renew-bonus" type="number" min="0" step="100" value="${pc.renewalOffer.signingBonus}"></label><label>Bônus desempenho<input id="renew-performance" type="number" min="0" step="100" value="${pc.renewalOffer.performanceBonus||0}"></label><label>Papel<select id="renew-role">${["Rotação","Titular","Importante","Estrela"].map(r=>`<option ${r===(pc.renewalOffer.role||pc.squadRole)?"selected":""}>${r}</option>`).join("")}</select></label></div><div class="actions"><button class="primary" data-action="accept-renewal">Aceitar renovação</button><button data-action="counter-renewal">Pedir meus termos</button><button data-action="reject-renewal">Recusar</button></div></div>` : (ct && Math.max(0,ct.endDay-state.day)<=365 ? `<button class="primary" data-action="request-renewal">Pedir ao agente para renovar</button>` : "")}</div>`; })() : ""}${state.mode === "player" && state.clubId ? (() => { const pc=e.playerCareer, objectives=Career.matchObjectives(state); return `<div class="notice"><div class="tag">RELAÇÃO COM O TÉCNICO</div><h3>${esc(pc.squadRole)} · ${Math.round(pc.coachTrust)}/100</h3>${bar("Confiança do técnico",pc.coachTrust)}<p><b>Objetivos da próxima partida:</b><br>${objectives.map(o=>"• "+esc(o.label)).join("<br>")}</p><small>Cumpridos na carreira: ${pc.objectivesMet}/${pc.objectivesTotal}${pc.lastEvaluation ? ` · última nota ${pc.lastEvaluation.rating}` : ""}</small></div>`; })() : ""}${state.world === "brazil2026" ? `<h3>Divisões</h3><div class="offer-pref-leagues">${leagueOptions.map(([id, label]) => `<label><input type="checkbox" class="offer-league" value="${id}" ${prefs.leagues.includes(id) ? "checked" : ""}> ${label}</label>`).join("")}</div>` : ""}<label>Nível dos clubes<select id="offer-club-level"><option value="any" ${prefs.clubLevel === "any" ? "selected" : ""}>Qualquer clube</option><option value="elite" ${prefs.clubLevel === "elite" ? "selected" : ""}>Somente clubes de elite</option><option value="competitive" ${prefs.clubLevel === "competitive" ? "selected" : ""}>Clubes competitivos</option><option value="intermediate" ${prefs.clubLevel === "intermediate" ? "selected" : ""}>Clubes intermediários</option><option value="small" ${prefs.clubLevel === "small" ? "selected" : ""}>Clubes menores</option></select></label><button class="primary" data-action="offer-prefs">Salvar preferências</button></section></div>`;
     },
     market() {
       if (state?.mode === "coach" && window.ProLifeCoachCareerView?.renderMarket) {
@@ -8777,6 +8792,19 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     window.ProLifeConferenceUI?.setRound?.(event.target.value);
     page="conference";render();
   });
+  document.addEventListener("click", event=>{
+    const el=event.target.closest?.("[data-pl-conmebol-tab]");
+    if(!el||!state)return;
+    const comp=el.getAttribute("data-comp")==="sud"?"sud":"lib";
+    window.ProLifeConmebolUI?.setTab?.(comp,el.getAttribute("data-pl-conmebol-tab"));
+    page=comp==="lib"?"libertadores":"sudamericana";render();
+  });
+  document.addEventListener("change",event=>{
+    if(event.target?.id!=="pl-conmebol-round"||!state)return;
+    const comp=event.target.getAttribute("data-comp")==="sud"?"sud":"lib";
+    window.ProLifeConmebolUI?.setRound?.(comp,event.target.value);
+    page=comp==="lib"?"libertadores":"sudamericana";render();
+  });
   // Champions usa a mesma navegacao da aba Temporada; sem overlay flutuante.
   document.addEventListener("click", (event) => {
     const el=event.target.closest?.("[data-pl-ucl-tab],[data-ch-ucl-open]");
@@ -8862,6 +8890,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         const f = input.files[0];
         if (!f) return;
         const parsed = S.parse(await f.text());
+        prepareLoadedCompetitions(parsed);
         const id = await (S.saveAsNewAsync ? S.saveAsNewAsync(parsed) : S.saveAsNew?.(parsed));
         if (!id) throw Error("Nao foi possivel salvar a carreira importada. O arquivo original permanece intacto.");
         rememberCatalog(id, parsed.catalogVersion === "fc27_v1" ? "fc27_v1" : "legacy");
@@ -9031,14 +9060,179 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
   });
   document.addEventListener("dragend",()=>{squadSwapSource=null;});
   document.addEventListener("click", (e) => {
+    const cancelSwap=e.target.closest?.("[data-squad-swap-cancel]");
+    if(cancelSwap){
+      squadSwapSource=null;
+      render();
+      toast("Modo de troca cancelado.");
+      return;
+    }
+    const cancelPosition=e.target.closest?.("[data-squad-position-cancel]");
+    if(cancelPosition){
+      squadPositionSource=null;
+      render();
+      toast("Mudanca de posicao cancelada.");
+      return;
+    }
+    const startPosition=e.target.closest?.("[data-squad-position-start]");
+    if(startPosition&&state?.mode==="coach"){
+      const id=startPosition.dataset.squadPositionStart;
+      const club=D.club(state);
+      if(!club?.lineup?.includes(id)){
+        toast("Selecione um titular para mudar de posicao.");
+        return;
+      }
+      squadSwapSource=null;
+      squadPositionSource=id;
+      squadSelectedId=id;
+      render();
+      toast("Escolha outra vaga no gramado para mudar a posicao.");
+      return;
+    }
+    const closeRole=e.target.closest?.("[data-squad-role-close]");
+    if(closeRole){
+      squadRolePanelOpen=false;
+      render();
+      return;
+    }
+    const openRole=e.target.closest?.("[data-squad-role-open]");
+    if(openRole&&state?.mode==="coach"){
+      const id=openRole.dataset.squadRoleOpen;
+      const club=D.club(state);
+      if(!club?.roster?.some(p=>p.id===id)){
+        toast("Jogador nao encontrado.");
+        return;
+      }
+      squadSelectedId=id;
+      squadRolePanelOpen=true;
+      squadTab="lineup";
+      render();
+      toast("Configuracao tatica individual aberta.");
+      return;
+    }
+    const startSwap=e.target.closest?.("[data-squad-swap-start]");
+    if(startSwap&&state?.mode==="coach"){
+      const id=startSwap.dataset.squadSwapStart;
+      const club=D.club(state);
+      if(!club?.roster?.some(p=>p.id===id)){
+        toast("Jogador nao encontrado.");
+        return;
+      }
+      squadSwapSource=id;
+      squadSelectedId=id;
+      render();
+      toast("Modo de troca ativado. Escolha o segundo jogador.");
+      return;
+    }
     const squadPlayer = e.target.closest?.("[data-squad-player]");
     if (squadPlayer && !e.target.closest(".pl-xi-toggle")) {
       const id=squadPlayer.dataset.squadPlayer;
-      if(state?.mode==="coach"&&squadSwapSource&&squadSwapSource!==id){
-        const source=squadSwapSource;squadSwapSource=null;
-        swapSquadPlayers(source,id);return;
+      if(state?.mode==="coach"&&squadPositionSource){
+        const source=squadPositionSource;
+        const club=D.club(state);
+        if(!club?.lineup?.includes(source)){
+          squadPositionSource=null;
+          render();
+          toast("O jogador de origem nao esta mais no XI.");
+          return;
+        }
+        if(source===id){
+          toast("Escolha outra vaga no gramado.");
+          return;
+        }
+        if(!club.lineup.includes(id)){
+          toast("Para mudar de posicao, escolha outro titular no gramado.");
+          return;
+        }
+        const positions={
+          "4-3-3":["PE","CA","PD","MC","VOL","MC","LE","ZAG","ZAG","LD","GOL"],
+          "4-4-2":["CA","CA","ME","MC","MC","MD","LE","ZAG","ZAG","LD","GOL"],
+          "4-2-3-1":["CA","PE","MEI","PD","VOL","VOL","LE","ZAG","ZAG","LD","GOL"]
+        };
+        const formation=club.formation||"4-3-3";
+        const pitch=state.coachCareer?.pitchSlots;
+        const ordered=Array.isArray(pitch)&&pitch.length===11&&state.coachCareer?.pitchFormation===formation
+          ?pitch:club.lineup;
+        const first=ordered.indexOf(source),second=ordered.indexOf(id);
+        const roles=positions[formation]||positions["4-3-3"];
+        if(first<0||second<0||first>=roles.length||second>=roles.length){
+          toast("Nao foi possivel identificar as vagas. Nenhuma mudanca aplicada.");
+          return;
+        }
+        const from=club.roster.find(p=>p.id===source);
+        const to=club.roster.find(p=>p.id===id);
+        if(!from||!to)return;
+        const originalA=roles[first],originalB=roles[second];
+        const api=window.ProLifePlayerPositions;
+        const grade=(player,role)=>{
+          const kind=api?.suitability?.(player,role)?.kind;
+          if(kind==="PRIMARY"||kind==="SECONDARY")return "NATURAL";
+          if(kind==="LEGACY_UNKNOWN")return "COMPATIVEL";
+          if(kind==="RELATED"||kind==="SUGGESTED")return "ADAPTADO";
+          return "IMPROVISADO";
+        };
+        const portrait=p=>window.ProLifePlayerCard?.portrait?.(p)||"";
+        const card=(p,before,after)=>`<div style="flex:1;min-width:130px;text-align:center;padding:12px;border:1px solid #42515a;border-radius:10px"><img src="${portrait(p)}" alt="" style="width:95px;height:105px;object-fit:contain"><h3>${esc(p.name)}</h3><p>GER ${D.overall(p)}</p><p>${esc(before)} → ${esc(after)}</p><strong>${grade(p,after)}</strong></div>`;
+        const previous=document.getElementById("pl-squad-position-modal");
+        previous?.remove();
+        const modal=document.createElement("div");
+        modal.id="pl-squad-position-modal";
+        modal.className="simulation-stop-backdrop";
+        modal.innerHTML=`<section class="simulation-stop-dialog" role="dialog" aria-modal="true" aria-label="Confirmar mudanca de posicao"><div class="tag">GESTAO DO ELENCO</div><h2>Mudar posicoes</h2><div style="display:flex;gap:12px;flex-wrap:wrap;margin:18px 0">${card(from,originalA,originalB)}${card(to,originalB,originalA)}</div><p>Os dois jogadores continuam titulares. Confirme para trocar suas vagas.</p><div class="actions"><button type="button" class="primary" data-position-confirm>Confirmar mudanca</button><button type="button" data-position-cancel>Cancelar</button></div></section>`;
+        document.body.appendChild(modal);
+        const close=()=>modal.remove();
+        modal.addEventListener("click",event=>{
+          if(event.target.closest("[data-position-cancel]")||event.target===modal){
+            close();
+            squadPositionSource=null;
+            render();
+            return;
+          }
+          if(event.target.closest("[data-position-confirm]")){
+            close();
+            squadPositionSource=null;
+            swapSquadPlayers(source,id);
+          }
+        });
+        modal.querySelector("[data-position-cancel]")?.focus();
+        return;
       }
-      squadSwapSource=state?.mode==="coach"?(squadSwapSource===id?null:id):null;
+      if(state?.mode==="coach"&&squadSwapSource&&squadSwapSource!==id){
+        const source=squadSwapSource;
+        const club=D.club(state);
+        const from=club?.roster?.find(p=>p.id===source);
+        const to=club?.roster?.find(p=>p.id===id);
+        squadSwapSource=null;
+        if(!from||!to){
+          toast("Jogador nao encontrado.");
+          render();
+          return;
+        }
+        const oldModal=document.getElementById("pl-squad-swap-modal");
+        oldModal?.remove();
+        const modal=document.createElement("div");
+        modal.id="pl-squad-swap-modal";
+        modal.className="simulation-stop-backdrop";
+        const portrait=p=>window.ProLifePlayerCard?.portrait?.(p)||"";
+        const card=p=>`<div style="flex:1;min-width:115px;text-align:center;padding:12px;border:1px solid rgba(255,255,255,.15);border-radius:12px;background:rgba(255,255,255,.04)"><img src="${portrait(p)}" alt="" style="width:100px;height:110px;max-width:100%;object-fit:contain"><h3>${esc(p.name)}</h3><p>${esc(window.ProLifePlayerPositions?.normalize?.(p)?.primaryPosition||p.pos||"—")} · GER ${D.overall(p)}</p></div>`;
+        modal.innerHTML=`<section class="simulation-stop-dialog" role="dialog" aria-modal="true" aria-label="Confirmar troca de jogadores"><div class="tag">GESTAO DO ELENCO</div><h2>Confirmar troca</h2><div style="display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;margin:18px 0">${card(from)}<strong>⇄</strong>${card(to)}</div><p>Confirme para aplicar a troca na escalacao.</p><div class="actions"><button type="button" class="primary" data-squad-swap-confirm>Confirmar troca</button><button type="button" data-squad-swap-cancel>Cancelar</button></div></section>`;
+        document.body.appendChild(modal);
+        const close=()=>modal.remove();
+        modal.addEventListener("click",event=>{
+          if(event.target.closest("[data-squad-swap-cancel]")||event.target===modal){
+            close();
+            render();
+            return;
+          }
+          if(event.target.closest("[data-squad-swap-confirm]")){
+            close();
+            swapSquadPlayers(source,id);
+          }
+        });
+        modal.querySelector("[data-squad-swap-confirm]")?.focus();
+        return;
+      }
+      squadSwapSource=null;
       squadSelectedId=id;
       render();
       return;
@@ -9165,7 +9359,10 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (b.dataset.loadSlot) {
       const loaded=S.loadSlot?.(b.dataset.loadSlot);
       if(!loaded){toast("Não foi possível carregar esta carreira.");return;}
-      state=loaded; setup=false; page="home"; render(); return;
+      const prepared=prepareLoadedCompetitions(loaded);
+      state=loaded; setup=false; page="home";
+      if(prepared.prepared) persist();
+      render(); return;
     }
     if (b.dataset.deleteSlot) {
       if(!confirm("Excluir esta carreira deste aparelho? Esta ação não pode ser desfeita.")) return;
@@ -9573,7 +9770,12 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
       case "careers":
         state = null; setup = false; S.clearActive?.(); render(); break;
       case "resume":
-        if(!state){const id=S.activeId?.(); state=id?S.loadSlot?.(id):null;}
+        if(!state){
+          const id=S.activeId?.(), loaded=id?S.loadSlot?.(id):null;
+          const prepared=prepareLoadedCompetitions(loaded);
+          state=loaded;
+          if(state&&prepared.prepared) persist();
+        }
         setup = false;
         render();
         break;

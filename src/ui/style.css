@@ -3919,6 +3919,9 @@ span.calendar-event.played{opacity:.8;border-left-color:var(--pl-green)}
 .cal-chip.k-mine{border-left-color:var(--game-cyan)}.cal-chip.k-world{border-left-color:#7aa7ff}.cal-chip.k-market{border-left-color:#eb7dca}.cal-chip.k-events{border-left-color:#ff785d}.cal-chip.k-selecao{border-left-color:#6ad36f}.cal-chip.k-state{border-left-color:#9d7cff}.cal-chip.k-national{border-left-color:#f4be4f}
 
 /* Stage 31.8B — Central de negociação e propostas */
+.proposals-layout{align-items:start}
+.proposals-layout.has-open-negotiation{grid-template-columns:minmax(0,1fr)}
+.proposals-layout.has-open-negotiation>section{width:100%}
 .neg-card{display:grid;gap:14px;border:1px solid var(--pl-line);border-radius:var(--pl-r-lg);background:linear-gradient(180deg,var(--pl-surface-2),var(--pl-surface));padding:var(--pl-pad);margin:0 0 var(--pl-gap);box-shadow:var(--pl-shadow)}
 .neg-card.open{border-color:var(--pl-cyan-line)}
 .neg-head,.neg-center-head{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}

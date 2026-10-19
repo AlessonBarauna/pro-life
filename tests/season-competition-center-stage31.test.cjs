@@ -41,6 +41,35 @@ test("31.7B: classificação brasileira preserva invariantes oficiais",()=>{
   assert.ok(data.recentResults.length>0&&data.nextFixtures.length>0);
 });
 
+test("31.7B: tabela oficial nao regride para 20 rodadas quando o historico detalhado foi compactado",()=>{
+  const s=career(317021),target=s.clubs.find(c=>c.name==="São Paulo")||s.clubs.find(c=>c.leagueId==="serieA");
+  for(const c of s.clubs.filter(c=>c.leagueId==="serieA"))c.stats={points:0,played:38,w:0,d:0,l:38,gf:0,ga:38};
+  target.stats={points:73,played:38,w:22,d:7,l:9,gf:61,ga:32};
+  s.round=38;s.matches=[];
+  for(let i=0;i<20;i++){
+    const pair=s.fixtures[i].find(x=>x.includes(target.id)),home=pair[0]===target.id,score=i<14?[1,0]:i<19?[0,0]:[0,1],hg=home?score[0]:score[1],ag=home?score[1]:score[0];
+    s.matches.push({season:s.season,date:(s.season-2026)*365+(s.calendarDays?.[i]??7+i*21),round:i+1,competitionId:"serieA",leagueId:"serieA",home:pair[0],away:pair[1],hg,ag});
+  }
+  const retained=s.matches.filter(m=>[m.home,m.away].includes(target.id)),partialPoints=retained.reduce((n,m)=>{const gf=m.home===target.id?m.hg:m.ag,ga=m.home===target.id?m.ag:m.hg;return n+(gf>ga?3:gf===ga?1:0);},0);
+  assert.equal(retained.length,20);assert.equal(partialPoints,47,"o recorte detalhado reproduz 14V, 5E, 1D");
+  const data=D.seasonCompetitionOverview(s,"serieA"),row=data.standings.find(x=>x.clubId===target.id);
+  assert.deepEqual({points:row.points,played:row.played,w:row.wins,d:row.draws,l:row.losses,gf:row.goalsFor,ga:row.goalsAgainst,gd:row.goalDifference},{points:73,played:38,w:22,d:7,l:9,gf:61,ga:32,gd:29});
+  assert.equal(data.nextFixtures.length,0,"rodadas antigas compactadas nao reaparecem como jogos futuros");
+  assert.ok(data.fixtures.some(x=>x.status==="PLAYED")&&data.fixtures.some(x=>x.status==="ARCHIVED"));
+  assert.ok(data.fixtures.every(x=>x.status!=="SCHEDULED"),"rodada encerrada nunca reaparece como jogo futuro");
+});
+
+test("31.7B: estados de agenda distinguem futuro, adiado, cancelado e arquivado",()=>{
+  const s=career(317022),cup=s.competitionSchedule.cup,round=cup.rounds[0],pairs=round.pairs.slice(0,4);
+  pairs[0].status="postponed";pairs[1].status="cancelled";pairs[2].archived=true;
+  const data=D.seasonCompetitionOverview(s,"copaBrasil"),byHome=new Map(data.fixtures.map(x=>[x.homeId,x.status]));
+  assert.equal(byHome.get(pairs[0].home),"POSTPONED");
+  assert.equal(byHome.get(pairs[1].home),"CANCELED");
+  assert.equal(byHome.get(pairs[2].home),"ARCHIVED");
+  assert.equal(byHome.get(pairs[3].home),"SCHEDULED");
+  assert.ok(data.nextFixtures.every(x=>["SCHEDULED","POSTPONED"].includes(x.status)));
+});
+
 test("31.7B: liga mundial reutiliza standings, results e calendar oficiais",()=>{
   const s=career(31703);D.advanceToDay(s,25);
   const id="gf_la_liga",data=D.seasonCompetitionOverview(s,id);

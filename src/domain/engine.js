@@ -5,6 +5,7 @@
   const ClubIntelligence=root.ProLifeClubIntelligence||(typeof require==="function"?require("./club-intelligence.js"):null);
   const WorldStats=root.ProLifeWorldStats||(typeof require==="function"?require("./world-stats.js"):null);
   const Continental=root.ProLifeContinental||(typeof require==="function"?require("./continental.js"):null);
+  const ConmebolTournaments=root.ProLifeConmebolTournaments||(typeof require==="function"?require("./conmebol-tournaments.js"):null);
   const ChampionsKnockout=root.ProLifeChampionsKnockout||(typeof require==="function"?require("./champions-knockout.js"):null);
   const EuropaSeason=root.ProLifeEuropaSeason||(typeof require==="function"?require("./europa-season.js"):null);
   const EuropaKnockout=root.ProLifeEuropaKnockout||(typeof require==="function"?require("./europa-knockout.js"):null);
@@ -578,6 +579,15 @@
     if (s.catalogVersion === "fc27_v1" && ConferenceLive && Continental) {
       const ed=Continental.edition(s,"uecl");
       if(ed?.status==="ready") { try{ConferenceLive.prepare(s,ed);}catch(e){ed.conferenceError=String(e?.message||e);} }
+    }
+    if (s.catalogVersion === "fc27_v1" && ConmebolTournaments && Continental && WorldClubCompetitions) {
+      Continental.init(s);
+      for (const comp of ["lib", "sud"]) {
+        const ed=Continental.edition(s,comp);
+        if(["ready","adapted"].includes(ed?.status)&&!ed.leagueSchedule){
+          try{ConmebolTournaments.prepare(s,Continental,WorldClubCompetitions,comp);}catch(e){ed.conmebolError=String(e?.message||e);}
+        }
+      }
     }
     if (plan && s.creation?.started) return s;
     if (mode === "player") Career.post(s, "Carreira", "Agente", "Sua origem: " + (plan ? plan.story.title : origin.name), origin.description + " Seu arquétipo inicial é " + (Training?.init(s)?.archetype?.name || "definido pela posição") + ".");
@@ -1899,7 +1909,11 @@
     const conference=ueclMatch&&{home:ueclMatch.homeId,away:ueclMatch.awayId,date:ueclMatch.day,round:ueclMatch.round,competitionId:"uecl",competitionName:"UEFA Conference League",stage:"Fase de liga"};
     const ueclKo=ConferenceKnockout?.nextFixture?.(s,ueclEd,s.clubId);
     const conferenceKo=ueclKo&&{home:ueclKo.homeId,away:ueclKo.awayId,date:ueclKo.day,round:ueclKo.pair+1,competitionId:"uecl",competitionName:"UEFA Conference League",stage:ueclKo.stage};
-    return [league, extra, national, world, continental, knockout, europa, europaKo,conference,conferenceKo].filter(Boolean).sort((a,b)=>a.date-b.date)[0] || null;
+    const conmebol=["lib","sud"].map(comp=>{
+      const ed=Continental?.edition?.(s,comp,s.season),game=ConmebolTournaments?.nextFixture?.(s,ed,s.clubId);
+      return game&&{home:game.homeId,away:game.awayId,date:game.day,round:game.round??game.pair+1,competitionId:comp,competitionName:comp==="lib"?"CONMEBOL Libertadores":"CONMEBOL Sul-Americana",stage:game.stageName||game.stage||(game.group?`Grupo ${game.group} · Rodada ${game.round}`:"Mata-mata")};
+    }).filter(Boolean);
+    return [league, extra, national, world, continental, knockout, europa, europaKo,conference,conferenceKo,...conmebol].filter(Boolean).sort((a,b)=>a.date-b.date)[0] || null;
   }
   function newSeason(s, rng) {
     WorldClubCompetitions?.closeSeason(s);
@@ -2016,6 +2030,15 @@
       s.fixtures = rounds[0].map((round, i) => round.concat(...rounds.slice(1).map((leagueRounds) => leagueRounds[i])));
     } else s.fixtures = schedule(s.clubs.map((c) => c.id));
     Competitions?.nextSeason(s, orders);
+    if (s.catalogVersion === "fc27_v1" && ConmebolTournaments && Continental && WorldClubCompetitions) {
+      Continental.init(s);
+      for (const comp of ["lib", "sud"]) {
+        const ed=Continental.edition(s,comp);
+        if(["ready","adapted"].includes(ed?.status)&&!ed.leagueSchedule){
+          try{ConmebolTournaments.prepare(s,Continental,WorldClubCompetitions,comp);}catch(e){ed.conmebolError=String(e?.message||e);}
+        }
+      }
+    }
     if (s.upgradeClub) migrateWorld(s, s.upgradeClub, rng);
     if (s.person.age >= 35 && s.mode === "player")
       log(
@@ -2387,6 +2410,34 @@
       }
     );
   }
+  function processConmebolDay(s,rng,comp){
+    if(!ConmebolTournaments||!Continental||!WorldClubCompetitions)return null;
+    const ed=Continental.edition(s,comp);
+    ConmebolTournaments.prepare(s,Continental,WorldClubCompetitions,comp);
+    if(!Array.isArray(ed?.leagueSchedule?.matches))return null;
+    const competitionName=comp==="lib"?"CONMEBOL Libertadores":"CONMEBOL Sul-Americana";
+    const backgroundScore=match=>{
+      const home=club(s,match.homeId),away=club(s,match.awayId);
+      const hs=Number(home?.strength??home?.structure??home?.reputation??65),as=Number(away?.strength??away?.structure??away?.reputation??65);
+      let h=2166136261;for(const c of `${match.id}|${s.season}`)h=Math.imul(h^c.charCodeAt(0),16777619);
+      const seed=h>>>0;
+      return {hg:Math.max(0,Math.min(6,Math.round(1.35+(hs-as)/28+((seed%5)-2)/2))),ag:Math.max(0,Math.min(6,Math.round(1.05+(as-hs)/28+((Math.floor(seed/17)%5)-2)/2)))};
+    };
+    return ConmebolTournaments.daily(s,Continental,WorldClubCompetitions,comp,{
+      otherFixture:backgroundScore,
+      heroFixture(match){
+        const participating=club(s,s.clubId);
+        if(!participating?.roster||match.day<(participating.joinedDay??0))return backgroundScore(match);
+        const previousScope=worldMatchScope;
+        worldMatchScope={s,ids:[match.homeId,match.awayId],cache:{}};
+        try{
+          const result=registerMatch(s,rng,match.homeId,match.awayId,{round:match.round??match.pair+1,competitionId:comp,competitionName,stage:match.stageName||match.stage||(match.group?`Grupo ${match.group} · Rodada ${match.round}`:"Mata-mata"),continentalMatch:true},false);
+          result.continentalMatch=true;
+          return {hg:result.hg,ag:result.ag};
+        }finally{worldMatchScope=previousScope;}
+      }
+    });
+  }
   function advance(s, days = 1) {
     // FC27/UCL: every advance reconciles missing continental editions.
     // Legacy careers may have skipped the seasonal rollover entirely.
@@ -2429,6 +2480,15 @@
       const ed=Continental.edition(s,"uecl");
       if(ed?.status==="ready"&&!ed.leagueSchedule) {try{ConferenceLive.prepare(s,ed);}catch(e){ed.conferenceError=String(e?.message||e);}}
     }
+    if (s.catalogVersion === "fc27_v1" && ConmebolTournaments && Continental && WorldClubCompetitions) {
+      Continental.init(s);
+      for(const comp of ["lib","sud"]){
+        const ed=Continental.edition(s,comp);
+        if(["ready","adapted"].includes(ed?.status)&&!ed.leagueSchedule){
+          try{ConmebolTournaments.prepare(s,Continental,WorldClubCompetitions,comp);}catch(e){ed.conmebolError=String(e?.message||e);}
+        }
+      }
+    }
     if (s.catalogVersion === "fc27_v1") GlobalFootball?.ensureAcademies?.(s);
     Career.init(s);
     Training?.init(s);
@@ -2453,6 +2513,8 @@
       processEuropaDay(s, rng);
       processEuropaKnockoutDay(s, rng);
       processConferenceDay(s, rng);
+      processConmebolDay(s,rng,"lib");
+      processConmebolDay(s,rng,"sud");
       ClubIntelligence?.daily(s, { log: (title, body) => log(s, title, body) });
       CoachCareer?.daily(s, API, { log: (title, body) => log(s, title, body) });
       OffField?.daily(s, API, { log: (title, body) => log(s, title, body) });
@@ -3031,6 +3093,23 @@
       "Sua carreira e patrimônio foram preservados. A temporada agora usa as Séries A, B, C e D, Copa do Brasil e o estadual do clube. Os relatórios da antiga liga ficam resumidos no diário e no histórico.",
     );
   }
+  function prepareConmebolSeason(s) {
+    if (s?.catalogVersion !== "fc27_v1" || !ConmebolTournaments || !Continental || !WorldClubCompetitions)
+      return { prepared: 0, competitions: [] };
+    Continental.init(s);
+    const competitions = [];
+    for (const comp of ["lib", "sud"]) {
+      const ed = Continental.edition(s, comp);
+      if (!["ready", "adapted"].includes(ed?.status) || ed.leagueSchedule) continue;
+      try {
+        const schedule = ConmebolTournaments.prepare(s, Continental, WorldClubCompetitions, comp);
+        if (schedule?.matches?.length) competitions.push(comp);
+      } catch (e) {
+        ed.conmebolError = String(e?.message || e);
+      }
+    }
+    return { prepared: competitions.length, competitions };
+  }
   const API = {
     Career,
     Personality,
@@ -3047,6 +3126,7 @@
     OffField,
     WorldStats,
     Continental,
+    ConmebolTournaments,
     NationalCallups,
     WorldLiveMarket,
     SeasonCompetitionCenter,
@@ -3062,6 +3142,7 @@
     NationalTeam,
     schedule,
     migrateWorld,
+    prepareConmebolSeason,
     VERSION,
     Random,
     positionNeed,

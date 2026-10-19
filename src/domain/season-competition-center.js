@@ -19,6 +19,11 @@
       const state=String(item.id).startsWith("state-");
       addUnique(out,seen,{id:item.id,name:item.name,country:"Brasil",type:state?"state":item.type||"competition",format:configs[item.id]?.format||(state?"groups-and-knockout":item.type==="league"?"double-round-robin":"single-leg-knockout"),season:item.season||s.season,available:true,status:item.status||"Sem dados"});
     }
+    for(const comp of ["lib","sud"]){
+      const ed=Object.values(s.continental?.editions||{}).find(x=>x?.comp===comp&&Number(x.season)===Number(s.season));
+      if(!ed)continue;
+      addUnique(out,seen,{id:comp,name:comp==="lib"?"CONMEBOL Libertadores":"CONMEBOL Sul-Americana",country:"América do Sul",type:"continental-tournament",format:"groups-and-knockout",season:ed.season,available:!!ed.leagueSchedule,status:ed.status||ed.simulationStatus||"Sem calendário processado"});
+    }
     const world=s.globalFootball?.worldCompetitions,worldStates=world?.leagues||{};
     for(const league of s.globalFootball?.leagues||[]){
       if(league.active===false||league.competitionEligible===false)continue;
@@ -53,24 +58,41 @@
     rows.sort((a,b)=>b.points-a.points||b.wins-a.wins||b.goalDifference-a.goalDifference||b.goalsFor-a.goalsFor||a.clubName.localeCompare(b.clubName,"pt-BR"));
     return rows.map((row,index)=>({rank:index+1,...row}));
   }
+  function localStandings(s,ids,fixtures){
+    const allowed=new Set(ids),rows=(s.clubs||[]).filter(c=>allowed.has(c.id)).map(c=>{
+      const st=c.stats||{},goalsFor=num(st.gf),goalsAgainst=num(st.ga);
+      return {clubId:c.id,clubName:c.name||clubName(s,c.id),points:num(st.points),played:num(st.played),wins:num(st.w),draws:num(st.d),losses:num(st.l),goalsFor,goalsAgainst,goalDifference:goalsFor-goalsAgainst,recentForm:formFor(fixtures,c.id)};
+    });
+    rows.sort((a,b)=>b.points-a.points||b.wins-a.wins||b.goalDifference-a.goalDifference||b.goalsFor-a.goalsFor||a.clubName.localeCompare(b.clubName,"pt-BR"));
+    return rows.map((row,index)=>({rank:index+1,...row}));
+  }
+  function fixtureStatus(data,hasScore){
+    if(hasScore)return "PLAYED";
+    if(data.archived===true)return "ARCHIVED";
+    const raw=plain(data.status||data.state||"").replace(/[^a-z]/g,"");
+    if(data.cancelled===true||data.canceled===true||/cancel/.test(raw))return "CANCELED";
+    if(data.postponed===true||/adiad|postpon/.test(raw))return "POSTPONED";
+    return "SCHEDULED";
+  }
   function fixture(s,data,meta={}){
-    const homeId=data.homeId??data.home,awayId=data.awayId??data.away,hg=data.homeScore??data.hg,ag=data.awayScore??data.ag,played=data.played===true||(Number.isFinite(hg)&&Number.isFinite(ag));
-    return {id:data.id||`${meta.competitionId}:${data.day??data.date}:${homeId}:${awayId}`,day:num(data.day??data.date),round:data.round??meta.round??null,stage:data.stage||data.phase||meta.stage||null,competitionId:meta.competitionId,homeId,awayId,home:clubName(s,homeId,data.homeName||(/^([A-Z]{3})$/.test(String(homeId||""))?data.home:null)),away:clubName(s,awayId,data.awayName||(/^([A-Z]{3})$/.test(String(awayId||""))?data.away:null)),status:played?"PLAYED":"SCHEDULED",played,homeScore:played?num(hg):null,awayScore:played?num(ag):null,score:played?`${num(hg)} x ${num(ag)}`:null,winnerId:data.winnerId||null,penalties:data.penalties||null,aggregate:data.aggregate||null,qualifiedId:data.qualifiedId||data.winnerId||null};
+    const homeId=data.homeId??data.home,awayId=data.awayId??data.away,hg=data.homeScore??data.hg,ag=data.awayScore??data.ag,hasScore=Number.isFinite(hg)&&Number.isFinite(ag),status=fixtureStatus(data,hasScore),played=status==="PLAYED";
+    return {id:data.id||`${meta.competitionId}:${data.day??data.date}:${homeId}:${awayId}`,day:num(data.day??data.date),round:data.round??meta.round??null,stage:data.stage||data.phase||meta.stage||null,competitionId:meta.competitionId,homeId,awayId,home:clubName(s,homeId,data.homeName||(/^([A-Z]{3})$/.test(String(homeId||""))?data.home:null)),away:clubName(s,awayId,data.awayName||(/^([A-Z]{3})$/.test(String(awayId||""))?data.away:null)),status,played,homeScore:played?num(hg):null,awayScore:played?num(ag):null,score:played?`${num(hg)} x ${num(ag)}`:null,winnerId:data.winnerId||null,penalties:data.penalties||null,aggregate:data.aggregate||null,qualifiedId:data.qualifiedId||data.winnerId||null};
   }
   function finish(meta,standings,fixtures,rounds){
     fixtures.sort((a,b)=>a.day-b.day||String(a.id).localeCompare(String(b.id)));
-    const nextFixtures=fixtures.filter(x=>!x.played).slice(0,12),recentResults=fixtures.filter(x=>x.played).sort((a,b)=>b.day-a.day).slice(0,12);
-    const current=rounds.find(r=>r.fixtures.some(x=>!x.played))||rounds.at(-1)||null;
+    const pending=x=>x.status==="SCHEDULED"||x.status==="POSTPONED";
+    const nextFixtures=fixtures.filter(pending).slice(0,12),recentResults=fixtures.filter(x=>x.status==="PLAYED").sort((a,b)=>b.day-a.day).slice(0,12);
+    const current=rounds.find(r=>r.fixtures.some(pending))||rounds.at(-1)||null;
     return {competition:meta,standings,fixtures,rounds,currentRound:current?{id:current.id,name:current.name,day:current.day}:null,nextFixtures,recentResults};
   }
   function localLeague(s,meta){
     const ids=(s.clubs||[]).filter(c=>c.leagueId===meta.id).map(c=>c.id),allowed=new Set(ids),base=baseDay(s),results=s.matches||[],rounds=[];
     for(let i=0;i<(s.fixtures||[]).length;i++){
       const day=base+num(s.calendarDays?.[i]??7+i*21),matches=[];
-      for(const pair of s.fixtures[i]||[]){if(!allowed.has(pair[0])||!allowed.has(pair[1]))continue;const result=results.find(m=>m.date===day&&m.home===pair[0]&&m.away===pair[1]&&(!m.competitionId||m.competitionId===meta.id||m.leagueId===meta.id));matches.push(fixture(s,result||{home:pair[0],away:pair[1],date:day,round:i+1},{competitionId:meta.id,round:i+1,stage:`Rodada ${i+1}`}));}
+      for(const pair of s.fixtures[i]||[]){if(!allowed.has(pair[0])||!allowed.has(pair[1]))continue;const result=results.find(m=>m.date===day&&m.home===pair[0]&&m.away===pair[1]&&(!m.competitionId||m.competitionId===meta.id||m.leagueId===meta.id));const source=result||{home:pair[0],away:pair[1],date:day,round:i+1,archived:i<num(s.round)};matches.push(fixture(s,source,{competitionId:meta.id,round:i+1,stage:`Rodada ${i+1}`}));}
       if(matches.length)rounds.push({id:`round-${i+1}`,name:`Rodada ${i+1}`,day,fixtures:matches});
     }
-    const fixtures=rounds.flatMap(r=>r.fixtures);return finish(meta,standingsFromFixtures(s,fixtures,ids),fixtures,rounds);
+    const fixtures=rounds.flatMap(r=>r.fixtures);return finish(meta,localStandings(s,ids,fixtures),fixtures,rounds);
   }
   function knockoutOrState(s,meta,source){
     const rounds=(source?.rounds||[]).map((r,index)=>{const matches=(r.pairs||[]).map(p=>fixture(s,{...p,day:r.date,round:r.index+1,stage:r.name},{competitionId:meta.id,round:r.index+1,stage:r.name}));return{id:String(r.index??index),name:r.name||`Fase ${index+1}`,day:num(r.date),kind:r.kind||"knockout",fixtures:matches};});
@@ -98,12 +120,31 @@
     const fixtures=tournamentMatches(t).map(x=>fixture(s,x,{competitionId:meta.id,round:x.round,stage:x.stage||x.phase})),grouped=new Map();for(const f of fixtures){const key=f.stage||`Rodada ${f.round||1}`;if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(f);}const rounds=[...grouped].map(([name,list],index)=>({id:slug(name)||String(index),name,day:Math.min(...list.map(x=>x.day)),fixtures:list}));
     const table=(t.groups||[]).flatMap(g=>g.table||[]),standings=table.map((r,index)=>({rank:index+1,clubId:r.id,clubName:r.name||r.id,group:(t.groups||[]).find(g=>(g.table||[]).includes(r))?.name,points:num(r.points),played:num(r.played),wins:num(r.w),draws:num(r.d),losses:num(r.l),goalsFor:num(r.gf),goalsAgainst:num(r.ga),goalDifference:num(r.gd??r.gf-r.ga),recentForm:formFor(fixtures,r.id)}));return finish(meta,standings,fixtures,rounds);
   }
+  function continentalTournament(s,meta,api){
+    const ed=Object.values(s.continental?.editions||{}).find(x=>x?.comp===meta.id&&Number(x.season)===Number(meta.season));
+    const engine=api.ConmebolTournaments||root.ProLifeConmebolTournaments;
+    if(!ed||!engine)return finish(meta,[],[],[]);
+    engine.hydrate?.(ed);
+    const rounds=[];
+    for(let round=1;round<=6;round++){
+      const matches=(ed.leagueSchedule?.matches||[]).filter(x=>x.round===round).map(x=>fixture(s,x,{competitionId:meta.id,round,stage:`Fase de grupos · Rodada ${round}`}));
+      if(matches.length)rounds.push({id:`group-round-${round}`,name:`Fase de grupos · Rodada ${round}`,day:Math.min(...matches.map(x=>x.day)),kind:"group",fixtures:matches});
+    }
+    for(const stage of ed.knockout?.stages||[]){
+      const matches=(stage.matches||[]).map(x=>fixture(s,x,{competitionId:meta.id,round:x.pair+1,stage:x.stageName||stage.name}));
+      if(matches.length)rounds.push({id:`knockout-${stage.key}`,name:stage.name,day:Math.min(...matches.map(x=>x.day)),kind:"knockout",fixtures:matches});
+    }
+    const fixtures=rounds.flatMap(r=>r.fixtures),standings=[];
+    for(const group of ed.groups||[])for(const row of engine.standings(ed,group.id))standings.push({rank:row.position,group:group.id,clubId:row.id,clubName:clubName(s,row.id),points:num(row.points),played:num(row.played),wins:num(row.wins),draws:num(row.draws),losses:num(row.losses),goalsFor:num(row.gf),goalsAgainst:num(row.ga),goalDifference:num(row.gd),recentForm:formFor(fixtures,row.id),status:row.status});
+    return finish(meta,standings,fixtures,rounds);
+  }
   function overview(s,id,api={}){
     const meta=catalog(s,api).find(x=>x.id===id);if(!meta)return null;
     if((s.leagues||[]).some(x=>x.id===id))return localLeague(s,meta);
     if(id==="copaBrasil")return knockoutOrState(s,meta,s.competitionSchedule?.cup);
     if(String(id).startsWith("state-")){const states=[s.competitionSchedule?.state,...(s.competitionSchedule?.otherStates||[])];return knockoutOrState(s,meta,states.find(x=>x?.id===id));}
     if(meta.type==="world-league")return worldLeague(s,meta,api);
+    if(meta.type==="continental-tournament")return continentalTournament(s,meta,api);
     if(id==="national-qualifiers")return nationalQualifiers(s,meta);
     if(meta.type==="national-tournament")return nationalTournament(s,meta);
     const fixtures=(s.nationalTeam?.schedule||[]).filter(x=>plain(x.competition)===plain(meta.name)).map(x=>fixture(s,{...x,homeId:x.homeId||"BRA",awayId:x.awayId||x.opponent,home:x.home||"Brasil",away:x.away||x.opponent},{competitionId:id,round:x.round,stage:x.competition}));return finish(meta,[],fixtures,[]);
