@@ -1,7 +1,8 @@
 const test = require("node:test"), assert = require("node:assert/strict"), fs = require("fs"), path = require("path"), { JSDOM } = require("jsdom");
 const base = path.join(__dirname, "..") + path.sep;
 const html = fs.readFileSync(base + "index.html", "utf8");
-const order = [...html.matchAll(/<script\b[^>]*\bsrc=["\'](src\/[^"\'?#]+\.js)(?:[?#][^"\']*)?["\']/g)].map((m) => m[1]).filter((f) => !/update\.js|avatar/.test(f));
+const { scriptPathsFromHtml } = require("./helpers/html-scripts.cjs");
+const order = scriptPathsFromHtml(html, { srcOnly: true }).filter((f) => !/update\.js|avatar/.test(f));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function make() {
   const dom = new JSDOM(html, { runScripts: "outside-only", url: "https://offline-test.invalid" }), w = dom.window;
@@ -16,9 +17,8 @@ async function go(w, s) { click(w, s); await settle(w); }
 const counts = (s) => ({ leagues: s.globalFootball.leagues.length, clubs: s.globalFootball.clubs.length, players: s.internationalPlayers.length });
 const toHub = (w) => { if (q(w, ".career-hub")) return; if (!q(w, '[data-action="careers"]')) click(w, '[data-page="save"]'); click(w, '[data-action="careers"]'); };
 const fillClassic = (w, mode) => {
-  const selector = mode === "coach" ? "#coach-creation-form" : "#creator";
-  const form = q(w, selector);
-  assert.ok(form, "formulario " + mode + " encontrado");
+  const { formForMode } = require("./helpers/ui-navigation.cjs");
+  const form = formForMode(w, mode);
   if (mode === "coach") {
     form.elements.name.value = "Treinador FC27";
     form.elements.city.value = "Mogi das Cruzes";

@@ -1,0 +1,56 @@
+name: FC27 Test Stabilization
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - chore/fc27-test-stabilization-prep
+  pull_request:
+    branches:
+      - feature/fc27-career-global-audit
+permissions:
+  contents: read
+jobs:
+  test-stabilization:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Test helper preflight and affected regressions
+        shell: bash
+        run: |
+          mkdir -p stabilization-results
+          failures=0
+          echo '## FC27 test stabilization' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Suite | Result |' >> "$GITHUB_STEP_SUMMARY"
+          echo '|---|---|' >> "$GITHUB_STEP_SUMMARY"
+          while IFS='|' read -r label file; do
+            [ -n "$label" ] || continue
+            echo "::group::$label"
+            set +e
+            node --test --test-reporter=tap "$file" > "stabilization-results/$label.tap" 2>&1
+            result=$?
+            set -e
+            cat "stabilization-results/$label.tap"
+            echo "::endgroup::"
+            if [ "$result" -eq 0 ]; then status=PASS; else status=FAIL; failures=$((failures+1)); fi
+            echo "| $label | $status |" >> "$GITHUB_STEP_SUMMARY"
+          done <<'TESTS'
+          script-preflight|tests/test-html-scripts-loader.test.cjs
+          navigation-preflight|tests/test-ui-navigation-helpers.test.cjs
+          fc27-catalog|tests/fc27-catalog-choice-ui-stage34f14.test.cjs
+          season-calendar|tests/season-calendar-ui-stage31.test.cjs
+          contract-integrity|tests/contract-integrity-stage33b.test.cjs
+          TESTS
+          echo "Failed suites: $failures" >> "$GITHUB_STEP_SUMMARY"
+          test "$failures" -eq 0
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fc27-stabilization-tap
+          path: stabilization-results/
+          retention-days: 30
