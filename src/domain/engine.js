@@ -2831,7 +2831,12 @@
       if (s.day % 7 === 0) Career.livingWorld(s, rng, API);
       if (s.day % 7 === 0 && s.mode === "player") Career.progressInterest(s, rng, weightedCareerOffers);
       if (s.day % 14 === 0) Career.rumor(s, rng);
-      if (s.day % 365 === 0) newSeason(s, rng);
+      const nextCivilYear= s.calendarVersion==="european_v1"?
+        (root.ProLifeEuropeanCalendar||(typeof require==="function"?require("./european-calendar.js"):null))
+          ?.dateDay?.((s.season+1)+"-01-01"):null;
+      if (s.calendarVersion==="european_v1"?
+        (Number.isInteger(nextCivilYear)&&s.day>=nextCivilYear):
+        s.day%365===0) newSeason(s, rng);
       if (s.day % 7 === 0 || s.day % 365 === 0) recordDevelopment(s);
       s.stress = clamp(
         s.stress + (s.intensity === "hard" ? 0.3 : -0.1),
