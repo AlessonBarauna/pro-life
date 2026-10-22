@@ -460,3 +460,18 @@ Cenários aprovados: faixas de GER/idade/posição/arquétipo; personalização 
 6. `tests/fc27-catalog-choice-ui-stage34f14.test.cjs` — catálogo e escolhas pela UI.
 
 **Nota:** não há novos testes executados em A01.20; manter acumulado de **139/139 TAP** e `npm run test:ui` aprovado. Não afirmar que novos arquivos passaram antes de executá-los. Próximo A01.21: wizard isolado.
+
+
+## A01.21 — TAP: fluxo wizard de criação (22/10/2026)
+
+**Origem:** TAP fornecido pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/creator-wizard-flow.test.cjs`.
+**Resultado:** `tests=3`, `pass=3`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração 91.2389 ms.
+
+Casos aprovados: validação da oportunidade apenas no passo 4; avanço recupera o passo anterior caso render falhe; rendering da oferta aceita falta de dados de clube/competição.
+
+**Acumulado de TAP A01.6–A01.21: 142/142 aprovados, 0 falhas.** `npm run test:ui` passou separadamente sem contagem TAP.
+
+**Limite:** cenários específicos de fluxo/error handling, não toda a experiência do novo criador visual.
+
+**Próximo teste:** `tests/coach-creator-06b.test.cjs`, isolado na branch de auditoria.
