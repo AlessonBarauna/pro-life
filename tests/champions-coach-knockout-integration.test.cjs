@@ -111,7 +111,7 @@ test("31016G treinador disputa mata-mata da Champions no fluxo interativo oficia
   }
 
   const restored = JSON.parse(JSON.stringify(s));
-  const restoredFixture = D.Continental.edition(restored, "ucl").knockout.stages
+  const restoredFixture = D.Continental.edition(restored, "ucl", ed.season).knockout.stages
     .flatMap(st => st.matches).find(m => m.id === fixture.id);
   assert.deepEqual([restoredFixture.played, restoredFixture.hg, restoredFixture.ag],
     [true, fixture.hg, fixture.ag], "mata-mata não persistiu na serialização");
@@ -140,6 +140,10 @@ test("mata-mata continua direcionando o clube controlado no modo jogador", () =>
 test("Premier League e Champions alternam cronologicamente e alimentam a Central", () => {
   const s = coach();
   const premierId = D.club(s).leagueId;
+  const openingEdition = D.Continental.edition(s, "ucl", 2026);
+  assert.ok(openingEdition?.leagueSchedule?.matches?.length, "calendario da Champions nao foi criado");
+  const openingDay = Math.min(...openingEdition.leagueSchedule.matches.map(m => m.day));
+  advanceTo(s, openingDay - 1);
   const observations = { premier: 0, champions: 0 };
   const observedCompetitions = new Map();
 
@@ -165,7 +169,7 @@ test("Premier League e Champions alternam cronologicamente e alimentam a Central
   const keys = own.map(m => [m.season, m.competitionId, m.date, m.round, m.home, m.away].join("|"));
   assert.equal(new Set(keys).size, keys.length, "há partidas oficiais duplicadas");
 
-  const edition = D.Continental.edition(s, "ucl");
+  const edition = D.Continental.edition(s, "ucl", openingEdition.season);
   for (const match of champions.filter(m => m.stage === "Fase de liga")) {
     const scheduled = edition.leagueSchedule.matches.find(f =>
       f.homeId === match.home && f.awayId === match.away &&
