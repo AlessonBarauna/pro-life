@@ -311,3 +311,18 @@ Cenários aprovados: (1) classificação e navegação da liga nacional; (2) EFL
 **Escopo:** somente cenário automatizado na branch de auditoria; não atesta todas as datas/temporadas nem incorpora mudanças da branch `fix/english-cups-calendar-2026`.
 
 **Próxima verificação:** teste de mercado `tests/market-stage7.test.cjs` e, posteriormente, validação de persistência e interface. Um teste por vez, mantendo logs TAP e `EXIT_CODE`.
+
+
+## A01.12 — TAP: mercado de transferências do jogador (22/10/2026)
+
+**Origem:** TAP fornecido pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/market-stage7.test.cjs`.
+**Resultado real:** `tests=8`, `pass=8`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração total 4153.4793 ms.
+
+Cenários aprovados: interesse segundo reputação e concorrência; recusa com cooldown sem duplicação; extensão do prazo; acordo fora da janela sem conflito; efetivação na janela com histórico e entrada no elenco; agência/agente persistentes; preservação do protagonista no roster e rejeição de transferência sem proposta; save/load preserva vínculo, contrato e clube.
+
+**Acumulado A01.6–A01.12: 32/32 testes aprovados, zero falhas.**
+
+**Limites:** cobertura exclusiva dos cenários do arquivo; não valida integralmente a negociação visual nem o mercado do treinador. Próxima etapa sugerida: `tests/world-career-market-stage28c.test.cjs`, teste de catálogo global e mercado do jogador.
+
+**Observação:** mudanças registradas aqui são somente documentais. Sem alteração de regras ou saves.
