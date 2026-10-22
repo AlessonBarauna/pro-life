@@ -32,3 +32,11 @@ test("missing navigation and forms fail with actionable assertions", () => {
   assert.throws(() => clickPage(w, "league"), /top-level navigation missing/);
   assert.throws(() => formForMode(w, "coach"), /creation form missing/);
 });
+
+test("top-level navigation is clicked only once", () => {
+  const w = new JSDOM('<header class="game-nav"><button data-page="competitions">Competições</button></header>').window;
+  let count = 0;
+  w.document.querySelector('[data-page="competitions"]').addEventListener("click", () => { count++; });
+  clickPage(w, "competitions");
+  assert.equal(count, 1, "top-level navigation must not be triggered twice");
+});
