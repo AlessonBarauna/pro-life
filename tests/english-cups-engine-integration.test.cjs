@@ -9,12 +9,15 @@ function advanceOne(s){s.board=100;D.advance(s,1);}
 
 test("motor oficial integra Premier, copas inglesas e competição UEFA no mesmo calendário",()=>{
   const s=career();
-  assert.equal(D.EnglishCups.edition(s,"fa_cup").participantIds.length,92);
-  assert.equal(D.EnglishCups.edition(s,"efl_cup").participantIds.length,92);
+  assert.equal(D.EnglishCups.edition(s,"fa_cup"),null,"FA Cup 2026/27 must not begin in January 2026");
+  const cupOpening=require("../src/domain/european-calendar.js").dateDay("2026-08-01");
+  while(s.day<cupOpening)advanceOne(s);
+  assert.equal(D.EnglishCups.edition(s,"fa_cup")?.participantIds.length,92);
+  assert.equal(D.EnglishCups.edition(s,"efl_cup")?.participantIds.length,92);
   assert.equal(D.Continental.heroEntries(s).length,1,"clube inscrito simultaneamente ou ausente nas competições UEFA");
 
   let cupFixture=null;
-  while(s.day<170&&!cupFixture){cupFixture=D.EnglishCups.nextFixture(s,CITY);if(!cupFixture)advanceOne(s);}
+  while(s.day<470&&!cupFixture){cupFixture=D.EnglishCups.nextFixture(s,CITY);if(!cupFixture)advanceOne(s);}
   assert.ok(cupFixture,"copa inglesa não entrou no calendário do Manchester City");
   while(s.day<cupFixture.day-1)advanceOne(s);
   const next=D.nextCommitment(s);
