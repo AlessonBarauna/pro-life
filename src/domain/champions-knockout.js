@@ -2,6 +2,15 @@
 "use strict";
 // PRO-LIFE Champions knockout: deterministic, persisted, no fabricated retroactive outcomes.
 const STAGES=[{key:"playoffs",name:"Playoffs",legs:2,days:[218,225]},{key:"round16",name:"Oitavas",legs:2,days:[246,253]},{key:"quarters",name:"Quartas",legs:2,days:[274,281]},{key:"semis",name:"Semifinais",legs:2,days:[302,309]},{key:"final",name:"Final",legs:1,days:[330]}];
+const EuropeanCalendar=()=>root.ProLifeEuropeanCalendar||
+  (typeof require==="function"?require("./european-calendar.js"):null);
+const STAGE_KEYS={playoffs:"playoff",round16:"round16",quarters:"quarterfinal",semis:"semifinal",final:"final"};
+function stageDay(ed,stage,leg){
+  if(ed?.calendarMode!=="european_v1"||ed.season!==2026)return null;
+  const cal=EuropeanCalendar(),value=cal?.UEFA_2026_27?.["ucl"]?.[STAGE_KEYS[stage]];
+  const iso=Array.isArray(value)?value[leg]:value;
+  return typeof iso==="string"?cal.dateDay(iso):null;
+}
 const hash=s=>{let h=2166136261;for(const c of String(s))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;};
 function rank(ed){
   if(!Array.isArray(ed?.entrants)||ed.entrants.length!==36||!Array.isArray(ed?.leagueSchedule?.matches))throw Error("Champions incompleta");
@@ -22,11 +31,11 @@ function pairsFor(stage,qualified,ranking){
   if(stage==="round16")return Array.from({length:8},(_,i)=>[qualified[i],ranking[7-i].id]);
   return Array.from({length:qualified.length/2},(_,i)=>[qualified[i*2],qualified[i*2+1]]);
 }
-function fixtureObjects(stage,pairs,base,season){
+function fixtureObjects(stage,pairs,base,season,ed){
   const def=STAGES.find(x=>x.key===stage);
   return pairs.flatMap(([first,second],pi)=>Array.from({length:def.legs},(_,li)=>({
     id:`ucl:${season}:${stage}:${pi}:${li}`,stage,pair:pi,leg:li+1,
-    day:base+def.days[li],homeId:li===0?first:second,awayId:li===0?second:first,
+    day:stageDay(ed,stage,li)??(base+def.days[li]),homeId:li===0?first:second,awayId:li===0?second:first,
     played:false
   })));
 }
@@ -34,10 +43,10 @@ function initialize(ed,day){
   if(ed.knockout)return ed.knockout;
   const ranking=rank(ed);
   const base=(Number(ed.season)-2026)*365;
-  if(day>base+STAGES[0].days[0])throw Error("Mata-mata retroativo bloqueado");
+  if(day>(stageDay(ed,"playoffs",0)??(base+STAGES[0].days[0])))throw Error("Mata-mata retroativo bloqueado");
   const result={version:1,status:"playoffs",ranking,stages:[],championId:null};
   const pairs=pairsFor("playoffs",null,ranking);
-  result.stages.push({key:"playoffs",matches:fixtureObjects("playoffs",pairs,base,ed.season),winners:null});
+  result.stages.push({key:"playoffs",matches:fixtureObjects("playoffs",pairs,base,ed.season,ed),winners:null});
   ed.knockout=result;
   return result;
 }
@@ -99,7 +108,7 @@ function advance(ed){
     const pool=next.key==="round16"?stage.winners:stage.winners;
     const pairs=pairsFor(next.key,pool,ko.ranking);
     const base=(Number(ed.season)-2026)*365;
-    ko.stages.push({key:next.key,matches:fixtureObjects(next.key,pairs,base,ed.season),winners:null});
+    ko.stages.push({key:next.key,matches:fixtureObjects(next.key,pairs,base,ed.season,ed),winners:null});
     ko.status=next.key;changed=true;
   }
 }
