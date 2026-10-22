@@ -1,0 +1,65 @@
+name: FC27 A01.30 Season Integrity Audit
+run-name: FC27 A01.30 - ${{ github.ref_name }}
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - feature/fc27-career-global-audit
+    paths:
+      - '.github/workflows/fc27-a01-30.yml'
+      - 'tests/**'
+      - 'src/**'
+      - 'package*.json'
+  push:
+    branches:
+      - automation/fc27-a01-30-season-integrity
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Verify tests and run independent suites
+        shell: bash
+        run: |
+          mkdir -p a01-30-results
+          failures=0
+          echo '## A01.30 - Season Integrity' >> "$GITHUB_STEP_SUMMARY"
+          echo '| Suite | Result |' >> "$GITHUB_STEP_SUMMARY"
+          echo '|---|---|' >> "$GITHUB_STEP_SUMMARY"
+          while IFS='|' read -r label file; do
+            [ -n "$label" ] || continue
+            echo "::group::$label"
+            set +e
+            node --test --test-reporter=tap "$file" > "a01-30-results/$label.tap" 2>&1
+            code=$?
+            set -e
+            cat "a01-30-results/$label.tap"
+            echo "::endgroup::"
+            if [ "$code" -eq 0 ]; then result=PASS; else result=FAIL; failures=$((failures+1)); fi
+            printf '%s,%s,%s,%s\n' "$label" "$file" "$result" "$code" >> a01-30-results/summary.csv
+            echo "| $label | $result (exit $code) |" >> "$GITHUB_STEP_SUMMARY"
+          done <<'TESTS'
+          season-review|tests/potential-season-review-stage32d3b.test.cjs
+          season-rewards|tests/season-rewards-idempotent-stage32d3c.test.cjs
+          statistics-history|tests/statistics-season-club-history.test.cjs
+          contract-integrity|tests/contract-integrity-stage33b.test.cjs
+          competition-center|tests/season-competition-center-stage31.test.cjs
+          TESTS
+          echo "Failed suites: $failures" >> "$GITHUB_STEP_SUMMARY"
+          test "$failures" -eq 0
+      - name: Upload TAP reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fc27-a01-30-tap
+          path: a01-30-results/
+          if-no-files-found: warn
+          retention-days: 30
