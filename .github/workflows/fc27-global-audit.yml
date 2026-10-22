@@ -3,6 +3,14 @@ run-name: FC27 Global Audit - ${{ github.ref_name }}
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - feature/fc27-career-global-audit
+    paths:
+      - '.github/workflows/fc27-global-audit.yml'
+      - 'tests/**'
+      - 'src/**'
+      - 'package*.json'
   push:
     branches:
       - automation/fc27-global-audit
@@ -36,6 +44,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
+
+      - name: Verify test syntax
+        run: |
+          node --check tests/fc27-catalog-choice-ui-stage34f14.test.cjs
+          node --check tests/coach-career-stage34f24.test.cjs
 
       - name: Execute each audit independently
         id: audit
