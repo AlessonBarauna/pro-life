@@ -493,3 +493,16 @@ Casos aprovados: validação da oportunidade apenas no passo 4; avanço recupera
 **Acumulado:** anteriores `142/142` TAP aprovados + `18/21` = **160 aprovados de 163 executados**, 3 falhas (não 157). `npm run test:ui` passou separadamente, sem total TAP. A01.22 bloqueia avanço de testes até triagem.
 
 **Próxima ação:** inspeção somente leitura dos trechos de teste (linhas 200–335), do módulo de busca/renderização de catálogo e eventuais diferenças de versões. Não editar gameplay/main/branch paralela, não mexer em saves. Usar comando único que gere `.txt` e abra Notepad.
+
+
+## A01.22.1 — Causas localizadas no código do criador do treinador (22/10/2026)
+
+**Evidência:** saída de leitura enviada pelo usuário para `tests/coach-creator-06b.test.cjs:195-335` e inspeção do arquivo `src/ui/coach-creator.js` na branch de auditoria, sem alteração de fonte.
+
+**Causa A: filtros descartados durante digitação.** Em `src/ui/coach-creator.js:125-129`, o handler de `clubSearch.input` limpa `countrySelect`, recompõe ligas e limpa `leagueSelect` quando busca não está vazia. Isso explica a falha 13: o clube `a` reaparece apesar da seleção de liga B.
+
+**Causa B: expressão regular de remoção de diacríticos incorreta.** Em `src/ui/coach-creator.js:75`, `normalize` usa classe de caracteres com barras duplicadas (`/[\\\\u0300-\\\\u036f]/g` representada com escapes nesta nota), em vez de intervalo Unicode de marcas combinantes. A implementação remove letras normais de determinados nomes: a avaliação Node do padrão mostrou `Real Betis` -> `eal etis`, enquanto `betis` -> `betis`. Isso explica falha 17 e o desaparecimento do cartão na falha 18.
+
+**Proposta de correção mínima, ainda NÃO aplicada:** normalizar diacríticos com classe Unicode correta (`/\u0300-\u036f/g` dentro da classe), e manter filtros de país/liga ao buscar (eventualmente incluir controle explícito para limpar filtros em outra alteração, mas não exigido). Revisar/rodar três falhas e suite completa antes de qualquer commit. Não alterar `main`, calendário paralelo, saves ou lógica de negociação.
+
+**Estado:** A01.22 bloqueada; último TAP `18/21`, acumulado `160/163`.
