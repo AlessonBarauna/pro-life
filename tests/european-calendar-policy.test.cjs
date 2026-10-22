@@ -64,7 +64,7 @@ test("UEFA 2026/27 tem calendarios independentes por torneio",()=>{
     assert.equal(Calendar.toDate(dates.at(-1)),last);
     assert.ok(dates.every((d,i)=>!i||d>dates[i-1]));
   }
-  assert.equal(Calendar.uefaLeagueWindows(2027,"ucl"),null);
+  assert.equal(Calendar.toDate(Calendar.uefaLeagueWindows(2027,"ucl")[0]),"2027-09-08");
 });
 
 test("non-summer leagues retain calendar-year policies in UEFA associations",()=>{
