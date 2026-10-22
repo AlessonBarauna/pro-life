@@ -203,3 +203,334 @@ notepad.exe $log
 - [ ] Repetição para outra temporada e compatibilidade com a branch de calendário quando aprovada.
 
 **Estado:** A01.4 inspeção estática e plano de testes documentados; **execução de testes bloqueada pela ausência de checkout acessível**. Não há correções de gameplay nesta etapa.
+
+
+## A01.6 — Evidência real de regressão: papéis e substituições do treinador (22/10/2026)
+
+**Ambiente:** Windows/PowerShell do usuário, clone separado em `C:\Users\aless\Projetos\PRO_LIFE_AUDITORIA`; branch `feature/fc27-career-global-audit`, commit verificado previamente `76f554a`.
+
+**Comando informado:** `node --test --test-reporter=tap tests/coach-player-roles-31011.test.cjs`.
+
+**Resultado TAP fornecido pelo usuário:** 5 testes, 5 aprovados, 0 falhas, 0 pulados, `EXIT_CODE=0`, duração 2051.6058 ms.
+
+| Caso | Resultado |
+|---|---|
+| Substituição do treinador registra reserva no minuto 60 | PASS |
+| Papéis táticos afetam distribuição de finalizações | PASS |
+| Substituição por lesão mantém a posição ocupada | PASS |
+| Assistências permanecem válidas entre funções | PASS |
+| Papel do reserva se ativa apenas após entrar | PASS |
+
+**Escopo da conclusão:** motor/teste unitário-integrado validado no cenário exercitado. **Não** prova interação manual da interface durante a partida, aderência a todos os minutos, sincronização oficial nem persistência após reload. Esses testes adicionais continuam pendentes.
+
+**Próxima regressão isolada:** `tests/coach-match-lab-v2.test.cjs` (4 casos declarados); registrar TAP completo, `$LASTEXITCODE` e distinguir prévia experimental de partida oficial.
+
+
+## A01.7 — Resultado real do laboratório de partidas (22/10/2026)
+
+**Fonte:** saída TAP compartilhada pelo usuário, execução no PowerShell na branch `feature/fc27-career-global-audit`.
+
+**Comando:** `node --test --test-reporter=tap tests/coach-match-lab-v2.test.cjs`
+
+**Resultado:** `tests=4`, `pass=4`, `fail=0`, `skipped=0`, `EXIT_CODE=0`; duração de 78.0986 ms.
+
+| Caso | Resultado |
+|---|---|
+| Força usa avaliações elegíveis conhecidas | PASS |
+| Decisões táticas só se aplicam após o minuto correspondente | PASS |
+| Laboratório preserva o objeto da partida oficial independente | PASS |
+| Ações inválidas são recusadas sem registro | PASS |
+
+**Acumulado de execuções recebidas:** A01.6 (5/5) + A01.7 (4/4) = **9/9**, 0 falhas.
+
+**Escopo da aprovação:** comportamento do laboratório independente. Não aprova substituição na interface da partida oficial, nem efeitos permanentes ou save/reload do jogo oficial.
+
+**Próxima execução sugerida:** `tests/coach-sponsorship-complete.test.cjs` (6 casos declarados), com saída TAP e código de saída capturados.
+
+
+## A01.8 — Evidência TAP: patrocínios do treinador (22/10/2026)
+
+**Fonte:** relatório TAP enviado pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/coach-sponsorship-complete.test.cjs`.
+**Resultado:** 6 testes, 6 aprovados, 0 falhas, 0 cancelados, 0 pulados; `EXIT_CODE=0`; duração 114.1889 ms.
+
+| Cenário | Estado |
+|---|---|
+| Propostas iniciais estáveis e sobrevivem ao save | PASS |
+| Contrato e parcelas creditadas uma única vez após reload | PASS |
+| Exclusividade esportiva bloqueia concorrentes | PASS |
+| Expiração, bônus e renovação são idempotentes | PASS |
+| Painel/popup ligados à proposta correta | PASS |
+| Interface mostra parcelas, datas e histórico persistidos | PASS |
+
+**Acumulado comprovado:** A01.6 (5) + A01.7 (4) + A01.8 (6) = **15/15**, zero falhas. Acentos corrompidos no arquivo de log não representam falhas nos testes.
+
+**Limite:** cenários automatizados aprovados; validação manual da interação real e da UI completa continua pendente.
+
+**Próxima execução:** `tests/central-official-competition-context.test.cjs` (7 cenários de contexto das competições, navegação e save/reload). Não incluir alterações do calendário europeu ainda em validação na outra branch.
+
+
+## A01.9 — TAP: contexto oficial da Central de Competições (22/10/2026)
+
+**Origem:** log TAP fornecido pelo usuário, na branch `feature/fc27-career-global-audit`.
+**Teste:** `tests/central-official-competition-context.test.cjs`.
+**Resultado:** `tests=7`, `pass=7`, `fail=0`, `skipped=0`, `cancelled=0`, `EXIT_CODE=0`; duração 85.5553 ms.
+
+Cenários aprovados: (1) classificação e navegação da liga nacional; (2) EFL Cup usa fase correta; (3) confrontos e classificados da FA Cup; (4) final única da Community Shield; (5) fase de liga e mata-mata UCL/UEL/UECL; (6) grupos e chaveamento da Libertadores/Sul-Americana; (7) save/reload com contexto e navegação corretos.
+
+**Acumulado verificado por TAP enviado:** A01.6 5 + A01.7 4 + A01.8 6 + A01.9 7 = **22/22 aprovados**, zero falhas.
+
+**Limite:** estes são testes focalizados de contexto e navegação, não comprovação de progressão de competições ao longo de temporadas. A branch paralela de calendário continua separada.
+
+**Próximo teste isolado:** `tests/coach-2029-central-integration.test.cjs`, para verificar a integração com agenda e histórico em 2029.
+
+
+## A01.10 — TAP: Central Premier League + Champions em 2029 (22/10/2026)
+
+**Origem:** saída TAP enviada pelo usuário, branch `feature/fc27-career-global-audit`.
+**Teste:** `tests/coach-2029-central-integration.test.cjs`.
+**Resultado:** `tests=1`, `pass=1`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração total **111458.4509 ms** (aprox. 1m51s). O único caso validado foi «Central preserva histórico e agenda Premier + Champions em 2029».
+
+**Acumulado comprovado de saídas TAP enviadas:** 5 + 4 + 6 + 7 + 1 = **23/23 aprovados**, sem falhas.
+
+**Limite da conclusão:** garante apenas o cenário de integração implementado nesse arquivo; não confirma todos os calendários europeus, outros anos ou a branch paralela em validação.
+
+**Próximo teste proposto:** `tests/english-cups-engine-integration.test.cjs` isoladamente na branch de auditoria, sem mesclar `fix/english-cups-calendar-2026`.
+
+
+## A01.11 — TAP: integração Premier / copas inglesas / UEFA (22/10/2026)
+
+**Origem:** saída TAP compartilhada pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/english-cups-engine-integration.test.cjs`.
+**Resultado:** `tests=1`, `pass=1`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração total 6832.7959 ms.
+
+**Caso aprovado:** «motor oficial integra Premier, copas inglesas e competição UEFA no mesmo calendário».
+
+**Acumulado das execuções A01.6–A01.11:** **24 testes aprovados, 0 falhas**. Os caracteres acentuados corrompidos no log não afetam a interpretação do TAP.
+
+**Escopo:** somente cenário automatizado na branch de auditoria; não atesta todas as datas/temporadas nem incorpora mudanças da branch `fix/english-cups-calendar-2026`.
+
+**Próxima verificação:** teste de mercado `tests/market-stage7.test.cjs` e, posteriormente, validação de persistência e interface. Um teste por vez, mantendo logs TAP e `EXIT_CODE`.
+
+
+## A01.12 — TAP: mercado de transferências do jogador (22/10/2026)
+
+**Origem:** TAP fornecido pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/market-stage7.test.cjs`.
+**Resultado real:** `tests=8`, `pass=8`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração total 4153.4793 ms.
+
+Cenários aprovados: interesse segundo reputação e concorrência; recusa com cooldown sem duplicação; extensão do prazo; acordo fora da janela sem conflito; efetivação na janela com histórico e entrada no elenco; agência/agente persistentes; preservação do protagonista no roster e rejeição de transferência sem proposta; save/load preserva vínculo, contrato e clube.
+
+**Acumulado A01.6–A01.12: 32/32 testes aprovados, zero falhas.**
+
+**Limites:** cobertura exclusiva dos cenários do arquivo; não valida integralmente a negociação visual nem o mercado do treinador. Próxima etapa sugerida: `tests/world-career-market-stage28c.test.cjs`, teste de catálogo global e mercado do jogador.
+
+**Observação:** mudanças registradas aqui são somente documentais. Sem alteração de regras ou saves.
+
+
+## A01.13 — TAP: mercado global do jogador (22/10/2026)
+
+**Origem:** log TAP enviado pelo usuário; `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/world-career-market-stage28c.test.cjs`.
+**Resultado:** `tests=7`, `pass=7`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração 4203.9012 ms.
+
+Passaram os cenários: catálogo local/global; resolução `club()` global; mercado gerando clube global; transferência com identidade preservada; não duplicação do protagonista; clube global com liga/proposta contratual; IDs de mercado válidos.
+
+**Acumulado A01.6–A01.13:** **39/39 aprovados**, zero falhas, sem testes pulados nas saídas compartilhadas.
+
+**Limite:** valida o motor do mercado global nesses cenários, não valida integralmente interface, IA em múltiplas temporadas ou decisões de negociação do treinador.
+
+**Próximo teste sugerido:** `tests/player-profile.test.cjs` (GER, dados canônicos do perfil e progressão), seguido de validações específicas de carreira e salvamento.
+
+
+## A01.14 — TAP: perfil e histórico de GER do jogador (22/10/2026)
+
+**Origem:** log TAP fornecido pelo usuário, branch `feature/fc27-career-global-audit`.
+**Teste:** `node --test --test-reporter=tap tests/player-profile.test.cjs`.
+**Resultado:** `tests=3`, `pass=3`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração 1173.7349 ms.
+
+Casos aprovados: (1) perfil Meu Jogador usa fontes canônicas; (2) histórico de overall não inventa passado e sobrevive à serialização; (3) overall permanece ponderado por posição.
+
+**Acumulado A01.6–A01.14: 42/42 testes aprovados, zero falhas.**
+
+**Limite:** estes testes não comprovam a evolução dinâmica de GER em múltiplas temporadas, consistência de todas as telas nem a experiência manual.
+
+**Próximo teste:** `tests/training-stage3.test.cjs` para verificar desenvolvimento e treinamento. Registrar TAP e código de saída real.
+
+
+## A01.15 — TAP: treinamento e evolução do jogador (22/10/2026)
+
+**Origem:** saída TAP compartilhada pelo usuário. Branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/training-stage3.test.cjs`.
+**Resultado:** `tests=9`, `pass=9`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`, duração total 11267.9845 ms.
+
+Casos aprovados:
+1. Treino manual gera nota/XP/progresso/energia e bloqueia repetição no mesmo dia.
+2. Progressão de atributo é gradual e fica mais cara em níveis altos.
+3. Idade e arquétipo influenciam eficiência.
+4. XP por partida considera posição e não é concedido duas vezes.
+5. Progresso sobrevive ao save e migra plano antigo.
+6. Treino automático ocorre em cada dia elegível e preserva preferências.
+7. Avanço de 30 dias equivale deterministicamente a 30 avanços diários quanto ao treino.
+8. Treino automático consome sessão diária, impedindo treino manual indevido.
+9. Troca de plano após sessão não permite segunda sessão indevida.
+
+**Acumulado de TAP A01.6–A01.15: 51/51 aprovados; zero falhas.**
+
+**Limite:** não demonstra visual de todas as telas nem progressão de múltiplas temporadas. Próxima checagem: testes de salvamento e continuidade de carreira, particularmente integração entre evolução e temporadas.
+
+
+## A01.16 — TAP: continuidade de carreira, saves e contratos (22/10/2026)
+
+**Origem:** log TAP enviado pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/career.test.cjs`.
+**Resultado:** `tests=27`, `pass=27`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração total 79339.6088 ms.
+
+**Cobertura demonstrada pelos testes:** mundo brasileiro com 4 ligas/80 clubes; 38 rodadas e históricos salváveis; limites de janelas, ofertas e contratações; compras pessoais e efeitos recorrentes; promessas à imprensa; transferências da IA sem duplicação; migração segura de saves antigos; rejeição de dados inválidos; bloqueios e preferências de ofertas; confiança, função no elenco e objetivos; contratos, renovações e agente; mídia e mundo vivo; rivalidades legadas persistidas; aposentadoria e transição para treinador; contagem contratual, contrapropostas, economia e clubes-alvo.
+
+**Achado A01-R12 refinado:** o caso `legacy tracks rivalries and survives old-save normalization` passou. Existe comportamento de rivalidades no domínio legado; a ausência dos arquivos separados `player-rivalries.js`/`player-j13-rivalries.js` não implica ausência total do recurso. Ainda é preciso auditar a implementação específica inspirada no FC 27.
+
+**Acumulado confirmado por TAP recebido:** A01.6–A01.16 = **78/78 aprovados, zero falhas**.
+
+**Limite:** cenários automatizados aprovados não validam a UI completa, todas as temporadas europeias nem toda a integração entre modos.
+
+**Próxima etapa de auditoria:** escolher teste de persistência/expansão separado (`tests/expansion.test.cjs`) e depois testar fluxo real da interface FC 27.
+
+
+## A01.17 — TAP: expansão, integridade e compatibilidade de saves (22/10/2026)
+
+**Origem:** arquivo de log enviado pelo usuário, `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/expansion.test.cjs`.
+**Resultado:** `tests=47`, `pass=47`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração **57897.2145 ms**.
+
+O conjunto inclui cobertura de: Séries C/D e respectivos elencos parciais; 27 habilidades de treino; estatísticas e ações de partida; seleção da equipe da temporada; taxa de agência; catálogo de copas e estaduais; save expandido round-trip; Copa do Brasil e estaduais; quatro acessos e rebaixamentos por divisão; prêmios; migração de calendário legado; rejeição de save corrompido; exportação, importação e reabertura manual; autosave; próximo compromisso; progresso de treino/GER; seleção brasileira; histórico e snapshots de temporada; progressão e arquétipos; identidade narrativa; preservação de times/estatísticas ao mudar de clube; importação de save válido maior que 8 MB.
+
+**Acumulado real de saídas TAP recebidas em A01.6–A01.17:** `125/125` aprovados, zero falhas.
+
+**Escopo da evidência:** testes automatizados de domínio e persistência aprovados nos cenários cobertos. Não demonstram a navegação completa do criador FC27 nem ações manuais na partida oficial.
+
+**Próximo foco:** `npm run test:ui` ou outro teste de interface específico, em cópia de trabalho isolada. O teste `tests/ui.test.cjs` usa fluxo legado para iniciar uma carreira e contém trecho de criação visual inalcançável; sua eventual aprovação não deve ser interpretada como prova de criação visual FC27.
+
+
+## A01.18 — Resultado real: teste procedural da interface (22/10/2026)
+
+**Origem:** saída de `npm run test:ui` enviada pelo usuário, branch `feature/fc27-career-global-audit`.
+
+O comando executa `node tests/ui.test.cjs`. Saídas:
+- `player: creation, proposals, every view, advances, match report, decisions, reload`
+- `coach: creation, proposals, every view, advances, match report, decisions, reload, tactics, lineup, license`
+- `save injection and invalid history: passed`
+- `published update checker: same version silent, new version prompts update`
+- `EXIT_CODE=0`
+
+**Conclusão:** regressão procedural de interface passou no cenário exercitado. **Não contabilizar casos TAP individuais**, pois esse script não imprimiu contagem. Acumulado anterior permanece **125/125 testes TAP aprovados**, além de **1 script de UI aprovado**.
+
+**Limite relevante:** `tests/ui.test.cjs:44-79` usa criação direta de estado legado e carrega o slot; trecho de criação via menu após o primeiro `return dom` é inalcançável. Portanto, sucesso do teste **não comprova** o fluxo de criação visual FC27 novo. Também não comprova substituições manuais na partida oficial.
+
+**Próximo passo de auditoria:** mapear testes FC27 específicos já presentes (criadores, menu de carreira, menus/fluxos de partida), escolher uma regressão focalizada, executar isoladamente e por fim fazer teste manual de criação em navegador sem usar saves reais.
+
+
+## A01.19 — TAP: criação de carreira do jogador (22/10/2026)
+
+**Origem:** TAP compartilhado pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/creation-stage14.test.cjs`.
+**Resultado:** 14 testes, 14 aprovados, 0 falhas, 0 ignorados, 0 cancelados, `EXIT_CODE=0`; duração total 24273.011 ms.
+
+Cenários aprovados: faixas de GER/idade/posição/arquétipo; personalização sem estados impossíveis; determinismo por seed; prévia e assinatura; oportunidades sem titularidade garantida; contrato, elenco e persistência; início sem assinatura; saves antigos; dificuldade; diversidade de atributos; orçamento de personalidade; compatibilidade do criador clássico; assistente UI de seis passos que preserva escolhas ao voltar; idade mínima de 14 anos.
+
+**Achado atualizado:** `tests/creation-stage14.test.cjs` comprova um fluxo automatizado de assistente visual de seis etapas, embora `tests/ui.test.cjs` tenha bloco inalcançável. É necessário confirmar a equivalência desse assistente ao criador FC27 atual, além do fluxo próprio do treinador.
+
+**Acumulado real de testes TAP A01.6–A01.19: 139/139 aprovados, sem falhas.** A execução adicional de `npm run test:ui` também passou, mas não foi convertida artificialmente em contagem TAP.
+
+**Próximo foco:** auditoria do criador FC27 específico de treinador e jogador; inspeção da navegação e teste manual isolado no navegador.
+
+
+## A01.20 — Inventário local de regressões de criação e FC27 (22/10/2026)
+
+**Origem:** saída de `Get-ChildItem .\\tests -Filter '*.test.cjs'` com filtro `fc27|creator|creation|coach|player|career` enviada pelo usuário. Branch `feature/fc27-career-global-audit`.
+
+**Resultado:** `TOTAL=182` arquivos de teste com nomes relacionados. O filtro é abrangente (especialmente `coach`) e não significa que os 182 cobrem criação.
+
+**Testes priorizados para validação isolada:**
+1. `tests/creator-wizard-flow.test.cjs` — wizard de criação.
+2. `tests/coach-creator-06b.test.cjs` — criador do treinador.
+3. `tests/fc27-engine-integration-stage34f12.test.cjs` — integração FC27.
+4. `tests/fc27-save-stage34f13.test.cjs` — persistência.
+5. `tests/fc27-indexeddb-stage34f16.test.cjs` — IndexedDB.
+6. `tests/fc27-catalog-choice-ui-stage34f14.test.cjs` — catálogo e escolhas pela UI.
+
+**Nota:** não há novos testes executados em A01.20; manter acumulado de **139/139 TAP** e `npm run test:ui` aprovado. Não afirmar que novos arquivos passaram antes de executá-los. Próximo A01.21: wizard isolado.
+
+
+## A01.21 — TAP: fluxo wizard de criação (22/10/2026)
+
+**Origem:** TAP fornecido pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/creator-wizard-flow.test.cjs`.
+**Resultado:** `tests=3`, `pass=3`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração 91.2389 ms.
+
+Casos aprovados: validação da oportunidade apenas no passo 4; avanço recupera o passo anterior caso render falhe; rendering da oferta aceita falta de dados de clube/competição.
+
+**Acumulado de TAP A01.6–A01.21: 142/142 aprovados, 0 falhas.** `npm run test:ui` passou separadamente sem contagem TAP.
+
+**Limite:** cenários específicos de fluxo/error handling, não toda a experiência do novo criador visual.
+
+**Próximo teste:** `tests/coach-creator-06b.test.cjs`, isolado na branch de auditoria.
+
+
+## A01.22 — TAP: criador do treinador — BLOQUEADO (22/10/2026)
+
+**Origem:** TAP enviado pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/coach-creator-06b.test.cjs`.
+**Resultado real:** `tests=21`, `pass=18`, `fail=3`, `cancelled=0`, `skipped=0`, `EXIT_CODE=1`, duração 1699.5075 ms.
+
+**Falhas:**
+- **Teste 13**, `tests/coach-creator-06b.test.cjs:223`: busca de primeiro clube pelo catálogo canônico, expected `['','c']`, actual `['','a','c']` (entrada `a` indevida).
+- **Teste 17**, `tests/coach-creator-06b.test.cjs:297`: seleção internacional de clubes, expected `['','betis']`, actual `['']` (Betis não encontrado).
+- **Teste 18**, `tests/coach-creator-06b.test.cjs:322`: seleção por cartões de clube com liga legível, `assert.ok(card)` falhou, cartão esperado ausente.
+
+**Investigação:** três falhas concentradas na busca/catálogo/renderização de clubes do criador do treinador. Causa raiz ainda não comprovada; NÃO afirmar que é apenas problema do teste. Demais 18 cenários aprovados (6 etapas, aparência, verba, persistência etc.).
+
+**Acumulado:** anteriores `142/142` TAP aprovados + `18/21` = **160 aprovados de 163 executados**, 3 falhas (não 157). `npm run test:ui` passou separadamente, sem total TAP. A01.22 bloqueia avanço de testes até triagem.
+
+**Próxima ação:** inspeção somente leitura dos trechos de teste (linhas 200–335), do módulo de busca/renderização de catálogo e eventuais diferenças de versões. Não editar gameplay/main/branch paralela, não mexer em saves. Usar comando único que gere `.txt` e abra Notepad.
+
+
+## A01.22.1 — Causas localizadas no código do criador do treinador (22/10/2026)
+
+**Evidência:** saída de leitura enviada pelo usuário para `tests/coach-creator-06b.test.cjs:195-335` e inspeção do arquivo `src/ui/coach-creator.js` na branch de auditoria, sem alteração de fonte.
+
+**Causa A: filtros descartados durante digitação.** Em `src/ui/coach-creator.js:125-129`, o handler de `clubSearch.input` limpa `countrySelect`, recompõe ligas e limpa `leagueSelect` quando busca não está vazia. Isso explica a falha 13: o clube `a` reaparece apesar da seleção de liga B.
+
+**Causa B: expressão regular de remoção de diacríticos incorreta.** Em `src/ui/coach-creator.js:75`, `normalize` usa classe de caracteres com barras duplicadas (`/[\\\\u0300-\\\\u036f]/g` representada com escapes nesta nota), em vez de intervalo Unicode de marcas combinantes. A implementação remove letras normais de determinados nomes: a avaliação Node do padrão mostrou `Real Betis` -> `eal etis`, enquanto `betis` -> `betis`. Isso explica falha 17 e o desaparecimento do cartão na falha 18.
+
+**Proposta de correção mínima, ainda NÃO aplicada:** normalizar diacríticos com classe Unicode correta (`/\u0300-\u036f/g` dentro da classe), e manter filtros de país/liga ao buscar (eventualmente incluir controle explícito para limpar filtros em outra alteração, mas não exigido). Revisar/rodar três falhas e suite completa antes de qualquer commit. Não alterar `main`, calendário paralelo, saves ou lógica de negociação.
+
+**Estado:** A01.22 bloqueada; último TAP `18/21`, acumulado `160/163`.
+
+
+## A01.22.3 — Correção local do criador do treinador: 21/21 TAP aprovados (22/10/2026)
+
+**Origem:** TAP informado pelo usuário após patch local em `src/ui/coach-creator.js`, em `feature/fc27-career-global-audit`.
+
+**Mudanças locais relatadas (NÃO publicadas):** em `normalize()`, substituir classe de caracteres indevida por intervalo de acentos correto; em `clubSearch.input`, preservar filtros de país/competição já selecionados. Backup informado em Downloads: `PRO_LIFE_COACH_CREATOR_BACKUP_1792672215427.js`. `node --check` antes do teste passou.
+
+**Reteste:** `node --test --test-reporter=tap tests/coach-creator-06b.test.cjs` → 21 testes, 21 aprovados, zero falhas/cancelamentos/ignorados, `EXIT_CODE=0`, duração 1937.8926 ms. Testes 13, 17 e 18 antes falhos agora estão todos verdes. `git status --short` indicou somente ` M src/ui/coach-creator.js`.
+
+**Acumulado A01.6–A01.22 após correção:** **163/163 testes TAP aprovados**. Anotar que A01.22 teve uma execução inicial 18/21 e um reteste 21/21 (não somar as duas execuções ao total único).
+
+**PENDENTE:** verificar `git diff --check`, diff exato da fonte, e regressão geral de interface antes de solicitar aprovação explícita para commit/push. Patch de fonte NÃO foi commitado ou enviado ao GitHub por esta ação de documentação.
+
+
+## A01.22.4 — Revisão de regressão do patch local (22/10/2026)
+
+**Evidência:** log do usuário de `git diff --check`, `npm run test:ui`, diff exato e `git status --short` na branch `feature/fc27-career-global-audit`.
+
+- `DIFF_EXIT_CODE=0` (nenhum erro de whitespace).
+- `TEST_EXIT_CODE=0`, script `npm run test:ui` aprovado: criação/jogo/relatórios/reload do jogador e treinador, injeção inválida de save, update checker.
+- Diff restrito a `src/ui/coach-creator.js`:
+  1. Linha `normalize`: trocar expressão regular com barras duplicadas por intervalo `[\u0300-\u036f]`, preservando NFD e lowercase pt-BR.
+  2. Handler `clubSearch.input`: substituir limpador automático de filtros por `filterClubs`, mantendo país/liga selecionados.
+- `git status --short`: apenas ` M src/ui/coach-creator.js`.
+- Reteste A01.22.3 já validou `21/21` casos TAP, incluindo 13/17/18 originalmente falhos. Acumulado TAP auditado `163/163`, além de teste UI procedural aprovado.
+
+**Estado:** patch **somente local**, sem commit/push do arquivo de gameplay. Aguardar aprovação explícita do usuário para commit/publicação. A documentação pode ser atualizada sem alterar o jogo.
