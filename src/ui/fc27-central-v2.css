@@ -66,3 +66,115 @@ body:has(.fc27-central-v2-approved){background:#06111e!important}
  .fc27-central-v2-approved>.central-v3-grid>.central-v3-tile{grid-column:1!important;grid-row:auto!important}
  .fc27-central-v2-approved .fc27-v2-number strong{font-size:20px}
 }
+
+/* 2.0.1 — Reparação da composição verificada no print: os wrappers não
+   podem participar da grade como colunas estreitas ou cair após o rodapé. */
+@media (min-width:1200px) {
+ body:has(.fc27-central-v2-approved) .career-dashboard.fc27-central-v2-approved{
+   display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;
+   grid-template-rows:auto minmax(410px,auto) minmax(245px,auto) auto auto!important;
+   align-items:stretch!important;gap:12px!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-header{
+   grid-column:1/-1!important;grid-row:1!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-hero{
+   grid-column:1/7!important;grid-row:2!important;min-height:410px!important;
+   height:auto!important;display:block!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.fc27-v2-board,
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-grid{
+   display:contents!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.fc27-v2-board>.fc27-v2-calendar{
+   grid-column:7/10!important;grid-row:2!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.fc27-v2-board>.fc27-v2-competitions{
+   grid-column:10/13!important;grid-row:2!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.fc27-v2-board>.fc27-v2-summary{
+   grid-column:1/7!important;grid-row:3!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-grid>.central-v3-form{
+   grid-column:7/10!important;grid-row:3!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.fc27-v2-board>.fc27-v2-alerts{
+   grid-column:10/13!important;grid-row:3!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-grid>.fc27-bottom-news{
+   grid-column:1/5!important;grid-row:4!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-grid>.fc27-bottom-objectives{
+   grid-column:5/9!important;grid-row:4!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-grid>.central-v3-tasks{
+   grid-column:9/13!important;grid-row:4!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-context{
+   grid-column:1/-1!important;grid-row:5!important
+ }
+}
+body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-hero{
+  grid-template-columns:minmax(0,1fr)!important
+}
+body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-hero>.central-v3-player{
+  display:none!important
+}
+body:has(.fc27-central-v2-approved) .fc27-central-v2-approved .central-v3-match{
+  padding:clamp(18px,2vw,30px)!important
+}
+body:has(.fc27-central-v2-approved) .fc27-central-v2-approved .central-v3-actions{
+  display:flex!important;flex-wrap:wrap!important;gap:7px!important
+}
+body:has(.fc27-central-v2-approved) .fc27-central-v2-approved .central-v3-actions>button{
+  flex:1 1 165px!important;width:auto!important;min-height:40px!important
+}
+body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-grid>.central-v3-table{
+  display:none!important
+}
+body:has(.fc27-central-v2-approved) .fc27-central-v2-approved .fc27-v2-panel{
+  display:block!important;min-width:0!important;width:auto!important;
+  margin:0!important;height:auto!important;overflow:hidden!important
+}
+body:has(.fc27-central-v2-approved) .fc27-central-v2-approved .fc27-v2-competition,
+body:has(.fc27-central-v2-approved) .fc27-central-v2-approved .fc27-v2-alert{
+  width:100%!important;white-space:normal!important;min-width:0!important
+}
+@media(min-width:761px) and (max-width:1199px){
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.fc27-v2-board{
+   display:grid!important;grid-column:1/-1!important;grid-row:3!important;
+   grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.fc27-v2-board>.fc27-v2-panel{
+   grid-column:auto!important;grid-row:auto!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-grid{
+   display:grid!important;grid-column:1/-1!important;grid-row:4!important;
+   grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-grid>.central-v3-tile{
+   grid-column:auto!important;grid-row:auto!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-context{
+   grid-column:1/-1!important;grid-row:5!important
+ }
+}
+@media(max-width:760px){
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.fc27-v2-board{
+   display:grid!important;grid-column:1/-1!important;grid-row:3!important;
+   grid-template-columns:minmax(0,1fr)!important;gap:10px!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.fc27-v2-board>.fc27-v2-panel{
+   grid-column:1!important;grid-row:auto!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-grid{
+   display:grid!important;grid-column:1/-1!important;grid-row:4!important;
+   grid-template-columns:minmax(0,1fr)!important;gap:10px!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-grid>.central-v3-tile{
+   grid-column:1!important;grid-row:auto!important
+ }
+ body:has(.fc27-central-v2-approved) .fc27-central-v2-approved>.central-v3-context{
+   grid-column:1/-1!important;grid-row:5!important
+ }
+}
