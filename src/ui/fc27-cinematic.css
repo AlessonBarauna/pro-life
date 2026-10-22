@@ -78,3 +78,82 @@ body:has(.career-central-v3) nav button.active,body:has(.career-central-v3) .top
 @media(max-width:1320px){.career-dashboard.career-central-v3{width:calc(100% - 22px)!important}.career-central-v3>.central-v3-hero{grid-column:1/9!important}.career-central-v3 .central-v3-match{padding:18px!important}.career-central-v3 .central-v3-team strong{font-size:16px!important}.career-central-v3 .central-v3-form-row{min-height:144px!important}}
 @media(max-width:1060px){.career-dashboard.career-central-v3{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:none!important}.career-central-v3>.central-v3-header{grid-column:1/-1!important;grid-row:auto!important}.career-central-v3>.central-v3-hero{grid-column:1/-1!important;grid-row:auto!important}.career-central-v3 .central-v3-table,.career-central-v3 .central-v3-form,.career-central-v3 .central-v3-tasks,.career-central-v3 .fc27-bottom-news,.career-central-v3 .fc27-bottom-objectives{grid-column:auto!important;grid-row:auto!important}.career-central-v3>.central-v3-context{grid-column:1/-1!important;grid-row:auto!important}}
 @media(max-width:650px){.career-dashboard.career-central-v3{grid-template-columns:1fr!important;width:calc(100% - 16px)!important}.career-central-v3>.central-v3-hero{grid-template-columns:1fr!important;min-height:0!important}.career-central-v3 .central-v3-player{border-left:0!important;border-top:1px solid rgba(192,232,238,.23)!important}.career-central-v3 .central-v3-avatar{max-height:250px!important}.career-central-v3 .central-v3-table,.career-central-v3 .central-v3-form,.career-central-v3 .central-v3-tasks,.career-central-v3 .fc27-bottom-news,.career-central-v3 .fc27-bottom-objectives{grid-column:1!important}.career-central-v3 .central-v3-actions{grid-template-columns:1fr!important}}
+
+
+/* PROLIFE-31012R-PRIORIDADES
+   Corrige conflitos de grid na agenda da Central.
+   Mantem os cartoes em linhas e evita textos verticais.
+*/
+body .career-central-v3 .central-v3-tasks {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  min-width: 0 !important;
+}
+
+body .career-central-v3 .central-v3-tasks > .central-v3-task {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-rows: auto auto auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  box-sizing: border-box !important;
+  gap: 5px 12px !important;
+  padding: 13px 0 !important;
+  margin: 0 !important;
+  border-bottom: 1px solid rgba(255,255,255,.09) !important;
+  background: transparent !important;
+}
+
+body .career-central-v3 .central-v3-tasks > .central-v3-task > small {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+}
+
+body .career-central-v3 .central-v3-tasks > .central-v3-task > b {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  min-width: 0 !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+  white-space: normal !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+}
+
+body .career-central-v3 .central-v3-tasks > .central-v3-task > span {
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+  min-width: 0 !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+  white-space: normal !important;
+}
+
+body .career-central-v3 .central-v3-tasks > .central-v3-task > button {
+  grid-column: 2 !important;
+  grid-row: 1 / 4 !important;
+  align-self: center !important;
+  width: auto !important;
+  min-width: 100px !important;
+  max-width: 150px !important;
+  margin: 0 !important;
+  padding: 9px 12px !important;
+  white-space: normal !important;
+}
+
+@media (max-width: 650px) {
+  body .career-central-v3 .central-v3-tasks > .central-v3-task {
+    grid-template-columns: minmax(0,1fr) !important;
+  }
+
+  body .career-central-v3 .central-v3-tasks > .central-v3-task > button {
+    grid-column: 1 !important;
+    grid-row: 4 !important;
+    justify-self: start !important;
+    width: auto !important;
+  }
+}

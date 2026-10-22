@@ -436,6 +436,12 @@
   function daily(s,api,hooks){
     if(!isCoach(s))return null;
     state(s);
+    const currentClub=clubOf(s,api),economy=root.ProLifeClubEconomy,brands=root.ProLifeCommercial?.brands||[];
+    if(currentClub&&economy){
+      economy.processSponsorshipLifecycle?.(s,currentClub,brands);
+      economy.processRevenuePayments?.(s,currentClub);
+      economy.processSponsorshipBonuses?.(s,currentClub,tableOf(s,api,currentClub));
+    }
     root.ProLifeCoachScoutingV2?.advance?.(s);
     settleInquiries(s,api);
     settleTransferReplies(s);

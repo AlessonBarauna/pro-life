@@ -25,6 +25,7 @@
   const NI=()=>root.ProLifeNationalIdentity||(typeof require==="function"?require("./national-identity.js"):null);
   const GFb=()=>root.ProLifeGlobalFootball||(root.ProLife&&root.ProLife.GlobalFootball)||(typeof require==="function"?require("./global-football.js"):null);
   const WCC=()=>root.ProLifeWorldClubCompetitions||(root.ProLife&&root.ProLife.WorldClubCompetitions)||(typeof require==="function"?require("./world-club-competitions.js"):null);
+  const EnglishCups=()=>root.ProLifeEnglishCups||(typeof require==="function"?require("./english-cups.js"):null);
   const FIRST=10,LAST=340;
 
   function state(s){
@@ -85,6 +86,23 @@
     ids.sort((x,y)=>prestige(s,y)-prestige(s,x)||(x<y?-1:1));
     return {order:ids,source:"bootstrap"};
   }
+  // A Inglaterra distribui sete vagas totais: 4 UCL, 2 UEL (inclui FA Cup)
+  // e 1 UECL (inclui EFL Cup). Se um campeão já estiver em nível superior,
+  // a vaga volta à classificação da Premier League; nunca cria vaga adicional.
+  function associationQuota(a,comp){
+    if(a.code==="ENG")return comp==="ucl"?4:comp==="uel"?2:comp==="uecl"?1:0;
+    return uefaQuota(a.rank,comp);
+  }
+  function englishEuropeanAllocation(order,cups={}){
+    const available=Array.from(new Set(order||[])),used=new Set(),takeLeague=n=>{const out=[];if(n<=0)return out;for(const id of available)if(!used.has(id)){used.add(id);out.push(id);if(out.length===n)break;}return out;};
+    const ucl=takeLeague(4),uel=[];
+    if(cups.faCupWinner&&available.includes(cups.faCupWinner)&&!used.has(cups.faCupWinner)){used.add(cups.faCupWinner);uel.push(cups.faCupWinner);}
+    uel.push(...takeLeague(2-uel.length));
+    const uecl=[];
+    if(cups.eflCupWinner&&available.includes(cups.eflCupWinner)&&!used.has(cups.eflCupWinner)){used.add(cups.eflCupWinner);uecl.push(cups.eflCupWinner);}
+    uecl.push(...takeLeague(1-uecl.length));
+    return {ucl,uel,uecl,all:[...ucl,...uel,...uecl]};
+  }
   function build(s,comp,season){
     const as=associations(s),def=COMPS[comp],entrants=[],used=new Set(),reasons=[];let source="previous_season";
     const claimed=new Set();
@@ -92,12 +110,20 @@
     const list=def.conf==="UEFA"?as.uefa:as.conmebol;
     for(const a of list){
       const rk=ranking(s,a,season);if(rk.source==="bootstrap")source="bootstrap";
-      const q=def.conf==="UEFA"?uefaQuota(a.rank,comp):((comp==="lib"?LIB_QUOTA:SUD_QUOTA)[a.code]||0);
+      const q=def.conf==="UEFA"?associationQuota(a,comp):((comp==="lib"?LIB_QUOTA:SUD_QUOTA)[a.code]||0);
       // vagas das competicoes de nivel superior sao consumidas primeiro (a vaga desce para o proximo colocado)
       let skip=0;
-      if(def.conf==="UEFA"){for(const hi of ["ucl","uel"]){if(COMPS[hi].tier<def.tier)skip+=uefaQuota(a.rank,hi);}}
+      if(def.conf==="UEFA"){for(const hi of ["ucl","uel"]){if(COMPS[hi].tier<def.tier)skip+=associationQuota(a,hi);}}
       else if(comp==="sud")skip=LIB_QUOTA[a.code]||0;
       let taken=0,pos=0;
+      if(def.conf==="UEFA"&&a.code==="ENG"&&(comp==="uel"||comp==="uecl")){
+        const cups=EnglishCups()?.europeanQualifiers?.(s,season-1)||{};
+        const cupId=comp==="uel"?cups.faCupWinner:cups.eflCupWinner;
+        if(cupId&&rk.order.includes(cupId)&&!claimed.has(cupId)&&!used.has(cupId)){
+          entrants.push([cupId,a.code,comp==="uel"?"campeão-fa-cup":"campeão-efl-cup",rk.order.indexOf(cupId)+1]);
+          used.add(cupId);taken++;
+        }
+      }
       for(const id of rk.order){
         pos++;if(pos<=skip||claimed.has(id)||used.has(id))continue;
         if(taken>=q)break;
@@ -141,6 +167,10 @@
 
         for(const a of countries){
           if(ed.entrants.length>=limit)break;
+
+          // A complementação do catálogo não pode criar vagas inglesas extras.
+          const already=ed.entrants.filter(e=>e[1]===a.code).length;
+          if(a.code==="ENG"&&already>=associationQuota(a,id))continue;
 
           const order=ranking(s,a,ed.season).order;
           const pos=order.findIndex(clubId=>!selected.has(clubId));
@@ -241,7 +271,7 @@
     if(!s.clubId)return [];
     return editions(s,s.season).filter(e=>e.entrants.some(x=>x[0]===s.clubId)).map(e=>({comp:e.comp,name:COMPS[e.comp].name,status:e.status,via:e.entrants.find(x=>x[0]===s.clubId)[2]}));
   }
-  const api={VERSION,COMPS,PLANNED,init,state,edition,editions,ensureEdition,closeSeason,startSeason,associations,clubCountry,windows,slotFor,auditCalendar,heroEntries,uefaQuota,LIB_QUOTA,SUD_QUOTA};
+  const api={VERSION,COMPS,PLANNED,init,state,edition,editions,ensureEdition,closeSeason,startSeason,associations,clubCountry,windows,slotFor,auditCalendar,heroEntries,uefaQuota,associationQuota,englishEuropeanAllocation,LIB_QUOTA,SUD_QUOTA};
   root.ProLifeContinental=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

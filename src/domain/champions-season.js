@@ -86,7 +86,7 @@ function processDay(s,C,W,hooks={}){
   let waitingHero=0;
 
   for(const match of due){
-    const isHero=s.mode==="player"&&
+    const isHero=["player","coach"].includes(s.mode)&&
       [match.homeId,match.awayId].includes(s.clubId);
 
     const resolver=isHero?hooks.heroFixture:hooks.otherFixture;

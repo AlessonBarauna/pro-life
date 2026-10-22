@@ -606,6 +606,53 @@
   }
 
 
+  function renderSponsorships(s,D){
+    const money = value => Number(value || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      maximumFractionDigits: 2
+    });
+    const own=D.club(s),economy=root.ProLifeClubEconomy,brands=root.ProLifeCommercial?.brands||[];
+    if(!own||!economy)return css()+'<section class="cc-dark"><section class="cc-card"><h2>Patrocínios do clube</h2><p class="cc-note">Assine com um clube para administrar contratos comerciais.</p></section></section>';
+    economy.initializeSponsorships?.(s,own,brands);
+    const finance=s.coachCareer?.finance||{},offers=finance.sponsorshipOffers||[],contracts=(finance.revenueContracts||[]).filter(x=>x.type==="sponsorship"&&String(x.clubId)===String(own.id));
+    const pending=offers.filter(x=>["pending","proposal","awaiting_brand","counter","brand_accepted","brand_countered"].includes(x.status));
+    const concluded=offers.filter(x=>!["pending","proposal","awaiting_brand","counter","brand_accepted","brand_countered"].includes(x.status));
+    const statusLabel={pending:"Pendente",proposal:"Pendente",awaiting_brand:"Aguardando resposta",counter:"Aguardando resposta",brand_accepted:"Marca aceitou",brand_countered:"Contraproposta da marca",brand_rejected:"Recusada pela marca",accepted:"Ativa",rejected:"Recusada",expired:"Expirada"};
+    const proposalCard=o=>{
+      const conflict=economy.sponsorshipConflict?.(s,o),days=Math.max(0,Number(o.responseExpiresDay??o.expiresDay)-Number(s.day));
+      const annual=Number(o.brandCounterAmount||o.counterAmount||o.annualAmount)||0;
+      const decision=["pending","proposal"].includes(o.status)?
+        '<div class="cc-deal-actions"><button type="button" data-coach-sponsor-accept="'+esc(o.id)+'"'+(conflict?' disabled aria-disabled="true"':'')+'>Aceitar</button><button type="button" data-coach-sponsor-reject="'+esc(o.id)+'">Recusar</button><button type="button" data-coach-sponsor-counter="'+esc(o.id)+'" data-coach-sponsor-base="'+esc(o.annualAmount)+'">Enviar contraproposta</button></div>':
+        o.status==="brand_accepted"?'<div class="cc-deal-actions"><button type="button" data-coach-sponsor-accept="'+esc(o.id)+'"'+(conflict?' disabled aria-disabled="true"':'')+'>Assinar</button><button type="button" data-coach-sponsor-decline="'+esc(o.id)+'">Recusar</button></div>':
+        o.status==="brand_countered"?'<div class="cc-deal-actions"><button type="button" data-coach-sponsor-accept="'+esc(o.id)+'"'+(conflict?' disabled aria-disabled="true"':'')+'>Aceitar contraproposta</button><button type="button" data-coach-sponsor-decline="'+esc(o.id)+'">Recusar</button></div>':'';
+      return '<article class="cc-card cc-deal" id="club-sponsor-offer-'+esc(o.id)+'"><div><small>'+esc(statusLabel[o.status]||o.status)+' · '+esc(o.label)+'</small><h3>'+esc(o.brandName)+'</h3><div class="profile-data"><span>Valor anual <b>'+money(annual)+'</b></span><span>Duração <b>'+Math.round(Number(o.durationDays)/365)+' temporada</b></span><span>Pagamento <b>'+esc(o.paymentFrequency==="monthly"?'Mensal':'Personalizado')+'</b></span><span>Prazo <b>'+days+' dia(s)</b></span></div><p class="cc-note"><b>Bônus:</b> '+esc(o.bonus?.label||"Sem bônus")+(o.bonus?.amount?' · '+money(o.bonus.amount):'')+'<br><b>Obrigações:</b> '+esc((o.obligations||[]).join(" · ")||"Nenhuma obrigação adicional")+'<br><b>Exclusividade:</b> '+esc(o.exclusive?'Exclusiva na categoria e em grupos conflitantes':'Não exclusiva, respeitando conflitos de marca')+'</p>'+(conflict?'<p class="cc-note bad"><b>Incompatível:</b> '+esc(conflict.reason)+' Contrato atual: '+esc(conflict.contract.brandName||"vigente")+'.</p>':'')+'</div>'+decision+'</article>';
+    };
+    const contractById=new Map(contracts.map(x=>[x.id,x]));
+    const installmentTotal=x=>Math.max(0,Math.floor((Number(x.endDay)-Number(x.startDay))/(Number(x.paymentIntervalDays)||30)));
+    const contractCard=x=>{
+      const total=installmentTotal(x),received=(x.postedPeriods||[]).length;
+      const installment=Math.round(Number(x.annualAmount||0)/Math.max(1,Math.round(365/(Number(x.paymentIntervalDays)||30))));
+      const remaining=Math.max(0,total*installment-Number(x.postedAmount||0));
+      const receivedTotal=(finance.revenueHistory||[]).filter(row=>row.contractId===x.id&&["payment","bonus"].includes(row.event)).reduce((sum,row)=>sum+Number(row.amount||0),0);
+      return '<article class="cc-card"><small>'+esc(x.status==="ended"?'ENCERRADO':x.status==="scheduled"?'AGENDADO':'ATIVO')+' · '+esc(x.sponsorRoleLabel||x.sponsorRole||"Patrocínio")+'</small><h3>'+esc(x.brandName||"Patrocinador")+'</h3><p><b>Categoria:</b> '+esc(x.brandCategory||"Não informada")+'<br><b>Valor anual:</b> '+money(x.annualAmount)+'<br><b>Início:</b> '+careerDate(s,x.startDay)+' · <b>Fim:</b> '+careerDate(s,x.endDay)+'<br><b>Parcelas recebidas:</b> '+esc(received)+' de '+esc(total)+'<br><b>Total recebido:</b> '+money(receivedTotal)+'<br><b>Valor contratual ainda previsto:</b> '+money(remaining)+'<br><b>Condição de bônus:</b> '+esc(x.bonus?.label||"Não previsto")+(x.bonus?.amount?' · '+money(x.bonus.amount):'')+'<br><b>Exclusividade:</b> '+esc(x.exclusive?'Exclusiva na categoria e nos grupos contratuais':'Não exclusiva, respeitando conflitos contratuais')+'</p></article>';
+    };
+    const history=(finance.revenueHistory||[]).filter(x=>contractById.has(x.contractId)).slice().sort((a,b)=>Number(b.day)-Number(a.day)||String(b.paymentId||"").localeCompare(String(a.paymentId||"")));
+    const schedule=(economy.revenueSchedule?.(s,own.id)||[]).filter(x=>contractById.has(x.contractId));
+    const historyRow=x=>{
+      const contract=contractById.get(x.contractId),type=x.event==="payment"?'Parcela':x.event==="bonus"?'Bônus':'Registro contratual';
+      const installment=x.event==="payment"?' · parcela '+esc(x.period)+'/'+esc(installmentTotal(contract)):'';
+      const status=x.event==="registered"?'Registrado sem crédito':'Recebido';
+      return '<p><b>'+esc(contract?.brandName||x.brandName||"Patrocinador")+'</b> · '+esc(contract?.brandCategory||"Categoria não informada")+' · '+careerDate(s,x.day)+' · '+type+installment+' · <b>'+money(x.amount||0)+'</b> · '+status+'</p>';
+    };
+    return css()+'<section class="cc-dark cc-market-screen"><header class="cc-market-screen-head"><small>CLUBE · FINANCEIRO · PATROCÍNIOS</small><h2>Patrocínios do clube</h2><p class="cc-note">'+esc(own.name)+' · propostas, contratos, pagamentos e metas comerciais persistidos nesta carreira.</p></header>'+
+      '<section class="cc-card"><h3>Propostas aguardando resposta</h3>'+(pending.length?pending.map(proposalCard).join(""):'<p class="cc-note">Nenhuma proposta pendente.</p>')+'</section>'+
+      '<section class="cc-card"><h3>Contratos ativos e encerrados</h3><div class="grid3">'+(contracts.length?contracts.map(contractCard).join(""):'<p class="cc-note">Nenhum contrato assinado.</p>')+'</div></section>'+
+      '<section class="cc-card"><h3>Próximos pagamentos</h3>'+(schedule.length?schedule.slice(0,12).map(x=>{const contract=contractById.get(x.contractId);return '<p><b>'+esc(contract?.brandName||"Patrocinador")+'</b> · '+esc(contract?.brandCategory||"Categoria não informada")+' · '+careerDate(s,x.dueDay)+' · parcela '+esc(x.period)+'/'+esc(installmentTotal(contract))+' · <b>'+money(x.expectedAmount)+'</b> · Previsto</p>';}).join(""):'<p class="cc-note">Nenhuma parcela futura agendada.</p>')+'</section>'+
+      '<section class="cc-card"><h3>Histórico de pagamentos e bônus</h3>'+(history.length?history.map(historyRow).join(""):'<p class="cc-note">Nenhum lançamento financeiro.</p>')+'</section>'+
+      '<section class="cc-card"><h3>Propostas encerradas</h3>'+(concluded.length?concluded.map(proposalCard).join(""):'<p class="cc-note">Nenhuma proposta encerrada.</p>')+'</section></section>';
+  }
+
   function settings(s){
     const difficulty=String(s.coachCareer?.settings?.marketStrictness||"normal");
     const marketDifficultyPanel='<section class="cc-card" aria-label="Rigor das negociações"><h4>Rigor das negociações</h4>'+
@@ -662,7 +709,7 @@
     return css()+marketCss()+'<section class="cc-dark cc-market-screen"><div class="cc-market-heading"><small>CENTRAL DE TRANSFERÊNCIAS</small><h2>Mercado de jogadores</h2><p class="cc-note">'+esc(own?.name||"Sem clube")+' · Temporada '+esc(s.season)+' · Orçamento '+esc(budget)+'</p></div>'+intro+navigation+negotiations(s,D)+'</section>';
   }
 
-  const api={render,renderMarket,state:ui,esc,setTab:id=>{if(TABS.some(x=>x[0]===id))ui.tab=id;},openSigning:id=>{ui.selectedSigning=String(id);ui.dealTab="reforcos";},closeSigning:()=>{ui.selectedSigning=null;},setDealTab:id=>{if(["lista","recebidas","propostas","emprestimos","financeiro","contratos","clausulas","historico","reforcos"].includes(id))ui.dealTab=id;},openDeal:id=>{ui.selectedDeal=id;ui.dealTab="propostas";},startOffer:(clubId,playerId,suggestedOffer)=>{ui.draftOffer={clubId,playerId,suggestedOffer};ui.selectedDeal=null;ui.dealTab="propostas";ui.marketArea="transferencias";},clearOffer:()=>{ui.draftOffer=null;},closeDeal:()=>{ui.selectedDeal=null;},setMarketArea:id=>{if(["observacao","transferencias"].includes(id))ui.marketArea=id;},selectScoutPlayer:id=>{ui.selectedScoutPlayer=String(id);ui.scoutScreen="busca";},setScoutScreen:id=>{if(["busca","alvos","olheiros","recomendacoes"].includes(id))ui.scoutScreen=id;},setScoutPage:direction=>{ui.scoutPage=Math.max(0,ui.scoutPage+(direction==="next"?1:-1));},setScoutFilters:(query,pos,filters={})=>{ui.scoutPage=0;ui.scoutQuery=String(query||"").slice(0,80);ui.scoutPosition=["all","GOL","ZAG","LD","LE","LAT","VOL","MC","MD","ME","MEI","PD","PE","ATA"].includes(pos)?pos:"all";ui.scoutClub=String(filters.club||"").slice(0,100);ui.scoutCompetition=String(filters.competition||"").slice(0,100);ui.scoutCountry=String(filters.country||"all");ui.scoutAge=["all","under18","under21","under23","23to29","30plus"].includes(filters.age)?filters.age:"all";ui.scoutCategory=["all","promises","free","listed"].includes(filters.category)?filters.category:"all";}};
+  const api={render,renderMarket,renderSponsorships,state:ui,esc,setTab:id=>{if(TABS.some(x=>x[0]===id))ui.tab=id;},openSigning:id=>{ui.selectedSigning=String(id);ui.dealTab="reforcos";},closeSigning:()=>{ui.selectedSigning=null;},setDealTab:id=>{if(["lista","recebidas","propostas","emprestimos","financeiro","contratos","clausulas","historico","reforcos"].includes(id))ui.dealTab=id;},openDeal:id=>{ui.selectedDeal=id;ui.dealTab="propostas";},startOffer:(clubId,playerId,suggestedOffer)=>{ui.draftOffer={clubId,playerId,suggestedOffer};ui.selectedDeal=null;ui.dealTab="propostas";ui.marketArea="transferencias";},clearOffer:()=>{ui.draftOffer=null;},closeDeal:()=>{ui.selectedDeal=null;},setMarketArea:id=>{if(["observacao","transferencias"].includes(id))ui.marketArea=id;},selectScoutPlayer:id=>{ui.selectedScoutPlayer=String(id);ui.scoutScreen="busca";},setScoutScreen:id=>{if(["busca","alvos","olheiros","recomendacoes"].includes(id))ui.scoutScreen=id;},setScoutPage:direction=>{ui.scoutPage=Math.max(0,ui.scoutPage+(direction==="next"?1:-1));},setScoutFilters:(query,pos,filters={})=>{ui.scoutPage=0;ui.scoutQuery=String(query||"").slice(0,80);ui.scoutPosition=["all","GOL","ZAG","LD","LE","LAT","VOL","MC","MD","ME","MEI","PD","PE","ATA"].includes(pos)?pos:"all";ui.scoutClub=String(filters.club||"").slice(0,100);ui.scoutCompetition=String(filters.competition||"").slice(0,100);ui.scoutCountry=String(filters.country||"all");ui.scoutAge=["all","under18","under21","under23","23to29","30plus"].includes(filters.age)?filters.age:"all";ui.scoutCategory=["all","promises","free","listed"].includes(filters.category)?filters.category:"all";}};
   root.ProLifeCoachCareerView=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

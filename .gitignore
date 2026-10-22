@@ -32,3 +32,12 @@ _to_delete/
 *.backup_hash_*
 *.backup_bom_*
 *.backup_14hash_*
+
+# Backups, relatorios e saidas locais de verificacao
+.prolife-backups/
+*.backup-*
+/test-*.txt
+/check-*.txt
+/build-*.txt
+/RELATORIO_*.txt
+/CARDS_AUDITORIA_LOCAL.txt

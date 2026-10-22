@@ -1,6 +1,9 @@
 (function (root) {
   "use strict";
   const decisions = [
+    { id:"coach_board_meeting", title:"Reuniao com a diretoria", body:"A diretoria quer entender os planos da equipe para os proximos compromissos.", choices:[["coach_board_commit","Assumir responsabilidade"],["coach_board_confidence","Pedir confianca no projeto"]] },
+    { id:"coach_locker_tension", title:"Insatisfacao no vestiario", body:"Alguns jogadores demonstraram insatisfacao com o ambiente do elenco. Sua postura pode mudar o clima.", choices:[["coach_locker_dialogue","Conversar com o grupo"],["coach_locker_discipline","Cobrar mais disciplina"]] },
+    { id:"coach_press_conference", title:"Entrevista antes de jogo importante", body:"A imprensa pede uma declaracao sobre as expectativas para o proximo confronto.", choices:[["coach_press_calm","Adotar discurso equilibrado"],["coach_press_bold","Demonstrar ambicao"]] },
     { id: "family", title: "Um fim de semana em família", body: "Uma pausa pode aliviar a pressão, mas reduz o foco no treino.", choices: [["visit", "Visitar a família"], ["work", "Priorizar o trabalho"]] },
     { id: "media", title: "Convite para uma entrevista", body: "Sua opinião pode aproximar a torcida e aumentar a cobrança.", choices: [["humble", "Falar com equilíbrio"], ["bold", "Prometer grandes resultados"]] },
     { id: "agent", title: "Assessoria de carreira", body: "Uma agência oferece representação contínua e novas oportunidades.", choices: [["hire", "Contratar a agência"], ["decline", "Seguir por conta própria"]] },
@@ -174,7 +177,14 @@
   }
   function next(s, rng) {
     const life = init(s), candidate=criticismCandidate(s);
-    const pool = decisions.filter((d) => !(life.agency&&d.id==="agent") && (d.id!=="criticism"||!!candidate));
+    const playerOnly = new Set(["agent", "sponsor", "criticism", "fans", "social"]);
+    const coachOnly = new Set(["coach_board_meeting", "coach_locker_tension", "coach_press_conference"]);
+    const pool = decisions.filter((d) =>
+      !(s.mode === "coach" && playerOnly.has(d.id)) &&
+      !(s.mode !== "coach" && coachOnly.has(d.id)) &&
+      !(life.agency && d.id === "agent") &&
+      (d.id !== "criticism" || !!candidate)
+    );
     life.lastDecisionDay = s.day;
     const decision=JSON.parse(JSON.stringify(rng.pick(pool)));
     if(decision.id==="criticism"){
@@ -201,6 +211,30 @@
     if (choice === "leave_fans") { s.person.condition=Math.min(100,s.person.condition+2); helpers.updateMediaProfile?.(s,{fans:-3,pressure:-1}); }
     if (choice === "embrace_social") { s.fans += 500; s.stress=Math.min(100,s.stress+5); helpers.updateMediaProfile?.(s,{fans:5,sponsor:5,pressure:4}); }
     if (choice === "quiet_social") { s.stress=Math.max(0,s.stress-6); helpers.updateMediaProfile?.(s,{pressure:-5,sponsor:-1}); }
+    if (s.mode === "coach") {
+      const effects = {
+        coach_board_commit: {board:2, reputation:1, stress:3},
+        coach_board_confidence: {board:1, reputation:1, stress:-2},
+        coach_locker_dialogue: {board:1, stress:-2, squadMorale:3},
+        coach_locker_discipline: {board:1, stress:2, squadMorale:-2},
+        coach_press_calm: {reputation:1, stress:-2},
+        coach_press_bold: {reputation:2, board:-1, stress:3}
+      };
+      const fx = effects[choice];
+      if (fx) {
+        const bounded = (value,delta) => Math.max(0,Math.min(100,Number(value ?? 50)+delta));
+        if (fx.board) s.board=bounded(s.board,fx.board);
+        if (fx.reputation) s.reputation=bounded(s.reputation,fx.reputation);
+        if (fx.stress) s.stress=bounded(s.stress,fx.stress);
+        if (fx.squadMorale && s.clubId) {
+          const own=(s.clubs||[]).find(c=>c.id===s.clubId)
+            || s.worldMatchClubs?.[s.clubId];
+          for (const player of own?.roster||[]) {
+            player.morale=bounded(player.morale,fx.squadMorale);
+          }
+        }
+      }
+    }
     life.events.unshift({ day: s.day, season: s.season, choice });
     life.events = life.events.slice(0, 80);
   }

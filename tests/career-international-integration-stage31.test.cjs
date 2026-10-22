@@ -135,15 +135,16 @@ test("31.4.8 H: determinismo",()=>{
 
 test("31.4.9 I: efeitos aplicados uma vez por partida",()=>{
   const s=career(MAD);const pc=C.init(s).playerCareer;
-  const seen=new Set();let apps=0;
+  const seen=new Set();
   for(let i=0;i<110;i++){
     D.advance(s,1);
     const r=pc.lastMatchReport;
-    if(r&&r.day===s.day&&r.competition==="LaLiga"&&!seen.has(r.day)){seen.add(r.day);if(r.minutes>0)apps++;}
+    if(r&&r.day===s.day&&r.competition==="LaLiga"&&!seen.has(r.day))seen.add(r.day);
   }
   const st=D.Statistics.heroDashboard(s);
   const total=st.currentClubSeason.appearances;
-  assert.equal(total,apps,"cada partida conta uma aparição");
+  const allClubAppearances=s.matches.filter(m=>[m.home,m.away].includes(s.clubId)&&m.ratings?.hero).length;
+  assert.equal(total,allClubAppearances,"cada partida oficial do clube conta uma aparição");
   const hm=heroOfficial(s).filter(m=>m.competitionName==="LaLiga");assert.equal(hm.length,seen.size);
 });
 

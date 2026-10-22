@@ -5,6 +5,7 @@
   const ClubIntelligence=root.ProLifeClubIntelligence||(typeof require==="function"?require("./club-intelligence.js"):null);
   const WorldStats=root.ProLifeWorldStats||(typeof require==="function"?require("./world-stats.js"):null);
   const Continental=root.ProLifeContinental||(typeof require==="function"?require("./continental.js"):null);
+  const EnglishCups=root.ProLifeEnglishCups||(typeof require==="function"?require("./english-cups.js"):null);
   const ConmebolTournaments=root.ProLifeConmebolTournaments||(typeof require==="function"?require("./conmebol-tournaments.js"):null);
   const ChampionsKnockout=root.ProLifeChampionsKnockout||(typeof require==="function"?require("./champions-knockout.js"):null);
   const EuropaSeason=root.ProLifeEuropaSeason||(typeof require==="function"?require("./europa-season.js"):null);
@@ -589,6 +590,7 @@
         }
       }
     }
+    if (s.catalogVersion === "fc27_v1") EnglishCups?.init?.(s);
     if (plan && s.creation?.started) return s;
     if (mode === "player") Career.post(s, "Carreira", "Agente", "Sua origem: " + (plan ? plan.story.title : origin.name), origin.description + " Seu arquétipo inicial é " + (Training?.init(s)?.archetype?.name || "definido pela posição") + ".");
     Career.post(
@@ -647,7 +649,7 @@
   }
   function worldMatchClub(s, id) {
     if (!id) return null;
-    const own = s.mode === "player" && id === s.clubId;
+    const own = ["player","coach"].includes(s.mode) && id === s.clubId;
     const cached = worldMatchScope && worldMatchScope.s === s ? worldMatchScope.cache[id] : null;
     if (cached) return cached;
     if (own) { const saved = s.worldMatchClubs?.[id]; if (saved) return linkWorldHero(s, saved); }
@@ -659,12 +661,44 @@
     worldMatchScope.cache[id] = built;
     return built;
   }
+  function prepareCoachWorldFixture(s, fixture) {
+    if (!s || s.mode !== "coach" || !fixture ||
+        ![fixture.home, fixture.away].includes(s.clubId)) return null;
+
+    const ids = [fixture.home, fixture.away];
+    const teams = ids.map(id => {
+      const local = (s.clubs || []).find(c => c.id === id);
+      if (local) return local;
+
+      const world = GlobalFootball?.clubById?.(s, id);
+      if (!world?.leagueId) return null;
+
+      if (id === s.clubId) return worldMatchClub(s, id);
+
+      return buildWorldClub(s, world);
+    });
+
+    if (teams.some(c => !c || !Array.isArray(c.roster) ||
+        c.roster.length < 11 || !Array.isArray(c.lineup) ||
+        c.lineup.length !== 11)) return null;
+
+    return { home: teams[0], away: teams[1] };
+  }
   function dropWorldMatchClubs(s, keepId) {
     if (!s.worldMatchClubs) return;
     for (const id of Object.keys(s.worldMatchClubs)) if (id !== keepId) delete s.worldMatchClubs[id];
   }
   function worldHeroFixture(s, rng, leagueId, roundIndex, pairIndex, home, away, date) {
-    if (s.mode !== "player" || !s.clubId || ![home, away].includes(s.clubId)) return null;
+    if (!["player","coach"].includes(s.mode) || !s.clubId || ![home, away].includes(s.clubId)) return null;
+    const alreadyPlayed = (s.matches || []).find(m =>
+      Number(m.season) === Number(s.season) &&
+      m.competitionId === leagueId &&
+      m.home === home &&
+      m.away === away &&
+      Number(m.round) === roundIndex + 1 &&
+      Number(m.date) === Number(date)
+    );
+    if (alreadyPlayed) return [alreadyPlayed.hg, alreadyPlayed.ag];
     const hero = worldMatchClub(s, s.clubId);
     if (!hero || date < (hero.joinedDay ?? s.day)) return null;
     worldMatchScope = { s, ids: [home, away], cache: {} };
@@ -999,7 +1033,7 @@
 
     s.clubId = id;
     dropWorldMatchClubs(s, id);
-    if (s.mode === "player") worldMatchClub(s, id);
+    if (["player", "coach"].includes(s.mode)) worldMatchClub(s, id);
 
     return next;
   }
@@ -1202,6 +1236,12 @@
              incoming.injury||incoming.suspension>0||incoming._competitionSuspended||incoming.condition<=35)continue;
           const index=ps.indexOf(outgoing);
           ps[index]=incoming;coachSubs[side]++;usedIncoming[side].add(incoming.id);
+          // Preserve the occupied pitch position when the coach substitutes a player.
+          const occupiedRole=positionRoles[side]?.get(outgoing.id);
+          if(positionRoles[side]?.has(outgoing.id)){
+            positionRoles[side].delete(outgoing.id);
+            positionRoles[side].set(incoming.id,occupiedRole);
+          }
           if(m.participation[outgoing.id]){
             m.participation[outgoing.id].exitMinute=minute;
             m.participation[outgoing.id].minutes=minute-m.participation[outgoing.id].entryMinute;
@@ -1211,13 +1251,43 @@
           m.events.push({minute,type:"substitution",side,player:incoming.name,playerId:incoming.id,outPlayer:outgoing.name,outPlayerId:outgoing.id,text:`Substituição: sai ${outgoing.name}, entra ${incoming.name}.`});
         }
       }
+      // Active individual tactical roles affect buildup after substitutions.
+      const roleBuildUp=squads.map((players,side)=>{
+        let control=0,attack=0;
+        for(const p of players){
+          const stored=clubs[side]?.coachPlayerRoles?.[p.id];
+          if(!stored)continue;
+          const assigned=positionRoles[side];
+          const actual=String(
+            assigned?.size
+              ? assigned.get(p.id)
+              : (p.primaryPosition||p.specificPosition||p.pos)
+          ).toUpperCase();
+          const configured=String(stored.position||"").toUpperCase();
+          const compatible=configured===actual||
+            (["CA","ATA"].includes(configured)&&
+             ["CA","ATA"].includes(actual));
+          if(!compatible)continue;
+          if(stored.role==="false_nine"){
+            control+=0.8;
+            attack+=0.5;
+          }else if(stored.role==="target"){
+            attack+=0.6;
+          }
+        }
+        return {
+          control:Math.min(1.6,control),
+          attack:Math.min(1.2,attack)
+        };
+      });
       const control = squads.map(
         (ps, i) =>
           quality(ps, "pass", formFactors, positionRoles[i]) +
           quality(ps, "stamina", formFactors, positionRoles[i]) * 0.2 +
           (i === 0 ? 3 : 0) +
           (clubs[i].tactic === "possession" ? 5 : 0) +
-          tactical[i].possession -
+          tactical[i].possession +
+          roleBuildUp[i].control -
           fatigue[i],
       );
       const i =
@@ -1237,7 +1307,8 @@
           : clubs[i].tactic === "counter"
             ? 2
             : 0) +
-        tactical[i].attack;
+        tactical[i].attack +
+        roleBuildUp[i].attack;
       const defense =
         quality(opp, "defense", formFactors, positionRoles[j]) * 0.65 +
         quality(opp, "strength", formFactors, positionRoles[j]) * 0.35 +
@@ -1266,7 +1337,20 @@
             if (p.archetypeId === "finisher") protagonism *= 1.16;
             else if (p.archetypeId === "nine") protagonism *= 1.09;
           }
-          return Math.max(1, role * relativeQuality * protagonism * (MatchPositions?.factor(p, positionRoles[i]) ?? 1) * (g.finish * 0.5 + g.pace * 0.16 + (p.attrs.positioning ?? (((p.attrs.pass ?? g.pass) + (p.attrs.finish ?? g.finish)) / 2)) * 0.34));
+          const storedRole=clubs[i]?.coachPlayerRoles?.[p.id];
+          const assignedRoles=positionRoles[i];
+          const pitchRole=assignedRoles?.size
+            ? assignedRoles.get(p.id)
+            : (p.primaryPosition||p.specificPosition||p.pos);
+          const normalizedPosition=String(pitchRole||"").toUpperCase();
+          const savedPosition=String(storedRole?.position||"").toUpperCase();
+          const roleCompatible=!!storedRole&&(
+            savedPosition===normalizedPosition||
+            (["CA","ATA"].includes(savedPosition)&&["CA","ATA"].includes(normalizedPosition))
+          );
+          const tacticalMultiplier=roleCompatible?
+            ({poacher:1.15,false_nine:0.88,target:1.08}[storedRole.role]??1):1;
+          return Math.max(1, role * relativeQuality * protagonism * tacticalMultiplier * (MatchPositions?.factor(p, positionRoles[i]) ?? 1) * (g.finish * 0.5 + g.pace * 0.16 + (p.attrs.positioning ?? (((p.attrs.pass ?? g.pass) + (p.attrs.finish ?? g.finish)) / 2)) * 0.34));
         });
         let shooterRoll = rng.next() * shooterWeights.reduce((n, v) => n + v, 0), shooter = candidates[0];
         for (let si = 0; si < candidates.length; si++) { shooterRoll -= shooterWeights[si]; if (shooterRoll <= 0) { shooter = candidates[si]; break; } }
@@ -1311,11 +1395,65 @@
             side: i,
             player: shooter.name,
             playerId: shooter.id,
-            assistPlayerId: rng.next() < 0.72 ? ps.filter((p) => p.id !== shooter.id).slice().sort((a, b) => {
-              const ga = Training?.groupRatings ? Training.groupRatings(a.attrs) : a.attrs;
-              const gb = Training?.groupRatings ? Training.groupRatings(b.attrs) : b.attrs;
-              return (gb.pass + (b.attrs.vision ?? gb.pass)) - (ga.pass + (a.attrs.vision ?? ga.pass));
-            })[Math.floor(rng.next() * Math.min(3, Math.max(1, ps.length - 1)))]?.id : undefined,
+            assistPlayerId: rng.next() < 0.72 ? (() => {
+              const helpers=ps.filter(p=>p.id!==shooter.id);
+              if(!helpers.length)return undefined;
+              const weights=helpers.map(p=>{
+                const g=Training?.groupRatings ? Training.groupRatings(p.attrs) : p.attrs;
+                const base=Math.max(1,(g.pass+(p.attrs.vision??g.pass))/2);
+                const saved=clubs[i]?.coachPlayerRoles?.[p.id];
+                const assigned=positionRoles[i];
+                const actual=String(
+                  assigned?.size
+                    ? assigned.get(p.id)
+                    : (p.primaryPosition||p.specificPosition||p.pos)
+                ).toUpperCase();
+                const configured=String(saved?.position||"").toUpperCase();
+                const compatible=!!saved&&(
+                  configured===actual||
+                  (["CA","ATA"].includes(configured)&&["CA","ATA"].includes(actual))
+                );
+                const bonus=compatible
+                  ? ({false_nine:1.25,target:1.15}[saved.role]??1)
+                  : 1;
+                const specific=String(
+                  p.primaryPosition||p.specificPosition||""
+                ).toUpperCase();
+                const group=String(p.pos||"").toUpperCase();
+
+                const specificWeights={
+                  GOL:0.05,
+                  ZAG:0.45,
+                  LD:0.95,LE:0.95,
+                  ALD:1.15,ALE:1.15,
+                  VOL:0.80,
+                  MC:1.20,MD:1.20,ME:1.20,MEI:1.20,
+                  PD:1.20,PE:1.20,
+                  SA:1.15,
+                  CA:0.85
+                };
+
+                const groupWeights={
+                  GOL:0.05,
+                  DEF:0.75,
+                  MEI:1.20,
+                  ATA:1.15
+                };
+
+                const positionWeight=
+                  specificWeights[specific]??
+                  groupWeights[group]??
+                  1;
+
+                return base*bonus*positionWeight;
+              });
+              let roll=rng.next()*weights.reduce((a,b)=>a+b,0);
+              for(let k=0;k<helpers.length;k++){
+                roll-=weights[k];
+                if(roll<=0)return helpers[k].id;
+              }
+              return helpers[helpers.length-1].id;
+            })() : undefined,
             text:
               shooter.name +
               " aproveitou " +
@@ -1397,6 +1535,12 @@
         );
         if (sub) {
           ps[ps.indexOf(p)] = sub;
+          // Preserve the injured player's occupied pitch position.
+          if(positionRoles[i]?.has(p.id)){
+            const occupiedRole=positionRoles[i].get(p.id);
+            positionRoles[i].delete(p.id);
+            positionRoles[i].set(sub.id,occupiedRole);
+          }
           if(m.participation[p.id]){m.participation[p.id].exitMinute=minute;m.participation[p.id].minutes=Math.max(1,minute-m.participation[p.id].entryMinute);}
           m.participation[sub.id]={side:i,starter:false,entryMinute:minute,exitMinute:94,minutes:94-minute};
           m.participants[i].push(sub.id);
@@ -1743,6 +1887,7 @@
       competitionId: meta.competitionId,
       competitionName: meta.competitionName,
     });
+    if (worldMatchScope?.s === s) m.worldMatch = true;
     m.importance=matchImportance(s,{...meta,home:homeId,away:awayId});
     processDiscipline(s,m,disciplineMeta,hc,ac);
     serveDisciplineSuspensions(hc,disciplineKey);
@@ -1872,7 +2017,7 @@
     const nationalName = nationalIdentity?.name || s.person?.nationality || "Brasil";
     const national = nationalMatch && nationalEligible && { national:true, date: nationalMatch.day, competitionId: "nationalTeam", competitionName: nationalMatch.competition, stage: nationalMatch.stage || "Seleção", opponent: nationalMatch.opponent, homeName: nationalName, awayName: nationalMatch.opponent };
     let world = null;
-    const hc = s.mode === "player" && s.clubId ? club(s) : null;
+    const hc = ["player","coach"].includes(s.mode) && s.clubId ? club(s) : null;
     if (hc?.worldMatch && WorldClubCompetitions?.nextFixture) {
       const f = WorldClubCompetitions.nextFixture(s, hc.leagueId, s.clubId);
       if (f && f.date >= s.day) world = { home: f.home, away: f.away, date: f.date, round: f.round, competitionId: hc.leagueId, competitionName: GlobalFootball?.leagueById?.(s, hc.leagueId)?.name || hc.leagueId };
@@ -1913,10 +2058,13 @@
       const ed=Continental?.edition?.(s,comp,s.season),game=ConmebolTournaments?.nextFixture?.(s,ed,s.clubId);
       return game&&{home:game.homeId,away:game.awayId,date:game.day,round:game.round??game.pair+1,competitionId:comp,competitionName:comp==="lib"?"CONMEBOL Libertadores":"CONMEBOL Sul-Americana",stage:game.stageName||game.stage||(game.group?`Grupo ${game.group} · Rodada ${game.round}`:"Mata-mata")};
     }).filter(Boolean);
-    return [league, extra, national, world, continental, knockout, europa, europaKo,conference,conferenceKo,...conmebol].filter(Boolean).sort((a,b)=>a.date-b.date)[0] || null;
+    const englishCupMatch=EnglishCups?.nextFixture?.(s,s.clubId);
+    const englishCup=englishCupMatch&&{home:englishCupMatch.homeId,away:englishCupMatch.awayId,date:englishCupMatch.day,round:englishCupMatch.round,competitionId:englishCupMatch.competitionId,competitionName:englishCupMatch.competitionName,stage:englishCupMatch.stage,knockout:true};
+    return [league, extra, national, world, englishCup, continental, knockout, europa, europaKo,conference,conferenceKo,...conmebol].filter(Boolean).sort((a,b)=>a.date-b.date)[0] || null;
   }
   function newSeason(s, rng) {
     WorldClubCompetitions?.closeSeason(s);
+    EnglishCups?.closeSeason?.(s);
     WorldStats?.closeSeason(s);
     CoachCareer?.closeSeason(s, API, { log: (title, body) => log(s, title, body) });
     ClubIntelligence?.closeSeason(s, { log: (title, body) => log(s, title, body) });
@@ -1967,7 +2115,7 @@
           " vitórias.",
       );
     }
-    const heroWorld = s.mode === "player" && s.clubId ? club(s) : null;
+    const heroWorld = ["player", "coach"].includes(s.mode) && s.clubId ? club(s) : null;
     if (heroWorld?.worldMatch && WorldClubCompetitions?.standings) {
       const order = WorldClubCompetitions.standings(s, heroWorld.leagueId) || [];
       const lg = GlobalFootball?.leagueById?.(s, heroWorld.leagueId);
@@ -2010,6 +2158,7 @@
       const ed=Continental.edition(s,"uecl");
       if(ed?.status==="ready") {try{ConferenceLive.prepare(s,ed);}catch(e){ed.conferenceError=String(e?.message||e);}}
     }
+    if (s.catalogVersion === "fc27_v1") EnglishCups?.init?.(s);
     ClubIntelligence?.startSeason(s);
     CoachCareer?.startSeason(s, API);
     if (s.mode === "player") Statistics?.ensureHeroStint?.(s, s.clubId);
@@ -2158,7 +2307,17 @@
         },
 
         heroFixture(match) {
-          if (s.mode !== "player" || !s.clubId) return null;
+          if (!["player","coach"].includes(s.mode) || !s.clubId) return null;
+
+          const existing = (s.matches || []).find(m =>
+            m.competitionId === "ucl" &&
+            m.home === match.homeId &&
+            m.away === match.awayId &&
+            Number(m.season) === Number(s.season) &&
+            Number(m.round) === Number(match.round) &&
+            Number(m.date) === Number(match.day)
+          );
+          if (existing) return {hg:existing.hg,ag:existing.ag};
 
           const hero = worldMatchClub(s, s.clubId);
           if (!hero || match.day < (hero.joinedDay ?? s.day)) return null;
@@ -2438,6 +2597,34 @@
       }
     });
   }
+  function processEnglishCupsDay(s,rng){
+    if(!EnglishCups||s.catalogVersion!=="fc27_v1")return;
+    EnglishCups.daily(s,{
+      heroFixture(match,edition){
+        const participating=club(s,s.clubId);
+        if(!participating?.roster||match.day<(participating.joinedDay??0))return null;
+        const previousScope=worldMatchScope;
+        worldMatchScope={s,ids:[match.homeId,match.awayId],cache:{}};
+        try{
+          let cupSeed=2166136261;for(const ch of `${match.id}|${s.initialSeed||0}`)cupSeed=Math.imul(cupSeed^ch.charCodeAt(0),16777619);
+          const cupRng=new Random(cupSeed>>>0);
+          const result=registerMatch(s,cupRng,match.homeId,match.awayId,{round:match.round,competitionId:edition.comp,competitionName:edition.name,stage:match.stage,domesticCupMatch:true,knockout:true},false);
+          result.domesticCupMatch=true;result.knockout=true;
+          return {hg:result.hg,ag:result.ag,record:result};
+        }finally{worldMatchScope=previousScope;}
+      },
+      onPrize(prize){
+        if(prize.clubId!==s.clubId)return;
+        const c=club(s,prize.clubId);if(c&&Number.isFinite(Number(c.budget)))c.budget+=prize.amount;
+        log(s,"Premiação de copa",`${prize.currency} ${Number(prize.amount).toLocaleString("pt-BR")} por ${prize.reason}.`);
+      },
+      onChampion({edition,championId}){
+        const winner=club(s,championId);
+        if(!s.history.some(h=>h.season===edition.season&&h.competitionId===edition.comp&&h.championId===championId))s.history.unshift({season:edition.season,competitionId:edition.comp,league:edition.name,champion:winner?.name||championId,championId,trophy:true,mode:s.mode});
+        log(s,`${edition.name}: campeão`,`${winner?.name||championId} conquistou o título.`);
+      }
+    });
+  }
   function advance(s, days = 1) {
     // FC27/UCL: every advance reconciles missing continental editions.
     // Legacy careers may have skipped the seasonal rollover entirely.
@@ -2489,6 +2676,7 @@
         }
       }
     }
+    if (s.catalogVersion === "fc27_v1") EnglishCups?.init?.(s);
     if (s.catalogVersion === "fc27_v1") GlobalFootball?.ensureAcademies?.(s);
     Career.init(s);
     Training?.init(s);
@@ -2515,6 +2703,7 @@
       processConferenceDay(s, rng);
       processConmebolDay(s,rng,"lib");
       processConmebolDay(s,rng,"sud");
+      processEnglishCupsDay(s,rng);
       ClubIntelligence?.daily(s, { log: (title, body) => log(s, title, body) });
       CoachCareer?.daily(s, API, { log: (title, body) => log(s, title, body) });
       OffField?.daily(s, API, { log: (title, body) => log(s, title, body) });
@@ -2545,7 +2734,7 @@
           if (!Physical) { p.injury = Math.max(0, p.injury - 1); p.condition = clamp(p.condition + (p.id === "hero" && s.intensity === "hard" ? 2 : 5), 0, 100); }
           if (p.suspension !== undefined) { const sv = Math.max(0, Number(p.suspension) || 0); if (sv > 0) p.suspension = sv; else delete p.suspension; } // ausência = 0
         }
-      if (s.mode === "player" && s.clubId && s.worldMatchClubs?.[s.clubId]) {
+      if (["player", "coach"].includes(s.mode) && s.clubId && s.worldMatchClubs?.[s.clubId]) {
         for (const p of club(s).roster) {
           Physical?.daily?.(p, s.day, p.id === "hero" ? s.intensity : "normal");
           if (!Physical) { p.injury = Math.max(0, p.injury - 1); p.condition = clamp(p.condition + (p.id === "hero" && s.intensity === "hard" ? 2 : 5), 0, 100); }
@@ -3126,6 +3315,7 @@
     OffField,
     WorldStats,
     Continental,
+    EnglishCups,
     ConmebolTournaments,
     NationalCallups,
     WorldLiveMarket,
@@ -3173,6 +3363,7 @@
     discardCoachLiveResult,
     simulateSteps,
     createCoachLiveController,
+    prepareCoachWorldFixture,
     scheduleCoachActions,
     coachActionPlan,
     selected,

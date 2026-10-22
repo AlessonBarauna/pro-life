@@ -89,6 +89,253 @@
     const start = Math.max(0, Math.min(index - 2, table.length - 5));
     return { rows: table.slice(start, start + 5).map((row,i)=>({...row, position:start+i+1})), position:index+1, league:s.leagues.find((l)=>l.id===c.leagueId)?.name || (root.ProLifeNames?root.ProLifeNames.league(s,c.leagueId):c.leagueId) };
   }
+  function competitionClubName(s,D,id) {
+    return D.club(s,id)?.name || (s.globalFootball?.clubs||[]).find(c=>c.id===id)?.name || id || "Clube";
+  }
+  function officialFixtureRows(s,D,matches) {
+    return (Array.isArray(matches)?matches:[]).map(m=>({
+      id:m.id,homeId:m.homeId,awayId:m.awayId,
+      home:competitionClubName(s,D,m.homeId),away:competitionClubName(s,D,m.awayId),
+      day:m.day,played:!!m.played,score:m.played&&Number.isInteger(m.hg)&&Number.isInteger(m.ag)?`${m.hg}–${m.ag}`:null,
+      leg:Number(m.leg)||1,aggregate:Array.isArray(m.tie?.aggregate)?m.tie.aggregate:null,winnerId:m.winnerId||m.tie?.winnerId||null
+    }));
+  }
+  function englishRoundQualified(round) {
+    const qualified=new Set(round?.byes||[]),groups=new Map();
+    for(const match of round?.matches||[]){const key=match.tieId||`pair:${match.pair}`;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(match);}
+    for(const matches of groups.values()){
+      if(matches.some(m=>!m.played))continue;
+      const teams=[matches[0].homeId,matches[0].awayId],goals=teams.map(id=>matches.reduce((sum,m)=>sum+(m.homeId===id?Number(m.hg)||0:Number(m.ag)||0),0));
+      let winner=null;
+      if(goals[0]!==goals[1])winner=teams[goals[0]>goals[1]?0:1];
+      else {const last=matches.slice().sort((a,b)=>(a.leg||1)-(b.leg||1)).at(-1),pens=last?.penalties;if(pens)winner=pens.home>pens.away?last.homeId:last.awayId;}
+      if(winner)qualified.add(winner);
+    }
+    return [...qualified];
+  }
+  function knockoutContext(s,D,base,stage,matches,qualifiedIds=[],extra={}) {
+    return {...base,kind:"knockout",stage:stage||"Mata-mata",rows:[],position:0,
+      fixtures:officialFixtureRows(s,D,matches),qualified:(qualifiedIds||[]).map(id=>({id,name:competitionClubName(s,D,id)})),...extra};
+  }
+  function centralCompetitionTable(s, D, next, leagueTable) {
+    const id = String(next?.competitionId || "");
+    if (["fa_cup","efl_cup","community_shield"].includes(id)) {
+      const names={fa_cup:"Emirates FA Cup",efl_cup:"EFL Cup",community_shield:"FA Community Shield"};
+      const base={competitionId:id,league:names[id],page:"englishCups",actionLabel:id==="community_shield"?"Ver competição":"Ver chaveamento",rows:[],position:0};
+      const edition=s.englishCups?.editions?.[`${id}:${s.season}`];
+      if(!edition)return {...base,kind:"unavailable",message:"A edição desta copa ainda não está disponível."};
+      const round=(edition.rounds||[]).find(r=>(r.matches||[]).some(m=>m.id===next?.id)) || edition.rounds?.[edition.currentRound] || edition.rounds?.at(-1);
+      if(!round)return {...base,kind:"unavailable",message:edition.reason||"Sorteio ainda não disponível."};
+      const championId=edition.championId||null;
+      return knockoutContext(s,D,base,round.name||next?.stage,round.matches,englishRoundQualified(round),{
+        champion:championId?{id:championId,name:competitionClubName(s,D,championId)}:null,
+        status:edition.status,final:id==="community_shield"||round.key==="final"
+      });
+    }
+    if (id.startsWith("state-")) {
+      const competition = D.Competitions || root.ProLifeCompetitions;
+      const tournament = [
+        s.competitionSchedule?.state,
+        ...(s.competitionSchedule?.otherStates || [])
+      ].find(x => x?.id === id && Number(x.season) === Number(s.season));
+
+      const empty = {
+        league: next?.competitionName || "Campeonato estadual",
+        page: "league",
+        kind: "unavailable",
+        rows: [],
+        position: 0
+      };
+
+      if (!tournament) return empty;
+
+      const group = (tournament.groups || []).find(
+        g => Array.isArray(g.clubIds) && g.clubIds.includes(s.clubId)
+      );
+
+      const stage = String(next?.stage || "");
+      const isGroup = /grupo/i.test(stage);
+
+      if (!isGroup) {
+        return {
+          ...empty,
+          kind: "knockout",
+          stage: stage || "Mata-mata",
+          league: tournament.name
+        };
+      }
+
+      if (!group || !competition?.stateTable) return empty;
+
+      const records = competition.stateTable(tournament, group.id);
+
+      const rows = records.map((r, index) => ({
+        id: r.id,
+        name: D.club(s, r.id)?.name || r.id,
+        position: index + 1,
+        stats: {
+          points: r.points,
+          played: r.played,
+          w: r.w,
+          d: r.d,
+          l: r.l,
+          gf: r.gf,
+          ga: r.ga
+        }
+      }));
+
+      const current = rows.find(r => r.id === s.clubId);
+
+      return {
+        league: tournament.name + " - Grupo " + group.id,
+        page: "league",
+        kind: "group",
+        rows,
+        position: current?.position || 0
+      };
+    }
+    if (["ucl", "uel", "uecl"].includes(id)) {
+      const names = {
+        ucl: "UEFA Champions League",
+        uel: "UEFA Europa League",
+        uecl: "UEFA Conference League"
+      };
+      const pages = {ucl:"champions",uel:"europa",uecl:"conference"};
+      const base = {
+        competitionId:id,
+        league: names[id],
+        page: pages[id],
+        actionLabel:"Ver competição",
+        kind: "unavailable",
+        rows: [],
+        position: 0
+      };
+      const ed = root.ProLifeContinental?.edition?.(s, id, s.season)
+        || s.continental?.editions?.[`${id}:${s.season}`]
+        || null;
+      if (!ed) {
+        console.warn("[PRO-LIFE CENTRAL] Edicao europeia nao encontrada:", id, s.season);
+        return base;
+      }
+
+      const stage = String(next?.stage || "");
+      if (stage && !/fase de liga/i.test(stage)) {
+        const labels={playoffs:"Playoffs",round16:"Oitavas de final",quarters:"Quartas de final",semis:"Semifinais",final:"Final"};
+        const current=(ed.knockout?.stages||[]).find(x=>x.key===stage)||(ed.knockout?.stages||[]).at(-1);
+        return knockoutContext(s,D,base,current?.name||labels[stage]||stage,current?.matches,current?.winners||[],{
+          champion:ed.knockout?.championId?{id:ed.knockout.championId,name:competitionClubName(s,D,ed.knockout.championId)}:null,
+          final:stage==="final"
+        });
+      }
+
+      const api = root.ProLifeChampionsStandings;
+      if (!api?.standings || !Array.isArray(ed.leagueSchedule?.matches)) {
+        return base;
+      }
+
+      let records;
+      try {
+        records = api.standings(ed);
+      } catch (error) {
+        console.warn("[PRO-LIFE CENTRAL] Falha na classificacao europeia:", id, error);
+        return base;
+      }
+
+      const index = records.findIndex(x => x.id === s.clubId);
+      if (index < 0) return base;
+
+      const start = Math.max(0, Math.min(index - 2, records.length - 5));
+      return {
+        ...base,
+        kind: "league",
+        position: index + 1,
+        rows: records.slice(start, start + 5).map(r => ({
+          id: r.id,
+          name: D.club(s, r.id)?.name ||
+            (s.globalFootball?.clubs || []).find(c => c.id === r.id)?.name ||
+            r.id,
+          position: r.position,
+          stats: {
+            points: r.points,
+            played: r.played,
+            w: r.wins,
+            d: r.draws,
+            l: r.losses,
+            gf: r.gf,
+            ga: r.ga
+          }
+        }))
+      };
+    }
+
+    if (id === "copaBrasil") {
+      return {
+        league: next?.competitionName || "Copa do Brasil",
+        page: "league",
+        kind: "knockout",
+        stage: next?.stage || "Fase eliminatoria",
+        opponent: next?.opponent || "",
+        rows: [],
+        position: 0
+      };
+    }
+    if (id !== "lib" && id !== "sud") return leagueTable;
+
+    const name = id === "lib" ? "CONMEBOL Libertadores" : "CONMEBOL Sul-Americana";
+    const page = id === "lib" ? "libertadores" : "sudamericana";
+    const empty = { competitionId:id,rows: [], position: 0, league: name, page, actionLabel:"Ver competição",kind: "unavailable" };
+
+    const ed = Object.values(s.continental?.editions || {}).find(
+      x => x?.comp === id && Number(x.season) === Number(s.season)
+    );
+
+    if (!ed) return empty;
+
+    const engine = D.ConmebolTournaments || root.ProLifeConmebolTournaments;
+    const group = (ed.groups || []).find(
+      g => Array.isArray(g.clubIds) && g.clubIds.includes(s.clubId)
+    );
+
+    const stageText=String(next?.stage||"");
+    if(stageText&&!/grupo/i.test(stageText)){
+      const current=(ed.knockout?.stages||[]).find(x=>x.key===next?.stage)||(ed.knockout?.stages||[]).at(-1);
+      return knockoutContext(s,D,empty,current?.name||next?.stage||"Mata-mata",current?.matches,current?.winners||[],{
+        champion:ed.knockout?.championId?{id:ed.knockout.championId,name:competitionClubName(s,D,ed.knockout.championId)}:null,
+        final:(current?.key||next?.stage)==="final"
+      });
+    }
+    if (!group || !engine?.standings) {
+      return empty;
+    }
+
+    const rows = engine.standings(ed, group.id);
+    if (!Array.isArray(rows) || !rows.length) return empty;
+
+    const index = rows.findIndex(r => r.id === s.clubId);
+
+    return {
+      league: name + " - Grupo " + group.id,
+      page,
+      kind: "group",
+      position: index >= 0 ? index + 1 : 0,
+      rows: rows.map(r => ({
+        id: r.id,
+        name: D.club(s, r.id)?.name ||
+          (s.globalFootball?.clubs || []).find(c => c.id === r.id)?.name ||
+          r.id,
+        position: r.position,
+        stats: {
+          points: r.points,
+          played: r.played,
+          w: r.wins,
+          d: r.draws,
+          l: r.losses,
+          gf: r.gf,
+          ga: r.ga
+        }
+      }))
+    };
+  }
   function nextInfo(s, D) {
     const fixture = D.nextCommitment(s); if (!fixture) return null;
     const national = fixture.competitionId === "nationalTeam";
@@ -96,10 +343,16 @@
     const home = national ? fixture.homeName : D.club(s, fixture.home)?.name;
     const away = national ? fixture.awayName : D.club(s, fixture.away)?.name;
     const opponent = national ? fixture.opponent : D.club(s, fixture.home === s.clubId ? fixture.away : fixture.home)?.name;
-    return { ...fixture, national, homeClubId:national?null:fixture.home, awayClubId:national?null:fixture.away, home:home || "—", away:away || "—", opponent:opponent || "—", stage:D.Competitions?.fixtureStage?.(s,fixture) || fixture.stage || (fixture.round ? `Rodada ${fixture.round}` : "Próximo compromisso") };
+    const competitionId=String(fixture.competitionId||""),explicitStage=fixture.knockout||["fa_cup","efl_cup","community_shield","lib","sud","ucl","uel","uecl"].includes(competitionId);
+    const rawStage=explicitStage
+      ? (fixture.stage || (fixture.round ? `Rodada ${fixture.round}` : "Próximo compromisso"))
+      : (D.Competitions?.fixtureStage?.(s,fixture) || fixture.stage || (fixture.round ? `Rodada ${fixture.round}` : "Próximo compromisso"));
+    const stageLabels={playoffs:"Playoffs",round16:"Oitavas de final",quarters:"Quartas de final",semis:"Semifinais",quarterfinal:"Quartas de final",semifinal:"Semifinal",final:"Final"};
+    const stage=stageLabels[rawStage]||rawStage;
+    return { ...fixture, national, homeClubId:national?null:fixture.home, awayClubId:national?null:fixture.away, home:home || "—", away:away || "—", opponent:opponent || "—", stage };
   }
   function snapshot(s, D, Calendar) {
-    const c=D.club(s), career=D.Career.init(s), stats=D.Statistics?.heroDashboard?.(s), current=stats?.currentClubSeason || stats?.season || {}, plan=D.Training.init(s), next=nextInfo(s,D), table=tableWindow(s,D), pc=career.playerCareer || {};
+    const c=D.club(s), career=D.Career.init(s), stats=D.Statistics?.heroDashboard?.(s), current=stats?.currentClubSeason || stats?.season || {}, plan=D.Training.init(s), next=nextInfo(s,D), table=tableWindow(s,D), competitionTable=centralCompetitionTable(s,D,next,table), pc=career.playerCareer || {};
     const recent=recentEntries(s).map(({kind,match:m})=>{
       if(kind==="national") {
         const rating=validRating(m.rating), starter=!!m.starter, brazil=Number(m.brazil), other=Number(m.other), hasScore=Number.isFinite(brazil)&&Number.isFinite(other);
@@ -138,12 +391,12 @@
     const lineup=s.mode==="player" && s.clubId && !next?.national && D.Squad?.competition ? D.Squad.competition(s) : null;
     const subPlan=lineup?.heroRole==="Banco" && D.Squad?.substitutePlan ? D.Squad.substitutePlan(s,s.person) : null;
     const leadership=D.captaincy?.(s,c) || null;
-    return { c, career, stats, current, plan, next, table, recent, events, objectives, news, messages, active, lineup, subPlan, leadership,
+    return { c, career, stats, current, plan, next, table, competitionTable, recent, events, objectives, news, messages, active, lineup, subPlan, leadership,
       player:{ name:s.person.name, pos:s.person.pos, age:s.person.age, overall:D.overall(s.person), condition:s.person.condition, morale:s.person.morale, form:(()=>{const ratings=recent.map(x=>validRating(x.rating)).filter(x=>x!==null);return ratings.length?+(ratings.reduce((n,x)=>n+x,0)/ratings.length).toFixed(1):null;})(), marketValue:pc.marketValue||0, squadRole:pc.squadRole||null },
       unread:s.decision?1:0,
       training:{ focus:D.Training.skills[s.training] || (s.training==="balanced"?"Equilibrado":s.training), intensity:{rest:"Recuperação",normal:"Normal",hard:"Intensa"}[s.intensity]||s.intensity, sessions:plan.sessions||0, improvements:plan.improvements||0, recent:active ? `${D.Training.trainingCategories[active.category]?.name || "Treino"} · nota ${active.grade}` : "Sem bônus temporário ativo", next:s.person.injury ? `Após ${s.person.injury} dia(s) de recuperação` : "Disponível na rotina diária" }
     };
   }
-  root.ProLifeHomeDashboard={ snapshot, tableWindow, sortedOwnMatches, recentEntries, resultFor };
+  root.ProLifeHomeDashboard={ snapshot, tableWindow, competitionContext:centralCompetitionTable, nextInfo, sortedOwnMatches, recentEntries, resultFor };
   if(typeof module!=="undefined"&&module.exports) module.exports=root.ProLifeHomeDashboard;
 })(typeof globalThis!=="undefined"?globalThis:this);
