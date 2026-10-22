@@ -203,3 +203,24 @@ notepad.exe $log
 - [ ] Repetição para outra temporada e compatibilidade com a branch de calendário quando aprovada.
 
 **Estado:** A01.4 inspeção estática e plano de testes documentados; **execução de testes bloqueada pela ausência de checkout acessível**. Não há correções de gameplay nesta etapa.
+
+
+## A01.6 — Evidência real de regressão: papéis e substituições do treinador (22/10/2026)
+
+**Ambiente:** Windows/PowerShell do usuário, clone separado em `C:\Users\aless\Projetos\PRO_LIFE_AUDITORIA`; branch `feature/fc27-career-global-audit`, commit verificado previamente `76f554a`.
+
+**Comando informado:** `node --test --test-reporter=tap tests/coach-player-roles-31011.test.cjs`.
+
+**Resultado TAP fornecido pelo usuário:** 5 testes, 5 aprovados, 0 falhas, 0 pulados, `EXIT_CODE=0`, duração 2051.6058 ms.
+
+| Caso | Resultado |
+|---|---|
+| Substituição do treinador registra reserva no minuto 60 | PASS |
+| Papéis táticos afetam distribuição de finalizações | PASS |
+| Substituição por lesão mantém a posição ocupada | PASS |
+| Assistências permanecem válidas entre funções | PASS |
+| Papel do reserva se ativa apenas após entrar | PASS |
+
+**Escopo da conclusão:** motor/teste unitário-integrado validado no cenário exercitado. **Não** prova interação manual da interface durante a partida, aderência a todos os minutos, sincronização oficial nem persistência após reload. Esses testes adicionais continuam pendentes.
+
+**Próxima regressão isolada:** `tests/coach-match-lab-v2.test.cjs` (4 casos declarados); registrar TAP completo, `$LASTEXITCODE` e distinguir prévia experimental de partida oficial.
