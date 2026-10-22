@@ -20,7 +20,9 @@ function prepare(s,ed,options={}){
  if(!Number.isInteger(startDay)||startDay<=s.day)throw Error("Inicio da Conference deve ser futuro");
  if(!Array.isArray(options.reserved)||!options.domesticCalendarComplete)throw Error("Calendario domestico e continental completo obrigatorio");
  const generated=Fixtures.generate(ed);
- const plan=Calendar.preview(ed,generated.matches,{startDay,stepDays:options.stepDays||21,maxOffset:options.maxOffset??6,reserved:options.reserved});
+ const EuropeanCalendar=root.ProLifeEuropeanCalendar||(typeof require==="function"?require("./european-calendar.js"):null);
+ const official=ed.calendarMode==="european_v1"?EuropeanCalendar?.uefaLeagueWindows?.(ed.season,"uecl"):null;
+ const plan=Calendar.preview(ed,generated.matches,{startDay,stepDays:options.stepDays||21,maxOffset:options.maxOffset??6,reserved:options.reserved,roundWindows:official||undefined});
  if(!plan.ready||plan.matches.length!==108||plan.matches.some(m=>m.day<=s.day))throw Error("Datas da Conference conflitantes ou retroativas");
  // Additionally enforce minimum three full days of rest against every supplied game.
  const byClub=new Map();
