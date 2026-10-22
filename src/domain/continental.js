@@ -80,6 +80,20 @@
   }
   // Classificacao da associacao: final da temporada anterior (registrada) ou, na edicao inicial, prestigio do catalogo (rotulado como adaptado).
   function ranking(s,a,season){
+    // Historico finalizado tem prioridade para ligas que atravessam janeiro.
+    // Nunca classificar por uma tabela ainda em andamento.
+    if(a.mode==="league"){
+      const calendar=root.ProLifeEuropeanCalendar||(typeof require==="function"?require("./european-calendar.js"):null);
+      const policy=calendar?.leagueCountry?.((s.globalFootball?.leagues||[]).find(l=>l.id===a.leagueId));
+      const history=(s.globalFootball?.worldCompetitions?.history||[]).find(
+        h=>h.leagueId===a.leagueId&&h.season===season-1
+      );
+      if(policy&&history?.top4?.length){
+        const seen=new Set(history.top4);
+        const all=(s.globalFootball?.clubs||[]).filter(c=>c.leagueId===a.leagueId).map(c=>c.id);
+        return {order:[...history.top4,...all.filter(id=>!seen.has(id))],source:"previous_season"};
+      }
+    }
     const st=state(s),fin=st.finals[String(season-1)]&&st.finals[String(season-1)][a.code];
     if(fin&&fin.length)return {order:fin.slice(),source:"previous_season"};
     const ids=clubsOf(s,a);
