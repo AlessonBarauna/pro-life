@@ -519,3 +519,18 @@ Casos aprovados: validação da oportunidade apenas no passo 4; avanço recupera
 **Acumulado A01.6–A01.22 após correção:** **163/163 testes TAP aprovados**. Anotar que A01.22 teve uma execução inicial 18/21 e um reteste 21/21 (não somar as duas execuções ao total único).
 
 **PENDENTE:** verificar `git diff --check`, diff exato da fonte, e regressão geral de interface antes de solicitar aprovação explícita para commit/push. Patch de fonte NÃO foi commitado ou enviado ao GitHub por esta ação de documentação.
+
+
+## A01.22.4 — Revisão de regressão do patch local (22/10/2026)
+
+**Evidência:** log do usuário de `git diff --check`, `npm run test:ui`, diff exato e `git status --short` na branch `feature/fc27-career-global-audit`.
+
+- `DIFF_EXIT_CODE=0` (nenhum erro de whitespace).
+- `TEST_EXIT_CODE=0`, script `npm run test:ui` aprovado: criação/jogo/relatórios/reload do jogador e treinador, injeção inválida de save, update checker.
+- Diff restrito a `src/ui/coach-creator.js`:
+  1. Linha `normalize`: trocar expressão regular com barras duplicadas por intervalo `[\u0300-\u036f]`, preservando NFD e lowercase pt-BR.
+  2. Handler `clubSearch.input`: substituir limpador automático de filtros por `filterClubs`, mantendo país/liga selecionados.
+- `git status --short`: apenas ` M src/ui/coach-creator.js`.
+- Reteste A01.22.3 já validou `21/21` casos TAP, incluindo 13/17/18 originalmente falhos. Acumulado TAP auditado `163/163`, além de teste UI procedural aprovado.
+
+**Estado:** patch **somente local**, sem commit/push do arquivo de gameplay. Aguardar aprovação explícita do usuário para commit/publicação. A documentação pode ser atualizada sem alterar o jogo.
