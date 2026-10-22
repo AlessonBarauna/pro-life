@@ -95,7 +95,41 @@
     const match=hungarian(cost);
     return roles.map((role,r)=>[players[match[r]],role]);
   }
-  const api={formationSlots,supportsSpecific,choose,assignRoles};
+  // Sugestao manual do melhor XI: primeiro respeita a posicao (primaria ou
+  // secundaria real) e, entre jogadores com o mesmo encaixe, escolhe o maior GER.
+  // A atribuicao global evita usar um atleta versatil cedo e prejudicar outra vaga.
+  function suggestIdeal({formation,roster,overall}){
+    if(!P||!formationSlots[formation]||!Array.isArray(roster)||typeof overall!=='function')return null;
+    const roles=formationSlots[formation];
+    const players=roster.filter(p=>p&&!p.injury&&!(Number(p.suspension)>0))
+      .sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+    if(players.length<roles.length)return null;
+    const goalkeeper=p=>P.group(p?.pos)==='GOL'||P.eligible(p)[0]==='GOL';
+    if(!players.some(goalkeeper))return null;
+    const fitTier=(p,role)=>{
+      if(role==='GOL')return goalkeeper(p)?0:1000;
+      if(goalkeeper(p))return 1000;
+      const valid=P.eligible(p);
+      if(valid.includes(role))return 0;
+      if(!valid.length&&P.group(p?.pos)===P.group(role))return 1;
+      if(valid.some(v=>NEAR.has(v+'>'+role)))return 2;
+      if(valid.length&&P.group(valid[0])===P.group(role))return 3;
+      return 4;
+    };
+    const cost=roles.map(role=>players.map((p,index)=>{
+      const value=Number(overall(p));
+      const ger=Number.isFinite(value)?Math.max(0,Math.min(100,value)):0;
+      return fitTier(p,role)*1000-ger+index*1e-7;
+    }));
+    const match=hungarian(cost);
+    const assignments=roles.map((role,index)=>({role,player:players[match[index]]}));
+    if(assignments.some(x=>!x.player)||new Set(assignments.map(x=>x.player.id)).size!==roles.length)return null;
+    if(assignments.some(x=>(x.role==='GOL')!==goalkeeper(x.player)))return null;
+    const assignedPositions={};
+    for(const item of assignments)assignedPositions[item.player.id]=item.role;
+    return {formation,assignments,starters:assignments.map(x=>x.player),assignedPositions};
+  }
+  const api={formationSlots,supportsSpecific,choose,assignRoles,suggestIdeal};
   root.ProLifeSquadPositionSelection=api;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

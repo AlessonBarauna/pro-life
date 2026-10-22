@@ -3,6 +3,11 @@
 // 06B: dedicated coach creation. Player attributes are never collected here.
 let currentStep=0;
 const STEPS=["Tipo de carreira","Treinador","Identidade","Vestuário","Clube","Configurações e início"];
+const FUNDING_STEP=100000000;
+const FUNDING_MAX=10000000000;
+// Values from older saves remain valid even though the new control advances in R$ 100 million steps.
+const LEGACY_FUNDING=new Set([0,10000000,50000000]);
+function validFunding(value){return Number.isSafeInteger(value)&&(LEGACY_FUNDING.has(value)||(value>=FUNDING_STEP&&value<=FUNDING_MAX&&value%FUNDING_STEP===0));}
 // FC 27 career database nationalities; selection is independent of national teams.
 const NATIONALITIES=["África do Sul","Albania","Alemanha","Andorra","Angola","Antigua and Barbuda","Arábia Saudita","Argélia","Argentina","Armenia","Austrália","Áustria","Azerbaijan","Belarus","Belgium","Benin","Bermuda","Bolivia","Bosnia Herzegovina","Brasil","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Camarões","Canada","CAR","Chad","Chile","China","Chinese Taipei","Colômbia","Comoros","Congo","Coreia do Norte","Coreia do Sul","Costa do Marfim","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Dominican Republic","DR Congo","Egito","El Salvador","Equador","Equatorial Guinea","Escócia","Espanha","Estados Unidos","Estonia","Faroe Islands","Fiji","Finland","França","FYR Macedonia","Gabon","Gambia","Georgia","Ghana","Gibraltar","Grécia","Grenada","Guatemala","Guinea","Guinea Bissau","Guyana","Haiti","Honduras","Hong Kong","Hungary","Iceland","India","Indonesia","Inglaterra","Iran","Iraq","Irlanda","Irlanda do Norte","Israel","Itália","Jamaica","Japão","Jordan","Kazakhstan","Kenya","Kosovo","Latvia","Lebanon","Liberia","Libya","Liechtenstein","Lithuania","Luxemburg","Madagascar","Malawi","Mali","Malta","Marrocos","Mauritania","Mauritius","México","Moldova","Montenegro","Montserrat","Mozambique","Namibia","Netherlands Antilles","Nigéria","Norway","Nova Zelândia","País de Gales","Países Baixos","Pakistan","Palestinian Authority","Panama","Paraguay","Peru","Philippines","Polônia","Portugal","Puerto Rico","Romania","Rússia","Senegal","Serbia","Sierra Leone","Slovakia","Slovenia","South Sudan","Sri Lanka","St Kitts Nevis","St Lucia","Sudan","Suécia","Suíça","Suriname","Syria","Tanzania","Thailand","Togo","Trinidad and Tobago","Tunisia","Turquia","Ucrânia","Uganda","United Arab Emirates","Uruguay","Uzbekistan","Vanuatu","Venezuela","Zambia","Zimbabwe"];
 function render(ctx){
@@ -33,7 +38,7 @@ function render(ctx){
     <label class="coach-full">Predefinição<select name="preset"><option value="balanced">Equilibrado (padrão)</option><option value="realistic">Realista</option><option value="custom">Personalizado</option></select></label>
     <nav class="coach-settings-tabs coach-full" aria-label="Categorias de configuração"><button type="button" data-settings-tab="general">Geral</button><button type="button" data-settings-tab="finance">Finanças</button><button type="button" data-settings-tab="market">Transferências</button><button type="button" data-settings-tab="management">Gestão</button><button type="button" data-settings-tab="development">Elenco</button><button type="button" data-settings-tab="world">Mundo</button></nav>
     <div class="coach-full coach-settings-pane" data-settings-panel="general"><p>O modo treinador usa o motor de simulação atual; dificuldade e velocidade personalizadas ainda não estão disponíveis.</p></div>
-    <div class="coach-full coach-settings-pane" data-settings-panel="finance"><label>Cenário financeiro inicial<select name="financialScenario"><option value="legacy">Original do clube</option><option value="conservative">Conservador (70%)</option><option value="standard">Padrão (100%)</option><option value="ambitious">Ambicioso (150%)</option></select></label><div class="coach-full coach-section-note" id="coach-finance-preview" aria-live="polite"></div><label>Orçamento adicional inicial<select name="funding"><option value="0">Sem aporte (orçamento original)</option><option value="10000000">+ R$ 10 milhões</option><option value="50000000">+ R$ 50 milhões</option><option value="100000000">+ R$ 100 milhões</option></select></label><p>Aplicado uma única vez ao clube escolhido quando a carreira é criada. Sem clube, não há aporte.</p></div>
+    <div class="coach-full coach-settings-pane" data-settings-panel="finance"><label>Cenário financeiro inicial<select name="financialScenario"><option value="legacy">Original do clube</option><option value="conservative">Conservador (70%)</option><option value="standard">Padrão (100%)</option><option value="ambitious">Ambicioso (150%)</option></select></label><div class="coach-full coach-section-note" id="coach-finance-preview" aria-live="polite"></div><div class="coach-funding-field"><span>Orçamento adicional inicial</span><div class="coach-funding-stepper" role="group" aria-label="Ajustar orçamento adicional inicial"><button type="button" data-funding-decrease aria-label="Diminuir aporte em R$ 100 milhões">−</button><output id="coach-funding-value" for="coach-funding-input" aria-live="polite">Sem aporte</output><button type="button" data-funding-increase aria-label="Aumentar aporte em R$ 100 milhões">+</button><input id="coach-funding-input" type="hidden" name="funding" value="0"></div><small>De R$ 100 milhões a R$ 10 bilhões, em passos de R$ 100 milhões.</small></div><p>Aplicado uma única vez ao clube escolhido quando a carreira é criada. Sem clube, não há aporte.</p></div>
     <div class="coach-full coach-settings-pane" data-settings-panel="market"><label>Rigor nas contratações<select name="marketStrictness"><option value="flexible">Flexível — negociações mais fáceis</option><option value="normal" selected>Normal — avaliação atual</option><option value="strict">Rigoroso — maior exigência financeira e esportiva</option></select></label><label>Primeira janela de transferências<select name="firstWindow"><option value="on">Ativada</option><option value="off">Desativada — contratações bloqueadas na primeira janela</option></select></label><label>Pagamento parcelado<select name="installments"><option value="off">Desativado — pagamento à vista</option><option value="on">Ativado — permitir entrada e parcela futura</option></select></label><label>Empréstimos de jogadores<select name="loans"><option value="off">Desativados</option><option value="on">Ativados — 180 ou 365 dias</option></select></label><p>Estas escolhas afetam o comando de contratação do treinador; não alteram o mercado do modo jogador.</p></div>
     <div class="coach-full coach-settings-pane" data-settings-panel="management"><p>Metas da diretoria, confiança e demissão continuam seguindo as regras reais já implementadas no modo treinador.</p></div>
     <div class="coach-full coach-settings-pane" data-settings-panel="development"><p>Foco de treino coletivo aplicado ao motor existente:</p></div>
@@ -58,11 +63,31 @@ function render(ctx){
  const panels=Array.from(app.querySelectorAll("[data-coach-panel]"));
  const next=app.querySelector("[data-coach-next]"),finish=app.querySelector("[data-coach-finish]"),prev=app.querySelector("[data-coach-prev]");
  const form=app.querySelector("#coach-creation-form");
+ const fundingInput=form.elements.funding;
+ const fundingOutput=app.querySelector("#coach-funding-value");
+ const fundingDecrease=app.querySelector("[data-funding-decrease]");
+ const fundingIncrease=app.querySelector("[data-funding-increase]");
+ function fundingLabel(value){return value===0?"Sem aporte":"+ R$ "+value.toLocaleString("pt-BR");}
+ function renderFunding(){
+   const value=Number(fundingInput.value)||0;
+   fundingOutput.textContent=fundingLabel(value);
+   fundingDecrease.disabled=value<=0;
+   fundingIncrease.disabled=value>=FUNDING_MAX;
+ }
+ function setFunding(value,{custom=true}={}){
+   const nextValue=Math.max(0,Math.min(FUNDING_MAX,Number(value)||0));
+   fundingInput.value=String(nextValue);
+   if(custom&&nextValue!==0)form.elements.preset.value="custom";
+   renderFunding();
+   review();
+ }
+ fundingDecrease.addEventListener("click",()=>setFunding(Number(fundingInput.value)-FUNDING_STEP));
+ fundingIncrease.addEventListener("click",()=>setFunding(Number(fundingInput.value)+FUNDING_STEP));
  form.elements.preset.addEventListener("change",()=>{
-   if(form.elements.preset.value==="realistic")form.elements.funding.value="0";
-   else if(form.elements.preset.value==="balanced")form.elements.funding.value="0";
+   if(form.elements.preset.value==="realistic"||form.elements.preset.value==="balanced")setFunding(0,{custom:false});
  });
- form.elements.funding.addEventListener("change",()=>{if(form.elements.funding.value!=="0")form.elements.preset.value="custom";});
+ fundingInput.addEventListener("change",()=>{if(fundingInput.value!=="0")form.elements.preset.value="custom";renderFunding();});
+ renderFunding();
  for(const key of ["marketStrictness","firstWindow","installments","loans"]){form.elements[key].addEventListener("change",()=>{form.elements.preset.value="custom";});}
 
  function selectedClub(){return clubs.find(c=>c.id===form.elements.clubId.value)||null;}
@@ -272,7 +297,7 @@ function render(ctx){
     const selected=D.club?.(fresh,fresh.clubId)||fresh.clubs?.find(c=>c.id===fresh.clubId);
     if(selected)selected.tactic=tactic;
     const funding=Number(f.get("funding")||0);
-    if(![0,10000000,50000000,100000000].includes(funding))throw Error("Aporte financeiro inválido.");
+    if(!validFunding(funding))throw Error("Aporte financeiro inválido.");
     if(fresh.mode==="coach"){fresh.coachCareer.settings={preset:String(f.get("preset")||"balanced"),funding,marketStrictness:String(f.get("marketStrictness")||"normal"),firstWindow:String(f.get("firstWindow")||"on"),firstWindowStartDay:Number(fresh.day)||0,installments:String(f.get("installments")||"off"),loans:String(f.get("loans")||"off")};if(selected&&funding){selected.budget=(Number(selected.budget)||0)+funding;fresh.coachCareer.settings.fundingApplied=true;}else fresh.coachCareer.settings.fundingApplied=false;}
     return ctx.onStart(fresh);
    }

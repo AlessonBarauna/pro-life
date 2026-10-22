@@ -119,6 +119,7 @@ const files = [
   "src/ui/fc27-05c-player.css",
   "src/ui/fc27-05d-calendar.css",
   "src/ui/fc27-06b-coach-creation.css",
+  "src/ui/fc27-central-v2.css",
   "src/assets/fc27-stadium-04j.svg",
   "src/assets/fc27-stadium-original.svg",
     "src/domain/europa-draw.js",

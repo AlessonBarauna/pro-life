@@ -62,4 +62,16 @@
 .coach-settings-pane[hidden]{display:none!important}
 .coach-settings-pane p{margin:0 0 10px;line-height:1.55}
 .coach-settings-pane label{display:block}
+.coach-funding-field{display:flex;flex-direction:column;gap:9px;margin:14px 0}
+.coach-funding-field>span{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#aec4cf}
+.coach-funding-field>small{color:#91aab3;font-size:11px;line-height:1.45}
+.coach-funding-stepper{display:grid;grid-template-columns:46px minmax(0,1fr) 46px;gap:8px;align-items:center}
+.coach-funding-stepper button,.coach-funding-stepper output{height:46px;border:1px solid #36525f;border-radius:6px}
+.coach-funding-stepper button{background:#bdf12c;color:#102009;font-size:24px;font-weight:900;cursor:pointer}
+.coach-funding-stepper button:hover:not(:disabled){background:#d0ff48}
+.coach-funding-stepper button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.coach-funding-stepper button:disabled{cursor:not-allowed;opacity:.35}
+.coach-funding-stepper output{display:grid;place-items:center;min-width:0;padding:0 12px;background:#112833;color:#fff;font-size:14px;font-weight:800;text-align:center}
 .coach-settings-core{display:contents}
+
+@media(max-width:540px){.coach-funding-stepper{grid-template-columns:42px minmax(0,1fr) 42px}.coach-funding-stepper button,.coach-funding-stepper output{height:42px}.coach-funding-stepper output{font-size:13px;padding:0 8px}}
