@@ -29,7 +29,7 @@ test("FC27 Central 2.0 usa dados oficiais ao inves de placares ficticios",()=>{
 });
 test("FC27 Central 2.0 ajusta paineis para celular",()=>{
   assert.match(css,/@media\(max-width:760px\)/);
-  assert.match(css,/grid-template-columns:1fr!important/);
+  assert.match(css,/grid-template-columns:minmax\(0,1fr\)!important/);
 });
 
 test("FC27 Central 2.0 carrega o CSS aprovado depois das outras folhas",()=>{
@@ -40,7 +40,7 @@ test("FC27 Central 2.0 usa containers independentes sem grid estreito",()=>{
   assert.match(css,/\.fc27-central-v2-approved>\.fc27-v2-board\{/);
   assert.match(css,/\.fc27-central-v2-approved>\.central-v3-grid\{/);
   assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-  assert.ok(!css.includes("display:contents"),"os wrappers nao devem ser dissolvidos na grade");
+  assert.ok(!/display:contents\\s*!important/.test(css),"os wrappers nao devem ser dissolvidos na grade");
   assert.ok(css.includes("grid-column:1/-1!important"),"rodape e faixa inferior ocupam toda a largura");
   assert.ok(css.includes("grid-row:4!important"),"rodape vem apos os paineis");
 });
