@@ -395,3 +395,18 @@ Casos aprovados:
 **Limite:** cenários automatizados aprovados não validam a UI completa, todas as temporadas europeias nem toda a integração entre modos.
 
 **Próxima etapa de auditoria:** escolher teste de persistência/expansão separado (`tests/expansion.test.cjs`) e depois testar fluxo real da interface FC 27.
+
+
+## A01.17 — TAP: expansão, integridade e compatibilidade de saves (22/10/2026)
+
+**Origem:** arquivo de log enviado pelo usuário, `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/expansion.test.cjs`.
+**Resultado:** `tests=47`, `pass=47`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração **57897.2145 ms**.
+
+O conjunto inclui cobertura de: Séries C/D e respectivos elencos parciais; 27 habilidades de treino; estatísticas e ações de partida; seleção da equipe da temporada; taxa de agência; catálogo de copas e estaduais; save expandido round-trip; Copa do Brasil e estaduais; quatro acessos e rebaixamentos por divisão; prêmios; migração de calendário legado; rejeição de save corrompido; exportação, importação e reabertura manual; autosave; próximo compromisso; progresso de treino/GER; seleção brasileira; histórico e snapshots de temporada; progressão e arquétipos; identidade narrativa; preservação de times/estatísticas ao mudar de clube; importação de save válido maior que 8 MB.
+
+**Acumulado real de saídas TAP recebidas em A01.6–A01.17:** `125/125` aprovados, zero falhas.
+
+**Escopo da evidência:** testes automatizados de domínio e persistência aprovados nos cenários cobertos. Não demonstram a navegação completa do criador FC27 nem ações manuais na partida oficial.
+
+**Próximo foco:** `npm run test:ui` ou outro teste de interface específico, em cópia de trabalho isolada. O teste `tests/ui.test.cjs` usa fluxo legado para iniciar uma carreira e contém trecho de criação visual inalcançável; sua eventual aprovação não deve ser interpretada como prova de criação visual FC27.
