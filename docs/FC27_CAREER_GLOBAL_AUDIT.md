@@ -475,3 +475,21 @@ Casos aprovados: validação da oportunidade apenas no passo 4; avanço recupera
 **Limite:** cenários específicos de fluxo/error handling, não toda a experiência do novo criador visual.
 
 **Próximo teste:** `tests/coach-creator-06b.test.cjs`, isolado na branch de auditoria.
+
+
+## A01.22 — TAP: criador do treinador — BLOQUEADO (22/10/2026)
+
+**Origem:** TAP enviado pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/coach-creator-06b.test.cjs`.
+**Resultado real:** `tests=21`, `pass=18`, `fail=3`, `cancelled=0`, `skipped=0`, `EXIT_CODE=1`, duração 1699.5075 ms.
+
+**Falhas:**
+- **Teste 13**, `tests/coach-creator-06b.test.cjs:223`: busca de primeiro clube pelo catálogo canônico, expected `['','c']`, actual `['','a','c']` (entrada `a` indevida).
+- **Teste 17**, `tests/coach-creator-06b.test.cjs:297`: seleção internacional de clubes, expected `['','betis']`, actual `['']` (Betis não encontrado).
+- **Teste 18**, `tests/coach-creator-06b.test.cjs:322`: seleção por cartões de clube com liga legível, `assert.ok(card)` falhou, cartão esperado ausente.
+
+**Investigação:** três falhas concentradas na busca/catálogo/renderização de clubes do criador do treinador. Causa raiz ainda não comprovada; NÃO afirmar que é apenas problema do teste. Demais 18 cenários aprovados (6 etapas, aparência, verba, persistência etc.).
+
+**Acumulado:** anteriores `142/142` TAP aprovados + `18/21` = **160 aprovados de 163 executados**, 3 falhas (não 157). `npm run test:ui` passou separadamente, sem total TAP. A01.22 bloqueia avanço de testes até triagem.
+
+**Próxima ação:** inspeção somente leitura dos trechos de teste (linhas 200–335), do módulo de busca/renderização de catálogo e eventuais diferenças de versões. Não editar gameplay/main/branch paralela, não mexer em saves. Usar comando único que gere `.txt` e abra Notepad.
