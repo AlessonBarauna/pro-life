@@ -634,11 +634,7 @@
           pairIndex,
           home,
           away,
-          roundDate(
-            state.season,
-            roundIndex,
-            schedule.length
-          )
+          leagueRoundDate(s,leagueId,state.season,roundIndex,schedule.length)
         );
 
       if(
@@ -712,6 +708,8 @@
   }
 
   function dueRoundCount(
+    s,
+    leagueId,
     state,
     day
   ){
@@ -730,11 +728,7 @@
     ){
 
       if(
-        roundDate(
-          state.season,
-          i,
-          schedule.length
-        )<=day
+        leagueRoundDate(s,leagueId,state.season,i,schedule.length)<=day
       )
         count++;
       else
@@ -780,6 +774,8 @@
 
         const due=
           dueRoundCount(
+            s,
+            leagueId,
             state,
             s.day
           );
@@ -915,11 +911,7 @@
             roundIndex+1,
 
           date:
-            roundDate(
-              state.season,
-              roundIndex,
-              schedule.length
-            ),
+            leagueRoundDate(s,leagueId,state.season,roundIndex,schedule.length),
 
           home,
           away,
@@ -985,11 +977,7 @@
           roundIndex+1,
 
         date:
-          roundDate(
-            state.season,
-            roundIndex,
-            schedule.length
-          ),
+          leagueRoundDate(s,leagueId,state.season,roundIndex,schedule.length),
 
         played:
           roundIndex<
@@ -1074,11 +1062,7 @@
           leagueId,
           round:ri+1,
           date:
-            roundDate(
-              state.season,
-              ri,
-              schedule.length
-            ),
+            leagueRoundDate(s,leagueId,state.season,ri,schedule.length),
           home,
           away
         };
