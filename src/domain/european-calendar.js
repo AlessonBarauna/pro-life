@@ -85,6 +85,19 @@
     Inglaterra:"ENG",Espanha:"ESP",Italia:"ITA",Alemanha:"GER",Franca:"FRA",
     Suecia:"SWE",Noruega:"NOR",Irlanda:"IRL"
   };
+  // Janelas de mercado para a simulacao: parametros nacionais editaveis.
+  // Sao janelas de planejamento, nao prazos oficiais fixos para todos os anos.
+  const MARKET_WINDOWS={
+    cross_year:[["01-01","02-02","Inverno"],["07-01","09-01","Verao"]],
+    calendar_year:[["01-01","03-31","Pre-temporada"],["07-01","08-31","Meio da temporada"]]
+  };
+  function transferWindows(country,year){
+    const policy=SEASON_POLICIES[country];
+    if(!policy)return [];
+    return MARKET_WINDOWS[policy.type].map(([start,end,name])=>({
+      name,start:dateDay(year+"-"+start),end:dateDay(year+"-"+end),source:"planning_window"
+    }));
+  }
   function leagueCountry(league){
     const raw=String(league?.country||league?.countryCode||"").trim();
     if(SEASON_POLICIES[raw])return raw;
@@ -98,7 +111,7 @@
     const country=leagueCountry(league);
     return country?roundDays(country,season,totalRounds)[roundIndex]??null:null;
   }
-  const api={EPOCH,SEASON_POLICIES,CONFIRMED_2026,UEFA_2026_27,dateDay,toDate,seasonWindow,roundDays,currentSeason,leagueCountry,resolvedRoundDay,uefaLeagueWindows};
+  const api={EPOCH,SEASON_POLICIES,CONFIRMED_2026,UEFA_2026_27,dateDay,toDate,seasonWindow,roundDays,currentSeason,leagueCountry,resolvedRoundDay,uefaLeagueWindows,transferWindows};
   root.ProLifeEuropeanCalendar=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
