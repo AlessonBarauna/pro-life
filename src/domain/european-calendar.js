@@ -61,7 +61,28 @@
     }
     return null;
   }
-  const api={EPOCH,SEASON_POLICIES,CONFIRMED_2026,UEFA_2026_27,dateDay,toDate,seasonWindow,roundDays,currentSeason};
+  const COUNTRY_NAMES={
+    England:"ENG",Spain:"ESP",Italy:"ITA",Germany:"GER",France:"FRA",
+    Portugal:"POR",Netherlands:"NED",Belgium:"BEL",Austria:"AUT",Switzerland:"SUI",
+    Scotland:"SCO",Denmark:"DEN",Poland:"POL",Romania:"ROU",
+    Sweden:"SWE",Norway:"NOR",Ireland:"IRL",
+    Inglaterra:"ENG",Espanha:"ESP",Italia:"ITA",Alemanha:"GER",Franca:"FRA",
+    Suecia:"SWE",Noruega:"NOR",Irlanda:"IRL"
+  };
+  function leagueCountry(league){
+    const raw=String(league?.country||league?.countryCode||"").trim();
+    if(SEASON_POLICIES[raw])return raw;
+    return COUNTRY_NAMES[raw]||null;
+  }
+  // Dados oficiais de cada rodada devem substituir a distribuicao uniforme
+  // quando disponiveis. Nao se deve agendar jogos sem saber a data confirmada.
+  function resolvedRoundDay(league,season,roundIndex,totalRounds){
+    const dates=league?.officialRoundDates?.[season]||league?.officialRoundDates;
+    if(Array.isArray(dates)&&typeof dates[roundIndex]==="string")return dateDay(dates[roundIndex]);
+    const country=leagueCountry(league);
+    return country?roundDays(country,season,totalRounds)[roundIndex]??null:null;
+  }
+  const api={EPOCH,SEASON_POLICIES,CONFIRMED_2026,UEFA_2026_27,dateDay,toDate,seasonWindow,roundDays,currentSeason,leagueCountry,resolvedRoundDay};
   root.ProLifeEuropeanCalendar=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
