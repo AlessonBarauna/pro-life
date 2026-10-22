@@ -25,7 +25,7 @@ function daily(s,ed,hooks={}){
  let count=0;
  for(const m of ed.leagueSchedule.matches){
   if(m.played||m.day>s.day)continue;
-  const hero=s.mode==="player"&&[m.homeId,m.awayId].includes(s.clubId);
+  const hero=["player","coach"].includes(s.mode)&&[m.homeId,m.awayId].includes(s.clubId);
   const solve=hero?hooks.heroFixture:hooks.otherFixture;
   if(typeof solve!=="function")continue;
   const r=solve(m,s);if(!r)continue;
