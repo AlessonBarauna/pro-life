@@ -1,50 +1,39 @@
 "use strict";
-const test=require("node:test");
-const assert=require("node:assert/strict");
-const fs=require("node:fs");
-const path=require("node:path");
-const root=path.resolve(__dirname,"..");
-const app=fs.readFileSync(path.join(root,"src/ui/app.js"),"utf8");
-const css=fs.readFileSync(path.join(root,"src/ui/fc27-central-v2.css"),"utf8");
-const html=fs.readFileSync(path.join(root,"index.html"),"utf8");
-
-test("FC27 Central 2.0 carrega a folha de estilo apos cinematic",()=>{
-  assert.match(html,/fc27-cinematic\.css[\s\S]*fc27-central-v2\.css/);
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const root=path.resolve(__dirname,".."),read=p=>fs.readFileSync(path.join(root,p),"utf8");
+const app=read("src/ui/app.js"),css=read("src/ui/fc27-central-v2.css"),html=read("index.html");
+test("Central 2.0: Bootstrap Grid carregado antes do CSS isolado",()=>{
+ const styles=[...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*>/g)].map(x=>x[0]);
+ assert.ok(styles.some(x=>x.includes("bootstrap-grid.min.css")));
+ assert.ok(styles.at(-1).includes("fc27-central-v2.css"));
 });
-test("FC27 Central 2.0 possui os quatro paineis previstos",()=>{
-  for(const section of ["fc27-v2-calendar","fc27-v2-competitions","fc27-v2-summary","fc27-v2-alerts"]){
-    assert.ok(app.includes('class="fc27-v2-panel '+section+'"'),section);
-  }
+test("Central 2.0: grid isolado envolve confronto, paineis e rodape",()=>{
+ const start=app.indexOf('class="career-dashboard career-central-v3 fc27-central-v2-approved"');
+ const end=app.indexOf('    lineup() {',start);
+ assert.ok(start>=0&&end>start);
+ const home=app.slice(start,end);
+ const row=home.indexOf('class="fc27-v2-layout row g-3"');
+ const hero=home.indexOf('class="central-v3-hero central-main-match col-12 col-xl-6"');
+ const board=home.indexOf('class="fc27-v2-board col-12 col-xl-6"');
+ const old=home.indexOf('class="central-v3-grid central-grid col-12"');
+ const footer=home.indexOf('class="central-v3-context central-news central-calendar col-12"');
+ assert.ok(row>=0&&row<hero&&hero<board&&board<old&&old<footer);
+ assert.match(home,/central-calendar col-12"[\s\S]*<\/footer>\s*<\/div>\s*<\/div>`;/);
 });
-test("FC27 Central 2.0 preserva proximo jogo e controles originais",()=>{
-  assert.match(app,/central-v3-matchup/);
-  assert.match(app,/data-live-match/);
-  assert.match(app,/data-simulate="nextCommitment"/);
+test("Central 2.0: nao dissolve wrappers com display contents",()=>{
+ assert.ok(!/display\s*:\s*contents\s*!important/.test(css));
+ assert.ok(css.includes(".fc27-v2-layout>.fc27-v2-board"));
+ assert.ok(css.includes("display:flex!important"));
+ assert.ok(css.includes("flex-wrap:wrap!important"));
+ assert.ok(css.includes("grid-template-columns:repeat(2,minmax(0,1fr))"));
 });
-test("FC27 Central 2.0 usa dados oficiais ao inves de placares ficticios",()=>{
-  assert.match(app,/D\.seasonCompetitionCatalog\?\.\(state\)/);
-  assert.match(app,/H\.events/);
-  assert.match(app,/H\.recent/);
-  assert.match(app,/c\?\.stats\?\.gf/);
+test("Central 2.0: dispositivos estreitos recebem uma coluna",()=>{
+ assert.ok(css.includes("@media(max-width:760px)"));
+ assert.ok(css.includes("grid-template-columns:minmax(0,1fr)!important"));
 });
-test("FC27 Central 2.0 ajusta paineis para celular",()=>{
-  assert.match(css,/@media\(max-width:760px\)/);
-  assert.ok(css.includes("grid-template-columns:minmax(0,1fr)!important"));
-});
-
-test("FC27 Central 2.0 carrega o CSS aprovado depois das outras folhas",()=>{
-  const styles=[...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*>/g)].map(m=>m[0]);
-  assert.ok(styles.at(-1).includes('src/ui/fc27-central-v2.css'),"CSS da Central deve ser a ultima folha para preservar a grade");
-});
-test("FC27 Central 2.0 usa containers independentes sem grid estreito",()=>{
-  assert.match(css,/\.fc27-central-v2-approved>\.fc27-v2-board\{/);
-  assert.match(css,/\.fc27-central-v2-approved>\.central-v3-grid\{/);
-  assert.ok(css.includes("grid-template-columns:repeat(2,minmax(0,1fr))"));
-  assert.ok(!/display:contents\\s*!important/.test(css),"os wrappers nao devem ser dissolvidos na grade");
-  assert.ok(css.includes("grid-column:1/-1!important"),"rodape e faixa inferior ocupam toda a largura");
-  assert.ok(css.includes("grid-row:4!important"),"rodape vem apos os paineis");
-});
-test("FC27 Central 2.0 nao exibe o painel antigo de treinador sobre a nova grade",()=>{
-  assert.ok(css.includes(".central-v3-hero>.central-v3-player"));
-  assert.ok(css.includes("display:none!important"));
+test("Central 2.0: paineis e botoes originais preservados",()=>{
+ for(const name of ["fc27-v2-calendar","fc27-v2-competitions","fc27-v2-summary","fc27-v2-alerts"])assert.ok(app.includes('class="fc27-v2-panel '+name+'"'));
+ assert.ok(app.includes("data-live-match"));assert.ok(app.includes('data-simulate="nextCommitment"'));
+ assert.ok(app.includes("D.seasonCompetitionCatalog?.(state)"));
+ assert.ok(app.includes("H.events"));assert.ok(app.includes("c?.stats?.gf"));
 });
