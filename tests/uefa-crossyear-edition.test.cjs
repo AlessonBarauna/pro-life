@@ -18,9 +18,11 @@ test("legacy unmarked UEFA editions stay on current engine season",()=>{
   delete s.continental.editions["ucl:2026"].calendarMode;
   assert.strictEqual(C.activeEdition(s,"ucl"),s.continental.editions["ucl:2027"]);
 });
-test("played or completed editions stop overriding current year",()=>{
+test("completed knockout editions stop overriding current year",()=>{
   const s=game();
   s.continental.editions["ucl:2026"].leagueSchedule.matches[0].played=true;
+  assert.strictEqual(C.activeEdition(s,"ucl"),s.continental.editions["ucl:2026"],"completed league phase must remain available for knockouts");
+  s.continental.editions["ucl:2026"].status="complete";
   assert.strictEqual(C.activeEdition(s,"ucl"),s.continental.editions["ucl:2027"]);
 });
 test("CONMEBOL keeps calendar-year edition",()=>{
