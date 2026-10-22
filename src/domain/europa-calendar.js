@@ -11,7 +11,7 @@ function create(s,C,W){
   if(!ed||ed.entrants.length!==36)
     throw Error("Europa sem 36 inscritos.");
 
-  const windows=C.windows(ed.season,"uel");
+  const windows=C.windows(ed.season,"uel",ed);
   const base=R.schedule(ed,windows);
   const associations=C.associations(s).uefa;
   const leagues=new Map();
@@ -32,7 +32,7 @@ function create(s,C,W){
     const days=new Set();
     if(coverage?.rounds){
       for(let i=0;i<coverage.rounds;i++)
-        days.add(W.roundDate(ed.season,i,coverage.rounds));
+        days.add((W.leagueRoundDate?.(s,leagueId,ed.season,i,coverage.rounds)??W.roundDate(ed.season,i,coverage.rounds)));
     }
     busy.set(clubId,days);
   }
