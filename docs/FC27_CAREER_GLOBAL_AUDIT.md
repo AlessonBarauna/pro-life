@@ -534,3 +534,20 @@ Casos aprovados: validação da oportunidade apenas no passo 4; avanço recupera
 - Reteste A01.22.3 já validou `21/21` casos TAP, incluindo 13/17/18 originalmente falhos. Acumulado TAP auditado `163/163`, além de teste UI procedural aprovado.
 
 **Estado:** patch **somente local**, sem commit/push do arquivo de gameplay. Aguardar aprovação explícita do usuário para commit/publicação. A documentação pode ser atualizada sem alterar o jogo.
+
+
+## A01.23 — Integração do motor FC27: reteste 9/9 (22/10/2026)
+
+**Origem:** TAP enviado pelo usuário na branch `feature/fc27-career-global-audit`, commit base `f85ea70`.
+
+**Primeira execução:** `tests=9`, `pass=8`, `fail=1`, `EXIT_CODE=1`. Falha do cenário 9 (`tests/fc27-engine-integration-stage34f12.test.cjs:129`): o `index.html` referencia `src/domain/engine.js?v=coach-swap-20261016`; teste comparava nome exato sem retirar query string.
+
+**Correção LOCAL no teste:** `map((m) => m[1])` virou `map((m) => m[1].split("?")[0])`, mantendo todos os scripts e o versionamento real do navegador. Sem mudança do motor ou manifestos. Backup local criado pelo usuário.
+
+**Reteste A01.23.2:** `node --test --test-reporter=tap tests/fc27-engine-integration-stage34f12.test.cjs`; **9/9 aprovados**, `fail=0`, `EXIT_CODE=0`, `duration_ms=9092.7013`. `git diff --check` sem mensagens (aparentemente aprovado, mas código de saída não foi impresso separadamente). `git status --short`: apenas ` M tests/fc27-engine-integration-stage34f12.test.cjs`.
+
+**Aviso residual:** `THREE.WARNING: Multiple instances of Three.js being imported.` — não quebrou o teste. Registrar como item de triagem posterior; não alterar biblioteca nessa correção.
+
+**Acumulado de cenários TAP únicos após correções:** **172/172 aprovados**. A execução inicial com falha não é contada novamente no total único, mas fica documentada.
+
+**Estado:** patch de teste somente local, sem commit/push. Próximos passos: validar diff/evitar regressões, obter confirmação antes de publicação do código de teste; depois seguir A01.24 (`tests/fc27-save-stage34f13.test.cjs`).
