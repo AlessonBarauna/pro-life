@@ -36,9 +36,9 @@ test("34F.32B.4B calendario persistente e idempotente",()=>{
 
 test("34F.32B.4B nao inventa jogos antigos",()=>{
   const {s,C,W}=setup();
-  const first=C.windows(s.season,"ucl")[0];
-  // Simula save legado criado antes do bootstrap do calendario no dia zero.
   const ed=C.edition(s,"ucl");
+  const first=C.windows(ed.season,"ucl",ed)[0];
+  // Simula save legado criado antes do bootstrap do calendario no dia zero.
   delete ed.leagueSchedule;
   s.day=first+5;
 
