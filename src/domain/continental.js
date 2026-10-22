@@ -226,7 +226,13 @@
   function init(s){
     state(s);const out=[];
     // as edicoes de nivel superior primeiro: elas reservam clubes para as inferiores
-    for(const comp of ["ucl","uel","uecl","lib","sud"])out.push(ensureEdition(s,comp,s.season));
+    const dateCalendar=root.ProLifeEuropeanCalendar||(typeof require==="function"?require("./european-calendar.js"):null);
+    const deferUefa=s.calendarVersion==="european_v1"&&s.season>2026&&
+      s.day<dateCalendar.dateDay(s.season+"-07-01");
+    for(const comp of ["ucl","uel","uecl","lib","sud"]){
+      if(deferUefa&&["ucl","uel","uecl"].includes(comp))continue;
+      out.push(ensureEdition(s,comp,s.season));
+    }
     completeUefaParticipants(s,out);
     return out;
   }
