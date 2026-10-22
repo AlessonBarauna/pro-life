@@ -283,3 +283,16 @@ Cenários aprovados: (1) classificação e navegação da liga nacional; (2) EFL
 **Limite:** estes são testes focalizados de contexto e navegação, não comprovação de progressão de competições ao longo de temporadas. A branch paralela de calendário continua separada.
 
 **Próximo teste isolado:** `tests/coach-2029-central-integration.test.cjs`, para verificar a integração com agenda e histórico em 2029.
+
+
+## A01.10 — TAP: Central Premier League + Champions em 2029 (22/10/2026)
+
+**Origem:** saída TAP enviada pelo usuário, branch `feature/fc27-career-global-audit`.
+**Teste:** `tests/coach-2029-central-integration.test.cjs`.
+**Resultado:** `tests=1`, `pass=1`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração total **111458.4509 ms** (aprox. 1m51s). O único caso validado foi «Central preserva histórico e agenda Premier + Champions em 2029».
+
+**Acumulado comprovado de saídas TAP enviadas:** 5 + 4 + 6 + 7 + 1 = **23/23 aprovados**, sem falhas.
+
+**Limite da conclusão:** garante apenas o cenário de integração implementado nesse arquivo; não confirma todos os calendários europeus, outros anos ou a branch paralela em validação.
+
+**Próximo teste proposto:** `tests/english-cups-engine-integration.test.cjs` isoladamente na branch de auditoria, sem mesclar `fix/english-cups-calendar-2026`.
