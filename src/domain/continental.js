@@ -225,8 +225,15 @@
     for(const ed of marked){
       const matches=[...(ed.leagueSchedule?.matches||[])];
       for(const stage of Object.values(ed.knockout?.stages||{}))matches.push(...(stage.matches||[]));
-      const pending=matches.some(m=>!m.played&&Number(m.day)>=s.day);
-      if(pending)return ed;
+      const pending=matches.some(m=>!m.played);
+      // Ao concluir a fase de liga em janeiro, os playoffs podem ainda nao
+      // existir no save. Preservar a edicao ate a final programada.
+      const cal=root.ProLifeEuropeanCalendar||(typeof require==="function"?require("./european-calendar.js"):null);
+      const last=ed.season===2026&&cal?.UEFA_2026_27?.[comp]?.final;
+      const awaitingKnockout=!!ed.leagueSchedule&&!ed.knockout&&
+        ed.leagueSchedule.matches.every(m=>m.played)&&
+        (!last||s.day<=cal.dateDay(last));
+      if(pending||awaitingKnockout)return ed;
     }
     return current;
   }
