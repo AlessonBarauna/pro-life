@@ -27,7 +27,20 @@
     efl_cup:{round_1:10,round_2:32,round_3:54,round_4:76,quarterfinal:100,semifinal:125,final:165},
     community_shield:{final:6}
   };
-  const cupDay=(season,comp,key)=>baseDay(season)+CUP_DAYS[comp][key];
+  const RealCalendar=()=>root.ProLifeEuropeanCalendar||(typeof require==="function"?require("./european-calendar.js"):null);
+  const REAL_CUP_DATES={
+    fa_cup:{round_1:"11-07",round_2:"12-05",round_3:"01-09",round_4:"02-13",round_5:"03-06",quarterfinal:"04-03",semifinal:"04-24",final:"05-15"},
+    efl_cup:{round_1:"08-11",round_2:"08-25",round_3:"09-22",round_4:"10-27",quarterfinal:"12-15",semifinal:"01-12",final:"02-28"},
+    community_shield:{final:"08-08"}
+  };
+  const cupDay=(season,comp,key,real=false)=>{
+    if(real){
+      const mmdd=REAL_CUP_DATES[comp]?.[key];
+      if(mmdd){const month=Number(mmdd.slice(0,2)),year=season+(month<7?1:0);
+        return RealCalendar().dateDay(year+"-"+mmdd);}
+    }
+    return baseDay(season)+CUP_DAYS[comp][key];
+  };
   function hash(text){let h=2166136261;for(const c of String(text))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;}
   function shuffled(ids,seed){return ids.slice().sort((a,b)=>{const x=hash(`${seed}|${a}`),y=hash(`${seed}|${b}`);return x-y||(a<b?-1:1);});}
   function state(s){
@@ -40,7 +53,7 @@
   }
   function occupiedDays(s,clubId,season){
     const out=new Set(),w=WCC(),c=(s.globalFootball?.clubs||[]).find(x=>x.id===clubId);
-    if(c&&w?.coverage&&w?.roundDate){const cov=w.coverage(s).find(x=>x.leagueId===c.leagueId);for(let i=0;i<(cov?.rounds||0);i++)out.add(w.roundDate(season,i,cov.rounds));}
+    if(c&&w?.coverage&&w?.roundDate){const cov=w.coverage(s).find(x=>x.leagueId===c.leagueId);for(let i=0;i<(cov?.rounds||0);i++)out.add(w.leagueRoundDate?.(s,c.leagueId,season,i,cov.rounds)??w.roundDate(season,i,cov.rounds));}
     for(const ed of Object.values(s.continental?.editions||{}))if(ed.season===season){
       for(const m of ed.leagueSchedule?.matches||[])if([m.homeId,m.awayId].includes(clubId))out.add(m.day);
       for(const stage of Object.values(ed.knockout?.stages||{}))for(const m of stage.matches||[])if([m.homeId,m.awayId].includes(clubId))out.add(m.day);
@@ -83,18 +96,19 @@
   }
   function createEdition(s,comp,season){
     const all=clubs(s),premier=all.filter(c=>c.leagueId===LEAGUES.premier).map(c=>c.id),lower=all.filter(c=>c.leagueId!==LEAGUES.premier).map(c=>c.id),faOpening=all.filter(c=>[LEAGUES.leagueOne,LEAGUES.leagueTwo].includes(c.leagueId)).map(c=>c.id);
-    const ed={id:`${comp}:${season}`,comp,name:DEFS[comp].name,season,status:"active",drawSeed:`${comp}|${season}|${s.initialSeed||0}`,participantIds:comp==="community_shield"?[]:all.map(c=>c.id),rounds:[],currentRound:0,championId:null,runnerUpId:null,createdDay:s.day};
-    if(comp==="fa_cup")pairRound(s,ed,"Primeira fase","round_1",faOpening,cupDay(season,comp,"round_1"),{target:Math.ceil(faOpening.length/2)});
-    if(comp==="efl_cup")pairRound(s,ed,"Primeira fase","round_1",lower,cupDay(season,comp,"round_1"),{target:Math.ceil(lower.length/2)});
+    const ed={id:`${comp}:${season}`,comp,name:DEFS[comp].name,season,calendarMode:s.calendarVersion==="european_v1"?"european_v1":null,status:"active",drawSeed:`${comp}|${season}|${s.initialSeed||0}`,participantIds:comp==="community_shield"?[]:all.map(c=>c.id),rounds:[],currentRound:0,championId:null,runnerUpId:null,createdDay:s.day};
+    if(comp==="fa_cup")pairRound(s,ed,"Primeira fase","round_1",faOpening,cupDay(season,comp,"round_1",ed.calendarMode==="european_v1"),{target:Math.ceil(faOpening.length/2)});
+    if(comp==="efl_cup")pairRound(s,ed,"Primeira fase","round_1",lower,cupDay(season,comp,"round_1",ed.calendarMode==="european_v1"),{target:Math.ceil(lower.length/2)});
     if(comp==="community_shield"){
       const leagueWinner=previousLeagueChampion(s,season-1),faWinner=previousWinner(s,"fa_cup",season-1);
       if(!leagueWinner||!faWinner){ed.status="not_eligible";ed.reason="Campeões da temporada anterior indisponíveis.";}
-      else {const opponent=leagueWinner===faWinner?previousLeagueRunnerUp(s,season-1):faWinner;if(!opponent){ed.status="not_eligible";ed.reason="Vice-campeão da Premier League indisponível.";}else {ed.participantIds=[leagueWinner,opponent];pairRound(s,ed,"Final","final",[leagueWinner,opponent],cupDay(season,comp,"final"),{target:1});}}
+      else {const opponent=leagueWinner===faWinner?previousLeagueRunnerUp(s,season-1):faWinner;if(!opponent){ed.status="not_eligible";ed.reason="Vice-campeão da Premier League indisponível.";}else {ed.participantIds=[leagueWinner,opponent];pairRound(s,ed,"Final","final",[leagueWinner,opponent],cupDay(season,comp,"final",ed.calendarMode==="european_v1"),{target:1});}}
     }
     return ed;
   }
   function init(s){
     const st=state(s);if(s.catalogVersion!=="fc27_v1"||clubs(s).length<2)return st;
+    if(s.calendarVersion==="european_v1"&&s.day<RealCalendar().dateDay(s.season+"-08-01"))return st;
     for(const comp of Object.keys(DEFS)){const key=`${comp}:${s.season}`;if(!st.editions[key])st.editions[key]=createEdition(s,comp,s.season);}
     return st;
   }
@@ -132,7 +146,7 @@
     round.status="complete";const winners=roundWinners(round);for(const id of winners)award(s,ed,id,round.key,hooks);
     if(winners.length===1){finishEdition(s,ed,round,hooks);return;}
     ed._leagueById=Object.fromEntries(clubs(s).map(c=>[c.id,c.leagueId]));const p=nextPlan(ed,winners,currentEuropeanClubs(s,ed.season));
-    if(!p){finishEdition(s,ed,round,hooks);return;}pairRound(s,ed,p.name,p.key,p.ids,baseDay(ed.season)+p.wanted,{target:p.target,twoLegged:p.twoLegged});delete ed._leagueById;
+    if(!p){finishEdition(s,ed,round,hooks);return;}pairRound(s,ed,p.name,p.key,p.ids,ed.calendarMode==="european_v1"?cupDay(ed.season,ed.comp,p.key,true):baseDay(ed.season)+p.wanted,{target:p.target,twoLegged:p.twoLegged});delete ed._leagueById;
   }
   function backgroundResult(s,m){const list=s.globalFootball?.clubs||[],h=list.find(c=>c.id===m.homeId),a=list.find(c=>c.id===m.awayId),hs=Number(h?.level||h?.strength||h?.reputation||65),as=Number(a?.level||a?.strength||a?.reputation||65),n=hash(`${m.id}|${s.initialSeed||0}`);let hg=Math.max(0,Math.min(5,Math.round(1.35+(hs-as)/26+((n%5)-2)/2))),ag=Math.max(0,Math.min(5,Math.round(1.05+(as-hs)/26+((Math.floor(n/19)%5)-2)/2)));return {hg,ag};}
   function applyTieBreak(m,result,round){
@@ -144,12 +158,12 @@
     if(result.record){result.record.stage=m.stage;result.record.domesticCupMatch=true;result.record.knockout=true;if(m.extraTime)result.record.extraTime=true;if(m.penalties)result.record.penalties={...m.penalties};}
   }
   function daily(s,hooks={}){
-    init(s);for(const ed of Object.values(state(s).editions).filter(e=>e.season===s.season&&e.status==="active")){
+    init(s);for(const ed of Object.values(state(s).editions).filter(e=>(e.season===s.season||e.calendarMode==="european_v1")&&e.status==="active")){
       const round=ed.rounds[ed.currentRound];for(const m of round?.matches||[]){if(m.played||m.day!==s.day)continue;const hero=[m.homeId,m.awayId].includes(s.clubId),result=(hero&&hooks.heroFixture?hooks.heroFixture(m,ed):hooks.otherFixture?.(m,ed))||backgroundResult(s,m);applyTieBreak(m,result,round);m.played=true;m.playedDay=s.day;}
       progress(s,ed,hooks);
     }
   }
-  function nextFixture(s,clubId=s.clubId){init(s);const all=[];for(const ed of Object.values(state(s).editions))if(ed.season===s.season&&ed.status==="active")for(const r of ed.rounds||[])for(const m of r.matches||[])if(!m.played&&m.day>s.day&&[m.homeId,m.awayId].includes(clubId))all.push({...m,competitionName:ed.name});return all.sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id))[0]||null;}
+  function nextFixture(s,clubId=s.clubId){init(s);const all=[];for(const ed of Object.values(state(s).editions))if((ed.season===s.season||ed.calendarMode==="european_v1")&&ed.status==="active")for(const r of ed.rounds||[])for(const m of r.matches||[])if(!m.played&&m.day>s.day&&[m.homeId,m.awayId].includes(clubId))all.push({...m,competitionName:ed.name});return all.sort((a,b)=>a.day-b.day||a.id.localeCompare(b.id))[0]||null;}
   function closeSeason(s){init(s);return state(s).history.filter(h=>h.season===s.season);}
   function europeanQualifiers(s,season){const out={faCupWinner:null,eflCupWinner:null};out.faCupWinner=previousWinner(s,"fa_cup",season);out.eflCupWinner=previousWinner(s,"efl_cup",season);return out;}
   function audit(s,season=s.season){init(s);const fixtures=[];for(const ed of Object.values(state(s).editions))if(ed.season===season)for(const r of ed.rounds||[])fixtures.push(...r.matches);const keys=new Set(),duplicates=[],sameDay=new Set();for(const m of fixtures){if(keys.has(m.id))duplicates.push(m.id);keys.add(m.id);for(const id of [m.homeId,m.awayId]){const k=`${id}:${m.day}`;if(sameDay.has(k))duplicates.push(k);sameDay.add(k);}}return {season,editions:Object.values(state(s).editions).filter(e=>e.season===season).length,fixtures:fixtures.length,duplicates};}
