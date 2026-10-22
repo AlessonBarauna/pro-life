@@ -551,3 +551,13 @@ Casos aprovados: validação da oportunidade apenas no passo 4; avanço recupera
 **Acumulado de cenários TAP únicos após correções:** **172/172 aprovados**. A execução inicial com falha não é contada novamente no total único, mas fica documentada.
 
 **Estado:** patch de teste somente local, sem commit/push. Próximos passos: validar diff/evitar regressões, obter confirmação antes de publicação do código de teste; depois seguir A01.24 (`tests/fc27-save-stage34f13.test.cjs`).
+
+
+## A01.24 — Auditoria de persistência de carreira FC27
+
+- **Commit local auditado:** `714ab99` (branch `feature/fc27-career-global-audit`).
+- **Teste:** `tests/fc27-save-stage34f13.test.cjs`.
+- **Resultado observado:** 6/6 testes aprovados; exit code 0; diretório de trabalho sem alterações reportadas.
+- **Cobertura verificada:** criação e salvamento automático em formato híbrido dentro da cota; preservação após recarga e dois ciclos consecutivos sem duplicações; falha de quota preservando o último save válido; rejeição de save adulterado ou com catálogo incompatível; exportação completa e importação para formato híbrido; compatibilidade de formato e salvamento legado.
+- **Conclusão delimitada:** os seis cenários de persistência cobertos pelo teste passaram. Isso não comprova, isoladamente, toda a persistência real em navegadores; a camada IndexedDB deve ser auditada separadamente.
+- **Próxima etapa:** auditar integração com IndexedDB no navegador, sem alterar a branch principal nem a branch de calendário.
