@@ -101,7 +101,7 @@
   const edition=(s,comp,season=s.season)=>state(s).editions[`${comp}:${season}`]||null;
   function tieWinner(match){if(match.hg!==match.ag)return match.hg>match.ag?match.homeId:match.awayId;return match.penalties?.home>match.penalties?.away?match.homeId:match.awayId;}
   function roundWinners(round){
-    if(round.twoLegged){const byTie=new Map();for(const m of round.matches){const k=m.tieId||m.id;if(!byTie.has(k))byTie.set(k,[]);byTie.get(k).push(m);}const out=[];for(const ms of byTie.values()){ms.sort((a,b)=>a.leg-b.leg);const a=ms[0],b=ms[1],aGoals=a.hg+b.ag,bGoals=a.ag+b.hg;out.push(aGoals!==bGoals?(aGoals>bGoals?a.homeId:a.awayId):tieWinner(b));}return round.byes.concat(out);}
+    if(round.twoLegged){const byTie=new Map();for(const m of round.matches){const k=m.tieId||m.id;if(!byTie.has(k))byTie.set(k,[]);byTie.get(k).push(m);}const out=[];for(const ms of byTie.values()){ms.sort((a,b)=>a.leg-b.leg);const a=ms[0],b=ms[1],aGoals=a.hg+b.ag,bGoals=a.ag+b.hg;out.push(aGoals!==bGoals?(aGoals>bGoals?a.homeId:a.awayId):(b.penalties?.home>b.penalties?.away?b.homeId:b.awayId));}return round.byes.concat(out);}
     return round.byes.concat(round.matches.map(tieWinner));
   }
   function nextPlan(ed,winners,european){
