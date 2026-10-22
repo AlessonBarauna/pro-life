@@ -14,11 +14,13 @@ const PAGE_GROUPS = Object.freeze({
   agency: "profile", story: "profile",
   proposals: "market", clubs: "market",
   squad: "squad", lineup: "squad",
-  training: "training", life: "life", finance: "profile", sponsorships: "life"
+  training: "training", life: "life", sponsorships: "life"
 });
 
 function clickPage(w, page) {
-  const group = PAGE_GROUPS[page];
+  // Finance is under different groups for player and coach. Resolve it at runtime.
+  const mode = w.ProLifeSave?.activeId?.() && w.ProLifeSave?.loadSlot?.(w.ProLifeSave.activeId())?.mode;
+  const group = page === "finance" ? (mode === "coach" ? "profile" : "life") : PAGE_GROUPS[page];
   const direct = w.document.querySelector(`.game-nav [data-page="${page}"]`);
   if (group && group !== page && !direct) {
     const top = w.document.querySelector(`.game-nav [data-page="${group}"]`);
@@ -40,6 +42,7 @@ function clickSelector(w, selector) {
 }
 
 function formForMode(w, mode) {
+  assert.ok(mode === "coach" || mode === "player", "unknown career mode: " + mode);
   const selector = mode === "coach" ? "#coach-creation-form" : "#creator";
   const form = w.document.querySelector(selector);
   assert.ok(form, `creation form missing: ${selector}`);
