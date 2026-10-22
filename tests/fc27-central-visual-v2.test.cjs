@@ -8,7 +8,7 @@ test("Central 2.0: Bootstrap Grid carregado antes do CSS isolado",()=>{
  assert.ok(styles.at(-1).includes("fc27-central-v2.css"));
 });
 test("Central 2.0: grid isolado envolve confronto, paineis e rodape",()=>{
- const start=app.indexOf('class="career-dashboard career-central-v3 fc27-central-v2-approved"');
+ const start=app.indexOf('class="career-dashboard fc27-central-v2-approved"');
  const end=app.indexOf('    lineup() {',start);
  assert.ok(start>=0&&end>start);
  const home=app.slice(start,end);
