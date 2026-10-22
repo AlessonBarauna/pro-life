@@ -1394,7 +1394,8 @@
     history,
     integrity,
     makeSchedule,
-    roundDate
+    roundDate,
+    leagueRoundDate
   };
 
   root.ProLifeWorldClubCompetitions=
