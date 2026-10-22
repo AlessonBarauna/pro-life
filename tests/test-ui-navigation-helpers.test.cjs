@@ -40,3 +40,22 @@ test("top-level navigation is clicked only once", () => {
   clickPage(w, "competitions");
   assert.equal(count, 1, "top-level navigation must not be triggered twice");
 });
+
+test("finance navigation follows player and coach layouts", () => {
+  for (const [mode, expected] of [["player", "life"], ["coach", "profile"]]) {
+    const w = new JSDOM('<header class="game-nav"><button data-page="life">Vida</button><button data-page="profile">Perfil</button></header><div class="game-subnav"></div>').window;
+    w.ProLifeSave = { activeId: () => "slot", loadSlot: () => ({ mode }) };
+    const events = [];
+    w.document.querySelectorAll(".game-nav button").forEach(button => button.addEventListener("click", () => {
+      events.push(button.dataset.page);
+      w.document.querySelector(".game-subnav").innerHTML = '<button data-page="finance">Finanças</button>';
+    }));
+    clickPage(w, "finance");
+    assert.deepEqual(events, [expected]);
+  }
+});
+
+test("form helper rejects unknown career modes", () => {
+  const w = new JSDOM('<form id="creator"></form>').window;
+  assert.throws(() => formForMode(w, "manager"), /unknown career mode/);
+});
