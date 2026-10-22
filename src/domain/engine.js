@@ -553,7 +553,7 @@
         const initialOffer = s.offers.find((o) => o.clubId === config.clubId);
         const durationDays = Math.max(730, initialOffer?.durationDays || 730);
         Career.signContract(s, { clubId: config.clubId, salary: s.salary, durationDays, signingBonus: 0, squadRole: "Rotação", transferType: "permanent" });
-        s.careerTransferAvailableDay = Career.nextWindowDay(s.day);
+        s.careerTransferAvailableDay = Career.nextWindowDay(s.day,s);
         s.offers = [];
         Statistics?.ensureHeroStint?.(s, config.clubId);
         Competitions?.ensureState(s);
@@ -1048,7 +1048,7 @@
     const trustBeforeTransfer = Number(pc0?.coachTrust || 0);
     if (pc0?.marketState?.signedAgreement && pc0.marketState.signedAgreement.clubId !== id) throw Error("Você já possui um acordo assinado com outro clube.");
     if (!Career.windowStatus(s).open) {
-      if (s.mode === "player") { Career.signAgreement(s, proposed); return { scheduled:true, startDay:Career.nextWindowStart(s.day) }; }
+      if (s.mode === "player") { Career.signAgreement(s, proposed); return { scheduled:true, startDay:Career.nextWindowStart(s.day,s) }; }
       throw Error("Janela de transferências fechada. Aguarde a próxima abertura.");
     }
     if (!Career.canTransfer(s)) throw Error("Você já assinou nesta janela. Aguarde a próxima janela para trocar de clube.");
@@ -1057,7 +1057,7 @@
     const previousSalary = s.salary, previousContract = s.contract;
     const next = movePlayerToClub(s, id);
     if (s.mode === "player") Statistics?.ensureHeroStint?.(s, id);
-    s.careerTransferAvailableDay = Career.nextWindowDay(s.day);
+    s.careerTransferAvailableDay = Career.nextWindowDay(s.day,s);
     // 33B: acordo assinado válido para este clube é a fonte de verdade dos termos (não depende de a oferta original continuar em s.offers).
     const agreedTerms = s.mode === "player" && pc0?.marketState?.signedAgreement?.clubId === id ? { ...pc0.marketState.signedAgreement } : null;
     const acceptedOffer = agreedTerms || s.offers.find((o) => o.clubId === id && o.expires >= s.day) || { clubId:id, salary, durationDays:730, signingBonus:0, squadRole:"Rotação", transferType:"permanent" };
