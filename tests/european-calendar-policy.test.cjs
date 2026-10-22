@@ -50,3 +50,19 @@ test("datas oficiais de rodadas tem prioridade sobre distribuicao planejada",()=
   assert.equal(Calendar.resolvedRoundDay({country:"England"},2026,0,38),Calendar.dateDay("2026-08-21"));
   assert.equal(Calendar.resolvedRoundDay({country:"Brasil"},2026,0,38),null);
 });
+
+test("UEFA 2026/27 tem calendarios independentes por torneio",()=>{
+  const cases={
+    ucl:["2026-09-08","2027-01-27",8],
+    uel:["2026-09-16","2027-01-28",8],
+    uecl:["2026-10-15","2026-12-17",6]
+  };
+  for(const [comp,[first,last,count]] of Object.entries(cases)){
+    const dates=Calendar.uefaLeagueWindows(2026,comp);
+    assert.equal(dates.length,count,comp);
+    assert.equal(Calendar.toDate(dates[0]),first);
+    assert.equal(Calendar.toDate(dates.at(-1)),last);
+    assert.ok(dates.every((d,i)=>!i||d>dates[i-1]));
+  }
+  assert.equal(Calendar.uefaLeagueWindows(2027,"ucl"),null);
+});
