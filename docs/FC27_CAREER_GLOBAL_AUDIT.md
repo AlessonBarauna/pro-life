@@ -99,3 +99,47 @@ Contagens referentes às tags script da página, não ao número total de arquiv
 - [ ] Validar navegação e imagens reais em desktop e iPhone.
 
 **Próximo diagnóstico:** rastrear cobertura de mercado, GER, partidas e salvamento; registrar matriz de testes antes de qualquer patch.
+
+
+## A01.3 — Matriz de cobertura dos testes (22/10/2026)
+
+**Método:** leitura de `package.json`, `index.html` e confirmação de existência de arquivos nomeados no GitHub. Os testes não foram executados; este inventário não equivale ao catálogo completo de `tests/`.
+
+### Cobertura configurada
+
+- `npm test`: referência explícita a **55 arquivos de teste distintos** em comandos encadeados `node --test` (mais etapa de pré-teste `coach:avatar`).
+- `npm run test:ui`: executa apenas **`tests/ui.test.cjs`**.
+- `npm run check`: valida sintaxe de uma lista de arquivos; não substitui testes de regressão.
+- Presença de `*.test.cjs` não garante inclusão no `npm test`.
+
+| Arquivo comprovadamente existente | Chamado por `npm test` | Área / hipótese de cobertura |
+|---|---|---|
+| `tests/market-stage7.test.cjs` | Sim | Interesse/negociação modo jogador |
+| `tests/world-career-market-stage28c.test.cjs` | Sim | Pool global de clubes do jogador |
+| `tests/player-profile.test.cjs` | Sim | Dados canônicos no perfil |
+| `tests/live-match.test.cjs` | Sim | Exibição incremental do placar; primeiro teste examinado valida apenas `scoreAt` |
+| `tests/coach-player-roles-31011.test.cjs` | **Não** | Substituição no modo treinador |
+| `tests/coach-match-lab-v2.test.cjs` | **Não** | Prévia tática independente |
+| `tests/coach-sponsorship-complete.test.cjs` | **Não** | Patrocínios e persistência |
+| `tests/central-official-competition-context.test.cjs` | **Não** | Contexto das competições na central |
+| `tests/coach-2029-central-integration.test.cjs` | **Não** | Integração da central em temporadas futuras |
+| `tests/english-cups-engine-integration.test.cjs` | **Não** | Copas inglesas, protegidas por branch paralela |
+
+**Importante:** os testes classificados 'Não' estão fora do script principal, mas podem fazer parte de outros comandos ou da CI. Ainda falta auditar os workflows e descobrir todos os testes existentes.
+
+### Novos achados
+
+- **A01-R10 — regressão parcial:** os testes de integração do treinador observados não são executados por `npm test`; executar isoladamente antes de julgar sua situação e avaliar inclusão futura com aprovação.
+- **A01-R11 — placar versus partida:** `tests/live-match.test.cjs` inspecionado contém teste de placar progressivo; não prova substituições, efeitos das táticas ou sincronização com o save.
+- **A01-R12 — rivalidades sem arquivos esperados:** `src/domain/player-rivalries.js` e `src/ui/player-j13-rivalries.js` retornaram ausência na branch. O `index.html` não referencia script com 'rival' no caminho. Ainda é necessário pesquisar implementação embutida, testes e outras branches.
+- **A01-R13 — testes e ramificações:** `tests/english-cups-engine-integration.test.cjs` existe na branch auditada, mas o desenvolvimento mais recente dos calendários está isolado; não misturar os resultados de branches diferentes.
+
+### Sequência de verificação, sem mudanças em gameplay
+
+1. Inventariar os arquivos sob `tests/` e os workflows de CI para contar testes omitidos de forma exaustiva.
+2. Executar separadamente os testes específicos do treinador, saves, partidas e mercado; capturar stdout/stderr e código de saída real em TAP, sem alegar aprovação antecipada.
+3. Testar pelo fluxo real: criação FC27 → transferência → jogo com substituição → avanço → autosave/reload → nova temporada.
+4. Testar jogador e treinador em separado, inclusive modo desktop e iPhone.
+5. Somente após os resultados, reclassificar os sistemas de 'Não verificada' para 'Completa', 'Parcial' ou 'Com problema'.
+
+**Situação da A01.3:** identificação da cobertura declarada concluída; execução e inventário exaustivo pendentes.
