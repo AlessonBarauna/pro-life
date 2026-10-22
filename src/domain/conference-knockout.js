@@ -7,10 +7,9 @@ const EuropeanCalendar=()=>root.ProLifeEuropeanCalendar||
   (typeof require==="function"?require("./european-calendar.js"):null);
 const STAGE_KEYS={playoffs:"playoff",round16:"round16",quarters:"quarterfinal",semis:"semifinal",final:"final"};
 function stageDay(ed,stage,leg){
-  if(ed?.calendarMode!=="european_v1"||ed.season!==2026)return null;
-  const cal=EuropeanCalendar(),value=cal?.UEFA_2026_27?.["uecl"]?.[STAGE_KEYS[stage]];
-  const iso=Array.isArray(value)?value[leg]:value;
-  return typeof iso==="string"?cal.dateDay(iso):null;
+  if(ed?.calendarMode!=="european_v1")return null;
+  const cal=EuropeanCalendar();
+  return cal?.uefaKnockoutDates?.(ed.season,"uecl",STAGE_KEYS[stage])?.[leg]??null;
 }
 const hash=s=>{let h=2166136261;for(const c of String(s))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;};
 function rank(ed){
