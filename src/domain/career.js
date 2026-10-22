@@ -194,7 +194,7 @@
           n.title === "Contrato assinado" && n.body.includes(s.person.name),
       );
       s.careerTransferAvailableDay = club
-        ? nextWindowDay(signing?.day ?? news?.day ?? s.day)
+        ? nextWindowDay(signing?.day ?? news?.day ?? s.day,s)
         : 0;
     }
     if (s.day < s.careerTransferAvailableDay) s.offers = [];
