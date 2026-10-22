@@ -3,7 +3,8 @@ const { JSDOM } = require("jsdom"),
   assert = require("node:assert/strict");
 const test = require("node:test");
 const base = require("node:path").resolve(__dirname, "..") + "/";
-const files = [...fs.readFileSync(base + "index.html", "utf8").matchAll(/<script src="([^"]+)"/g)].map((m) => m[1].split(/[?#]/, 1)[0]);
+const { scriptPathsFromHtml } = require("./helpers/html-scripts.cjs");
+const files = scriptPathsFromHtml(fs.readFileSync(base + "index.html", "utf8"));
 function make(mode) {
   const dom = new JSDOM(fs.readFileSync(base + "index.html", "utf8"), {
       runScripts: "outside-only",
