@@ -19,7 +19,8 @@ const PAGE_GROUPS = Object.freeze({
 
 function clickPage(w, page) {
   // Finance is under different groups for player and coach. Resolve it at runtime.
-  const mode = w.ProLifeSave?.activeId?.() && w.ProLifeSave?.loadSlot?.(w.ProLifeSave.activeId())?.mode;
+  const activeId = page === "finance" ? w.ProLifeSave?.activeId?.() : null;
+  const mode = activeId ? w.ProLifeSave?.loadSlot?.(activeId)?.mode : null;
   const group = page === "finance" ? (mode === "coach" ? "profile" : "life") : PAGE_GROUPS[page];
   const direct = w.document.querySelector(`.game-nav [data-page="${page}"]`);
   if (group && group !== page && !direct) {
