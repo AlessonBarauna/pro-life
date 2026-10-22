@@ -268,6 +268,10 @@
     const st=state(s),key=String(s.season);if(st.finals[key])return st.finals[key];
     const as=associations(s),w=WCC(),fin={};
     for(const a of [...as.uefa,...as.conmebol]){
+      const leagueState=s.globalFootball?.worldCompetitions?.leagues?.[a.leagueId];
+      // Janeiro nao representa a classificacao FINAL das ligas agosto-maio.
+      if(s.calendarVersion==="european_v1"&&a.mode==="league"&&
+        leagueState?.calendarMode==="european_v1"&&leagueState.status==="active")continue;
       let ids=null;
       if(a.mode==="local"){const t=ctx&&ctx.orders&&ctx.orders[a.leagueId];ids=t?t.map(c=>c.id):null;}
       else if(a.mode==="pool"){const o=(w.standings(s,a.leagueId)||[]).map(x=>x.id);ids=o.filter(id=>a.ids.includes(id));}
