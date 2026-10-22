@@ -7,12 +7,14 @@ function valid(ed){return !!(ed&&ed.comp==="uecl"&&ed.status==="ready"&&ed.entra
 function prepare(s,ed){
  if(!valid(ed))return null;
  if(ed.leagueSchedule){if(ed.leagueSchedule.matches?.length!==108)throw Error("Conference: calendario persistido invalido");return ed.leagueSchedule;}
+ const cal=root.ProLifeEuropeanCalendar||(typeof require==="function"?require("./european-calendar.js"):null);
+ const windows=ed.calendarMode==="european_v1"?cal?.uefaLeagueWindows?.(ed.season,"uecl"):null;
  const base=(Number(ed.season)-2026)*365;
- if(s.day>=base+140)return null; // do not fabricate legacy scores/schedules
+ if(s.day>=(windows?.[0]??(base+140)))return null; // Never fabricate past fixtures
  const generated=Fixtures.generate(ed);
  if(generated.matches?.length!==108)throw Error("Conference: sorteio incompleto");
  // Distinct UEFA entrants: never overwrite domestic/other continental calendar.
- const matches=generated.matches.map(m=>({...m,day:base+140+(m.round-1)*12,played:false}));
+ const matches=generated.matches.map(m=>({...m,day:windows?.[m.round-1]??(base+140+(m.round-1)*12),played:false}));
  if(new Set(matches.map(m=>m.id)).size!==108)throw Error("Conference: identificadores repetidos");
  ed.leagueSchedule={version:1,phase:"league",qualificationSource:"adapted-domestic-merit",matches};
  ed.accessNote="Vagas adaptadas ao catalogo PRO-LIFE. Qualificatorias UEFA completas nao simuladas.";
