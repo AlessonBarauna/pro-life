@@ -23,7 +23,37 @@
     GER3:{type:"cross_year",start:"08-01",end:"05-31"},
     SWE:{type:"calendar_year",start:"04-04",end:"11-29",verified2026:true},
     NOR:{type:"calendar_year",start:"03-15",end:"12-06",verified2026:true},
-    IRL:{type:"calendar_year",start:"02-06",end:"10-30",verified2026:true}
+    IRL:{type:"calendar_year",start:"02-06",end:"10-30",verified2026:true},
+    TUR:{type:"cross_year",start:"08-01",end:"05-31"},
+    GRE:{type:"cross_year",start:"08-01",end:"05-31"},
+    CZE:{type:"cross_year",start:"07-15",end:"05-31"},
+    CRO:{type:"cross_year",start:"07-15",end:"05-31"},
+    SRB:{type:"cross_year",start:"07-15",end:"05-31"},
+    UKR:{type:"cross_year",start:"08-01",end:"05-31"},
+    HUN:{type:"cross_year",start:"07-15",end:"05-31"},
+    SVK:{type:"cross_year",start:"07-15",end:"05-31"},
+    SVN:{type:"cross_year",start:"07-15",end:"05-31"},
+    BUL:{type:"cross_year",start:"07-15",end:"05-31"},
+    CYP:{type:"cross_year",start:"08-01",end:"05-31"},
+    ISR:{type:"cross_year",start:"08-01",end:"05-31"},
+    AZE:{type:"cross_year",start:"08-01",end:"05-31"},
+    ARM:{type:"cross_year",start:"08-01",end:"05-31"},
+    BIH:{type:"cross_year",start:"07-15",end:"05-31"},
+    ALB:{type:"cross_year",start:"08-01",end:"05-31"},
+    MKD:{type:"cross_year",start:"08-01",end:"05-31"},
+    MNE:{type:"cross_year",start:"08-01",end:"05-31"},
+    KOS:{type:"cross_year",start:"08-01",end:"05-31"},
+    MDA:{type:"cross_year",start:"07-15",end:"05-31"},
+    WAL:{type:"cross_year",start:"08-01",end:"05-31"},
+    NIR:{type:"cross_year",start:"08-01",end:"05-31"},
+    FIN:{type:"calendar_year",start:"04-01",end:"11-15"},
+    ISL:{type:"calendar_year",start:"04-01",end:"10-31"},
+    EST:{type:"calendar_year",start:"03-01",end:"11-30"},
+    LVA:{type:"calendar_year",start:"03-01",end:"11-30"},
+    LTU:{type:"calendar_year",start:"03-01",end:"11-30"},
+    BLR:{type:"calendar_year",start:"03-01",end:"11-30"},
+    GEO:{type:"calendar_year",start:"03-01",end:"12-15"},
+    KAZ:{type:"calendar_year",start:"03-01",end:"11-30"}
   };
   // Confirmadas: apenas ligas, datas e temporadas indicadas.
   const CONFIRMED_2026={
@@ -94,7 +124,14 @@
     Scotland:"SCO",Denmark:"DEN",Poland:"POL",Romania:"ROU",
     Sweden:"SWE",Norway:"NOR",Ireland:"IRL",
     Inglaterra:"ENG",Espanha:"ESP",Italia:"ITA",Alemanha:"GER",Franca:"FRA",
-    Suecia:"SWE",Noruega:"NOR",Irlanda:"IRL"
+    Suecia:"SWE",Noruega:"NOR",Irlanda:"IRL",
+    Turkey:"TUR",Türkiye:"TUR",Greece:"GRE",Czechia:"CZE",Croatia:"CRO",
+    Serbia:"SRB",Ukraine:"UKR",Hungary:"HUN",Slovakia:"SVK",Slovenia:"SVN",
+    Bulgaria:"BUL",Cyprus:"CYP",Israel:"ISR",Azerbaijan:"AZE",Armenia:"ARM",
+    "Bosnia and Herzegovina":"BIH",Albania:"ALB","North Macedonia":"MKD",
+    Montenegro:"MNE",Kosovo:"KOS",Moldova:"MDA",Wales:"WAL","Northern Ireland":"NIR",
+    Finland:"FIN",Iceland:"ISL",Estonia:"EST",Latvia:"LVA",Lithuania:"LTU",
+    Belarus:"BLR",Georgia:"GEO",Kazakhstan:"KAZ"
   };
   // Janelas de mercado para a simulacao: parametros nacionais editaveis.
   // Sao janelas de planejamento, nao prazos oficiais fixos para todos os anos.
