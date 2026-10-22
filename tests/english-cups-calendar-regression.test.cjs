@@ -58,3 +58,18 @@ test("Community Shield pega o vice da Premier e apresenta somente dois participa
   assert.deepEqual(shield.participantIds,[top[0].id,top[1].id]);
   assert.equal(shield.rounds[0].matches.length,1);
 });
+test("empate agregado usa disputa de penaltis, mesmo quando o segundo jogo nao empata",()=>{
+  const s=career();Cup.init(s);
+  const ed=Cup.edition(s,"efl_cup");
+  const a=s.globalFootball.clubs[0].id,b=s.globalFootball.clubs[1].id;
+  ed.rounds=[{key:"semifinal",name:"Semifinal",status:"scheduled",twoLegged:true,matches:[
+    {id:"tie-leg1",tieId:"tie-pens",homeId:a,awayId:b,leg:1,day:10,played:false},
+    {id:"tie-leg2",tieId:"tie-pens",homeId:b,awayId:a,leg:2,day:25,played:false}
+  ],byes:[]}];ed.currentRound=0;
+  for(let d=1;d<=25;d++){s.day=d;Cup.daily(s,{otherFixture(m){return m.leg===1?{hg:2,ag:0}:{hg:2,ag:0};}});}
+  const second=ed.rounds[0].matches[1],final=ed.rounds[1].matches[0];
+  assert.ok(second.penalties,"agregado empatado exige penaltis");
+  const winner=second.penalties.home>second.penalties.away?b:a;
+  assert.ok([final.homeId,final.awayId].includes(winner));
+  assert.equal(ed.rounds[1].byes.length,0);
+});
