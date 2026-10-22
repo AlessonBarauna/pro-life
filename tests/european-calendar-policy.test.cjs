@@ -38,3 +38,15 @@ test("politica diferencia janela planejada de data oficialmente verificada",()=>
   assert.equal(eng.source,"confirmed");
   assert.equal(por.source,"planning_window");
 });
+
+test("metadados da liga identificam o pais sem adivinhar formato",()=>{
+  assert.equal(Calendar.leagueCountry({country:"England"}),"ENG");
+  assert.equal(Calendar.leagueCountry({country:"Norway"}),"NOR");
+  assert.equal(Calendar.leagueCountry({country:"Brasil"}),null);
+});
+test("datas oficiais de rodadas tem prioridade sobre distribuicao planejada",()=>{
+  const league={country:"England",officialRoundDates:{"2026":["2026-08-21","2026-08-29"]}};
+  assert.equal(Calendar.resolvedRoundDay(league,2026,1,38),Calendar.dateDay("2026-08-29"));
+  assert.equal(Calendar.resolvedRoundDay({country:"England"},2026,0,38),Calendar.dateDay("2026-08-21"));
+  assert.equal(Calendar.resolvedRoundDay({country:"Brasil"},2026,0,38),null);
+});
