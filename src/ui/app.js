@@ -2345,17 +2345,24 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         if(at<0){
           let best=-1;
           for(let k=0;k<remaining.length;k++){
+            const goalkeeper=String(remaining[k]?.pos||"").toUpperCase()==="GOL";
+            if(role==="GOL"?!goalkeeper:goalkeeper)continue;
             const score=fit(role,remaining[k]);
             if(score>best){best=score;at=k;}
           }
         }
-        return remaining.splice(Math.max(0,at),1)[0];
+        if(at<0)return null; // Never place a goalkeeper into an outfield slot.
+        return remaining.splice(at,1)[0];
       }).filter(Boolean)}));
       // Keep the coach's explicit slot order instead of re-sorting every render.
       if(coach){
         const saved=state.coachCareer?.pitchSlots;
         const ids=starters.map(p=>p.id);
-        const valid=state.coachCareer?.pitchFormation===formation&&Array.isArray(saved)&&saved.length===ids.length&&new Set(saved).size===ids.length&&saved.every(id=>ids.includes(id));
+        const valid=state.coachCareer?.pitchFormation===formation&&Array.isArray(saved)&&saved.length===ids.length&&new Set(saved).size===ids.length&&saved.every(id=>ids.includes(id))&&saved.every((id,index)=>{
+          const p=c.roster.find(x=>x.id===id);
+          const isGK=String(p?.pos||"").toUpperCase()==="GOL";
+          return index===ids.length-1?isGK:!isGK;
+        });
         if(valid){
           // All initial players were consumed while constructing rows above.
           // Use the rendered slot count, not the emptied 'remaining' array.
