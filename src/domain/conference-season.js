@@ -5,7 +5,7 @@
 const Fixtures=typeof require==="function"?require("./conference-fixtures.js"):root.ProLifeConferenceFixtures;
 const Calendar=typeof require==="function"?require("./conference-calendar.js"):root.ProLifeConferenceCalendar;
 function checkEdition(s,ed){
- if(!s||!ed||ed.comp!=="uecl"||ed.season!==s.season)throw Error("Edicao Conference invalida");
+ if(!s||!ed||ed.comp!=="uecl"||(ed.season!==s.season&&!(ed.calendarMode==="european_v1"&&ed.season===s.season-1&&ed.leagueSchedule)))throw Error("Edicao Conference invalida");
  if(ed.status!=="ready"||!Array.isArray(ed.entrants)||ed.entrants.length!==36||new Set(ed.entrants.map(e=>e[0])).size!==36)throw Error("36 classificados distintos obrigatorios");
  if(ed.qualificationVerified!==true||ed.qualificationSource!=="official-access-and-playoffs")throw Error("Acesso oficial e playoffs ainda nao comprovados");
 }
