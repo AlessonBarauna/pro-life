@@ -296,3 +296,18 @@ Cenários aprovados: (1) classificação e navegação da liga nacional; (2) EFL
 **Limite da conclusão:** garante apenas o cenário de integração implementado nesse arquivo; não confirma todos os calendários europeus, outros anos ou a branch paralela em validação.
 
 **Próximo teste proposto:** `tests/english-cups-engine-integration.test.cjs` isoladamente na branch de auditoria, sem mesclar `fix/english-cups-calendar-2026`.
+
+
+## A01.11 — TAP: integração Premier / copas inglesas / UEFA (22/10/2026)
+
+**Origem:** saída TAP compartilhada pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/english-cups-engine-integration.test.cjs`.
+**Resultado:** `tests=1`, `pass=1`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração total 6832.7959 ms.
+
+**Caso aprovado:** «motor oficial integra Premier, copas inglesas e competição UEFA no mesmo calendário».
+
+**Acumulado das execuções A01.6–A01.11:** **24 testes aprovados, 0 falhas**. Os caracteres acentuados corrompidos no log não afetam a interpretação do TAP.
+
+**Escopo:** somente cenário automatizado na branch de auditoria; não atesta todas as datas/temporadas nem incorpora mudanças da branch `fix/english-cups-calendar-2026`.
+
+**Próxima verificação:** teste de mercado `tests/market-stage7.test.cjs` e, posteriormente, validação de persistência e interface. Um teste por vez, mantendo logs TAP e `EXIT_CODE`.
