@@ -1,7 +1,8 @@
 const test = require("node:test"), assert = require("node:assert/strict"), fs = require("fs"), path = require("path"), { JSDOM } = require("jsdom");
 const base = path.join(__dirname, "..") + path.sep;
 const html = fs.readFileSync(base + "index.html", "utf8");
-const order = [...html.matchAll(/<script\b[^>]*\bsrc=["\'](src\/[^"\'?#]+\.js)(?:[?#][^"\']*)?["\']/g)].map((m) => m[1]).filter((f) => !/update\.js|avatar/.test(f));
+const { scriptPathsFromHtml } = require("./helpers/html-scripts.cjs");
+const order = scriptPathsFromHtml(html, { srcOnly: true }).filter((f) => !/update\.js|avatar/.test(f));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function make() {
   const dom = new JSDOM(html, { runScripts: "outside-only", url: "https://offline-test.invalid" }), w = dom.window;
