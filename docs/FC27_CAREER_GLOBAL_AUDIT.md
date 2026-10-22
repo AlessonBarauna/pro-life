@@ -341,3 +341,18 @@ Passaram os cenários: catálogo local/global; resolução `club()` global; merc
 **Limite:** valida o motor do mercado global nesses cenários, não valida integralmente interface, IA em múltiplas temporadas ou decisões de negociação do treinador.
 
 **Próximo teste sugerido:** `tests/player-profile.test.cjs` (GER, dados canônicos do perfil e progressão), seguido de validações específicas de carreira e salvamento.
+
+
+## A01.14 — TAP: perfil e histórico de GER do jogador (22/10/2026)
+
+**Origem:** log TAP fornecido pelo usuário, branch `feature/fc27-career-global-audit`.
+**Teste:** `node --test --test-reporter=tap tests/player-profile.test.cjs`.
+**Resultado:** `tests=3`, `pass=3`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração 1173.7349 ms.
+
+Casos aprovados: (1) perfil Meu Jogador usa fontes canônicas; (2) histórico de overall não inventa passado e sobrevive à serialização; (3) overall permanece ponderado por posição.
+
+**Acumulado A01.6–A01.14: 42/42 testes aprovados, zero falhas.**
+
+**Limite:** estes testes não comprovam a evolução dinâmica de GER em múltiplas temporadas, consistência de todas as telas nem a experiência manual.
+
+**Próximo teste:** `tests/training-stage3.test.cjs` para verificar desenvolvimento e treinamento. Registrar TAP e código de saída real.
