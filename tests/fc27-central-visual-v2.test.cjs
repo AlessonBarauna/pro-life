@@ -36,14 +36,13 @@ test("FC27 Central 2.0 carrega o CSS aprovado depois das outras folhas",()=>{
   const styles=[...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*>/g)].map(m=>m[0]);
   assert.ok(styles.at(-1).includes('src/ui/fc27-central-v2.css'),"CSS da Central deve ser a ultima folha para preservar a grade");
 });
-test("FC27 Central 2.0 fixa os paineis diretamente na grade de 12 colunas",()=>{
-  for(const name of ["fc27-v2-calendar","fc27-v2-competitions","fc27-v2-summary","fc27-v2-alerts"]){
-    assert.ok(css.includes(".fc27-v2-board>."+name),name);
-  }
-  assert.ok(css.includes("grid-template-columns:repeat(12,minmax(0,1fr))"),"grade desktop");
-  assert.ok(css.includes("display:contents!important"),"wrappers transparentes");
-  assert.ok(css.includes("grid-column:7/10!important"),"calendario ao lado do confronto");
-  assert.ok(css.includes("grid-column:10/13!important"),"competicoes na direita");
+test("FC27 Central 2.0 usa containers independentes sem grid estreito",()=>{
+  assert.match(css,/\.fc27-central-v2-approved>\.fc27-v2-board\{/);
+  assert.match(css,/\.fc27-central-v2-approved>\.central-v3-grid\{/);
+  assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.ok(!css.includes("display:contents"),"os wrappers nao devem ser dissolvidos na grade");
+  assert.ok(css.includes("grid-column:1/-1!important"),"rodape e faixa inferior ocupam toda a largura");
+  assert.ok(css.includes("grid-row:4!important"),"rodape vem apos os paineis");
 });
 test("FC27 Central 2.0 nao exibe o painel antigo de treinador sobre a nova grade",()=>{
   assert.ok(css.includes(".central-v3-hero>.central-v3-player"));
