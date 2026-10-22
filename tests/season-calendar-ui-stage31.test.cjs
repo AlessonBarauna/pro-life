@@ -68,10 +68,8 @@ function get(w) {
 
 const q = (w, s) => w.document.querySelector(s), qa = (w, s) => [...w.document.querySelectorAll(s)];
 function toLeague(w) {
-  const g = q(w, '.game-nav [data-page="competitions"]');
-  assert.ok(g, "navegacao principal de competicoes encontrada");
-  g.click();
-  assert.ok(q(w, '[data-page="league"]'), "subnavegacao da liga encontrada");
+  const { clickPage } = require("./helpers/ui-navigation.cjs");
+  clickPage(w, "league");
 }
 function toPage(w, p) { click(w, `[data-page="${p}"]`); }
 const MINE = (w) => get(w).clubId;
