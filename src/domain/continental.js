@@ -254,7 +254,19 @@
     const out=new Set();for(let i=0;i<cov.rounds;i++)out.add(w.roundDate(season,i,cov.rounds));return out;
   }
   // Janelas continentais: 3 dias consecutivos (ter/qua/qui); cada clube joga no primeiro dia livre da sua janela.
-  function windows(season,comp){
+  function windows(season,comp,editionForCalendar){
+    if(editionForCalendar?.calendarMode==="european_v1"&&editionForCalendar.season===season&&["ucl","uel","uecl"].includes(comp)){
+      const cal=root.ProLifeEuropeanCalendar||(typeof require==="function"?require("./european-calendar.js"):null);
+      const dates=cal?.uefaLeagueWindows?.(season,comp);
+      if(dates?.length){
+        // A fase de liga e o mata-mata usam o mesmo ciclo anual; a
+        // programacao de confrontos nao sobrescreve partidas persistidas.
+        const stages=cal.UEFA_2026_27?.[comp];
+        return [...dates,...["playoff","round16","quarterfinal","semifinal","final"].map(key=>
+          cal.dateDay(Array.isArray(stages?.[key])?stages[key][0]:stages?.[key])
+        )];
+      }
+    }
     const b=baseDay(season),def=COMPS[comp],n=def.conf==="UEFA"?8+5:6+5,out=[];
     const start=FIRST+30,end=LAST-20,gap=Math.floor((end-start)/(n-1));
     const shift={ucl:0,uel:1,uecl:2,lib:0,sud:1}[comp]||0;
