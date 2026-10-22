@@ -25,7 +25,7 @@
     const valid=P.eligible(p);
     if(!valid.length)return P.group(p.pos)===P.group(role)?0:COST.otherGroup; // legado sem subposicao: sem inventar
     if(valid[0]===role)return 0;
-    if(valid.includes(role))return p.secondaryPositionsSource==='suggested'?(P.group(valid[0])===P.group(role)?COST.sameGroup:COST.otherGroup):COST.secondary;
+    if(valid.includes(role))return p.secondaryPositionsSource==='suggested'?1.5:COST.secondary;
     if(valid.some(v=>NEAR.has(v+'>'+role)))return COST.near;
     return P.group(valid[0])===P.group(role)?COST.sameGroup:COST.otherGroup;
   }
