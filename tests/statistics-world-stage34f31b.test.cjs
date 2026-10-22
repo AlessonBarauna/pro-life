@@ -32,14 +32,25 @@ test("34F.31B (4) clube brasileiro abre sua divisao", () => {
 
 test("34F.31B (5,6) seletor inclui ligas jogaveis; ligas so de catalogo ficam desabilitadas", () => {
   const h = E.statistics(B(), ""); const comps = WS.competitions(B());
-  assert.ok(comps.length >= 30); for (const c of comps.slice(0, 40)) assert.ok(h.includes(`<option value="${c.id}"`), c.id);
+  const playable = B().globalFootball.leagues.filter((l) => {
+    const state = B().globalFootball.worldCompetitions?.leagues?.[l.id];
+    return l.active !== false &&
+      l.competitionEligible !== false &&
+      state &&
+      Array.isArray(state.clubIds) &&
+      state.clubIds.length > 1 &&
+      Number(state.season) === Number(B().season);
+  });
+  assert.ok(playable.length >= 30);
+  for (const c of playable) assert.ok(h.includes(`<option value="${c.id}"`), c.id);
+  for (const c of comps) assert.ok(h.includes(`<option value="${c.id}"`), c.id);
   assert.ok(h.includes('<option value="serieA"'));
-  const only = B().globalFootball.leagues.filter((l) => !comps.some((c) => c.id === l.id));
+  const only = B().globalFootball.leagues.filter((l) => !comps.some((c) => c.id === l.id) && !playable.some((c) => c.id === l.id));
   if (only.length) { assert.ok(h.includes("Somente catálogo")); for (const l of only) assert.ok(!h.includes(`<option value="${l.id}"`), l.id + " nao pode ser selecionavel"); }
 });
 
 test("34F.31B (7) rankings da LaLiga vem dos registros canonicos (WorldStats), sem misturar ligas", () => {
-  const s = B(), h = E.statistics(s, LALIGA); const top = WS.leaders(s, { leagueId: LALIGA, stat: "goals", limit: 10 });
+  const s = make(/^Real Betis$/, 330), h = E.statistics(s, LALIGA); const top = WS.leaders(s, { leagueId: LALIGA, stat: "goals", limit: 10 });
   assert.ok(top.length >= 3);
   for (const r of top.slice(0, 3)) assert.ok(h.includes(r.name), r.name);
   const prem = WS.leaders(s, { leagueId: PREMIER, stat: "goals", limit: 10 }); const laNames = new Set(top.map((r) => r.id));

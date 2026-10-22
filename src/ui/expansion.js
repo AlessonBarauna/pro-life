@@ -35,15 +35,78 @@
   }
   // 34F.31B - seletor mundial: competicoes brasileiras + ligas FC27 com partidas processadas (WorldStats); catalogo puro fica desabilitado.
   function worldList(s) {
-    const WS = root.ProLifeWorldStats, out = [], seen = new Set();
-    if (!WS || !WS.competitions) return { playable: out, catalogOnly: [] };
-    for (const c of WS.competitions(s)) { out.push({ id: c.id, name: c.name, type: "league", world: true, country: c.country || "" }); seen.add(c.id); }
-    const main = root.ProLifeCareerContext?.resolve(s)?.mainCompetitionId;
+    const WS = root.ProLifeWorldStats;
+    const out = [];
+    const seen = new Set();
     const gl = s.globalFootball?.leagues || [];
-    if (main && !seen.has(main)) { const l = gl.find((x) => x.id === main); if (l) { out.push({ id: l.id, name: root.ProLifeNames?.league ? root.ProLifeNames.league(s, l.id, l.name) : l.name, type: "league", world: true, country: l.country || "", empty: true }); seen.add(main); } }
-    out.sort((a, b) => String(a.country).localeCompare(String(b.country), "pt-BR") || String(a.name).localeCompare(String(b.name), "pt-BR"));
+    const states = s.globalFootball?.worldCompetitions?.leagues || {};
+
+    const add = (id, fallback, empty = false) => {
+      if (!id || seen.has(id)) return;
+      const league = gl.find(l => l.id === id);
+      out.push({
+        id,
+        name: root.ProLifeNames?.league
+          ? root.ProLifeNames.league(s, id, league?.name || fallback || id)
+          : league?.name || fallback || id,
+        type: "league",
+        world: true,
+        country: league?.country || "",
+        empty
+      });
+      seen.add(id);
+    };
+
+    for (const c of WS?.competitions?.(s) || []) {
+      add(c.id, c.name, false);
+    }
+
+    for (const league of gl) {
+      const state = states[league.id];
+      const eligible =
+        league.active !== false &&
+        league.competitionEligible !== false &&
+        state &&
+        Array.isArray(state.clubIds) &&
+        state.clubIds.length > 1 &&
+        Number(state.season) === Number(s.season);
+
+      if (eligible) {
+        add(league.id, league.name, !s.globalFootball?.worldStats?.leagues?.[league.id]?.n);
+      }
+    }
+
+    const main = root.ProLifeCareerContext?.resolve(s)?.mainCompetitionId;
+    if (main && gl.some(l => l.id === main)) {
+      add(main, main, true);
+    }
+
+    out.sort((a, b) =>
+      String(a.country).localeCompare(String(b.country), "pt-BR") ||
+      String(a.name).localeCompare(String(b.name), "pt-BR")
+    );
+
     const hasLocalBr = (s.leagues || []).length > 0;
-    const catalogOnly = gl.filter((l) => !seen.has(l.id) && !(hasLocalBr && l.country === "Brasil" && !(s.leagues || []).some((x) => x.id === l.id))).map((l) => ({ id: l.id, name: root.ProLifeNames?.league ? root.ProLifeNames.league(s, l.id, l.name) : l.name, country: l.country || "" })).sort((a, b) => String(a.country).localeCompare(String(b.country), "pt-BR") || String(a.name).localeCompare(String(b.name), "pt-BR"));
+
+    const catalogOnly = gl
+      .filter(l =>
+        !seen.has(l.id) &&
+        !(hasLocalBr &&
+          l.country === "Brasil" &&
+          !(s.leagues || []).some(x => x.id === l.id))
+      )
+      .map(l => ({
+        id: l.id,
+        name: root.ProLifeNames?.league
+          ? root.ProLifeNames.league(s, l.id, l.name)
+          : l.name,
+        country: l.country || ""
+      }))
+      .sort((a, b) =>
+        String(a.country).localeCompare(String(b.country), "pt-BR") ||
+        String(a.name).localeCompare(String(b.name), "pt-BR")
+      );
+
     return { playable: out, catalogOnly };
   }
   function allComps(s) { return [...root.ProLifeCompetitions.statCompetitions(s), ...worldList(s).playable]; }
@@ -64,6 +127,35 @@
     const hist = past.length ? `<section class="card section"><h2>Temporadas anteriores</h2><div class="tablewrap"><table><thead><tr><th>Temporada</th><th>Prêmio</th><th>Vencedor</th><th>Valor</th></tr></thead><tbody>${past.slice().reverse().flatMap((a) => (a.awards || []).filter((w) => /artilh|assist/i.test(String(w.label || w.cat))).map((w) => `<tr><td>${esc(a.season)}</td><td>${esc(w.label || w.cat)}</td><td>${esc(w.name)}<small>${esc(w.club || "")}</small></td><td>${esc(WS.formatAward(w))}</td></tr>`)).join("")}</tbody></table></div></section>` : "";
     return `<p class="muted">Estatísticas individuais desta liga são atribuídas de forma determinística a partir dos placares simulados e dos elencos (não são lances jogados). Jogos do seu protagonista usam os registros reais da partida.</p><div class="competition-grid section">${worldBoard(s, "Artilharia", "goals", id, "gols")}${worldBoard(s, "Assistências", "assists", id, "assistencias")}${worldBoard(s, "Melhor média de nota", "rating", id, "nota")}${worldBoard(s, "Melhores em campo", "motm", id, "motm")}${worldBoard(s, "Jogos disputados", "apps", id, "jogos")}${worldBoard(s, "Defesas (goleiros)", "saves", id, "defesas")}</div>${hist}`;
   }
+  function coachWorldStats(s, selected) {
+    const competitions = allComps(s);
+    const id = competitions.some(c => c.id === selected)
+      ? selected
+      : DUMMY(s, competitions);
+    const current = competitions.find(c => c.id === id);
+    if (!current) return "";
+
+    const boards = current.world
+      ? worldLeaders(s, id)
+      : `<div class="competition-grid section">
+          ${leaderTable(s, "Artilharia", "goals", id)}
+          ${leaderTable(s, "Assistências", "assists", id)}
+          ${leaderTable(s, "Melhores em campo", "motm", id)}
+        </div>`;
+
+    return `<section class="card section">
+      <div class="split">
+        <div>
+          <div class="tag">ESTATÍSTICAS DAS COMPETIÇÕES</div>
+          <h2>${esc(current.name)}</h2>
+        </div>
+        <label class="chart-select">
+          Competição
+          <select id="statistics-key">${selectOptions(s, competitions, id)}</select>
+        </label>
+      </div>
+    </section>${boards}`;
+  }
   function statistics(s, selected) {
     if (s.mode === "coach") {
       const api=root.ProLifeCoachCareer, career=api?.snapshot?.(s,root.ProLife)||null;
@@ -76,7 +168,7 @@
       const row=stints.length?stints.map(x=>{const rows=x.rows||[],v=rows.reduce((a,r)=>({w:a.w+(Number(r.w)||0),d:a.d+(Number(r.d)||0),l:a.l+(Number(r.l)||0)}),{w:0,d:0,l:0});return `<tr><td>${esc(x.club||"—")}</td><td>${x.fromSeason??"—"}${x.toSeason&&x.toSeason!==x.fromSeason?"–"+x.toSeason:""}</td><td>${v.w+v.d+v.l}</td><td>${v.w}</td><td>${v.d}</td><td>${v.l}</td><td>${x.titles||0}</td></tr>`;}).join(""):'<tr><td colspan="7">O histórico será preenchido conforme temporadas e passagens forem registradas.</td></tr>';
       return `<section class="card"><div class="tag">ESTATÍSTICAS DO TREINADOR</div><h2>${esc(club?.name||"Sem clube")} · Temporada ${s.season}</h2><p class="muted">Dados do clube e do histórico de carreira do treinador; não são estatísticas individuais de jogador.</p><div class="profile-data"><span>Jogos na liga <b>${played}</b></span><span>Vitórias <b>${w}</b></span><span>Empates <b>${d}</b></span><span>Derrotas <b>${l}</b></span><span>Pontos <b>${pts}</b></span><span>Aproveitamento em vitórias <b>${pct}%</b></span><span>Gols pró <b>${Number(st.gf)||0}</b></span><span>Gols contra <b>${Number(st.ga)||0}</b></span><span>Títulos registrados <b>${total.titles}</b></span></div></section>
       <section class="card section"><h2>Histórico da carreira</h2><div class="tablewrap"><table><thead><tr><th>Clube</th><th>Temporada</th><th>J</th><th>V</th><th>E</th><th>D</th><th>Títulos</th></tr></thead><tbody>${row}</tbody></table></div><p class="muted">V/E/D históricos são somados apenas a partir dos registros de passagem já salvos.</p></section>
-      <section class="card section"><h2>Diretoria</h2><div class="profile-data"><span>Confiança <b>${Number.isFinite(Number(career?.board))?Math.round(Number(career.board))+"%":"—"}</b></span><span>Risco de demissão <b>${esc(career?.risk||"—")}</b></span><span>Reputação <b>${Number(s.reputation)||0}</b></span><span>Temporadas registradas <b>${total.w+total.d+total.l?stints.filter(x=>(x.rows||[]).length).length:0}</b></span></div></section>`;
+      <section class="card section"><h2>Diretoria</h2><div class="profile-data"><span>Confiança <b>${Number.isFinite(Number(career?.board))?Math.round(Number(career.board))+"%":"—"}</b></span><span>Risco de demissão <b>${esc(career?.risk?.label || (typeof career?.risk === "string" ? career.risk : "—"))}</b></span><span>Reputação <b>${Number(s.reputation || 0).toLocaleString("pt-BR", {maximumFractionDigits: 1})}</b></span><span>Temporadas registradas <b>${total.w+total.d+total.l?stints.filter(x=>(x.rows||[]).length).length:0}</b></span></div></section>${coachWorldStats(s, selected)}`;
     }
     const S=root.ProLifeStatistics, dash=S.heroDashboard(s), insight=S.careerInsights(s), competitions=allComps(s), id=competitions.some(item=>item.id===selected)?selected:DUMMY(s,competitions), current=competitions.find(item=>item.id===id), h=dash.currentClubSeason || dash.season;
     const metrics=(x)=>`<div class="profile-data"><span>Jogos <b>${x.appearances||0}</b></span><span>Titular <b>${x.starts||0}</b></span><span>Minutos <b>${x.minutes||0}</b></span><span>Gols <b>${x.goals||0}</b></span><span>Assist. <b>${x.assists||0}</b></span><span>Participações <b>${Number(x.goals||0)+Number(x.assists||0)}</b></span><span>Nota média <b>${x.averageRating||"—"}</b></span><span>V/E/D <b>${x.wins||0}/${x.draws||0}/${x.losses||0}</b></span><span>Finalizações <b>${x.shots||0}</b></span><span>No alvo <b>${x.onTarget||0}</b></span><span>xG <b>${x.xg||0}</b></span><span>Amarelos <b>${x.yellowCards||0}</b></span><span>Vermelhos <b>${x.redCards||0}</b></span></div>`;
