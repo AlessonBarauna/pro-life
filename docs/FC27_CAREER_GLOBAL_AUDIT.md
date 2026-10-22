@@ -356,3 +356,25 @@ Casos aprovados: (1) perfil Meu Jogador usa fontes canônicas; (2) histórico de
 **Limite:** estes testes não comprovam a evolução dinâmica de GER em múltiplas temporadas, consistência de todas as telas nem a experiência manual.
 
 **Próximo teste:** `tests/training-stage3.test.cjs` para verificar desenvolvimento e treinamento. Registrar TAP e código de saída real.
+
+
+## A01.15 — TAP: treinamento e evolução do jogador (22/10/2026)
+
+**Origem:** saída TAP compartilhada pelo usuário. Branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/training-stage3.test.cjs`.
+**Resultado:** `tests=9`, `pass=9`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`, duração total 11267.9845 ms.
+
+Casos aprovados:
+1. Treino manual gera nota/XP/progresso/energia e bloqueia repetição no mesmo dia.
+2. Progressão de atributo é gradual e fica mais cara em níveis altos.
+3. Idade e arquétipo influenciam eficiência.
+4. XP por partida considera posição e não é concedido duas vezes.
+5. Progresso sobrevive ao save e migra plano antigo.
+6. Treino automático ocorre em cada dia elegível e preserva preferências.
+7. Avanço de 30 dias equivale deterministicamente a 30 avanços diários quanto ao treino.
+8. Treino automático consome sessão diária, impedindo treino manual indevido.
+9. Troca de plano após sessão não permite segunda sessão indevida.
+
+**Acumulado de TAP A01.6–A01.15: 51/51 aprovados; zero falhas.**
+
+**Limite:** não demonstra visual de todas as telas nem progressão de múltiplas temporadas. Próxima checagem: testes de salvamento e continuidade de carreira, particularmente integração entre evolução e temporadas.
