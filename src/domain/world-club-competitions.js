@@ -358,7 +358,7 @@
       w.season=s.season;
       // Ligas europeias explicitamente opt-in atravessam 1 de janeiro.
       w.leagues=Object.fromEntries(Object.entries(w.leagues).filter(
-        ([,league])=>league?.calendarMode==="european_v1"&&league.status==="active"
+        ([,league])=>league?.calendarMode==="european_v1"
       ));
     }
 
@@ -376,7 +376,7 @@
       if(
         !current ||
         (Number(current.season)!==Number(s.season)&&
-         !(current.calendarMode==="european_v1"&&current.status==="active"))
+         !(current.calendarMode==="european_v1"))
       ){
 
         w.leagues[id]=
@@ -1247,7 +1247,7 @@
       s.season;
 
     w.leagues=Object.fromEntries(Object.entries(w.leagues||{}).filter(
-      ([,league])=>league?.calendarMode==="european_v1"&&league.status==="active"
+      ([,league])=>league?.calendarMode==="european_v1"
     ));
 
     ensureSeason(s);
