@@ -8,7 +8,7 @@ const Calendar=typeof require==="function"
   :root.ProLifeEuropaCalendar;
 
 function prepare(s,C,W, options={}){
-  const ed=C.edition(s,"uel");
+  const ed=C.activeEdition?.(s,"uel")||C.edition(s,"uel");
   if(!ed)throw Error("Edicao da Europa inexistente.");
 
   if(ed.leagueSchedule){
