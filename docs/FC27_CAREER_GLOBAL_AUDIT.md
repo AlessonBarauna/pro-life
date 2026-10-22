@@ -326,3 +326,18 @@ Cenários aprovados: interesse segundo reputação e concorrência; recusa com c
 **Limites:** cobertura exclusiva dos cenários do arquivo; não valida integralmente a negociação visual nem o mercado do treinador. Próxima etapa sugerida: `tests/world-career-market-stage28c.test.cjs`, teste de catálogo global e mercado do jogador.
 
 **Observação:** mudanças registradas aqui são somente documentais. Sem alteração de regras ou saves.
+
+
+## A01.13 — TAP: mercado global do jogador (22/10/2026)
+
+**Origem:** log TAP enviado pelo usuário; `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/world-career-market-stage28c.test.cjs`.
+**Resultado:** `tests=7`, `pass=7`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração 4203.9012 ms.
+
+Passaram os cenários: catálogo local/global; resolução `club()` global; mercado gerando clube global; transferência com identidade preservada; não duplicação do protagonista; clube global com liga/proposta contratual; IDs de mercado válidos.
+
+**Acumulado A01.6–A01.13:** **39/39 aprovados**, zero falhas, sem testes pulados nas saídas compartilhadas.
+
+**Limite:** valida o motor do mercado global nesses cenários, não valida integralmente interface, IA em múltiplas temporadas ou decisões de negociação do treinador.
+
+**Próximo teste sugerido:** `tests/player-profile.test.cjs` (GER, dados canônicos do perfil e progressão), seguido de validações específicas de carreira e salvamento.
