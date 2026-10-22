@@ -378,3 +378,20 @@ Casos aprovados:
 **Acumulado de TAP A01.6–A01.15: 51/51 aprovados; zero falhas.**
 
 **Limite:** não demonstra visual de todas as telas nem progressão de múltiplas temporadas. Próxima checagem: testes de salvamento e continuidade de carreira, particularmente integração entre evolução e temporadas.
+
+
+## A01.16 — TAP: continuidade de carreira, saves e contratos (22/10/2026)
+
+**Origem:** log TAP enviado pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/career.test.cjs`.
+**Resultado:** `tests=27`, `pass=27`, `fail=0`, `cancelled=0`, `skipped=0`, `EXIT_CODE=0`; duração total 79339.6088 ms.
+
+**Cobertura demonstrada pelos testes:** mundo brasileiro com 4 ligas/80 clubes; 38 rodadas e históricos salváveis; limites de janelas, ofertas e contratações; compras pessoais e efeitos recorrentes; promessas à imprensa; transferências da IA sem duplicação; migração segura de saves antigos; rejeição de dados inválidos; bloqueios e preferências de ofertas; confiança, função no elenco e objetivos; contratos, renovações e agente; mídia e mundo vivo; rivalidades legadas persistidas; aposentadoria e transição para treinador; contagem contratual, contrapropostas, economia e clubes-alvo.
+
+**Achado A01-R12 refinado:** o caso `legacy tracks rivalries and survives old-save normalization` passou. Existe comportamento de rivalidades no domínio legado; a ausência dos arquivos separados `player-rivalries.js`/`player-j13-rivalries.js` não implica ausência total do recurso. Ainda é preciso auditar a implementação específica inspirada no FC 27.
+
+**Acumulado confirmado por TAP recebido:** A01.6–A01.16 = **78/78 aprovados, zero falhas**.
+
+**Limite:** cenários automatizados aprovados não validam a UI completa, todas as temporadas europeias nem toda a integração entre modos.
+
+**Próxima etapa de auditoria:** escolher teste de persistência/expansão separado (`tests/expansion.test.cjs`) e depois testar fluxo real da interface FC 27.
