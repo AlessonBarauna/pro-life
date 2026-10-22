@@ -428,3 +428,18 @@ O comando executa `node tests/ui.test.cjs`. Saídas:
 **Limite relevante:** `tests/ui.test.cjs:44-79` usa criação direta de estado legado e carrega o slot; trecho de criação via menu após o primeiro `return dom` é inalcançável. Portanto, sucesso do teste **não comprova** o fluxo de criação visual FC27 novo. Também não comprova substituições manuais na partida oficial.
 
 **Próximo passo de auditoria:** mapear testes FC27 específicos já presentes (criadores, menu de carreira, menus/fluxos de partida), escolher uma regressão focalizada, executar isoladamente e por fim fazer teste manual de criação em navegador sem usar saves reais.
+
+
+## A01.19 — TAP: criação de carreira do jogador (22/10/2026)
+
+**Origem:** TAP compartilhado pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/creation-stage14.test.cjs`.
+**Resultado:** 14 testes, 14 aprovados, 0 falhas, 0 ignorados, 0 cancelados, `EXIT_CODE=0`; duração total 24273.011 ms.
+
+Cenários aprovados: faixas de GER/idade/posição/arquétipo; personalização sem estados impossíveis; determinismo por seed; prévia e assinatura; oportunidades sem titularidade garantida; contrato, elenco e persistência; início sem assinatura; saves antigos; dificuldade; diversidade de atributos; orçamento de personalidade; compatibilidade do criador clássico; assistente UI de seis passos que preserva escolhas ao voltar; idade mínima de 14 anos.
+
+**Achado atualizado:** `tests/creation-stage14.test.cjs` comprova um fluxo automatizado de assistente visual de seis etapas, embora `tests/ui.test.cjs` tenha bloco inalcançável. É necessário confirmar a equivalência desse assistente ao criador FC27 atual, além do fluxo próprio do treinador.
+
+**Acumulado real de testes TAP A01.6–A01.19: 139/139 aprovados, sem falhas.** A execução adicional de `npm run test:ui` também passou, mas não foi convertida artificialmente em contagem TAP.
+
+**Próximo foco:** auditoria do criador FC27 específico de treinador e jogador; inspeção da navegação e teste manual isolado no navegador.
