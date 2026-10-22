@@ -253,10 +253,10 @@
       // Ao concluir a fase de liga em janeiro, os playoffs podem ainda nao
       // existir no save. Preservar a edicao ate a final programada.
       const cal=root.ProLifeEuropeanCalendar||(typeof require==="function"?require("./european-calendar.js"):null);
-      const last=ed.season===2026&&cal?.UEFA_2026_27?.[comp]?.final;
+      const finalDay=cal?.uefaKnockoutDates?.(ed.season,comp,"final")?.[0];
       const awaitingKnockout=!!ed.leagueSchedule&&!ed.knockout&&
         ed.leagueSchedule.matches.every(m=>m.played)&&
-        (!last||s.day<=cal.dateDay(last));
+        (!Number.isFinite(finalDay)||s.day<=finalDay);
       if(pending||awaitingKnockout)return ed;
     }
     return current;
