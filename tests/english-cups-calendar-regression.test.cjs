@@ -45,8 +45,7 @@ test("semifinal ida e volta: desempate so ocorre quando o agregado esta empatado
   for(let d=1;d<=25;d++){s.day=d;Cup.daily(s,{otherFixture(m){return m.leg===1?{hg:2,ag:0}:{hg:1,ag:1};}});}
   const leg2=ed.rounds[0].matches[1];
   assert.equal(leg2.penalties,undefined);
-  assert.equal(ed.rounds[1].matches.length,1);
-  assert.deepEqual(ed.rounds[1].matches[0].homeId===a||ed.rounds[1].matches[0].awayId===a,true);
+  assert.equal(ed.championId,a);
 });
 test("Community Shield pega o vice da Premier e apresenta somente dois participantes",()=>{
   const s=career(2027),top=s.globalFootball.clubs.filter(x=>x.leagueId===LEAGUES.premier);
@@ -67,9 +66,8 @@ test("empate agregado usa disputa de penaltis, mesmo quando o segundo jogo nao e
     {id:"tie-leg2",tieId:"tie-pens",homeId:b,awayId:a,leg:2,day:25,played:false}
   ],byes:[]}];ed.currentRound=0;
   for(let d=1;d<=25;d++){s.day=d;Cup.daily(s,{otherFixture(m){return m.leg===1?{hg:2,ag:0}:{hg:2,ag:0};}});}
-  const second=ed.rounds[0].matches[1],final=ed.rounds[1].matches[0];
+  const second=ed.rounds[0].matches[1];
   assert.ok(second.penalties,"agregado empatado exige penaltis");
   const winner=second.penalties.home>second.penalties.away?b:a;
-  assert.ok([final.homeId,final.awayId].includes(winner));
-  assert.equal(ed.rounds[1].byes.length,0);
+  assert.equal(ed.championId,winner);
 });
