@@ -1479,14 +1479,30 @@
   }
 
   function interestAssessment(s,clubId){ const c=marketClub(s,clubId); if(!c||clubId===s.clubId) return null; const pc=init(s).playerCareer, ov=playerOverall(s), comp=positionCompetition(s,c), level=clubLevel(c,s), rep=sportingReputation(s), age=s.person.age; const ageBonus=age<=21?6:age<=25?3:age>=32?-5:0; const form=((pc.lastEvaluation?.rating||6.5)-6.5)*7; const need=Math.max(-18,Math.min(18,(ov-comp.best)*2.4 + (5-comp.depth)*1.5)); const levelGap=Math.abs(level-(ov+rep*.18)); const fit=Math.max(-20,18-levelGap*.8); const personality=PlayerPersonality?.marketModifier?.(s)||0; const score=clamp(Math.round(28+rep*.28+form+ageBonus+need+fit+personality),0,100); return {clubId,score,...careerMarketEligibility(s,c),label:score>=72?"ALTO":score>=48?"MÉDIO":"BAIXO",clubLevel:level,bestRival:comp.best,competition:comp.best>=ov+5?"Alta":comp.best>=ov-2?"Média":"Favorável",recommendedOverall:Math.max(55,comp.best-1),sportingReputation:rep,personalityModifier:personality}; }
-  function nextWindowStart(day){ const year=Math.floor(day/365)*365,current=day%365; const w=windows.find(x=>x.start>current); return w?year+w.start:year+365+windows[0].start; }
+  function calendarMarketWindows(s){
+    if(s?.calendarVersion!=="european_v1"||!s.clubId)return null;
+    const calendar=root.ProLifeEuropeanCalendar||(typeof require==="function"?require("./european-calendar.js"):null);
+    const club=marketClub(s,s.clubId),league=(s.globalFootball?.leagues||[]).find(l=>l.id===club?.leagueId);
+    const country=calendar?.leagueCountry?.(league);
+    if(!country)return null;
+    const year=Number(calendar.toDate(s.day).slice(0,4));
+    return [year-1,year,year+1].flatMap(y=>calendar.transferWindows(country,y)).sort((x,y)=>x.start-y.start);
+  }
+  function nextWindowStart(day,s){
+    const list=calendarMarketWindows(s);
+    if(list){const w=list.find(x=>x.start>day);if(w)return w.start;}
+    const year=Math.floor(day/365)*365,current=day%365;
+    const w=windows.find(x=>x.start>current);return w?year+w.start:year+365+windows[0].start;
+  }
   function holdOffer(s,clubId){ const o=findOffer(s,clubId); if(!o) throw Error("Esta proposta não está disponível."); const pc=init(s).playerCareer;ensureOfferIdentity(s,o,pc);o.expires=Math.max(o.expires,s.day+7);o.responseDeadline=o.expires;o.onHold=true;o.stage="ON_HOLD";recordNegotiationEvent(s,o,"ON_HOLD",null,pc);post(s,"Carreira","Agente","Mais tempo para decidir",`Seu agente conseguiu prazo até o dia ${o.expires} para responder.`);return o; }
   function rejectOffer(s,clubId){ const o=findOffer(s,clubId);if(!o)throw Error("Esta proposta não está disponível.");const pc=init(s).playerCareer;ensureOfferIdentity(s,o,pc);s.offers=s.offers.filter(item=>item!==o);pc.marketState.rejectionCooldowns[o.clubId]=s.day+60;const it=pc.interests.find(x=>x.clubId===o.clubId);if(it){it.stage="Recusado";it.expires=s.day+60;}recordNegotiationEvent(s,{...o,status:"rejected",stage:"REJECTED"},"REJECTED",{outcome:"player-rejected"},pc);post(s,"Carreira","Agente","Proposta recusada",`A proposta de ${marketClub(s,o.clubId)?.name||"clube"} foi recusada. Um novo contato não é esperado no curto prazo.`);return o; }
-  function signAgreement(s,offer){ const pc=init(s).playerCareer;ensureOfferIdentity(s,offer,pc);if(pc.marketState.signedAgreement) throw Error("Você já possui um acordo assinado pendente."); const startDay=windowStatus(s).open?s.day:nextWindowStart(s.day); pc.marketState.signedAgreement={...offer,agreedDay:s.day,startDay,status:startDay===s.day?"ready":"scheduled",stage:"AGREEMENT"}; pc.marketState.futureTransfer=startDay>s.day?{clubId:offer.clubId,startDay,agreedDay:s.day}:null; s.offers=s.offers.filter(x=>x.clubId===offer.clubId);recordNegotiationEvent(s,pc.marketState.signedAgreement,"AGREEMENT",{outcome:"player-accepted"},pc);post(s,"Transferências","Agente",startDay>s.day?"Transferência acordada":"Acordo assinado",`${root.ProLife?.club(s,offer.clubId)?.name||"Clube"} e jogador chegaram a um acordo. ${startDay>s.day?`A mudança será efetivada no dia ${startDay}.`:"A transferência pode ser efetivada agora."}`); return pc.marketState.signedAgreement; }
+  function signAgreement(s,offer){ const pc=init(s).playerCareer;ensureOfferIdentity(s,offer,pc);if(pc.marketState.signedAgreement) throw Error("Você já possui um acordo assinado pendente."); const startDay=windowStatus(s).open?s.day:nextWindowStart(s.day,s); pc.marketState.signedAgreement={...offer,agreedDay:s.day,startDay,status:startDay===s.day?"ready":"scheduled",stage:"AGREEMENT"}; pc.marketState.futureTransfer=startDay>s.day?{clubId:offer.clubId,startDay,agreedDay:s.day}:null; s.offers=s.offers.filter(x=>x.clubId===offer.clubId);recordNegotiationEvent(s,pc.marketState.signedAgreement,"AGREEMENT",{outcome:"player-accepted"},pc);post(s,"Transferências","Agente",startDay>s.day?"Transferência acordada":"Acordo assinado",`${root.ProLife?.club(s,offer.clubId)?.name||"Clube"} e jogador chegaram a um acordo. ${startDay>s.day?`A mudança será efetivada no dia ${startDay}.`:"A transferência pode ser efetivada agora."}`); return pc.marketState.signedAgreement; }
   function clearAgreement(s){ const pc=init(s).playerCareer; pc.marketState.signedAgreement=null; pc.marketState.futureTransfer=null; }
   function marketTick(s){ const pc=init(s).playerCareer; for(const o of s.offers||[]) if(o.expires<s.day){ ensureOfferIdentity(s,o,pc);const it=pc.interests.find(x=>x.clubId===o.clubId);if(it&&["Oferta oficial","Negociação"].includes(it.stage))it.stage="Encerrado";recordNegotiationEvent(s,{...o,status:"expired",stage:"EXPIRED"},"EXPIRED",{outcome:"expired"},pc); } s.offers=(s.offers||[]).filter(o=>o.expires>=s.day); const a=pc.marketState.signedAgreement; return a&&a.startDay<=s.day?a:null; }
 
-  function nextWindowDay(day) {
+  function nextWindowDay(day,s) {
+    const list=calendarMarketWindows(s);
+    if(list){const w=list.find(x=>x.start>day);if(w)return w.start;}
     const year = Math.floor(day / 365) * 365,
       current = day % 365;
     const next = windows.find((w) => w.start > current);
@@ -1497,6 +1513,15 @@
     return windowStatus(s).open && s.day >= s.careerTransferAvailableDay;
   }
   function windowStatus(s) {
+    const periods=calendarMarketWindows(s);
+    if(periods){
+      const current=periods.find(w=>s.day>=w.start&&s.day<=w.end);
+      const next=periods.find(w=>w.start>s.day);
+      if(current||next)return {
+        open:!!current,name:current?.name||"Janela fechada",
+        remaining:current?current.end-s.day+1:next.start-s.day,next:next?.name||periods[0]?.name
+      };
+    }
     const day = s.day % 365,
       w = windows.find((w) => day >= w.start && day <= w.end);
     const next = windows.find((w) => w.start > day) || windows[0];
