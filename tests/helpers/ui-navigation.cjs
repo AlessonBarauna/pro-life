@@ -14,12 +14,13 @@ const PAGE_GROUPS = Object.freeze({
   agency: "profile", story: "profile",
   proposals: "market", clubs: "market",
   squad: "squad", lineup: "squad",
-  training: "training", life: "life", finance: "life", sponsorships: "life"
+  training: "training", life: "life", finance: "profile", sponsorships: "life"
 });
 
 function clickPage(w, page) {
   const group = PAGE_GROUPS[page];
-  if (group) {
+  const direct = w.document.querySelector(`.game-nav [data-page="${page}"]`);
+  if (group && group !== page && !direct) {
     const top = w.document.querySelector(`.game-nav [data-page="${group}"]`);
     assert.ok(top, `top-level navigation missing: ${group}`);
     top.click();
