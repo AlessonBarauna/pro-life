@@ -2022,7 +2022,7 @@
       const f = WorldClubCompetitions.nextFixture(s, hc.leagueId, s.clubId);
       if (f && f.date >= s.day) world = { home: f.home, away: f.away, date: f.date, round: f.round, competitionId: hc.leagueId, competitionName: GlobalFootball?.leagueById?.(s, hc.leagueId)?.name || hc.leagueId };
     }
-    const uclSchedule = Continental?.edition?.(s, "ucl", s.season)?.leagueSchedule;
+    const uclSchedule = (Continental?.activeEdition?.(s,"ucl")||Continental?.edition?.(s,"ucl",s.season))?.leagueSchedule;
     const uclMatch = Array.isArray(uclSchedule?.matches)
       ? uclSchedule.matches
           .filter(m =>
@@ -2042,14 +2042,14 @@
       competitionName: "UEFA Champions League",
       stage: "Fase de liga"
     };
-    const koFixture = ChampionsKnockout?.nextFixture?.(s,Continental?.edition?.(s,"ucl"),s.clubId);
+    const koFixture = ChampionsKnockout?.nextFixture?.(s,Continental?.activeEdition?.(s,"ucl")||Continental?.edition?.(s,"ucl"),s.clubId);
     const knockout = koFixture && {home:koFixture.homeId,away:koFixture.awayId,date:koFixture.day,round:koFixture.pair+1,competitionId:"ucl",competitionName:"UEFA Champions League",stage:koFixture.stage};
-    const uelEd=Continental?.edition?.(s,"uel",s.season);
+    const uelEd=Continental?.activeEdition?.(s,"uel")||Continental?.edition?.(s,"uel",s.season);
     const uelGame=uelEd?.leagueSchedule?.matches?.filter(m=>!m.played&&m.day>s.day&&[m.homeId,m.awayId].includes(s.clubId)).sort((a,b)=>a.day-b.day)[0];
     const europa=uelGame&&{home:uelGame.homeId,away:uelGame.awayId,date:uelGame.day,round:uelGame.round,competitionId:"uel",competitionName:"UEFA Europa League",stage:"Fase de liga"};
     const uelKo=EuropaKnockout?.nextFixture?.(s,uelEd,s.clubId);
     const europaKo=uelKo&&{home:uelKo.homeId,away:uelKo.awayId,date:uelKo.day,round:uelKo.pair+1,competitionId:"uel",competitionName:"UEFA Europa League",stage:uelKo.stage};
-    const ueclEd=Continental?.edition?.(s,"uecl",s.season);
+    const ueclEd=Continental?.activeEdition?.(s,"uecl")||Continental?.edition?.(s,"uecl",s.season);
     const ueclMatch=ueclEd?.leagueSchedule?.matches?.filter(m=>!m.played&&m.day>s.day&&[m.homeId,m.awayId].includes(s.clubId)).sort((a,b)=>a.day-b.day)[0];
     const conference=ueclMatch&&{home:ueclMatch.homeId,away:ueclMatch.awayId,date:ueclMatch.day,round:ueclMatch.round,competitionId:"uecl",competitionName:"UEFA Conference League",stage:"Fase de liga"};
     const ueclKo=ConferenceKnockout?.nextFixture?.(s,ueclEd,s.clubId);
