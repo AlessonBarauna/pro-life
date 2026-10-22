@@ -1671,7 +1671,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       }
       if(!alertRows.length)alertRows.push(["Situação da carreira","Nenhuma decisão urgente registrada","inbox"]);
       const alertsHtml=alertRows.slice(0,4).map(([label,detail,page])=>`<button class="fc27-v2-alert" data-page="${esc(page)}"><b>${esc(label)}</b><small>${esc(detail)}</small><span aria-hidden="true">›</span></button>`).join("");
-      return `<div class="career-dashboard career-central-v3 fc27-central-v2-approved">
+      return `<div class="career-dashboard fc27-central-v2-approved">
         <header class="central-v3-header"><div><span>TEMPORADA ${safe(state.season)}</span><time>${dayDate(state.day)}</time><h1>Central</h1></div><p>${esc(next?.competitionName||H.table.league||"Temporada atual")} <b>·</b> ${esc(next?.stage||"Visão geral")}</p></header>
         <div class="fc27-v2-layout row g-3" aria-label="Dashboard da temporada">
         <section class="central-v3-hero central-main-match col-12 col-xl-6">
