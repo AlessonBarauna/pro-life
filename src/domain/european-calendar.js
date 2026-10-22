@@ -51,9 +51,20 @@
     playoff:["2027-02-18","2027-02-25"],round16:["2027-03-11","2027-03-18"],
     quarterfinal:["2027-04-08","2027-04-15"],semifinal:["2027-04-29","2027-05-06"],final:"2027-06-02"
   };
+  function projectedUefaDate(iso,startYear){
+    if(!iso||!Number.isInteger(startYear)||startYear<2026)return null;
+    const isoYear=Number(iso.slice(0,4));
+    return (startYear+isoYear-2026)+iso.slice(4);
+  }
   function uefaLeagueWindows(startYear,comp){
-    if(startYear!==2026||!UEFA_2026_27[comp])return null;
-    return UEFA_2026_27[comp].league.map(dateDay);
+    if(!Number.isInteger(startYear)||!UEFA_2026_27[comp])return null;
+    return UEFA_2026_27[comp].league.map(iso=>dateDay(projectedUefaDate(iso,startYear)));
+  }
+  function uefaKnockoutDates(startYear,comp,stage){
+    const dates=UEFA_2026_27[comp]?.[stage];
+    if(!dates||!Number.isInteger(startYear))return null;
+    const arr=Array.isArray(dates)?dates:[dates];
+    return arr.map(iso=>dateDay(projectedUefaDate(iso,startYear)));
   }
   function seasonWindow(country,startYear){
     const p=SEASON_POLICIES[country];if(!p)return null;
@@ -111,7 +122,7 @@
     const country=leagueCountry(league);
     return country?roundDays(country,season,totalRounds)[roundIndex]??null:null;
   }
-  const api={EPOCH,SEASON_POLICIES,CONFIRMED_2026,UEFA_2026_27,dateDay,toDate,seasonWindow,roundDays,currentSeason,leagueCountry,resolvedRoundDay,uefaLeagueWindows,transferWindows};
+  const api={EPOCH,SEASON_POLICIES,CONFIRMED_2026,UEFA_2026_27,dateDay,toDate,seasonWindow,roundDays,currentSeason,leagueCountry,resolvedRoundDay,uefaLeagueWindows,uefaKnockoutDates,transferWindows};
   root.ProLifeEuropeanCalendar=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
