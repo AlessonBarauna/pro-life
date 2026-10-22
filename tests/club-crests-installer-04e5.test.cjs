@@ -101,7 +101,7 @@ test("04E5 repositorios comunitarios: manifestos provisorios consistentes (arqui
       const c = list.find((x) => x.id === id); assert.ok(c, "id do catalogo: " + id); assert.ok(m.sourceRepo || m.sourceFile, id);
       assert.equal(m.provisional, true, id); assert.ok(!seen.has(id), "id em dois manifestos: " + id); seen.add(id);
       if (c.asset && c.asset.endsWith("/" + m.file)) {
-        const buf = fs.readFileSync(path.join(dir, m.file)); assert.equal(require("node:crypto").createHash("sha256").update(buf).digest("hex"), m.sha256, "hash " + id);
+        let buf = fs.readFileSync(path.join(dir, m.file)); if (/\.svg$/i.test(m.file)) buf = Buffer.from(buf.toString("latin1").replace(/\r\n/g, "\n"), "latin1"); /* checkout Windows (autocrlf) converte SVG para CRLF; o hash do manifesto e do conteudo em LF */ assert.equal(require("node:crypto").createHash("sha256").update(buf).digest("hex"), m.sha256, "hash " + id);
         if (L.bufferKind(buf) === "svg") assert.ok(L.svgIsSafe(buf.toString("utf8")), "svg seguro " + id);
       }
     }

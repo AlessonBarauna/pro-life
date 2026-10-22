@@ -126,7 +126,7 @@
         !Array.isArray(c.lineup) ||
         c.lineup.length > 11 ||
         !c.lineup.every((id) => c.roster.some((p) => p.id === id)) ||
-        !num(c.budget, -1e10, 1e10) ||
+        !num(c.budget, -1e12, 1e12) ||
         !num(c.structure, 0, 100) ||
         !["balanced", "possession", "counter", "attack"].includes(c.tactic) ||
         !c.stats ||

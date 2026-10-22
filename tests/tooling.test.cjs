@@ -49,6 +49,9 @@ test("published build is an installable offline PWA for iPhone", () => {
     const cached = JSON.parse(sw.match(/const ASSETS = (\[.*\]);/)[1]);
     assert.ok(cached.every((url) => fs.existsSync(out(url.split("?")[0]))));
     assert.ok(cached.includes("src/ui/app.js?v=" + built.version));
+    assert.ok(cached.some((url) => url.startsWith("src/assets/club-crests/c0.png?v=")));
+    // O comportamento do cache (offline, atualizacao, versao antiga) e verificado de verdade em service-worker-cache.test.cjs.
+    assert.doesNotMatch(sw, /ignoreSearch/, "nada de ignoreSearch generico: so a chave versionada desta build");
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
