@@ -66,3 +66,23 @@ test("UEFA 2026/27 tem calendarios independentes por torneio",()=>{
   }
   assert.equal(Calendar.uefaLeagueWindows(2027,"ucl"),null);
 });
+
+test("non-summer leagues retain calendar-year policies in UEFA associations",()=>{
+  for(const code of ["FIN","ISL","EST","LVA","LTU","BLR","GEO","KAZ"]){
+    const policy=Calendar.seasonWindow(code,2026);
+    assert.equal(policy.type,"calendar_year",code);
+    assert.equal(policy.source,"planning_window");
+  }
+  for(const code of ["TUR","GRE","CZE","CRO","SRB","UKR","HUN","SVK"]){
+    const policy=Calendar.seasonWindow(code,2026);
+    assert.equal(policy.type,"cross_year",code);
+  }
+});
+test("future UEFA seasons retain proper January and June crossover",()=>{
+  for(const comp of ["ucl","uel","uecl"]){
+    const windows=Calendar.uefaLeagueWindows(2027,comp);
+    assert.ok(windows.every(x=>Number.isInteger(x)));
+    assert.ok(windows[0]>=Calendar.dateDay("2027-09-01"));
+    assert.ok(Calendar.uefaKnockoutDates(2027,comp,"final")[0]>=Calendar.dateDay("2028-05-01"));
+  }
+});
