@@ -213,6 +213,23 @@
     return out;
   }
   function edition(s,comp,season){return state(s).editions[`${comp}:${season==null?s.season:season}`]||null;}
+  // Resolve a temporada UEFA que atravessa janeiro sem alterar saves legados.
+  // Somente edicoes explicitamente marcadas participam da continuidade.
+  function activeEdition(s,comp){
+    const current=edition(s,comp,s.season);
+    if(!["ucl","uel","uecl"].includes(comp))return current;
+    const marked=Object.values(state(s).editions).filter(ed=>
+      ed?.comp===comp&&ed.calendarMode==="european_v1"&&
+      ed.season<=s.season&&ed.status!=="complete"&&ed.status!=="unavailable"
+    ).sort((a,b)=>b.season-a.season);
+    for(const ed of marked){
+      const matches=[...(ed.leagueSchedule?.matches||[])];
+      for(const stage of Object.values(ed.knockout?.stages||{}))matches.push(...(stage.matches||[]));
+      const pending=matches.some(m=>!m.played&&Number(m.day)>=s.day);
+      if(pending)return ed;
+    }
+    return current;
+  }
   function editions(s,season){init(s);return Object.values(state(s).editions).filter(e=>season==null||e.season===season);}
 
   // Registro das classificacoes finais (chamado no encerramento da temporada, antes de s.season++). Idempotente.
@@ -271,7 +288,7 @@
     if(!s.clubId)return [];
     return editions(s,s.season).filter(e=>e.entrants.some(x=>x[0]===s.clubId)).map(e=>({comp:e.comp,name:COMPS[e.comp].name,status:e.status,via:e.entrants.find(x=>x[0]===s.clubId)[2]}));
   }
-  const api={VERSION,COMPS,PLANNED,init,state,edition,editions,ensureEdition,closeSeason,startSeason,associations,clubCountry,windows,slotFor,auditCalendar,heroEntries,uefaQuota,associationQuota,englishEuropeanAllocation,LIB_QUOTA,SUD_QUOTA};
+  const api={VERSION,COMPS,PLANNED,init,state,edition,activeEdition,editions,ensureEdition,closeSeason,startSeason,associations,clubCountry,windows,slotFor,auditCalendar,heroEntries,uefaQuota,associationQuota,englishEuropeanAllocation,LIB_QUOTA,SUD_QUOTA};
   root.ProLifeContinental=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
