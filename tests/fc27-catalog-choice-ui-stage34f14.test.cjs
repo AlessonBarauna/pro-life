@@ -17,9 +17,8 @@ async function go(w, s) { click(w, s); await settle(w); }
 const counts = (s) => ({ leagues: s.globalFootball.leagues.length, clubs: s.globalFootball.clubs.length, players: s.internationalPlayers.length });
 const toHub = (w) => { if (q(w, ".career-hub")) return; if (!q(w, '[data-action="careers"]')) click(w, '[data-page="save"]'); click(w, '[data-action="careers"]'); };
 const fillClassic = (w, mode) => {
-  const selector = mode === "coach" ? "#coach-creation-form" : "#creator";
-  const form = q(w, selector);
-  assert.ok(form, "formulario " + mode + " encontrado");
+  const { formForMode } = require("./helpers/ui-navigation.cjs");
+  const form = formForMode(w, mode);
   if (mode === "coach") {
     form.elements.name.value = "Treinador FC27";
     form.elements.city.value = "Mogi das Cruzes";
