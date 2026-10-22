@@ -57,3 +57,45 @@ Contagens referentes às tags script da página, não ao número total de arquiv
 **Sem alterações de gameplay nesta fase.** Não alterar `main` ou `fix/english-cups-calendar-2026`; não fazer merges automáticos ou force push. Toda classificação **Completa** exige código, fluxo real, teste e validação manual quando necessária.
 
 **Estado:** A01 inventário inicial registrado; auditoria funcional e testes ainda pendentes. Próxima etapa: aprofundar rastreamento e cobertura.
+
+
+## A01.2 — Fluxos de execução e cobertura (22/10/2026)
+
+**Método:** inspeção direta de trechos e pontos de entrada no GitHub. **Não foram executados testes locais/remotos.** Referências abaixo são números de linha do ref auditado nesta rodada.
+
+### Cadeia principal observada
+
+`src/ui/app.js` → `src/application/game.js:execute` → `src/domain/engine.js` e módulos especializados → `src/ui/app.js:persist` → `src/infrastructure/save.js:save`.
+
+| Operação | Evidência | Conclusão limitada |
+|---|---|---|
+| Avançar dias | `game.js:58-63` delega a `D.advance`; `engine.js:2628` | Encaminhamento confirmado, efeitos não testados |
+| Simular próxima partida/30 dias/temporada | `game.js:65-66` delega a `D.simulateAdvance`; `engine.js:3005-3069` | Estados de parada, modo retomável e resultado explícitos no código |
+| Avançar até data | `app.js:1319-1330` usa `D.advanceToDay`; `engine.js:3073` | Caminho alternativo que requer teste próprio |
+| Salvar após simulação | `app.js:9592-9596` chama `A.execute`, `persist`, `render`; `app.js:8622` usa `S.save` | Encaminhamento confirmado, não prova integridade |
+| Validação do save | `save.js:867-891` valida e compara carreira/slot anterior | Bloqueios protetivos podem rejeitar gravações; testar cenários reais |
+| Transferência do jogador | `game.js:69-82` identifica oferta válida antes de `D.join` | Fluxo condicionado à disponibilidade da proposta |
+| Apresentação do treinador | `game.js:7-26` registra e reconhece apresentação | Investigar disparadores e duplicação |
+| Criação via teste de UI | `tests/ui.test.cjs:44-79` | `return dom` na linha 60 torna bloco posterior inalcançável |
+
+### Testes: limitação importante
+
+`package.json`: `npm run test:ui` chama exclusivamente `node tests/ui.test.cjs`. `npm test` usa uma cadeia longa de comandos `node --test`, sem coleta automática de todos os arquivos do diretório `tests/`. A presença de um arquivo `*.test.cjs` no repositório, isoladamente, **não garante** que integre a execução de `npm test`.
+
+**A01-R07 — risco de cobertura:** comparar todos os testes existentes com o conjunto referenciado em `package.json`; validar aqueles omitidos explicitamente e exigir logs TAP com saída real.
+
+**A01-R08 — inconsistência potencial do fluxo de salvamento:** operações do aplicativo com mutação de estado e retornos antecipados precisam ser auditadas em conjunto com os gatilhos de persistência. Verificar save → reload → mesmo estado para jogador e treinador.
+
+**A01-R09 — avanço temporal concorrente:** há rotas distintas para `advance`, `simulateAdvance` e `advanceToDay`. Verificar se eventos de mercado, convocações, calendário e contratos se comportam identicamente quando atingidos por cada rota.
+
+### Critérios de saída da A01
+
+- [x] Criar branch isolada e documento central.
+- [x] Inventariar scripts carregados pelo index.
+- [x] Identificar pontos de entrada, comandos, avanço e save.
+- [ ] Completar inventário dos casos de teste incluídos e omitidos dos scripts npm.
+- [ ] Localizar rivalidades e comprovar a interação com a carreira do jogador.
+- [ ] Executar testes de integração e testes manuais sem alterar saves do usuário.
+- [ ] Validar navegação e imagens reais em desktop e iPhone.
+
+**Próximo diagnóstico:** rastrear cobertura de mercado, GER, partidas e salvamento; registrar matriz de testes antes de qualquer patch.
