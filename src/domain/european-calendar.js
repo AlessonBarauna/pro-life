@@ -39,6 +39,22 @@
   const UEFA_2026_27={
     ucl:{league:["2026-09-08","2026-10-13","2026-10-20","2026-11-03","2026-11-24","2026-12-08","2027-01-19","2027-01-27"],playoff:["2027-02-16","2027-02-23"],round16:["2027-03-09","2027-03-16"],quarterfinal:["2027-04-06","2027-04-13"],semifinal:["2027-04-27","2027-05-04"],final:"2027-06-05"}
   };
+  // Datas-base oficiais UEFA 2026/27. As datas por confronto podem variar
+  // dentro da rodada (ter/qua/qui); o jogo usa janela e resolve conflitos.
+  UEFA_2026_27.uel={
+    league:["2026-09-16","2026-10-15","2026-10-22","2026-11-05","2026-11-26","2026-12-10","2027-01-21","2027-01-28"],
+    playoff:["2027-02-18","2027-02-25"],round16:["2027-03-11","2027-03-18"],
+    quarterfinal:["2027-04-08","2027-04-15"],semifinal:["2027-04-29","2027-05-06"],final:"2027-05-26"
+  };
+  UEFA_2026_27.uecl={
+    league:["2026-10-15","2026-10-22","2026-11-05","2026-11-26","2026-12-10","2026-12-17"],
+    playoff:["2027-02-18","2027-02-25"],round16:["2027-03-11","2027-03-18"],
+    quarterfinal:["2027-04-08","2027-04-15"],semifinal:["2027-04-29","2027-05-06"],final:"2027-06-02"
+  };
+  function uefaLeagueWindows(startYear,comp){
+    if(startYear!==2026||!UEFA_2026_27[comp])return null;
+    return UEFA_2026_27[comp].league.map(dateDay);
+  }
   function seasonWindow(country,startYear){
     const p=SEASON_POLICIES[country];if(!p)return null;
     const endYear=startYear+(p.type==="cross_year"?1:0);
@@ -82,7 +98,7 @@
     const country=leagueCountry(league);
     return country?roundDays(country,season,totalRounds)[roundIndex]??null:null;
   }
-  const api={EPOCH,SEASON_POLICIES,CONFIRMED_2026,UEFA_2026_27,dateDay,toDate,seasonWindow,roundDays,currentSeason,leagueCountry,resolvedRoundDay};
+  const api={EPOCH,SEASON_POLICIES,CONFIRMED_2026,UEFA_2026_27,dateDay,toDate,seasonWindow,roundDays,currentSeason,leagueCountry,resolvedRoundDay,uefaLeagueWindows};
   root.ProLifeEuropeanCalendar=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
