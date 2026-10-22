@@ -1,0 +1,68 @@
+/* FC27 Central de Temporada 2.0 — layout aprovado, somente apresentação. */
+body:has(.fc27-central-v2-approved){background:#06111e!important}
+.fc27-central-v2-approved{--v2line:rgba(140,180,204,.19);--v2panel:#061323;color:#f1f7ff!important}
+.fc27-central-v2-approved .central-v3-header{padding:14px 4px 20px!important}
+.fc27-central-v2-approved .central-v3-header h1{font-weight:950!important;letter-spacing:-1.2px!important}
+.fc27-central-v2-approved>.central-v3-hero{grid-column:1/8!important;grid-row:2!important;min-height:440px!important;max-height:none!important;border:1px solid var(--v2line)!important;background:linear-gradient(115deg,rgba(3,13,25,.36),rgba(4,14,26,.84)),url('../assets/fc27-stadium-original.svg') center/cover!important;border-radius:14px!important}
+.fc27-central-v2-approved .central-v3-match{padding:24px!important}
+.fc27-central-v2-approved .central-v3-player{display:none!important}
+.fc27-central-v2-approved .central-v3-matchup{margin:10px auto!important}
+.fc27-central-v2-approved .central-v3-team i{max-width:88px!important;max-height:88px!important}
+.fc27-central-v2-approved .central-v3-actions{display:flex!important;flex-wrap:wrap;justify-content:center}
+.fc27-central-v2-approved .central-v3-action-main{background:#e9f1f8!important;color:#081726!important}
+.fc27-central-v2-approved>.fc27-v2-board{grid-column:1/-1!important;grid-row:3!important;display:grid!important;grid-template-columns:1.4fr 1fr 1fr!important;gap:14px!important;margin:0!important}
+.fc27-central-v2-approved .fc27-v2-panel{background:linear-gradient(145deg,rgba(8,23,40,.97),rgba(2,13,27,.96));border:1px solid var(--v2line);border-radius:13px;padding:19px;min-width:0;min-height:190px}
+.fc27-central-v2-approved .fc27-v2-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:13px;border-bottom:1px solid rgba(151,183,209,.15)}
+.fc27-central-v2-approved .fc27-v2-panel-head h2{margin:0;color:#e9f5ff;font-size:13px;letter-spacing:.7px;font-weight:900}
+.fc27-central-v2-approved .fc27-v2-panel-head button{border:0!important;background:transparent!important;color:#b3d8ef!important;font-size:11px;padding:5px!important}
+.fc27-central-v2-approved .fc27-v2-calendar{grid-column:2!important;grid-row:1!important}
+.fc27-central-v2-approved .fc27-v2-competitions{grid-column:3!important;grid-row:1!important}
+.fc27-central-v2-approved .fc27-v2-summary{grid-column:1!important;grid-row:2!important}
+.fc27-central-v2-approved .fc27-v2-alerts{grid-column:3!important;grid-row:2!important}
+.fc27-central-v2-approved .fc27-v2-agenda-row{display:grid;grid-template-columns:75px minmax(0,1fr);gap:9px;align-items:center;padding:11px 2px;border-bottom:1px solid rgba(151,183,209,.1)}
+.fc27-central-v2-approved .fc27-v2-day{font-size:11px;color:#96c4e3;font-weight:800}
+.fc27-central-v2-approved .fc27-v2-agenda-row b,.fc27-central-v2-approved .fc27-v2-competition b,.fc27-central-v2-approved .fc27-v2-alert b{display:block;color:#edf4fc;font-size:12px;overflow-wrap:anywhere}
+.fc27-central-v2-approved .fc27-v2-agenda-row small,.fc27-central-v2-approved .fc27-v2-competition small,.fc27-central-v2-approved .fc27-v2-alert small{display:block;color:#9db1bf;font-size:10px;margin-top:3px}
+.fc27-central-v2-approved .fc27-v2-competition,.fc27-central-v2-approved .fc27-v2-alert{position:relative;display:block;text-align:left;width:100%;padding:13px 22px 13px 3px;background:transparent!important;border:0!important;border-bottom:1px solid rgba(151,183,209,.1)!important}
+.fc27-central-v2-approved .fc27-v2-competition>span,.fc27-central-v2-approved .fc27-v2-alert>span{position:absolute;right:5px;top:17px;color:#bfd6ea}
+.fc27-central-v2-approved .fc27-v2-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:18px 0}
+.fc27-central-v2-approved .fc27-v2-number{padding:14px 6px;text-align:center;border-radius:8px;background:rgba(116,159,185,.08)}
+.fc27-central-v2-approved .fc27-v2-number strong{display:block;font-size:26px;color:#fff}
+.fc27-central-v2-approved .fc27-v2-number small{display:block;font-size:10px;color:#afcadc}
+.fc27-central-v2-approved .fc27-v2-goals{display:flex;justify-content:space-between;gap:14px;color:#b4c5d2;font-size:12px}
+.fc27-central-v2-approved .fc27-v2-goals strong{color:#0ee783;font-size:18px}
+.fc27-central-v2-approved>.central-v3-grid{grid-column:1/-1!important;grid-row:4!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;margin-top:0!important}
+.fc27-central-v2-approved>.central-v3-grid>.central-v3-table{display:none!important}
+.fc27-central-v2-approved>.central-v3-grid>.central-v3-form{grid-column:2!important;grid-row:1!important;min-height:190px!important}
+.fc27-central-v2-approved>.central-v3-grid>.fc27-bottom-news{grid-column:1!important}
+.fc27-central-v2-approved>.central-v3-grid>.fc27-bottom-objectives{grid-column:2!important}
+.fc27-central-v2-approved>.central-v3-grid>.central-v3-tasks{grid-column:3!important}
+.fc27-central-v2-approved>.central-v3-context{grid-row:5!important;grid-column:1/-1!important}
+@media(min-width:1200px){
+ .fc27-central-v2-approved>.central-v3-hero{grid-column:1/7!important;grid-row:2!important}
+ .fc27-central-v2-approved>.fc27-v2-board{display:contents!important}
+ .fc27-central-v2-approved .fc27-v2-calendar{grid-column:7/10!important;grid-row:2!important}
+ .fc27-central-v2-approved .fc27-v2-competitions{grid-column:10/13!important;grid-row:2!important}
+ .fc27-central-v2-approved .fc27-v2-summary{grid-column:1/7!important;grid-row:3!important}
+ .fc27-central-v2-approved .fc27-v2-alerts{grid-column:10/13!important;grid-row:3!important}
+ .fc27-central-v2-approved>.central-v3-grid{display:contents!important}
+ .fc27-central-v2-approved>.central-v3-grid>.central-v3-form{grid-column:7/10!important;grid-row:3!important}
+ .fc27-central-v2-approved>.central-v3-grid>.fc27-bottom-news{grid-column:1/5!important;grid-row:4!important}
+ .fc27-central-v2-approved>.central-v3-grid>.fc27-bottom-objectives{grid-column:5/9!important;grid-row:4!important}
+ .fc27-central-v2-approved>.central-v3-grid>.central-v3-tasks{grid-column:9/13!important;grid-row:4!important}
+}
+@media(max-width:1199px){
+ .fc27-central-v2-approved>.central-v3-hero{grid-column:1/-1!important;grid-row:2!important}
+ .fc27-central-v2-approved>.fc27-v2-board{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .fc27-central-v2-approved .fc27-v2-calendar{grid-column:1!important}
+ .fc27-central-v2-approved .fc27-v2-competitions{grid-column:2!important}
+ .fc27-central-v2-approved .fc27-v2-summary{grid-column:1!important}
+ .fc27-central-v2-approved .fc27-v2-alerts{grid-column:2!important}
+}
+@media(max-width:760px){
+ .fc27-central-v2-approved>.fc27-v2-board{grid-template-columns:1fr!important}
+ .fc27-central-v2-approved .fc27-v2-panel{grid-column:1!important;grid-row:auto!important}
+ .fc27-central-v2-approved>.central-v3-grid{grid-template-columns:1fr!important}
+ .fc27-central-v2-approved>.central-v3-grid>.central-v3-tile{grid-column:1!important;grid-row:auto!important}
+ .fc27-central-v2-approved .fc27-v2-number strong{font-size:20px}
+}
