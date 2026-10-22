@@ -7,7 +7,7 @@ const src=name=>fs.readFileSync(path.join(__dirname,"../src/domain/",name),"utf8
 test("UEFA live match processing consults active edition for all three tournaments",()=>{
   const engine=src("engine.js");
   for(const comp of ["ucl","uel","uecl"]){
-    const re=new RegExp("Continental\\.activeEdition\\?\\.\\(s,\\s*[\"']"+comp+"[\"']\\)","g");
+    const re=new RegExp("Continental\\\\.activeEdition\\\\?\\\\.\\\\(s,\\\\s*[\\\"\']"+comp+"[\\\"\']\\\\)","g");
     assert.ok((engine.match(re)||[]).length>=2,comp+" does not resolve both schedule and daily processing");
   }
 });
