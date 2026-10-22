@@ -88,10 +88,11 @@
       const history=(s.globalFootball?.worldCompetitions?.history||[]).find(
         h=>h.leagueId===a.leagueId&&h.season===season-1
       );
+      if(policy&&history?.orderIds?.length)return {order:history.orderIds.slice(),source:"previous_season"};
       if(policy&&history?.top4?.length){
         const seen=new Set(history.top4);
         const all=(s.globalFootball?.clubs||[]).filter(c=>c.leagueId===a.leagueId).map(c=>c.id);
-        return {order:[...history.top4,...all.filter(id=>!seen.has(id))],source:"previous_season"};
+        return {order:[...history.top4,...all.filter(id=>!seen.has(id))],source:"previous_season_partial"};
       }
     }
     const st=state(s),fin=st.finals[String(season-1)]&&st.finals[String(season-1)][a.code];
