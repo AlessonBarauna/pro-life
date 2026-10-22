@@ -121,7 +121,20 @@ function render(ctx){
    }
    review();
  }
- rebuildLeagueOptions();
+ // The club-country default follows the coach nationality, without restricting choice.
+ function syncCoachCountry(){
+   const nationality=String(form.elements.nationality.value||"");
+   const known=[...countrySelect.options].map(o=>o.value).filter(Boolean);
+   const aliases={"Escócia":"Scotland","País de Gales":"Wales","Estados Unidos":"United States","Países Baixos":"Netherlands","Alemanha":"Germany","Espanha":"Spain","Itália":"Italy","França":"France","Portugal":"Portugal","Brasil":"Brasil","Inglaterra":"Inglaterra"};
+   const normalized=normalize(nationality);
+   const wanted=known.find(c=>normalize(c)===normalized)||known.find(c=>normalize(c)===normalize(aliases[nationality]));
+   countrySelect.value=wanted||"";
+   leagueSelect.value="";
+   rebuildLeagueOptions();
+   filterClubs();
+ }
+ syncCoachCountry();
+ form.elements.nationality.addEventListener("change",syncCoachCountry);
  form.elements.clubSearch.addEventListener("input",()=>{
    // Name search is global; reset geographic filters so international clubs can be discovered.
    if(form.elements.clubSearch.value.trim()){countrySelect.value="";rebuildLeagueOptions();leagueSelect.value="";}
