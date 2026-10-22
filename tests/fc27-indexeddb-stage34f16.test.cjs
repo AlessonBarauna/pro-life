@@ -28,8 +28,30 @@ function openPage(br, { lsQuota } = {}) {
 }
 async function hubReady(w) { for (let i = 0; i < 100 && !q(w, ".career-hub"); i++) await sleep(50); assert.ok(q(w, ".career-hub"), "Central carregada"); }
 async function settle(w) { await sleep(150); for (let i = 0; i < 900 && (q(w, "#wiz-busy")); i++) await sleep(100); }
-const fill = (w, mode) => { const f = q(w, "#creator"); assert.ok(f); f.elements.mode.value = mode; f.elements.age.value = mode === "coach" ? "35" : "16"; f.elements.seed.value = "44"; return f; };
-const submit = (w) => q(w, "#creator").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+const fill = (w, mode) => {
+  // 34F.16 audit: coach now has a dedicated six-stage form; persistence tests should use it
+  // instead of assuming the retired shared #creator form still handles new-coach.
+  const coach = q(w, "#coach-creation-form");
+  if (coach) {
+    coach.elements.name.value = "Teste FC27";
+    coach.elements.city.value = "Mogi das Cruzes";
+    coach.elements.age.value = "35";
+    coach.elements.seed.value = "44";
+    click(w, '[data-coach-step="5"]');
+    return coach;
+  }
+  const f = q(w, "#creator");
+  assert.ok(f, "formulário de criação disponível");
+  f.elements.mode.value = mode;
+  f.elements.age.value = mode === "coach" ? "35" : "16";
+  f.elements.seed.value = "44";
+  return f;
+};
+const submit = (w) => {
+  const form = q(w, "#coach-creation-form") || q(w, "#creator");
+  assert.ok(form, "formulário de criação para enviar");
+  return form.dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+};
 const counts = (s) => [s.globalFootball.leagues.length, s.globalFootball.clubs.length, s.internationalPlayers.length];
 async function createFc27(w, mode) {
   click(w, mode === "coach" ? '[data-action="new-coach"]' : '[data-action="new-player"]');
