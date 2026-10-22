@@ -356,7 +356,10 @@
     ){
 
       w.season=s.season;
-      w.leagues={};
+      // Ligas europeias explicitamente opt-in atravessam 1 de janeiro.
+      w.leagues=Object.fromEntries(Object.entries(w.leagues).filter(
+        ([,league])=>league?.calendarMode==="european_v1"&&league.status==="active"
+      ));
     }
 
     for(
@@ -372,8 +375,8 @@
 
       if(
         !current ||
-        Number(current.season)!==
-          Number(s.season)
+        (Number(current.season)!==Number(s.season)&&
+         !(current.calendarMode==="european_v1"&&current.status==="active"))
       ){
 
         w.leagues[id]=
@@ -1100,7 +1103,7 @@
       )
     ){
 
-      if(state.status==="finished")
+      if(state.status==="finished"||state.calendarMode==="european_v1")
         continue;
 
       const schedule=
@@ -1195,7 +1198,9 @@
     w.season=
       s.season;
 
-    w.leagues={};
+    w.leagues=Object.fromEntries(Object.entries(w.leagues||{}).filter(
+      ([,league])=>league?.calendarMode==="european_v1"&&league.status==="active"
+    ));
 
     ensureSeason(s);
 
