@@ -158,7 +158,10 @@
   function ensureEdition(s,comp,season){
     const st=state(s),key=`${comp}:${season}`;
     if(st.editions[key])return st.editions[key];
-    const ed=build(s,comp,season);st.editions[key]=ed;return ed;
+    const ed=build(s,comp,season);
+    if(s.calendarVersion==="european_v1"&&["ucl","uel","uecl"].includes(comp))
+      ed.calendarMode="european_v1";
+    st.editions[key]=ed;return ed;
   }
   // 34F.32B.0 - Preenche vagas UEFA restantes somente depois
   // de reservar os participantes das tres competicoes.
