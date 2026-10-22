@@ -379,11 +379,10 @@
          !(current.calendarMode==="european_v1"))
       ){
 
-        w.leagues[id]=
-          createLeagueState(
-            s.season,
-            item.clubs
-          );
+        const next=createLeagueState(s.season,item.clubs);
+        if(s.calendarVersion==="european_v1"&&EuropeanCalendar()?.leagueCountry?.(item.league))
+          next.calendarMode="european_v1";
+        w.leagues[id]=next;
       }
     }
 
