@@ -238,6 +238,19 @@
     ];
   }
 
+  // Calendario europeu por liga: opt-in para novas edicoes, sem
+  // substituir as datas de saves que ainda usam o calendario legado.
+  const EuropeanCalendar=()=>root.ProLifeEuropeanCalendar||
+    (typeof require==="function"?require("./european-calendar.js"):null);
+  function leagueRoundDate(s,leagueId,season,roundIndex,totalRounds){
+    const st=s?.globalFootball?.worldCompetitions?.leagues?.[leagueId];
+    if(st?.calendarMode==="european_v1"){
+      const league=(s.globalFootball?.leagues||[]).find(l=>l.id===leagueId);
+      const calculated=EuropeanCalendar()?.resolvedRoundDay?.(league,season,roundIndex,totalRounds);
+      if(Number.isFinite(calculated))return calculated;
+    }
+    return roundDate(season,roundIndex,totalRounds);
+  }
   function roundDate(
     season,
     roundIndex,
