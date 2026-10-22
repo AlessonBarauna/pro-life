@@ -91,7 +91,8 @@ test("33B (4) modo treinador: join sem acordo continua usando a oferta/padrões 
 const { JSDOM } = require("jsdom"), fs = require("fs");
 const base = require("node:path").resolve(__dirname, "..") + "/";
 const html = fs.readFileSync(base + "index.html", "utf8");
-const files = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
+const { scriptPathsFromHtml } = require("./helpers/html-scripts.cjs");
+const files = scriptPathsFromHtml(html);
 const q = (w, s) => w.document.querySelector(s);
 function click(w, sel) {
   let el = q(w, sel);
