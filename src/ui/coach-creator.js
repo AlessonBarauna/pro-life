@@ -72,7 +72,7 @@ function render(ctx){
  for(const country of [...new Set(clubs.map(c=>String(c.country||"Brasil")))].sort((a,b)=>a.localeCompare(b,"pt-BR"))){const option=document.createElement("option");option.value=country;option.textContent=country;countrySelect.appendChild(option);}
  const leagueLabels=new Map(clubs.map(c=>[String(c.leagueId||""),String(c.leagueName||c.leagueId||"Liga não informada")]));
  const originalClubOptions=[...form.elements.clubId.options].map(option=>({value:option.value,text:option.textContent}));
- function normalize(value){return String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLocaleLowerCase("pt-BR");}
+  function normalize(value){return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR");}
  function rebuildLeagueOptions(){
    const old=leagueSelect.value,country=countrySelect.value;
    const options=[...new Set(clubs.filter(c=>c.active!==false&&(!country||String(c.country||"Brasil")===country))
@@ -122,11 +122,7 @@ function render(ctx){
    review();
  }
  rebuildLeagueOptions();
- form.elements.clubSearch.addEventListener("input",()=>{
-   // Name search is global; reset geographic filters so international clubs can be discovered.
-   if(form.elements.clubSearch.value.trim()){countrySelect.value="";rebuildLeagueOptions();leagueSelect.value="";}
-   filterClubs();
- });
+  form.elements.clubSearch.addEventListener("input",filterClubs);
  leagueSelect.addEventListener("change",filterClubs);
  countrySelect.addEventListener("change",()=>{rebuildLeagueOptions();filterClubs();});
  form.elements.clubId.addEventListener("change",filterClubs);
