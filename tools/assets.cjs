@@ -58,6 +58,7 @@ const files = [
   "src/data/global-football-fc27-world.js",
   "src/domain/global-football.js",
   "src/domain/world-live-market.js",
+  "src/domain/european-calendar.js",
   "src/domain/world-club-competitions.js",
   "src/domain/season-competition-center.js",
   "src/domain/international-pool.js",
