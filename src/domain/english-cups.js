@@ -21,6 +21,13 @@
   const GF=()=>root.ProLifeGlobalFootball||(root.ProLife&&root.ProLife.GlobalFootball)||(typeof require==="function"?require("./global-football.js"):null);
   const WCC=()=>root.ProLifeWorldClubCompetitions||(root.ProLife&&root.ProLife.WorldClubCompetitions)||(typeof require==="function"?require("./world-club-competitions.js"):null);
   const baseDay=season=>(Number(season)-2026)*365;
+  // Calendario interno do PRO-LIFE: janeiro a dezembro (nao agosto-maio).
+  const CUP_DAYS={
+    fa_cup:{round_1:12,round_2:35,round_3:58,round_4:81,round_5:105,quarterfinal:130,semifinal:155,final:180},
+    efl_cup:{round_1:10,round_2:32,round_3:54,round_4:76,quarterfinal:100,semifinal:125,final:165},
+    community_shield:{final:6}
+  };
+  const cupDay=(season,comp,key)=>baseDay(season)+CUP_DAYS[comp][key];
   function hash(text){let h=2166136261;for(const c of String(text))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;}
   function shuffled(ids,seed){return ids.slice().sort((a,b)=>{const x=hash(`${seed}|${a}`),y=hash(`${seed}|${b}`);return x-y||(a<b?-1:1);});}
   function state(s){
@@ -48,35 +55,41 @@
       const bad=set=>set.has(d)||set.has(d-1)||set.has(d+1)||set.has(d-2)||set.has(d+2);
       if(!bad(h)&&!bad(a))return d;
     }
-    for(let d=wanted;d<wanted+30;d++)if(!h.has(d)&&!a.has(d))return d;
-    return wanted;
+    for(let d=Math.max(wanted,s.day+1);d<=wanted+30;d++)if(!h.has(d)&&!a.has(d))return d;
+    return Math.max(wanted,s.day+1);
   }
   function pairRound(s,ed,stageName,stageKey,ids,wanted,options={}){
     const order=shuffled(ids,`${ed.drawSeed}|${stageKey}`),target=options.target==null?Math.ceil(order.length/2):options.target;
+    wanted=Math.max(wanted,s.day+3);
     const matchCount=Math.max(0,order.length-target),playing=order.slice(0,matchCount*2),byes=order.slice(matchCount*2),matches=[];
     for(let i=0;i<playing.length;i+=2){
       const a=playing[i],b=playing[i+1],swap=(hash(`${ed.drawSeed}|${stageKey}|${i}`)&1)===1,home=swap?b:a,away=swap?a:b;
       const day=safeDay(s,home,away,wanted+Math.floor(i/16),ed.season);
       matches.push({id:`${ed.id}:${stageKey}:${i/2+1}`,competitionId:ed.comp,season:ed.season,stage:stageName,stageKey,round:ed.rounds.length+1,pair:i/2,leg:1,homeId:home,awayId:away,day,played:false});
-      if(options.twoLegged){const day2=safeDay(s,away,home,wanted+14+Math.floor(i/16),ed.season);matches.push({id:`${ed.id}:${stageKey}:${i/2+1}:2`,tieId:`${ed.id}:${stageKey}:${i/2+1}`,competitionId:ed.comp,season:ed.season,stage:stageName,stageKey,round:ed.rounds.length+1,pair:i/2,leg:2,homeId:away,awayId:home,day:day2,played:false});matches[matches.length-2].tieId=matches[matches.length-1].tieId;}
+      if(options.twoLegged){const day2=safeDay(s,away,home,Math.max(wanted+14+Math.floor(i/16),day+7),ed.season);matches.push({id:`${ed.id}:${stageKey}:${i/2+1}:2`,tieId:`${ed.id}:${stageKey}:${i/2+1}`,competitionId:ed.comp,season:ed.season,stage:stageName,stageKey,round:ed.rounds.length+1,pair:i/2,leg:2,homeId:away,awayId:home,day:day2,played:false});matches[matches.length-2].tieId=matches[matches.length-1].tieId;}
     }
     const round={key:stageKey,name:stageName,index:ed.rounds.length,matches,byes,status:matches.length?"scheduled":"complete",twoLegged:!!options.twoLegged};ed.rounds.push(round);ed.currentRound=round.index;return round;
   }
   function previousWinner(s,comp,season){return state(s).history.find(h=>h.season===season&&h.comp===comp)?.championId||null;}
   function previousLeagueChampion(s,season){
-    const w=WCC(),hist=s.worldClubCompetitions?.history||s.worldCompetitions?.history||[];
+    const w=WCC(),hist=s.globalFootball?.worldCompetitions?.history||s.worldClubCompetitions?.history||s.worldCompetitions?.history||[];
     const row=hist.find(h=>h.season===season&&h.leagueId===LEAGUES.premier);if(row?.championId)return row.championId;
     const standings=w?.standings?.(s,LEAGUES.premier)||[];return season===s.season-1?standings[0]?.id:null;
   }
+  function previousLeagueRunnerUp(s,season){
+    const hist=s.globalFootball?.worldCompetitions?.history||s.worldClubCompetitions?.history||s.worldCompetitions?.history||[];
+    const row=hist.find(h=>h.season===season&&h.leagueId===LEAGUES.premier);
+    return row?.runnerUpId||row?.top4?.[1]||null;
+  }
   function createEdition(s,comp,season){
     const all=clubs(s),premier=all.filter(c=>c.leagueId===LEAGUES.premier).map(c=>c.id),lower=all.filter(c=>c.leagueId!==LEAGUES.premier).map(c=>c.id),faOpening=all.filter(c=>[LEAGUES.leagueOne,LEAGUES.leagueTwo].includes(c.leagueId)).map(c=>c.id);
-    const ed={id:`${comp}:${season}`,comp,name:DEFS[comp].name,season,status:"active",drawSeed:`${comp}|${season}|${s.initialSeed||0}`,participantIds:all.map(c=>c.id),rounds:[],currentRound:0,championId:null,runnerUpId:null,createdDay:s.day};
-    if(comp==="fa_cup")pairRound(s,ed,"Primeira fase","round_1",faOpening,baseDay(season)+105,{target:Math.ceil(faOpening.length/2)});
-    if(comp==="efl_cup")pairRound(s,ed,"Primeira fase","round_1",lower,baseDay(season)+28,{target:Math.ceil(lower.length/2)});
+    const ed={id:`${comp}:${season}`,comp,name:DEFS[comp].name,season,status:"active",drawSeed:`${comp}|${season}|${s.initialSeed||0}`,participantIds:comp==="community_shield"?[]:all.map(c=>c.id),rounds:[],currentRound:0,championId:null,runnerUpId:null,createdDay:s.day};
+    if(comp==="fa_cup")pairRound(s,ed,"Primeira fase","round_1",faOpening,cupDay(season,comp,"round_1"),{target:Math.ceil(faOpening.length/2)});
+    if(comp==="efl_cup")pairRound(s,ed,"Primeira fase","round_1",lower,cupDay(season,comp,"round_1"),{target:Math.ceil(lower.length/2)});
     if(comp==="community_shield"){
       const leagueWinner=previousLeagueChampion(s,season-1),faWinner=previousWinner(s,"fa_cup",season-1);
       if(!leagueWinner||!faWinner){ed.status="not_eligible";ed.reason="Campeões da temporada anterior indisponíveis.";}
-      else {const opponent=leagueWinner===faWinner?(s.continental?.finals?.[String(season-1)]?.ENG||[]).find(id=>id!==leagueWinner):faWinner;if(!opponent){ed.status="not_eligible";ed.reason="Vice-campeão da Premier League indisponível.";}else pairRound(s,ed,"Final","final",[leagueWinner,opponent],baseDay(season)+6,{target:1});}
+      else {const opponent=leagueWinner===faWinner?previousLeagueRunnerUp(s,season-1):faWinner;if(!opponent){ed.status="not_eligible";ed.reason="Vice-campeão da Premier League indisponível.";}else {ed.participantIds=[leagueWinner,opponent];pairRound(s,ed,"Final","final",[leagueWinner,opponent],cupDay(season,comp,"final"),{target:1});}}
     }
     return ed;
   }
@@ -94,15 +107,15 @@
   function nextPlan(ed,winners,european){
     if(ed.comp==="fa_cup"){
       const keys=["round_1","round_2","round_3","round_4","round_5","quarterfinal","semifinal","final"],i=keys.indexOf(ed.rounds.at(-1).key)+1,key=keys[i];
-      if(key==="round_2")return {key,name:"Segunda fase",ids:winners,wanted:132,target:Math.ceil(winners.length/2)};
-      if(key==="round_3")return {key,name:"Terceira fase",ids:winners.concat(ed.participantIds.filter(id=>!ed.rounds[0].matches.some(m=>[m.homeId,m.awayId].includes(id)))),wanted:160,target:32};
-      const names={round_4:"Quarta fase",round_5:"Oitavas de final",quarterfinal:"Quartas de final",semifinal:"Semifinal",final:"Final"};return key?{key,name:names[key],ids:winners,wanted:{round_4:190,round_5:220,quarterfinal:250,semifinal:282,final:320}[key],target:Math.ceil(winners.length/2)}:null;
+      if(key==="round_2")return {key,name:"Segunda fase",ids:winners,wanted:CUP_DAYS.fa_cup.round_2,target:Math.ceil(winners.length/2)};
+      if(key==="round_3")return {key,name:"Terceira fase",ids:winners.concat(ed.participantIds.filter(id=>!ed.rounds[0].matches.some(m=>[m.homeId,m.awayId].includes(id)))),wanted:CUP_DAYS.fa_cup.round_3,target:32};
+      const names={round_4:"Quarta fase",round_5:"Oitavas de final",quarterfinal:"Quartas de final",semifinal:"Semifinal",final:"Final"};return key?{key,name:names[key],ids:winners,wanted:{round_4:81,round_5:105,quarterfinal:130,semifinal:155,final:180}[key],target:Math.ceil(winners.length/2)}:null;
     }
     if(ed.comp==="efl_cup"){
       const key=ed.rounds.at(-1).key;
-      if(key==="round_1"){const prem=ed.participantIds.filter(id=>clubsCacheLeague(ed,id)===LEAGUES.premier),late=prem.filter(id=>european.has(id)),early=prem.filter(id=>!european.has(id));ed.lateEntrants=late;return {key:"round_2",name:"Segunda fase",ids:winners.concat(early),wanted:58,target:Math.max(1,32-late.length)};}
-      if(key==="round_2")return {key:"round_3",name:"Terceira fase",ids:winners.concat(ed.lateEntrants||[]),wanted:88,target:16};
-      const seq={round_3:["round_4","Oitavas de final",118,8],round_4:["quarterfinal","Quartas de final",154,4],quarterfinal:["semifinal","Semifinal",190,2,true],semifinal:["final","Final",235,1]};const x=seq[key];return x?{key:x[0],name:x[1],ids:winners,wanted:x[2],target:x[3],twoLegged:x[4]}:null;
+      if(key==="round_1"){const prem=ed.participantIds.filter(id=>clubsCacheLeague(ed,id)===LEAGUES.premier),late=prem.filter(id=>european.has(id)),early=prem.filter(id=>!european.has(id));ed.lateEntrants=late;return {key:"round_2",name:"Segunda fase",ids:winners.concat(early),wanted:CUP_DAYS.efl_cup.round_2,target:Math.max(1,32-late.length)};}
+      if(key==="round_2")return {key:"round_3",name:"Terceira fase",ids:winners.concat(ed.lateEntrants||[]),wanted:CUP_DAYS.efl_cup.round_3,target:16};
+      const seq={round_3:["round_4","Oitavas de final",76,8],round_4:["quarterfinal","Quartas de final",100,4],quarterfinal:["semifinal","Semifinal",125,2,true],semifinal:["final","Final",165,1]};const x=seq[key];return x?{key:x[0],name:x[1],ids:winners,wanted:x[2],target:x[3],twoLegged:x[4]}:null;
     }
     return null;
   }
@@ -122,14 +135,17 @@
     if(!p){finishEdition(s,ed,round,hooks);return;}pairRound(s,ed,p.name,p.key,p.ids,baseDay(ed.season)+p.wanted,{target:p.target,twoLegged:p.twoLegged});delete ed._leagueById;
   }
   function backgroundResult(s,m){const list=s.globalFootball?.clubs||[],h=list.find(c=>c.id===m.homeId),a=list.find(c=>c.id===m.awayId),hs=Number(h?.level||h?.strength||h?.reputation||65),as=Number(a?.level||a?.strength||a?.reputation||65),n=hash(`${m.id}|${s.initialSeed||0}`);let hg=Math.max(0,Math.min(5,Math.round(1.35+(hs-as)/26+((n%5)-2)/2))),ag=Math.max(0,Math.min(5,Math.round(1.05+(as-hs)/26+((Math.floor(n/19)%5)-2)/2)));return {hg,ag};}
-  function applyTieBreak(m,result){
+  function applyTieBreak(m,result,round){
     m.hg=Number(result.hg)||0;m.ag=Number(result.ag)||0;
-    if(m.hg===m.ag&&(!m.tieId||m.leg===2)){const n=hash(`${m.id}|pens`);m.extraTime=m.competitionId!=="community_shield";m.penalties={home:3+(n%3),away:3+(Math.floor(n/7)%3)};if(m.penalties.home===m.penalties.away)m.penalties[(n&1)?"home":"away"]++;}
+    const firstLeg=m.tieId&&m.leg===2?round.matches.find(x=>x.tieId===m.tieId&&x.leg===1):null;
+    const aggregateTied=firstLeg&&Number(firstLeg.hg)+m.ag===Number(firstLeg.ag)+m.hg;
+    const needsDecision=m.tieId?(m.leg===2&&aggregateTied):(m.hg===m.ag);
+    if(needsDecision){const n=hash(`${m.id}|pens`);m.extraTime=m.competitionId!=="community_shield";m.penalties={home:3+(n%3),away:3+(Math.floor(n/7)%3)};if(m.penalties.home===m.penalties.away)m.penalties[(n&1)?"home":"away"]++;}
     if(result.record){result.record.stage=m.stage;result.record.domesticCupMatch=true;result.record.knockout=true;if(m.extraTime)result.record.extraTime=true;if(m.penalties)result.record.penalties={...m.penalties};}
   }
   function daily(s,hooks={}){
     init(s);for(const ed of Object.values(state(s).editions).filter(e=>e.season===s.season&&e.status==="active")){
-      const round=ed.rounds[ed.currentRound];for(const m of round?.matches||[]){if(m.played||m.day!==s.day)continue;const hero=[m.homeId,m.awayId].includes(s.clubId),result=(hero&&hooks.heroFixture?hooks.heroFixture(m,ed):hooks.otherFixture?.(m,ed))||backgroundResult(s,m);applyTieBreak(m,result);m.played=true;m.playedDay=s.day;}
+      const round=ed.rounds[ed.currentRound];for(const m of round?.matches||[]){if(m.played||m.day!==s.day)continue;const hero=[m.homeId,m.awayId].includes(s.clubId),result=(hero&&hooks.heroFixture?hooks.heroFixture(m,ed):hooks.otherFixture?.(m,ed))||backgroundResult(s,m);applyTieBreak(m,result,round);m.played=true;m.playedDay=s.day;}
       progress(s,ed,hooks);
     }
   }
