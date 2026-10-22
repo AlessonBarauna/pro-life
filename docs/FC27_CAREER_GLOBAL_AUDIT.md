@@ -224,3 +224,25 @@ notepad.exe $log
 **Escopo da conclusão:** motor/teste unitário-integrado validado no cenário exercitado. **Não** prova interação manual da interface durante a partida, aderência a todos os minutos, sincronização oficial nem persistência após reload. Esses testes adicionais continuam pendentes.
 
 **Próxima regressão isolada:** `tests/coach-match-lab-v2.test.cjs` (4 casos declarados); registrar TAP completo, `$LASTEXITCODE` e distinguir prévia experimental de partida oficial.
+
+
+## A01.7 — Resultado real do laboratório de partidas (22/10/2026)
+
+**Fonte:** saída TAP compartilhada pelo usuário, execução no PowerShell na branch `feature/fc27-career-global-audit`.
+
+**Comando:** `node --test --test-reporter=tap tests/coach-match-lab-v2.test.cjs`
+
+**Resultado:** `tests=4`, `pass=4`, `fail=0`, `skipped=0`, `EXIT_CODE=0`; duração de 78.0986 ms.
+
+| Caso | Resultado |
+|---|---|
+| Força usa avaliações elegíveis conhecidas | PASS |
+| Decisões táticas só se aplicam após o minuto correspondente | PASS |
+| Laboratório preserva o objeto da partida oficial independente | PASS |
+| Ações inválidas são recusadas sem registro | PASS |
+
+**Acumulado de execuções recebidas:** A01.6 (5/5) + A01.7 (4/4) = **9/9**, 0 falhas.
+
+**Escopo da aprovação:** comportamento do laboratório independente. Não aprova substituição na interface da partida oficial, nem efeitos permanentes ou save/reload do jogo oficial.
+
+**Próxima execução sugerida:** `tests/coach-sponsorship-complete.test.cjs` (6 casos declarados), com saída TAP e código de saída capturados.
