@@ -1899,6 +1899,7 @@
     const heroOffense = m.offensiveStats?.hero;
     m.offensiveStats = heroOffense ? { hero: heroOffense } : {};
     s.matches.unshift(m);
+    CoachCareer?.recordOfficialMatch?.(s,m);
     Statistics?.recordMatch(s, m);
     const heroDevelopment = Training?.matchDevelopment?.(s, m, { overall, clamp });
     if (![homeId, awayId].includes(s.clubId)) { delete m.participation; delete m.playerStats; }

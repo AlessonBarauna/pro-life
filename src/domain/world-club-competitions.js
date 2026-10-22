@@ -1206,6 +1206,12 @@
     const champion=order[0]||null;
     leagueState.championId=champion?.id||null;
     leagueState.status="finished";
+    // Integra o titulo mundial ao historico do treinador sem antecipar campeoes.
+    const coachCareer=root.ProLifeCoachCareer||(typeof require==="function"?require("./coach-career.js"):null);
+    coachCareer?.recordWorldLeagueTitle?.(s,{
+      leagueId,season:leagueState.season,championId:champion?.id||null,
+      name:meta?.name||leagueId,day:s.day
+    });
     const w=rootState(s),key=leagueState.season+":"+leagueId;
     if(!w.history.some(h=>h.key===key))w.history.unshift({
       key,season:leagueState.season,leagueId,league:meta?.name||leagueId,

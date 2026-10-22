@@ -186,6 +186,143 @@
   }
 
   // ---------- virada de temporada ----------
+  // Registro compacto das partidas oficiais do clube treinado.
+  // O saldo da liga continua vindo da tabela canonica em closeSeason.
+  function recordOfficialMatch(s,m){
+    if(!isCoach(s)||!m||!s.clubId)return false;
+    const st=currentStint(s);
+    if(!st||st.clubId!==s.clubId)return false;
+    if(m.home!==st.clubId&&m.away!==st.clubId)return false;
+    if(!Number.isFinite(Number(m.hg))||!Number.isFinite(Number(m.ag)))return false;
+    if(!Number.isInteger(Number(m.season))||!Number.isFinite(Number(m.date)))return false;
+    const competitionId=String(m.competitionId||m.leagueId||"");
+    if(!competitionId)return false;
+    const season=String(m.season);
+    const ledger=st.officialMatches||(st.officialMatches={});
+    const seasonLedger=ledger[season]||(ledger[season]={seen:{},byCompetition:{}});
+    const key=[season,m.date,competitionId,m.round??"",m.stage??"",m.leg??"",m.home,m.away].join("|");
+    if(seasonLedger.seen[key])return false;
+    const own=m.home===st.clubId?Number(m.hg):Number(m.ag);
+    const opponent=m.home===st.clubId?Number(m.ag):Number(m.hg);
+    const result=own>opponent?"w":own===opponent?"d":"l";
+    const row=seasonLedger.byCompetition[competitionId]||
+      (seasonLedger.byCompetition[competitionId]={w:0,d:0,l:0,league:false});
+    row[result]++;
+    if(m.leagueId!=null)row.league=true;
+    seasonLedger.seen[key]=1;
+    return true;
+  }
+  // Títulos confirmados durante a temporada e o vínculo atual.
+  // Fontes sem data verificável não geram conquistas presumidas.
+  // Registra o titulo somente quando o motor fecha a liga mundial de fato.
+  // O dia da conquista corresponde ao evento de fechamento do calendario.
+  function recordWorldLeagueTitle(s,info){
+    if(!isCoach(s)||!info||!s.clubId)return false;
+    const st=currentStint(s);
+    if(!st||st.clubId!==s.clubId||String(info.championId)!==String(st.clubId))return false;
+    if(!Number.isFinite(Number(info.day))||Number(info.day)!==Number(s.day))return false;
+    if(Number(info.day)<Number(st.fromDay??0))return false;
+    const edition=Number(info.season);
+    if(!Number.isInteger(edition))return false;
+    const leagueId=String(info.leagueId||"");
+    if(!leagueId)return false;
+    const id=`world-league:${edition}:${leagueId}`;
+    const ledger=st.worldLeagueTitles||(st.worldLeagueTitles={});
+    if(ledger[id])return false;
+    ledger[id]={key:id,name:String(info.name||leagueId),day:Number(info.day),season:Number(s.season)};
+    return true;
+  }
+  function officialTrophies(s,club,st,pos){
+    const trophies=[],seen=new Set();
+    const season=Number(s.season);
+    const startDay=Math.max(
+      Number(st?.fromDay)||0,
+      (season-2026)*365
+    );
+    const endDay=Number(s.day);
+    const previous=new Set(
+      (st?.rows||[]).flatMap(r=>
+        (r.season===season?[]:(r.trophies||[]))
+          .map(t=>t.key)
+      )
+    );
+
+    const add=(key,name,championId,day)=>{
+      if(String(championId)!==String(club.id))return;
+      const d=Number(day);
+      if(day==null||!Number.isFinite(d))return;
+      if(d<startDay||d>endDay)return;
+      if(seen.has(key)||previous.has(key))return;
+      seen.add(key);
+      trophies.push({key,name});
+    };
+
+    // A posição final continua sendo a fonte canônica da liga.
+    if(pos===1&&!club.worldMatch){
+      const key=`league:${season}:${club.leagueId}`;
+      seen.add(key);
+      trophies.push({key,name:"Campeonato nacional"});
+    }
+
+    // Atribui trofeus de ligas mundiais apenas apos fechamento oficial.
+    for(const title of Object.values(st?.worldLeagueTitles||{})){
+      if(Number(title.season)!==season)continue;
+      add(title.key,title.name,club.id,title.day);
+    }
+    const finalDay=(rounds,championId)=>{
+      for(const round of [...(rounds||[])].reverse()){
+        const matches=round.matches||round.pairs||[];
+        if(matches.length!==1)continue;
+        const m=matches[0];
+        if(!m?.played)continue;
+        if(String(m.winnerId||championId)!==String(championId))continue;
+        const day=m.playedDay??m.day??round.date;
+        if(day!=null&&Number.isFinite(Number(day)))return Number(day);
+      }
+      return null;
+    };
+
+    const schedule=s.competitionSchedule||{};
+    const cup=schedule.cup;
+    if(cup?.championId&&Number(cup.season)===season){
+      add(`copa:${cup.season}:${cup.id||"copaBrasil"}`,
+        cup.name||"Copa do Brasil",
+        cup.championId,
+        finalDay(cup.rounds,cup.championId));
+    }
+
+    for(const state of [schedule.state,...(schedule.otherStates||[])]){
+      if(!state?.championId||Number(state.season)!==season)continue;
+      add(`state:${state.season}:${state.id}`,
+        state.name||"Campeonato estadual",
+        state.championId,
+        finalDay(state.rounds,state.championId));
+    }
+
+    for(const h of s.englishCups?.history||[]){
+      if(!h?.championId)continue;
+      add(`english:${h.season}:${h.comp}`,
+        h.name||h.comp,
+        h.championId,
+        h.completedDay);
+    }
+
+
+    for(const [editionKey,ed] of Object.entries(s.continental?.editions||{})){
+      const comp=String(ed?.comp||editionKey.split(":")[0]);
+      if(!["ucl","uel","uecl","lib","sud"].includes(comp))continue;
+      const championId=ed?.championId||ed?.knockout?.championId;
+      if(!championId)continue;
+      const final=(ed?.knockout?.stages||[]).find(x=>x.key==="final");
+      if(!final)continue;
+      add(`continental:${comp}:${ed.season}`,
+        comp.toUpperCase(),
+        championId,
+        finalDay([final],championId));
+    }
+
+    return trophies;
+  }
   function closeSeason(s,api,hooks){
     const c=state(s),club=clubOf(s,api);if(!c||!club||!c.goals)return null;
     refreshGoals(s,api);
@@ -196,9 +333,30 @@
       score+=g.status==="cumprida"?g.weight:0;total+=g.weight;
     }
     const ok=pos<=(c.goals.items[0]?.target||0);
-    const row={season:s.season,pos,of:order.length,points:Number(stats.points)||0,w:Number(stats.w)||0,d:Number(stats.d)||0,l:Number(stats.l)||0,goals:c.goals.items.map(g=>({id:g.id,label:g.label,status:g.status})),score:Math.round(score/Math.max(1,total)*100)};
+    const current=currentStint(s);
+    const trophies=officialTrophies(s,club,current,pos);
+    const official=current?.officialMatches?.[String(s.season)]?.byCompetition||{};
+    const additional=Object.entries(official).reduce((sum,[id,r])=>{
+      if(r.league)return sum;
+      sum.w+=Number(r.w)||0;sum.d+=Number(r.d)||0;sum.l+=Number(r.l)||0;
+      return sum;
+    },{w:0,d:0,l:0});
+    const row={season:s.season,pos,of:order.length,points:Number(stats.points)||0,
+      w:(Number(stats.w)||0)+additional.w,
+      d:(Number(stats.d)||0)+additional.d,
+      l:(Number(stats.l)||0)+additional.l,
+      competitionBreakdown:JSON.parse(JSON.stringify(official)),
+      statisticsScope:Object.keys(official).length?"league_plus_recorded_cups":"league_only",
+      trophies,
+      titles:trophies.length,
+      goals:c.goals.items.map(g=>({id:g.id,label:g.label,status:g.status})),
+      score:Math.round(score/Math.max(1,total)*100)};
     const st=currentStint(s);
-    if(st){st.rows=[row,...st.rows.filter(r=>r.season!==s.season)].slice(0,SEASON_ROWS);if(pos===1)st.titles=(st.titles||0)+1;}
+    if(st){const old=st.rows.find(r=>r.season===s.season);
+      st.rows=[row,...st.rows.filter(r=>r.season!==s.season)].slice(0,SEASON_ROWS);
+      const prior=old?(Number(old.titles)||
+        (Number(old.pos)===1?1:0)):0;
+      st.titles=Math.max(0,(Number(st.titles)||0)-prior+trophies.length);}
     const delta=pos===1?18:ok?10:-14;
     s.board=Math.round(clamp((Number(s.board)||50)+delta,0,100));
     s.reputation=clamp((Number(s.reputation)||0)+(pos===1?3:ok?1:-1),0,100);
@@ -471,7 +629,7 @@
       focus:c.focus,foci:FOCI,stints:c.stints,totals,license:s.license,reputation:s.reputation};
   }
 
-  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf};
+  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
