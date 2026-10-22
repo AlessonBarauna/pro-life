@@ -268,3 +268,18 @@ notepad.exe $log
 **Limite:** cenários automatizados aprovados; validação manual da interação real e da UI completa continua pendente.
 
 **Próxima execução:** `tests/central-official-competition-context.test.cjs` (7 cenários de contexto das competições, navegação e save/reload). Não incluir alterações do calendário europeu ainda em validação na outra branch.
+
+
+## A01.9 — TAP: contexto oficial da Central de Competições (22/10/2026)
+
+**Origem:** log TAP fornecido pelo usuário, na branch `feature/fc27-career-global-audit`.
+**Teste:** `tests/central-official-competition-context.test.cjs`.
+**Resultado:** `tests=7`, `pass=7`, `fail=0`, `skipped=0`, `cancelled=0`, `EXIT_CODE=0`; duração 85.5553 ms.
+
+Cenários aprovados: (1) classificação e navegação da liga nacional; (2) EFL Cup usa fase correta; (3) confrontos e classificados da FA Cup; (4) final única da Community Shield; (5) fase de liga e mata-mata UCL/UEL/UECL; (6) grupos e chaveamento da Libertadores/Sul-Americana; (7) save/reload com contexto e navegação corretos.
+
+**Acumulado verificado por TAP enviado:** A01.6 5 + A01.7 4 + A01.8 6 + A01.9 7 = **22/22 aprovados**, zero falhas.
+
+**Limite:** estes são testes focalizados de contexto e navegação, não comprovação de progressão de competições ao longo de temporadas. A branch paralela de calendário continua separada.
+
+**Próximo teste isolado:** `tests/coach-2029-central-integration.test.cjs`, para verificar a integração com agenda e histórico em 2029.
