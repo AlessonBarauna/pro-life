@@ -1,7 +1,7 @@
 const test = require("node:test"), assert = require("node:assert/strict"), fs = require("fs"), path = require("path"), { JSDOM } = require("jsdom");
 const base = path.join(__dirname, "..") + path.sep;
 const html = fs.readFileSync(base + "index.html", "utf8");
-const order = html.match(/src="(src\/[^"]+\.js)"/g).map((x) => x.slice(5, -1)).filter((f) => !/update\.js|avatar/.test(f));
+const order = [...html.matchAll(/<script\b[^>]*\bsrc=["\'](src\/[^"\'?#]+\.js)(?:[?#][^"\']*)?["\']/g)].map((m) => m[1]).filter((f) => !/update\.js|avatar/.test(f));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function make() {
   const dom = new JSDOM(html, { runScripts: "outside-only", url: "https://offline-test.invalid" }), w = dom.window;
@@ -16,8 +16,19 @@ async function go(w, s) { click(w, s); await settle(w); }
 const counts = (s) => ({ leagues: s.globalFootball.leagues.length, clubs: s.globalFootball.clubs.length, players: s.internationalPlayers.length });
 const toHub = (w) => { if (q(w, ".career-hub")) return; if (!q(w, '[data-action="careers"]')) click(w, '[data-page="save"]'); click(w, '[data-action="careers"]'); };
 const fillClassic = (w, mode) => {
-  const form = q(w, "#creator"); assert.ok(form);
-  form.elements.mode.value = mode; form.elements.age.value = mode === "coach" ? "35" : "16"; form.elements.seed.value = "44";
+  const selector = mode === "coach" ? "#coach-creation-form" : "#creator";
+  const form = q(w, selector);
+  assert.ok(form, "formulario " + mode + " encontrado");
+  if (mode === "coach") {
+    form.elements.name.value = "Treinador FC27";
+    form.elements.city.value = "Mogi das Cruzes";
+    form.elements.age.value = "35";
+    form.elements.seed.value = "44";
+  } else {
+    form.elements.mode.value = "player";
+    form.elements.age.value = "16";
+    form.elements.seed.value = "44";
+  }
   return form;
 };
 
@@ -31,7 +42,7 @@ function makeWithLegacySlot() {
   w.eval(fs.readFileSync(base + order[order.length - 1], "utf8"));
   return { w, id };
 }
-const submit = (w) => q(w, "#creator").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+const submit = (w) => { const form = q(w, "#coach-creation-form") || q(w, "#creator"); assert.ok(form, "formulario para submit"); return form.dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true })); };
 const slotText = (w, id) => w.localStorage.getItem("prolife.v1.slot." + id);
 
 test("34F.15 (1) criação sem opção Clássica: assistente e formulário só oferecem FC 27", () => {

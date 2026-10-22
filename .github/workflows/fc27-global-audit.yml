@@ -1,0 +1,106 @@
+name: FC27 Global Audit
+run-name: FC27 Global Audit - ${{ github.ref_name }}
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - feature/fc27-career-global-audit
+    paths:
+      - '.github/workflows/fc27-global-audit.yml'
+      - 'tests/**'
+      - 'src/**'
+      - 'package*.json'
+  push:
+    branches:
+      - automation/fc27-global-audit
+    paths:
+      - '.github/workflows/fc27-global-audit.yml'
+      - 'tests/**'
+      - 'src/**'
+      - 'package*.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fc27-global-audit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  fc27-audit:
+    name: FC27 isolated regression tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout audit branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify test syntax
+        run: |
+          node --check tests/fc27-catalog-choice-ui-stage34f14.test.cjs
+          node --check tests/coach-career-stage34f24.test.cjs
+
+      - name: Execute each audit independently
+        id: audit
+        shell: bash
+        run: |
+          mkdir -p audit-results
+          failures=0
+          total=0
+          {
+            echo '## FC27 Global Audit'
+            echo ''
+            echo '| Stage | Test | Result |'
+            echo '|---|---|---|'
+          } >> "$GITHUB_STEP_SUMMARY"
+          while IFS='|' read -r stage file; do
+            [ -n "$stage" ] || continue
+            total=$((total + 1))
+            echo "::group::$stage - $file"
+            set +e
+            node --test --test-reporter=tap "$file" > "audit-results/$stage.tap" 2>&1
+            code=$?
+            set -e
+            cat "audit-results/$stage.tap"
+            echo "::endgroup::"
+            if [ "$code" -eq 0 ]; then
+              result='PASS'
+            else
+              result='FAIL'
+              failures=$((failures + 1))
+            fi
+            printf '%s,%s,%s,%s\n' "$stage" "$file" "$result" "$code" >> audit-results/results.csv
+            echo "| $stage | \`$file\` | $result (exit $code) |" >> "$GITHUB_STEP_SUMMARY"
+          done <<'TESTS'
+          A01.22|tests/coach-creator-06b.test.cjs
+          A01.23|tests/fc27-engine-integration-stage34f12.test.cjs
+          A01.24|tests/fc27-save-stage34f13.test.cjs
+          A01.25|tests/fc27-indexeddb-stage34f16.test.cjs
+          A01.26|tests/fc27-catalog-choice-ui-stage34f14.test.cjs
+          A01.27|tests/career-context-stage34f31a.test.cjs
+          A01.28|tests/coach-career-stage34f24.test.cjs
+          TESTS
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Executed: $total; failed stages: $failures." >> "$GITHUB_STEP_SUMMARY"
+          if [ "$failures" -gt 0 ]; then
+            exit 1
+          fi
+
+      - name: Upload per-stage TAP reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fc27-global-audit-tap
+          path: audit-results/
+          if-no-files-found: warn
+          retention-days: 30
