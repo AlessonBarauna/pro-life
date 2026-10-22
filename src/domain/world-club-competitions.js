@@ -754,6 +754,8 @@
     )
       return w;
 
+    progressEuropeanSeasons(s);
+
     const catalog=
       clubCatalog(s);
 
@@ -1190,6 +1192,52 @@
     return w;
   }
 
+  // Finaliza somente a liga cujo calendario terminou. Outras ligas e saves legados
+  // continuam independentes; o registro de campeao e idempotente.
+  function closeEuropeanLeague(s,leagueId,leagueState){
+    if(leagueState.status!=="active"||leagueState.calendarMode!=="european_v1")return false;
+    const calendar=EuropeanCalendar();
+    const meta=(s.globalFootball?.leagues||[]).find(l=>l.id===leagueId);
+    const country=calendar?.leagueCountry?.(meta);
+    const window=country&&calendar.seasonWindow(country,leagueState.season);
+    if(!window||s.day<window.endDay)return false;
+    const schedule=makeSchedule(leagueState.clubIds);
+    if(leagueState.round<schedule.length)return false;
+    const order=standings(s,leagueId);
+    const champion=order[0]||null;
+    leagueState.championId=champion?.id||null;
+    leagueState.status="finished";
+    const w=rootState(s),key=leagueState.season+":"+leagueId;
+    if(!w.history.some(h=>h.key===key))w.history.unshift({
+      key,season:leagueState.season,leagueId,league:meta?.name||leagueId,
+      championId:champion?.id||null,champion:champion?.name||null,
+      top4:order.slice(0,4).map(c=>c.id),bottom3:order.slice(-3).map(c=>c.id)
+    });
+    w.history=w.history.slice(0,HISTORY_LIMIT);
+    return true;
+  }
+  function progressEuropeanSeasons(s){
+    const w=ensureSeason(s),calendar=EuropeanCalendar();
+    if(!calendar)return 0;
+    let changes=0;
+    for(const [leagueId,leagueState] of Object.entries(w.leagues)){
+      if(leagueState.calendarMode!=="european_v1")continue;
+      if(closeEuropeanLeague(s,leagueId,leagueState))changes++;
+      if(leagueState.status!=="finished")continue;
+      const meta=(s.globalFootball?.leagues||[]).find(l=>l.id===leagueId);
+      const country=calendar.leagueCountry(meta);
+      if(!country)continue;
+      const next=calendar.seasonWindow(country,leagueState.season+1);
+      if(!next||s.day<next.startDay)continue;
+      const eligible=eligibleLeagueData(s).find(item=>item.league.id===leagueId);
+      if(!eligible)continue;
+      const replacement=createLeagueState(leagueState.season+1,eligible.clubs);
+      replacement.calendarMode="european_v1";
+      w.leagues[leagueId]=replacement;
+      changes++;
+    }
+    return changes;
+  }
   function nextSeason(s){
 
     const w=
@@ -1400,7 +1448,8 @@
     integrity,
     makeSchedule,
     roundDate,
-    leagueRoundDate
+    leagueRoundDate,
+    progressEuropeanSeasons
   };
 
   root.ProLifeWorldClubCompetitions=
