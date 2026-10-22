@@ -506,3 +506,16 @@ Casos aprovados: validação da oportunidade apenas no passo 4; avanço recupera
 **Proposta de correção mínima, ainda NÃO aplicada:** normalizar diacríticos com classe Unicode correta (`/\u0300-\u036f/g` dentro da classe), e manter filtros de país/liga ao buscar (eventualmente incluir controle explícito para limpar filtros em outra alteração, mas não exigido). Revisar/rodar três falhas e suite completa antes de qualquer commit. Não alterar `main`, calendário paralelo, saves ou lógica de negociação.
 
 **Estado:** A01.22 bloqueada; último TAP `18/21`, acumulado `160/163`.
+
+
+## A01.22.3 — Correção local do criador do treinador: 21/21 TAP aprovados (22/10/2026)
+
+**Origem:** TAP informado pelo usuário após patch local em `src/ui/coach-creator.js`, em `feature/fc27-career-global-audit`.
+
+**Mudanças locais relatadas (NÃO publicadas):** em `normalize()`, substituir classe de caracteres indevida por intervalo de acentos correto; em `clubSearch.input`, preservar filtros de país/competição já selecionados. Backup informado em Downloads: `PRO_LIFE_COACH_CREATOR_BACKUP_1792672215427.js`. `node --check` antes do teste passou.
+
+**Reteste:** `node --test --test-reporter=tap tests/coach-creator-06b.test.cjs` → 21 testes, 21 aprovados, zero falhas/cancelamentos/ignorados, `EXIT_CODE=0`, duração 1937.8926 ms. Testes 13, 17 e 18 antes falhos agora estão todos verdes. `git status --short` indicou somente ` M src/ui/coach-creator.js`.
+
+**Acumulado A01.6–A01.22 após correção:** **163/163 testes TAP aprovados**. Anotar que A01.22 teve uma execução inicial 18/21 e um reteste 21/21 (não somar as duas execuções ao total único).
+
+**PENDENTE:** verificar `git diff --check`, diff exato da fonte, e regressão geral de interface antes de solicitar aprovação explícita para commit/push. Patch de fonte NÃO foi commitado ou enviado ao GitHub por esta ação de documentação.
