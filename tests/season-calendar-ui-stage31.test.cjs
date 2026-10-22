@@ -42,23 +42,8 @@ function make(mode) {
   return dom;
 }
 function click(w, sel) {
-  let el = w.document.querySelector(sel);
-  if (!el) {
-    const match = sel.match(/^\[data-page="([^"]+)"\]$/);
-    const page = match?.[1];
-    const groups = {
-      training:"profile", statistics:"profile", awards:"profile", legacy:"profile", proposals:"market",
-      calendar:"league", matches:"league", competitions:"league", panorama:"league", squad:"league",
-      life:"history", finance:"history", sponsorships:"history"
-    };
-    if (page && groups[page]) {
-      const group = w.document.querySelector(`.game-nav [data-page="${groups[page]}"]`);
-      if (group) group.click();
-      el = w.document.querySelector(sel);
-    }
-  }
-  assert.ok(el, sel);
-  el.click();
+  const { clickSelector } = require("./helpers/ui-navigation.cjs");
+  return clickSelector(w, sel);
 }
 function get(w) {
   const id = w.ProLifeSave.activeId();
@@ -94,7 +79,7 @@ const catalogOf = (w) => w.ProLife.seasonCompetitionCatalog(get(w));
 const ovOf = (w, id) => w.ProLife.seasonCompetitionOverview(get(w), id);
 const rowsOf = (w) => qa(w, ".season-table tbody tr");
 const nums = (tr) => [...tr.querySelectorAll("td")].map((x) => x.textContent.trim());
-function open(w, id) { toLeague(w); click(w, '[data-page="league"]'); click(w, `[data-season-comp="${id}"]`); }
+function open(w, id) { toLeague(w); click(w, `[data-season-comp="${id}"]`); }
 // Simula a decisão do jogador sobre propostas pendentes (o app não expõe o estado); a pausa em si vem do motor real.
 function decideOnResume(w) {
   const D = w.ProLife, real = D.advanceToDay; let n = 0;
@@ -109,7 +94,7 @@ function noDup(s) {
 test("31.7C (1) catálogo real: 61 competições listadas e navegáveis, sem exigir region/current", () => {
   const w = world().window, cat = catalogOf(w);
   assert.ok(Array.isArray(cat)); assert.equal(cat.length, 61);
-  toLeague(w); click(w, '[data-page="league"]');
+  toLeague(w);
   assert.ok(q(w, ".season-center"));
   assert.equal(qa(w, ".season-comp").length, 61);
   for (const c of cat) { click(w, `[data-season-comp="${c.id}"]`); assert.ok(q(w, ".season-head h2").textContent.includes(c.name), c.name); }
@@ -117,7 +102,7 @@ test("31.7C (1) catálogo real: 61 competições listadas e navegáveis, sem exi
 
 test("31.7C (2) busca, país e tipo funcionam com os dados reais", () => {
   const w = world().window, cat = catalogOf(w);
-  toLeague(w); click(w, '[data-page="league"]');
+  toLeague(w);
   const input = q(w, "#season-q"); input.value = "laliga"; input.dispatchEvent(new w.Event("input", { bubbles: true }));
   const found = qa(w, ".season-comp b").map((x) => x.textContent);
   assert.ok(found.includes("LaLiga") && found.length < 10);
@@ -223,7 +208,7 @@ test("31.7C (8) pausa contratual real e continuação depois da decisão", () =>
 test("31.7C (9) carreira internacional: competição do clube, tabela e calendário reais", () => {
   const w = (intl ||= makeIntl()).window, s = get(w);
   assert.equal(s.clubId, "gf_real_madrid");
-  toLeague(w); click(w, '[data-page="league"]');
+  toLeague(w);
   assert.equal(qa(w, ".season-comp").length, 61);
   click(w, "[data-season-mine]");
   assert.ok(q(w, ".season-head h2").textContent.length > 2);
