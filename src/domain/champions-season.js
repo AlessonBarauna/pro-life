@@ -8,7 +8,7 @@ const Calendar=typeof require==="function"
   :root.ProLifeChampionsCalendar;
 
 function prepare(s,C,W, options={}){
-  const ed=C.edition(s,"ucl");
+  const ed=C.activeEdition?.(s,"ucl")||C.edition(s,"ucl");
   if(!ed)throw Error("Edicao da Champions inexistente.");
 
   if(ed.leagueSchedule){
