@@ -511,6 +511,9 @@
     if (config.catalogVersion !== undefined && config.catalogVersion !== null && config.catalogVersion !== "legacy") {
       if (config.catalogVersion !== "fc27_v1" || !FC27) throw Error("catalogVersion desconhecido: " + config.catalogVersion);
       FC27.installState(s);
+      // Somente carreiras FC27 criadas nesta versao: saves antigos nao
+      // recebem migracao silenciosa do calendario.
+      s.calendarVersion="european_v1";
     }
     Career.init(s);
     Career.updateProfessionalCareer(s);
