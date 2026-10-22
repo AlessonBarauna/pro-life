@@ -410,3 +410,21 @@ O conjunto inclui cobertura de: Séries C/D e respectivos elencos parciais; 27 h
 **Escopo da evidência:** testes automatizados de domínio e persistência aprovados nos cenários cobertos. Não demonstram a navegação completa do criador FC27 nem ações manuais na partida oficial.
 
 **Próximo foco:** `npm run test:ui` ou outro teste de interface específico, em cópia de trabalho isolada. O teste `tests/ui.test.cjs` usa fluxo legado para iniciar uma carreira e contém trecho de criação visual inalcançável; sua eventual aprovação não deve ser interpretada como prova de criação visual FC27.
+
+
+## A01.18 — Resultado real: teste procedural da interface (22/10/2026)
+
+**Origem:** saída de `npm run test:ui` enviada pelo usuário, branch `feature/fc27-career-global-audit`.
+
+O comando executa `node tests/ui.test.cjs`. Saídas:
+- `player: creation, proposals, every view, advances, match report, decisions, reload`
+- `coach: creation, proposals, every view, advances, match report, decisions, reload, tactics, lineup, license`
+- `save injection and invalid history: passed`
+- `published update checker: same version silent, new version prompts update`
+- `EXIT_CODE=0`
+
+**Conclusão:** regressão procedural de interface passou no cenário exercitado. **Não contabilizar casos TAP individuais**, pois esse script não imprimiu contagem. Acumulado anterior permanece **125/125 testes TAP aprovados**, além de **1 script de UI aprovado**.
+
+**Limite relevante:** `tests/ui.test.cjs:44-79` usa criação direta de estado legado e carrega o slot; trecho de criação via menu após o primeiro `return dom` é inalcançável. Portanto, sucesso do teste **não comprova** o fluxo de criação visual FC27 novo. Também não comprova substituições manuais na partida oficial.
+
+**Próximo passo de auditoria:** mapear testes FC27 específicos já presentes (criadores, menu de carreira, menus/fluxos de partida), escolher uma regressão focalizada, executar isoladamente e por fim fazer teste manual de criação em navegador sem usar saves reais.
