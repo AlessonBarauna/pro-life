@@ -7,8 +7,8 @@ const src=name=>fs.readFileSync(path.join(__dirname,"../src/domain/",name),"utf8
 test("UEFA live match processing consults active edition for all three tournaments",()=>{
   const engine=src("engine.js");
   for(const comp of ["ucl","uel","uecl"]){
-    const re=new RegExp("Continental\\\\.activeEdition\\\\?\\\\.\\\\(s,\\\\s*[\\\"\']"+comp+"[\\\"\']\\\\)","g");
-    assert.ok((engine.match(re)||[]).length>=2,comp+" does not resolve both schedule and daily processing");
+    const occurrence='activeEdition?.(s,"'+comp+'")';
+    assert.ok(engine.split(occurrence).length-1>=2,comp+" does not resolve both schedule and daily processing");
   }
 });
 test("Champions and Europa season processors respect persisted prior-year editions",()=>{
