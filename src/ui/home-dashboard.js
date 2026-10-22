@@ -351,6 +351,26 @@
     const stage=stageLabels[rawStage]||rawStage;
     return { ...fixture, national, homeClubId:national?null:fixture.home, awayClubId:national?null:fixture.away, home:home || "—", away:away || "—", opponent:opponent || "—", stage };
   }
+  // FC27: agenda da Central ordenada, sem compromissos repetidos e ancorada no motor.
+  // Apenas consulta: não simula jogos, não avança dias e não altera o save.
+  function upcomingAgenda(s,D,Calendar,next=null) {
+    const allowed=new Set(["club","state","cup","national","event"]);
+    const rows=(Calendar?.events?.(s,D)||[]).filter(e=>
+      e&&allowed.has(e.type)&&Number.isFinite(Number(e.day))&&Number(e.day)>=Number(s.day)
+    ).slice().sort((a,b)=>Number(a.day)-Number(b.day)||String(a.title||"").localeCompare(String(b.title||""),"pt-BR"));
+    const seen=new Set(),out=[];
+    const key=e=>e.type==="event"
+      ? `event:${e.day}:${e.title||""}`
+      : `match:${e.day}:${[...(e.clubs||[])].sort().join(":")||e.title||""}`;
+    // O próximo jogo do motor tem prioridade sobre aproximações do calendário visual.
+    if(next&&Number.isFinite(Number(next.date))&&Number(next.date)>=Number(s.day)){
+      const clubs=next.national?[]:[next.homeClubId??next.home,next.awayClubId??next.away].filter(Boolean);
+      const first={day:Number(next.date),type:next.national?"national":"club",title:`${next.home||"A definir"} × ${next.away||"A definir"}`,detail:next.competitionName||"Próximo jogo",destination:next.national?"national":"matches",clubs,officialNext:true,competitionId:next.competitionId};
+      seen.add(key(first));out.push(first);
+    }
+    for(const e of rows){const id=key(e);if(seen.has(id))continue;seen.add(id);out.push(e);}
+    return out.sort((a,b)=>a.day-b.day||(b.officialNext?1:0)-(a.officialNext?1:0)).slice(0,5);
+  }
   function snapshot(s, D, Calendar) {
     const c=D.club(s), career=D.Career.init(s), stats=D.Statistics?.heroDashboard?.(s), current=stats?.currentClubSeason || stats?.season || {}, plan=D.Training.init(s), next=nextInfo(s,D), table=tableWindow(s,D), competitionTable=centralCompetitionTable(s,D,next,table), pc=career.playerCareer || {};
     const recent=recentEntries(s).map(({kind,match:m})=>{
@@ -383,7 +403,7 @@
         hero:heroStats?{played:true,starter:heroStats.starter!==false,entryMinute:heroStats.entryMinute||0,minutes:heroStats.minutes||0,goals:heroGoals,assists:heroAssists,rating}:{played:false}
       };
     });
-    const events=(Calendar?.events?.(s,D)||[]).filter((e)=>e.day>=s.day && ["club","state","cup","national","event"].includes(e.type)).slice(0,5);
+    const events=upcomingAgenda(s,D,Calendar,next);
     const objectives=s.mode==="player" && s.clubId ? D.Career.matchObjectives(s) : [];
     const news=(s.news||[]).slice().sort((a,b)=>(b.day||0)-(a.day||0)).slice(0,4);
     const messages=[...(s.decision?[{day:s.day,title:s.decision.title,body:s.decision.body,kind:"decision"}]:[]), ...news].slice(0,4);
@@ -397,6 +417,6 @@
       training:{ focus:D.Training.skills[s.training] || (s.training==="balanced"?"Equilibrado":s.training), intensity:{rest:"Recuperação",normal:"Normal",hard:"Intensa"}[s.intensity]||s.intensity, sessions:plan.sessions||0, improvements:plan.improvements||0, recent:active ? `${D.Training.trainingCategories[active.category]?.name || "Treino"} · nota ${active.grade}` : "Sem bônus temporário ativo", next:s.person.injury ? `Após ${s.person.injury} dia(s) de recuperação` : "Disponível na rotina diária" }
     };
   }
-  root.ProLifeHomeDashboard={ snapshot, tableWindow, competitionContext:centralCompetitionTable, nextInfo, sortedOwnMatches, recentEntries, resultFor };
+  root.ProLifeHomeDashboard={ snapshot, tableWindow, competitionContext:centralCompetitionTable, nextInfo, upcomingAgenda, sortedOwnMatches, recentEntries, resultFor };
   if(typeof module!=="undefined"&&module.exports) module.exports=root.ProLifeHomeDashboard;
 })(typeof globalThis!=="undefined"?globalThis:this);
