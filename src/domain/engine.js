@@ -2276,7 +2276,7 @@
   function processChampionsDay(s, rng) {
     if (!ChampionsSeason || !Continental || !WorldClubCompetitions) return null;
 
-    const ed = Continental.edition(s, "ucl");
+    const ed = Continental.activeEdition?.(s,"ucl")||Continental.edition(s, "ucl");
     if (!Array.isArray(ed?.leagueSchedule?.matches)) return null;
 
     return ChampionsSeason.processDay(
@@ -2354,7 +2354,7 @@
   }
   // 34F.32B.6 - Knockout UCL persistente, separado da liga nacional.
   function processChampionsKnockoutDay(s, rng) {
-    const ed=Continental?.edition?.(s,"ucl");
+    const ed=Continental?.activeEdition?.(s,"ucl")||Continental?.edition?.(s,"ucl");
     if(!ChampionsKnockout||!ed?.leagueSchedule?.matches)return null;
     const score=(m)=>{
       const hc=GlobalFootball?.clubById?.(s,m.homeId);
@@ -2399,7 +2399,7 @@
   function processEuropaDay(s, rng) {
     if (!EuropaSeason || !Continental || !WorldClubCompetitions) return null;
 
-    const ed = Continental.edition(s, "uel");
+    const ed = Continental.activeEdition?.(s,"uel")||Continental.edition(s, "uel");
     if (!Array.isArray(ed?.leagueSchedule?.matches)) return null;
 
     return EuropaSeason.processDay(
@@ -2467,7 +2467,7 @@
   }
   // 34F.32B.6 - Knockout UCL persistente, separado da liga nacional.
   function processEuropaKnockoutDay(s, rng) {
-    const ed=Continental?.edition?.(s,"uel");
+    const ed=Continental?.activeEdition?.(s,"uel")||Continental?.edition?.(s,"uel");
     if(!EuropaKnockout||!ed?.leagueSchedule?.matches)return null;
     const score=(m)=>{
       const hc=GlobalFootball?.clubById?.(s,m.homeId);
@@ -2503,7 +2503,7 @@
   function processConferenceDay(s, rng) {
     if (!ConferenceLive || !Continental || !WorldClubCompetitions) return null;
 
-    const ed = Continental.edition(s, "uecl");
+    const ed = Continental.activeEdition?.(s,"uecl")||Continental.edition(s, "uecl");
     if (!Array.isArray(ed?.leagueSchedule?.matches)) return null;
 
     return ConferenceLive.daily(
