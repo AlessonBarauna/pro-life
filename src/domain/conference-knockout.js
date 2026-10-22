@@ -96,7 +96,7 @@ function daily(s,ed,hooks){
   const stage=ko.stages[ko.stages.length-1];
   for(const m of stage.matches){
     if(m.played||m.day>s.day)continue;
-    const hero=s.mode==="player"&&[m.homeId,m.awayId].includes(s.clubId);
+    const hero=["player","coach"].includes(s.mode)&&[m.homeId,m.awayId].includes(s.clubId);
     const fn=hero?hooks?.heroFixture:hooks?.otherFixture;
     if(typeof fn!=="function")continue;
     const score=fn(m,s);
