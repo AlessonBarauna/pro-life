@@ -292,9 +292,8 @@
       if(dates?.length){
         // A fase de liga e o mata-mata usam o mesmo ciclo anual; a
         // programacao de confrontos nao sobrescreve partidas persistidas.
-        const stages=cal.UEFA_2026_27?.[comp];
         return [...dates,...["playoff","round16","quarterfinal","semifinal","final"].map(key=>
-          cal.dateDay(Array.isArray(stages?.[key])?stages[key][0]:stages?.[key])
+          cal.uefaKnockoutDates(season,comp,key)?.[0]
         )];
       }
     }
