@@ -443,3 +443,20 @@ Cenários aprovados: faixas de GER/idade/posição/arquétipo; personalização 
 **Acumulado real de testes TAP A01.6–A01.19: 139/139 aprovados, sem falhas.** A execução adicional de `npm run test:ui` também passou, mas não foi convertida artificialmente em contagem TAP.
 
 **Próximo foco:** auditoria do criador FC27 específico de treinador e jogador; inspeção da navegação e teste manual isolado no navegador.
+
+
+## A01.20 — Inventário local de regressões de criação e FC27 (22/10/2026)
+
+**Origem:** saída de `Get-ChildItem .\\tests -Filter '*.test.cjs'` com filtro `fc27|creator|creation|coach|player|career` enviada pelo usuário. Branch `feature/fc27-career-global-audit`.
+
+**Resultado:** `TOTAL=182` arquivos de teste com nomes relacionados. O filtro é abrangente (especialmente `coach`) e não significa que os 182 cobrem criação.
+
+**Testes priorizados para validação isolada:**
+1. `tests/creator-wizard-flow.test.cjs` — wizard de criação.
+2. `tests/coach-creator-06b.test.cjs` — criador do treinador.
+3. `tests/fc27-engine-integration-stage34f12.test.cjs` — integração FC27.
+4. `tests/fc27-save-stage34f13.test.cjs` — persistência.
+5. `tests/fc27-indexeddb-stage34f16.test.cjs` — IndexedDB.
+6. `tests/fc27-catalog-choice-ui-stage34f14.test.cjs` — catálogo e escolhas pela UI.
+
+**Nota:** não há novos testes executados em A01.20; manter acumulado de **139/139 TAP** e `npm run test:ui` aprovado. Não afirmar que novos arquivos passaram antes de executá-los. Próximo A01.21: wizard isolado.
