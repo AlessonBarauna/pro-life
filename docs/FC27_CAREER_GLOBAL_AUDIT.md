@@ -143,3 +143,63 @@ Contagens referentes às tags script da página, não ao número total de arquiv
 5. Somente após os resultados, reclassificar os sistemas de 'Não verificada' para 'Completa', 'Parcial' ou 'Com problema'.
 
 **Situação da A01.3:** identificação da cobertura declarada concluída; execução e inventário exaustivo pendentes.
+
+
+## A01.4 — Verificação estática aprofundada e protocolo de execução (22/10/2026)
+
+**Limitação operacional:** código remoto está acessível para inspeção pelo GitHub, mas não há checkout deste repositório no executor disponível; tentativa de `git ls-remote` falhou por resolução DNS. Consulta de workflows associados ao commit anterior `3b91bf0...` retornou lista vazia. **Nenhum teste de execução foi realizado nesta etapa.** Não interpretar resultados estáticos como testes aprovados.
+
+### Casos existentes, verificados no código-fonte
+
+| Teste | Casos `test(...)` encontrados | Verificações cobertas pelo nome/código | Executado nesta etapa? |
+|---|---:|---|---|
+| `tests/coach-player-roles-31011.test.cjs` | 5 | Reserva no minuto 60, papéis táticos, lesão, assistências e entrada em campo | Não |
+| `tests/coach-match-lab-v2.test.cjs` | 4 | Força, decisões por minuto, independência da partida oficial e invalidação de comandos | Não |
+| `tests/coach-sponsorship-complete.test.cjs` | 6 | Persistência, parcelas, exclusividade, expiração, interface | Não |
+| `tests/central-official-competition-context.test.cjs` | 7 | Ligas/copas europeias e continentais, save/reload na central | Não |
+| `tests/coach-2029-central-integration.test.cjs` | 1 | Histórico e agenda 2029 | Não |
+| `tests/english-cups-engine-integration.test.cjs` | 1 | Integração Premier/Copas/UEFA | Não |
+| `tests/market-stage7.test.cjs` | 8 | Interesse, cooldown, janela, transferência, agência e save/reload | Não |
+| `tests/live-match.test.cjs` | 1 | Placar por minuto | Não |
+
+Esta tabela descreve só os arquivos lidos, não a suíte completa. O teste de UI é script procedural JSDOM e não usa `test(...)`: a contagem por nome de caso não é aplicável.
+
+### Risco confirmado pela estrutura: partida oficial versus laboratório
+
+- `src/ui/coach-match-lab-v2.js:3`: declara explicitamente ser laboratório independente, **não persistido**, que não substitui resultados oficiais.
+- `src/domain/coach-incremental-match-v2.js:18`: possui mecanismo de substituição no simulador incremental.
+- `src/ui/coach-match-center-v2.js`: exibe informações e eventos da partida.
+- **A01-R14:** demonstrar qual comando do usuário alcança o motor oficial, se há substituição durante o jogo e se o resultado persiste após recarregar. A existência da prévia não é comprovação disso.
+
+### Execução segura necessária antes de classificar funcionalidades
+
+Recomendação: criar clone/check-out **separado** da branch de auditoria, sem usar pastas com saves do usuário. Primeiro conferir `git status --porcelain` e branch selecionada. Instalar dependências apenas em cópia de trabalho isolada. Executar cada arquivo separadamente com `node --test --test-reporter=tap`; capturar stdout/stderr para `.txt`, `$LASTEXITCODE` imediatamente, e abrir no Bloco de Notas. Não aceitar `pass=` ou `fail=` vazios como sinal de falha. Não executar tudo numa única linha sem revisar resultados.
+
+**Primeiro comando proposto quando houver checkout isolado (PowerShell):**
+
+```powershell
+$repo='C:\Users\aless\Projetos\PRO_LIFE_AUDITORIA'
+$test='tests/coach-player-roles-31011.test.cjs'
+$log=Join-Path $env:USERPROFILE 'Downloads\PRO_LIFE_A014_SUBSTITUICOES.txt'
+Push-Location $repo
+try {
+  node --test --test-reporter=tap $test *> $log
+  $exitCode=$LASTEXITCODE
+  Add-Content -LiteralPath $log -Value ("EXIT_CODE=" + $exitCode)
+} finally { Pop-Location }
+notepad.exe $log
+```
+
+**Pré-condição:** pasta de clone independente já existente na branch correta com dependências instaladas; se não existir, não executar. Este bloco é apenas uma especificação registrada, não foi executado.
+
+### Critérios de aprovação pendentes
+
+- [ ] TAP real com status por teste, contagens verificáveis e `EXIT_CODE=0`.
+- [ ] Dois modos: jogador e treinador; início de carreira FC27 e carregamento posterior.
+- [ ] Antes/durante/depois da partida: escalação, substituição, placar e efeitos oficiais.
+- [ ] Mercado: aceite, recusa, contrapartida, janela fechada e transferência futura.
+- [ ] Save/reload sem perda, duplicação, troca de identidade ou corrupção.
+- [ ] Avanço temporal de 1 dia, 30 dias, data alvo e virada de temporada.
+- [ ] Repetição para outra temporada e compatibilidade com a branch de calendário quando aprovada.
+
+**Estado:** A01.4 inspeção estática e plano de testes documentados; **execução de testes bloqueada pela ausência de checkout acessível**. Não há correções de gameplay nesta etapa.
