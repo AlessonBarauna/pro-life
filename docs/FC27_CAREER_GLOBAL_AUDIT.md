@@ -246,3 +246,25 @@ notepad.exe $log
 **Escopo da aprovação:** comportamento do laboratório independente. Não aprova substituição na interface da partida oficial, nem efeitos permanentes ou save/reload do jogo oficial.
 
 **Próxima execução sugerida:** `tests/coach-sponsorship-complete.test.cjs` (6 casos declarados), com saída TAP e código de saída capturados.
+
+
+## A01.8 — Evidência TAP: patrocínios do treinador (22/10/2026)
+
+**Fonte:** relatório TAP enviado pelo usuário, branch `feature/fc27-career-global-audit`.
+**Comando:** `node --test --test-reporter=tap tests/coach-sponsorship-complete.test.cjs`.
+**Resultado:** 6 testes, 6 aprovados, 0 falhas, 0 cancelados, 0 pulados; `EXIT_CODE=0`; duração 114.1889 ms.
+
+| Cenário | Estado |
+|---|---|
+| Propostas iniciais estáveis e sobrevivem ao save | PASS |
+| Contrato e parcelas creditadas uma única vez após reload | PASS |
+| Exclusividade esportiva bloqueia concorrentes | PASS |
+| Expiração, bônus e renovação são idempotentes | PASS |
+| Painel/popup ligados à proposta correta | PASS |
+| Interface mostra parcelas, datas e histórico persistidos | PASS |
+
+**Acumulado comprovado:** A01.6 (5) + A01.7 (4) + A01.8 (6) = **15/15**, zero falhas. Acentos corrompidos no arquivo de log não representam falhas nos testes.
+
+**Limite:** cenários automatizados aprovados; validação manual da interação real e da UI completa continua pendente.
+
+**Próxima execução:** `tests/central-official-competition-context.test.cjs` (7 cenários de contexto das competições, navegação e save/reload). Não incluir alterações do calendário europeu ainda em validação na outra branch.
