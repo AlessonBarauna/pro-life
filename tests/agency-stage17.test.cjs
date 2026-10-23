@@ -945,7 +945,7 @@ test("17D: interface contem painel completo de agencia",()=>{
 });
 
 
-test("17D: navegacao Meu jogador possui aba Empresario e Agencia",()=>{
+test("17D: navegacao Meu jogador possui aba Empresario ligada ao painel de agencia",()=>{
   const html=fs.readFileSync(
     require("node:path").join(
       __dirname,
@@ -955,7 +955,7 @@ test("17D: navegacao Meu jogador possui aba Empresario e Agencia",()=>{
   );
 
   assert(
-    /\["agency",\s*"Empres\u00e1rio e Ag\u00eancia"\]/.test(html)
+    /\["agency",\s*"Empres\u00e1rio"\]/.test(html)
   );
 
   assert(
@@ -975,7 +975,7 @@ test("17D: navegacao Meu jogador possui aba Empresario e Agencia",()=>{
 
   assert(
     playerNav[0].includes(
-      '["agency", "Empres\u00e1rio e Ag\u00eancia"]'
+      '["agency", "Empres\u00e1rio"]'
     )
   );
 });
