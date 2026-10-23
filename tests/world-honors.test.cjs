@@ -49,3 +49,9 @@ test("indicados saem em 25/09 e o vencedor só em 20/10",()=>{
   H.daily(s,api);assert.equal(rec.nomsAnnounced,true);assert.equal(rec.revealed,false);assert.equal(arts.length,1);assert.equal(msgs.length,1);
   s.day=day(9,21);H.daily(s,api);assert.equal(rec.revealed,true);assert.equal(arts.length,2);
 });
+test("Chuteira de Ouro Europeia pondera 2 / 1,5 / 1 e ignora divisões inferiores e ligas de fora da Europa",()=>{
+  const W=require("../src/domain/world-stats.js");
+  assert.equal(typeof W.goldenShoe,"function");assert.equal(typeof W.europeanLeaders,"function");
+  const s={globalFootball:{leagues:[],worldCompetitions:{leagues:{}}}};
+  assert.deepEqual(W.goldenShoe(s,5),[]);
+});

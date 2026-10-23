@@ -330,6 +330,35 @@
     const floor=stat==="rating"?(min||(leagueId?minApps(s,leagueId):3)):min;
     return rows.filter(r=>r.apps>=floor&&(stat==="rating"||key(r)>0)).sort((a,b)=>key(b)-key(a)||b.goals-a.goals||b.assists-a.assists||a.apps-b.apps||(a.id<b.id?-1:1)).slice(0,limit).map(r=>({...r,value:key(r)}));
   }
+  // ---------- Chuteira de Ouro Europeia (regra real: so ligas nacionais da primeira divisao europeia; 2 / 1,5 / 1 ponto por gol) ----------
+  const SECOND_TIER=/championship|league_one|league_two|bundesliga_2|hypermotion|ligue_2|serie_bkt|3_liga|2_liga/i;
+  const TOP5_COUNTRIES=new Set(["inglaterra","espanha","alemanha","italia","franca"]);
+  const norm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+  function europeanTopFlight(s,id){
+    const c=s.globalFootball?.worldCompetitions?.leagues?.[id];
+    if(!c||c.calendarMode!=="european_v1"||SECOND_TIER.test(id))return null;
+    const meta=(s.globalFootball?.leagues||[]).find(l=>l.id===id);if(!meta)return null;
+    const top5=TOP5_COUNTRIES.has(norm(meta.country));
+    if(top5&&Number(meta.reputation)<60)return null;     // divisoes inferiores dos paises das cinco grandes
+    return {meta,weight:top5?2:(Number(meta.reputation)>=50?1.5:1),round:Number(c.round)||0,total:Math.max(0,((c.clubIds||[]).length-1)*2)};
+  }
+  function europeanLeaders(s,{stat="goals",limit=10}={}){
+    const out=[];
+    for(const id of leagueIds(s)){
+      const info=europeanTopFlight(s,id);if(!info)continue;
+      for(const r of rowsOf(s,id)){
+        const raw=stat==="assists"?r.assists:r.goals;if(!(raw>0))continue;
+        out.push({...r,league:info.meta.name,round:info.round,roundTotal:info.total,weight:info.weight,points:+(raw*(stat==="goals"?info.weight:1)).toFixed(1),value:stat==="goals"?+(raw*info.weight).toFixed(1):raw});
+      }
+    }
+    return out.sort((a,b)=>b.value-a.value||b.goals-a.goals||b.assists-a.assists||a.apps-b.apps||(a.id<b.id?-1:1)).slice(0,limit);
+  }
+  const goldenShoe=(s,limit=10)=>europeanLeaders(s,{stat:"goals",limit});
+  function leagueContext(s,id){
+    const c=s.globalFootball?.worldCompetitions?.leagues?.[id];if(!c)return null;
+    const meta=(s.globalFootball?.leagues||[]).find(l=>l.id===id);
+    return {name:meta?.name||id,round:Number(c.round)||0,total:Math.max(0,((c.clubIds||[]).length-1)*2)};
+  }
   function youngLeaders(s,limit=10){return globalRows(s).filter(r=>r.eligible&&r.age<=21).sort((a,b)=>b.globalScore-a.globalScore||(a.id<b.id?-1:1)).slice(0,limit).map(r=>({...r,value:r.avg}));}
   function keepersTop(s,limit=10){return globalRows(s).filter(r=>r.eligible&&r.pos==="GOL").sort((a,b)=>b.globalScore-a.globalScore||(a.id<b.id?-1:1)).slice(0,limit).map(r=>({...r,value:r.saves}));}
   function coachesTop(s,limit=10){
@@ -456,7 +485,7 @@
   function formatByName(name,value){const hit=UNIT_BY_NAME.find(([re])=>re.test(String(name||"")));return format(hit?hit[1]:"jogos",value);}
   function formatAward(a){return format(a.unit,a.value);}
 
-  const api={VERSION,init:state,record,rowsOf,globalRows,minApps,leagueAwards,worldAwards,leaders,youngLeaders,keepersTop,coachesTop,closeLeague,closeSeason,history,heroAwards,heroStanding,competitions,format,formatByName,formatAward,UNITS};
+  const api={VERSION,europeanLeaders,goldenShoe,leagueContext,init:state,record,rowsOf,globalRows,minApps,leagueAwards,worldAwards,leaders,youngLeaders,keepersTop,coachesTop,closeLeague,closeSeason,history,heroAwards,heroStanding,competitions,format,formatByName,formatAward,UNITS};
   root.ProLifeWorldStats=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
