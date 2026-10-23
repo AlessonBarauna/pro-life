@@ -83,9 +83,14 @@ function click(w, sel) {
     const match = sel.match(/^\[data-page="([^"]+)"\]$/);
     const page = match?.[1];
     const groups = {
-      training:"profile", statistics:"profile", awards:"profile", legacy:"profile", proposals:"market",
-      league:"competitions", calendar:"calendar", matches:"calendar", competitions:"competitions", squad:"squad",
-      life:"history", finance:"history", sponsorships:"history"
+      contract:"profile", agency:"profile", legacy:"profile", story:"profile",
+      lineup:"squad", calendar:"competitions", matches:"competitions",
+      league:"competitions", competitions:"competitions", statistics:"competitions", awards:"competitions",
+      worldCompetitions:"competitions", englishCups:"competitions", champions:"competitions", europa:"competitions",
+      conference:"competitions", libertadores:"competitions", sudamericana:"competitions",
+      proposals:"market", clubs:"market", training:"profile",
+      life:"life", offField:"life", finance:"life", sponsorships:"life",
+      history:"history", youth:"history", squad:"squad"
     };
     if (page && groups[page]) {
       const group = w.document.querySelector(`.game-nav [data-page="${groups[page]}"]`);
@@ -145,11 +150,12 @@ for (const mode of ["player", "coach"]) {
   const navigation = mode === "player"
     ? [
         ["home", ["home"]],
-        ["profile", ["profile", "training", "statistics", "awards", "legacy"]],
-        ["competitions", ["league", "calendar", "matches", "competitions"]],
+        ["profile", ["profile", "training", "contract", "agency", "legacy", "story"]],
+        ["competitions", ["calendar", "matches", "league", "competitions", "statistics", "awards", "worldCompetitions", "englishCups", "champions", "europa", "conference", "libertadores", "sudamericana"]],
         ["squad", ["squad"]],
-        ["market", ["market", "proposals"]],
-        ["history", ["history", "life", "finance", "sponsorships"]],
+        ["market", ["market", "proposals", "clubs"]],
+        ["life", ["life", "offField", "finance", "sponsorships"]],
+        ["history", ["history", "youth"]],
         ["inbox", ["inbox"]],
         ["save", ["save"]],
       ]
@@ -164,9 +170,14 @@ for (const mode of ["player", "coach"]) {
         ["save", ["save"]],
       ];
   const globalLabels = [...w.document.querySelectorAll(".game-nav nav button")].map((button) => button.textContent.trim());
-  assert.equal(globalLabels.length, 9, "A navegacao principal deve expor as nove areas prioritarias");
-  for (const label of ["Central", mode === "player" ? "Meu Jogador" : "Treinador", "Elenco", "Calendário", "Competições", "Mercado", "Treinamento", "Vida", "Caixa"])
+  assert.equal(globalLabels.length, mode === "player" ? 6 : 9, "A navegacao principal deve expor apenas as areas prioritarias");
+  const expectedLabels = mode === "player"
+    ? ["Central", "Meu Jogador", "Elenco", "Temporada", "Mercado", "Vida"]
+    : ["Central", "Treinador", "Elenco", "Calendário", "Competições", "Mercado", "Treinamento", "Vida", "Caixa"];
+  for (const label of expectedLabels)
     assert.ok(globalLabels.some((item) => item.includes(label)), `atalho global ${label}`);
+  if (mode === "player") for (const removed of ["Calendário", "Competições", "Treinamento", "Caixa"])
+    assert.ok(!globalLabels.some((item) => item === removed), `atalho redundante ${removed}`);
   for (const [group, pages] of navigation) {
     click(w, `.game-nav [data-page="${group}"]`);
     for (const page of pages) {
@@ -275,6 +286,7 @@ for (const mode of ["player", "coach"]) {
   }
   click(w, '[data-page="profile"]');
   if (mode === "player") {
+    click(w, '[data-page="playerIdentity"]');
     const shirtNumber = w.document.querySelector("#shirt-number");
     assert.ok(shirtNumber, "O Modo Jogador deve manter a edição do número da camisa");
     shirtNumber.value = "27";
@@ -297,12 +309,15 @@ for (const mode of ["player", "coach"]) {
   if (mode === "player") {
     assert.ok(w.document.querySelector(".pl-player-screen"), "Meu Jogador deve usar a composição 05C");
     assert.ok(w.document.querySelector(".pl-player-showcase"), "O destaque cinematográfico do jogador deve existir");
-    assert.equal(w.document.querySelectorAll(".pl-player-tabs a").length, 5, "As cinco áreas principais do jogador devem estar acessíveis");
+    assert.equal(w.document.querySelectorAll(".game-subnav button").length, 8, "Meu Jogador deve usar um único submenu para todas as áreas");
+    assert.equal(w.document.querySelector(".pl-player-tabs"), null, "O perfil não deve criar uma segunda barra de abas");
     assert.ok(w.document.querySelector(".pl-player-radar .radar-chart"), "O radar deve consumir os atributos reais");
     assert.equal(w.document.querySelectorAll(".pl-player-summary > article").length, 4, "Temporada, evolução, contrato e conquistas devem formar o resumo");
+    click(w, '[data-page="playerIdentity"]');
     assert.ok(w.document.querySelector("#appearance-editor"), "A edição de aparência existente deve ser preservada");
   }
   if (mode === "player") {
+    click(w, '[data-page="playerDevelopment"]');
     const chart = w.document.querySelector("#chart-key");
     assert.ok(chart, "O relatorio de desenvolvimento deve existir no perfil do jogador");
     chart.value = "all";

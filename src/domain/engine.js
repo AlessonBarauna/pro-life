@@ -4,6 +4,7 @@
   const WorldClubCompetitions=root.ProLifeWorldClubCompetitions||(typeof require==="function"?require("./world-club-competitions.js"):null);
   const ClubIntelligence=root.ProLifeClubIntelligence||(typeof require==="function"?require("./club-intelligence.js"):null);
   const WorldStats=root.ProLifeWorldStats||(typeof require==="function"?require("./world-stats.js"):null);
+  const WorldHonors=root.ProLifeWorldHonors||(typeof require==="function"?require("./world-honors.js"):null);
   const Continental=root.ProLifeContinental||(typeof require==="function"?require("./continental.js"):null);
   const EnglishCups=root.ProLifeEnglishCups||(typeof require==="function"?require("./english-cups.js"):null);
   const ConmebolTournaments=root.ProLifeConmebolTournaments||(typeof require==="function"?require("./conmebol-tournaments.js"):null);
@@ -2071,6 +2072,7 @@
   function newSeason(s, rng) {
     WorldClubCompetitions?.closeSeason(s);
     EnglishCups?.closeSeason?.(s);
+    try{WorldHonors?.compute(s,API);}catch(e){}
     WorldStats?.closeSeason(s);
     CoachCareer?.closeSeason(s, API, { log: (title, body) => log(s, title, body) });
     ClubIntelligence?.closeSeason(s, { log: (title, body) => log(s, title, body) });
@@ -2195,12 +2197,18 @@
       }
     }
     if (s.upgradeClub) migrateWorld(s, s.upgradeClub, rng);
-    if (s.person.age >= 35 && s.mode === "player")
-      log(
-        s,
-        "Uma nova etapa",
-        "Você já pode se aposentar e seguir como treinador no mesmo universo.",
-      );
+    if (s.mode === "player") {
+      const RR = root.ProLifeRetirementRules || (typeof require === "function" ? require("./retirement-rules.js") : null);
+      const age = s.person.age, cap = RR?.hardCap ? RR.hardCap(s.person.pos) : 42;
+      if (age >= cap) {
+        log(s, "Fim de carreira", `Aos ${age} anos o corpo não acompanha mais. Você encerra a carreira como jogador e segue como treinador.`);
+        try { retire(s); } catch (e) { /* mantém a carreira se a transição não for possível */ }
+      } else if (age >= 38) {
+        Career.addMessage?.(s, { category: "CARREIRA", sender: "Família e agente", subject: "Hora de pensar na despedida", body: `Você tem ${age} anos. Cada temporada fica mais difícil de sustentar o nível. A aposentadoria será obrigatória aos ${cap} anos.`, eventId: `retire-warn:${s.season}` });
+      } else if (age >= 34) {
+        Career.addMessage?.(s, { category: "CARREIRA", sender: "Seu agente", subject: "Planejando o fim da carreira", body: "Você já pode se aposentar e seguir como treinador no mesmo universo, ou continuar jogando enquanto o rendimento permitir.", eventId: `retire-hint:${s.season}` });
+      }
+    }
   }
   function recordDevelopment(s) {
     if (!s.development) s.development = [];
@@ -2646,7 +2654,7 @@
       Continental.init(s);
       const ed=Continental.edition(s,"ucl");
       if (ed?.status==="ready" && !ed.leagueSchedule) {
-        const firstDay=Continental.windows(s.season,"ucl")[0];
+        const firstDay=Continental.windows(s.season,"ucl",s.season>2026?ed:undefined)[0];
         const base=(Number(s.season)-2026)*365;
         if(s.day<firstDay) {
           ChampionsSeason.prepare(s,Continental,WorldClubCompetitions);
@@ -2695,6 +2703,7 @@
     const rng = new Random(s.rng);
     for (let d = 0; d < clamp(days, 1, 30); d++) {
       s.day++;
+      try{WorldHonors?.daily(s,{Career},{log:(title,body)=>log(s,title,body)});}catch(e){}
       generateWorldMarket(s, rng);
       WorldLiveMarket?.tick?.(s, rng);
       applyMarketBudgets(s, WorldLiveMarket?.executeCompleted?.(s, { canExecute: worldMarketCanExecute })?.executed);
@@ -3081,6 +3090,31 @@
   function seasonCalendarEvents(s, fromDay, toDay, filters = {}) {
     return SeasonCompetitionCenter?.calendarEvents(s, fromDay, toDay, filters, API) || [];
   }
+  // Pre-temporada (FC 27): carreira nova cujo campeonato so comeca meses depois (ex.: ligas europeias em agosto)
+  // avanca sozinha ate ~14 dias antes do primeiro jogo oficial. Nunca mexe em carreira ja iniciada.
+  function preseasonPlan(s, options = {}) {
+    const lead = Number.isFinite(options.leadDays) ? options.leadDays : 14, minGap = Number.isFinite(options.minGapDays) ? options.minGapDays : 45;
+    if (!s || !s.clubId || Number(s.day) !== 0) return null;
+    let nc = null;
+    try { nc = nextCommitment(s); } catch (e) { nc = null; }
+    if (!nc || !Number.isFinite(Number(nc.date))) return null;
+    const gap = Number(nc.date) - Number(s.day);
+    if (gap <= minGap) return null;
+    return { fromDay: s.day, targetDay: Number(nc.date) - lead, firstMatchDay: Number(nc.date), competition: nc.competitionName || "" };
+  }
+  function preseasonStep(s, targetDay, chunk = 7) {
+    let n = 0, error = null;
+    while (s.day < targetDay && n < chunk) {
+      try { advance(s, 1); }
+      catch (e1) {
+        try { autoResolveDecision(s); advance(s, 1); }
+        catch (e2) { error = String(e2?.message || e2); break; }
+      }
+      n++;
+    }
+    if (s.decision) { try { autoResolveDecision(s); } catch (e) { /* mantem a decisao para o jogador */ } }
+    return { done: s.day >= targetDay || !!error, day: s.day, error };
+  }
   function advanceToDay(s, targetDay, options = {}) {
     if (!Number.isInteger(targetDay)) throw Error("Data de destino inválida.");
     if (targetDay <= s.day) throw Error("A data de destino deve ser posterior ao dia atual.");
@@ -3353,6 +3387,8 @@
     advance,
     simulateAdvance,
     advanceToDay,
+    preseasonPlan,
+    preseasonStep,
     seasonCompetitionCatalog,
     seasonCompetitionOverview,
     seasonCalendarEvents,

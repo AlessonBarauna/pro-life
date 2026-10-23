@@ -213,15 +213,8 @@
 
   // ---------- aposentadoria ----------
   function retirementChance(p, ctx) {
-    if (p.age < 31) return 0;
-    const motive = unit(p.id, "retire") * 2 - 1;
-    let mid = (p.pos === "GOL" ? 41.5 : 38) + motive * 1.5;
-    mid += ctx.starter ? 1 : 0;
-    mid -= clamp((ctx.level - 10 - ctx.ovr) / 6, 0, 2.5);
-    mid -= ctx.freeSeasons * 1.5;
-    const hardCap = p.pos === "GOL" ? 45 : 42;
-    if (p.age >= hardCap) return 1;
-    return clamp(logistic((p.age - mid) / 1.7), 0, 0.97);
+    const RR = root.ProLifeRetirementRules || (typeof require === "function" ? require("./retirement-rules.js") : null);
+    return RR.chance(p, { ovr: ctx.ovr, peak: p.peakOvr, level: ctx.level, starter: ctx.starter, freeSeasons: ctx.freeSeasons, motive: unit(p.id, "retire") * 2 - 1 });
   }
   function retireOne(s, api, p, club, why) {
     const u = s.universe, o = ovrOf(p);

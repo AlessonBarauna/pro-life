@@ -316,14 +316,14 @@
     const pc=s.extras?.playerCareer || {};
     const goals=sum("goals") || matchSnapshot.goals, assists=sum("assists") || matchSnapshot.assists, motm=sum("motm") || matchSnapshot.motm;
     const averageRating=ratingTotal && appearances ? +(ratingTotal/appearances).toFixed(2) : matchSnapshot.averageRating;
-    return { clubId:s.clubId||null, clubIds:[...new Set(heroStintHistory(s).filter(x=>x.season===s.season).map(x=>x.clubId))], club:Ctx()?.clubName(s) || s.clubs.find((club)=>club.id===s.clubId)?.name || (s.clubId ? "Clube não identificado" : "Sem clube"), clubs:heroStintHistory(s).filter(x=>x.season===s.season).map(x=>Names?Names.club(s,x.clubId,x.club):x.club), stints:heroStintHistory(s).filter(x=>x.season===s.season), age:s.person.age, overallStart:start?.overall ?? null, overallEnd:end?.overall ?? (root.ProLife?.overall ? root.ProLife.overall(s.person) : null), marketValueEnd:pc.marketValue||0, appearances, starts:Math.min(appearances, s.extras?.seasonStarts || appearances), minutes:s.person.minutes||0, goals, assists, motm, averageRating, reputation:Math.round(s.reputation||0), national:{ caps:s.nationalTeam?.caps||0, goals:s.nationalTeam?.goals||0, assists:s.nationalTeam?.assists||0 } };
+    return { competitions:Object.entries(hero.byCompetition||{}).map(([cid,row])=>({id:cid,name:competitionName(s,cid),appearances:row.appearances||0,starts:row.starts||0,minutes:row.minutes||0,goals:row.goals||0,assists:row.assists||0,motm:row.motm||0,ratingTotal:row.ratingTotal||0,wins:row.wins||0,draws:row.draws||0,losses:row.losses||0})), clubId:s.clubId||null, clubIds:[...new Set(heroStintHistory(s).filter(x=>x.season===s.season).map(x=>x.clubId))], club:Ctx()?.clubName(s) || s.clubs.find((club)=>club.id===s.clubId)?.name || (s.clubId ? "Clube não identificado" : "Sem clube"), clubs:heroStintHistory(s).filter(x=>x.season===s.season).map(x=>Names?Names.club(s,x.clubId,x.club):x.club), stints:heroStintHistory(s).filter(x=>x.season===s.season), age:s.person.age, overallStart:start?.overall ?? null, overallEnd:end?.overall ?? (root.ProLife?.overall ? root.ProLife.overall(s.person) : null), marketValueEnd:pc.marketValue||0, appearances, starts:Math.min(appearances, s.extras?.seasonStarts || appearances), minutes:s.person.minutes||0, goals, assists, motm, averageRating, reputation:Math.round(s.reputation||0), national:{ caps:s.nationalTeam?.caps||0, goals:s.nationalTeam?.goals||0, assists:s.nationalTeam?.assists||0 } };
   }
 
   function heroDashboard(s) {
     const hero=normalize(init(s).root.players.hero), currentClub=Ctx()?.clubOf(s) || s.clubs.find(c=>c.id===s.clubId), seasonRows=Object.values(hero.byCompetition||{});
     const sum=(rows,f)=>rows.reduce((n,r)=>n+Number(r?.[f]||0),0), pack=(row)=>{ row=row||{}; const apps=Number(row.appearances||0), mins=Number(row.minutes||0), goals=Number(row.goals||0), assists=Number(row.assists||0), shots=Number(row.shots||0), on=Number(row.onTarget||0); return { appearances:apps, starts:Number(row.starts||apps), minutes:mins, goals, assists, motm:Number(row.motm||0), averageRating:apps ? +(Number(row.ratingTotal||0)/apps).toFixed(2):0, goals90:mins ? +(goals*90/mins).toFixed(2):0, assists90:mins ? +(assists*90/mins).toFixed(2):0, shots, onTarget:on, xg:+Number(row.xg||0).toFixed(2), conversion:shots ? +(goals*100/shots).toFixed(1):0, yellowCards:Number(row.yellowCards||0), redCards:Number(row.redCards||0), tackles:Number(row.tackles||0), saves:Number(row.saves||0), wins:Number(row.wins||0), draws:Number(row.draws||0), losses:Number(row.losses||0), hatTricks:Number(row.hatTricks||0), cleanSheets:Number(row.cleanSheets||0) }; };
-    const season={}; for(const f of fields) season[f]=sum(seasonRows,f);
     const seasonStints=heroStintHistory(s).filter(x=>x.season===s.season);
+    const season={}; for(const f of fields) season[f]=sum(seasonRows,f);
     const currentStints=seasonStints.filter(x=>x.clubId===s.clubId);
     const seasonClubIds=[...new Set(seasonStints.map(x=>x.clubId).filter(Boolean))];
     const fullSeasonAtCurrentClub=seasonClubIds.length===1 && seasonClubIds[0]===s.clubId;
@@ -475,6 +475,7 @@
     for (const archived of stats.seasons.slice(1)) compactArchivedSeason(archived,s.person?.name);
     for (const row of Object.values(stats.players)) for (const competition of competitions) delete normalize(row).byCompetition[competition.id];
     const hero=stats.players.hero;
+    if(hero) hero.byCompetition={};
     stats.players=hero ? {hero} : {};
     return valid;
   }

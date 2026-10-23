@@ -3,7 +3,7 @@
   // Stage 34F.28 - Central mundial de premios e rankings (substitui a tela "Premios & Rankings").
   // Le somente: ProLifeWorldStats (ligas mundiais simuladas) e ProLifeStatistics (competicoes brasileiras / protagonista).
   const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
-  const TABS=[["geral","Visão geral"],["competicoes","Competições"],["mundo","Mundo"],["carreira","Minha carreira"]];
+  const TABS=[["geral","Visão geral"],["honras","Bola de Ouro"],["lendas","Lendas"],["competicoes","Competições"],["mundo","Mundo"],["carreira","Minha carreira"]];
   const ui={tab:"geral",league:null,season:"atual"};
   const WS=()=>root.ProLifeWorldStats;
   const POS_NAME={ATA:"Ataque",MEI:"Meio-campo",DEF:"Defesa",GOL:"Goleiro"};
@@ -149,7 +149,7 @@
   function render(s,D){
     if(!WS()||!s)return `<section class="card"><h2>Prêmios &amp; Rankings</h2><p class="muted">Módulo indisponível.</p></section>`;
     try{WS().init(s);}catch(e){}
-    const body=ui.tab==="competicoes"?competicoes(s):ui.tab==="mundo"?mundo(s):ui.tab==="carreira"?carreira(s):geral(s);
+    const HV=root.ProLifeHonorsView;const body=ui.tab==="honras"&&HV?HV.honras(s):ui.tab==="lendas"&&HV?HV.lendas(s):ui.tab==="competicoes"?competicoes(s):ui.tab==="mundo"?mundo(s):ui.tab==="carreira"?carreira(s):geral(s);
     return `${css()}<section class="wa-dark"><small>PRÊMIOS &amp; RANKINGS</small><h2>Central mundial · Temporada ${esc(s.season)}</h2><p class="wa-note">Todos os dados vêm das partidas simuladas. Nenhum vencedor é escolhido por fama ou por ser o protagonista. Prêmios internos do PRO-LIFE.</p>${tabs()}${body}</section>`;
   }
   const api={render,state:ui,esc,setTab:id=>{if(TABS.some(t=>t[0]===id))ui.tab=id;},setLeague:id=>{ui.league=id||null;ui.season="atual";},setSeason:v=>{ui.season=v||"atual";}};

@@ -77,7 +77,8 @@ test("32E está integrado à área existente e registrado uma única vez",()=>{
   const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
   const assets=fs.readFileSync(path.join(root,"tools/assets.cjs"),"utf8");
   assert.match(app,/ProLifePlayerDevelopmentView\?\.render/);
-  assert.match(app,/href="#player-development">Evolução/);
+  assert.match(app,/\["playerDevelopment", "Evolução"\]/);
+  assert.match(app,/page === "playerDevelopment" \? "evolucao"/);
   assert.equal((index.match(/src\/ui\/player-development-view\.js/g)||[]).length,1);
   assert.equal((assets.match(/src\/ui\/player-development-view\.js/g)||[]).length,1);
   assert.ok(index.indexOf("src/ui/player-development-view.js")<index.indexOf("src/ui/app.js"));

@@ -235,8 +235,10 @@
   .fc27-central-v2-approved .fc27-bottom-news .fc27-news-item small{grid-row:auto!important;justify-self:start!important}
 }
 
-/* Faixa vazia no topo da Central: a tela ja tem cabecalho proprio; submenu de um item unico some. */
-.game-shell>.game-subnav:has(>button:only-child){display:none!important}
+/* Acoes globais primeiro; submenu contextual abaixo, sem cobrir Salvar/Simular. */
+.game-shell .game-subnav:has(>button:only-child){display:none!important}
+.game-shell .game-subnav{position:relative!important;top:auto!important;z-index:1!important}
+.game-shell .main>.topbar{position:relative!important;z-index:2!important;overflow:visible!important}
 .game-shell:has(.fc27-central-v2-approved) .topbar{display:flex!important;justify-content:flex-end!important;align-items:center!important;min-height:0!important;margin:0 auto!important;padding:10px 0 0!important;width:min(calc(100% - 32px),1810px)!important;background:none!important;border:0!important}
 .game-shell:has(.fc27-central-v2-approved) .topbar>div:first-child{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important}
 .game-shell:has(.fc27-central-v2-approved) .topbar>.actions{display:flex!important;flex-wrap:wrap!important;justify-content:flex-end!important;gap:8px!important;margin:0!important}

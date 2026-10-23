@@ -12,8 +12,14 @@ assert.match(html, /fc27-05c-player\.css/, "A folha da etapa 05C deve ser carreg
 assert.match(assets, /src\/ui\/fc27-05c-player\.css/, "A folha da etapa 05C deve entrar no pacote offline");
 for (const contract of ["pl-player-screen", "pl-player-showcase", "pl-player-rating", "pl-player-summary", "pl-player-trophies", "pl-player-actions"])
   assert.match(app, new RegExp(contract), `Contrato visual ausente: ${contract}`);
-for (const preserved of ["appearance-editor", "player-development", "player-career", "contract-agent", "player-transfers"])
+for (const preserved of ["appearance-editor", "player-development", "contract-agent", "player-transfers"])
   assert.match(app, new RegExp(preserved), `Funcionalidade existente não preservada: ${preserved}`);
+assert.match(app, /\["playerDevelopment", "Evolução"\]/, "A evolução deve pertencer ao submenu único de Meu Jogador");
+assert.match(app, /\["playerIdentity", "Identidade"\]/, "A identidade deve pertencer ao submenu único de Meu Jogador");
+assert.doesNotMatch(app, /data-player-profile-tab/, "Meu Jogador não deve manter uma segunda barra de navegação");
+assert.doesNotMatch(css, /\.game-shell:has\(\.pl-player-screen\) \.game-subnav\{display:none\}/, "O submenu único deve permanecer visível no perfil");
+assert.doesNotMatch(css, /\.game-shell:has\(\.pl-player-screen\) \.topbar\{display:none\}/, "O título deve permanecer acima do submenu em todas as telas de Meu Jogador");
+assert.match(css, /\.pl-player-screen\{[^}]*align-content:start;[^}]*grid-auto-rows:max-content/, "As abas não podem esticar verticalmente quando há pouco conteúdo");
 assert.doesNotMatch(css, /transform\s*:\s*scale/i, "A responsividade não deve depender de scale");
 assert.match(css, /@media\s*\(max-width:\s*820px\)/, "A composição deve possuir breakpoint para telas estreitas");
 

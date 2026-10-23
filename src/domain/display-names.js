@@ -28,6 +28,7 @@
     if(stored&&stored!==id&&!isInternal(stored))return String(stored);
     return isInternal(id)?UNKNOWN_CLUB:String(id);
   }
+  const KNOWN_COMP={ucl:"UEFA Champions League",uel:"UEFA Europa League",uecl:"UEFA Conference League",lib:"CONMEBOL Libertadores",sud:"CONMEBOL Sul-Americana",copaBrasil:"Copa do Brasil",nationalTeam:"Seleção"};
   function league(s,id,stored){
     if(id==null||id==="")return stored||"—";
     const own=index(s?.leagues,"leagues")?.get(id);if(nameOf(own))return nameOf(own);
@@ -35,6 +36,7 @@
     const wc=s?.globalFootball?.worldCompetitions?.leagues;
     const wcHit=Array.isArray(wc)?index(wc,"wc")?.get(id):wc&&wc[id];if(nameOf(wcHit))return nameOf(wcHit);
     const named=root.ProLifeCompetitions?.leagueNames?.[id];if(named)return named;
+    const known=KNOWN_COMP[id];if(known)return known;
     if(stored&&stored!==id&&!isInternal(stored))return String(stored);
     return isInternal(id)?UNKNOWN_COMP:String(id);
   }

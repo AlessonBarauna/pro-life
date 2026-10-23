@@ -1,0 +1,41 @@
+/* Estatisticas do jogador (modo jogador). Escopo: .ps-screen / .ps-leaders. */
+.ps-screen{--a:var(--pl-accent,#c9f43d);--line:var(--pl-line,rgba(184,215,225,.13));--panel:var(--pl-panel,rgba(12,22,31,.92));--t2:var(--pl-text-2,#bac7cf);--t3:var(--pl-text-3,#7f929e);display:grid;gap:16px}
+.ps-screen small{color:var(--t3)}
+.ps-hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px;align-items:center;padding:22px;border-radius:16px;border:1px solid rgba(214,186,96,.4);background:linear-gradient(120deg,#2b2a1c,#0f161c 62%);overflow:hidden}
+.ps-hero[data-tier="elite"]{border-color:rgba(120,210,255,.45);background:linear-gradient(120deg,#1d3446,#0c1218 62%)}.ps-hero[data-tier="silver"]{border-color:rgba(200,210,220,.35);background:linear-gradient(120deg,#2a3036,#0f161c 62%)}.ps-hero[data-tier="bronze"]{border-color:rgba(190,120,70,.4);background:linear-gradient(120deg,#30221a,#0f161c 62%)}
+.ps-who{display:flex;align-items:flex-end;gap:16px;min-width:0}.ps-portrait{width:128px;height:136px;object-fit:cover;object-position:top;flex:0 0 auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.45))}.ps-initials{display:grid;place-items:center;font-size:40px;font-weight:800;background:rgba(255,255,255,.08);border-radius:50%;width:110px;height:110px}
+.ps-eyebrow{font-size:11px;letter-spacing:.14em;color:var(--a);font-weight:700}.ps-hero h1{margin:4px 0 6px;font-size:30px;line-height:1.05;font-style:italic;text-transform:uppercase}
+.ps-hero p{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0;color:var(--t2);font-size:14px}.ps-hero p img,.ps-hero p .stat-crest img{width:28px;height:28px;object-fit:contain}.ps-sep{width:1px;height:18px;background:var(--line)}
+.ps-chips{display:flex;gap:8px;margin-top:12px}.ps-chips b{padding:4px 12px;border-radius:8px;background:var(--a);color:var(--pl-accent-ink,#101908);font-size:18px;font-style:italic}.ps-chips span{padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.08);font-size:13px;font-weight:700}
+.ps-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.ps-kpis div{padding:14px 6px;text-align:center;background:rgba(0,0,0,.28);border-radius:12px}.ps-kpis b{display:block;font-size:30px;line-height:1;font-style:italic}.ps-kpis small{font-size:11px}
+.ps-rate.hi b{color:#7fe3a1}.ps-rate.mid b{color:#f3d36a}.ps-rate.lo b{color:#ff9aa1}
+.ps-herorside{display:grid;gap:10px;min-width:0}.ps-career{margin:0;font-size:13px;color:var(--t2);text-align:center}.ps-career b{color:#fff}
+.ps-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.ps-stack{display:grid;gap:16px;align-content:start}
+.ps-panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}.ps-panel h3{margin:0 0 12px;font-size:15px}.ps-empty{color:var(--t3);font-size:13px;margin:0}
+.ps-wdl{display:flex;height:26px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,.08);margin-bottom:14px;font-size:12px;font-weight:800}.ps-wdl span{display:grid;place-items:center;min-width:0}.ps-wdl .w{background:#2f9d62}.ps-wdl .d{background:#8a8f3a}.ps-wdl .l{background:#c4505a}.ps-wdl em{font-style:normal;color:var(--t3);margin:auto;font-weight:500}
+.ps-bar{margin-bottom:12px}.ps-bar>div{display:flex;justify-content:space-between;font-size:13px;color:var(--t2)}.ps-bar b{color:#fff;font-size:15px}.ps-bar i{display:block;height:6px;border-radius:4px;background:rgba(255,255,255,.1);margin-top:5px;position:relative;overflow:hidden}.ps-bar i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--v);background:var(--a);border-radius:4px}.ps-bar small{font-size:11px}
+.ps-mini{display:flex;flex-wrap:wrap;gap:8px}.ps-mini span{flex:1 1 90px;padding:8px 10px;background:rgba(0,0,0,.25);border-radius:8px;font-size:12px;color:var(--t3)}.ps-mini b{display:block;color:#fff;font-size:17px}
+.ps-game{display:grid;grid-template-columns:28px minmax(0,1fr) auto;grid-template-areas:"r t n" "r c n";gap:2px 10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}.ps-game>b{grid-area:r;display:grid;place-items:center;height:26px;border-radius:6px;font-size:12px;background:rgba(255,255,255,.1)}.ps-game>b.r-V{background:#2f9d62}.ps-game>b.r-D{background:#c4505a}.ps-game>b.r-E{background:#8a8f3a}
+.ps-teams{grid-area:t;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center;font-size:13px}.ps-teams span{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.ps-teams span:last-child{justify-content:flex-end}.ps-teams em{font-style:normal;font-weight:800;font-size:15px}.ps-teams img{width:20px;height:20px;object-fit:contain;flex:0 0 auto}.ps-teams .stat-crest{flex:0 0 auto}
+.ps-game small{grid-area:c;font-size:11px}.ps-nota{grid-area:n;font-style:normal;font-weight:800;font-size:15px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.08);min-width:44px;text-align:center}.ps-nota.hi{background:#2f9d62}.ps-nota.mid{background:#8a7a2a}.ps-nota.lo{background:#c4505a}
+.ps-rows{display:grid}.ps-row{display:grid;grid-template-columns:minmax(0,2.4fr) repeat(5,minmax(44px,1fr));gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);text-align:center}.ps-row>span b{display:block;font-size:16px}.ps-row>span small{font-size:10px;letter-spacing:.08em}
+.ps-row>span.hi b{color:#7fe3a1}.ps-row>span.mid b{color:#f3d36a}.ps-row>span.lo b{color:#ff9aa1}
+.ps-lead{display:flex!important;align-items:center;gap:10px;text-align:left;min-width:0}.ps-lead b{font-size:14px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ps-lead small{margin-left:auto;font-size:11px!important}.ps-lead img,.ps-lead svg,.ps-lead .stat-crest img{width:30px;height:30px;object-fit:contain;flex:0 0 auto}.ps-lead .stat-crest{flex:0 0 auto}
+.ps-clubs{display:grid;gap:8px}.ps-clubs article{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;background:rgba(0,0,0,.22);border-radius:10px}.ps-clubs img{width:34px;height:34px;object-fit:contain}.ps-clubs b{display:block;font-size:14px}.ps-clubs span{font-size:12px;color:var(--t2)}.ps-total{margin:12px 0 0;font-size:13px;color:var(--t2)}.ps-total b{color:#fff}
+.ps-nat-top{display:flex;align-items:center;gap:16px}.ps-nat-crest img{width:56px;height:56px;object-fit:contain}.ps-natnums,.ps-recs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex:1}.ps-natnums div,.ps-recs div{padding:10px 4px;text-align:center;background:rgba(0,0,0,.25);border-radius:10px}.ps-natnums b,.ps-recs b{display:block;font-size:22px;line-height:1}.ps-natnums small,.ps-recs small{font-size:10px}
+.ps-ms{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px;font-size:13px}.ps-ms li{display:flex;gap:10px}.ps-ms span{color:var(--a);font-weight:700;flex:0 0 42px}
+.ps-leaders{margin-top:16px}
+@media(max-width:1000px){.ps-hero{grid-template-columns:1fr}.ps-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.ps-kpis{grid-template-columns:repeat(3,1fr)}.ps-row{grid-template-columns:minmax(0,2fr) repeat(5,minmax(34px,1fr));gap:4px}.ps-portrait{width:96px;height:104px}.ps-hero h1{font-size:24px}.ps-natnums,.ps-recs{grid-template-columns:repeat(2,1fr)}.ps-nat-top{flex-direction:column;align-items:flex-start}}
+
+/* Líderes da competição: 2-3 colunas, sem barra de rolagem lateral (mostra posição e valor). */
+.competition-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr))!important;align-items:start}
+.competition-grid>.card{min-width:0}
+.competition-grid .tablewrap{overflow-x:visible!important}
+.competition-grid table{width:100%;table-layout:fixed}
+.competition-grid th:first-child,.competition-grid td:first-child{width:34px}
+.competition-grid th:nth-last-child(1),.competition-grid td:nth-last-child(1){width:74px;text-align:right}
+.competition-grid th:nth-last-child(2):not(:nth-child(2)),.competition-grid td:nth-last-child(2):not(:nth-child(2)){width:56px;text-align:center}
+.competition-grid .stat-who{min-width:0}.competition-grid .stat-who>span{min-width:0}
+.competition-grid .stat-who b,.competition-grid .stat-who small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.competition-grid .stat-who small{display:flex;align-items:center;gap:4px}

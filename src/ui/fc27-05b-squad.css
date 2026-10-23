@@ -1,5 +1,5 @@
 /* PRO-LIFE 05B — elenco e escalação. Escopo isolado para preservar as demais telas. */
-.game-shell:has(.pl-squad-screen) .topbar,.game-shell:has(.pl-squad-screen)>.game-subnav{display:none}
+.game-shell:has(.pl-squad-screen) .topbar,.game-shell:has(.pl-squad-screen) .game-subnav{display:none}
 .game-shell:has(.pl-squad-screen) .main{width:100%;max-width:none;padding:0}
 .pl-squad-screen{min-height:calc(100vh - var(--pl-nav-height));color:var(--pl-text);background:linear-gradient(115deg,rgba(3,9,14,.97),rgba(5,15,23,.9) 65%,rgba(9,23,29,.86)),url('../assets/fc27-stadium-04j.svg') center/cover fixed no-repeat;overflow:hidden}
 .pl-squad-header{min-height:82px;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:12px clamp(20px,3vw,50px);border-bottom:1px solid var(--pl-line);background:rgba(3,9,14,.7)}

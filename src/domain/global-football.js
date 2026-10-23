@@ -331,8 +331,16 @@
   }
   function retirePlayer(s,playerId,season=seasonOf(s),reason="idade"){
     init(s);const player=playerById(s,playerId);if(!player||player.id==="hero"||player.status==="retired")return false;
-    player.status="retired";player.active=false;player.retired=true;player.retiredSeason=season;
-    const g=state(s);if(!g.retirements.some(item=>item.playerId===player.id))g.retirements.unshift({playerId:player.id,name:player.name,season,age:player.age,clubId:player.clubId||null,reason});g.retirements=g.retirements.slice(0,500);return true;
+    player.status="retired";player.active=false;player.retired=true;player.retiredSeason=season;player.retiredReason=reason;
+    const g=state(s);if(!g.retireStats||typeof g.retireStats!=="object")g.retireStats={};
+    const st=g.retireStats[season]||(g.retireStats[season]={total:0,dismissed:0,notable:0,byAge:{}});
+    if(reason==="dispensado"){st.dismissed++;return true;}   // dispensa de jovem sem clube NAO e aposentadoria
+    const age=Number(player.age)||0,ovr=Number(player.ovr||player.overall)||0,peak=Math.max(ovr,Number(player.peakOvr)||0);
+    st.total++;st.byAge[age]=(st.byAge[age]||0)+1;
+    const notable=peak>=78||ovr>=74||!!player.honorNominee;
+    if(notable&&!g.retirements.some(item=>item.playerId===player.id)){st.notable++;g.retirements.unshift({playerId:player.id,name:player.name,season,age,pos:player.pos||null,ovr,peak,nationality:player.nationality||null,clubId:player.clubId||null,club:player.externalClub||player.club||null,reason,farewell:player.farewellSeason||null});g.retirements=g.retirements.slice(0,1500);}
+    const keys=Object.keys(g.retireStats).sort();while(keys.length>30)delete g.retireStats[keys.shift()];
+    return true;
   }
   // Stage 34F.22 - evolucao anual dos jogadores do catalogo FC27 (so ovr/overall/potential; ids, clubes e identidade intactos).
   // Usa os perfis individuais (32B) e o teto dinamico (32C); minutos sao estimados pela posicao no elenco do clube.
@@ -454,16 +462,20 @@
   function renewYouth(s,season){
     const pools=youthPools(s),clubs=catalogClubs(s),pool=s.internationalPlayers||[],r=rngFor(`fc27-youth|${season}`);
     const summary={season,created:0,free:0,promoted:0,released:0,signed:0,retiredFree:0,trimmed:0,stars:[]};
+    const g0=state(s),activeNow=pool.filter(p=>p.status!=="retired"&&p.active!==false).length;
+    if(!g0.popBaseline)g0.popBaseline=activeNow;
+    const over=activeNow>g0.popBaseline*1.03;   // mundo acima de +3%: base e jovens livres so repoem o que saiu
+    summary.pop=activeNow;summary.popBaseline=g0.popBaseline;summary.capped=over;
     const firstTeam=new Map(),academy=new Map();
     for(const p of pool){if(p.status==="retired"||!p.clubId)continue;const m=p.academy?academy:firstTeam;m.set(p.clubId,(m.get(p.clubId)||0)+1);}
     const clubById=new Map(clubs.map(c=>[c.id,c]));
     // 1) livres da temporada anterior: assinam com um clube ou encerram a carreira
     for(const p of pool){
       if(p.status==="retired"||p.clubId||p.id==="hero")continue;
-      const ok=(p.age<=21&&p.potential>=58)||(p.ovr>=55&&p.age<=34),club=ok?pickSigningClub(s,p,clubs,firstTeam,academy,r):null;
+      const ok=(p.age<=21&&p.potential>=58)||(p.ovr>=55&&p.age<=34)||(p.age<=27&&p.ovr>=48),club=ok?pickSigningClub(s,p,clubs,firstTeam,academy,r):null;
       if(club){p.clubId=club.id;p.leagueId=club.leagueId||null;p.externalClub=club.name;p.clubHistory.push({season,fromClubId:null,toClubId:club.id});p.clubHistory=p.clubHistory.slice(-30);
         if(p.age<=19&&p.generated){p.academy=true;academy.set(club.id,(academy.get(club.id)||0)+1);}else firstTeam.set(club.id,(firstTeam.get(club.id)||0)+1);summary.signed++;}
-      else{retirePlayer(s,p.id,season,"sem clube");summary.retiredFree++;}
+      else{retirePlayer(s,p.id,season,p.age<30?"dispensado":"sem clube");summary.retiredFree++;}
     }
     // 2) base: aos 20 anos sobe para o elenco principal ou e dispensada
     for(const p of pool){
@@ -487,9 +499,9 @@
     }
     // 4) novas turmas da base (minimo 6 por clube) e jovens livres
     const by=academyByClub(s),created=[];
-    for(const club of clubs){const level=clubLevel(club);created.push(...seedClubAcademy(s,pools,club,by.get(club.id)||[],season,[16,17,17,18],1+(Number(club.reputation)>=70?1:0),"yearly"));}
+    for(const club of clubs){const level=clubLevel(club);created.push(...seedClubAcademy(s,pools,club,by.get(club.id)||[],season,[16,17,17,18],over?0:1+(Number(club.reputation)>=70?1:0),"yearly"));}
     const fr=rngFor(`fc27-free|${season}`);
-    for(let i=0;i<FREE_YOUTH;i++){const x=fr(),pos=x<0.1?"GOL":x<0.45?"DEF":x<0.8?"MEI":"ATA";created.push(addYouth(s,buildYouthPlayer(s,pools,fr,{club:null,level:58,age:[17,18,18,19,19,20][Math.floor(fr()*6)],pos,season,boost:1.5,freeAgent:true})));summary.free++;}
+    for(let i=0;i<(over?Math.round(FREE_YOUTH*0.25):FREE_YOUTH);i++){const x=fr(),pos=x<0.1?"GOL":x<0.45?"DEF":x<0.8?"MEI":"ATA";created.push(addYouth(s,buildYouthPlayer(s,pools,fr,{club:null,level:58,age:[17,18,18,19,19,20][Math.floor(fr()*6)],pos,season,boost:1.5,freeAgent:true})));summary.free++;}
     summary.created=created.length;
     const clubName=new Map(clubs.map(c=>[c.id,c.name]));
     summary.stars=created.slice().sort((a,b)=>b.potential-a.potential||(a.id<b.id?-1:1)).slice(0,8).map(p=>({id:p.id,name:p.name,age:p.age,pos:p.pos,ovr:p.ovr,potential:p.potential,tier:p.talent,club:clubName.get(p.clubId)||"Livre"}));
@@ -499,7 +511,18 @@
     init(s);const season=seasonOf(s),g=state(s);if(g.processedSeasons[String(season)])return [];
     g.processedSeasons[String(season)]=true;const retired=[];
     if(s.catalogVersion==="fc27_v1"){const dev=developCatalog(s,season);if(dev)g.lastDevelopment=dev;}
-    for(const player of s.internationalPlayers||[]){normalizePlayer(s,player);if(player.status==="retired")continue;const threshold=player.pos==="GOL"?39:36,hardCap=player.pos==="GOL"?45:42;if(player.age>=hardCap||(player.age>=threshold&&hash(`${player.id}|retire|${season}`)/4294967296<Math.min(.75,.08+(player.age-threshold)*.13))){if(retirePlayer(s,player.id,season,"idade"))retired.push(player.id);}}
+    const RR=root.ProLifeRetirementRules||(typeof require==="function"?require("./retirement-rules.js"):null);
+    const lvl=new Map(catalogClubs(s).map(c=>[c.id,clubLevel(c)]));
+    if(!Array.isArray(g.farewells))g.farewells=[];
+    for(const player of s.internationalPlayers||[]){normalizePlayer(s,player);if(player.status==="retired"||player.id==="hero")continue;
+      const ovr=Number(player.ovr||player.overall)||0;player.peakOvr=Math.max(Number(player.peakOvr)||0,ovr);
+      const level=lvl.get(player.clubId)||55,motive=hash(`${player.id}|motive`)/4294967296*2-1;
+      const c=RR.chance(player,{ovr,peak:player.peakOvr,level,starter:ovr>=level-6,freeSeasons:player.clubId?0:1,motive});
+      const forced=player.farewellSeason&&Number(player.farewellSeason)<season;
+      if(c>=1||forced||hash(`${player.id}|retire|${season}`)/4294967296<c){if(retirePlayer(s,player.id,season,"idade"))retired.push(player.id);continue;}
+      // lendas anunciam a temporada de despedida (aposentam no fim da proxima)
+      if(!player.farewellSeason&&player.peakOvr>=85&&c>=.2){player.farewellSeason=season;g.farewells.unshift({id:player.id,name:player.name,season,age:player.age,peak:player.peakOvr,club:player.externalClub||player.club||null});g.farewells=g.farewells.slice(0,60);}
+    }
     if(s.catalogVersion==="fc27_v1")g.lastIntake=renewYouth(s,season);
     return retired;
   }

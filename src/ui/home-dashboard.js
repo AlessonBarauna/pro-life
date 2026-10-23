@@ -13,12 +13,19 @@
     const entries=sortedOwnMatches(s).map((match,index)=>({ kind:"club", match, day:Number(match.date ?? match.day ?? 0)||0, index }));
     if (s.mode === "player" && Array.isArray(s.nationalTeam?.matches)) {
       entries.push(...s.nationalTeam.matches.map((match,index)=>({ kind:"national", match, day:Number(match.day ?? 0)||0, index })));
+      // Jogos da seleção em que o protagonista não entrou (banco/não convocado) só existem no calendário: entram como "sem participação".
+      const done=new Set(s.nationalTeam.matches.map((m)=>`${Number(m.day)}:${m.opponent}`));
+      (s.nationalTeam.schedule||[]).forEach((f,index)=>{
+        if(!f||!f.played||f.participated||!Number.isFinite(Number(f.brazil))||!Number.isFinite(Number(f.other))) return;
+        if(done.has(`${Number(f.day)}:${f.opponent}`)) return;
+        entries.push({ kind:"national", day:Number(f.day)||0, index:1000+index, match:{ day:f.day, competition:f.competition, opponent:f.opponent, brazil:f.brazil, other:f.other, season:2026+Math.floor((Number(f.day)||0)/365), starter:false, minutes:0, goals:0, assists:0, rating:null, bench:true, status:f.status||"Sem participação" } });
+      });
     }
     const seen=new Set();
     return entries.sort((a,b)=>b.day-a.day || (a.kind===b.kind ? a.index-b.index : a.kind.localeCompare(b.kind))).filter((entry)=>{
       const m=entry.match;
       const key=entry.kind==="national"
-        ? `national:${m.season??""}:${m.day??""}:${m.competition??""}:${m.opponent??""}:${m.brazil??""}:${m.other??""}`
+        ? `national:${m.day??""}:${m.opponent??""}`
         : `club:${m.id??`${m.season??""}:${m.date??m.day??""}:${m.home??""}:${m.away??""}:${m.competitionId??m.leagueId??""}`}`;
       if(seen.has(key)) return false;
       seen.add(key); return true;
@@ -379,7 +386,7 @@
         return { match:m, national:true, result:hasScore?(brazil>other?"V":brazil<other?"D":"E"):null, rating,
           opponent:m.opponent||"Adversário", home:nationalTeamName(s,m), teamName:nationalTeamName(s,m), away:m.opponent||"Adversário", score:hasScore?`${brazil}–${other}`:"—",
           competition:m.competition||"Seleção", date:m.day, goals:nationalGoals(m), motm:nationalMotm(m),
-          hero:{played:true,starter,entryMinute:starter?0:(m.entryMinute!==null&&m.entryMinute!==undefined&&Number.isFinite(Number(m.entryMinute))?Number(m.entryMinute):null),minutes:Math.max(0,Number(m.minutes)||0),goals:Math.max(0,Number(m.goals)||0),assists:Math.max(0,Number(m.assists)||0),rating}
+          hero:{played:!m.bench,bench:!!m.bench,starter,entryMinute:starter?0:(m.entryMinute!==null&&m.entryMinute!==undefined&&Number.isFinite(Number(m.entryMinute))?Number(m.entryMinute):null),minutes:Math.max(0,Number(m.minutes)||0),goals:Math.max(0,Number(m.goals)||0),assists:Math.max(0,Number(m.assists)||0),rating}
         };
       }
       const home=D.club(s,m.home), away=D.club(s,m.away);
