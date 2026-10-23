@@ -1139,8 +1139,10 @@
     }
     return result;
   }
-  // Sensibilidade da qualidade do elenco no resultado: quanto menor, mais o favorito domina (zebras ficam raras).
-  const MATCH_CLASS = Object.freeze({ control: Number(globalThis.__MC_CONTROL) || 120, shots: Number(globalThis.__MC_SHOTS) || 190, xg: Number(globalThis.__MC_XG) || 560 });
+  // Sensibilidade da qualidade do elenco no resultado: quanto menor, mais o favorito domina.
+  // Os divisores preservam a vantagem técnica sem transformar confrontos desiguais
+  // em resultados praticamente predeterminados (o antigo ajuste produzia só 1,3% de zebras).
+  const MATCH_CLASS = Object.freeze({ control: Number(globalThis.__MC_CONTROL) || 240, shots: Number(globalThis.__MC_SHOTS) || 380, xg: Number(globalThis.__MC_XG) || 1120 });
   function quality(ps, key, formFactors = null, roles = null) {
     if (!ps.length) return 25;
     return (
