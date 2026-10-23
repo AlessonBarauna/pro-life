@@ -58,7 +58,11 @@ test("34F.18 (5) todas as ligas jogaveis tem calendario integro e uma temporada 
     const ids = s.globalFootball.worldCompetitions.leagues[l.id].clubIds, sched = W.makeSchedule(ids);
     assert.equal(sched.length, 2 * (ids.length % 2 ? ids.length : ids.length - 1), l.id);
   }
-  W.closeSeason(s);
+  // Ligas de ano-calendário fecham em dezembro; ligas europeias 2026/27
+  // fecham no próprio fim (maio/junho de 2027), nunca artificialmente no dia 0.
+  const expected=W.eligibleLeagues(s).length;let guard=0;
+  while(W.history(s).length<expected&&guard++<800)D.advance(s,1);
+  assert.ok(guard<800,"todos os calendários jogáveis chegaram ao encerramento real");
   const history = W.history(s);
   assert.equal(history.length, 37, "uma entrada de campeao por liga jogavel");
   const ids = new Set(history.map((h) => h.leagueId));

@@ -6,7 +6,7 @@
   const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
   const ui={section:"minhas",continent:"ALL",country:"ALL",leagueId:null,tab:"geral",season:"atual",round:null,query:""};
   const SECTIONS=[["minhas","Minhas competições"],["ligas","Ligas nacionais"],["copas","Copas nacionais"],["continentais","Continentais"],["mundiais","Mundiais"],["selecoes","Seleções"],["historico","Histórico e estatísticas"]];
-  const TABS=[["geral","Visão geral"],["tabela","Tabela"],["calendario","Calendário"],["stats","Estatísticas"],["historico","Histórico"],["clubes","Clubes"]];
+  const TABS=[["geral","Resumo"],["tabela","Tabela"],["calendario","Jogos"],["stats","Estatísticas"],["clubes","Clubes"],["historico","Campeões"]];
   const STATUS={playable:["Jogável","ok"],regional_pool:["Grupo regional","warn"],catalog_only:["Somente consulta","off"],partial:["Cobertura parcial","warn"],catalog_info:["Informação do catálogo","off"]};
   // Continente por pais (nomes em portugues do catalogo). Pais desconhecido cai em "Outros".
   const CONT={Europa:["Espanha","Inglaterra","Alemanha","França","Itália","Turquia","Portugal","Bélgica","Grécia","Países Baixos","Tchéquia","Noruega","Escócia","Dinamarca","Ucrânia","Croácia","Hungria","Suíça","Áustria","Polônia","Chipre","Bulgaria","Bulgária","Azerbaijão","Romênia","Suécia","Finlândia","Irlanda","País de Gales","Sérvia","Eslováquia","Eslovênia","Israel"],
@@ -66,17 +66,21 @@
 
   // ---------- componentes ----------
   const chip=(status)=>{const [l,t]=STATUS[status]||[status,"off"];return `<span class="ch-chip ${t}">${esc(l)}</span>`;};
+  const NAV=[["minhas","Minhas competições"],["ligas","Ligas"],["copas","Copas"],["continentais","Continentais"],["mundiais","Mundo"],["historico","Histórico"]];
   function nav(){
-    return `<nav class="ch-nav" role="tablist" aria-label="Seções">${SECTIONS.map(([id,l])=>`<button type="button" role="tab" aria-selected="${ui.section===id}" class="${ui.section===id?"active":""}" data-ch-section="${id}">${l}</button>`).join("")}</nav>`;
+    const cur=ui.section==="selecoes"?"mundiais":ui.section;
+    return `<nav class="ch-nav" role="tablist" aria-label="Seções">${NAV.map(([id,l])=>`<button type="button" role="tab" aria-selected="${cur===id}" class="${cur===id?"active":""}" data-ch-section="${id}">${l}</button>`).join("")}</nav>`;
   }
   function filters(s,cat){
     const conts=[...new Set(cat.map(c=>c.continent))].sort(),countries=[...new Set(cat.filter(c=>ui.continent==="ALL"||c.continent===ui.continent).map(c=>c.country).filter(Boolean))].sort();
     const seasons=[...new Set([s.season,...(W({})?.history?.(s)||[]).map(h=>h.season)])].sort((a,b)=>b-a);
-    return `<div class="ch-filters"><label>Continente<select data-ch-continent><option value="ALL">Todos</option>${conts.map(c=>`<option ${ui.continent===c?"selected":""}>${esc(c)}</option>`).join("")}</select></label><label>País<select data-ch-country><option value="ALL">Todos</option>${countries.map(c=>`<option ${ui.country===c?"selected":""}>${esc(c)}</option>`).join("")}</select></label><label>Buscar<input type="search" data-ch-query value="${esc(ui.query||"")}" placeholder="Nome da liga ou país" /></label><label>Temporada<select data-ch-season><option value="atual" ${ui.season==="atual"?"selected":""}>Atual (${esc(s.season)})</option>${seasons.filter(y=>y!==s.season).map(y=>`<option value="${y}" ${String(ui.season)===String(y)?"selected":""}>${y}</option>`).join("")}</select></label></div>`;
+    return `<div class="ch-filters"><label>Continente<select data-ch-continent><option value="ALL">Todos</option>${conts.map(c=>`<option ${ui.continent===c?"selected":""}>${esc(c)}</option>`).join("")}</select></label><label>Buscar<input type="search" data-ch-query value="${esc(ui.query||"")}" placeholder="Buscar liga ou país" /></label><label>Temporada<select data-ch-season><option value="atual" ${ui.season==="atual"?"selected":""}>Atual (${esc(s.season)})</option>${seasons.filter(y=>y!==s.season).map(y=>`<option value="${y}" ${String(ui.season)===String(y)?"selected":""}>${y}</option>`).join("")}</select></label></div>`;
   }
+  const logo=(c,size)=>root.ProLifeLeagueLogos?root.ProLifeLeagueLogos.render(c.id,c.name,{size:size||44}):"";
   function card(c,s,D){
-    const open=c.status==="playable"||c.status==="regional_pool";
-    return `<article class="ch-card ${open?"":"off"}"><div><small>${esc(c.country||c.continent)}</small><b>${esc(c.name)}</b></div>${chip(c.status)}<span>${c.clubCount?`${c.clubCount} clubes · `:""}${esc(phase(s,D,c))}</span>${open?`<button type="button" data-ch-open="${esc(c.id)}">Abrir</button>`:`<p>${esc(c.note||"Sem calendário simulado nesta carreira.")}</p>`}</article>`;
+    const open=c.status==="playable"||c.status==="regional_pool",hc=heroClub(s),mine=!!hc&&c.id===hc.leagueId;
+    const ph=phase(s,D,c);
+    return `<article class="ch-lg ${open?"":"off"} ${mine?"mine":""}"><span class="ch-lg-logo">${logo(c)}</span><div class="ch-lg-t"><b>${esc(c.name)}</b><small>${esc(c.country||c.continent)}${c.clubCount?` · ${c.clubCount} clubes`:""}</small>${open?`<span class="ch-lg-s">${mine?"Sua liga · ":""}${esc(ph)}</span>`:`${chip(c.status)}<span class="ch-lg-s off">${esc(ph)}</span>`}</div>${open?`<button type="button" data-ch-open="${esc(c.id)}">Abrir</button>`:""}</article>`;
   }
   const empty=t=>`<p class="ch-note">${esc(t)}</p>`;
 
@@ -86,17 +90,19 @@
     if(!hc)return `<section class="ch-box"><small>MINHAS COMPETIÇÕES</small>${empty("Você está sem clube. As competições do seu clube aparecem aqui assim que assinar com um.")}</section>`;
     const lg=cat.find(c=>c.id===hc.leagueId),api=W(D);
     let next="";
-    if(lg?.world&&api?.nextFixture){const f=api.nextFixture(s,lg.id,hc.id);if(f)next=`<p class="ch-note">Próximo jogo: <b>${esc(club(s,f.home))} × ${esc(club(s,f.away))}</b> · ${dateOf(f.date)} · rodada ${f.round}</p>`;}
+    if(false&&lg?.world&&api?.nextFixture){const f=api.nextFixture(s,lg.id,hc.id);if(f)next=`<p class="ch-note">Próximo jogo: <b>${esc(club(s,f.home))} × ${esc(club(s,f.away))}</b> · ${dateOf(f.date)} · rodada ${f.round}</p>`;}
     const mine=[];
-    if(lg)mine.push(`<article class="ch-main"><small>LIGA NACIONAL · ${esc(lg.country)}</small><h3>${esc(lg.name)}</h3>${pos(s,D,lg,hc)}${next}<button type="button" class="primary" data-ch-open="${esc(lg.id)}">Abrir competição</button></article>`);
+    let nc=null;try{nc=D.nextCommitment?.(s);}catch(e){}
+    const banner=nc&&nc.home&&nc.away?`<div class="ch-next"><small>PRÓXIMO JOGO</small><div class="ch-next-m"><span>${cr(nc.home)}<b>${esc(club(s,nc.home))}</b></span><em>×</em><span><b>${esc(club(s,nc.away))}</b>${cr(nc.away)}</span></div><span class="ch-next-i">${esc(nc.competitionName||"")}${nc.round?` · rodada ${nc.round}`:""} · ${dateOf(nc.date)}</span></div>`:"";
+    if(lg)mine.push(`<article class="ch-main"><span class="ch-lg-logo big">${logo(lg,52)}</span><small>${esc(lg.country)} · liga</small><h3>${esc(lg.name)}</h3>${pos(s,D,lg,hc)}<button type="button" class="primary" data-ch-open="${esc(lg.id)}">Abrir</button></article>`);
     for(const cup of brazilCups(s)){
       const part=cup.id==="copaBrasil"?(s.competitionSchedule?.cup?.entrants||s.competitionSchedule?.cup?.participants||[]).some?.(x=>(x.id||x)===hc.id):cup.state?.entrants?.includes(hc.id);
-      if(part)mine.push(`<article class="ch-main"><small>COPA NACIONAL</small><h3>${esc(cup.name)}</h3>${cup.champion?`<p class="ch-note">Campeão: ${esc(cup.champion?.name||cup.champion)}</p>`:`<p class="ch-note">Em disputa nesta temporada.</p>`}<button type="button" data-page="competitions" data-ch-section="copas">Ver copas</button></article>`);
+      if(part)mine.push(`<article class="ch-main"><small>Copa nacional</small><h3>${esc(cup.name)}</h3>${cup.champion?`<p class="ch-note">Campeão: ${esc(cup.champion?.name||cup.champion)}</p>`:`<p class="ch-note">Em disputa</p>`}<button type="button" data-ch-section="copas">Ver</button></article>`);
     }
     const ce=(()=>{try{return CONTI()?.heroEntries?.(s)||[];}catch(e){return [];}})();
-    if(ce.length)for(const e of ce){const route={ucl:"champions",uel:"europa",uecl:"conference",lib:"libertadores",sud:"sudamericana"}[e.comp],live=!!CONTI().edition?.(s,e.comp)?.leagueSchedule;mine.push(`<article class="ch-main"><small>COMPETIÇÃO CONTINENTAL · ${esc(CONTI().COMPS[e.comp].conf)}</small><h3>${esc(e.name)}</h3><p class="ch-note">Seu clube está classificado por mérito (${esc(String(e.via).replace("liga:","posição ").replace(/^posição (\d+)$/,"$1º colocado na liga nacional"))}). ${e.status==="adapted"?"Edição adaptada. ":""}${live?"Os jogos, a classificação e os resultados seguem o calendário registrado no PRO-LIFE.":"A inscrição está registrada, mas esta edição ainda não possui partidas simuladas."}</p>${route&&live?`<button type="button" class="primary" data-page="${route}">Abrir ${esc(e.name)}</button>`:`<button type="button" data-ch-section="continentais">Ver inscritos e limitações</button>`}</article>`);}
-    else mine.push(`<article class="ch-main off"><small>COMPETIÇÕES CONTINENTAIS</small><h3>Seu clube não está classificado</h3><p class="ch-note">As vagas continentais são definidas pela classificação nacional. Você não participa artificialmente.</p></article>`);
-    return `<section class="ch-box"><small>MINHAS COMPETIÇÕES · ${esc(hc.name)}</small><div class="ch-mine">${mine.join("")}</div></section>`;
+    if(ce.length)for(const e of ce){const route={ucl:"champions",uel:"europa",uecl:"conference",lib:"libertadores",sud:"sudamericana"}[e.comp],live=!!CONTI().edition?.(s,e.comp)?.leagueSchedule;mine.push(`<article class="ch-main"><span class="ch-lg-logo big">${logo({id:e.comp,name:e.name},52)}</span><small>${esc(CONTI().COMPS[e.comp].conf)} · continental</small><h3>${esc(e.name)}</h3><p class="ch-note">${esc(String(e.via).replace("liga:","").replace(/^(\d+)$/,"Classificado em $1º na liga"))}${e.status==="adapted"?" · edição adaptada":""}</p>${route&&live?`<button type="button" class="primary" data-page="${route}">Abrir</button>`:`<button type="button" data-ch-section="continentais">Ver inscritos</button>`}</article>`);}
+    else mine.push(`<article class="ch-main off"><small>Continentais</small><h3>Sem vaga continental</h3><p class="ch-note">Termine bem na liga para se classificar.</p></article>`);
+    return `${banner}<section class="ch-box"><small>MINHAS COMPETIÇÕES · ${esc(hc.name)}</small><div class="ch-mine">${mine.join("")}</div></section>`;
   }
   function pos(s,D,lg,hc){
     let rows=[];
@@ -113,13 +119,18 @@
     if(ui.continent!=="ALL")list=list.filter(c=>c.continent===ui.continent);
     if(ui.country!=="ALL")list=list.filter(c=>c.country===ui.country);
     if(ui.query){const q=plain(ui.query);list=list.filter(c=>plain(c.name).includes(q)||plain(c.country).includes(q));}
-    const playable=list.filter(c=>c.status!=="catalog_only").length;
-    return `${filters(s,cat)}<p class="ch-note">${list.length} competição(ões) · ${playable} com calendário simulado.</p><div class="ch-list">${list.map(c=>card(c,s,D)).join("")||empty("Nenhuma competição para os filtros escolhidos.")}</div>${info.length?`<section class="ch-box"><small>INFORMAÇÃO DO CATÁLOGO FC 27</small>${info.map(c=>`<p class="ch-note"><b>${esc(c.name)}</b> (${c.clubCount} clube${c.clubCount===1?"":"s"} no catálogo). Não é uma competição independente: o Brasil já é disputado no PRO-LIFE pelo Brasileirão Série A, B, C e D. Os clubes brasileiros do catálogo continuam ligados ao manifesto, sem fusão automática de jogadores.</p>`).join("")}</section>`:""}`;
+    const hc=heroClub(s),rank=c=>(hc&&c.id===hc.leagueId?0:hc&&c.country===(cat.find(x=>x.id===hc.leagueId)||{}).country?1:2);
+    const open=list.filter(c=>c.status!=="catalog_only").sort((a,b)=>rank(a)-rank(b)||String(a.name).localeCompare(String(b.name)));
+    const only=list.filter(c=>c.status==="catalog_only");
+    return `${filters(s,cat)}<div class="ch-list ch-lgs">${open.map(c=>card(c,s,D)).join("")||empty("Nenhuma competição para os filtros escolhidos.")}</div>${only.length?`<details class="ch-more"><summary>Somente consulta (${only.length}) · sem calendário simulado</summary><div class="ch-list ch-lgs">${only.map(c=>card(c,s,D)).join("")}</div></details>`:""}${info.length?`<p class="ch-note"><small>INFORMAÇÃO DO CATÁLOGO FC 27</small><br>${info.map(c=>`<b>${esc(c.name)}</b>: não é uma competição independente. O Brasil já é disputado aqui pelo Brasileirão Séries A, B, C e D.`).join(" ")}</p>`:""}`;
   }
   function copas(s,D,cat){
-    const cups=brazilCups(s);
-    const rows=cups.map(c=>`<article class="ch-card ${c.status==="playable"?"":"off"}"><div><small>${esc(c.country)}</small><b>${esc(c.name)}</b></div>${chip(c.status)}<span>${c.entrants?`${c.entrants} clube(s)`:""}</span>${c.champion?`<p>Campeão: ${esc(c.champion.name||c.champion)}</p>`:c.status==="playable"?`<p>Em disputa.</p>`:`<p>Participantes insuficientes para um torneio competitivo.</p>`}</article>`).join("");
-    return `<p class="ch-note">Copa do Brasil e estaduais são simulados. Copas nacionais de outros países ainda não existem no motor: nenhuma é exibida como jogável.</p><div class="ch-list">${rows||empty("Nenhuma copa nacional nesta carreira.")}</div><div class="ch-actions"><button type="button" data-page="league">Ver campeonatos e calendário do Brasil</button></div>`;
+    const cups=brazilCups(s),row=(id,name,sub,btn,off)=>`<article class="ch-lg ${off?"off":""}"><span class="ch-lg-logo">${logo({id,name},44)}</span><div class="ch-lg-t"><b>${esc(name)}</b><small>${esc(sub)}</small></div>${btn||""}</article>`;
+    const sub=c=>c.champion?`Campeão: ${c.champion.name||c.champion}`:c.status==="playable"?"Em disputa":"Poucos clubes para disputar";
+    const nat=cups.filter(c=>c.id==="copaBrasil").map(c=>row(c.id,c.name,`Brasil · ${sub(c)}`,`<button type="button" data-page="league">Abrir</button>`));
+    const eng=[["fa_cup","FA Cup"],["efl_cup","EFL Cup"],["community_shield","Community Shield"]].map(([id,n])=>row(id,n,"Inglaterra",`<button type="button" data-page="englishCups">Abrir</button>`));
+    const st=cups.filter(c=>c.id!=="copaBrasil").map(c=>row(c.id,c.name,`${c.entrants?`${c.entrants} clubes · `:""}${sub(c)}`,"",c.status!=="playable"));
+    return `<div class="ch-sec"><small>COPAS</small><div class="ch-list ch-lgs">${nat.concat(eng).join("")}</div></div><div class="ch-sec"><small>CAMPEONATOS ESTADUAIS</small><div class="ch-list ch-lgs">${st.join("")||empty("Nenhum estadual nesta carreira.")}</div></div>`;
   }
   function continentais(s,D,cat){
     const C=CONTI();let eds=[];try{eds=C?C.editions(s,s.season):[];}catch(e){}
@@ -127,29 +138,55 @@
     const chip2=e=>e.status==="unavailable"?'<span class="ch-chip off">Indisponível</span>':e.status==="adapted"?'<span class="ch-chip warn">Inscrições adaptadas</span>':'<span class="ch-chip ok">Inscrições definidas</span>';
     const cards=eds.map(e=>{const def=C.COMPS[e.comp],hero=s.clubId,route={ucl:"champions",uel:"europa",uecl:"conference",lib:"libertadores",sud:"sudamericana"}[e.comp],live=!!e.leagueSchedule;
       const list=e.entrants.map(x=>`<li><span>${esc(club(s,x[0]))}${x[0]===hero?" · SEU CLUBE":""}</span><small>${esc(x[1])} · ${esc(String(x[2]).replace("liga:",""))}º colocado</small></li>`).join("");
-      return `<article class="ch-card ${live?"":"off"}"><div><small>${esc(def.conf)} · temporada ${esc(e.season)}</small><b>${esc(def.name)}</b></div>${chip2(e)}<p>${esc(def.note)}</p><p class="ch-note">${e.count} de ${e.required} participantes por mérito. ${live?"Calendário, classificação, mata-mata e resultados são simulados nesta edição.":"Somente inscrições e critérios de vaga estão implementados; ainda não há partidas, classificação de grupos, campeão, estatísticas ou premiações oficiais nesta edição."}</p>${route&&live?`<button type="button" data-page="${route}">Abrir competição</button>`:""}${e.reasons.length?`<details><summary>Limitações e regras desta edição</summary><ul class="ch-ul">${e.reasons.map(r=>`<li><small>${esc(r)}</small></li>`).join("")}</ul></details>`:""}<details><summary>Clubes inscritos (${e.count})</summary><ul class="ch-ul">${list||"<li><small>Nenhum clube identificável.</small></li>"}</ul></details></article>`;}).join("");
+      return `<article class="ch-card ${live?"":"off"}"><span class="ch-lg-logo">${logo({id:e.comp,name:def.name},48)}</span><div><small>${esc(def.conf)} · temporada ${esc(e.season)}</small><b>${esc(def.name)}</b></div>${chip2(e)}<p>${esc(def.note)}</p><p class="ch-note">${e.count} de ${e.required} participantes por mérito. ${live?"Calendário, classificação, mata-mata e resultados são simulados nesta edição.":"Somente inscrições e critérios de vaga estão implementados; ainda não há partidas, classificação de grupos, campeão, estatísticas ou premiações oficiais nesta edição."}</p>${route&&live?`<button type="button" data-page="${route}">Abrir competição</button>`:""}${e.reasons.length?`<details><summary>Limitações e regras desta edição</summary><ul class="ch-ul">${e.reasons.map(r=>`<li><small>${esc(r)}</small></li>`).join("")}</ul></details>`:""}<details><summary>Clubes inscritos (${e.count})</summary><ul class="ch-ul">${list||"<li><small>Nenhum clube identificável.</small></li>"}</ul></details></article>`;}).join("");
     const planned=(C?C.PLANNED:[]).map(p=>`<article class="ch-card off"><div><small>${esc(p.conf)}</small><b>${esc(p.name)}</b></div><span class="ch-chip off">Planejada</span><p>${esc(p.reason)} Etapa ${esc(p.step)}.</p></article>`).join("");
     return `<p class="ch-note">Vagas continentais por classificação nacional (distribuição adaptada do PRO-LIFE, não a tabela oficial de coeficientes). Sem clubes fictícios: quando faltam clubes reais no catálogo, a edição é marcada como adaptada.</p><div class="ch-list">${cards}${planned}</div>`;
   }
   function mundiais(){
-    return `<div class="ch-list"><article class="ch-card off"><div><small>Mundo</small><b>Mundial de Clubes</b></div><span class="ch-chip off">Planejada</span><p>Depende dos torneios continentais de clubes. Ainda não é simulada.</p></article></div>`;
+    return `${selecoes()}<div class="ch-list"><article class="ch-card off"><span class="ch-lg-logo">${logo({id:"mundial",name:"Mundial de Clubes"},48)}</span><div><small>Mundo</small><b>Mundial de Clubes</b></div><span class="ch-chip off">Planejada</span><p>Depende dos torneios continentais de clubes. Ainda não é simulada.</p></article></div>`;
   }
-  function selecoes(s){
-    return `<p class="ch-note">As competições de seleções (Copa do Mundo, Eurocopa, Copa América e demais) já são simuladas pelo motor e acompanhadas na área da Seleção.</p><div class="ch-actions"><button type="button" class="primary" data-page="national">Abrir Seleção</button><button type="button" data-page="worldCompetitions">Competições mundiais de clubes (visão antiga)</button></div>`;
+  function selecoes(){
+    return `<article class="ch-main" style="margin-bottom:12px"><small>Seleções</small><h3>Copa do Mundo, Eurocopa, Copa América</h3><div class="ch-actions"><button type="button" class="primary" data-page="national">Abrir Seleção</button></div></article>`;
+  }
+  // "Minha trajetoria": o que o meu clube disputou em cada temporada encerrada e quem foi campeao.
+  function minhaTrajetoria(s,D,cat,hc){
+    const rows=[];
+    for(const h of s.history||[]){
+      if(h.event||h.season==null)continue;
+      if(h.position&&h.leagueId){const comp=cat.find(c=>c.id===h.leagueId)||{id:h.leagueId,name:h.league};rows.push({season:h.season,comp,name:h.league||comp.name,pos:h.position,champion:h.champion,title:h.position===1});}
+      else if(h.trophy&&hc&&h.championId===hc.id)rows.push({season:h.season,comp:{id:h.competitionId,name:h.league},name:h.league,pos:1,champion:h.champion||hc.name,title:true});
+    }
+    for(const h of (s.englishCups?.history||[])){
+      if(hc&&(h.championId===hc.id||h.runnerUpId===hc.id))rows.push({season:h.season,comp:{id:h.comp,name:h.name},name:h.name,pos:h.championId===hc.id?1:2,champion:club(s,h.championId),title:h.championId===hc.id,final:true});
+    }
+    if(!rows.length)return `<section class="ch-box ch-mytraj"><small>MINHA TRAJETÓRIA</small><h3>Suas competições, temporada a temporada</h3>${empty("Quando uma temporada terminar, aparecem aqui as competições que seu clube disputou, sua posição e o campeão de cada uma.")}</section>`;
+    const by=new Map();for(const r of rows){const k=String(r.season);if(!by.has(k))by.set(k,[]);by.get(k).push(r);}
+    const seasons=[...by.entries()].sort((a,b)=>Number(b[0])-Number(a[0]));
+    const titles=rows.filter(r=>r.title).length;
+    return `<section class="ch-box ch-mytraj"><div class="ch-mytraj-h"><div><small>MINHA TRAJETÓRIA</small><h3>Suas competições, temporada a temporada</h3></div><div class="ch-strip"><div><b>${seasons.length}</b><span>temporada(s)</span></div><div><b>${titles}</b><span>título(s)</span></div></div></div>${seasons.map(([season,list])=>`<div class="ch-mytraj-s"><b>${esc(season)}</b><div class="ch-list ch-lgs">${list.map(r=>`<article class="ch-lg ${r.title?"mine":""}"><span class="ch-lg-logo">${logo(r.comp,44)}</span><div class="ch-lg-t"><b>${esc(r.name)}</b><small>${r.title?"Você foi campeão":r.final?"Você foi vice-campeão":`Você terminou em ${r.pos}º`}</small>${r.title?"":`<span class="ch-lg-s">Campeão: ${esc(r.champion||"—")}</span>`}</div></article>`).join("")}</div></div>`).join("")}</section>`;
   }
   function historico(s,D){
-    const api=W(D),h=api?.history?.(s)||[],ws=root.ProLifeWorldStats;
-    const rows=h.slice(0,60).map(x=>`<li><span>${x.season}</span><b>${esc(x.league)}</b><small>${esc(x.champion||"—")}</small></li>`).join("");
+    const api=W(D),h=(api?.history?.(s)||[]).slice(0,60),ws=root.ProLifeWorldStats,cat=catalog(s,D),hc=heroClub(s);
+    const groups=new Map();
+    for(const x of h){const season=String(x.season??"—");if(!groups.has(season))groups.set(season,[]);groups.get(season).push(x);}
+    const seasons=[...groups.entries()].sort((a,b)=>Number(b[0])-Number(a[0]));
+    const latest=seasons[0]?.[0]||"—",champions=new Set(h.map(x=>x.championId||x.champion).filter(Boolean)).size;
+    const card=x=>{const comp=cat.find(c=>c.id===x.leagueId)||{id:x.leagueId,name:x.league||"Competição",country:"Mundo",continent:"Mundo"};
+      const champion=x.champion||(x.championId?club(s,x.championId):"")||"Campeão não registrado",mine=!!hc&&x.championId===hc.id;
+      return `<article class="ch-history-card ${mine?"mine":""}"><span class="ch-history-league-logo">${logo(comp,42)}</span><div class="ch-history-meta"><small>${esc(comp.country||comp.continent||"Mundo")}</small><b>${esc(x.league||comp.name)}</b></div><div class="ch-history-winner"><span class="ch-history-crest">${x.championId?cr(x.championId):'<span class="ch-history-fallback">★</span>'}</span><div><small>${mine?"SEU CLUBE CAMPEÃO":"CAMPEÃO"}</small><strong>${esc(champion)}</strong></div></div></article>`;};
+    const archive=seasons.map(([season,items],i)=>`<details class="ch-history-season" ${i===0?"open":""}><summary><span><small>TEMPORADA</small><b>${esc(season)}</b></span><span class="ch-history-count">${items.length} ${items.length===1?"competição":"competições"}</span><i aria-hidden="true">⌄</i></summary><div class="ch-history-grid">${items.map(card).join("")}</div></details>`).join("");
     const aw=ws?ws.history(s).filter(a=>a.leagueId==="world").slice(0,3):[];
-    return `<section class="ch-box"><small>CAMPEÕES DAS LIGAS MUNDIAIS</small>${rows?`<ul class="ch-ul">${rows}</ul>`:empty("O histórico começa quando a primeira temporada for encerrada. Nenhum campeão é inventado.")}</section>
-    <section class="ch-box"><small>PRÊMIOS MUNDIAIS</small>${aw.length?aw.map(a=>`<p class="ch-note"><b>${a.season}</b>: ${a.awards.map(w=>`${esc(w.label)} — ${esc(w.name)}`).join(" · ")}</p>`).join(""):empty("Os prêmios mundiais são fechados no fim da temporada.")}</section><div class="ch-actions"><button type="button" data-page="awards">Abrir Prêmios & Rankings</button></div>`;
+    const mineSec=minhaTrajetoria(s,D,cat,hc);
+    return `${mineSec}<header class="ch-history-hero"><div><small>TODAS AS LIGAS DO MUNDO · CAMPEÕES</small><h3>Hall dos Campeões</h3><p>Reviva cada temporada encerrada, com as competições e os clubes que levantaram a taça.</p></div><div class="ch-history-kpis"><span><small>Temporadas</small><b>${seasons.length}</b></span><span><small>Última edição</small><b>${esc(latest)}</b></span><span><small>Clubes campeões</small><b>${champions}</b></span></div></header>
+    ${archive?`<section class="ch-history-archive" aria-label="Histórico de campeões">${archive}</section>`:`<section class="ch-box ch-history-empty"><span aria-hidden="true">◇</span><div><b>O Hall dos Campeões ainda está vazio</b>${empty("O histórico começa quando a primeira temporada for encerrada. Nenhum campeão é inventado.")}</div></section>`}
+    <section class="ch-history-awards"><div class="ch-history-awards-head"><div><small>PRÊMIOS MUNDIAIS</small><h3>Protagonistas de cada temporada</h3></div><button type="button" data-page="awards">Abrir Prêmios & Rankings →</button></div>${aw.length?`<div class="ch-history-awards-grid">${aw.map(a=>`<article><span>${esc(a.season)}</span><div>${(a.awards||[]).slice(0,4).map(w=>`<p><small>${esc(w.label)}</small><b>${esc(w.name)}</b></p>`).join("")}</div></article>`).join("")}</div>`:empty("Os prêmios mundiais são fechados no fim da temporada.")}</section>`;
   }
 
   // ---------- detalhe de uma liga ----------
   function detail(s,D,cat){
     const lg=cat.find(c=>c.id===ui.leagueId);if(!lg)return empty("Competição não encontrada.");
     const tabs=`<nav class="ch-nav sub" role="tablist">${TABS.map(([id,l])=>`<button type="button" role="tab" aria-selected="${ui.tab===id}" class="${ui.tab===id?"active":""}" data-ch-tab="${id}">${l}</button>`).join("")}</nav>`;
-    const head=`<div class="ch-head"><button type="button" data-ch-back>← Voltar</button><div><small>${esc(lg.country)} · ${esc(lg.continent)}</small><h3>${esc(lg.name)}</h3></div>${chip(lg.status)}</div>`;
+    const head=`<div class="ch-head"><button type="button" data-ch-back>← Voltar</button><span class="ch-lg-logo big">${logo(lg,56)}</span><div><small>${esc(lg.country)} · ${esc(lg.continent)}</small><h3>${esc(lg.name)}</h3></div>${lg.status==="playable"?"":chip(lg.status)}</div>`;
     if(!lg.world)return `${head}${brazilBody(s,D,lg)}`;
     return `${head}${tabs}${worldBody(s,D,lg)}`;
   }
@@ -159,14 +196,14 @@
   }
   function brazilBody(s,D,lg){
     const rows=D.table?.(s,lg.id)||[];
-    return `<section class="ch-box"><small>CLASSIFICAÇÃO · ${esc(s.season)}</small>${tableHtml(s,rows,heroClub(s))}</section><div class="ch-actions"><button type="button" data-page="calendar">Calendário e partidas</button><button type="button" data-page="league">Campeonatos</button><button type="button" data-page="awards">Prêmios & Rankings</button></div>`;
+    return `<section class="ch-box"><small>CLASSIFICAÇÃO · ${esc(s.season)}</small>${tableHtml(s,rows,heroClub(s))}</section><div class="ch-actions"><button type="button" data-page="calendar">Ver jogos e calendário</button></div>`;
   }
   function worldBody(s,D,lg){
     const api=W(D),hc=heroClub(s),ws=root.ProLifeWorldStats;
     if(ui.season!=="atual")return pastSeason(s,D,lg);
     if(ui.tab==="tabela"){
       const rows=api.standings(s,lg.id);
-      return `<section class="ch-box"><small>CLASSIFICAÇÃO · ${esc(s.season)}</small>${tableHtml(s,rows,hc)}<p class="ch-note">Vagas continentais e rebaixamento: esta liga não tem promoção, rebaixamento nem torneio continental simulados, então nenhuma zona é marcada.</p></section>`;
+      return `<section class="ch-box"><small>CLASSIFICAÇÃO · ${esc(s.season)}</small>${tableHtml(s,rows,hc)}</section>`;
     }
     if(ui.tab==="calendario"){
       const cal=api.calendar(s,lg.id)||[];
@@ -177,7 +214,7 @@
     if(ui.tab==="stats"){
       if(!ws)return empty("Estatísticas indisponíveis.");
       const t=(title,stat,f)=>{const rows=ws.leaders(s,{leagueId:lg.id,stat,limit:10});return `<section class="ch-box"><small>${title}</small>${rows.length?`<table class="ch-table"><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.name)}</b></td><td>${esc(r.club)}</td><td>${esc(ws.format(f,stat==="rating"?r.avg:r[stat==="goals"?"goals":"assists"]))}</td></tr>`).join("")}</tbody></table>`:empty("Dados insuficientes.")}</section>`;};
-      return `${t("ARTILHARIA","goals","gols")}${t("ASSISTÊNCIAS","assists","assistencias")}${t("DESEMPENHO","rating","nota")}<div class="ch-actions"><button type="button" data-page="awards">Prêmios & Rankings desta liga</button></div>`;
+      return `${t("ARTILHARIA","goals","gols")}${t("ASSISTÊNCIAS","assists","assistencias")}${t("DESEMPENHO","rating","nota")}`;
     }
     if(ui.tab==="historico"){
       const h=(api.history(s)||[]).filter(x=>x.leagueId===lg.id);
@@ -185,7 +222,7 @@
     }
     if(ui.tab==="clubes"){
       const st=s.globalFootball?.worldCompetitions?.leagues?.[lg.id],ids=st?.clubIds||[];
-      return `<section class="ch-box"><small>PARTICIPANTES (${ids.length})</small><div class="ch-clubs">${ids.map(id=>`<button type="button" class="${hc&&id===hc.id?"hero":""}" data-ch-club="${esc(id)}" data-ch-league="${esc(lg.id)}">${cr(id)}${esc(club(s,id))}</button>`).join("")}</div><p class="ch-note">Escolha um clube para ver o elenco completo.</p></section>`;
+      return `<section class="ch-box"><small>PARTICIPANTES (${ids.length})</small><div class="ch-clubs">${ids.map(id=>`<button type="button" class="${hc&&id===hc.id?"hero":""}" data-ch-club="${esc(id)}" data-ch-league="${esc(lg.id)}">${cr(id)}${esc(club(s,id))}</button>`).join("")}</div></section>`;
     }
     // visao geral
     const rows=api.standings(s,lg.id),cal=api.calendar(s,lg.id)||[],cur=cal.find(r=>!r.played);
@@ -215,7 +252,16 @@
 .ch-ul{list-style:none;margin:8px 0 0;padding:0}.ch-ul li{display:flex;gap:12px;padding:7px 0;border-bottom:1px solid var(--ch-line)}.ch-ul small{flex:1;text-transform:none;letter-spacing:0}
 .ch-clubs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.ch-clubs button{background:transparent;border:1px solid var(--ch-line);border-radius:8px;color:var(--ch-text);padding:7px 10px;cursor:pointer}.ch-clubs button.hero{border-color:var(--ch-gold)}
 .ch-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}.ch-dark button:disabled{opacity:.4;cursor:not-allowed}.ch-dark button:focus-visible,.ch-dark select:focus-visible{outline:2px solid var(--ch-gold);outline-offset:2px}
-@media(max-width:900px){.ch-dark{padding:16px}.ch-cols{grid-template-columns:1fr}}</style>`;
+.ch-dark{padding:20px 22px}.ch-dark>h2{font-size:22px;margin:0}.ch-nav{margin:12px 0 16px}.ch-nav button{padding:10px 16px;font-size:14px}
+.ch-next{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:14px 18px;border-radius:14px;border:1px solid var(--ch-gold);background:linear-gradient(90deg,rgba(216,180,91,.14),rgba(216,180,91,.02));margin-bottom:14px}.ch-next-m{display:flex;align-items:center;gap:14px;font-size:17px}.ch-next-m span{display:inline-flex;align-items:center;gap:8px}.ch-next-m em{color:var(--ch-muted);font-style:normal}.ch-next-i{margin-left:auto;color:var(--ch-muted);font-size:13px}
+.ch-main{display:flex;flex-direction:column;gap:6px}.ch-main h3{font-size:19px}.ch-main .ch-strip{margin:6px 0}.ch-main button{align-self:flex-start;margin-top:auto}.ch-main .ch-strip b{font-size:28px}
+.ch-lgs{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))!important;gap:10px}.ch-lg{display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid var(--ch-line);border-radius:12px;background:var(--ch-card)}.ch-lg.mine{border-color:var(--ch-gold);background:rgba(216,180,91,.07)}.ch-lg.off{opacity:.7}.ch-lg-logo{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px}.ch-lg-logo.big{width:56px;height:56px}.ch-lg-logo img,.ch-lg-logo svg{max-width:100%;max-height:100%;object-fit:contain}
+.ch-lg-t{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.ch-lg-t b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ch-lg-t small{text-transform:none;letter-spacing:0;font-size:12px}.ch-lg-s{font-size:12px;color:var(--ch-ok)}.ch-lg-s.off{color:var(--ch-muted)}.ch-lg button{flex:0 0 auto}
+.ch-mytraj{margin-bottom:16px}.ch-mytraj-h{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:12px}.ch-mytraj-s{margin-top:12px}.ch-mytraj-s>b{display:block;font-size:15px;margin-bottom:6px;color:var(--ch-gold)}.ch-sec{margin-bottom:18px}.ch-sec>small{display:block;margin-bottom:8px}.ch-more{margin-top:14px}.ch-more>summary{cursor:pointer;color:var(--ch-muted);font-weight:600;padding:8px 0}.ch-more[open]>summary{margin-bottom:8px}.ch-head .ch-lg-logo{margin-right:2px}
+.ch-history-hero{position:relative;overflow:hidden;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;padding:24px;margin-bottom:14px;border:1px solid rgba(216,180,91,.35);border-radius:14px;background:radial-gradient(circle at 86% 10%,rgba(216,180,91,.18),transparent 32%),linear-gradient(120deg,#152231,#0d1721 70%)}.ch-history-hero:after{content:"";position:absolute;right:-34px;bottom:-74px;width:210px;height:210px;border:1px solid rgba(216,180,91,.12);border-radius:50%}.ch-history-hero h3{font-size:27px;margin:5px 0}.ch-history-hero p{max-width:620px;margin:0;color:var(--ch-muted);font-size:13px}.ch-history-kpis{display:flex;gap:8px;position:relative;z-index:1}.ch-history-kpis>span{min-width:104px;padding:11px 13px;border:1px solid var(--ch-line);border-radius:10px;background:rgba(5,12,19,.55)}.ch-history-kpis small,.ch-history-kpis b{display:block}.ch-history-kpis small{font-size:9px}.ch-history-kpis b{font-size:21px;margin-top:3px}
+.ch-history-archive{display:grid;gap:10px}.ch-history-season{border:1px solid var(--ch-line);border-radius:13px;background:#0d1721;overflow:hidden}.ch-history-season[open]{border-color:rgba(216,180,91,.32)}.ch-history-season>summary{list-style:none;display:flex;align-items:center;gap:14px;padding:13px 16px;cursor:pointer;background:rgba(255,255,255,.015)}.ch-history-season>summary::-webkit-details-marker{display:none}.ch-history-season>summary>span:first-child{display:flex;align-items:baseline;gap:10px}.ch-history-season>summary b{font-size:19px}.ch-history-season>summary i{margin-left:2px;color:var(--ch-gold);font-style:normal;font-size:20px;transition:transform .18s}.ch-history-season[open]>summary i{transform:rotate(180deg)}.ch-history-count{margin-left:auto;color:var(--ch-muted);font-size:12px}.ch-history-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:9px;padding:0 12px 12px}.ch-history-card{min-width:0;display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px 12px;padding:13px;border:1px solid var(--ch-line);border-radius:11px;background:linear-gradient(135deg,#14212d,#101a24)}.ch-history-card.mine{border-color:var(--ch-gold);box-shadow:inset 3px 0 var(--ch-gold)}.ch-history-league-logo{grid-row:1;display:flex;align-items:center;justify-content:center;width:42px;height:42px}.ch-history-league-logo img,.ch-history-league-logo svg{max-width:100%;max-height:100%;object-fit:contain}.ch-history-meta{display:flex;min-width:0;flex-direction:column;justify-content:center}.ch-history-meta b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.ch-history-meta small{font-size:9px}.ch-history-winner{grid-column:1/-1;display:flex;align-items:center;gap:9px;padding-top:10px;border-top:1px solid var(--ch-line)}.ch-history-winner>div{display:flex;min-width:0;flex-direction:column}.ch-history-winner strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}.ch-history-winner small{font-size:9px;color:var(--ch-gold)}.ch-history-crest{display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 28px}.ch-history-crest img,.ch-history-crest svg{max-width:100%;max-height:100%;object-fit:contain}.ch-history-fallback{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:rgba(216,180,91,.12);color:var(--ch-gold)}
+.ch-history-awards{margin-top:14px;padding:18px;border:1px solid var(--ch-line);border-radius:13px;background:var(--ch-card)}.ch-history-awards-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.ch-history-awards-head h3{font-size:18px;margin-top:3px}.ch-history-awards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:9px;margin-top:14px}.ch-history-awards-grid>article{display:flex;gap:14px;padding:12px;border:1px solid var(--ch-line);border-radius:10px;background:#0d1721}.ch-history-awards-grid>article>span{font-size:18px;font-weight:800;color:var(--ch-gold)}.ch-history-awards-grid p{margin:0 0 7px}.ch-history-awards-grid p:last-child{margin-bottom:0}.ch-history-awards-grid p small,.ch-history-awards-grid p b{display:block}.ch-history-awards-grid p small{font-size:9px}.ch-history-awards-grid p b{font-size:12px}.ch-history-empty{display:flex;align-items:center;gap:14px}.ch-history-empty>span{font-size:28px;color:var(--ch-gold)}
+@media(max-width:900px){.ch-dark{padding:16px}.ch-cols{grid-template-columns:1fr}.ch-history-hero{align-items:stretch;flex-direction:column}.ch-history-kpis{width:100%}.ch-history-kpis>span{flex:1;min-width:0}}@media(max-width:560px){.ch-history-hero{padding:18px}.ch-history-kpis{display:grid;grid-template-columns:repeat(3,1fr)}.ch-history-kpis>span{padding:9px}.ch-history-kpis b{font-size:17px}.ch-history-grid{grid-template-columns:1fr}.ch-history-awards-head{align-items:flex-start;flex-direction:column}.ch-history-count{display:none}}</style>`;
   }
 
   function render(s,D){
@@ -229,11 +275,10 @@
     else if(ui.section==="copas")body=copas(s,D,cat);
     else if(ui.section==="continentais")body=continentais(s,D,cat);
     else if(ui.section==="mundiais")body=mundiais();
-    else if(ui.section==="selecoes")body=selecoes(s);
+    else if(ui.section==="selecoes")body=selecoes();
     else if(ui.section==="historico")body=historico(s,D);
     else body=minhas(s,D,cat);
-    const playable=cat.filter(c=>c.status==="playable"||c.status==="regional_pool").length;
-    return `${css()}<section class="ch-dark" data-competitions-hub><small>CENTRAL MUNDIAL</small><h2>Competições · Temporada ${esc(s.season)}</h2><p class="ch-note">${cat.length} ligas no catálogo · ${playable} com calendário simulado. Nenhum clube fictício foi criado para completar ligas.</p>${nav()}${body}</section>`;
+    return `${css()}<section class="ch-dark" data-competitions-hub><h2>Competições · Temporada ${esc(s.season)}</h2>${ui.leagueId?"":nav()}${body}</section>`;
   }
   const api={render,state:ui,catalog,continentOf,
     setSection(id){if(SECTIONS.some(x=>x[0]===id)){ui.section=id;ui.leagueId=null;ui.tab="geral";ui.round=null;}},

@@ -11,6 +11,8 @@
   const hash=value=>{let h=2166136261;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
   const unit=key=>hash(key)/4294967296;
   const Names=()=>root.ProLifeNames||(typeof require==="function"?require("./display-names.js"):null);
+  const Stats=()=>root.ProLifeStatistics||(typeof require==="function"?require("./statistics.js"):null);
+  const Comps=()=>root.ProLifeCompetitions||(typeof require==="function"?require("./competitions.js"):null);
   const POS_SCORE={GOL:0,DEF:0.6,MEI:2.2,ATA:5}, POS_ASSIST={GOL:0,DEF:1.2,MEI:4,ATA:3};
   const FORMATION={GOL:1,DEF:4,MEI:3,ATA:3};
   const UNITS={gols:["gol","gols"],assistencias:["assistência","assistências"],jogos:["jogo","jogos"],defesas:["defesa","defesas"],motm:["prêmio de melhor em campo","prêmios de melhor em campo"],pontos:["ponto","pontos"],posicoes:["posição acima do esperado","posições acima do esperado"],cs:["jogo sem sofrer gols","jogos sem sofrer gols"]};
@@ -19,9 +21,20 @@
   function state(s){
     const g=s?.globalFootball;if(!g)return null;
     let ws=g.worldStats;
-    if(!ws||typeof ws!=="object"||ws.version!==VERSION||(Number(ws.season)!==Number(s.season))){
+    if(!ws||typeof ws!=="object"||ws.version!==VERSION){
       const archive=Array.isArray(ws?.archive)?ws.archive:[];
       ws=g.worldStats={version:VERSION,season:s.season,leagues:{},archive,matches:0};
+    }else if(Number(ws.season)!==Number(s.season)){
+      // O ano civil do PRO-LIFE muda em janeiro, mas ligas europeias cruzam o ano.
+      // Mantemos somente os acumuladores dessas edicoes ainda ativas; as ligas de
+      // ano-calendario ja foram arquivadas por closeSeason().
+      const live=s.globalFootball?.worldCompetitions?.leagues||{},carried={};
+      for(const [id,L] of Object.entries(ws.leagues||{})){
+        const competition=live[id];
+        if(competition?.calendarMode==="european_v1"&&competition.status==="active")carried[id]=L;
+      }
+      ws.season=s.season;ws.leagues=carried;
+      ws.matches=Object.values(carried).reduce((sum,L)=>sum+(Number(L?.n)||0),0);
     }
     if(!ws.leagues||typeof ws.leagues!=="object")ws.leagues={};
     if(!Array.isArray(ws.archive))ws.archive=[];
@@ -223,48 +236,158 @@
     }
     return out;
   }
+  // A visao mundial precisa representar a temporada inteira do atleta, nao o seu
+  // melhor recorte isolado. Um jogador pode ter linhas em mais de uma competicao
+  // (por transferencia ou por qualquer torneio registrado no WorldStats); aqui elas
+  // sao consolidadas pelo id, sem alterar os rankings individuais de cada torneio.
+  const globalKey=new WeakMap();
+  function globalRows(s){
+    const ws=state(s);if(!ws)return [];
+    const sig=`${ws.matches}|${s.day}|${leagueIds(s).length}|${(s.matches||[]).length}`,hit=globalKey.get(ws);
+    if(hit&&hit.sig===sig)return hit.rows;
+    const grouped=new Map(),idx=index(s),N=Names();
+    const add=(r,competitionId)=>{
+      let g=grouped.get(r.id);
+      if(!g){
+        g={...r,leagueId:null,apps:0,goals:0,assists:0,avg:0,cs:0,saves:0,motm:0,
+          score:0,wscore:0,eligible:false,competitionIds:[],competitionCount:0,_rating:0,_score:0,_wscore:0,_primaryApps:-1};
+        grouped.set(r.id,g);
+      }
+      const apps=Number(r.apps)||0;
+      g.apps+=apps;g.goals+=Number(r.goals)||0;g.assists+=Number(r.assists)||0;
+      g.cs+=Number(r.cs)||0;g.saves+=Number(r.saves)||0;g.motm+=Number(r.motm)||0;
+      g._rating+=(Number(r.avg)||0)*apps;
+      g._score+=(Number(r.score)||0)*apps;
+      g._wscore+=(Number(r.wscore)||0)*apps;
+      // A soma continua global, mas premios e UI precisam de uma competição de
+      // referência. Usamos aquela em que o atleta mais atuou, com desempate estável.
+      if(competitionId&&(apps>g._primaryApps||(apps===g._primaryApps&&String(competitionId)<String(g.leagueId||"~")))){
+        g.leagueId=competitionId;g._primaryApps=apps;
+      }
+      if(competitionId&&!g.competitionIds.includes(competitionId))g.competitionIds.push(competitionId);
+    };
+    const registered=new Set();
+    for(const r of worldRows(s)){
+      registered.add(`${r.id}|${r.leagueId}`);add(r,r.leagueId);
+    }
+    // Partidas brasileiras e as competicoes completas do clube controlado usam o
+    // acumulador canonico Statistics. Mesclamos apenas jogador+competicao ausentes
+    // do WorldStats, evitando contar duas vezes uma partida registrada nos dois.
+    const stats=s.statistics?.players||{},localPlayers=new Map();
+    for(const c of s.clubs||[])for(const p of c.roster||[])if(p?.id)localPlayers.set(p.id,{p,clubId:c.id});
+    for(const [id,total] of Object.entries(stats)){
+      for(const [competitionId,c] of Object.entries(total?.byCompetition||{})){
+        const apps=Number(c?.appearances)||0;if(!apps||registered.has(`${id}|${competitionId}`))continue;
+        const local=localPlayers.get(id),p=id==="hero"?s.person:(local?.p||idx.byId.get(id));if(!p)continue;
+        const clubId=id==="hero"?s.clubId:(local?.clubId||p.clubId||null);
+        add({id,name:p.name||"Atleta",pos:p.pos||p.position||"",age:Number(p.age)||(s.season-Number(p.birthYear||s.season-25)),
+          clubId,club:clubId?(N?N.club(s,clubId):String(clubId)):"—",hero:id==="hero",apps,
+          goals:Number(c.goals)||0,assists:Number(c.assists)||0,avg:(Number(c.ratingTotal)||0)/apps,
+          cs:Number(c.cleanSheets)||0,saves:Number(c.saves)||0,motm:Number(c.motm)||0,score:0,wscore:0},competitionId);
+      }
+    }
+    const rows=[];
+    for(const g of grouped.values()){
+      g.avg=g.apps?g._rating/g.apps:0;g.score=g.apps?g._score/g.apps:0;g.wscore=g.apps?g._wscore/g.apps:0;
+      g.competitionCount=g.competitionIds.length;g.eligible=g.apps>=3;
+      g.globalScore=g.avg*10+g.goals*0.55+g.assists*0.35+g.motm*0.4+(g.pos==="GOL"?g.cs*0.4+g.saves*0.02:g.pos==="DEF"?g.cs*0.2:0);
+      const p=g.id==="hero"?null:idx.byId.get(g.id);
+      if(p?.clubId){g.clubId=p.clubId;g.club=N?N.club(s,p.clubId):String(p.clubId);}
+      delete g._rating;delete g._score;delete g._wscore;delete g._primaryApps;rows.push(g);
+    }
+    globalKey.set(ws,{sig,rows});return rows;
+  }
   function worldAwards(s){
-    const rows=worldRows(s),el=rows.filter(r=>r.eligible),out=[],insufficient=[];
+    const global=globalRows(s),el=global.filter(r=>r.eligible),out=[],insufficient=[];
     const push=(cat,label,w,value,u)=>{if(w)out.push({...award(cat,label,w,value,u),leagueId:w.leagueId});else insufficient.push({cat,label});};
     const tie=(a,b)=>a.id<b.id?-1:1;
-    const star=best(el,(a,b)=>b.wscore-a.wscore||tie(a,b));push("melhorMundo","Melhor jogador do mundo",star,star&&+star.avg.toFixed(2),"nota");
-    const young=best(el.filter(r=>r.age<=21),(a,b)=>b.wscore-a.wscore||tie(a,b));push("jovemMundo","Melhor jovem do mundo",young,young&&+young.avg.toFixed(2),"nota");
-    const gk=best(el.filter(r=>r.pos==="GOL"),(a,b)=>b.wscore-a.wscore||tie(a,b));push("goleiroMundo","Melhor goleiro do mundo",gk,gk&&gk.saves,"defesas");
-    const gs=best(rows.filter(r=>r.goals>0),(a,b)=>b.goals-a.goals||b.assists-a.assists||a.apps-b.apps||tie(a,b));push("artilheiroMundo","Artilheiro global",gs,gs&&gs.goals,"gols");
-    const as=best(rows.filter(r=>r.assists>0),(a,b)=>b.assists-a.assists||b.goals-a.goals||a.apps-b.apps||tie(a,b));push("assistenciasMundo","Líder global de assistências",as,as&&as.assists,"assistencias");
-    let coach=null;
-    for(const id of leagueIds(s)){const c=bestCoach(s,id);if(c&&(!coach||c.value>coach.value||(c.value===coach.value&&c.extra.points>coach.extra.points)))coach={...c,leagueId:id};}
-    if(coach)out.push(coach);else insufficient.push({cat:"treinadorMundo",label:"Melhor treinador"});
+    const star=best(el,(a,b)=>b.globalScore-a.globalScore||tie(a,b));push("melhorMundo","Melhor jogador do mundo",star,star&&+star.avg.toFixed(2),"nota");
+    const young=best(el.filter(r=>r.age<=21),(a,b)=>b.globalScore-a.globalScore||tie(a,b));push("jovemMundo","Melhor jovem do mundo",young,young&&+young.avg.toFixed(2),"nota");
+    const gk=best(el.filter(r=>r.pos==="GOL"),(a,b)=>b.globalScore-a.globalScore||tie(a,b));push("goleiroMundo","Melhor goleiro do mundo",gk,gk&&gk.saves,"defesas");
+    const gs=best(global.filter(r=>r.goals>0),(a,b)=>b.goals-a.goals||b.assists-a.assists||a.apps-b.apps||tie(a,b));push("artilheiroMundo","Artilheiro global",gs,gs&&gs.goals,"gols");
+    const as=best(global.filter(r=>r.assists>0),(a,b)=>b.assists-a.assists||b.goals-a.goals||a.apps-b.apps||tie(a,b));push("assistenciasMundo","Líder global de assistências",as,as&&as.assists,"assistencias");
+    const coach=coachesTop(s,1)[0];
+    if(coach)out.push({...coach,cat:"treinadorMundo",label:"Melhor treinador",playerId:null,pos:"TEC",unit:"pontos"});else insufficient.push({cat:"treinadorMundo",label:"Melhor treinador"});
     return {awards:out,insufficient};
   }
   function leaders(s,{leagueId=null,stat="goals",limit=10,min=0}={}){
-    const rows=leagueId?rowsOf(s,leagueId):worldRows(s);
+    const rows=leagueId?rowsOf(s,leagueId):globalRows(s);
     const key={goals:r=>r.goals,assists:r=>r.assists,rating:r=>r.avg,saves:r=>r.saves,motm:r=>r.motm,apps:r=>r.apps}[stat]||(r=>r.goals);
     const floor=stat==="rating"?(min||(leagueId?minApps(s,leagueId):3)):min;
     return rows.filter(r=>r.apps>=floor&&(stat==="rating"||key(r)>0)).sort((a,b)=>key(b)-key(a)||b.goals-a.goals||b.assists-a.assists||a.apps-b.apps||(a.id<b.id?-1:1)).slice(0,limit).map(r=>({...r,value:key(r)}));
   }
-  function youngLeaders(s,limit=10){return worldRows(s).filter(r=>r.eligible&&r.age<=21).sort((a,b)=>b.wscore-a.wscore||(a.id<b.id?-1:1)).slice(0,limit).map(r=>({...r,value:r.avg}));}
-  function keepersTop(s,limit=10){return worldRows(s).filter(r=>r.eligible&&r.pos==="GOL").sort((a,b)=>b.wscore-a.wscore||(a.id<b.id?-1:1)).slice(0,limit).map(r=>({...r,value:r.saves}));}
+  function youngLeaders(s,limit=10){return globalRows(s).filter(r=>r.eligible&&r.age<=21).sort((a,b)=>b.globalScore-a.globalScore||(a.id<b.id?-1:1)).slice(0,limit).map(r=>({...r,value:r.avg}));}
+  function keepersTop(s,limit=10){return globalRows(s).filter(r=>r.eligible&&r.pos==="GOL").sort((a,b)=>b.globalScore-a.globalScore||(a.id<b.id?-1:1)).slice(0,limit).map(r=>({...r,value:r.saves}));}
   function coachesTop(s,limit=10){
-    const out=[];for(const id of leagueIds(s)){const c=bestCoach(s,id);if(c)out.push({...c,leagueId:id});}
-    return out.sort((a,b)=>b.value-a.value||b.extra.points-a.extra.points||(a.clubId<b.clubId?-1:1)).slice(0,limit);
+    const grouped=new Map(),N=Names();
+    const add=(c,competitionId,score,points=0,title=false,over=0,record=null)=>{
+      if(!c?.clubId)return;let g=grouped.get(c.clubId);
+      if(!g){g={name:c.name,club:c.club||(N?N.club(s,c.clubId):c.clubId),clubId:c.clubId,value:0,points:0,titles:0,overperformance:0,games:0,wins:0,draws:0,losses:0,gf:0,ga:0,competitionIds:[],competitionCount:0};grouped.set(c.clubId,g);}
+      if(g.competitionIds.includes(competitionId))return;
+      g.value+=Number(score)||0;g.points+=Number(points)||0;g.titles+=title?1:0;g.overperformance+=Number(over)||0;g.competitionIds.push(competitionId);g.competitionCount=g.competitionIds.length;
+      if(record)for(const k of ["games","wins","draws","losses","gf","ga"])g[k]+=Number(record[k])||0;
+      if(s.mode==="coach"&&c.clubId===s.clubId)g.name=s.person?.name||g.name;
+    };
+    for(const id of leagueIds(s)){const c=bestCoach(s,id);if(c)add(c,id,(Number(c.extra?.points)||0)+(Number(c.value)||0)*3,c.extra?.points,false,c.value);}
+    const S=Stats(),C=Comps();
+    const localCompetitions=C?.statCompetitions?.(s)||[],byCompetition=new Map(localCompetitions.map(c=>[c.id,c]));
+    const explicitTitle=(competitionId,clubId)=>{
+      if(competitionId==="copaBrasil")return s.competitionSchedule?.cup?.championId===clubId;
+      const state=(C?.allStates?.(s)||[]).find(x=>x.id===competitionId);if(state)return state.championId===clubId;
+      const comp=byCompetition.get(competitionId),finished=comp?.type==="league"&&Number(s.round||0)>=(s.fixtures?.length||38);
+      return !!(finished&&S?.competitionOutcome?.(s,comp)?.championId===clubId);
+    };
+    // O treinador controlado possui partidas detalhadas: esta e a fonte canonica
+    // para todas as competicoes, inclusive continentais e copas fora do catalogo local.
+    if(s.mode==="coach"&&s.clubId){
+      const own=(s.matches||[]).filter(m=>Number(m.season)===Number(s.season)&&[m.home,m.away].includes(s.clubId)),records=new Map();
+      for(const m of own){
+        const id=m.competitionId||m.leagueId||"career",r=records.get(id)||{games:0,wins:0,draws:0,losses:0,gf:0,ga:0};
+        const home=m.home===s.clubId,gf=Number(home?m.hg:m.ag)||0,ga=Number(home?m.ag:m.hg)||0;r.games++;r.gf+=gf;r.ga+=ga;if(gf>ga)r.wins++;else if(gf===ga)r.draws++;else r.losses++;records.set(id,r);
+      }
+      for(const [id,r] of records){const points=r.wins*3+r.draws,title=explicitTitle(id,s.clubId);add({name:s.person?.name||"Treinador",clubId:s.clubId},id,points+(title?40:0),points,title,0,r);}
+    }
+    for(const comp of localCompetitions){
+      const c=S?.bestCoach?.(s,comp.id);if(!c)continue;
+      const title=explicitTitle(comp.id,c.clubId),club=(s.clubs||[]).find(x=>x.id===c.clubId),points=comp.type==="league"?(Number(club?.stats?.points)||0):0;
+      add(c,comp.id,points+(title?40:0),points,title,0);
+    }
+    return [...grouped.values()].sort((a,b)=>b.value-a.value||b.titles-a.titles||b.points-a.points||(a.clubId<b.clubId?-1:1)).slice(0,limit);
   }
 
   // ---------- fechamento e historico ----------
   function leagueName(s,id){const N=Names();return N?N.league(s,id):id;}
+  function archiveLeague(s,leagueId,season,championId){
+    const ws=state(s),L=ws?.leagues?.[leagueId];if(!ws||!L?.n)return 0;
+    if(ws.archive.some(a=>Number(a.season)===Number(season)&&a.leagueId===leagueId))return 0;
+    const r=leagueAwards(s,leagueId,{min:minApps(s,leagueId)}),N=Names();
+    ws.archive.unshift({season:Number(season),leagueId,league:leagueName(s,leagueId),champion:championId?(N?N.club(s,championId):championId):null,championId:championId||null,awards:r.awards,xi:r.xi,insufficient:r.insufficient.map(x=>x.cat),matches:L.n});
+    if(ws.archive.length>ARCHIVE_LIMIT*6)ws.archive=ws.archive.slice(0,ARCHIVE_LIMIT*6);
+    return 1;
+  }
+  function closeLeague(s,leagueId,season,championId){
+    const ws=state(s),L=ws?.leagues?.[leagueId],added=archiveLeague(s,leagueId,season,championId);
+    // Depois de arquivada, a proxima edicao precisa de acumuladores novos. Uma
+    // segunda chamada continua idempotente porque o arquivo ja possui a chave.
+    if(L){ws.matches=Math.max(0,ws.matches-(Number(L.n)||0));delete ws.leagues[leagueId];}
+    return added;
+  }
   function closeSeason(s){
     const ws=state(s);if(!ws)return 0;let added=0;
     const has=(season,leagueId)=>ws.archive.some(a=>a.season===season&&a.leagueId===leagueId);
+    const calendarIds=[];
     for(const id of leagueIds(s)){
-      if(has(s.season,id)||!ws.leagues[id].n)continue;
-      const r=leagueAwards(s,id,{min:minApps(s,id)});
-      const champId=s.globalFootball?.worldCompetitions?.leagues?.[id]?.championId||null,N=Names();
-      ws.archive.unshift({season:s.season,leagueId:id,league:leagueName(s,id),champion:champId?(N?N.club(s,champId):champId):null,championId:champId,awards:r.awards,xi:r.xi,insufficient:r.insufficient.map(x=>x.cat),matches:ws.leagues[id].n});
-      added++;
+      const competition=s.globalFootball?.worldCompetitions?.leagues?.[id];
+      if(competition?.calendarMode==="european_v1")continue;
+      calendarIds.push(id);
+      const champId=competition?.championId||null;
+      added+=archiveLeague(s,id,s.season,champId);
     }
     if(!has(s.season,"world")&&ws.matches>0){
       const w=worldAwards(s);ws.archive.unshift({season:s.season,leagueId:"world",league:"Prêmios mundiais",awards:w.awards,xi:[],insufficient:w.insufficient.map(x=>x.cat),matches:ws.matches});added++;
     }
+    for(const id of calendarIds)delete ws.leagues[id];
+    ws.matches=Object.values(ws.leagues).reduce((sum,L)=>sum+(Number(L?.n)||0),0);
     if(ws.archive.length>ARCHIVE_LIMIT*6)ws.archive=ws.archive.slice(0,ARCHIVE_LIMIT*6);
     return added;
   }
@@ -301,7 +424,7 @@
   function formatByName(name,value){const hit=UNIT_BY_NAME.find(([re])=>re.test(String(name||"")));return format(hit?hit[1]:"jogos",value);}
   function formatAward(a){return format(a.unit,a.value);}
 
-  const api={VERSION,init:state,record,rowsOf,minApps,leagueAwards,worldAwards,leaders,youngLeaders,keepersTop,coachesTop,closeSeason,history,heroAwards,heroStanding,competitions,format,formatByName,formatAward,UNITS};
+  const api={VERSION,init:state,record,rowsOf,globalRows,minApps,leagueAwards,worldAwards,leaders,youngLeaders,keepersTop,coachesTop,closeLeague,closeSeason,history,heroAwards,heroStanding,competitions,format,formatByName,formatAward,UNITS};
   root.ProLifeWorldStats=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

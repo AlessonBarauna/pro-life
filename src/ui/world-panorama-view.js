@@ -44,7 +44,11 @@ ${sum?`<p class="wp-note">${sum.fc27} ligas do catálogo FC 27 · ${sum.fc27Play
     const arch=legacy?`<div class="wp-arch"><button type="button" data-wp-archive>${ui.archive?"Ocultar panorama arquivado":"Ver panorama arquivado da última temporada encerrada"}</button>${ui.archive?legacy():""}</div>`:"";
     return `${css()}${header(s,D)}${H.render(s,D)}${arch}`;
   }
-  const api={render,seasonInfo,summary,header,state:ui,toggleArchive(){ui.archive=!ui.archive;}};
+  function renderSummary(s,D){
+    if(!s)return "";
+    return `${css()}${header(s,D)}`;
+  }
+  const api={render,renderSummary,seasonInfo,summary,header,state:ui,toggleArchive(){ui.archive=!ui.archive;}};
   root.ProLifeWorldPanorama=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

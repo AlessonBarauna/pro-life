@@ -67,7 +67,9 @@ function createDevServer(root = ROOT) {
       return;
     }
     const file = route === "/" ? "index.html" : route.replace(/^\//, "");
-    if (!files.includes(file)) {
+    // Logos/escudos instalados com o servidor ligado (nome simples, so imagem) tambem sao servidos, sem reiniciar.
+    const dynamicImage = /^src\/assets\/(league-logos|club-crests)\/[a-zA-Z0-9_-]+\.(png|svg|webp)$/.test(file);
+    if (!files.includes(file) && !dynamicImage) {
       res.writeHead(404);
       res.end("Arquivo não disponível.");
       return;

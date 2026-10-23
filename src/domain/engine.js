@@ -1138,6 +1138,8 @@
     }
     return result;
   }
+  // Sensibilidade da qualidade do elenco no resultado: quanto menor, mais o favorito domina (zebras ficam raras).
+  const MATCH_CLASS = Object.freeze({ control: Number(globalThis.__MC_CONTROL) || 120, shots: Number(globalThis.__MC_SHOTS) || 190, xg: Number(globalThis.__MC_XG) || 560 });
   function quality(ps, key, formFactors = null, roles = null) {
     if (!ps.length) return 25;
     return (
@@ -1294,7 +1296,7 @@
           fatigue[i],
       );
       const i =
-          rng.next() < clamp(0.5 + (control[0] - control[1]) / 280, 0.34, 0.66)
+          rng.next() < clamp(0.5 + (control[0] - control[1]) / MATCH_CLASS.control, 0.28, 0.72)
             ? 0
             : 1,
         j = 1 - i,
@@ -1321,7 +1323,7 @@
             ? -6
             : 0) +
         tactical[j].defense;
-      if (rng.next() < clamp(0.2 + (attack - defense) / 650, 0.12, 0.29)) {
+      if (rng.next() < clamp(0.19 + (attack - defense) / MATCH_CLASS.shots, 0.08, 0.35)) {
         m.shots[i]++;
         const candidates = ps.filter((p) => p.pos !== "GOL").length ? ps.filter((p) => p.pos !== "GOL") : ps;
         const shooterWeights = candidates.map((p) => {
@@ -1361,9 +1363,9 @@
         if (!m.offensiveStats[shooter.id]) m.offensiveStats[shooter.id] = { shots: 0, onTarget: 0, xg: 0, goals: 0 };
         m.offensiveStats[shooter.id].shots++;
         const shotXg = clamp(
-          0.045 + rng.next() * 0.18 + (attack - defense) / 1600,
+          0.045 + rng.next() * 0.18 + (attack - defense) / MATCH_CLASS.xg,
           0.025,
-          0.32,
+          0.36,
         );
         m.xg[i] += shotXg;
         m.offensiveStats[shooter.id].xg += shotXg;

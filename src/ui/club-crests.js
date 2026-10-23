@@ -3,7 +3,7 @@
   const list=Array.isArray(root.ProLifeCrestData)?root.ProLifeCrestData:[];
   const catalog=new Map(list.map(x=>[x.id,x]));
   const safeId=id=>typeof id==="string"&&/^[a-zA-Z0-9_-]+$/.test(id);
-  const escape=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&#39;"}[c]));
+  const escape=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const validAsset=p=>typeof p==="string"&&/^src\/assets\/club-crests\/[a-zA-Z0-9_-]+\.(?:webp|png|svg)$/.test(p);
   function metadata(id){return safeId(id)?catalog.get(id)||null:null;}
   function fallback(item,size){

@@ -1,0 +1,317 @@
+[
+ {
+  "id": "gf_fc27_1a_pro_league",
+  "name": "1A Pro League",
+  "country": "Bélgica"
+ },
+ {
+  "id": "gf_fc27_3_liga",
+  "name": "3. Liga",
+  "country": "Alemanha"
+ },
+ {
+  "id": "gf_fc27_allsvenskan",
+  "name": "Allsvenskan",
+  "country": "Suécia"
+ },
+ {
+  "id": "gf_fc27_brack_super_league",
+  "name": "Brack Super League",
+  "country": "Suíça"
+ },
+ {
+  "id": "gf_fc27_bundesliga",
+  "name": "Bundesliga",
+  "country": "Alemanha"
+ },
+ {
+  "id": "gf_fc27_bundesliga_2",
+  "name": "Bundesliga 2",
+  "country": "Alemanha"
+ },
+ {
+  "id": "gf_fc27_ceska_liga",
+  "name": "Česká Liga",
+  "country": "Tchéquia"
+ },
+ {
+  "id": "gf_fc27_conmebol_libertadores",
+  "name": "CONMEBOL Libertadores",
+  "country": "Colômbia"
+ },
+ {
+  "id": "gf_fc27_conmebol_sudamericana",
+  "name": "CONMEBOL Sudamericana",
+  "country": "Uruguai"
+ },
+ {
+  "id": "gf_fc27_csl",
+  "name": "CSL",
+  "country": "China"
+ },
+ {
+  "id": "gf_fc27_efl_championship",
+  "name": "EFL Championship",
+  "country": "Inglaterra"
+ },
+ {
+  "id": "gf_fc27_efl_league_one",
+  "name": "EFL League One",
+  "country": "Inglaterra"
+ },
+ {
+  "id": "gf_fc27_efl_league_two",
+  "name": "EFL League Two",
+  "country": "Inglaterra"
+ },
+ {
+  "id": "gf_fc27_ekstraklasa",
+  "name": "Ekstraklasa",
+  "country": "Polônia"
+ },
+ {
+  "id": "gf_fc27_eliteserien",
+  "name": "Eliteserien",
+  "country": "Noruega"
+ },
+ {
+  "id": "gf_fc27_eredivisie",
+  "name": "Eredivisie",
+  "country": "Países Baixos"
+ },
+ {
+  "id": "gf_fc27_finnliiga",
+  "name": "Finnliiga",
+  "country": "Finlândia"
+ },
+ {
+  "id": "gf_fc27_hellas_liga",
+  "name": "Hellas Liga",
+  "country": "Grécia"
+ },
+ {
+  "id": "gf_fc27_isl",
+  "name": "ISL",
+  "country": "Índia"
+ },
+ {
+  "id": "gf_fc27_isuzu_ute_a_league",
+  "name": "Isuzu UTE A League",
+  "country": "Australia"
+ },
+ {
+  "id": "gf_fc27_k_league_1",
+  "name": "K League 1",
+  "country": "Coreia do Sul"
+ },
+ {
+  "id": "gf_fc27_laliga_ea_sports",
+  "name": "LALIGA EA SPORTS",
+  "country": "Espanha"
+ },
+ {
+  "id": "gf_fc27_laliga_hypermotion",
+  "name": "LALIGA HYPERMOTION",
+  "country": "Espanha"
+ },
+ {
+  "id": "gf_fc27_liga_azerbaijan",
+  "name": "Liga Azerbaijan",
+  "country": "Azerbaijão"
+ },
+ {
+  "id": "gf_fc27_liga_bbva_mx",
+  "name": "Liga BBVA MX",
+  "country": "México"
+ },
+ {
+  "id": "gf_fc27_liga_bulgaria",
+  "name": "Liga Bulgaria",
+  "country": "Bulgaria"
+ },
+ {
+  "id": "gf_fc27_liga_colombia",
+  "name": "Liga Colombia",
+  "country": "Colômbia"
+ },
+ {
+  "id": "gf_fc27_liga_cyprus",
+  "name": "Liga Cyprus",
+  "country": "Chipre"
+ },
+ {
+  "id": "gf_fc27_liga_do_brasil",
+  "name": "Liga do Brasil",
+  "country": "Brasil"
+ },
+ {
+  "id": "gf_fc27_liga_hrvatska",
+  "name": "Liga Hrvatska",
+  "country": "Croácia"
+ },
+ {
+  "id": "gf_fc27_liga_portugal",
+  "name": "Liga Portugal",
+  "country": "Portugal"
+ },
+ {
+  "id": "gf_fc27_ligue_1_mcdonald_s",
+  "name": "Ligue 1 McDonald's",
+  "country": "França"
+ },
+ {
+  "id": "gf_fc27_ligue_2_bkt",
+  "name": "Ligue 2 BKT",
+  "country": "França"
+ },
+ {
+  "id": "gf_fc27_lpf",
+  "name": "LPF",
+  "country": "Argentina"
+ },
+ {
+  "id": "gf_fc27_magyar_liga",
+  "name": "Magyar Liga",
+  "country": "Hungria"
+ },
+ {
+  "id": "gf_fc27_metropolitan_division",
+  "name": "Metropolitan Division",
+  "country": "Dinamarca"
+ },
+ {
+  "id": "gf_fc27_mls",
+  "name": "MLS",
+  "country": "Estados Unidos"
+ },
+ {
+  "id": "gf_fc27_o_bundesliga",
+  "name": "Ö. Bundesliga",
+  "country": "Áustria"
+ },
+ {
+  "id": "gf_fc27_premier_league",
+  "name": "Premier League",
+  "country": "Inglaterra"
+ },
+ {
+  "id": "gf_fc27_roshn_saudi_league",
+  "name": "ROSHN Saudi League",
+  "country": "Arábia Saudita"
+ },
+ {
+  "id": "gf_fc27_scottish_premiership",
+  "name": "Scottish Premiership",
+  "country": "Escócia"
+ },
+ {
+  "id": "gf_fc27_serie_a_enilive",
+  "name": "Serie A Enilive",
+  "country": "Itália"
+ },
+ {
+  "id": "gf_fc27_serie_bkt",
+  "name": "Serie BKT",
+  "country": "Itália"
+ },
+ {
+  "id": "gf_fc27_sse_airtricity_men_s_premier_division",
+  "name": "SSE Airtricity Men's Premier Division",
+  "country": "Republic of Ireland"
+ },
+ {
+  "id": "gf_fc27_superliga",
+  "name": "SUPERLIGA",
+  "country": "Romênia"
+ },
+ {
+  "id": "gf_fc27_thailand_league",
+  "name": "Thailand League",
+  "country": "Thailand"
+ },
+ {
+  "id": "gf_fc27_trendyol_super_lig",
+  "name": "Trendyol Süper Lig",
+  "country": "Turquia"
+ },
+ {
+  "id": "gf_fc27_ukrayina_liha",
+  "name": "Ukrayina Liha",
+  "country": "Ucrânia"
+ },
+ {
+  "id": "gf_fc27_united_emirates_league",
+  "name": "United Emirates League",
+  "country": "Emirados Árabes Unidos"
+ },
+ {
+  "id": "serieA",
+  "name": "Brasileirão Série A",
+  "country": "Brasil"
+ },
+ {
+  "id": "serieB",
+  "name": "Brasileirão Série B",
+  "country": "Brasil"
+ },
+ {
+  "id": "serieC",
+  "name": "Brasileirão Série C",
+  "country": "Brasil"
+ },
+ {
+  "id": "serieD",
+  "name": "Brasileirão Série D",
+  "country": "Brasil"
+ },
+ {
+  "id": "ucl",
+  "name": "UEFA Champions League",
+  "country": "Mundo"
+ },
+ {
+  "id": "uel",
+  "name": "UEFA Europa League",
+  "country": "Mundo"
+ },
+ {
+  "id": "uecl",
+  "name": "UEFA Conference League",
+  "country": "Mundo"
+ },
+ {
+  "id": "lib",
+  "name": "CONMEBOL Libertadores",
+  "country": "Mundo"
+ },
+ {
+  "id": "sud",
+  "name": "CONMEBOL Sudamericana",
+  "country": "Mundo"
+ },
+ {
+  "id": "mundial",
+  "name": "Mundial de Clubes",
+  "country": "Mundo"
+ },
+ {
+  "id": "copaBrasil",
+  "name": "Copa do Brasil",
+  "country": "Brasil"
+ },
+ {
+  "id": "fa_cup",
+  "name": "FA Cup",
+  "country": "Inglaterra"
+ },
+ {
+  "id": "efl_cup",
+  "name": "EFL Cup",
+  "country": "Inglaterra"
+ },
+ {
+  "id": "community_shield",
+  "name": "Community Shield",
+  "country": "Inglaterra"
+ }
+]

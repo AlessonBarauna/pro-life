@@ -64,10 +64,34 @@ test("34F.31E (8) temporadas: ano civil x temporada PRO-LIFE x ultima encerrada,
   assert.ok(!/\b2029\/30\b/.test(h.replace(/não divide as ligas europeias em 2029\/30/g, "")));
 });
 
+test("34F.31E (8B) resumo pode ser incorporado em Competições sem duplicar a central", () => {
+  const s = make(RM); const h = vis(P.renderSummary(s, D));
+  assert.ok(h.includes("PANORAMA MUNDIAL"));
+  assert.ok(h.includes("Temporada " + s.season));
+  assert.ok(!h.includes("data-competitions-hub"));
+  section("historico");
+  assert.ok(vis(H.render(s, D)).includes("Hall dos Campeões"));
+});
+
+test("34F.31E (8C) histórico agrupa temporadas e identifica competição e campeão", () => {
+  const s = make(RM); const leagueId = global.ProLifeCareerContext.resolve(s, D).league.id;
+  s.globalFootball.worldCompetitions.history = [
+    { key: `2027:${leagueId}`, season: 2027, leagueId, league: "LaLiga EA SPORTS", championId: RM, champion: "Real Madrid" },
+    { key: `2026:${leagueId}`, season: 2026, leagueId, league: "LaLiga EA SPORTS", championId: BETIS, champion: "Real Betis" }
+  ];
+  section("historico"); const h = vis(H.render(s, D));
+  assert.match(h, /Hall dos Campeões/); assert.match(h, /ch-history-season/); assert.match(h, /ch-history-card mine/);
+  assert.equal((h.match(/<details class="ch-history-season"/g) || []).length, 2);
+  assert.match(h, /Real Madrid/); assert.match(h, /Real Betis/);
+  const archive = h.slice(h.indexOf("ch-history-archive")); assert.ok(archive.indexOf("2027") < archive.indexOf("2026"));
+});
+
 test("34F.31E (9)(10) rankings por campeonato nao se misturam e vem de partidas realmente simuladas", () => {
   const s = make(RM); const lc = H.catalog(s, D).filter((c) => c.world && c.status === "playable").slice(0, 6);
   for (const c of lc) assert.equal(WS.leaders(s, { leagueId: c.id, stat: "goals", limit: 5 }).length, 0, "sem jogos, sem artilheiros: " + c.name);
-  play(s, 120);
+  // As ligas europeias começam no segundo semestre; dia 300 já contém
+  // rodadas reais inclusive para a 3. Liga, sem misturar ou inventar dados.
+  play(s, 300);
   const clubsOf = (id) => new Set(W.standings(s, id).map((r) => r.id)); const seen = new Map();
   for (const c of lc) {
     const L = WS.leaders(s, { leagueId: c.id, stat: "goals", limit: 20 }); assert.ok(L.length > 0, c.name);

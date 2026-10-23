@@ -84,7 +84,7 @@ function click(w, sel) {
     const page = match?.[1];
     const groups = {
       training:"profile", statistics:"profile", awards:"profile", legacy:"profile", proposals:"market",
-      league:"competitions", calendar:"calendar", matches:"calendar", competitions:"competitions", panorama:"competitions", squad:"squad",
+      league:"competitions", calendar:"calendar", matches:"calendar", competitions:"competitions", squad:"squad",
       life:"history", finance:"history", sponsorships:"history"
     };
     if (page && groups[page]) {
@@ -146,7 +146,8 @@ for (const mode of ["player", "coach"]) {
     ? [
         ["home", ["home"]],
         ["profile", ["profile", "training", "statistics", "awards", "legacy"]],
-        ["competitions", ["league", "calendar", "matches", "competitions", "panorama", "squad"]],
+        ["competitions", ["league", "calendar", "matches", "competitions"]],
+        ["squad", ["squad"]],
         ["market", ["market", "proposals"]],
         ["history", ["history", "life", "finance", "sponsorships"]],
         ["inbox", ["inbox"]],
@@ -155,7 +156,8 @@ for (const mode of ["player", "coach"]) {
     : [
         ["home", ["home"]],
         ["profile", ["profile", "training", "finance"]],
-        ["competitions", ["league", "calendar", "matches", "competitions", "panorama", "squad", "statistics", "awards"]],
+        ["competitions", ["league", "calendar", "matches", "competitions", "statistics", "awards"]],
+        ["squad", ["squad"]],
         ["market", ["market", "proposals"]],
         ["history", ["history", "life"]],
         ["inbox", ["inbox"]],
@@ -177,6 +179,11 @@ for (const mode of ["player", "coach"]) {
         assert.ok(w.document.querySelector("[data-world-live-market-view]"), "Central do Mercado Mundial ausente");
         assert.ok(w.document.querySelector('[data-world-market-tab="completed"]'), "Aba Concluidas ausente");
       }
+      if (page === "competitions") {
+        assert.equal(w.document.querySelectorAll('.game-subnav [data-page="panorama"]').length, 0, "Panorama não deve continuar como aba duplicada");
+        assert.equal(w.document.querySelectorAll('.game-subnav [data-page="squad"]').length, 0, "Elenco não deve continuar duplicado em Competições");
+      }
+      if (page === "squad") assert.equal(w.document.querySelectorAll(".game-subnav").length, 0, "Elenco deve abrir como área própria, sem submenu duplicado");
        if (page === "proposals") assert.ok(w.document.querySelector("main").textContent.includes("Quais propostas quero receber?"));
       assert.ok(w.document.querySelector("main").textContent.length > 150);
     }

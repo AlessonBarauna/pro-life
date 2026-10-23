@@ -87,14 +87,13 @@
 .fc27-central-v2-approved .fc27-v2-goals{display:flex!important;justify-content:space-between!important;gap:10px!important}
 .fc27-central-v2-approved .fc27-v2-goals strong{color:#c8f932!important}
 .fc27-central-v2-approved .central-v3-grid{
-  grid-area:details!important;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-area:details!important;display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;
   gap:12px!important;width:auto!important;max-width:none!important;min-width:0!important;margin:0!important;padding:0!important;
 }
 .fc27-central-v2-approved .central-v3-grid>.central-v3-tile{
   grid-column:auto!important;grid-row:auto!important;width:auto!important;max-width:none!important;min-width:0!important;
   min-height:260px!important;margin:0!important;overflow:hidden!important;
 }
-.fc27-central-v2-approved .central-v3-grid>.central-v3-table{display:none!important}
 .fc27-central-v2-approved .central-v3-context{
   grid-area:context!important;display:flex!important;align-items:center!important;justify-content:space-between!important;
   gap:18px!important;width:auto!important;max-width:none!important;min-width:0!important;margin:0!important;
@@ -104,6 +103,7 @@
 @media(max-width:1180px){
   .fc27-central-v2-approved>.fc27-v2-layout{grid-template-columns:minmax(0,.88fr) minmax(540px,1.12fr)!important}
   .fc27-central-v2-approved .central-v3-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .fc27-central-v2-approved .central-v3-grid>.central-v3-tile{grid-column:auto!important}
 }
 @media(max-width:1050px){
   .fc27-central-v2-approved>.fc27-v2-layout{
@@ -139,3 +139,104 @@
   .fc27-central-v2-approved .fc27-v2-goals{flex-direction:column!important}
   .fc27-central-v2-approved .central-v3-context nav{grid-template-columns:minmax(0,1fr)!important}
 }
+
+/* ===== Central estilo FC 27 (correcoes de sobreposicao, escudos e grade) ===== */
+.fc27-central-v2-approved>.central-v3-header{display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:16px!important}
+.fc27-central-v2-approved>.central-v3-header .central-v3-title{margin:2px 0 0!important;font-size:clamp(26px,2.4vw,38px)!important;line-height:1.05!important;font-weight:900!important;font-style:italic!important;letter-spacing:-.5px!important;color:#fff!important}
+.fc27-central-v2-approved>.central-v3-header p{margin:0!important;color:#c8f932!important;font-weight:800!important;font-size:12px!important}
+/* hero: coluna fluida; botoes saem do posicionamento absoluto */
+.fc27-central-v2-approved .central-v3-match{gap:14px!important;justify-content:flex-start!important;padding:clamp(18px,2vw,28px)!important}
+.fc27-central-v2-approved .central-v3-matchup{margin:4px 0!important}
+.fc27-central-v2-approved .central-v3-team .has-crest,.fc27-central-v2-approved .central-v3-team>i{flex:0 0 auto}
+.fc27-central-v2-approved .central-v3-team img{object-fit:contain!important;filter:drop-shadow(0 10px 18px rgba(0,0,0,.45))}
+.fc27-central-v2-approved .central-v3-match-meta{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin:0!important;position:static!important}
+.fc27-central-v2-approved .central-v3-match-meta>span{min-width:0!important;padding:9px 10px!important}
+.fc27-central-v2-approved .central-v3-match-meta b{overflow-wrap:anywhere!important}
+.fc27-central-v2-approved .central-v3-status-row,.fc27-central-v2-approved .central-v3-lineup{position:static!important;margin:0!important}
+.fc27-central-v2-approved .central-v3-actions{
+  position:static!important;inset:auto!important;left:auto!important;right:auto!important;bottom:auto!important;
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:auto 0 0!important;padding-top:6px!important;
+}
+.fc27-central-v2-approved .central-v3-actions>.central-v3-action-main{grid-column:1/-1!important;min-height:50px!important;background:#c8f932!important;color:#10200a!important;border:0!important;font-weight:900!important;letter-spacing:.3px!important;clip-path:polygon(12px 0,100% 0,calc(100% - 12px) 100%,0 100%)!important}
+.fc27-central-v2-approved .central-v3-actions>button{flex:none!important;min-height:44px!important;padding:8px 10px!important;font-size:12px!important;line-height:1.2!important}
+.fc27-central-v2-approved .central-v3-actions>button:only-of-type,.fc27-central-v2-approved .central-v3-actions>.central-v3-action-quiet:last-child:nth-child(2){grid-column:1/-1!important}
+/* paineis laterais */
+.fc27-central-v2-approved .fc27-v2-panel-head h2{text-transform:none!important;font-size:14px!important;font-weight:900!important;letter-spacing:.2px!important}
+.fc27-central-v2-approved .fc27-v2-agenda-row{grid-template-columns:62px auto minmax(0,1fr)!important;align-items:center!important}
+.fc27-central-v2-approved .fc27-v2-agenda-row:not(:has(.fc27-v2-agenda-crests)){grid-template-columns:62px minmax(0,1fr)!important}
+.fc27-central-v2-approved .fc27-v2-agenda-crests{display:inline-flex!important;align-items:center!important;gap:3px!important}
+.fc27-central-v2-approved .fc27-v2-agenda-crests .fc-crest{display:inline-grid!important;place-items:center!important;width:26px!important;height:26px!important;border-radius:6px!important;font-size:9px!important;font-weight:900!important;color:#fff!important;background:hsl(var(--h,200) 45% 28%)!important;overflow:hidden}
+.fc27-central-v2-approved .fc27-v2-agenda-crests .fc-crest.has-crest{background:transparent!important}
+.fc27-central-v2-approved .fc27-v2-agenda-crests img{width:24px!important;height:24px!important;max-width:24px!important;max-height:24px!important;object-fit:contain!important}
+/* grade inferior: tabela | forma | prioridades ; noticias | objetivos */
+.fc27-central-v2-approved .central-v3-grid>.central-v3-tile{min-height:0!important}
+.fc27-central-v2-approved .central-v3-grid>.central-v3-table{display:block!important;grid-column:1/5!important;grid-row:1!important}
+.fc27-central-v2-approved .central-v3-grid>.central-v3-form{grid-column:5/9!important;grid-row:1!important}
+.fc27-central-v2-approved .central-v3-grid>.central-v3-tasks{grid-column:9/13!important;grid-row:1!important}
+.fc27-central-v2-approved .central-v3-grid>.fc27-bottom-news{grid-column:1/7!important;grid-row:2!important}
+.fc27-central-v2-approved .central-v3-grid>.fc27-bottom-objectives{grid-column:7/13!important;grid-row:2!important}
+.fc27-central-v2-approved .central-v3-standing{grid-template-columns:22px 28px minmax(0,1fr) auto!important}
+.fc27-central-v2-approved .central-v3-standing b{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.fc27-central-v2-approved .central-v3-standing .fc-crest{display:inline-grid!important;place-items:center!important;width:26px!important;height:26px!important}
+.fc27-central-v2-approved .central-v3-standing .fc-crest img{width:24px!important;height:24px!important;max-width:24px!important;max-height:24px!important;object-fit:contain!important}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task{grid-template-columns:minmax(0,1fr) auto!important}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task b{font-size:13px!important;text-transform:none!important;overflow-wrap:anywhere!important}
+.fc27-central-v2-approved .central-v3-task-match{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:5px!important}
+.fc27-central-v2-approved .central-v3-task-match em{font-style:normal;color:#8ca1ac}
+.fc27-central-v2-approved .central-v3-task-match .fc-crest{display:inline-grid!important;place-items:center!important;width:24px!important;height:24px!important;color:#fff;font-size:9px;border-radius:6px;background:hsl(var(--h,200) 45% 28%)}
+.fc27-central-v2-approved .central-v3-task-match .fc-crest.has-crest{background:transparent}
+.fc27-central-v2-approved .central-v3-task-match img{width:22px!important;height:22px!important;object-fit:contain!important}
+.fc27-central-v2-approved .central-v3-form-row .fc27-team i{flex:0 0 auto}
+.fc27-central-v2-approved .central-v3-form-row .fc27-team img{width:22px!important;height:22px!important;object-fit:contain!important}
+@media(max-width:1180px){
+  .fc27-central-v2-approved .central-v3-grid>.central-v3-table,.fc27-central-v2-approved .central-v3-grid>.central-v3-form,.fc27-central-v2-approved .central-v3-grid>.central-v3-tasks,.fc27-central-v2-approved .central-v3-grid>.fc27-bottom-news,.fc27-central-v2-approved .central-v3-grid>.fc27-bottom-objectives{grid-column:auto!important;grid-row:auto!important}
+}
+@media(max-width:760px){
+  .fc27-central-v2-approved .central-v3-match-meta{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .fc27-central-v2-approved .central-v3-actions{grid-template-columns:minmax(0,1fr)!important}
+}
+
+/* ===== Prioridades e Ultimas noticias: cartoes legiveis ===== */
+.fc27-central-v2-approved .central-v3-grid>.central-v3-tasks{display:flex!important;flex-direction:column!important;gap:10px!important;padding:18px!important}
+.fc27-central-v2-approved .central-v3-tasks>h2{margin:0 0 4px!important;font-size:20px!important}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task{
+  position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:4px 12px!important;align-items:center!important;
+  width:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:12px 14px 12px 18px!important;
+  background:linear-gradient(120deg,rgba(18,40,56,.95),rgba(8,22,34,.95))!important;border:1px solid rgba(140,180,204,.2)!important;
+  border-radius:10px!important;clip-path:none!important;overflow:hidden!important;
+}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#c8f932}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task-urgent::before{background:#ffb020}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task-urgent{border-color:rgba(255,176,32,.5)!important;background:linear-gradient(120deg,rgba(60,40,8,.9),rgba(8,22,34,.95))!important}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task small{grid-column:1/-1!important;margin:0!important;font-size:10px!important;letter-spacing:1.2px!important;color:#c8f932!important;font-style:normal!important}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task-urgent small{color:#ffc454!important}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task b{grid-column:1!important;font-size:15px!important;line-height:1.25!important;font-style:normal!important;color:#fff!important;writing-mode:horizontal-tb!important;text-orientation:mixed!important;word-break:normal!important;overflow-wrap:break-word!important}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task span{grid-column:1!important;font-size:12px!important;color:#a6bbc6!important;font-style:normal!important;writing-mode:horizontal-tb!important}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task button{grid-column:2!important;grid-row:2/4!important;align-self:center!important;min-height:36px!important;padding:6px 14px!important;white-space:nowrap!important;background:#c8f932!important;color:#10200a!important;border:0!important;border-radius:6px!important;font-size:11px!important;font-weight:900!important}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task button:hover{filter:brightness(1.08)}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task-match{font-size:14px!important}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-task-match span{grid-column:auto!important;color:#fff!important;font-size:13px!important;font-weight:800!important}
+.fc27-central-v2-approved .central-v3-tasks .central-v3-decision .actions{grid-column:1/-1!important;display:flex!important;flex-wrap:wrap!important;gap:6px!important}
+
+.fc27-central-v2-approved .fc27-bottom-news{padding:18px!important}
+.fc27-central-v2-approved .fc27-bottom-news .fc27-news-item{
+  display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;gap:2px 14px!important;align-items:start!important;
+  margin:0 0 10px!important;padding:12px 14px!important;background:rgba(116,159,185,.07)!important;border:1px solid rgba(140,180,204,.14)!important;
+  border-left:3px solid #c8f932!important;border-radius:8px!important;
+}
+.fc27-central-v2-approved .fc27-bottom-news .fc27-news-item small{grid-row:1/3!important;align-self:start!important;padding:4px 8px!important;border-radius:5px!important;background:rgba(200,249,50,.12)!important;color:#c8f932!important;font-size:11px!important;font-weight:900!important;white-space:nowrap!important}
+.fc27-central-v2-approved .fc27-bottom-news .fc27-news-item strong{display:block!important;font-size:15px!important;line-height:1.3!important;color:#fff!important;margin:0!important}
+.fc27-central-v2-approved .fc27-bottom-news .fc27-news-item p{margin:0!important;font-size:13px!important;line-height:1.45!important;color:#b6cad6!important}
+.fc27-central-v2-approved .fc27-bottom-news .central-v3-tile-head button{background:transparent!important;border:0!important;color:#c8f932!important;font-weight:900!important;font-size:11px!important}
+@media(max-width:760px){
+  .fc27-central-v2-approved .central-v3-tasks .central-v3-task{grid-template-columns:minmax(0,1fr)!important}
+  .fc27-central-v2-approved .central-v3-tasks .central-v3-task button{grid-column:1!important;grid-row:auto!important;width:100%!important}
+  .fc27-central-v2-approved .fc27-bottom-news .fc27-news-item{grid-template-columns:minmax(0,1fr)!important}
+  .fc27-central-v2-approved .fc27-bottom-news .fc27-news-item small{grid-row:auto!important;justify-self:start!important}
+}
+
+/* Faixa vazia no topo da Central: a tela ja tem cabecalho proprio; submenu de um item unico some. */
+.game-shell>.game-subnav:has(>button:only-child){display:none!important}
+.game-shell:has(.fc27-central-v2-approved) .topbar{display:flex!important;justify-content:flex-end!important;align-items:center!important;min-height:0!important;margin:0 auto!important;padding:10px 0 0!important;width:min(calc(100% - 32px),1810px)!important;background:none!important;border:0!important}
+.game-shell:has(.fc27-central-v2-approved) .topbar>div:first-child{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important}
+.game-shell:has(.fc27-central-v2-approved) .topbar>.actions{display:flex!important;flex-wrap:wrap!important;justify-content:flex-end!important;gap:8px!important;margin:0!important}

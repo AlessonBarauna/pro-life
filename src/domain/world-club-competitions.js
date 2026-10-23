@@ -1206,6 +1206,9 @@
     const champion=order[0]||null;
     leagueState.championId=champion?.id||null;
     leagueState.status="finished";
+    // Estatisticas da edicao europeia atravessam o ano civil e so podem ser
+    // fechadas agora, junto do campeao real da tabela completa.
+    worldStats()?.closeLeague?.(s,leagueId,leagueState.season,champion?.id||null);
     // Integra o titulo mundial ao historico do treinador sem antecipar campeoes.
     const coachCareer=root.ProLifeCoachCareer||(typeof require==="function"?require("./coach-career.js"):null);
     coachCareer?.recordWorldLeagueTitle?.(s,{

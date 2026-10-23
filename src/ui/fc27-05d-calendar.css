@@ -56,3 +56,44 @@
 @media(max-width:900px){.pl-calendar-screen{grid-template-columns:1fr;grid-template-areas:"detail" "calendar" "agenda"}.pl-calendar-screen>.cal-day-panel{min-height:0}.pl-calendar-screen>.calendar-agenda-card,.pl-calendar-screen>.calendar-results-card{max-width:none;margin:0}.pl-calendar-screen>.calendar-results-card{grid-area:auto}.pl-calendar-screen .calendar-upcoming{grid-template-columns:1fr}.cal-selected-match>div span{min-height:50px}.pl-calendar-screen .calendar-toolbar{grid-template-columns:1fr auto}.pl-calendar-screen .calendar-month-tabs{overflow-x:auto;justify-content:flex-start}.calendar-month-tabs>span{display:none}}
 @media(max-width:680px){.pl-calendar-screen>.career-calendar{padding:12px;overflow:hidden}.pl-calendar-screen .calendar-grid,.pl-calendar-screen .calendar-weekdays{min-width:0!important}.pl-calendar-screen .calendar-day{min-height:58px;padding:5px}.pl-calendar-screen .calendar-event{height:6px;min-height:6px;padding:0;font-size:0;border-radius:3px}.pl-calendar-screen .calendar-event:before{content:""}.pl-calendar-screen .calendar-number{font-size:11px}.calendar-month-tabs>strong{min-width:120px}.pl-calendar-screen .calendar-toolbar h2{font-size:21px}.pl-calendar-screen .cal-filters{margin-bottom:9px}}
 @media(prefers-reduced-motion:reduce){.pl-calendar-screen .calendar-day{transition:none!important}}
+
+/* ===== Calendário estilo FC 27: escudos, jogo do clube em destaque, mundo recolhido ===== */
+.cal-crest{display:inline-grid;place-items:center;flex:0 0 auto;width:20px;height:20px;border-radius:5px;font-style:normal;font-size:8px;font-weight:900;color:#fff;background:hsl(var(--h,200) 45% 28%)}
+.cal-crest.has-crest{background:transparent}
+.cal-crest img{width:100%;height:100%;object-fit:contain;display:block}
+.pl-calendar-screen .calendar-day{min-height:96px}
+.pl-calendar-screen .calendar-event.cal-match{display:flex!important;align-items:center;justify-content:center;gap:6px;min-height:30px;margin:4px 0 2px;padding:4px 6px;border-radius:7px;background:linear-gradient(135deg,rgba(200,255,46,.2),rgba(200,255,46,.06))!important;box-shadow:inset 3px 0 var(--fc-lime,#c8ff2e)}
+.pl-calendar-screen .calendar-event.cal-match.played{background:linear-gradient(135deg,rgba(120,150,170,.22),rgba(120,150,170,.07))!important;box-shadow:inset 3px 0 #7f98a8}
+.pl-calendar-screen .calendar-event.cal-match b{font-size:12px;font-weight:900;color:#fff;letter-spacing:.02em;min-width:18px;text-align:center}
+.pl-calendar-screen .calendar-event.cal-match .cal-crest{width:22px;height:22px}
+.pl-calendar-screen .calendar-day.next-game .calendar-number::after{content:"PRÓXIMO";margin-left:6px;padding:2px 5px;border-radius:4px;background:var(--fc-lime,#c8ff2e);color:#10200a;font-size:7px;font-weight:900;letter-spacing:.08em;vertical-align:middle}
+.cal-selected-match>div{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+.cal-selected-match>div span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:104px;background:rgba(255,255,255,.045)}
+.cal-selected-match>div span .cal-crest{width:52px;height:52px;font-size:15px;border-radius:10px}
+.cal-selected-match>div span .cal-crest img{filter:drop-shadow(0 6px 10px rgba(0,0,0,.4))}
+.cal-world{margin-top:12px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.025)}
+.cal-world>summary{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;cursor:pointer;font-weight:800;font-size:12px;color:#c7d6df;list-style:none}
+.cal-world>summary::-webkit-details-marker{display:none}
+.cal-world>summary small{color:#8a989f;font-weight:600}
+.cal-world[open]>summary{border-bottom:1px solid rgba(255,255,255,.07)}
+.cal-world .cal-group{margin:0;border:0;border-bottom:1px solid rgba(255,255,255,.05)}
+.cal-world .cal-group summary{padding:8px 12px;font-size:11px}
+.cal-world .cal-line{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px;padding:4px 12px;font-size:11px}
+.cal-world .cal-line span{display:flex;align-items:center;gap:5px;min-width:0}.cal-world .cal-line span:last-child{justify-content:flex-end;text-align:right}
+.cal-world .cal-line .cal-crest{width:16px;height:16px}
+/* Copas e torneios: segunda faixa da navegação, sem cobrir o conteúdo da página. */
+.game-subnav{position:relative;overflow-x:auto;overflow-y:visible;align-items:flex-start}
+.game-subnav:has(.subnav-menu[open]){overflow:visible;padding-bottom:55px}
+.subnav-menu{position:static;display:inline-block;flex:0 0 auto}
+.subnav-menu>summary{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:7px 13px;cursor:pointer;list-style:none;font-weight:800;font-size:11px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;color:#9fb0ba;border-bottom:2px solid transparent;border-radius:0;transition:color .15s ease,background .15s ease}
+.subnav-menu>summary::-webkit-details-marker{display:none}
+.subnav-menu>summary:hover,.subnav-menu[open]>summary{color:#fff;background:rgba(255,255,255,.035)}
+.subnav-menu>summary span{font-size:9px;transition:transform .15s ease}
+.subnav-menu[open]>summary span{transform:rotate(180deg)}
+.subnav-menu.active>summary{color:var(--pl-accent,#c8f932);border-bottom-color:var(--pl-accent,#c8f932)}
+.subnav-pop{position:absolute;z-index:1;top:48px;left:clamp(16px,2vw,34px);right:clamp(16px,2vw,34px);display:flex;align-items:center;gap:6px;overflow-x:auto;padding:8px 0 1px;border-top:1px solid rgba(255,255,255,.06);background:transparent;box-shadow:none;scrollbar-width:thin;scrollbar-color:rgba(200,249,50,.35) transparent}
+.subnav-pop::-webkit-scrollbar{height:4px}.subnav-pop::-webkit-scrollbar-thumb{background:rgba(200,249,50,.35);border-radius:999px}
+.subnav-pop button{flex:0 0 auto;justify-content:center;text-align:center;min-height:32px;padding:7px 12px!important;border:1px solid rgba(255,255,255,.09)!important;border-radius:7px!important;background:rgba(255,255,255,.025)!important}
+.subnav-pop button:hover{border-color:rgba(200,249,50,.32)!important;background:rgba(255,255,255,.055)!important}
+.subnav-pop button.active{color:var(--pl-accent,#c8f932)!important;border-color:rgba(200,249,50,.48)!important;background:rgba(200,249,50,.10)!important}
+@media(max-width:760px){.game-subnav:has(.subnav-menu[open]){padding-bottom:59px}.subnav-pop{top:48px;left:12px;right:12px;padding-top:7px}.subnav-pop button{min-height:36px;padding-inline:11px!important}}

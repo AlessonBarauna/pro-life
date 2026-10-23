@@ -28,10 +28,29 @@
     const stateCards = states.map((state) => `<article class="competition-card"><span class="pill">ESTADUAL · ${esc(state.state)}</span><h3>${esc(state.name)}</h3><p>${state.entrants.length} clube(s) · grupos e mata-mata</p><small>${esc(state.status)}</small><b>${state.champion ? `Campeão: ${esc(state.champion)}` : "Título em disputa"}</b></article>`).join("");
     return `<section class="card"><div class="tag">PIRÂMIDE NACIONAL</div><h2 class="section">Competições disponíveis</h2><p class="muted">Séries A/B/C/D, Copa do Brasil e todos os estaduais representados são simulados. Os estaduais possuem fase de grupos, mata-mata e final conforme a quantidade de clubes disponível.</p><div class="competition-grid">${leagueCards(s)}<article class="competition-card"><span class="pill">COPA NACIONAL</span><h3>Copa do Brasil</h3><p>32 clubes · mata-mata</p><small>${esc(schedule.cup?.status || "Aguardando")}</small><b>${schedule.cup?.champion ? `Campeão: ${esc(schedule.cup.champion)}` : "Título em disputa"}</b></article>${stateCards}</div></section>${stateView(s, schedule.state)}${cupView(s, schedule.cup)}`;
   }
+  // Avatar do jogador e escudo do clube nas tabelas de estatísticas.
+  const initialsOf = (name) => String(name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+  function findPlayer(s, id, name) {
+    if (id === "hero") return s.person || { id, name };
+    return (s.internationalPlayers || []).find((p) => p.id === id) || (s.clubs || []).flatMap((c) => c.roster || []).find((p) => p.id === id) || { id: id || name, name };
+  }
+  function crestFor(s, clubId, name) {
+    const id = clubId || [...(s.clubs || []), ...(s.globalFootball?.clubs || [])].find((c) => c.name === name || c.shortName === name)?.id || null;
+    const C = root.ProLifeClubCrests;
+    const img = id && C ? (C.render?.(id, { size: "sm" }) || "") : "";
+    return String(img).startsWith("<img") ? `<i class="stat-crest has-crest">${img}</i>` : `<i class="stat-crest" aria-hidden="true">${esc(initialsOf(name))}</i>`;
+  }
+  function faceFor(s, id, name) {
+    const src = root.ProLifePlayerCard?.portrait?.(findPlayer(s, id, name));
+    return src ? `<span class="stat-face"><img src="${src}" alt="" loading="lazy" decoding="async"></span>` : `<span class="stat-face" aria-hidden="true">${esc(initialsOf(name))}</span>`;
+  }
+  function whoCell(s, row) {
+    return `<div class="stat-who">${faceFor(s, row.id, row.name)}<span><b>${esc(row.name)}</b><small>${crestFor(s, row.clubId, row.club)}${esc(row.club)}</small></span></div>`;
+  }
   function leaderTable(s, title, field, competitionId) {
     const S = root.ProLifeStatistics;
     const rows = S.leaders(s, field, 10, competitionId);
-    return `<section class="card"><h2>${esc(title)}</h2>${rows.length ? `<div class="tablewrap"><table><thead><tr><th>#</th><th>Atleta / clube</th><th>Total</th></tr></thead><tbody>${rows.map((player, index) => `<tr><td>${index + 1}</td><td>${esc(player.name)}<small>${esc(player.club)}</small></td><td><b>${player.value}</b></td></tr>`).join("")}</tbody></table></div>` : '<div class="empty">Sem registros nesta competição ainda.</div>'}</section>`;
+    return `<section class="card"><h2>${esc(title)}</h2>${rows.length ? `<div class="tablewrap"><table><thead><tr><th>#</th><th>Atleta / clube</th><th>Total</th></tr></thead><tbody>${rows.map((player, index) => `<tr><td>${index + 1}</td><td>${whoCell(s, player)}</td><td><b>${player.value}</b></td></tr>`).join("")}</tbody></table></div>` : '<div class="empty">Sem registros nesta competição ainda.</div>'}</section>`;
   }
   // 34F.31B - seletor mundial: competicoes brasileiras + ligas FC27 com partidas processadas (WorldStats); catalogo puro fica desabilitado.
   function worldList(s) {
@@ -120,7 +139,7 @@
     const WS = root.ProLifeWorldStats, N = root.ProLifeNames;
     const rows = WS.leaders(s, { leagueId, stat, limit: 10 });
     const val = (r) => stat === "rating" ? WS.format("nota", r.value) : WS.format(unit, r.value);
-    return `<section class="card"><h2>${esc(title)}</h2>${rows.length ? `<div class="tablewrap"><table><thead><tr><th>#</th><th>Atleta / clube</th><th>Pos.</th><th>Valor</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.name)}<small>${esc(N?.club ? N.club(s, r.clubId) : r.club || "")}</small></td><td>${esc(r.pos || "")}</td><td><b>${esc(val(r))}</b></td></tr>`).join("")}</tbody></table></div>` : '<div class="empty">Dados insuficientes nesta competição ainda.</div>'}</section>`;
+    return `<section class="card"><h2>${esc(title)}</h2>${rows.length ? `<div class="tablewrap"><table><thead><tr><th>#</th><th>Atleta / clube</th><th>Pos.</th><th>Valor</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td>${i + 1}</td><td>${whoCell(s, { id: r.id, name: r.name, clubId: r.clubId, club: N?.club ? N.club(s, r.clubId) : r.club || "" })}</td><td>${esc(r.pos || "")}</td><td><b>${esc(val(r))}</b></td></tr>`).join("")}</tbody></table></div>` : '<div class="empty">Dados insuficientes nesta competição ainda.</div>'}</section>`;
   }
   function worldLeaders(s, id) {
     const WS = root.ProLifeWorldStats, past = WS.history(s, { leagueId: id });
@@ -172,7 +191,7 @@
         const w=Number(r.w)||0,d=Number(r.d)||0,l=Number(r.l)||0;
         const season=r.season??x.fromSeason??"-";
         const titles=Number.isFinite(Number(r.titles))?Number(r.titles):(Number(r.pos)===1?1:0);
-        return `<tr><td>${esc(x.club||"-")}</td><td>${esc(season)}</td><td>${w+d+l}</td><td>${w}</td><td>${d}</td><td>${l}</td><td>${titles}</td></tr>`;
+        return `<tr><td><span class="stat-club">${crestFor(s, x.clubId, x.club)}${esc(x.club||"-")}</span></td><td>${esc(season)}</td><td>${w+d+l}</td><td>${w}</td><td>${d}</td><td>${l}</td><td>${titles}</td></tr>`;
       }).join(""):'<tr><td colspan="7">Nenhuma temporada concluida registrada.</td></tr>';
       return `<section class="card"><div class="tag">ESTATÍSTICAS DO TREINADOR</div><h2>${esc(club?.name||"Sem clube")} · Temporada ${s.season}</h2><p class="muted">Dados do clube e do histórico de carreira do treinador; não são estatísticas individuais de jogador.</p><div class="profile-data"><span>Jogos na liga <b>${played}</b></span><span>Vitórias <b>${w}</b></span><span>Empates <b>${d}</b></span><span>Derrotas <b>${l}</b></span><span>Pontos <b>${pts}</b></span><span>Aproveitamento em vitórias <b>${pct}%</b></span><span>Gols pró <b>${Number(st.gf)||0}</b></span><span>Gols contra <b>${Number(st.ga)||0}</b></span><span>Títulos registrados <b>${total.titles}</b></span></div></section>
       <section class="card section"><h2>Histórico da carreira</h2><div class="tablewrap"><table><thead><tr><th>Clube</th><th>Temporada</th><th>J</th><th>V</th><th>E</th><th>D</th><th>Títulos</th></tr></thead><tbody>${row}</tbody></table></div><p class="muted">V/E/D históricos são somados apenas a partir dos registros de passagem já salvos.</p></section>
