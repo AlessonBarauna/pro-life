@@ -306,6 +306,20 @@
     const gk=best(el.filter(r=>r.pos==="GOL"),(a,b)=>b.globalScore-a.globalScore||tie(a,b));push("goleiroMundo","Melhor goleiro do mundo",gk,gk&&gk.saves,"defesas");
     const gs=best(global.filter(r=>r.goals>0),(a,b)=>b.goals-a.goals||b.assists-a.assists||a.apps-b.apps||tie(a,b));push("artilheiroMundo","Artilheiro global",gs,gs&&gs.goals,"gols");
     const as=best(global.filter(r=>r.assists>0),(a,b)=>b.assists-a.assists||b.goals-a.goals||a.apps-b.apps||tie(a,b));push("assistenciasMundo","Líder global de assistências",as,as&&as.assists,"assistencias");
+    try{
+      const H=root.ProLifeWorldHonors,h=H?.awardsFor?.(s,null);
+      if(h?.awards?.length){
+        const drop=new Set(["melhorMundo","jovemMundo","goleiroMundo","artilheiroMundo","treinadorMundo"]);
+        const keep=out.filter(x=>!drop.has(x.cat));
+        const as=keep.filter(x=>x.cat==="assistenciasMundo");
+        return {awards:[...h.awards,...as],insufficient:[],honors:true,partial:h.partial};
+      }
+      if(H&&!h){
+        // antes da cerimonia nao existe "melhor do mundo": so os lideres de estatistica ficam visiveis
+        const drop=new Set(["melhorMundo","jovemMundo","goleiroMundo","artilheiroMundo"]);
+        return {awards:out.filter(x=>!drop.has(x.cat)),insufficient:[],pendingCeremony:true};
+      }
+    }catch(e){}
     const coach=coachesTop(s,1)[0];
     if(coach)out.push({...coach,cat:"treinadorMundo",label:"Melhor treinador",playerId:null,pos:"TEC",unit:"pontos"});else insufficient.push({cat:"treinadorMundo",label:"Melhor treinador"});
     return {awards:out,insufficient};
@@ -365,7 +379,25 @@
     if(ws.archive.length>ARCHIVE_LIMIT*6)ws.archive=ws.archive.slice(0,ARCHIVE_LIMIT*6);
     return 1;
   }
+  // Guarda um resumo compacto dos melhores jogadores da temporada que acabou de fechar. A Bola de Ouro olha
+  // a temporada europeia encerrada em maio, que ja foi arquivada e apagada quando a cerimonia acontece em outubro.
+  function savePool(s,leagueId,season){
+    const ws=state(s);if(!ws||!ws.leagues?.[leagueId])return 0;
+    const gs=r=>r.avg*10+r.goals*0.55+r.assists*0.35+r.motm*0.4+(r.pos==="GOL"?r.cs*0.4+r.saves*0.02:r.pos==="DEF"?r.cs*0.2:0);
+    const rows=rowsOf(s,leagueId).filter(r=>r.apps>=3).map(r=>({...r,gs:gs(r)}));
+    const keep=new Map();
+    for(const r of rows.slice().sort((a,b)=>b.gs-a.gs||(a.id<b.id?-1:1)).slice(0,30))keep.set(r.id,r);
+    for(const r of rows.filter(x=>x.pos==="GOL").sort((a,b)=>b.gs-a.gs).slice(0,6))keep.set(r.id,r);
+    for(const r of rows.filter(x=>x.id==="hero"))keep.set(r.id,r);
+    ws.pool=ws.pool&&typeof ws.pool==="object"?ws.pool:{};
+    const key=String(season),list=(ws.pool[key]||[]).filter(x=>x.leagueId!==leagueId);
+    for(const r of keep.values())list.push({id:r.id,name:r.name,pos:r.pos,age:r.age,clubId:r.clubId,club:r.club,leagueId,apps:r.apps,goals:r.goals,assists:r.assists,avg:+r.avg.toFixed(3),cs:r.cs,saves:r.saves,motm:r.motm,hero:r.id==="hero"||undefined,globalScore:+r.gs.toFixed(3)});
+    ws.pool[key]=list;
+    for(const k of Object.keys(ws.pool))if(Number(k)<Number(season)-2)delete ws.pool[k];
+    return keep.size;
+  }
   function closeLeague(s,leagueId,season,championId){
+    try{savePool(s,leagueId,season);}catch(e){}
     const ws=state(s),L=ws?.leagues?.[leagueId],added=archiveLeague(s,leagueId,season,championId);
     // Depois de arquivada, a proxima edicao precisa de acumuladores novos. Uma
     // segunda chamada continua idempotente porque o arquivo ja possui a chave.

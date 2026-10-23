@@ -12,6 +12,7 @@ test("jogos da seleção do herói espanhol aparecem como meus jogos no calendá
 });
 test("atuações recentes incluem jogos da seleção sem participação",()=>{
   const s=D.create({mode:"player",clubId:"gf_fc27_449",catalogVersion:"fc27_v1",origin:"blank",creation:{difficulty:"realistic",personality:"balanced",startMode:"club"}},7);
+  s.statistics.players.hero=Object.assign(s.statistics.players.hero||{},{appearances:3});
   s.nationalTeam=s.nationalTeam||{};
   s.nationalTeam.matches=[];
   s.nationalTeam.schedule=[{id:"x",day:300,opponent:"Chile",competition:"Amistoso",played:true,participated:false,brazil:2,other:0}];

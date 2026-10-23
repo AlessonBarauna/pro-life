@@ -3102,18 +3102,12 @@
     if (gap <= minGap) return null;
     return { fromDay: s.day, targetDay: Number(nc.date) - lead, firstMatchDay: Number(nc.date), competition: nc.competitionName || "" };
   }
-  function preseasonStep(s, targetDay, chunk = 7) {
-    let n = 0, error = null;
-    while (s.day < targetDay && n < chunk) {
-      try { advance(s, 1); }
-      catch (e1) {
-        try { autoResolveDecision(s); advance(s, 1); }
-        catch (e2) { error = String(e2?.message || e2); break; }
-      }
-      n++;
-    }
-    if (s.decision) { try { autoResolveDecision(s); } catch (e) { /* mantem a decisao para o jogador */ } }
-    return { done: s.day >= targetDay || !!error, day: s.day, error };
+  // A carreira abre direto na data: nada e simulado nos meses anteriores (sem jogos, convocacoes ou numeros
+  // que o protagonista nao viveu). O mundo se atualiza normalmente a partir do primeiro dia jogado.
+  function preseasonStep(s, targetDay) {
+    if (s.day < targetDay) s.day = targetDay;
+    s.careerStartDay = s.day;
+    return { done: true, day: s.day, error: null };
   }
   function advanceToDay(s, targetDay, options = {}) {
     if (!Number.isInteger(targetDay)) throw Error("Data de destino inválida.");

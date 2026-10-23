@@ -33,6 +33,10 @@
     const sel=all.find(r=>r.season===ui.season)||all[0];
     const pending=s.honors?.seasons?.[String(s.season)];
     const next=Hn?Hn.ceremonyDay(0):0;
+    const nom=pending&&!pending.revealed&&pending.nomsAnnounced?[...pending.ballon].sort((a,b)=>String(a.name).localeCompare(String(b.name),"pt-BR")):null;
+    if(!sel&&nom){
+      return `<section class="hn-card"><h3>Indicados à Bola de Ouro ${esc(pending.season)}</h3><p class="hn-note">Lista em ordem alfabética. O vencedor e a votação saem na cerimônia de 20 de outubro.</p><ul class="hn-nom">${nom.map(r=>`<li class="${r.hero?"hero":""}">${face(s,r,"sm")}<span class="hn-who"><b>${esc(r.name)}</b><small>${crest(r)}${esc(r.club||"")}</small></span></li>`).join("")}</ul></section>`;
+    }
     if(!sel){
       return `<section class="hn-empty"><h3>A cerimônia de ${esc(s.season)} ainda não aconteceu</h3><p>A Bola de Ouro e os troféus Kopa, Yashin, Gerd Müller, Cruyff e The Best são entregues em 20 de outubro. A votação usa o desempenho em campo, os títulos e o nível das competições.</p></section>`;
     }

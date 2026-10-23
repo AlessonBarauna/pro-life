@@ -6,6 +6,7 @@
   const TABS=[["geral","Visão geral"],["honras","Bola de Ouro"],["lendas","Lendas"],["competicoes","Competições"],["mundo","Mundo"],["carreira","Minha carreira"]];
   const ui={tab:"geral",league:null,season:"atual"};
   const WS=()=>root.ProLifeWorldStats;
+  const WH=()=>root.ProLifeWorldHonors;
   const POS_NAME={ATA:"Ataque",MEI:"Meio-campo",DEF:"Defesa",GOL:"Goleiro"};
   const val=(unit,v)=>WS().format(unit,v);
   const initials=name=>String(name||"?").split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join("").toUpperCase();
@@ -56,7 +57,8 @@
   function geral(s){
     const hid=heroLeagueId(s),W=WS(),world=W.competitions(s),arch=W.history(s).slice(0,40);
     const latestSeason=arch.length?arch[0].season:null;
-    const recent=latestSeason==null?[]:arch.filter(a=>a.season===latestSeason&&(a.leagueId==="world"||a.leagueId===hid)).flatMap(a=>a.awards.map(w=>({...w,_l:a.league})));
+    let hAw=null;try{hAw=latestSeason==null?null:WH()?.awardsFor?.(s,null,latestSeason);}catch(e){}
+    const recent=latestSeason==null?[]:arch.filter(a=>a.season===latestSeason&&(a.leagueId==="world"||a.leagueId===hid)).flatMap(a=>(a.leagueId==="world"&&hAw?.awards?.length?[...hAw.awards,...a.awards.filter(w=>w.cat==="assistenciasMundo")]:a.awards).map(w=>({...w,_l:a.league})));
     const recentHtml=recent.length?`<div class="wa-awards">${recent.slice(0,9).map(a=>awardCard(s,a,a._l)).join("")}</div>`:`<p class="wa-note">Os primeiros prêmios saem ao fim da temporada em andamento. Nenhum vencedor é definido antes disso.</p>`;
     let live="";
     if(hid&&isWorld(s,hid)){
@@ -64,11 +66,11 @@
       live=aw.awards.length?`<div class="wa-awards">${aw.awards.slice(0,6).map(a=>awardCard(s,a)).join("")}</div>`:`<p class="wa-note">Dados insuficientes: a liga ainda não atingiu a amostra mínima (${aw.min} jogos).</p>`;
     }else if(world.length){
       const g=W.leaders(s,{stat:"goals",limit:1})[0],a=W.leaders(s,{stat:"assists",limit:1})[0];
-      live=`<div class="wa-awards">${g?awardCard(s,{label:"Artilheiro global",playerId:g.id,clubId:g.clubId,name:g.name,club:g.club,pos:g.pos,unit:"gols",value:g.goals}):""}${a?awardCard(s,{label:"Líder global de assistências",playerId:a.id,clubId:a.clubId,name:a.name,club:a.club,pos:a.pos,unit:"assistencias",value:a.assists}):""}</div>`;
+      live=`<div class="wa-awards">${a?awardCard(s,{label:"Líder global de assistências",playerId:a.id,clubId:a.clubId,name:a.name,club:a.club,pos:a.pos,unit:"assistencias",value:a.assists}):""}${g?awardCard(s,{label:"Artilheiro global",playerId:g.id,clubId:g.clubId,name:g.name,club:g.club,pos:g.pos,unit:"gols",value:g.goals}):""}</div><p class="wa-note">Bola de Ouro, Kopa, Yashin, Gerd Müller e Cruyff só são revelados na cerimônia de 20 de outubro.</p>`;
     }
     const st=hid&&isWorld(s,hid)?W.heroStanding(s,hid):null;
     const stand=st?`<div class="wa-strip"><div><b>${st.apps}</b><span>jogos</span></div><div><b>${st.goals}</b><span>gols</span></div><div><b>${st.assists}</b><span>assistências</span></div><div><b>${st.apps?String(st.avg).replace(".",","):"—"}</b><span>nota média</span></div></div><p class="wa-note">Posição nos rankings da liga: ${st.rankGoals?`${st.rankGoals}º em gols`:"fora do ranking de gols"} · ${st.rankAssists?`${st.rankAssists}º em assistências`:"fora do ranking de assistências"} · ${st.rankRating?`${st.rankRating}º em nota`:"sem amostra de nota"}.</p>`:`<p class="wa-note">${hid&&isWorld(s,hid)?"Você ainda não entrou em campo nesta liga na temporada.":"Seus números oficiais estão em Estatísticas e na aba Competições."}</p>`;
-    const close=`Os prêmios são fechados no fim da temporada (dia ${365}); o histórico fica permanente.`;
+    const hs=s.honors?.seasons?.[String(s.season)];const close=hs?.revealed?`A Bola de Ouro ${s.season} já foi entregue (${hs.ballon?.[0]?.name||"—"}). Os demais prêmios fecham no fim da temporada.`:`A cerimônia da Bola de Ouro, Kopa, Yashin, Gerd Müller e Cruyff acontece em 20 de outubro; os demais prêmios fecham no fim da temporada.`;
     return `<div class="wa-grid"><section class="wa-card wide"><small>PRÊMIOS MAIS RECENTES</small>${recentHtml}</section><section class="wa-card wide"><small>DISPUTAS ATUAIS · TEMPORADA ${esc(s.season)}</small>${live}</section><section class="wa-card"><small>SITUAÇÃO DO PROTAGONISTA</small>${stand}</section><section class="wa-card"><small>PRÓXIMAS PREMIAÇÕES</small><p class="wa-note">${esc(close)} ${world.length} liga(s) do mundo geram estatísticas individuais nesta carreira.</p></section></div>`;
   }
 

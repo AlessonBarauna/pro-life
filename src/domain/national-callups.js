@@ -87,8 +87,11 @@
     const rank=better+1,quota=QUOTA[pos]||7;
     const reasons=[];
     if(injured)reasons.push("lesionado");if(suspended)reasons.push("suspenso");
-    const called=!injured&&!suspended&&rank<=quota;
-    if(!injured&&!suspended)reasons.push(called?`${rank}º entre ${same.length+1} em ${pos} (${quota} vagas)`:`${rank}º entre ${same.length+1} em ${pos} (${quota} vagas)`);
+    const hs=(s.statistics&&s.statistics.players&&s.statistics.players.hero)||{},natApps=Number(hs.byCompetition&&hs.byCompetition.nationalTeam&&hs.byCompetition.nationalTeam.appearances)||0;
+    const debuted=(Number(hs.appearances)||0)-natApps>0;   // so e convocado quem ja estreou como profissional
+    if(!debuted)reasons.push("ainda sem jogos oficiais pelo clube");
+    const called=debuted&&!injured&&!suspended&&rank<=quota;
+    if(debuted&&!injured&&!suspended)reasons.push(called?`${rank}º entre ${same.length+1} em ${pos} (${quota} vagas)`:`${rank}º entre ${same.length+1} em ${pos} (${quota} vagas)`);
     const role=!called?null:rank<=SHAPE[pos]?"Titular provável":rank<=SHAPE[pos]+2?"Disputa por posição":"Reserva";
     // lista de convocados: demais atletas reais disponiveis + o protagonista se escolhido, por posicao
     const list=[];

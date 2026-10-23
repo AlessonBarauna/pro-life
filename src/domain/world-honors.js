@@ -104,10 +104,26 @@
   function codeOf(v){try{return NI()?.codeOf?.(v)||null;}catch(e){return null;}}
   function build(s,opts={}){
     const W=WS();if(!W)return null;
-    const season=num(opts.season,s.season),rows=W.globalRows(s);
+    const season=num(opts.season,s.season);
+    let rows=W.globalRows(s);
+    // Temporada europeia que acabou em maio: ja foi arquivada, entao o resumo guardado no fechamento substitui o parcial da nova edicao.
+    const poolRows=s.globalFootball?.worldStats?.pool?.[String(season-1)]||[];
+    if(poolRows.length){
+      const euro=r=>s.globalFootball?.worldCompetitions?.leagues?.[r.leagueId]?.calendarMode==="european_v1";
+      const byId=new Map();
+      for(const r of rows)if(!euro(r))byId.set(r.id,r);
+      for(const r of poolRows){const prior=byId.get(r.id);if(!prior||r.apps>prior.apps)byId.set(r.id,{...r,eligible:true});}
+      rows=[...byId.values()];
+    }
     const ucl=uclResults(s,season),lib=continentalChampions(s,season),nat=nationalResults(s,season);
-    const natTop=new Map();   // codigo -> Set(ids) dos 26 melhores
-    const natSet=code=>{if(natTop.has(code))return natTop.get(code);const list=(GF()?.activePlayers?.(s)||[]).filter(p=>codeOf(p.nationality)===code).sort((a,b)=>num(b.ovr||b.overall)-num(a.ovr||a.overall)).slice(0,26).map(p=>p.id);const set=new Set(list);natTop.set(code,set);return set;};
+    let natTop=null;   // codigo -> Set(ids) dos 26 melhores, calculado uma unica vez e so se houver torneio de selecoes
+    const codeCache=new Map(),codeFast=nat=>{if(!codeCache.has(nat))codeCache.set(nat,codeOf(nat));return codeCache.get(nat);};
+    const natSet=code=>{
+      if(!natTop){natTop=new Map();const by=new Map();
+        for(const p of (GF()?.activePlayers?.(s)||[])){const c=codeFast(p.nationality);if(!c)continue;let a=by.get(c);if(!a)by.set(c,a=[]);a.push(p);}
+        for(const [c,list] of by)natTop.set(c,new Set(list.sort((x,y)=>num(y.ovr||y.overall)-num(x.ovr||x.overall)).slice(0,26).map(p=>p.id)));}
+      return natTop.get(code)||new Set();
+    };
     const leagueTitles=new Map();
     for(const l of s.globalFootball?.leagues||[]){const c=championOf(s,l.id);if(c)leagueTitles.set(c,l.id);}
     const cands=[];
@@ -117,7 +133,7 @@
       if(lw<.5&&r.id!=="hero"&&r.apps<10)continue;
       const p=playerOf(s,r.id)||{};
       const ovr=r.id==="hero"?num(opts.heroOvr,num(p.overall,num(p.ovr,60))):num(p.ovr||p.overall,60);
-      const code=codeOf(p.nationality)||null;
+      const code=codeFast(p.nationality)||null;
       // desempenho ponderado pelo nível da competição
       const perf=num(r.globalScore)*lw;
       // conquistas: so contam proporcionalmente a participacao
@@ -163,7 +179,7 @@
   const compact=(c,rank)=>({rank,id:c.id,name:c.name,pos:c.pos,age:c.age,clubId:c.clubId,club:c.club,leagueId:c.leagueId,nat:c.nat,natName:c.natName,hero:c.hero||undefined,points:c.points,score:+c.score.toFixed(1),apps:c.apps,goals:c.goals,assists:c.assists,avg:c.avg,saves:c.saves||undefined,cs:c.cs||undefined,reasons:c.reasons});
   function prevRanking(s,season){const h=s.honors?.seasons?.[String(season-1)];const m={};for(const r of h?.ballon||[])m[r.id]=r.points;return m;}
   function compute(s,api,opts={}){
-    const hs=s.honors=s.honors&&typeof s.honors==="object"?s.honors:{version:VERSION,seasons:{}};
+    const hs=opts.preview?{version:VERSION,seasons:{}}:(s.honors=s.honors&&typeof s.honors==="object"?s.honors:{version:VERSION,seasons:{}});
     if(!hs.seasons)hs.seasons={};
     const season=num(opts.season,s.season);
     if(hs.seasons[String(season)]&&!opts.force)return hs.seasons[String(season)];
@@ -183,7 +199,7 @@
     const hero=ballon.findIndex(c=>c.id==="hero");if(hero>=0)rec.hero={rank:hero+1,points:ballon[hero].points,score:+ballon[hero].score.toFixed(1),of:ballon.length};
     hs.seasons[String(season)]=rec;
     // finalistas ficam marcados (aposentadoria notavel)
-    try{for(const c of rec.ballon){const p=c.id==="hero"?null:GF()?.playerById?.(s,c.id);if(p)p.honorNominee=season;}}catch(e){}
+    if(!opts.preview)try{for(const c of rec.ballon){const p=c.id==="hero"?null:GF()?.playerById?.(s,c.id);if(p)p.honorNominee=season;}}catch(e){}
     // armazenamento compacto: temporadas antigas guardam so o pódio e o top-5
     const keys=Object.keys(hs.seasons).map(Number).sort((a,b)=>b-a);
     for(const k of keys.slice(12)){const r=hs.seasons[k];if(r&&!r.compact){for(const f of ["ballon","theBest","kopa","yashin","gerd"])r[f]=(r[f]||[]).slice(0,5).map(x=>({rank:x.rank,id:x.id,name:x.name,club:x.club,clubId:x.clubId,nat:x.nat,points:x.points,hero:x.hero}));r.compact=true;}}
@@ -191,7 +207,13 @@
   }
   // ---------- cerimônia ----------
   function daily(s,api,hooks={}){
-    if(s.day>=dayOfDate(s.season,9,20)&&!s.honors?.seasons?.[String(s.season)]){try{compute(s,api);}catch(e){}}
+    if(s.day>=dayOfDate(s.season,8,25)&&!s.honors?.seasons?.[String(s.season)]){try{compute(s,api);}catch(e){}}
+    const cur=s.honors?.seasons?.[String(s.season)];
+    if(cur&&!cur.nomsAnnounced&&!cur.revealed&&s.day>=dayOfDate(s.season,8,25)){
+      cur.nomsAnnounced=true;
+      try{api?.Career?.addArticle?.(s,{category:"MUNDO",title:`Bola de Ouro ${cur.season}: indicados divulgados`,body:`Os 30 indicados à Bola de Ouro ${cur.season} foram anunciados. O vencedor será revelado em 20 de outubro.${cur.hero?` Você está entre os indicados.`:""}`,eventId:`honors:noms:${cur.season}`});}catch(e){}
+      try{if(s.mode==="player"&&cur.hero)api?.Career?.addMessage?.(s,{category:"PREMIOS",sender:"Prêmios mundiais",subject:`Você é indicado à Bola de Ouro ${cur.season}`,body:"Seu nome está na lista dos 30 indicados. O resultado sai em 20 de outubro.",priority:"ALTA",eventId:`honors:noms:${cur.season}:hero`});}catch(e){}
+    }
     const hs=s.honors;if(!hs?.seasons)return 0;let n=0;
     for(const rec of Object.values(hs.seasons)){
       if(!rec||rec.revealed||s.day<num(rec.revealDay,Infinity))continue;
@@ -213,11 +235,28 @@
   // prévia da temporada em andamento (não persistida; cache por assinatura)
   let previewCache=null;
   function preview(s,api){
-    const W=WS();if(!W)return null;const sig=`${s.season}|${s.day}|${s.globalFootball?.worldStats?.matches}`;
+    const W=WS();if(!W)return null;const sig=`${s.season}|${Math.floor(s.day/7)}`;
     if(previewCache&&previewCache.s===s&&previewCache.sig===sig)return previewCache.v;
-    const clone={...s,honors:undefined};let v=null;try{v=compute(clone,api,{force:true});if(v)delete clone.honors;}catch(e){v=null;}
+    let v=null;try{v=compute(s,api,{force:true,preview:true});}catch(e){v=null;}
     previewCache={s,sig,v};return v;
   }
-  const api={VERSION,realUcl,compute,daily,latest,winners,preview,ceremonyDay,leagueWeight,build,vote};
+  // Cartões de prêmio mundial para a Central (mesmos dados da votação). Com cerimônia feita = vencedores; antes = líderes da corrida.
+  function awardsFor(s,api,season){
+    let rec=s.honors?.seasons?.[String(season??s.season)],partial=false;
+    if(!rec||!(rec.revealed||s.day>=num(rec.revealDay,Infinity)))return null;
+    if(!rec)return null;
+    const mk=(cat,label,r,unit,value)=>r?{cat,label:partial?`Líder · ${label}`:label,playerId:r.id,name:r.name,clubId:r.clubId,club:r.club,pos:r.pos,value,unit,honors:true,partial}:null;
+    const out=[
+      mk("melhorMundo","Bola de Ouro",rec.ballon?.[0],"pontos",rec.ballon?.[0]?.points),
+      mk("melhorMundoTB","The Best",rec.theBest?.[0],"pontos",rec.theBest?.[0]?.points),
+      mk("jovemMundo","Troféu Kopa",rec.kopa?.[0],"pontos",rec.kopa?.[0]?.points),
+      mk("goleiroMundo","Troféu Yashin",rec.yashin?.[0],"pontos",rec.yashin?.[0]?.points),
+      mk("artilheiroMundo","Troféu Gerd Müller",rec.gerd?.[0],"gols",rec.gerd?.[0]?.goals)
+    ].filter(Boolean);
+    const c=rec.cruyff?.[0];
+    if(c)out.push({cat:"treinadorMundo",label:partial?"Líder · Troféu Cruyff":"Troféu Cruyff",playerId:null,name:c.name,clubId:c.clubId,club:c.club,pos:"TEC",value:c.points,unit:"pontos",honors:true,partial});
+    return {awards:out,partial,revealed:!!rec.revealed};
+  }
+  const api={VERSION,realUcl,awardsFor,compute,daily,latest,winners,preview,ceremonyDay,leagueWeight,build,vote};
   root.ProLifeWorldHonors=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

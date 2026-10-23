@@ -21,8 +21,12 @@
         entries.push({ kind:"national", day:Number(f.day)||0, index:1000+index, match:{ day:f.day, competition:f.competition, opponent:f.opponent, brazil:f.brazil, other:f.other, season:2026+Math.floor((Number(f.day)||0)/365), starter:false, minutes:0, goals:0, assists:0, rating:null, bench:true, status:f.status||"Sem participação" } });
       });
     }
+    // Sem nenhum jogo do protagonista (clube ou seleção) não há "últimas atuações": o calendário geral não entra aqui.
+    const hs=(s.statistics&&s.statistics.players&&s.statistics.players.hero)||{};
+    if (s.mode === "player" && !(Number(hs.appearances)>0) && !(Number(s.nationalTeam?.caps)>0)) return [];
+    const startDay=Number(s.careerStartDay)||0;   // nada anterior a abertura da carreira entra no historico do protagonista
     const seen=new Set();
-    return entries.sort((a,b)=>b.day-a.day || (a.kind===b.kind ? a.index-b.index : a.kind.localeCompare(b.kind))).filter((entry)=>{
+    return entries.filter((entry)=>entry.day>=startDay).sort((a,b)=>b.day-a.day || (a.kind===b.kind ? a.index-b.index : a.kind.localeCompare(b.kind))).filter((entry)=>{
       const m=entry.match;
       const key=entry.kind==="national"
         ? `national:${m.day??""}:${m.opponent??""}`
