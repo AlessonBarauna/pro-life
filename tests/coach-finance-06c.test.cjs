@@ -5,6 +5,14 @@ const fs=require("node:fs");
 const path=require("node:path");
 const vm=require("node:vm");
 const src=fs.readFileSync(path.join(__dirname,"../src/domain/career.js"),"utf8");
+const CoachCareer=require("../src/domain/coach-career.js");
+function settleTransferReply(state){
+ const pending=state.coachCareer?.negotiations?.find(n=>n.status==="pending"&&n.response==="awaiting_reply");
+ assert.ok(pending,"resposta pendente esperada");
+ state.day=pending.replyDay;
+ assert.equal(CoachCareer.settleTransferReplies(state),1);
+ return pending;
+}
 test("Deferred transfer debts are paid only once when day advances",()=>{
  const root={};root.globalThis=root;
  vm.runInNewContext(src,root,{filename:"career.js"});
@@ -84,9 +92,13 @@ test("Manager negotiations survive JSON reload and failed purchases do not consu
   clubs:[{id:"a",name:"Origem",budget:100000,structure:90,roster:[p,...others],lineup:["p1"]},
    {id:"b",name:"Destino",budget:0,structure:90,roster:[],lineup:[]}]};
  const base=root.ProLifeApp.valuation(p);
- root.ProLifeApp.execute(state,"counterRecruit",{clubId:"a",playerId:"p1",offer:base/2});
+ root.ProLifeApp.execute(state,"counterRecruit",{clubId:"a",playerId:"p1",offer:base});
  state=JSON.parse(JSON.stringify(state));
  assert.equal(state.coachCareer.negotiations.length,1);
+ const beforeReply=JSON.stringify(state.clubs);
+ assert.throws(()=>root.ProLifeApp.execute(state,"recruit",{clubId:"a",playerId:"p1"}),/Aguarde a resposta/);
+ assert.equal(JSON.stringify(state.clubs),beforeReply,"proposta pendente não altera orçamento ou elenco");
+ settleTransferReply(state);
  assert.throws(()=>root.ProLifeApp.execute(state,"recruit",{clubId:"a",playerId:"p1"}),/Orçamento insuficiente/);
  assert.equal(state.coachCareer.negotiations[0].status,"pending");
  state.clubs[1].budget=base*3;
@@ -136,7 +148,7 @@ test("Coach negotiation centre renders five real finance sections from persisted
    V.setDealTab(tab);
    const html=V.render(state,D);
    assert.ok(html.includes('data-coach-deal-tab="'+tab+'"'),tab);
-   assert.ok(html.includes('aria-label="Categorias de negociações"'));
+   assert.ok(html.includes('aria-label="Telas independentes de transferências"'));
    for(const marker of markers)assert.ok(html.includes(marker),tab+" / "+marker);
  }
  V.setTab("central");
@@ -179,18 +191,21 @@ test("Multiround negotiations persist and close after three rounds without spend
  vm.runInNewContext(appSource,root,{filename:"game.js"});
  const p={id:"p",name:"Atleta",age:23,overall:70,pos:"ATA"};
  const source={id:"a",name:"Origem",roster:[p,...Array.from({length:18},(_,i)=>({id:"r"+i}))],budget:100000,structure:90,lineup:["p"]};
- const buyer={id:"b",name:"Destino",roster:[],budget:2000000,structure:90,lineup:[]};
+ const buyer={id:"b",name:"Destino",roster:[],budget:20000000,structure:90,lineup:[]};
  let state={mode:"coach",clubId:"b",day:1,season:2026,news:[],clubs:[source,buyer],coachCareer:{settings:{marketStrictness:"normal",installments:"on"}}};
  const original=buyer.budget;
  root.ProLifeApp.execute(state,"counterRecruit",{clubId:"a",playerId:"p",offer:20000});
  const id=state.coachCareer.negotiations[0].id;
  state=JSON.parse(JSON.stringify(state));
+ settleTransferReply(state);
  root.ProLifeApp.execute(state,"reviseCoachDeal",{id,offer:30000});
  assert.equal(state.coachCareer.negotiations[0].round,2);
  assert.equal(state.coachCareer.negotiations[0].history.length,2);
  state=JSON.parse(JSON.stringify(state));
- root.ProLifeApp.execute(state,"reviseCoachDeal",{id,offer:40000});
+ settleTransferReply(state);
+ root.ProLifeApp.execute(state,"reviseCoachDeal",{id,offer:10000000});
  assert.equal(state.coachCareer.negotiations[0].round,3);
+ settleTransferReply(state);
  assert.throws(()=>root.ProLifeApp.execute(state,"reviseCoachDeal",{id,offer:50000}),/três rodadas/);
  assert.equal(state.clubs[1].budget,original);
  assert.equal(state.clubs[0].roster.length,19);
@@ -219,7 +234,7 @@ test("Incoming club offers transfer a player exactly once, credit budget and per
  root.ProLife={club:(s,id=s.clubId)=>s.clubs.find(c=>c.id===id),overall:p=>p.overall,Career:{windowStatus:()=>({open:true}),transfer:()=>{transfers++;}}};
  vm.runInNewContext(appSource,root,{filename:"game.js"});
  const roster=Array.from({length:20},(_,i)=>({id:"p"+i,name:"Atleta "+i,age:25,overall:65,pos:"ATA"}));
- let state={mode:"coach",clubId:"a",day:10,season:2026,news:[],clubs:[{id:"a",name:"Meu Clube",budget:500000,roster,lineup:["p0"]},{id:"b",name:"Comprador",budget:2000000,roster:[],lineup:[]}],coachCareer:{settings:{marketStrictness:"normal"},sellOnClauses:[]}};
+ let state={mode:"coach",clubId:"a",day:10,season:2026,news:[],clubs:[{id:"a",name:"Meu Clube",budget:500000,roster,lineup:["p0"]},{id:"b",name:"Comprador",budget:20000000,roster:[],lineup:[]}],coachCareer:{settings:{marketStrictness:"normal"},sellOnClauses:[]}};
  root.ProLifeApp.execute(state,"generateSaleInterest",{});
  const offer=state.coachCareer.saleOffers[0];
  assert.equal(offer.status,"pending");
@@ -258,7 +273,7 @@ function saleFixture(windowOpen=true){
  const roster=Array.from({length:20},(_,i)=>({id:"p"+i,name:"Atleta "+i,age:25,overall:65,pos:"ATA"}));
  const state={mode:"coach",clubId:"a",day:10,season:2026,news:[],clubs:[
  {id:"a",name:"Vendedor",budget:500000,roster,lineup:["p0"]},
- {id:"b",name:"Comprador",budget:3000000,roster:[],lineup:[]},
+ {id:"b",name:"Comprador",budget:20000000,roster:[],lineup:[]},
  {id:"c",name:"Terceiro",budget:200000,roster:[],lineup:[]}],
  coachCareer:{settings:{marketStrictness:"normal"},sellOnClauses:[]}};
  return {root,state};
@@ -282,7 +297,7 @@ test("Incoming sales: buyer cannot be underfunded and duplicate offers have dist
  state.clubs[1].budget=1000;state.clubs[2].budget=1000;
  assert.throws(()=>root.ProLifeApp.execute(state,"generateSaleInterest",{}),/orçamento/);
  assert.equal(state.coachCareer.saleOffers,undefined);
- state.clubs[1].budget=3000000;
+ state.clubs[1].budget=20000000;
  root.ProLifeApp.execute(state,"generateSaleInterest",{});
  root.ProLifeApp.execute(state,"generateSaleInterest",{});
  assert.equal(new Set(state.coachCareer.saleOffers.map(o=>o.id)).size,2);
@@ -308,7 +323,8 @@ test("Incoming sales: closed window and loaned player are blocked without change
  assert.equal(closed.state.coachCareer.saleOffers.length,1);
  const future=closed.state.coachCareer.saleOffers[0];
  const unchanged=JSON.stringify(closed.state.clubs);
- assert.throws(()=>closed.root.ProLifeApp.execute(closed.state,"acceptSaleOffer",{id:future.id}),/Mercado fechado/);
+ closed.root.ProLifeApp.execute(closed.state,"acceptSaleOffer",{id:future.id});
+ assert.equal(future.status,"awaiting_window");
  assert.equal(JSON.stringify(closed.state.clubs),unchanged);
  const {root,state}=saleFixture();
  root.ProLifeApp.execute(state,"generateSaleInterest",{});
@@ -325,7 +341,7 @@ test("Incoming sales: legacy saves and player career remain isolated",()=>{
  root.ProLifeApp.execute(state,"generateSaleInterest",{});
  assert.equal(state.coachCareer.saleOffers.length,1);
  state.mode="player";
- assert.throws(()=>root.ProLifeApp.execute(state,"acceptSaleOffer",{id:state.coachCareer.saleOffers[0].id}),/Mercado fechado/);
+ assert.throws(()=>root.ProLifeApp.execute(state,"acceptSaleOffer",{id:state.coachCareer.saleOffers[0].id}),/apenas ao treinador/);
 });
 
 test("Coach profile uses manager-specific panels without player number or attributes",()=>{
@@ -419,6 +435,7 @@ test("Global scouting supports international catalog and moves player exactly on
  assert.equal(state.coachCareer.shortlist.length,1);
  root.ProLifeApp.execute(state,"counterRecruit",{clubId:"intlclub",playerId:"intl0",offer:5000000});
  assert.equal(state.coachCareer.negotiations.length,1);
+ settleTransferReply(state);
  root.ProLifeApp.execute(state,"recruit",{clubId:"intlclub",playerId:"intl0"});
  const restored=JSON.parse(JSON.stringify(state));
  assert.equal(restored.clubs[0].roster.filter(p=>p.id==="intl0").length,1);
@@ -498,7 +515,7 @@ test("Coach can negotiate outside transfer window but cannot recruit until windo
  const before=JSON.stringify(state.clubs);
  root.ProLifeApp.execute(state,"counterRecruit",{clubId:"a",playerId:"p0",offer:1000000});
  assert.equal(state.coachCareer.negotiations.length,1);
- assert.equal(state.coachCareer.negotiations[0].expiresDay,state.day+38);
+ assert.equal(state.coachCareer.negotiations[0].expiresDay,state.day+41);
  assert.equal(JSON.stringify(state.clubs),before);
  assert.throws(()=>root.ProLifeApp.execute(state,"recruit",{clubId:"a",playerId:"p0"}),/Janela de transferências fechada/);
  assert.equal(JSON.stringify(state.clubs),before);
@@ -523,7 +540,9 @@ test("Off-window manager deal negotiates, signs, and settles only once after ope
  const before=state.clubs[1].budget;
  root.ProLifeApp.execute(state,"counterRecruit",{clubId:"a",playerId:"p0",offer:160000});
  const n=state.coachCareer.negotiations[0];
- root.ProLifeApp.execute(state,"reviseCoachDeal",{id:n.id,offer:170000});
+ settleTransferReply(state);
+ root.ProLifeApp.execute(state,"reviseCoachDeal",{id:n.id,offer:5000000});
+ settleTransferReply(state);
  root.ProLifeApp.execute(state,"acceptCoachDeal",{id:n.id,paymentPlan:"upfront"});
  assert.equal(n.status,"awaiting_window");
  assert.equal(state.clubs[1].budget,before);
@@ -562,7 +581,7 @@ test("Manager team management offers drag, drop, and click-to-swap through lineu
 
 test("Drag substitution repairs a ten-player lineup containing injured goalkeeper",()=>{
  const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
- const start=app.indexOf("  function swapSquadPlayers("),end=app.indexOf('  document.addEventListener("dragstart"',start);
+ const start=app.indexOf("  function swapSquadPlayers("),end=app.indexOf('  document.addEventListener("click"',start);
  assert.ok(start>0&&end>start);
  const squad=Array.from({length:12},(_,i)=>({id:"p"+i,name:"Player "+i,pos:i<2?"GOL":"ATA",overall:70+i}));
  squad[0].injury={days:10};
@@ -638,7 +657,7 @@ test("Received offers show financial dashboard and urgent decision deadlines",()
  const ui=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
  assert.match(ui,/Resumo de propostas recebidas/);
  assert.match(ui,/Prazo próximo \(até 3 dias\)/);
- assert.match(ui,/URGENTE/);
+ assert.match(ui,/Urgente/);
  assert.match(ui,/Valor total oferecido/);
 });
 

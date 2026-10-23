@@ -692,6 +692,10 @@ case "tactic": {
         (s.news||[]).unshift({day:s.day,season:s.season,title:"Opção de compra exercida",body:player.name+" foi contratado em definitivo."});
         return s;
       }
+      case "payReleaseClause": {
+        if(s.mode!=="coach")throw Error("Disponível apenas ao treinador.");
+        return execute(s,"recruit",{clubId:data.clubId,playerId:data.playerId,paymentPlan:"upfront",dealType:"permanent",releaseClause:true});
+      }
       case "recruit": {
         const rules=s.mode==="coach"?s.coachCareer?.settings:null;
         if(rules?.firstWindow==="off" && Number(s.day||0)>=Number(rules.firstWindowStartDay||0) && Number(s.day||0)<59)
@@ -724,18 +728,30 @@ case "tactic": {
         const optionPrice=isLoan&&data.buyOption==="on"?Math.ceil(valuation(p)*1.1/1000)*1000:0;
         const plan=rules?.installments==="on"&&data.paymentPlan==="split"&&!isLoan?"split":"upfront";
         if(isLoan)fee=Math.ceil(fee*0.08*(duration/180)/1000)*1000;
+        const byClause=data.releaseClause===true&&!isLoan;
+        if(data.releaseClause===true&&isLoan)throw Error("A rescisória só vale para compra definitiva.");
         const negotiation=!isLoan?s.coachCareer?.negotiations?.find(n=>n.playerId===p.id&&n.sellerClubId===source.id&&n.buyerClubId===own.id&&(n.status==="pending"||n.status==="awaiting_window")&&(n.expiresDay==null||n.expiresDay>=s.day)):null;
-        if(negotiation)fee=negotiation.finalFee;
+        if(negotiation&&!byClause){
+          if(negotiation.response==="awaiting_reply")throw Error("Aguarde a resposta do clube antes de concluir a contratação.");
+          if(negotiation.status==="pending"&&negotiation.response!=="accepted")throw Error("O clube vendedor ainda não aceitou a proposta.");
+          const agreedFee=Number(negotiation.finalFee);
+          if(!Number.isSafeInteger(agreedFee)||agreedFee<=0||agreedFee>100000000000)
+            throw Error("Negociação sem valor final válido.");
+          fee=agreedFee;
+        }
+        if(byClause)fee=releaseClause(p);
         const agreedContract=negotiation?.contractOffer?.status==="accepted"?negotiation.contractOffer:null;
         const contractBonus=!isLoan&&agreedContract?agreedContract.bonus:0;
         const due=plan==="split"?Math.floor(fee/2):0,upfront=fee-due;
         if (own.budget < upfront+contractBonus) throw Error("Orçamento insuficiente para a entrada e bônus contratual.");
         // The deferred half becomes a persistent financial obligation, not free money.
-        if (D.overall(p) > own.structure + (rules?.marketStrictness==="strict"?7:rules?.marketStrictness==="flexible"?25:14))
+        if (!byClause && D.overall(p) > own.structure + (rules?.marketStrictness==="strict"?7:rules?.marketStrictness==="flexible"?25:14))
           throw Error(
             "O jogador recusou: busca um projeto com maior estrutura.",
           );
         if(negotiation)negotiation.status="accepted";
+        if(byClause&&negotiation)negotiation.status="superseded";
+        if(byClause&&Array.isArray(s.coachCareer?.negotiations))for(const n of s.coachCareer.negotiations)if(n!==negotiation&&n.playerId===p.id&&n.buyerClubId===own.id&&n.status==="pending")n.status="superseded";
         own.budget -= upfront+contractBonus;
         source.budget = (Number(source.budget)||0) + upfront;
         // Pay the previous selling club its agreed percentage from proceeds
@@ -784,7 +800,7 @@ case "tactic": {
         s.news.unshift({
           day: s.day,
           season: s.season,
-          title: isLoan ? "Jogador contratado por empréstimo" : "Reforço contratado",
+          title: isLoan ? "Jogador contratado por empréstimo" : byClause ? "Rescisória paga" : "Reforço contratado",
           body:
             p.name +
             " foi contratado por R$ " +
@@ -809,6 +825,19 @@ case "tactic": {
     const base = 39000000 * Math.pow(overall / 84, 9) * ageFactor * potentialFactor;
     return Math.max(100000, Math.round(base / 10000) * 10000);
   }
+  // Cláusula de rescisória (estilo FC): valor fixo por atleta; pagando o total, o clube é obrigado a liberar
+  // e o jogador aceita o acordo, independentemente do interesse. Determinístico a partir do id e do valor.
+  function releaseClause(p) {
+    const overall = Math.max(40, Math.min(99, Number(D.overall(p)) || 65));
+    const age = Math.max(14, Math.min(45, Number(p.age) || 26));
+    let h = 2166136261;
+    for (const ch of String(p.id)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+    const jitter = ((h >>> 0) % 41) / 100; // 0.00 a 0.40
+    const star = overall >= 88 ? 1.1 : overall >= 82 ? 0.6 : overall >= 75 ? 0.25 : 0;
+    const ageCut = age >= 34 ? 0.55 : age >= 31 ? 0.8 : 1;
+    const multiplier = (1.9 + star + jitter) * ageCut;
+    return Math.max(250000, Math.round(valuation(p) * multiplier / 100000) * 100000);
+  }
   // Salary uses a monthly storage unit for legacy compatibility; the UI may also show weekly.
   // Newly negotiated contracts use a financially coherent market-level monthly floor.
   function minimumMarketSalaryMonthly(p) {
@@ -831,7 +860,7 @@ case "tactic": {
     const suggestedBonus=Math.ceil(requiredSalary*Math.max(1,Math.min(5,Number(years)||3))*0.35/10000)*10000;
     return {requiredSalary,suggestedBonus,baseline};
   }
-  root.ProLifeApp = { execute, valuation, minimumMarketSalaryMonthly, coachContractRequirements };
+  root.ProLifeApp = { execute, valuation, releaseClause, minimumMarketSalaryMonthly, coachContractRequirements };
   if (typeof module !== "undefined" && module.exports)
     module.exports = root.ProLifeApp;
 })(typeof globalThis !== "undefined" ? globalThis : this);
