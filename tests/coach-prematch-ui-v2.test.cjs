@@ -6,7 +6,7 @@ const root=path.join(__dirname,"..");
 test("T1 browser loads match rating before coach career view",()=>{
  const html=fs.readFileSync(path.join(root,"index.html"),"utf8");
  const a=html.indexOf('src="src/domain/coach-match-rating.js"');
- const b=html.indexOf('src="src/ui/coach-career-view.js"');
+ const b=html.indexOf('src="src/ui/coach-career-view.js');
  assert.ok(a>=0&&b>a);
 });
 test("T1 published asset manifest includes match rating",()=>{

@@ -3,7 +3,7 @@ const engine=fs.readFileSync(path.join(__dirname,"../src/domain/engine.js"),"utf
 test("official coach action pipeline validates actual prepared starting XI",()=>{
  const prepare=engine.indexOf("preparePlayerLineup(s, rng, homeId, awayId);",engine.indexOf("function registerMatch("));
  const real=engine.indexOf("const onField=new Set(selected(team)",prepare);
- const simulate=engine.indexOf("const m = simulate(hc, ac, rng, s, eligibleActions)",real);
+ const simulate=engine.indexOf("const m = useLive ? staged.result : simulate(hc, ac, rng, s, eligibleActions)",real);
  assert.ok(prepare>=0&&real>prepare&&simulate>real);
 });
 test("scheduled bench player must remain eligible at kickoff",()=>{

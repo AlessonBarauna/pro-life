@@ -56,7 +56,12 @@ function lineup(club){
  const seen=new Set(starters.filter(Boolean));
  return {starters,bench:pool.filter(p=>!seen.has(p)).slice(0,12),formation:shape};
 }
-function frame(minute,home,away,officialActions=[]){
+function liveLineup(club,ids){
+ const wanted=new Set((Array.isArray(ids)?ids:[]).map(String));
+ const roster=players(club).filter(p=>wanted.has(String(p.id)));
+ return lineup({...club,roster,lineup:roster.map(p=>p.id)});
+}
+function frame(minute,home,away,officialActions=[],liveLineups=null){
  const t=Math.max(0,Number(minute)||0),possession=Math.floor(t/6)%2,phase=(t*.42)%1;
  const ball={x:clamp(10+phase*80,8,92),y:clamp(50+Math.sin(t*.39)*27,9,91)};
  const make=(club,side)=>SCHEMES[lineupCache[side].formation].map(([position,x,y],i)=>{
@@ -64,10 +69,11 @@ function frame(minute,home,away,officialActions=[]){
   const offset=possession===side?5:-3;
   px=clamp(px+(side===0?offset:-offset)+Math.sin(t*.37+i*1.73)*2.2,4,96);
   py=clamp(py+Math.cos(t*.42+i*.87)*3,6,94);
-  return {x:px,y:py,number:i+1,position,player};
- });
- const lineupCache=[lineup(home),lineup(away)];
- for(const action of officialActions){
+  return player||!Array.isArray(liveLineups?.[side])?{x:px,y:py,number:i+1,position,player}:null;
+ }).filter(Boolean);
+ const lineupCache=[home,away].map((club,side)=>Array.isArray(liveLineups?.[side])
+  ?liveLineup(club,liveLineups[side]):lineup(club));
+ for(const action of (liveLineups?[]:officialActions)){
   if(action.type!=="substitution"||action.minute>t)continue;
   const side=Number(action.side);
   if(side!==0&&side!==1)continue;

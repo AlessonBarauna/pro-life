@@ -1753,7 +1753,7 @@
         const bench=new Set(eligible.sort((a,b)=>(orderRank.get(String(a.id))??99999)-(orderRank.get(String(b.id))??99999))
           .slice(0,7).map(p=>String(p.id)));
         const participants=(last?.participation||{});
-        if(!outgoing||!incoming||((String(outgoing.pos)==="GOL")!==(String(incoming.pos)==="GOL"))||!bench.has(String(inId))||!participants[outId]||participants[outId].exitMinute<minute||
+        if(!outgoing||!incoming||((String(outgoing.pos)==="GOL")!==(String(incoming.pos)==="GOL"))||!bench.has(String(inId))||!participants[outId]||participants[outId].exitMinute<=minute||
           participants[inId]||incoming.injury||Number(incoming.suspension)>0||
           incoming._competitionSuspended||Number(incoming.condition??100)<=35)return false;
         actions.push({type:"substitution",side,minute:windowMinute,outId:String(outId),inId:String(inId)});
@@ -1766,9 +1766,11 @@
         const roster=Array.isArray(field?.roster)?field.roster:[];
         const participation=last?.participation||{};
         const starters=new Set((field.lineup||[]).map(String));
-        const incoming=new Set(actions.filter(a=>a.side===side&&a.minute<=minute).map(a=>a.inId));
-        const outgoing=new Set(actions.filter(a=>a.side===side&&a.minute<=minute).map(a=>a.outId));
-        const onField=new Set([...starters,...incoming].filter(id=>!outgoing.has(id)));
+        const participationEntries=Object.entries(participation).filter(([,part])=>part?.side===side);
+        const onField=participationEntries.length?new Set(participationEntries
+          .filter(([,part])=>Number(part.entryMinute??0)<=minute&&
+            (Number(part.exitMinute??94)>minute||(minute>=94&&Number(part.exitMinute??94)>=94)))
+          .map(([id])=>String(id))):starters;
         const rank=new Map((context?.coachCareer?.benchOrder||[]).map((id,i)=>[String(id),i]));
         const reserved=roster.filter(p=>p&&!starters.has(String(p.id))&&!p.injury&&
           !(Number(p.suspension)>0)&&!p._competitionSuspended&&Number(p.condition??100)>35)
@@ -1777,7 +1779,7 @@
             id:String(p.id),name:String(p.name||p.id),pos:String(p.pos||""),
             condition:Number(p.condition??100),rating:Number(last?.ratings?.[p.id]??0),
             minutes:Math.max(0,minute-Number(participation[p.id]?.entryMinute??0))
-          })),bench:reserved.filter(p=>!used[side].has(String(p.id))).map(p=>({
+          })),bench:reserved.filter(p=>!used[side].has(String(p.id))&&!participation[p.id]).map(p=>({
             id:String(p.id),name:String(p.name||p.id),pos:String(p.pos||""),
             condition:Number(p.condition??100)
           })),substitutions:substitutions[side],windows:windows[side].size,
@@ -1844,12 +1846,33 @@
   // Only the completed interactive official match may be committed, once.
   // Never persist a partially simulated match or a second set of career effects.
   const coachLiveResults=new WeakMap();
+  const coachLivePairKey=(value)=>value?[
+    String(value.home),String(value.away)
+  ].join("|"):"";
+  const coachLiveFixtureKey=(value)=>value?[
+    Number(value.date),String(value.home),String(value.away)
+  ].join("|"):"";
+  function coachLiveResultIssue(s,fixture,controller){
+    if(!s||s.mode!=="coach")return "A sessão ativa não pertence a uma carreira de treinador.";
+    if(!fixture)return "O compromisso oficial não foi localizado.";
+    if(!controller?.finished||!controller.result)return "A partida ainda não terminou no motor oficial.";
+    if(Number(fixture.date)!==Number(s.day)+1)return "A data da partida não corresponde ao próximo dia da carreira.";
+    const clubId=String(s.clubId??"");
+    if(![String(fixture.home),String(fixture.away)].includes(clubId))return "O clube do treinador não participa deste compromisso.";
+    if(coachLivePairKey(controller.result)!==coachLivePairKey(fixture))return "O resultado gerado pertence a outro compromisso.";
+    return null;
+  }
   function stageCoachLiveResult(s,fixture,controller){
-    if(!s||s.mode!=="coach"||!fixture||!controller?.finished||!controller.result)return false;
-    if(fixture.date!==s.day+1||![fixture.home,fixture.away].includes(s.clubId))return false;
-    if(controller.result.home!==fixture.home||controller.result.away!==fixture.away)return false;
-    if(coachLiveResults.has(s))return false;
-    coachLiveResults.set(s,{home:fixture.home,away:fixture.away,date:fixture.date,result:controller.result});
+    if(coachLiveResultIssue(s,fixture,controller))return false;
+    const key=coachLiveFixtureKey(fixture),pending=coachLiveResults.get(s);
+    // Repeated confirmation of the same completed overlay is idempotent. A
+    // different entry can only be left by an abandoned/failed prior overlay;
+    // it must not permanently block the next official match in this runtime.
+    if(pending&&coachLiveFixtureKey(pending)===key){
+      pending.result=controller.result;
+      return true;
+    }
+    coachLiveResults.set(s,{home:fixture.home,away:fixture.away,date:Number(fixture.date),result:controller.result});
     return true;
   }
   function discardCoachLiveResult(s){coachLiveResults.delete(s);}
@@ -1877,8 +1900,8 @@
       }
     }
     const staged=coachLiveResults.get(s);
-    const useLive=staged&&s.mode==="coach"&&staged.date===s.day&&
-      staged.home===homeId&&staged.away===awayId;
+    const useLive=staged&&s.mode==="coach"&&coachLiveFixtureKey(staged)===
+      coachLiveFixtureKey({date:s.day,home:homeId,away:awayId});
     if(useLive)coachLiveResults.delete(s);
     const m = useLive ? staged.result : simulate(hc, ac, rng, s, eligibleActions);
     if (s.mode === "player") {
@@ -2600,7 +2623,12 @@
       otherFixture:backgroundScore,
       heroFixture(match){
         const participating=club(s,s.clubId);
-        if(!participating?.roster||match.day<(participating.joinedDay??0))return backgroundScore(match);
+        const pending=coachLiveResults.get(s);
+        const isStagedLiveResult=pending&&coachLiveFixtureKey(pending)===coachLiveFixtureKey({date:match.day,home:match.homeId,away:match.awayId});
+        // A completed official overlay must always pass through registerMatch.
+        // Legacy joinedDay metadata can otherwise make the tournament mark the
+        // fixture as played with a background score while the career records no match.
+        if(!participating?.roster||(match.day<(participating.joinedDay??0)&&!isStagedLiveResult))return backgroundScore(match);
         const previousScope=worldMatchScope;
         worldMatchScope={s,ids:[match.homeId,match.awayId],cache:{}};
         try{
@@ -3407,6 +3435,7 @@
     recordDevelopment,
     simulate,
     stageCoachLiveResult,
+    coachLiveResultIssue,
     discardCoachLiveResult,
     simulateSteps,
     createCoachLiveController,
