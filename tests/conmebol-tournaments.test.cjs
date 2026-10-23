@@ -78,6 +78,53 @@ test("partida do clube local usa o registro oficial sem alterar a tabela da liga
   assert.ok(D.seasonCalendarEvents(s,fixture.day,fixture.day,{competitionId:"lib"}).some(x=>x.isHeroEvent));
 });
 
+test("treinador confirma uma partida ao vivo da Libertadores uma única vez",()=>{
+  const s=make(1906,"coach"),ed=D.Continental.edition(s,"lib");
+  const localId=ed.entrants.map(x=>x[0]).find(id=>s.clubs.some(c=>c.id===id));
+  assert.ok(localId);
+  s.clubId=localId;
+  const scheduled=ed.leagueSchedule.matches.find(m=>[m.homeId,m.awayId].includes(localId));
+  s.day=scheduled.day-1;
+  const fixture={home:scheduled.homeId,away:scheduled.awayId,date:scheduled.day,
+    round:scheduled.round,competitionId:"lib",competitionName:"CONMEBOL Libertadores",stage:scheduled.stage};
+  const prepared=D.prepareCoachWorldFixture(s,fixture);
+  assert.ok(prepared?.home?.roster?.length>=11&&prepared?.away?.roster?.length>=11);
+  const controller=D.createCoachLiveController(prepared.home,prepared.away,new D.Random(s.rng),s);
+  controller.advanceTo(94);
+  assert.equal(D.stageCoachLiveResult(s,fixture,controller),true);
+  const expected=[controller.result.hg,controller.result.ag];
+  s.matches=Array.from({length:800},(_,i)=>({date:-i-1,home:`old-home-${i}`,away:`old-away-${i}`,
+    events:[],participants:[[],[]],ratings:{},shots:[0,0],target:[0,0],xg:[0,0],possession:50}));
+  D.advance(s,1);
+  const official=s.matches.filter(m=>m.competitionId==="lib"&&m.date===scheduled.day&&
+    m.home===scheduled.homeId&&m.away===scheduled.awayId);
+  assert.equal(official.length,1);
+  assert.equal(s.matches.length,800,"o registro novo substitui o mais antigo no histórico cheio");
+  assert.deepEqual([official[0].hg,official[0].ag],expected);
+  assert.deepEqual([scheduled.hg,scheduled.ag],expected);
+});
+
+test("resultado ao vivo prevalece sobre joinedDay legado e entra no calendário oficial",()=>{
+  const s=make(1907,"coach"),ed=D.Continental.edition(s,"lib");
+  const localId=ed.entrants.map(x=>x[0]).find(id=>s.clubs.some(c=>c.id===id));
+  s.clubId=localId;
+  const scheduled=ed.leagueSchedule.matches.find(m=>[m.homeId,m.awayId].includes(localId));
+  s.day=scheduled.day-1;
+  D.club(s,localId).joinedDay=scheduled.day+30;
+  const fixture={home:scheduled.homeId,away:scheduled.awayId,date:scheduled.day,
+    round:scheduled.round,competitionId:"lib",competitionName:"CONMEBOL Libertadores",stage:scheduled.stage};
+  const prepared=D.prepareCoachWorldFixture(s,fixture);
+  const controller=D.createCoachLiveController(prepared.home,prepared.away,new D.Random(s.rng),s);
+  controller.advanceTo(94);
+  assert.equal(D.stageCoachLiveResult(s,fixture,controller),true);
+  D.advance(s,1);
+  const official=s.matches.filter(m=>m.competitionId==="lib"&&m.date===scheduled.day&&
+    m.home===scheduled.homeId&&m.away===scheduled.awayId);
+  assert.equal(official.length,1);
+  assert.deepEqual([official[0].hg,official[0].ag],[controller.result.hg,controller.result.ag]);
+  assert.deepEqual([scheduled.hg,scheduled.ag],[controller.result.hg,controller.result.ag]);
+});
+
 test("carreira antiga após a primeira janela não recebe resultados retroativos",()=>{
   const s=make(1904),ed=D.Continental.edition(s,"lib"),first=D.Continental.windows(s.season,"lib")[0];
   delete ed.leagueSchedule;delete ed.groups;ed.status="ready";s.day=first;

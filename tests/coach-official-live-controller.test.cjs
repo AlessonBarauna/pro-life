@@ -6,7 +6,8 @@ test("Official live controller uses the existing minute generator",()=>{
  assert.match(src,/function createCoachLiveController\(home,away,rng,context,initialActions=\[\]\)/);
  assert.match(src,/const runner=simulateSteps\(home,away,rng,context,actions\)/);
  assert.match(src,/get result\(\)\{return finished\?result:null;\}/);
- assert.match(src,/createCoachLiveController,\s*scheduleCoachActions/);
+ assert.match(src,/createCoachLiveController,/);
+ assert.match(src,/scheduleCoachActions,/);
  assert.match(src,/stageCoachLiveResult,/);
 });
 test("Official live controller rejects invalid and excessive substitutions",()=>{

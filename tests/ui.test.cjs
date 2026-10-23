@@ -161,22 +161,23 @@ for (const mode of ["player", "coach"]) {
       ]
     : [
         ["home", ["home"]],
-        ["profile", ["profile", "training", "finance"]],
-        ["competitions", ["league", "calendar", "matches", "competitions", "statistics", "awards"]],
+        ["profile", ["profile", "coachCareer", "training", "finance", "clubSponsorships"]],
+        ["competitions", ["competitions", "calendar", "matches", "league", "statistics", "awards"]],
         ["squad", ["squad"]],
         ["market", ["market", "proposals"]],
-        ["history", ["history", "life"]],
+        ["life", ["life", "offField"]],
+        ["history", ["history", "youth", "clubs"]],
         ["inbox", ["inbox"]],
         ["save", ["save"]],
       ];
   const globalLabels = [...w.document.querySelectorAll(".game-nav nav button")].map((button) => button.textContent.trim());
-  assert.equal(globalLabels.length, mode === "player" ? 6 : 9, "A navegacao principal deve expor apenas as areas prioritarias");
+  assert.equal(globalLabels.length, 6, "A navegacao principal deve expor apenas as seis areas prioritarias");
   const expectedLabels = mode === "player"
     ? ["Central", "Meu Jogador", "Elenco", "Temporada", "Mercado", "Vida"]
-    : ["Central", "Treinador", "Elenco", "Calendário", "Competições", "Mercado", "Treinamento", "Vida", "Caixa"];
+    : ["Central", "Treinador", "Elenco", "Temporada", "Mercado", "Vida"];
   for (const label of expectedLabels)
     assert.ok(globalLabels.some((item) => item.includes(label)), `atalho global ${label}`);
-  if (mode === "player") for (const removed of ["Calendário", "Competições", "Treinamento", "Caixa"])
+  for (const removed of ["Calendário", "Competições", "Treinamento", "Caixa"])
     assert.ok(!globalLabels.some((item) => item === removed), `atalho redundante ${removed}`);
   for (const [group, pages] of navigation) {
     click(w, `.game-nav [data-page="${group}"]`);

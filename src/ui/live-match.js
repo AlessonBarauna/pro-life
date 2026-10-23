@@ -5,7 +5,9 @@
   function scoreAt(m,min){let h=0,a=0;(m.events||[]).forEach(e=>{if(e.type==="goal"&&e.minute<=min)e.side===0?h++:a++;});return [h,a];}
   function dot(i,side,min){const row=Math.floor(i/3),col=i%3;const baseX=side?58:12;const x=baseX+col*8+Math.sin((min+i*7)*.17)*3;const y=10+row*21+Math.cos((min+i*5)*.13)*5;return `<i class="lm-player lm-${side?'away':'home'}" style="left:${x}%;top:${y}%">${i+1}</i>`;}
   function coachPitch(min,home,away){
-    const frame=root.ProLifeMatchPitchV2?.frame?.(min,home,away,session?.officialControl?.actions||[]);
+    const live=session?.officialControl;
+    const liveLineups=live?[live.snapshot(0)?.players?.map(p=>p.id)||[],live.snapshot(1)?.players?.map(p=>p.id)||[]]:null;
+    const frame=root.ProLifeMatchPitchV2?.frame?.(min,home,away,live?.actions||[],liveLineups);
     if(!frame)return null;
     const dots=(list,side)=>list.map(p=>{
       const id=root.ProLifeMatchIdentityV2?.identify?.(p.player?.id,home,away);

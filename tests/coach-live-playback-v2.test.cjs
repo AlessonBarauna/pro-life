@@ -13,13 +13,16 @@ function harness(){
     body,
     createElement(){return overlay;},
     getElementById(id){return id==="live-match-overlay"?overlay:null;},
-    addEventListener(type,handler){handlers[type]=handler;}
+    addEventListener(type,handler){(handlers[type]||=[]).push(handler);}
   };
   const sandbox={document,setInterval(fn){sandbox.tick=fn;return 1;},clearInterval(){},window:null,globalThis:null};
   sandbox.globalThis=sandbox;
   sandbox.ProLifeCoachMatchCenterV2=require("../src/ui/coach-match-center-v2.js");
   vm.runInNewContext(source,sandbox,{filename:"live-match.js"});
-  const click=(dataset,attributes=[])=>handlers.click({target:{closest:()=>({dataset,hasAttribute:name=>attributes.includes(name)})}});
+  const click=(dataset,attributes=[])=>{
+    const event={target:{closest:()=>({dataset,hasAttribute:name=>attributes.includes(name)})}};
+    for(const handler of handlers.click||[])handler(event);
+  };
   return {overlay,sandbox,click,api:sandbox.ProLifeLiveMatch};
 }
 const match={competitionName:"Liga",events:[{type:"goal",minute:5,side:0,text:"Gol!"}],shots:[9,4],xg:[1.8,.7]};

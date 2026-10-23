@@ -446,10 +446,13 @@
         : [
             ["home", "Início", [["home", "Central"]]],
             ["inbox", "Caixa", [["inbox", "Mensagens"]]],
-            ["profile", "Treinador", [["profile", "Perfil"], ["coachCareer", "Carreira e Vestiário"], ["training", "Desenvolvimento"], ["finance", "Diretoria"], ["clubSponsorships", "Patrocínios"]]],
-            ["market", "Transferências", [["market", "Mercado"], ["proposals", "Propostas"]]],
-            ["league", "Temporada", [["league", "Campeonatos"], ["calendar", "Calendário"], ["matches", "Partidas"], ["competitions", "Competições"], ["englishCups", "Copas Inglesas"], ["champions", "Champions League"], ["europa", "Europa League"], ["conference", "Conference League"], ["libertadores", "Libertadores"], ["sudamericana", "Sul-Americana"], ["statistics", "Estatísticas"], ["awards", "Prêmios"]]],
-            ["history", "Mundo", [["history", "Mundo vivo"], ["worldCompetitions", "Competições Mundiais"], ["youth", "Base e Craques"], ["clubs", "Clubes"], ["life", "Decisões"], ["offField", "Vida profissional"]]],
+            ["profile", "Treinador", [["profile", "Visão geral"], ["coachCareer", "Carreira e Vestiário"], ["training", "Desenvolvimento"], ["finance", "Diretoria"], ["clubSponsorships", "Patrocínios"]]],
+            ["squad", "Elenco", []],
+            ["competitions", "Temporada", [["competitions", "Visão geral"], ["calendar", "Calendário"], ["matches", "Partidas"], ["league", "Campeonatos"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["worldCompetitions", "Mundo"], ["englishCups", "Copas Inglesas"], ["champions", "Champions League"], ["europa", "Europa League"], ["conference", "Conference League"], ["libertadores", "Libertadores"], ["sudamericana", "Sul-Americana"]]],
+            ["market", "Mercado", [["market", "Visão geral"], ["proposals", "Propostas"]]],
+            ["life", "Vida", [["life", "Visão geral"], ["offField", "Vida profissional"]]],
+            ["history", "Mundo", [["history", "Mundo vivo"], ["youth", "Base e Craques"], ["clubs", "Clubes"]]],
+            ["national", "Seleção", []],
             ["save", "Saves", [["save", "Gerenciar saves"]]],
           ],
       allPages = groups.flatMap((g) => g[2]),
@@ -483,14 +486,11 @@
         ]
       : [
           ["home", "Central", "⌂", ["home"]],
-          ["profile", "Treinador", "◉", ["profile", "coachCareer", "finance", "clubSponsorships"]],
-          ["squad", "Elenco", "⬡", ["squad", "lineup"]],
-          ["calendar", "Calendário", "□", ["calendar", "matches"]],
-          ["competitions", "Competições", "◇", ["league", "competitions", "englishCups", "champions", "europa", "conference", "libertadores", "sudamericana", "worldCompetitions", "statistics", "awards"]],
+          ["profile", "Treinador", "◉", ["profile", "coachCareer", "training", "finance", "clubSponsorships"]],
+          ["squad", "Elenco", "⬡", ["squad"]],
+          ["competitions", "Temporada", "◇", ["calendar", "matches", "league", "competitions", "statistics", "awards", "worldCompetitions", "englishCups", "champions", "europa", "conference", "libertadores", "sudamericana"]],
           ["market", "Mercado", "↔", ["market", "proposals", "clubs"]],
-          ["training", "Treinamento", "▲", ["training"]],
-          ["life", "Vida", "＋", ["life", "offField", "finance", "history", "youth"]],
-          ["inbox", "Caixa", "✉", ["inbox"]],
+          ["life", "Vida", "＋", ["life", "offField"]],
         ];
     const navButton = ([id, label, icon, pages]) => {
       const active = pages.includes(page), count = id === "inbox" ? unread : id === "market" ? offerCount : 0;
@@ -498,7 +498,7 @@
     };
     const clubCrest = c?.id && window.ProLifeClubCrests ? window.ProLifeClubCrests.render(c.id, { size:"sm" }) : "";
     $("#app").innerHTML =
-      `<div class="game-shell"><header class="game-nav"><button type="button" class="brand" data-page="home" aria-label="PRO LIFE · Central">PRO<span>LIFE</span></button><nav aria-label="Navegação principal">${quickNav.map(navButton).join("")}</nav><details class="global-more"><summary aria-label="Mais áreas">•••</summary><div>${state.mode==="player"?'<button type="button" data-page="inbox">Caixa</button>':""}<button type="button" data-page="national">Seleção</button><button type="button" data-page="history">Mundo</button><button type="button" data-page="save">Saves</button>${state.mode==="coach"?'<button type="button" data-coach-settings-open>Configurações da carreira</button>':""}</div></details><div class="club-chip">${clubCrest ? `<span class="club-chip-crest">${clubCrest}</span>` : ""}<span><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b><span class="sx-line">${esc(window.ProLifeShellExtras?.chipLine(state,D)||"")}</span></span></div>${window.ProLifeShellExtras?window.ProLifeShellExtras.bell(window.ProLifeShellExtras.pending(state,D)):""}</header><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${page === "englishCups" ? "FA Cup · EFL Cup · FA Community Shield" : page === "sudamericana" ? "CONMEBOL Sul-Americana · grupos, playoffs e fase eliminatória" : page === "libertadores" ? "CONMEBOL Libertadores · grupos e fase eliminatória" : page === "conference" ? "UEFA Conference League · classificação, rodadas e fase eliminatória" : page === "europa" ? "UEFA Europa League · classificação, rodadas e fase eliminatória" : page === "champions" ? "UEFA Champions League · classificação, rodadas e fase eliminatória" : (topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado")}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${subnavShell()}${views[page]()}<div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
+      `<div class="game-shell"><header class="game-nav"><button type="button" class="brand" data-page="home" aria-label="PRO LIFE · Central">PRO<span>LIFE</span></button><nav aria-label="Navegação principal">${quickNav.map(navButton).join("")}</nav><details class="global-more"><summary aria-label="Mais áreas">•••</summary><div><button type="button" data-page="inbox">Caixa</button><button type="button" data-page="national">Seleção</button><button type="button" data-page="history">Mundo</button><button type="button" data-page="save">Saves</button>${state.mode==="coach"?'<button type="button" data-coach-settings-open>Configurações da carreira</button>':""}</div></details><div class="club-chip">${clubCrest ? `<span class="club-chip-crest">${clubCrest}</span>` : ""}<span><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b><span class="sx-line">${esc(window.ProLifeShellExtras?.chipLine(state,D)||"")}</span></span></div>${window.ProLifeShellExtras?window.ProLifeShellExtras.bell(window.ProLifeShellExtras.pending(state,D)):""}</header><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${page === "englishCups" ? "FA Cup · EFL Cup · FA Community Shield" : page === "sudamericana" ? "CONMEBOL Sul-Americana · grupos, playoffs e fase eliminatória" : page === "libertadores" ? "CONMEBOL Libertadores · grupos e fase eliminatória" : page === "conference" ? "UEFA Conference League · classificação, rodadas e fase eliminatória" : page === "europa" ? "UEFA Europa League · classificação, rodadas e fase eliminatória" : page === "champions" ? "UEFA Champions League · classificação, rodadas e fase eliminatória" : (topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado")}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${subnavShell()}${views[page]()}<div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
     mountInternationalOfferPreference();
     window.ProLifeTargetClubSelector?.mount?.(state,D,Career);
     mountAvatar();
@@ -9651,17 +9651,21 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
               return "A partida ainda não terminou.";
             }
             if(!D.stageCoachLiveResult?.(state,next,live)){
-              return "Resultado oficial indisponível. Nenhuma partida foi confirmada.";
+              return D.coachLiveResultIssue?.(state,next,live)||
+                "Resultado oficial indisponível. Nenhuma partida foi confirmada.";
             }
-            const prior=(state.matches||[]).length;
             try{D.advance(state,1);}
             catch(error){
               D.discardCoachLiveResult?.(state);
               return "Erro ao concluir a partida: "+error.message;
             }
             D.discardCoachLiveResult?.(state);
-            const played=(state.matches||[]).find(m=>m.date===state.day&&m.home===next.home&&m.away===next.away);
-            if(!played||(state.matches||[]).length===prior){
+            const played=(state.matches||[]).find(m=>Number(m.date)===Number(state.day)&&
+              String(m.home)===String(next.home)&&String(m.away)===String(next.away));
+            // The history is capped at 800 entries. At the cap a successful
+            // registration replaces the oldest item, so list length cannot
+            // be used as proof that the new official match was persisted.
+            if(!played){
               return "Partida não registrada no calendário. Confira os resultados.";
             }
             persist();render();return true;

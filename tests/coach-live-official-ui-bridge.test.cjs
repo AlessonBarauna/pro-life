@@ -13,7 +13,7 @@ test("Interactive coach branch does not advance career before finishing match",(
  const part=app.slice(start,end);
  assert.match(part,/ProLifeLiveMatch\.start/);
  assert.match(part,/onOfficialFinish:/);
- assert.match(part,/D\.scheduleCoachActions\(state,next,all\)/);
+ assert.match(part,/D\.stageCoachLiveResult\?\.\(state,next,live\)/);
  assert.match(part,/D\.advance\(state,1\)/);
  assert.ok(part.indexOf('D.advance(state,1)')>part.indexOf('onOfficialFinish:'));
 });
