@@ -3137,6 +3137,23 @@
   function preseasonStep(s, targetDay) {
     if (s.day < targetDay) s.day = targetDay;
     s.careerStartDay = s.day;
+    // The initial jump deliberately does not simulate the skipped months. Keep
+    // future-facing pointers aligned with the new career start, though, or the
+    // save validator sees the first international window (day 74) in the past.
+    // Do not call NationalTeam.init() here: it may process tournament history,
+    // which would defeat the direct-to-preseason behavior.
+    if (s.nationalTeam && typeof s.nationalTeam === "object") {
+      const nextScheduled = (s.nationalTeam.schedule || []).find(
+        (match) =>
+          match &&
+          !match.played &&
+          Number.isFinite(Number(match.day)) &&
+          Number(match.day) >= s.day,
+      );
+      s.nationalTeam.nextWindow = nextScheduled
+        ? Number(nextScheduled.day)
+        : (NationalTeam?.nextWindowDay?.(s) ?? s.day);
+    }
     return { done: true, day: s.day, error: null };
   }
   function advanceToDay(s, targetDay, options = {}) {

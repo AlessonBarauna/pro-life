@@ -132,7 +132,7 @@ test("27 manager first-club search filters the canonical club catalog",()=>{
  assert.deepEqual([...form.elements.clubId.options].map(o=>o.value),["","b","c"]);
  form.elements.clubSearch.value="Alfa";
  form.elements.clubSearch.dispatchEvent(new dom.window.Event("input",{bubbles:true}));
- assert.deepEqual([...form.elements.clubId.options].map(o=>o.value),["","c"]);
+ assert.deepEqual([...form.elements.clubId.options].map(o=>o.value),["","a","c"],"a busca por nome é global e limpa o filtro de competição");
  form.elements.leagueFilter.value="";
  form.elements.leagueFilter.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
  assert.deepEqual([...form.elements.clubId.options].map(o=>o.value),["","a","c"]);
@@ -225,6 +225,8 @@ test("FC-inspired coach selection uses human league labels and clickable real cl
  vm.runInNewContext(avatar2d,sandbox,{filename:"coach-avatar-2d.js"});vm.runInNewContext(creator,sandbox,{filename:"coach-creator.js"});
  sandbox.ProLifeCoachCreator.mount({D:{create:()=>({clubs:[{id:"a",name:"Clube Local"}]})},esc:String,toast:()=>{},busy:(_m,fn)=>fn(),onStart:()=>{},onBack:()=>{}});
  const form=dom.window.document.querySelector("#coach-creation-form");
+ form.elements.countryFilter.value="";
+ form.elements.countryFilter.dispatchEvent(new dom.window.Event("change",{bubbles:true}));
  const league=[...form.elements.leagueFilter.options].find(o=>o.value==="gf_fc27_la_liga");
  assert.ok(league);assert.equal(league.textContent,"La Liga");
  form.elements.clubSearch.value="BeTiS";

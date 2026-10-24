@@ -1,6 +1,7 @@
 "use strict";
 const test=require("node:test"),assert=require("node:assert/strict");
 const D=require("../src/domain/engine.js");global.ProLife=D;
+const S=require("../src/infrastructure/save.js");
 const make=()=>D.create({mode:"player",clubId:"gf_fc27_449",catalogVersion:"fc27_v1",origin:"blank",creation:{difficulty:"realistic",personality:"balanced",startMode:"club"}},7);
 test("carreira europeia abre direto na data, sem simular a pré-temporada",()=>{
   const s=make(),plan=D.preseasonPlan(s),before=s.globalFootball?.worldStats?.matches||0;
@@ -9,6 +10,15 @@ test("carreira europeia abre direto na data, sem simular a pré-temporada",()=>{
   assert.equal(s.globalFootball?.worldStats?.matches||0,before,"nenhum jogo simulado");
   assert.equal((s.matches||[]).length,0);
   assert.equal(s.nationalTeam.caps||0,0);assert.equal((s.nationalTeam.matches||[]).length,0);
+  assert.ok(s.nationalTeam.nextWindow>=s.day,"a próxima janela internacional acompanha a nova data inicial");
+  assert.doesNotThrow(()=>S.validate(s),"a carreira saltada continua sendo um save válido");
+});
+test("treinador em clube europeu pode salvar depois do salto direto para a pré-temporada",()=>{
+  const s=D.create({mode:"coach",name:"Treinador",city:"Mogi",age:35,clubId:"gf_fc27_449",catalogVersion:"fc27_v1"},17);
+  const plan=D.preseasonPlan(s);assert.ok(plan);
+  D.preseasonStep(s,plan.targetDay);
+  assert.ok(s.nationalTeam.nextWindow>=s.day);
+  assert.doesNotThrow(()=>S.validate(s));
 });
 test("sem estreia como profissional não há convocação",()=>{
   const s=make(),plan=D.preseasonPlan(s);D.preseasonStep(s,plan.targetDay);
