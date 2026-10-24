@@ -118,7 +118,7 @@ function render(ctx){
  for(const country of [...new Set(clubs.map(c=>String(c.country||"Brasil")))].sort((a,b)=>a.localeCompare(b,"pt-BR"))){const option=document.createElement("option");option.value=country;option.textContent=country;countrySelect.appendChild(option);}
  const leagueLabels=new Map(clubs.map(c=>[String(c.leagueId||""),String(c.leagueName||c.leagueId||"Liga não informada")]));
  const originalClubOptions=[...form.elements.clubId.options].map(option=>({value:option.value,text:option.textContent}));
- function normalize(value){return String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLocaleLowerCase("pt-BR");}
+ function normalize(value){return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR");}
  function rebuildLeagueOptions(){
    const old=leagueSelect.value,country=countrySelect.value;
    const options=[...new Set(clubs.filter(c=>c.active!==false&&(!country||String(c.country||"Brasil")===country))
@@ -260,7 +260,7 @@ function render(ctx){
   const financial=app.querySelector("#coach-finance-preview");if(financial)financial.textContent=financePreview();
   const detail=app.querySelector("#coach-confirm-details");
   if(detail){
-    detail.textContent="Treinador: "+(form.elements.name.value.trim()||"Não informado")+" · "+(form.elements.nationality.value.trim()||"Brasil")+" · Idade: "+form.elements.age.value+" · Projeto: "+(club?.name||"Propostas de clubes")+" · Aparência: "+form.elements.outfit.options[form.elements.outfit.selectedIndex].text+" · Treino: "+form.elements.focus.value+" · Tática: "+form.elements.tactic.value+" · "+financePreview()+" · Base FC 27 · Seed: "+(form.elements.seed.value||"automática");
+    detail.textContent="Treinador: "+(form.elements.name.value.trim()||"Não informado")+" · "+(form.elements.nationality.value.trim()||"Brasil")+" · Idade: "+form.elements.age.value+" · Projeto: "+(club?.name||"Propostas de clubes")+" · Aparência: "+(form.elements.outfit?.selectedOptions?.[0]?.text||"Padrão")+" · Treino: "+form.elements.focus.value+" · Tática: "+form.elements.tactic.value+" · "+financePreview()+" · Base FC 27 · Seed: "+(form.elements.seed.value||"automática");
   }
  }
  function validIdentity(){
