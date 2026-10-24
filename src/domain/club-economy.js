@@ -34,10 +34,12 @@
       {id:"standard",label:"Padrão",multiplier:1},
       {id:"ambitious",label:"Ambicioso",multiplier:1.5}
     ];
+    // 100% = orçamento real do clube; só usa a estimativa quando o clube não tem orçamento.
+    const reference=base.currentBudget>0?base.currentBudget:base.suggestedTransferBudget;
     return levels.map(level=>({
       id:level.id,label:level.label,clubId:base.clubId,
       estimatedClubValue:base.economicValue,
-      proposedTransferBudget:Math.round(base.suggestedTransferBudget*level.multiplier/100000)*100000,
+      proposedTransferBudget:Math.round(reference*level.multiplier/100000)*100000,
       existingBudget:base.currentBudget,
       readOnly:true,source:"pro_life_scenario"
     }));

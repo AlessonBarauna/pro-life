@@ -35,7 +35,7 @@ function render(ctx){
  let clubs=[],previewState=null;
  try{previewState=D.create({mode:"coach",catalogVersion:"fc27_v1"},1);clubs=previewState.clubs||[];
    const browser=root.ProLifeClubBrowser;
-   if(browser?.collect){const shared=browser.collect(previewState,D);if(shared.length)clubs=shared.map(c=>({...c,active:true,strength:Number(c.reputation)||60,budget:previewState.clubs?.find(x=>x.id===c.id)?.budget||0,roster:c.players||[],country:c.country,leagueName:c.leagueName,source:c.source}));}
+   if(browser?.collect){const shared=browser.collect(previewState,D);if(shared.length)clubs=shared.map(c=>({...c,active:true,strength:Number(c.reputation)||60,budget:Number(previewState.clubs?.find(x=>x.id===c.id)?.budget??previewState.globalFootball?.clubs?.find(x=>x.id===c.id)?.budget)||0,roster:c.players||[],country:c.country,leagueName:c.leagueName,source:c.source}));}
  }catch(e){console.warn("Club selection unavailable",e);}
  const options=clubs.filter(c=>c&&c.id&&c.active!==false).map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join("");
  const app=document.getElementById("app");
@@ -57,7 +57,7 @@ function render(ctx){
     <label class="coach-full">Predefinição<select name="preset"><option value="balanced">Equilibrado (padrão)</option><option value="realistic">Realista</option><option value="custom">Personalizado</option></select></label>
     <nav class="coach-settings-tabs coach-full" aria-label="Categorias de configuração"><button type="button" data-settings-tab="general">Geral</button><button type="button" data-settings-tab="finance">Finanças</button><button type="button" data-settings-tab="market">Transferências</button><button type="button" data-settings-tab="management">Gestão</button><button type="button" data-settings-tab="development">Elenco</button><button type="button" data-settings-tab="world">Mundo</button></nav>
     <div class="coach-full coach-settings-pane" data-settings-panel="general"><p>O modo treinador usa o motor de simulação atual; dificuldade e velocidade personalizadas ainda não estão disponíveis.</p></div>
-    <div class="coach-full coach-settings-pane" data-settings-panel="finance"><label>Cenário financeiro inicial<select name="financialScenario"><option value="legacy">Original do clube</option><option value="conservative">Conservador (70%)</option><option value="standard">Padrão (100%)</option><option value="ambitious">Ambicioso (150%)</option></select></label><div class="coach-full coach-section-note" id="coach-finance-preview" aria-live="polite"></div><div class="coach-funding-field"><span>Orçamento adicional inicial</span><div class="coach-funding-stepper" role="group" aria-label="Ajustar orçamento adicional inicial"><button type="button" data-funding-decrease aria-label="Diminuir aporte em R$ 100 milhões">−</button><output id="coach-funding-value" for="coach-funding-input" aria-live="polite">Sem aporte</output><button type="button" data-funding-increase aria-label="Aumentar aporte em R$ 100 milhões">+</button><input id="coach-funding-input" type="hidden" name="funding" value="0"></div><small>De R$ 100 milhões a R$ 10 bilhões, em passos de R$ 100 milhões.</small></div><p>Aplicado uma única vez ao clube escolhido quando a carreira é criada. Sem clube, não há aporte.</p></div>
+    <div class="coach-full coach-settings-pane" data-settings-panel="finance"><label>Cenário financeiro inicial<select name="financialScenario"><option value="legacy">Original do clube</option><option value="conservative">Conservador (70%)</option><option value="standard">Padrão (100%)</option><option value="ambitious">Ambicioso (150%)</option></select></label><div class="coach-full coach-section-note" id="coach-finance-preview" aria-live="polite"></div><div class="coach-funding-field"><span>Orçamento adicional inicial</span><div class="coach-funding-stepper" role="group" aria-label="Ajustar orçamento adicional inicial"><button type="button" data-funding-decrease aria-label="Diminuir aporte em R$ 100 milhões">−</button><output id="coach-funding-value" for="coach-funding-input" aria-live="polite">Sem aporte</output><button type="button" data-funding-increase aria-label="Aumentar aporte em R$ 100 milhões">+</button><input id="coach-funding-input" type="hidden" name="funding" value="0"></div><input type="range" class="coach-funding-range" name="fundingRange" min="0" max="100" step="1" value="0" aria-label="Orçamento adicional inicial: arraste para ajustar"><div class="coach-funding-marks"><span>Sem aporte</span><span>R$ 5 bi</span><span>R$ 10 bi</span></div><small>Arraste a barra ou segure + / − para subir ou descer rápido. De R$ 100 milhões a R$ 10 bilhões, em passos de R$ 100 milhões.</small></div><p>Aplicado uma única vez ao clube escolhido quando a carreira é criada. Sem clube, não há aporte.</p></div>
     <div class="coach-full coach-settings-pane" data-settings-panel="market"><label>Rigor nas contratações<select name="marketStrictness"><option value="flexible">Flexível — negociações mais fáceis</option><option value="normal" selected>Normal — avaliação atual</option><option value="strict">Rigoroso — maior exigência financeira e esportiva</option></select></label><label>Primeira janela de transferências<select name="firstWindow"><option value="on">Ativada</option><option value="off">Desativada — contratações bloqueadas na primeira janela</option></select></label><label>Pagamento parcelado<select name="installments"><option value="off">Desativado — pagamento à vista</option><option value="on">Ativado — permitir entrada e parcela futura</option></select></label><label>Empréstimos de jogadores<select name="loans"><option value="off">Desativados</option><option value="on">Ativados — 180 ou 365 dias</option></select></label><p>Estas escolhas afetam o comando de contratação do treinador; não alteram o mercado do modo jogador.</p></div>
     <div class="coach-full coach-settings-pane" data-settings-panel="management"><p>Metas da diretoria, confiança e demissão continuam seguindo as regras reais já implementadas no modo treinador.</p></div>
     <div class="coach-full coach-settings-pane" data-settings-panel="development"><p>Foco de treino coletivo aplicado ao motor existente:</p></div>
@@ -94,6 +94,7 @@ function render(ctx){
    fundingOutput.textContent=fundingLabel(value);
    fundingDecrease.disabled=value<=0;
    fundingIncrease.disabled=value>=FUNDING_MAX;
+   if(fundingRange&&Number(fundingRange.value)!==Math.round(value/FUNDING_STEP))fundingRange.value=String(Math.round(value/FUNDING_STEP));
  }
  function setFunding(value,{custom=true}={}){
    const nextValue=Math.max(0,Math.min(FUNDING_MAX,Number(value)||0));
@@ -102,8 +103,17 @@ function render(ctx){
    renderFunding();
    review();
  }
- fundingDecrease.addEventListener("click",()=>setFunding(Number(fundingInput.value)-FUNDING_STEP));
- fundingIncrease.addEventListener("click",()=>setFunding(Number(fundingInput.value)+FUNDING_STEP));
+ const fundingRange=form.elements.fundingRange;
+ function holdRepeat(button,direction){
+  let timer=null,delay=null,held=false,ticks=0;
+  const stop=()=>{clearTimeout(delay);clearInterval(timer);timer=delay=null;};
+  const step=()=>{ticks++;const jump=ticks>40?25:ticks>20?10:ticks>8?4:1;held=true;setFunding(Number(fundingInput.value)+direction*FUNDING_STEP*jump);if((direction>0&&Number(fundingInput.value)>=FUNDING_MAX)||(direction<0&&Number(fundingInput.value)<=0))stop();};
+  button.addEventListener("pointerdown",e=>{if(button.disabled||(e.button&&e.button!==0))return;held=false;ticks=0;delay=setTimeout(()=>{timer=setInterval(step,70);step();},380);});
+  for(const type of ["pointerup","pointerleave","pointercancel","blur"])button.addEventListener(type,stop);
+  button.addEventListener("click",()=>{if(held){held=false;return;}setFunding(Number(fundingInput.value)+direction*FUNDING_STEP);});
+ }
+ holdRepeat(fundingDecrease,-1);holdRepeat(fundingIncrease,1);
+ fundingRange?.addEventListener("input",()=>setFunding(Number(fundingRange.value)*FUNDING_STEP));
  form.elements.preset.addEventListener("change",()=>{
    if(form.elements.preset.value==="realistic"||form.elements.preset.value==="balanced")setFunding(0,{custom:false});
  });
@@ -216,7 +226,7 @@ function render(ctx){
    const kind=rank<=Math.max(1,Math.round(n*.12))?"Título":relative<.35?"Parte de cima da tabela":relative<.7?"Meio de tabela":"Permanência";
    const roster=Array.isArray(club.roster)?club.roster.filter(p=>p.status!=="retired"):[];
    const avg=roster.length?Math.round(roster.reduce((total,p)=>total+(Number(p.morale)||60),0)/roster.length):null;
-   const money=Number(club.budget||0).toLocaleString("pt-BR");
+   const money=(scenarioBudget(club,form.elements.financialScenario.value)+(Number(form.elements.funding.value)||0)).toLocaleString("pt-BR");
    const entries=[
      "Clube: "+club.name,
      "Competição: "+(club.leagueId||"Não informada"),
@@ -229,6 +239,19 @@ function render(ctx){
    if(club.country)entries.splice(1,0,"País: "+club.country);
    if(club.leagueName)entries[2]="Competição: "+club.leagueName;
    return entries.join(" · ");
+ }
+ function scenarioBudget(club,scenario){
+  if(!club)return null;
+  const original=Number(club.budget)||0;
+  const found=(root.ProLifeClubEconomy?.scenarios?.(club)||[]).find(x=>x.id===scenario);
+  return found?found.proposedTransferBudget:original;
+ }
+ const money=v=>"R$ "+Math.round(v).toLocaleString("pt-BR");
+ function refreshScenarioLabels(){
+  const club=selectedClub(),select=form.elements.financialScenario;
+  if(!select)return;
+  const names={legacy:"Original do clube",conservative:"Conservador (70%)",standard:"Padrão (100%)",ambitious:"Ambicioso (150%)"};
+  for(const option of select.options)option.textContent=names[option.value]+(club?" — "+money(scenarioBudget(club,option.value)):"");
  }
  function financePreview(){
   const club=selectedClub(),scenario=form.elements.financialScenario.value;
@@ -244,6 +267,7 @@ function render(ctx){
     (found?" · Cenário "+found.label:" · Orçamento original");
  }
  function review(){
+  refreshScenarioLabels();
   const club=selectedClub(),target=app.querySelector("#coach-club-analysis");
   if(target){
     target.textContent=clubBriefing(club);
@@ -305,7 +329,7 @@ function render(ctx){
     if(selected)selected.tactic=tactic;
     const funding=Number(f.get("funding")||0);
     if(!validFunding(funding))throw Error("Aporte financeiro inválido.");
-    if(fresh.mode==="coach"){fresh.coachCareer.settings={preset:String(f.get("preset")||"balanced"),funding,marketStrictness:String(f.get("marketStrictness")||"normal"),firstWindow:String(f.get("firstWindow")||"on"),firstWindowStartDay:Number(fresh.day)||0,installments:String(f.get("installments")||"off"),loans:String(f.get("loans")||"off")};if(selected&&funding){selected.budget=(Number(selected.budget)||0)+funding;fresh.coachCareer.settings.fundingApplied=true;}else fresh.coachCareer.settings.fundingApplied=false;}
+    if(fresh.mode==="coach"){fresh.coachCareer.settings={preset:String(f.get("preset")||"balanced"),funding,marketStrictness:String(f.get("marketStrictness")||"normal"),firstWindow:String(f.get("firstWindow")||"on"),firstWindowStartDay:Number(fresh.day)||0,installments:String(f.get("installments")||"off"),loans:String(f.get("loans")||"off")};const baseBudget=selected?Number(selected.budget)||0:0;if(selected)fresh.coachCareer.settings.initialBudget={clubId:selected.id,scenario:String(f.get("financialScenario")||"legacy"),base:baseBudget,funding,total:baseBudget+funding};if(selected&&funding){selected.budget=baseBudget+funding;fresh.coachCareer.settings.fundingApplied=true;}else fresh.coachCareer.settings.fundingApplied=false;}
     return ctx.onStart(fresh);
    }
    catch(err){ctx.toast(err.message);return false;}

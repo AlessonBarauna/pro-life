@@ -92,3 +92,7 @@
 .look-swatch.on{outline:2px solid #baf12d;outline-offset:2px}
 .look-range-row{display:flex;align-items:center;gap:10px}.look-range-row input{flex:1}.look-range-row output{min-width:78px;color:#9cb2c0;font-size:12px}
 @media(max-width:900px){.coach-creation .coach-profile-art{position:static;max-height:360px}.look-group{grid-template-columns:1fr}}
+
+.coach-funding-range{width:100%;accent-color:#bdf12c;height:28px;margin:2px 0 0}
+.coach-funding-marks{display:flex;justify-content:space-between;color:#91aab3;font-size:11px;margin-top:-4px}
+.coach-funding-stepper button{touch-action:manipulation;user-select:none}
