@@ -2,7 +2,7 @@
 "use strict";
 // 06B: dedicated coach creation. Player attributes are never collected here.
 let currentStep=0;
-const STEPS=["Tipo de carreira","Treinador","Identidade","Vestuário","Clube","Configurações e início"];
+const STEPS=["Tipo de carreira","Treinador","Identidade","Aparência","Clube","Configurações e início"];
 const FUNDING_STEP=100000000;
 const FUNDING_MAX=10000000000;
 // Values from older saves remain valid even though the new control advances in R$ 100 million steps.
@@ -10,6 +10,25 @@ const LEGACY_FUNDING=new Set([0,10000000,50000000]);
 function validFunding(value){return Number.isSafeInteger(value)&&(LEGACY_FUNDING.has(value)||(value>=FUNDING_STEP&&value<=FUNDING_MAX&&value%FUNDING_STEP===0));}
 // FC 27 career database nationalities; selection is independent of national teams.
 const NATIONALITIES=["África do Sul","Albania","Alemanha","Andorra","Angola","Antigua and Barbuda","Arábia Saudita","Argélia","Argentina","Armenia","Austrália","Áustria","Azerbaijan","Belarus","Belgium","Benin","Bermuda","Bolivia","Bosnia Herzegovina","Brasil","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Camarões","Canada","CAR","Chad","Chile","China","Chinese Taipei","Colômbia","Comoros","Congo","Coreia do Norte","Coreia do Sul","Costa do Marfim","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Dominican Republic","DR Congo","Egito","El Salvador","Equador","Equatorial Guinea","Escócia","Espanha","Estados Unidos","Estonia","Faroe Islands","Fiji","Finland","França","FYR Macedonia","Gabon","Gambia","Georgia","Ghana","Gibraltar","Grécia","Grenada","Guatemala","Guinea","Guinea Bissau","Guyana","Haiti","Honduras","Hong Kong","Hungary","Iceland","India","Indonesia","Inglaterra","Iran","Iraq","Irlanda","Irlanda do Norte","Israel","Itália","Jamaica","Japão","Jordan","Kazakhstan","Kenya","Kosovo","Latvia","Lebanon","Liberia","Libya","Liechtenstein","Lithuania","Luxemburg","Madagascar","Malawi","Mali","Malta","Marrocos","Mauritania","Mauritius","México","Moldova","Montenegro","Montserrat","Mozambique","Namibia","Netherlands Antilles","Nigéria","Norway","Nova Zelândia","País de Gales","Países Baixos","Pakistan","Palestinian Authority","Panama","Paraguay","Peru","Philippines","Polônia","Portugal","Puerto Rico","Romania","Rússia","Senegal","Serbia","Sierra Leone","Slovakia","Slovenia","South Sudan","Sri Lanka","St Kitts Nevis","St Lucia","Sudan","Suécia","Suíça","Suriname","Syria","Tanzania","Thailand","Togo","Trinidad and Tobago","Tunisia","Turquia","Ucrânia","Uganda","United Arab Emirates","Uruguay","Uzbekistan","Vanuatu","Venezuela","Zambia","Zimbabwe"];
+
+const esc2=v=>String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function lookSelect(name,label,list,value){return `<label>${label}<select name="${name}">${list.map(([v,t])=>`<option value="${v}" ${v===value?"selected":""}>${esc2(t)}</option>`).join("")}</select></label>`;}
+function lookSwatches(name,list){return `<div class="look-swatches" role="group" aria-label="Cores">${list.map(c=>`<button type="button" class="look-swatch" data-swatch="${name}" data-value="${c}" style="--sw:${c}" aria-label="${c}"></button>`).join("")}</div>`;}
+function lookRange(name,label,value,hint){return `<label class="coach-full look-range">${label}<span class="look-range-row"><input type="range" name="${name}" min="0" max="100" step="1" value="${value}"><output ${hint?`data-looks-${hint}`:""}></output></span></label>`;}
+function appearancePanel(){
+ const A=root.ProLifeCoachAvatar2D;
+ if(!A)return '<div class="coach-full coach-section-note"><b>Aparência</b><p>O editor de aparência não foi carregado.</p></div>';
+ const D=A.DEFAULTS,C=A.CATALOG;
+ const presets=A.PRESETS.map(p=>`<button type="button" class="look-preset" data-coach-preset="${p.id}" title="${esc2(p.name)}"><span class="look-thumb">${A.svg(p.cfg,{uid:"p"+p.id})}</span><b>${esc2(p.name)}</b></button>`).join("");
+ return `<div class="coach-full coach-section-note"><b>Modelos prontos</b><p>Escolha um ponto de partida e ajuste cada detalhe abaixo.</p></div>
+ <div class="coach-full look-presets">${presets}</div>
+ <div class="coach-full look-tools"><button type="button" class="coach-return" data-coach-random>Sortear aparência</button><button type="button" class="coach-return" data-coach-reset>Restaurar padrão</button></div>
+ <fieldset class="coach-full look-group"><legend>Rosto</legend>${lookSelect("face","Formato",C.face,D.face)}${lookSelect("eyes","Olhos",C.eyes,D.eyes)}${lookSelect("brows","Sobrancelhas",C.brows,D.brows)}${lookSelect("nose","Nariz",C.nose,D.nose)}${lookSelect("mouth","Boca",C.mouth,D.mouth)}${lookSelect("expression","Expressão",C.expression,D.expression)}</fieldset>
+ <fieldset class="coach-full look-group"><legend>Pele e olhos</legend><div class="coach-full">${lookSwatches("skin",A.SKINS)}</div><label>Cor da pele<input name="skin" type="color" value="${D.skin}"></label><div class="coach-full">${lookSwatches("eyeColor",A.EYES)}</div><label>Cor dos olhos<input name="eyeColor" type="color" value="${D.eyeColor}"></label></fieldset>
+ <fieldset class="coach-full look-group"><legend>Cabelo e barba</legend>${lookSelect("hair","Cabelo",C.hair,D.hair)}<div class="coach-full">${lookSwatches("hairColor",A.HAIRS)}</div><label>Cor do cabelo<input name="hairColor" type="color" value="${D.hairColor}"></label>${lookRange("grey","Fios brancos",D.grey)}${lookSelect("beard","Barba",C.beard,D.beard)}${lookSelect("glasses","Óculos",C.glasses,D.glasses)}</fieldset>
+ <fieldset class="coach-full look-group"><legend>Corpo e idade</legend>${lookSelect("body","Porte",C.body,D.body)}${lookRange("ageLook","Marcas de idade (rugas)",D.age,"age")}</fieldset>
+ <fieldset class="coach-full look-group"><legend>Roupa</legend>${lookSelect("outfit","Peça",C.outfit,D.outfit)}<label>Cor principal<input name="outfitColor" type="color" value="${D.outfitColor}"></label><label>Cor de detalhe (gravata, faixas)<input name="accentColor" type="color" value="${D.accentColor}"></label></fieldset>`;
+}
 function render(ctx){
  const {D,esc}=ctx;
  // Reuse canonical available club catalog; no separate world or generated league list.
@@ -31,8 +50,8 @@ function render(ctx){
      <label class="coach-full">Nome completo<input name="name" required maxlength="60" autocomplete="name" value="" placeholder="Nome do treinador"></label>
      <label>Cidade natal<input name="city" required maxlength="60" value="" placeholder="Cidade"></label>
      <label>Idade inicial<input name="age" type="number" min="25" max="65" required value="35"></label>
-     <label class="coach-full">Nacionalidade<select name="nationality" required>${NATIONALITIES.map(n=>`<option value="${esc(n)}" ${n==="Brasil"?"selected":""}>${esc(n)}</option>`).join("")}</select></label><label>Cor da pele<input name="skin" type="color" value="#bc8660"></label><label>Cor do cabelo<input name="hairColor" type="color" value="#241e1a"></label><label>Cor dos olhos<input name="eyeColor" type="color" value="#694829"></label><label>Cabelo<select name="hair"><option value="lowfade">Cabelo original (Vitruvian)</option><option value="bald">Sem cabelo</option><option value="crew" disabled>Social curto — modelo pendente</option><option value="highfade" disabled>Degradê alto — modelo pendente</option><option value="buzz" disabled>Raspado — modelo pendente</option><option value="curly" disabled>Cacheado — modelo pendente</option><option value="afro" disabled>Black power — modelo pendente</option><option value="twists" disabled>Twists — modelo pendente</option><option value="braids" disabled>Tranças — modelo pendente</option><option value="mullet" disabled>Mullet — modelo pendente</option><option value="long" disabled>Longo — modelo pendente</option></select></label><label>Barba<select name="beard"><option value="none">Sem barba</option><option value="stubble">Por fazer</option><option value="short">Curta</option><option value="full">Cheia</option><option value="mustache">Bigode</option><option value="goatee">Cavanhaque</option></select></label><label>Biotipo<select name="body"><option value="normal">Normal</option><option value="slim" disabled>Magro</option><option value="strong" disabled>Forte</option></select></label>
-    </div><div class="coach-fields" data-coach-panel="3"><div class="coach-full coach-section-note"><b>Vestuário do treinador</b><p>Por enquanto as categorias Esportivo, Casual, Clássico e Formal representam paletas da roupa atual. Peças 3D diferentes serão integradas depois.</p></div><label>Categoria de roupa<select name="outfit"><option value="tracksuit">Esportivo — cores</option><option value="polo">Casual — cores</option><option value="classic">Clássico — cores</option><option value="suit">Formal — cores</option></select></label><label>Óculos<select name="accessory"><option value="none">Sem óculos</option><option value="glasses">Óculos (armação 3D)</option></select></label></div>
+     <label class="coach-full">Nacionalidade<select name="nationality" required>${NATIONALITIES.map(n=>`<option value="${esc(n)}" ${n==="Brasil"?"selected":""}>${esc(n)}</option>`).join("")}</select></label>
+    </div><div class="coach-fields coach-looks" data-coach-panel="3">${appearancePanel()}</div>
     <div class="coach-fields" data-coach-panel="4"><label>Buscar clube<input type="search" name="clubSearch" placeholder="Nome do clube" autocomplete="off"></label><label>País<select name="countryFilter"><option value="">Todos os países</option></select></label><label>Filtrar competição<select name="leagueFilter"><option value="">Todas as competições</option></select></label><label class="coach-full">Primeiro projeto<select name="clubId"><option value="">Receber propostas de clubes</option>${options}</select></label><div class="coach-full coach-club-results" id="coach-club-results" aria-label="Escolha visual dos clubes"></div><div class="coach-full coach-club-analysis" id="coach-club-analysis" aria-live="polite"></div>
     </div><div class="coach-fields" data-coach-panel="5"><div class="coach-full coach-section-note"><b>Configurações finais — PRO-LIFE</b><p>Predefinições com efeitos reais. Abas adicionais indicam o que ainda será desenvolvido, sem alterar regras de simulação.</p></div>
     <label class="coach-full">Predefinição<select name="preset"><option value="balanced">Equilibrado (padrão)</option><option value="realistic">Realista</option><option value="custom">Personalizado</option></select></label>
@@ -50,7 +69,7 @@ function render(ctx){
    </section>
    <aside class="coach-creation-card">
     <h2>Seu projeto de carreira</h2>
-    <div class="coach-appearance-notice" id="coach-appearance-notice" aria-live="polite">Visual 3D: pele, cabelo (cor e silhueta) e opção sem cabelo. Barba, óculos, roupas e biotipo aguardam modelos adicionais.</div><div class="coach-profile-art" id="coach-profile-preview" aria-label="Prévia do treinador"><div class="avatar-stage coach-3d-stage" id="coach-3d-stage"></div><svg viewBox="0 0 160 195" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="80" cy="47" r="26" fill="#C99B77"/><path d="M52 43c1-25 52-32 57-2l-4-16-17-10H70L56 25Z" fill="#242A2B"/><path d="M46 87c15-18 53-20 68 0l18 80H28l18-80Z" fill="#1B313E" stroke="#9DB4B7" stroke-width="2"/><path d="m65 88 15 24 15-24-15-13-15 13Z" fill="#EDF5F4"/><path d="m80 105-8 47h16l-8-47Z" fill="#B8F32E"/><path d="M24 166h112" stroke="#B8F32E" stroke-width="3"/><g id="coach-beard" fill="#241e1a" hidden><path d="M64 65Q80 84 96 65L94 77Q80 94 66 77Z"/></g><g id="coach-glasses" fill="none" stroke="#dce7e9" stroke-width="2" hidden><rect x="57" y="43" width="19" height="13" rx="5"/><rect x="84" y="43" width="19" height="13" rx="5"/><path d="M76 47h8"/></g><g id="coach-eyes" fill="#694829"><circle cx="68" cy="50" r="2.2"/><circle cx="92" cy="50" r="2.2"/></g></svg></div>
+    <div class="coach-profile-art" id="coach-profile-preview" aria-label="Prévia do treinador"><div class="coach-2d-stage" id="coach-2d-stage"></div></div>
     <div class="coach-summary"><div><small>Modo</small><strong>Treinador</strong></div><div><small>Base</small><strong>FC 27</strong></div><div><small>Início</small><strong>Temporada 2026</strong></div><div><small>Carreira</small><strong>Gestão de clube</strong></div></div>
     <div class="coach-navigation"><button type="button" class="coach-return" data-coach-prev>← Anterior</button><button type="button" class="coach-start" data-coach-next>Próxima etapa →</button></div><button type="submit" class="coach-start" data-coach-finish>Iniciar carreira de treinador →</button>
     <p class="coach-helper">O jogo preserva o fluxo de saves existente. Nenhuma habilidade, posição ou ponto de atleta será solicitado.</p>
@@ -63,6 +82,8 @@ function render(ctx){
  const panels=Array.from(app.querySelectorAll("[data-coach-panel]"));
  const next=app.querySelector("[data-coach-next]"),finish=app.querySelector("[data-coach-finish]"),prev=app.querySelector("[data-coach-prev]");
  const form=app.querySelector("#coach-creation-form");
+ const looksFields=new Set(root.ProLifeCoachAvatar2D?root.ProLifeCoachAvatar2D.FORM_FIELDS:[]);
+ let randomSeed=(Date.now()>>>0)||7;
  const fundingInput=form.elements.funding;
  const fundingOutput=app.querySelector("#coach-funding-value");
  const fundingDecrease=app.querySelector("[data-funding-decrease]");
@@ -169,28 +190,23 @@ function render(ctx){
  countrySelect.addEventListener("change",()=>{rebuildLeagueOptions();filterClubs();});
  form.elements.clubId.addEventListener("change",filterClubs);
  filterClubs();
-  function update3D(){
-  const viewer=root.ProLifeCoachAvatar3D;
-  if(!viewer)return;
-  const configuration=viewer.configFromForm(form);
-  const host=app.querySelector("#coach-3d-stage");
-  if(host)viewer.render(host,configuration);
-  const panel=app.querySelector("#coach-profile-preview");
-  if(panel)panel.classList.add("has-3d");
+  function update2D(){
+  const A=root.ProLifeCoachAvatar2D;
+  const host=app.querySelector("#coach-2d-stage");
+  if(!A||!host)return;
+  const cfg=A.configFromForm(form);
+  A.render(host,cfg,{uid:"creator"});
+  host.dataset.looks=JSON.stringify(cfg);
+  const label=app.querySelector("[data-looks-age]");if(label)label.textContent=cfg.age<20?"Jovem":cfg.age<50?"Meia-idade":cfg.age<75?"Experiente":"Veterano";
+  app.querySelectorAll("[data-swatch]").forEach(b=>b.classList.toggle("on",(form.elements[b.dataset.swatch]?.value||"").toLowerCase()===b.dataset.value));
+  app.querySelectorAll("[data-coach-preset]").forEach(b=>b.classList.toggle("on",!!b.dataset.active));
+  return cfg;
  }
- function appearanceNotice(){
-  const element=app.querySelector("#coach-appearance-notice");
-  if(!element)return;
-  const a=form.elements;
-  const unsupported=[];
-  // Beard variants are now modeled on the live Vitruvian preview.
-  // Os oculos possuem uma armacao 3D independente e funcional.
-  // As tres opcoes usam a mesma malha; a diferenca e apenas a paleta.
-  if(a.body.value!=="normal")unsupported.push("biotipo");
-  element.textContent=unsupported.length
-   ? "Ainda sem modelos 3D para: "+unsupported.join(", ")+". Estas escolhas ficam no save, mas não mudam o personagem nesta versão."
-   : "Prévia 3D disponível: pele, olhos, cabelo e cores da camisa/calça. Cortes de roupa e acessórios precisam de arquivos 3D próprios.";
- }
+ function applyLooks(cfg){const A=root.ProLifeCoachAvatar2D;if(!A)return;A.applyToForm(form,cfg);update2D();review();}
+ app.querySelectorAll("[data-coach-preset]").forEach(b=>b.addEventListener("click",()=>{const A=root.ProLifeCoachAvatar2D;const p=A.PRESETS.find(x=>x.id===b.dataset.coachPreset);if(p){applyLooks(p.cfg);app.querySelectorAll("[data-coach-preset]").forEach(x=>{delete x.dataset.active;});b.dataset.active="1";update2D();}}));
+ app.querySelector("[data-coach-random]")?.addEventListener("click",()=>{randomSeed=(randomSeed*1664525+1013904223)>>>0;applyLooks(root.ProLifeCoachAvatar2D.randomize(randomSeed));});
+ app.querySelector("[data-coach-reset]")?.addEventListener("click",()=>applyLooks(root.ProLifeCoachAvatar2D.DEFAULTS));
+ app.querySelectorAll("[data-swatch]").forEach(b=>b.addEventListener("click",()=>{const el=form.elements[b.dataset.swatch];if(!el)return;el.value=b.dataset.value;el.dispatchEvent(new Event("input",{bubbles:true}));el.dispatchEvent(new Event("change",{bubbles:true}));}));
  function clubBriefing(club){
    if(!club)return "Receber propostas: você começa sem clube e poderá avaliar oportunidades na carreira.";
    const peers=clubs.filter(c=>c.leagueId===club.leagueId&&c.active!==false)
@@ -227,17 +243,7 @@ function render(ctx){
     " · Total previsto: R$ "+(selected+funding).toLocaleString("pt-BR")+
     (found?" · Cenário "+found.label:" · Orçamento original");
  }
- function review(){appearanceNotice();
-  const preview=app.querySelector("#coach-profile-preview");
-  if(preview){const skin=form.elements.skin.value,hair=form.elements.hairColor.value,outfit=form.elements.outfit.value;
-   const face=preview.querySelector("circle"),hairPath=preview.querySelector("path"),jacket=preview.querySelectorAll("path")[1];
-   if(face)face.setAttribute("fill",skin);
-   if(hairPath)hairPath.setAttribute("fill",form.elements.hair.value==="bald"?"transparent":hair);
-   if(jacket)jacket.setAttribute("fill",outfit==="suit"?"#1b313e":outfit==="tracksuit"?"#254f42":outfit==="classic"?"#333946":"#355a62");
-   const eyeglasses=preview.querySelector("#coach-glasses");if(eyeglasses)eyeglasses.hidden=form.elements.accessory.value!=="glasses";
-   const beard=preview.querySelector("#coach-beard");if(beard){beard.hidden=form.elements.beard.value==="none";beard.setAttribute("fill",hair);}
-   const ears=preview.querySelector("#coach-eyes");if(ears)ears.setAttribute("fill",form.elements.eyeColor.value);
-  }
+ function review(){
   const club=selectedClub(),target=app.querySelector("#coach-club-analysis");
   if(target){
     target.textContent=clubBriefing(club);
@@ -268,8 +274,8 @@ function render(ctx){
  }
  function showStep(index){currentStep=Math.max(0,Math.min(STEPS.length-1,index));panels.forEach((p,i)=>{p.hidden=i!==currentStep;});app.querySelectorAll("[data-coach-step]").forEach((b,i)=>{b.classList.toggle("on",i===currentStep);b.setAttribute("aria-current",i===currentStep?"step":"false");});next.hidden=currentStep===STEPS.length-1;finish.hidden=currentStep!==STEPS.length-1;prev.hidden=currentStep===0;}
  app.querySelectorAll("[data-coach-step]").forEach(b=>b.addEventListener("click",()=>{const target=Number(b.dataset.coachStep);if(target>2&&!validIdentity())return;showStep(target);review();}));
- next.addEventListener("click",()=>{if(currentStep===2&&!validIdentity())return;showStep(currentStep+1);review();});prev.addEventListener("click",()=>showStep(currentStep-1));form.addEventListener("input",e=>{review();if(["skin","hairColor","eyeColor"].includes(e.target.name))update3D();});form.addEventListener("change",e=>{review();if(["skin","hairColor","eyeColor","hair","beard","body","accessory","outfit"].includes(e.target.name))update3D();});showStep(0);review();update3D();
- app.querySelector('[data-coach-back]').addEventListener("click",()=>{root.ProLifeCoachAvatar3D?.dispose();currentStep=0;ctx.onBack();});
+ next.addEventListener("click",()=>{if(currentStep===2&&!validIdentity())return;showStep(currentStep+1);review();});prev.addEventListener("click",()=>showStep(currentStep-1));form.addEventListener("input",e=>{review();if(looksFields.has(e.target.name))update2D();});form.addEventListener("change",e=>{review();if(looksFields.has(e.target.name)){if(e.target.name==="outfit"){const od=root.ProLifeCoachAvatar2D?.OUTFIT_DEFAULT[e.target.value];if(od){form.elements.outfitColor.value=od[0];form.elements.accentColor.value=od[1];}}update2D();}});showStep(0);review();update2D();
+ app.querySelector('[data-coach-back]').addEventListener("click",()=>{currentStep=0;ctx.onBack();});
  app.querySelector("#coach-creation-form").addEventListener("submit",event=>{
   event.preventDefault();
   const f=new FormData(event.currentTarget);
@@ -281,13 +287,14 @@ function render(ctx){
   const seed=seedRaw!==""?Number(seedRaw):Date.now();
   if(!Number.isFinite(seed)){ctx.toast("Seed invalida.");return;}
   if(f.get("careerType")!=="original"||f.get("coachType")!=="custom"){ctx.toast("Este modo ainda não está disponível.");return;}
-  const config={mode:"coach",catalogVersion:"fc27_v1",name,city,age,nationality:String(f.get("nationality")||"Brasil").trim(),clubId:String(f.get("clubId")||""),financialScenario:String(f.get("clubId")||"")?String(f.get("financialScenario")||"legacy"):"legacy",appearance:{skin:String(f.get("skin")),hairColor:String(f.get("hairColor")),eyeColor:String(f.get("eyeColor")),hair:String(f.get("hair")),beard:String(f.get("beard")),body:String(f.get("body")),accessory:String(f.get("accessory"))}};
+  const looksConfig=root.ProLifeCoachAvatar2D?root.ProLifeCoachAvatar2D.configFromForm(event.currentTarget):null;
+  const config={mode:"coach",catalogVersion:"fc27_v1",name,city,age,nationality:String(f.get("nationality")||"Brasil").trim(),clubId:String(f.get("clubId")||""),financialScenario:String(f.get("clubId")||"")?String(f.get("financialScenario")||"legacy"):"legacy",appearance:looksConfig?root.ProLifeCoachAvatar2D.toAppearance(looksConfig):{}};
   ctx.busy("Criando carreira de treinador FC 27…",()=>{
    try{
     const fresh=D.create(config,seed);
     if(fresh.mode==="coach"){
      if(!fresh.coachCareer)fresh.coachCareer={version:1};
-     fresh.coachCareer.presentation={outfit:String(f.get("outfit")||"suit"),careerType:"original",coachType:"custom"};
+     fresh.coachCareer.presentation={outfit:String(f.get("outfit")||"suit"),careerType:"original",coachType:"custom",avatar2d:looksConfig||null};
     }
     const focus=String(f.get("focus")||"equilibrado");
     if(D.CoachCareer?.setFocus)D.CoachCareer.setFocus(fresh,focus);

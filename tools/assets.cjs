@@ -98,13 +98,11 @@ const files = [
   "src/ui/home-dashboard.js",
   "src/ui/live-match.js",
   "src/ui/creator.js",
-  "src/ui/coach-glb.js",
-  "src/assets/coach3d/coach-base.glb",
   "src/ui/player-card-prolife.js",
   "src/ui/player-central-view.js",
   "src/ui/player-stats-view.js",
   "src/ui/player-card-prolife.css",
-  "src/ui/coach-avatar-3d.js",
+  "src/ui/coach-avatar-2d.js",
   "src/ui/coach-creator.js",
   "src/ui/club-browser.js",
   "src/ui/world-competitions-view.js",
@@ -199,11 +197,6 @@ const files = [
   "src/ui/club-crests.js","src/ui/national-crests.js",
   "src/ui/league-logos-data.js","src/ui/league-logos.js",
 ];
-// Optional large CC0 Vitruvian assets are installed locally from the supplied ZIP.
-for (const name of ["vitruvian_body.glb","vitruvian_head.glb","vitruvian_hair.glb"]) {
- const file = "src/assets/coach3d-realistic/" + name;
- if (require("fs").existsSync(require("path").join(__dirname, "..", file))) files.push(file);
-}
 // 04E: escudos instalados (somente imagens; manifestos ficam fora da publicacao).
 try { const d = require("path").join(__dirname, "..", "src/assets/club-crests"); for (const f of require("fs").readdirSync(d).sort()) if (/^[a-zA-Z0-9_-]+\.(png|svg|webp)$/.test(f)) files.push("src/assets/club-crests/" + f); } catch (e) { /* sem escudos */ }
 try { const d = require("path").join(__dirname, "..", "src/assets/league-logos"); for (const f of require("fs").readdirSync(d).sort()) if (/^[a-zA-Z0-9_-]+\.(png|svg|webp)$/.test(f)) files.push("src/assets/league-logos/" + f); } catch (e) { /* sem logos de liga */ }
