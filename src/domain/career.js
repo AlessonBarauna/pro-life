@@ -1666,7 +1666,7 @@
       for(const offer of s.coachCareer.saleOffers){
         if(offer.status!=="pending"||!Number.isFinite(Number(offer.expiresDay))||Number(s.day)<=Number(offer.expiresDay))continue;
         offer.status="expired";offer.closedDay=s.day;
-        (s.news||[]).unshift({day:s.day,season:s.season,title:"Proposta de transferência expirada",body:"A oferta por "+(s.clubs||[]).flatMap(c=>c.roster||[]).find(p=>p.id===offer.playerId)?.name+" expirou sem resposta."});
+        (s.news||[]).unshift({day:s.day,season:s.season,title:offer.dealType==="loan"?"Proposta de empréstimo expirada":"Proposta de transferência expirada",body:"A oferta por "+(s.clubs||[]).flatMap(c=>c.roster||[]).find(p=>p.id===offer.playerId)?.name+" expirou sem resposta."});
       }
     }
     // Periodic inbound approaches; preferences and pending-offer limits are respected.
@@ -1717,6 +1717,7 @@
         borrowing.roster=borrowing.roster.filter(x=>x.id!==loan.playerId);
         if(Array.isArray(borrowing.lineup))borrowing.lineup=borrowing.lineup.filter(id=>id!==loan.playerId);
         if(!origin.roster.some(x=>x.id===loan.playerId))origin.roster.push(p);
+        p.clubId=origin.id;p.leagueId=origin.leagueId||p.leagueId;
         loan.returned=true;loan.returnDay=s.day;
         (s.news||[]).unshift({day:s.day,season:s.season,title:"Retorno de empréstimo",body:p.name+" voltou ao "+(origin.name||"clube de origem")+"."});
       }

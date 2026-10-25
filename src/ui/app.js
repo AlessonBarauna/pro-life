@@ -8792,7 +8792,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return;
     }
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
-    const el = event.target.closest?.("[data-coach-pay-clause],[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-signing-squad],[data-coach-signing-open],[data-coach-signing-close],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-screen],[data-coach-scout-select],[data-coach-scout-page],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-save-priority],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer],[data-coach-submit-offer],[data-coach-cancel-offer]");
+    const el = event.target.closest?.("[data-coach-pay-clause],[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-signing-squad],[data-coach-signing-open],[data-coach-signing-close],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-screen],[data-coach-scout-select],[data-coach-scout-page],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-save-priority],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer],[data-coach-submit-offer],[data-coach-cancel-offer],[data-coach-squad-player],[data-coach-squad-apply],[data-coach-player-status],[data-coach-renew-open],[data-coach-renew-cancel],[data-coach-renew-confirm],[data-coach-player-release],[data-coach-player-offers],[data-coach-squad-lineup]");
     if (!el || !state || state.mode !== "coach") return;
     const V = window.ProLifeCoachCareerView;
     if (el.hasAttribute("data-coach-tab")) { V?.setTab(el.getAttribute("data-coach-tab")); render(); return; }
@@ -8803,6 +8803,25 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (el.hasAttribute("data-coach-deal-open")) { V?.openDeal(el.getAttribute("data-coach-deal-open")); render(); return; }
     if (el.hasAttribute("data-coach-deal-close")) { V?.closeDeal(); render(); return; }
     if(el.hasAttribute("data-coach-market-area")) { V?.setMarketArea(el.getAttribute("data-coach-market-area")); render(); return; }
+    const H=window.ProLifeCoachSquadHub;
+    if(el.hasAttribute("data-coach-squad-player")){H?.select(el.getAttribute("data-coach-squad-player"));V?.setMarketArea("squad");render();return;}
+    if(el.hasAttribute("data-coach-squad-apply")){H?.setFilters({query:document.querySelector("[data-coach-squad-query]")?.value,position:document.querySelector("[data-coach-squad-position]")?.value,status:document.querySelector("[data-coach-squad-status]")?.value,sort:document.querySelector("[data-coach-squad-sort]")?.value,direction:document.querySelector("[data-coach-squad-direction]")?.value});render();return;}
+    if(el.hasAttribute("data-coach-player-status"))return command("setCoachPlayerOfferStatus",{playerId:el.getAttribute("data-player"),status:el.getAttribute("data-coach-player-status")});
+    if(el.hasAttribute("data-coach-renew-open")){H?.openRenewal(el.getAttribute("data-coach-renew-open"));render();return;}
+    if(el.hasAttribute("data-coach-renew-cancel")){H?.closeRenewal();render();return;}
+    if(el.hasAttribute("data-coach-renew-confirm")){
+      const playerId=el.getAttribute("data-coach-renew-confirm"),form=el.closest("[data-coach-renew-form]");
+      const completed=command("renewCoachPlayerContract",{playerId,salary:Number(form?.querySelector("[data-coach-renew-salary]")?.value),years:Number(form?.querySelector("[data-coach-renew-years]")?.value),bonus:Number(form?.querySelector("[data-coach-renew-bonus]")?.value),role:form?.querySelector("[data-coach-renew-role]")?.value});
+      if(completed){H?.closeRenewal();render();}
+      return;
+    }
+    if(el.hasAttribute("data-coach-player-release")){
+      const cost=Number(el.getAttribute("data-cost"))||0;
+      if(!window.confirm("Liberar este jogador"+(cost?" e pagar R$ "+cost.toLocaleString("pt-BR")+" de rescisão":"")+"? Esta ação não pode ser desfeita."))return;
+      return command("releaseCoachPlayer",{playerId:el.getAttribute("data-coach-player-release")});
+    }
+    if(el.hasAttribute("data-coach-player-offers")){V?.setMarketArea("transferencias");V?.setDealTab("recebidas");render();return;}
+    if(el.hasAttribute("data-coach-squad-lineup")){squadSelectedId=el.getAttribute("data-coach-squad-lineup");page="squad";render();return;}
     if(el.hasAttribute("data-coach-scout-screen")) { V?.setScoutScreen(el.getAttribute("data-coach-scout-screen")); render(); return; }
     if(el.hasAttribute("data-coach-scout-select")) { V?.selectScoutPlayer(el.getAttribute("data-coach-scout-select")); render(); return; }
     if(el.hasAttribute("data-coach-scout-page")) { V?.setScoutPage(el.getAttribute("data-coach-scout-page")); render(); return; }
@@ -9017,8 +9036,10 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       persist();
       render();
       toast("Ação concluída.");
+      return true;
     } catch (e) {
       toast(e.message);
+      return false;
     }
   }
   function exportSave() {
