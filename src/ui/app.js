@@ -1689,6 +1689,17 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const contextEyebrow=CT.kind==="knockout"?(CT.final?"FINAL":"CHAVEAMENTO"):"CLASSIFICAÇÃO";
       const contextButton=`<button data-page="${esc(CT.page||"league")}"${CT.page==="englishCups"&&CT.competitionId?` data-english-cup="${esc(CT.competitionId)}" data-target="english-cup-${esc(CT.competitionId)}"`:""}>${esc(CT.actionLabel||(CT.kind==="knockout"?"Ver chaveamento":"Ver tabela"))}</button>`;
       const agendaRows=(H.events||[]).slice(0,5).map(e=>`<div class="fc27-v2-agenda-row"><span class="fc27-v2-day">${dayDate(e.day)}</span>${agendaCrests(e)}<div><b>${esc(e.title||"Compromisso")}</b><small>${esc(e.detail||"Agenda da carreira")}</small></div></div>`).join("");
+      // Só aparecem competições disputadas pelo clube atual (liga, copa, estadual ou torneio continental).
+      const clubPlaysCompetition=(comp)=>{
+        const clubId=String(state.clubId||c?.id||"");if(!clubId)return false;
+        const has=list=>(list||[]).some(x=>String(x&&typeof x==="object"&&!Array.isArray(x)?x.clubId??x.id:Array.isArray(x)?x[0]:x)===clubId);
+        if(comp.type==="world-league")return comp.id===c?.leagueId;
+        if(comp.type==="continental-tournament"){const ed=state.continental?.editions?.[`${comp.id}:${state.season||comp.season}`];return !!ed&&(has(ed.entrants)||has(ed.supplementalEntrants));}
+        const cs=state.competitionSchedule||{};
+        if(comp.type==="cup")return cs.cup?.id===comp.id&&has(cs.cup.entrants);
+        if(comp.type==="state")return [cs.state,...(cs.otherStates||[])].some(x=>x?.id===comp.id&&has(x.entrants));
+        return false;
+      };
       const competitionCards=[];
       const pushCompetition=(id,name,detail,page)=>{
         if(competitionCards.some(x=>x.id===id))return;
@@ -1700,7 +1711,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       for(const comp of catalog){
         if(competitionCards.length>=4)break;
         if(comp.available===false||!["cup","state","continental-tournament","world-league"].includes(comp.type))continue;
-        if(comp.type==="world-league"&&comp.id!==c?.leagueId)continue;
+        if(!clubPlaysCompetition(comp))continue;
         pushCompetition(comp.id,comp.name,comp.status||"Competição em andamento","competitions");
       }
       const competitionCardsHtml=competitionCards.map(x=>`<button type="button" class="fc27-v2-competition" data-page="${esc(x.page)}"><b>${esc(x.name)}</b><small>${esc(x.detail)}</small><span aria-hidden="true">›</span></button>`).join("");
