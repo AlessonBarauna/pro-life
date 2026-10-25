@@ -16,6 +16,7 @@
   const ChampionsSeason=root.ProLifeChampionsSeason||(typeof require==="function"?require("./champions-season.js"):null);
   const NationalCallups=root.ProLifeNationalCallups||(typeof require==="function"?require("./national-callups.js"):null);
   const OffField=root.ProLifeOffField||(typeof require==="function"?require("./off-field.js"):null);
+  const ClubFinance=root.ProLifeClubFinance||(typeof require==="function"?require("./club-finance.js"):null);
   const ClubEconomy=root.ProLifeClubEconomy||(typeof require==="function"?require("./club-economy.js"):null);
   const CoachCareer=root.ProLifeCoachCareer||(typeof require==="function"?require("./coach-career.js"):null);
   const WorldLiveMarket=root.ProLifeWorldLiveMarket||(typeof require==="function"?require("./world-live-market.js"):null);
@@ -1928,6 +1929,7 @@
     m.offensiveStats = heroOffense ? { hero: heroOffense } : {};
     s.matches.unshift(m);
     CoachCareer?.recordOfficialMatch?.(s,m);
+    ClubFinance?.onMatch?.(s, m, hc, ac, meta);
     Statistics?.recordMatch(s, m);
     const heroDevelopment = Training?.matchDevelopment?.(s, m, { overall, clamp });
     if (![homeId, awayId].includes(s.clubId)) { delete m.participation; delete m.playerStats; }
@@ -2659,7 +2661,7 @@
       },
       onPrize(prize){
         if(prize.clubId!==s.clubId)return;
-        const c=club(s,prize.clubId);if(c&&Number.isFinite(Number(c.budget)))c.budget+=prize.amount;
+        const c=club(s,prize.clubId);if(c&&Number.isFinite(Number(c.budget))){if(ClubFinance)ClubFinance.income(s,c,"premios",prize.amount,`Premiação: ${prize.reason}`);else c.budget+=prize.amount;}
         log(s,"Premiação de copa",`${prize.currency} ${Number(prize.amount).toLocaleString("pt-BR")} por ${prize.reason}.`);
       },
       onChampion({edition,championId}){
@@ -2826,12 +2828,18 @@
         Life?.monthly(s, Career);
         const c = club(s);
         if (c) {
+          if (ClubFinance) {
+            const r = ClubFinance.monthlyClose(s);
+            const fmt = (n) => `R$ ${Math.round(n).toLocaleString("pt-BR")}`;
+            log(s, "Fechamento financeiro", r ? `Resultado do mês: ${fmt(r.result)}. Receitas e folha salarial reais foram lançadas no extrato.` : "Salário e despesas do mês foram contabilizados.");
+          } else {
           c.budget -= s.salary + 22000;
           log(
             s,
             "Fechamento financeiro",
             "Salário e despesas do mês foram contabilizados.",
           );
+          }
         }
         if (s.mode === "coach" && s.board <= 15) {
           if (CoachCareer) CoachCareer.dismiss(s, API, "Confiança da diretoria esgotada");
@@ -3483,5 +3491,6 @@
     nextCommitment,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = API;
+  ClubFinance?.bind?.(club);
   root.ProLife = API;
 })(typeof globalThis !== "undefined" ? globalThis : this);

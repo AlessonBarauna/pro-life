@@ -146,6 +146,7 @@ const files = [
   "src/domain/club-history.js",
   "src/domain/club-intelligence.js",
   "src/domain/club-economy.js",
+  "src/domain/club-finance.js",
   "src/domain/coach-career.js",
   "src/domain/off-field.js",
   "src/data/fc27/fc27-manifest-v1.js",
