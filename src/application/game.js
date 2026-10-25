@@ -509,7 +509,8 @@ case "tactic": {
         const mode=String(data.mode||"");
         if(!["all","listed","none"].includes(mode))throw Error("Preferência inválida.");
         s.coachCareer||={version:1};
-        s.coachCareer.offerPreferences||={mode:"all",blockedIds:[],listedIds:[]};
+        s.coachCareer.offerPreferences||={mode:"all",blockedIds:[],listedIds:[],loanListedIds:[]};
+        s.coachCareer.offerPreferences.loanListedIds||=[];
         s.coachCareer.offerPreferences.mode=mode;
         break;
       }
@@ -517,13 +518,66 @@ case "tactic": {
         if(s.mode!=="coach")throw Error("Disponível apenas ao treinador.");
         const club=D.club(s),player=club?.roster?.find(p=>p.id===data.playerId);
         if(!player||player.id==="hero")throw Error("Atleta indisponível.");
-        if(!["available","listed","blocked"].includes(data.status))throw Error("Status inválido.");
+        if(!["available","listed","loan_listed","blocked"].includes(data.status))throw Error("Status inválido.");
+        if(data.status==="loan_listed"&&s.coachCareer?.settings?.loans==="off")throw Error("Empréstimos estão desativados nesta carreira.");
         s.coachCareer||={version:1};
-        const prefs=s.coachCareer.offerPreferences||={mode:"all",blockedIds:[],listedIds:[]};
+        const prefs=s.coachCareer.offerPreferences||={mode:"all",blockedIds:[],listedIds:[],loanListedIds:[]};
         prefs.blockedIds=(prefs.blockedIds||[]).filter(id=>id!==player.id);
         prefs.listedIds=(prefs.listedIds||[]).filter(id=>id!==player.id);
+        prefs.loanListedIds=(prefs.loanListedIds||[]).filter(id=>id!==player.id);
         if(data.status==="blocked")prefs.blockedIds.push(player.id);
         if(data.status==="listed")prefs.listedIds.push(player.id);
+        if(data.status==="loan_listed")prefs.loanListedIds.push(player.id);
+        break;
+      }
+      case "renewCoachPlayerContract": {
+        if(s.mode!=="coach")throw Error("Disponível apenas ao treinador.");
+        const club=D.club(s),player=club?.roster?.find(p=>p.id===data.playerId);
+        if(!player||player.id==="hero")throw Error("Atleta indisponível para renovação.");
+        const activeLoan=(s.coachCareer?.loans||[]).find(l=>!l.returned&&l.playerId===player.id);
+        if(activeLoan&&activeLoan.toClubId===club.id&&activeLoan.fromClubId!==club.id)throw Error("Jogador emprestado por outro clube não pode renovar aqui.");
+        if((s.coachCareer?.saleOffers||[]).some(o=>o.playerId===player.id&&(o.status==="pending"||o.status==="awaiting_window")))throw Error("Resolva a proposta ativa antes de renovar.");
+        const salary=Number(data.salary),years=Number(data.years),bonus=Number(data.bonus||0),role=String(data.role||"");
+        if(!Number.isSafeInteger(salary)||salary<1000||salary>1000000000)throw Error("Salário inválido.");
+        if(!Number.isInteger(years)||years<1||years>5)throw Error("Duração do contrato inválida.");
+        if(!Number.isSafeInteger(bonus)||bonus<0||bonus>10000000000)throw Error("Luvas inválidas.");
+        if(!["Rotação","Importante","Titular","Estrela"].includes(role))throw Error("Papel no elenco inválido.");
+        if(Number.isFinite(Number(player.lastContractSignedDay))&&Number(s.day)-Number(player.lastContractSignedDay)<30)throw Error("Aguarde 30 dias para renegociar este contrato.");
+        if(!Number.isFinite(Number(club.budget))||Number(club.budget)<bonus)throw Error("Orçamento insuficiente para as luvas.");
+        club.budget=Number(club.budget)-bonus;
+        player.salary=salary;player.contractEndDay=Number(s.day)+years*365;player.squadRole=role;player.lastSigningBonus=bonus;player.lastContractSignedDay=Number(s.day);
+        if(player.contract&&typeof player.contract==="object")Object.assign(player.contract,{salary,endDay:player.contractEndDay,role});
+        s.coachCareer||={version:1};
+        const renewals=s.coachCareer.contractRenewals||[];
+        renewals.push({id:"renew_"+s.season+"_"+s.day+"_"+player.id,playerId:player.id,playerName:player.name,day:Number(s.day),salary,years,bonus,role,endDay:player.contractEndDay});
+        s.coachCareer.contractRenewals=renewals.slice(-120);
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Contrato renovado",body:player.name+" renovou por "+years+" ano(s), com salário mensal de R$ "+salary.toLocaleString("pt-BR")+"."});
+        break;
+      }
+      case "releaseCoachPlayer": {
+        if(s.mode!=="coach")throw Error("Disponível apenas ao treinador.");
+        const club=D.club(s),player=club?.roster?.find(p=>p.id===data.playerId);
+        if(!player||player.id==="hero")throw Error("Atleta indisponível para liberação.");
+        if((club.roster||[]).filter(Boolean).length<=18)throw Error("O elenco precisa manter ao menos 18 jogadores.");
+        if((s.coachCareer?.loans||[]).some(l=>!l.returned&&l.playerId===player.id))throw Error("Jogador com empréstimo ativo não pode ser liberado.");
+        if((s.coachCareer?.saleOffers||[]).some(o=>o.playerId===player.id&&(o.status==="pending"||o.status==="awaiting_window")))throw Error("Resolva a proposta ativa antes de liberar o jogador.");
+        const end=[player.contractEndDay,player.contract?.endDay,player.contract?.expiresDay].map(Number).find(Number.isFinite);
+        const months=Number.isFinite(end)?Math.max(0,Math.ceil((end-Number(s.day))/30)):0;
+        const wage=Math.max(0,Math.round(Number(player.salary??player.monthlySalary??player.wage)||0));
+        const cost=wage*Math.min(12,months);
+        if(!Number.isFinite(Number(club.budget))||Number(club.budget)<cost)throw Error("Orçamento insuficiente para pagar a rescisão.");
+        club.budget=Number(club.budget)-cost;
+        club.roster=club.roster.filter(p=>p.id!==player.id);club.lineup=(club.lineup||[]).filter(id=>id!==player.id);
+        const prefs=s.coachCareer?.offerPreferences;
+        if(prefs){for(const key of ["blockedIds","listedIds","loanListedIds"])prefs[key]=(prefs[key]||[]).filter(id=>id!==player.id);}
+        player.clubId=null;player.leagueId=null;player.squadRole=null;
+        s.internationalPlayers||=[];
+        if(!s.internationalPlayers.some(p=>p.id===player.id))s.internationalPlayers.push(player);
+        s.coachCareer||={version:1};
+        const releases=s.coachCareer.releases||[];
+        releases.push({id:"release_"+s.season+"_"+s.day+"_"+player.id,playerId:player.id,playerName:player.name,clubId:club.id,day:Number(s.day),cost});
+        s.coachCareer.releases=releases.slice(-120);
+        (s.news||[]).unshift({day:s.day,season:s.season,title:"Jogador liberado",body:player.name+" deixou o clube"+(cost?" após rescisão de R$ "+cost.toLocaleString("pt-BR"):"")+"."});
         break;
       }
       case "generateSaleInterest": {
@@ -531,20 +585,24 @@ case "tactic": {
         const own=D.club(s),clubs=(s.clubs||[]).concat(s.globalFootball?.clubs||[]);
         const buyers=clubs.filter(c=>c.id!==own.id&&c.active!==false&&Array.isArray(c.roster)&&Number.isFinite(Number(c.budget))&&Number(c.budget)>0&&D.club(s,c.id)===c);
         const loans=s.coachCareer?.loans||[];
-        const prefs=s.coachCareer?.offerPreferences||{mode:"all",blockedIds:[],listedIds:[]};
+        const prefs=s.coachCareer?.offerPreferences||{mode:"all",blockedIds:[],listedIds:[],loanListedIds:[]};
         if(prefs.mode==="none")throw Error("Recebimento de propostas desativado nas preferências.");
-        const eligible=(own.roster||[]).filter(p=>p.id!=="hero"&&!p.injury&&!loans.some(l=>!l.returned&&l.playerId===p.id)&&!(prefs.blockedIds||[]).includes(p.id)&&(prefs.mode!=="listed"||(prefs.listedIds||[]).includes(p.id))&&!s.coachCareer?.saleOffers?.some(o=>o.playerId===p.id&&(o.status==="pending"||o.status==="awaiting_window")));
+        const listedSet=new Set([...(prefs.listedIds||[]),...(prefs.loanListedIds||[])]);
+        const eligible=(own.roster||[]).filter(p=>p.id!=="hero"&&!p.injury&&!loans.some(l=>!l.returned&&l.playerId===p.id)&&!(prefs.blockedIds||[]).includes(p.id)&&(prefs.mode!=="listed"||listedSet.has(p.id))&&!s.coachCareer?.saleOffers?.some(o=>o.playerId===p.id&&(o.status==="pending"||o.status==="awaiting_window")));
         if(own.roster.length<=18||!eligible.length||!buyers.length)throw Error("Nenhuma proposta elegível segundo as preferências e elencos atuais.");
-        eligible.sort((a,b)=>String(a.id).localeCompare(String(b.id)));
-        const p=eligible[(Math.floor(s.day/7)+eligible.length)%eligible.length];
+        eligible.sort((a,b)=>(listedSet.has(b.id)?1:0)-(listedSet.has(a.id)?1:0)||String(a.id).localeCompare(String(b.id)));
+        const preferred=eligible.filter(p=>listedSet.has(p.id)),pool=preferred.length?preferred:eligible;
+        const p=pool[(Math.floor(s.day/7)+pool.length)%pool.length];
         const price=valuation(p);
-        const amount=Math.ceil(price*(s.coachCareer?.settings?.marketStrictness==="strict"?1.1:0.95)/1000)*1000;
+        const isLoan=(prefs.loanListedIds||[]).includes(p.id);
+        if(isLoan&&s.coachCareer?.settings?.loans==="off")throw Error("Empréstimos estão desativados nesta carreira.");
+        const amount=Math.ceil(price*(isLoan?0.08:(s.coachCareer?.settings?.marketStrictness==="strict"?1.1:0.95))/1000)*1000;
         const buyer=buyers.filter(c=>Number(c.budget)>=amount).sort((a,b)=>String(a.id).localeCompare(String(b.id)))[0];
         if(!buyer)throw Error("Nenhum clube possui orçamento para apresentar proposta.");
         s.coachCareer||={version:1};s.coachCareer.saleOffers||=[];
-        const offer={id:"sale_"+s.season+"_"+s.day+"_"+p.id+"_"+s.coachCareer.saleOffers.length,playerId:p.id,buyerClubId:buyer.id,sellerClubId:own.id,amount,requested:amount,round:1,status:"pending",createdDay:s.day,expiresDay:s.day+10,history:[{day:s.day,round:1,offer:amount}]};
+        const offer={id:"sale_"+s.season+"_"+s.day+"_"+p.id+"_"+s.coachCareer.saleOffers.length,playerId:p.id,buyerClubId:buyer.id,sellerClubId:own.id,amount,requested:amount,round:1,status:"pending",createdDay:s.day,expiresDay:s.day+10,dealType:isLoan?"loan":"permanent",loanDays:isLoan?180:null,salaryShare:isLoan?50:null,buyOption:0,history:[{day:s.day,round:1,offer:amount}]};
         s.coachCareer.saleOffers.push(offer);
-        (s.news||[]).unshift({day:s.day,season:s.season,title:"Proposta recebida",body:buyer.name+" oferece R$ "+amount.toLocaleString("pt-BR")+" por "+p.name+"."});
+        (s.news||[]).unshift({day:s.day,season:s.season,title:isLoan?"Proposta de empréstimo recebida":"Proposta recebida",body:buyer.name+" oferece R$ "+amount.toLocaleString("pt-BR")+(isLoan?" pelo empréstimo de ":" por ")+p.name+"."});
         break;
       }
       case "counterSaleOffer": {
@@ -579,7 +637,7 @@ case "tactic": {
           const p=seller?.roster?.find(x=>x.id===offer.playerId);
           if(!p||p.id==="hero"||!buyer||seller.roster.length<=18||(s.coachCareer?.loans||[]).some(l=>!l.returned&&l.playerId===p.id))throw Error("Jogador indisponível para acordo futuro.");
           offer.status="awaiting_window";offer.agreedDay=s.day;offer.lastSettlementError=null;
-          (s.news||[]).unshift({day:s.day,season:s.season,title:"Venda acordada",body:p.name+" permanece no clube até a próxima janela. A transferência será concluída quando o mercado abrir."});
+          (s.news||[]).unshift({day:s.day,season:s.season,title:offer.dealType==="loan"?"Empréstimo acordado":"Venda acordada",body:p.name+" permanece no clube até a próxima janela. "+(offer.dealType==="loan"?"O empréstimo será concluído":"A transferência será concluída")+" quando o mercado abrir."});
           break;
         }
         if(!offer)throw Error("Proposta indisponível.");
@@ -588,6 +646,24 @@ case "tactic": {
         const fee=Number(offer.amount);
         if(!p||p.id==="hero"||seller.id===buyer?.id||seller.roster.length<=18||!buyer||!Array.isArray(buyer.roster)||!Number.isSafeInteger(fee)||fee<=0||fee>100000000000||!Number.isFinite(Number(buyer.budget))||Number(buyer.budget)<fee||buyer.roster.some(x=>x.id===p.id))throw Error("Transferência indisponível ou orçamento insuficiente.");
         if((s.coachCareer?.loans||[]).some(l=>!l.returned&&l.playerId===p.id))throw Error("Jogador emprestado não pode ser vendido.");
+        if(offer.dealType==="loan"){
+          const duration=Number(offer.loanDays||180),salaryShare=Number(offer.salaryShare??50);
+          if(![180,365].includes(duration)||![0,50,100].includes(salaryShare))throw Error("Termos do empréstimo inválidos.");
+          seller.roster=seller.roster.filter(x=>x.id!==p.id);seller.lineup=(seller.lineup||[]).filter(id=>id!==p.id);
+          buyer.roster.push(p);buyer.budget-=fee;seller.budget=(Number(seller.budget)||0)+fee;
+          p.clubId=buyer.id;p.leagueId=buyer.leagueId||p.leagueId;
+          if(Array.isArray(s.internationalPlayers))s.internationalPlayers=s.internationalPlayers.filter(x=>x.id!==p.id);
+          s.coachCareer.loans||=[];
+          s.coachCareer.loans.push({id:"loan_out_"+s.season+"_"+s.day+"_"+p.id,playerId:p.id,fromClubId:seller.id,toClubId:buyer.id,startDay:Number(s.day)||0,dueDay:(Number(s.day)||0)+duration,fee,salaryShare,buyOption:Number(offer.buyOption)||0,nextSalaryDay:(Number(s.day)||0)+30,returned:false});
+          offer.status="accepted";offer.closedDay=s.day;offer.finalFee=fee;
+          const prefs=s.coachCareer.offerPreferences;
+          if(prefs)for(const key of ["blockedIds","listedIds","loanListedIds"])prefs[key]=(prefs[key]||[]).filter(id=>id!==p.id);
+          const history=D.Career.init(s).transfers||[];
+          history.unshift({day:s.day,season:s.season,player:p.name,from:seller.name||"Sem clube",to:buyer.name,fee,pos:p.pos||"—",transferType:"loan",salary:Number(p.salary)||0});
+          D.Career.init(s).transfers=history.slice(0,100);
+          (s.news||[]).unshift({day:s.day,season:s.season,title:"Empréstimo concluído",body:p.name+" foi emprestado ao "+buyer.name+" por "+duration+" dias. Taxa: R$ "+fee.toLocaleString("pt-BR")+"."});
+          break;
+        }
         const clauses=(s.coachCareer?.sellOnClauses||[]).filter(x=>x.active&&x.playerId===p.id&&x.buyerClubId===seller.id);
         const payments=clauses.map(x=>({x,beneficiary:D.club(s,x.sellerClubId),value:Math.floor(fee*Number(x.percentage)/100)}));
         if(payments.some(v=>!Number.isFinite(v.value)||v.value<0||v.value>fee)||payments.reduce((sum,v)=>sum+v.value,0)>fee)throw Error("Cláusula de revenda inválida.");
@@ -597,6 +673,8 @@ case "tactic": {
         buyer.roster.push(p);buyer.budget-=fee;seller.budget=(Number(seller.budget)||0)+fee-payable;
         for(const v of payments){if(v.beneficiary&&v.beneficiary.id!==seller.id&&v.beneficiary.id!==buyer.id)v.beneficiary.budget=(Number(v.beneficiary.budget)||0)+v.value;v.x.active=false;}
         offer.status="accepted";offer.closedDay=s.day;offer.finalFee=fee;offer.sellOnPaid=payable;
+        const prefs=s.coachCareer?.offerPreferences;
+        if(prefs)for(const key of ["blockedIds","listedIds","loanListedIds"])prefs[key]=(prefs[key]||[]).filter(id=>id!==p.id);
         D.Career.transfer(s,p,seller,buyer,fee);
         (s.news||[]).unshift({day:s.day,season:s.season,title:"Venda concluída",body:p.name+" vendido por R$ "+fee.toLocaleString("pt-BR")+"."});
         break;
