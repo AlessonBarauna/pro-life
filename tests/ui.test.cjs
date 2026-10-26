@@ -140,6 +140,10 @@ for (const mode of ["player", "coach"]) {
   assert.ok(offerText.includes("Compet"));
   assert.ok(offerText.includes("Dura"));
   assert.match(offerText, /S.{0,3}rie [ABCD]/);
+  click(w, '.game-subnav [data-page="market"]');
+  assert.equal(w.document.querySelector('.game-subnav [data-page="market"]')?.getAttribute("aria-current"), "page", "Visão geral deve abrir a central do Mercado");
+  assert.ok(w.document.querySelector("[data-world-live-market-view], .cc-market-screen"), "A central do Mercado deve ser renderizada");
+  click(w, '.game-subnav [data-page="proposals"]');
   click(w, "[data-neg-open]");
   click(w, "[data-neg-sign]");
   if (mode === "player") { click(w, "[data-cine-next]"); click(w, "[data-cine-sign]"); click(w, "[data-cine-close]"); }

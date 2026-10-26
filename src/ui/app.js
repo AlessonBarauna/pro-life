@@ -8746,6 +8746,19 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       toast("Autosave indisponível neste navegador. Use Exportar save.");
   }
   document.addEventListener("click", (event) => {
+    const subnavPageButton = event.target.closest?.(".game-subnav [data-page]");
+    if (subnavPageButton && state) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (subnavPageButton.dataset.englishCup) englishCupKey = subnavPageButton.dataset.englishCup;
+      page = subnavPageButton.dataset.page;
+      if (page === "calendar" && !calendarMonth) calendarMonth = Calendar?.monthId(state);
+      render();
+      document.querySelector(".game-stage")?.scrollTo?.(0, 0);
+      window.scrollTo(0, 0);
+      window.ProLifeShellExtras?.pageEnter();
+      return;
+    }
     const desktopViewButton = event.target.closest?.("[data-desktop-home-view]");
     if (desktopViewButton && state && page === "home") {
       const next = desktopViewButton.getAttribute("data-desktop-home-view");
