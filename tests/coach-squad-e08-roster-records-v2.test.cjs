@@ -9,7 +9,7 @@ test("Roster records initialized across clubs without overwriting existing contr
  assert.match(domain,/p\.secondaryPositionsSource="suggested"/);
  assert.match(domain,/p\.contractEndDay=Number\(s\.day\|\|0\)\+years\*365/);
  assert.match(domain,/p\.contractEndSource="generated_game"/);
- assert.match(domain,/if\(c\.playerDataVersion!==3\)/);
+ assert.match(domain,/c\.playerDataVersion=4/);
 });
 test("Manager can save focus and training honors selected attribute groups",()=>{
  assert.match(game,/case "coachDevelopmentPlan":/);
@@ -29,7 +29,7 @@ test("E08 migration preserves verified empty alternatives and maps defender code
  assert.match(domain,/const verified=p\.secondaryPositionsSource==="ea_fc27"/);
  assert.match(domain,/if\(normalized\.length\|\|verified\)/);
  assert.match(domain,/CB:"ZAG",LB:"LE",RB:"LD"/);
- assert.match(domain,/const primary=normalizePos\(p\.pos\|\|p\.position\)/);
+ assert.match(domain,/const primary=normalizePos\(p\.primaryPosition\|\|p\.specificPosition\|\|p\.pos\|\|p\.position\)/);
 });
 
 test("Legacy defender dossier shows labeled suggestions when position array is empty",()=>{

@@ -17,6 +17,7 @@
   const NationalCallups=root.ProLifeNationalCallups||(typeof require==="function"?require("./national-callups.js"):null);
   const OffField=root.ProLifeOffField||(typeof require==="function"?require("./off-field.js"):null);
   const ClubFinance=root.ProLifeClubFinance||(typeof require==="function"?require("./club-finance.js"):null);
+  const PlayerEconomy=root.ProLifePlayerEconomy||(typeof require==="function"?require("./player-economy.js"):null);
   const ClubEconomy=root.ProLifeClubEconomy||(typeof require==="function"?require("./club-economy.js"):null);
   const CoachCareer=root.ProLifeCoachCareer||(typeof require==="function"?require("./coach-career.js"):null);
   const WorldLiveMarket=root.ProLifeWorldLiveMarket||(typeof require==="function"?require("./world-live-market.js"):null);
@@ -623,7 +624,8 @@
     const ovr = clamp(Math.round(Number(gp.ovr) || 55), 30, 99), h = wmHash(gp.id), j = (k) => ((h >> k) % 5) - 2;
     const off = { GOL: [-8, -20, -6, 4, 2, -2], DEF: [-2, -10, 0, 4, 3, 0], MEI: [0, -3, 4, -4, -3, 2], ATA: [3, 4, 0, -12, 0, -1] }[gp.pos] || [0, 0, 0, 0, 0, 0];
     const a = {}; attrs.forEach((k, i) => (a[k] = clamp(ovr + off[i] + j(i * 3), 20, 99)));
-    const p = { id: gp.id, name: gp.name, shortName: gp.shortName || gp.name, age: s.season - (gp.birthYear || s.season - 26), pos: gp.pos, attrs: a, condition: 100, morale: 60 + (h % 21), discipline: 40 + (h % 51), potential: gp.potential || ovr, injury: 0, goals: 0, minutes: 0, ovr, overall: ovr, number, nationality: gp.nationality, birthYear: gp.birthYear, primaryPosition: (PositionOverlay?.normalized(gp,gc.name).primaryPosition || null), secondaryPositions: (PositionOverlay?.normalized(gp,gc.name).secondaryPositions || []), status: "active", active: true, reputation: clamp(ovr - 15, 10, 95), clubId: gc.id, leagueId: gc.leagueId, contract: { end: s.season + 1 + (h % 3), salary: Math.round(ovr * ovr * 6) } };
+    const p = { id: gp.id, name: gp.name, shortName: gp.shortName || gp.name, age: s.season - (gp.birthYear || s.season - 26), pos: gp.pos, attrs: a, condition: 100, morale: 60 + (h % 21), discipline: 40 + (h % 51), potential: gp.potential || ovr, injury: 0, goals: 0, minutes: 0, ovr, overall: ovr, number, nationality: gp.nationality, birthYear: gp.birthYear, primaryPosition: (PositionOverlay?.normalized(gp,gc.name).primaryPosition || null), secondaryPositions: (PositionOverlay?.normalized(gp,gc.name).secondaryPositions || []), status: "active", active: true, reputation: clamp(ovr - 15, 10, 95), clubId: gc.id, leagueId: gc.leagueId };
+    PlayerEconomy?.ensurePlayer?.(s,p,gc);
     const diff = ovr - overall(p);
     if (diff) attrs.forEach((k) => (a[k] = clamp(a[k] + diff, 20, 99)));
     return p;
@@ -810,6 +812,7 @@
     return Number.isFinite(value) ? clamp(value, 20, 100) : overall(p);
   }
   function worldMarketTerms(player, destination) {
+    if(PlayerEconomy)return {value:PlayerEconomy.estimateMarketValue(player,destination),salary:PlayerEconomy.expectedSalary(player,destination)};
     const level = worldMarketPlayerLevel(player);
     const potential = clamp(Number(player.potential ?? level), level, 100);
     const age = clamp(Number(player.age || 25), 15, 45);
@@ -3406,6 +3409,7 @@
     WorldClubCompetitions,
     ClubIntelligence,
     CoachCareer,
+    PlayerEconomy,
     OffField,
     WorldStats,
     Continental,

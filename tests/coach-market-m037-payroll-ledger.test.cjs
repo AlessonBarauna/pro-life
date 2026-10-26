@@ -7,17 +7,17 @@ function make() {
   const state = {mode:"coach",day:1,clubId:"a",clubs:[club],coachCareer:{version:1,stints:[],board:{history:[]},locker:{cooldowns:{},log:[]},focus:"equilibrado",playerDataVersion:3}};
   return {state,club,api:{club:()=>club}};
 }
-test("M03.7 first monthly forecast preserves player data and budget",()=>{
+test("M03.7 first monthly forecast migrates missing contracts and preserves budget",()=>{
   const {state,club,api}=make();
-  const original=JSON.stringify(club.roster);
   assert.equal(career.recordPayrollForecast(state,api),null);
   state.day=31;
   const row=career.recordPayrollForecast(state,api);
-  assert.equal(row.monthlyRegistered,8000);
-  assert.equal(row.missingCount,1);
+  assert.ok(row.monthlyRegistered>8000);
+  assert.equal(row.missingCount,0);
   assert.equal(row.status,"forecast_only");
   assert.equal(club.budget,12000000);
-  assert.equal(JSON.stringify(club.roster),original);
+  assert.ok(club.roster.every(player=>Number(player.salary)>0));
+  assert.ok(club.roster.every(player=>Number(player.marketValue)>0));
 });
 test("M03.7 repeated calls and JSON reload do not duplicate a period",()=>{
   const {state,api}=make();

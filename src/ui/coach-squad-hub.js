@@ -8,6 +8,7 @@
   const overall=(D,p)=>Math.round(Number(p?.overall??p?.ovr??D?.overall?.(p))||0);
   const potential=(D,p)=>Math.max(overall(D,p),Math.min(99,Math.round(Number(p?.potential)||overall(D,p))));
   const salary=p=>Math.max(0,Math.round(Number(p?.salary??p?.monthlySalary??p?.wage)||0));
+  const marketValue=p=>Number(root.ProLifePlayerEconomy?.marketValue?.(p))||Number(root.ProLifeApp?.valuation?.(p))||0;
   const endDay=p=>[p?.contractEndDay,p?.contract?.endDay,p?.contract?.expiresDay].map(Number).find(Number.isFinite);
   const portrait=p=>root.ProLifePlayerCard?.portrait?.(p)||"";
   const statusOf=(prefs,p)=>{
@@ -30,7 +31,7 @@
     if(needle)rows=rows.filter(p=>text(p.name).includes(needle));
     if(state.position!=="all")rows=rows.filter(p=>String(p.primaryPosition||p.pos||p.position||"").toUpperCase()===state.position);
     if(state.status!=="all")rows=rows.filter(p=>statusOf(prefs,p)===state.status);
-    const value=p=>state.sort==="potential"?potential(D,p):state.sort==="age"?Number(p.age)||0:state.sort==="value"?Number(root.ProLifeApp?.valuation?.(p))||0:state.sort==="contract"?(remaining(s,p)??9999):overall(D,p);
+    const value=p=>state.sort==="potential"?potential(D,p):state.sort==="age"?Number(p.age)||0:state.sort==="value"?marketValue(p):state.sort==="contract"?(remaining(s,p)??9999):overall(D,p);
     rows=rows.slice().sort((a,b)=>{const delta=value(a)-value(b);return (state.direction==="asc"?delta:-delta)||String(a.name||"").localeCompare(String(b.name||""),"pt-BR");});
     return rows;
   }
@@ -40,7 +41,7 @@
     return '<button type="button" class="csh-player-row'+(selected?' is-selected':'')+'" data-coach-squad-player="'+esc(p.id)+'" aria-pressed="'+selected+'">'+
       '<span class="csh-player-person">'+(photo?'<img src="'+esc(photo)+'" alt="">':'<i>'+esc(String(p.name||"?").charAt(0))+'</i>')+'<span><b>'+esc(p.name||"Jogador")+'</b><small>'+esc(p.primaryPosition||p.pos||p.position||"—")+' · '+esc(p.age??"—")+' anos</small></span></span>'+
       '<span class="csh-rating"><b>'+esc(overall(D,p))+'</b><small>GER</small></span><span class="csh-rating"><b>'+esc(potential(D,p))+'</b><small>POT</small></span>'+
-      '<span><b>'+esc(money(root.ProLifeApp?.valuation?.(p)))+'</b><small>Valor</small></span><span><b>'+esc(remaining(s,p)===null?"Não informado":remaining(s,p)+" meses")+'</b><small>Contrato</small></span>'+
+      '<span><b>'+esc(money(marketValue(p)))+'</b><small>Valor</small></span><span><b>'+esc(remaining(s,p)===null?"Não informado":remaining(s,p)+" meses")+'</b><small>Contrato</small></span>'+
       '<span class="csh-status" data-status="'+esc(status)+'">'+esc(loan&&loan.fromClubId===s.clubId?"Emprestado":offer?(offer.dealType==="loan"?"Proposta de empréstimo":"Proposta recebida"):statusLabel[status])+'</span></button>';
   }
 
@@ -60,7 +61,7 @@
     const photo=portrait(p),status=statusOf(prefs,p),offer=activeOffer(s,p),loan=activeLoan(s,p),months=remaining(s,p),cost=releaseCost(s,p);
     const stats=p.seasonStats||p.stats||{};
     return '<aside class="csh-detail"><header>'+(photo?'<img src="'+esc(photo)+'" alt="Retrato de '+esc(p.name)+'">':'<i>'+esc(String(p.name||"?").charAt(0))+'</i>')+'<div><small>GESTÃO DO ATLETA</small><h3>'+esc(p.name||"Jogador")+'</h3><p>'+esc(p.primaryPosition||p.pos||p.position||"—")+' · '+esc(p.age??"—")+' anos · '+esc(p.nationality||p.nation||"Nacionalidade não informada")+'</p></div><strong>'+esc(overall(D,p))+'<small>GER</small></strong></header>'+
-      '<div class="csh-detail-kpis"><span><small>Potencial</small><b>'+esc(potential(D,p))+'</b></span><span><small>Valor</small><b>'+esc(money(root.ProLifeApp?.valuation?.(p)))+'</b></span><span><small>Salário</small><b>'+esc(salary(p)?money(salary(p))+"/mês":"Estimado")+'</b></span><span><small>Contrato</small><b>'+esc(months===null?"Não informado":months+" meses")+'</b></span></div>'+
+      '<div class="csh-detail-kpis"><span><small>Potencial</small><b>'+esc(potential(D,p))+'</b></span><span><small>Valor</small><b>'+esc(money(marketValue(p)))+'</b></span><span><small>Salário mensal</small><b>'+esc(money(salary(p)))+'</b><small>'+esc(money(root.ProLifePlayerEconomy?.weeklySalary?.(salary(p))||0))+'/semana</small></span><span><small>Contrato</small><b>'+esc(months===null?"Não informado":months+" meses")+'</b></span></div>'+
       '<div class="csh-detail-grid"><span><small>Papel</small><b>'+esc(roleLabel(p.squadRole||p.contract?.role))+'</b></span><span><small>Forma</small><b>'+esc(p.form??"—")+'</b></span><span><small>Moral</small><b>'+esc(Math.round(Number(p.morale)||0))+'</b></span><span><small>Condição</small><b>'+esc(Math.round(Number(p.condition??p.fitness)||0))+'%</b></span><span><small>Jogos</small><b>'+esc(stats.appearances??p.appearances??"—")+'</b></span><span><small>Gols / assist.</small><b>'+esc(stats.goals??p.goals??0)+' / '+esc(stats.assists??p.assists??0)+'</b></span></div>'+
       '<div class="csh-current-status"><small>STATUS NO MERCADO</small><b>'+esc(statusLabel[status])+'</b>'+(offer?'<span>'+esc(offer.dealType==="loan"?"Há proposta de empréstimo ativa.":"Há proposta de compra ativa.")+'</span>':'')+(loan?'<span>Empréstimo ativo até o dia '+esc(loan.dueDay)+'.</span>':'')+'</div>'+
       '<div class="csh-actions"><button type="button" data-coach-player-status="'+(status==="listed"?'available':'listed')+'" data-player="'+esc(p.id)+'">'+(status==="listed"?'Retirar da lista de transferências':'Colocar na lista de transferências')+'</button><button type="button" data-coach-player-status="'+(status==="loan_listed"?'available':'loan_listed')+'" data-player="'+esc(p.id)+'">'+(status==="loan_listed"?'Retirar da lista de empréstimos':'Colocar na lista de empréstimos')+'</button><button type="button" data-coach-player-status="'+(status==="blocked"?'available':'blocked')+'" data-player="'+esc(p.id)+'">'+(status==="blocked"?'Liberar ofertas':'Bloquear ofertas')+'</button><button type="button" data-coach-renew-open="'+esc(p.id)+'">Renovar contrato</button><button type="button" data-coach-player-offers="'+esc(p.id)+'"'+(offer?'':' disabled')+'>Abrir propostas</button><button type="button" data-coach-squad-lineup="'+esc(p.id)+'">Abrir elenco e tática</button><button type="button" class="danger" data-coach-player-release="'+esc(p.id)+'" data-cost="'+esc(cost)+'">Liberar jogador'+(cost?' · '+esc(money(cost)):'')+'</button></div>'+renewalForm(s,p)+'</aside>';

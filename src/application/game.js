@@ -3,6 +3,7 @@
   const D =
     root.ProLife ||
     (typeof require === "function" ? require("../domain/engine.js") : null);
+  const PlayerEconomy=root.ProLifePlayerEconomy||(typeof require==="function"?require("../domain/player-economy.js"):null);
   function queueCoachPresentation(s,p,from,to,fee,type){
     if(s.mode!=="coach"||to?.id!==s.clubId||!p?.id)return;
     s.coachCareer||={version:1};
@@ -895,6 +896,7 @@ case "tactic": {
   // Market model v2: BRL nominal values; existing accepted deals retain their stored finalFee.
   // Calibrated for career-gameplay rather than claimed as official EA/TransferRoom prices.
   function valuation(p) {
+    if(PlayerEconomy)return PlayerEconomy.marketValue(p);
     const overall = Math.max(40, Math.min(99, Number(D.overall(p)) || 65));
     const age = Math.max(14, Math.min(45, Number(p.age) || 26));
     const potential = Math.max(overall, Math.min(99, Number(p.potential) || overall));
@@ -919,6 +921,7 @@ case "tactic": {
   // Salary uses a monthly storage unit for legacy compatibility; the UI may also show weekly.
   // Newly negotiated contracts use a financially coherent market-level monthly floor.
   function minimumMarketSalaryMonthly(p) {
+    if(PlayerEconomy)return PlayerEconomy.expectedSalary(p);
     const weekly = Math.max(750, Math.round(valuation(p) * 0.00085 / 250) * 250);
     return Math.ceil(weekly * 52 / 12 / 1000) * 1000;
   }

@@ -11,10 +11,10 @@ test("M03.6 estimates absent salaries without writing to players",()=>{
   assert.match(source,/registeredMonthly\+estimatedMonthly/);
   assert.doesNotMatch(source,/p\.salary\s*=/);
 });
-test("M03.6 clearly separates recorded and estimated wages",()=>{
-  assert.match(source,/Salários registrados:/);
-  assert.match(source,/Estimativas sem contrato:/);
-  assert.match(source,/Nenhum contrato, save ou orçamento é alterado/);
+test("M03.6 clearly separates contractual wages and defensive fallbacks",()=>{
+  assert.match(source,/Salários contratuais:/);
+  assert.match(source,/Fallbacks pendentes:/);
+  assert.match(source,/contratos já negociados são preservados/);
 });
 test("M03.6 view file JavaScript parses",()=>{
   new vm.Script(source,{filename:"coach-career-view.js"});

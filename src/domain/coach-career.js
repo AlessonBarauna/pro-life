@@ -7,6 +7,7 @@
   const hash=value=>{let h=2166136261;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
   const unit=key=>hash(key)/4294967296;
   const isCoach=s=>s?.mode==="coach";
+  const PlayerEconomy=root.ProLifePlayerEconomy||(typeof require==="function"?require("./player-economy.js"):null);
 
   const FOCI=Object.freeze({
     equilibrado:{label:"Equilibrado",note:"Rotina estável: pequena melhora de moral."},
@@ -34,6 +35,7 @@
   const FOCUS_ATTRIBUTES={equilibrado:["pace","finish","pass","defense","strength","stamina"],velocidade:["pace","stamina"],finalizacao:["finish","pace"],criacao:["pass","finish"],marcacao:["defense","strength"],fisico:["strength","stamina"]};
   function fillPlayerRecords(s){
     if(!isCoach(s))return;
+    PlayerEconomy?.ensureState?.(s);
     for(const club of (s.clubs||[])){
       for(const p of (club.roster||[])){
         if(!p||!p.id)continue;
@@ -95,7 +97,7 @@
     if(!c.locker.cooldowns)c.locker.cooldowns={};
     if(!Array.isArray(c.locker.log))c.locker.log=[];
     if(!FOCI[c.focus])c.focus="equilibrado";
-    if(c.playerDataVersion!==3){fillPlayerRecords(s);c.playerDataVersion=3;}
+    if(c.playerDataVersion!==4){fillPlayerRecords(s);c.playerDataVersion=4;}
     return c;
   }
   const clubOf=(s,api)=>api?.club?api.club(s):(s.clubs||[]).find(c=>c.id===s.clubId)||null;
