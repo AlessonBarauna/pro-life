@@ -9,6 +9,7 @@ const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const app = read("src/ui/app.js");
 const css = read("src/ui/fc27-game-shell-desktop.css");
+const mobileMenuCss = read("src/ui/fc27-mobile-menu.css");
 const html = read("index.html");
 const assets = read("tools/assets.cjs");
 
@@ -36,4 +37,14 @@ test("shell desktop: abas internas do Mercado recebem clique prioritario", () =>
   assert.match(app, /\.cc-market-main-nav \[data-coach-market-area\]/);
   assert.match(app, /coachMarketAreaButton[\s\S]*?stopImmediatePropagation\(\)/);
   assert.match(app, /coachMarketAreaButton[\s\S]*?setMarketArea/);
+});
+
+test("menu mobile: Central de Carreiras ocupa o viewport e orienta o modo horizontal", () => {
+  assert.match(html, /src\/ui\/fc27-mobile-menu\.css/);
+  assert.match(assets, /"src\/ui\/fc27-mobile-menu\.css"/);
+  assert.match(app, /career-hub-intro/);
+  assert.match(app, /career-orientation-hint/);
+  assert.match(mobileMenuCss, /height:100dvh/);
+  assert.match(mobileMenuCss, /grid-template-rows:auto auto auto auto minmax\(0,1fr\) auto/);
+  assert.match(mobileMenuCss, /\.career-slots\s*{[\s\S]*?overflow:auto/);
 });
