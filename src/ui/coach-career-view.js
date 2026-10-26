@@ -142,6 +142,7 @@
   // actions use the existing app command dispatcher and never duplicate market logic.
   function negotiations(s,D){
     const c=s.coachCareer||{};
+    const money=v=>"R$ "+Math.round(Number(v)||0).toLocaleString("pt-BR");
     const squadHub=root.ProLifeCoachSquadHub;
     if(ui.marketArea==="overview")return squadHub?.renderOverview?.(s,D)||'<section class="cc-card"><p class="cc-note">Visão geral indisponível.</p></section>';
     if(ui.marketArea==="squad")return squadHub?.render?.(s,D)||'<section class="cc-card"><p class="cc-note">Gestão do elenco indisponível.</p></section>';
@@ -398,7 +399,6 @@
       const regionOptions=[["all","Todas as regiões"],["Brasil","Brasil"],["América do Sul","América do Sul"],["Europa","Europa"],["África","África"],["Ásia","Ásia"],["América do Norte","América do Norte"]].map(([value,label])=>opt(value,label,ui.scoutRegion)).join("");
       return scoutNav+'<section class="cc-card cc-fc27-scout">'+searchHeading+'<div class="cc-fc27-filter-area"><h3>Filtros de pesquisa</h3><p class="cc-note">Resultados do catálogo dos clubes carregados neste save. Acompanhamento persistido na carreira do treinador.</p><label>Região do clube<select data-coach-scout-region>'+regionOptions+'</select></label><label>Especialidade<select data-coach-scout-specialty><option value="geral">Geral</option><option value="jovens">Jovens talentos</option><option value="defesa">Defensores</option><option value="meio">Meio-campistas</option><option value="ataque">Atacantes</option><option value="goleiros">Goleiros</option></select></label><label>Duração da observação <select data-coach-scout-duration><option value="7">7 dias</option><option value="14" selected>14 dias</option><option value="28">28 dias</option></select></label><p class="cc-note">Custo padrão: R$ 0 nesta etapa experimental. Missões duram dias da carreira.</p><label>Nome do atleta <input data-coach-scout-search placeholder="Buscar jogador..." value="'+esc(ui.scoutQuery)+'"></label><label>Posição <select data-coach-scout-position><option value="all"'+(ui.scoutPosition==="all"?" selected":"")+'>Todas</option>'+["GOL","ZAG","LD","LE","LAT","VOL","MC","MD","ME","MEI","PD","PE","ATA"].map(v=>'<option value="'+v+'"'+(ui.scoutPosition===v?" selected":"")+'>'+v+'</option>').join("")+'</select></label>'+advanced+'<div class="cc-deal-actions"><button data-coach-scout-apply type="button">Pesquisar jogadores</button></div></div><div class="cc-fc27-results-head"><b>RESULTADOS DA BUSCA</b><span>Selecione as ações do atleta para observar ou negociar</span></div>'+'<div class="cc-market-search-layout"><div class="cc-market-results">'+pageControls+(rows||'<p class="cc-note">Nenhum atleta encontrado.</p>')+pageControls+'</div>'+sideDetail+'</div></section>';
     }
-    const money=v=>"R$ "+Math.round(Number(v)||0).toLocaleString("pt-BR");
     const all=[...(s.clubs||[]),...(s.globalFootball?.clubs||[])];
     const club=id=>D?.club?.(s,id)||all.find(x=>x.id===id)||null;
     const clubName=id=>club(id)?.name||id||"Clube";
