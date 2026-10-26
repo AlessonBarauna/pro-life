@@ -18,6 +18,7 @@
     squadPositionSource = null,
     squadUndo = null,
     coachProfileTab = "resumo",
+    desktopHomeView = "match",
     englishCupKey = null;
   const $ = (q) => document.querySelector(q),
     esc = (v) =>
@@ -498,7 +499,7 @@
     };
     const clubCrest = c?.id && window.ProLifeClubCrests ? window.ProLifeClubCrests.render(c.id, { size:"sm" }) : "";
     $("#app").innerHTML =
-      `<div class="game-shell"><header class="game-nav"><button type="button" class="brand" data-page="home" aria-label="PRO LIFE · Central">PRO<span>LIFE</span></button><nav aria-label="Navegação principal">${quickNav.map(navButton).join("")}</nav><details class="global-more"><summary aria-label="Mais áreas">•••</summary><div><button type="button" data-page="inbox">Caixa</button><button type="button" data-page="national">Seleção</button><button type="button" data-page="history">Mundo</button><button type="button" data-page="save">Saves</button>${state.mode==="coach"?'<button type="button" data-coach-settings-open>Configurações da carreira</button>':""}</div></details><div class="club-chip">${clubCrest ? `<span class="club-chip-crest">${clubCrest}</span>` : ""}<span><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b><span class="sx-line">${esc(window.ProLifeShellExtras?.chipLine(state,D)||"")}</span></span></div>${window.ProLifeShellExtras?window.ProLifeShellExtras.bell(window.ProLifeShellExtras.pending(state,D)):""}</header><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${page === "englishCups" ? "FA Cup · EFL Cup · FA Community Shield" : page === "sudamericana" ? "CONMEBOL Sul-Americana · grupos, playoffs e fase eliminatória" : page === "libertadores" ? "CONMEBOL Libertadores · grupos e fase eliminatória" : page === "conference" ? "UEFA Conference League · classificação, rodadas e fase eliminatória" : page === "europa" ? "UEFA Europa League · classificação, rodadas e fase eliminatória" : page === "champions" ? "UEFA Champions League · classificação, rodadas e fase eliminatória" : (topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado")}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${subnavShell()}${views[page]()}<div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
+      `<div class="game-shell"><header class="game-nav"><button type="button" class="brand" data-page="home" aria-label="PRO LIFE · Central">PRO<span>LIFE</span></button><nav aria-label="Navegação principal">${quickNav.map(navButton).join("")}</nav><details class="global-more"><summary aria-label="Mais áreas">•••</summary><div><button type="button" data-page="inbox">Caixa</button><button type="button" data-page="national">Seleção</button><button type="button" data-page="history">Mundo</button><button type="button" data-page="save">Saves</button>${state.mode==="coach"?'<button type="button" data-coach-settings-open>Configurações da carreira</button>':""}</div></details><div class="club-chip">${clubCrest ? `<span class="club-chip-crest">${clubCrest}</span>` : ""}<span><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b><span class="sx-line">${esc(window.ProLifeShellExtras?.chipLine(state,D)||"")}</span></span></div>${window.ProLifeShellExtras?window.ProLifeShellExtras.bell(window.ProLifeShellExtras.pending(state,D)):""}</header><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${page === "englishCups" ? "FA Cup · EFL Cup · FA Community Shield" : page === "sudamericana" ? "CONMEBOL Sul-Americana · grupos, playoffs e fase eliminatória" : page === "libertadores" ? "CONMEBOL Libertadores · grupos e fase eliminatória" : page === "conference" ? "UEFA Conference League · classificação, rodadas e fase eliminatória" : page === "europa" ? "UEFA Europa League · classificação, rodadas e fase eliminatória" : page === "champions" ? "UEFA Champions League · classificação, rodadas e fase eliminatória" : (topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado")}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${subnavShell()}<div class="game-stage game-stage-${esc(page)}" data-page-stage="${esc(page)}"${page==="home"?` data-desktop-view="${esc(desktopHomeView)}"`:""}>${page==="home"?`<nav class="desktop-stage-tabs" aria-label="Visões da Central"><button type="button" data-desktop-home-view="match" class="${desktopHomeView==="match"?"active":""}" aria-selected="${desktopHomeView==="match"}">Dia de jogo</button><button type="button" data-desktop-home-view="management" class="${desktopHomeView==="management"?"active":""}" aria-selected="${desktopHomeView==="management"}">Gestão do clube</button></nav>`:""}${views[page]()}</div><div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
     mountInternationalOfferPreference();
     window.ProLifeTargetClubSelector?.mount?.(state,D,Career);
     mountAvatar();
@@ -8745,6 +8746,20 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       toast("Autosave indisponível neste navegador. Use Exportar save.");
   }
   document.addEventListener("click", (event) => {
+    const desktopViewButton = event.target.closest?.("[data-desktop-home-view]");
+    if (desktopViewButton && state && page === "home") {
+      const next = desktopViewButton.getAttribute("data-desktop-home-view");
+      if (!["match", "management"].includes(next)) return;
+      desktopHomeView = next;
+      const stage = desktopViewButton.closest(".game-stage-home");
+      if (stage) stage.dataset.desktopView = next;
+      stage?.querySelectorAll("[data-desktop-home-view]").forEach((button) => {
+        const active = button.getAttribute("data-desktop-home-view") === next;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", String(active));
+      });
+      return;
+    }
     const profileTabButton = event.target.closest?.("[data-coach-profile-tab]");
     if (profileTabButton && state?.mode === "coach" && page === "profile") {
       const next = profileTabButton.getAttribute("data-coach-profile-tab");
