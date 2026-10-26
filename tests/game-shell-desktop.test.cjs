@@ -31,3 +31,9 @@ test("shell desktop: Central alterna entre dia de jogo e gestao", () => {
   assert.match(css, /data-desktop-view="match"/);
   assert.match(css, /data-desktop-view="management"/);
 });
+
+test("shell desktop: abas internas do Mercado recebem clique prioritario", () => {
+  assert.match(app, /\.cc-market-main-nav \[data-coach-market-area\]/);
+  assert.match(app, /coachMarketAreaButton[\s\S]*?stopImmediatePropagation\(\)/);
+  assert.match(app, /coachMarketAreaButton[\s\S]*?setMarketArea/);
+});

@@ -8746,6 +8746,15 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       toast("Autosave indisponível neste navegador. Use Exportar save.");
   }
   document.addEventListener("click", (event) => {
+    const coachMarketAreaButton = event.target.closest?.(".cc-market-main-nav [data-coach-market-area]");
+    if (coachMarketAreaButton && state?.mode === "coach") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.ProLifeCoachCareerView?.setMarketArea(coachMarketAreaButton.getAttribute("data-coach-market-area"));
+      render();
+      document.querySelector(".game-stage")?.scrollTo?.(0, 0);
+      return;
+    }
     const subnavPageButton = event.target.closest?.(".game-subnav [data-page]");
     if (subnavPageButton && state) {
       event.preventDefault();
