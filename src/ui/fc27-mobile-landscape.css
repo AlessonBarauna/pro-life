@@ -1,0 +1,515 @@
+/* PRO LIFE — camada mobile horizontal.
+   Mantem desktop e telefone em pe intactos; entra apenas em viewports baixas e largas. */
+@media (orientation: landscape) and (min-width: 568px) and (max-width: 1024px) and (max-height: 560px) {
+  :root {
+    --pl-nav-height: 48px;
+    --pl-landscape-gutter: max(12px, env(safe-area-inset-left));
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: var(--pl-nav-height);
+  }
+
+  body {
+    min-width: 0;
+    overscroll-behavior: none;
+  }
+
+  .game-shell {
+    padding-top: var(--pl-nav-height);
+  }
+
+  /* Navegacao principal sempre no topo; a regra de celular em pe nao deve
+     transformar o menu em barra inferior quando o aparelho esta deitado. */
+  .game-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 80;
+    height: var(--pl-nav-height);
+    min-height: var(--pl-nav-height);
+    padding: 0 max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left));
+    gap: 8px;
+  }
+
+  .game-nav .brand {
+    flex: 0 0 auto;
+    font-size: 18px;
+  }
+
+  .game-nav nav {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    display: flex;
+    flex: 1 1 auto;
+    width: auto;
+    height: 100%;
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border: 0;
+    background: transparent;
+    scrollbar-width: none;
+  }
+
+  .game-nav nav::-webkit-scrollbar,
+  .game-subnav::-webkit-scrollbar,
+  .topbar .actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .game-nav nav button {
+    flex: 0 0 auto;
+    width: auto;
+    height: 100%;
+    min-height: 44px;
+    padding: 0 9px;
+    flex-direction: row;
+    gap: 5px;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  .game-nav nav button.active::after {
+    top: auto;
+    bottom: 0;
+  }
+
+  .game-nav nav button i {
+    top: 4px;
+    right: 2px;
+  }
+
+  .nav-icon,
+  .club-chip {
+    display: none;
+  }
+
+  .global-more {
+    display: block;
+    flex: 0 0 auto;
+  }
+
+  .global-more summary {
+    width: 36px;
+    height: 36px;
+  }
+
+  .global-more > div {
+    top: 40px;
+    max-height: calc(100dvh - 54px);
+    overflow-y: auto;
+  }
+
+  .game-subnav {
+    position: sticky;
+    top: var(--pl-nav-height);
+    z-index: 60;
+    min-height: 40px;
+    padding: 3px max(12px, env(safe-area-inset-right)) 3px max(12px, env(safe-area-inset-left));
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .game-subnav button {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 6px 10px;
+  }
+
+  /* Estrutura compacta: acoes continuam acessiveis sem consumir metade da tela. */
+  .game-shell .main {
+    width: 100%;
+    max-width: none;
+    padding: 0 max(12px, env(safe-area-inset-right)) 18px max(12px, env(safe-area-inset-left));
+  }
+
+  .game-shell .topbar {
+    display: grid;
+    grid-template-columns: minmax(170px, .7fr) minmax(390px, 1.3fr);
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+  }
+
+  .game-shell .topbar h1 {
+    margin: 2px 0;
+    font-size: 20px;
+  }
+
+  .game-shell .topbar .tag,
+  .game-shell .topbar small {
+    font-size: 8px;
+    line-height: 1.2;
+  }
+
+  .game-shell .topbar .actions {
+    display: flex;
+    width: 100%;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 5px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .game-shell .topbar .actions button {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 7px 11px;
+    white-space: nowrap;
+  }
+
+  .game-shell .topbar .actions .primary {
+    order: 0 !important;
+  }
+
+  .game-shell button,
+  .wizard button,
+  .pl-btn {
+    min-height: 40px;
+    touch-action: manipulation;
+  }
+
+  #toast {
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  /* Central: hero e quadro de informacoes lado a lado, como em managers mobile. */
+  .game-shell:has(.fc27-central-v2-approved) .topbar {
+    width: 100% !important;
+    padding: 6px 0 0 !important;
+  }
+
+  .career-dashboard.fc27-central-v2-approved {
+    width: 100% !important;
+    padding: 6px 0 18px !important;
+  }
+
+  .fc27-central-v2-approved > .central-v3-header {
+    min-height: 42px !important;
+    padding: 2px 4px 7px !important;
+  }
+
+  .fc27-central-v2-approved > .central-v3-header .central-v3-title {
+    font-size: 25px !important;
+  }
+
+  .fc27-central-v2-approved > .fc27-v2-layout {
+    grid-template-columns: minmax(300px, .9fr) minmax(0, 1.1fr) !important;
+    grid-template-areas: "hero board" "details details" "context context" !important;
+    gap: 10px !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-hero,
+  .fc27-central-v2-approved .central-v3-match {
+    min-height: 360px !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-match {
+    padding: 15px !important;
+    gap: 8px !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-matchup {
+    grid-template-columns: minmax(0, 1fr) 50px minmax(0, 1fr) !important;
+    gap: 5px !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-team {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    gap: 4px !important;
+    text-align: center !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-team small {
+    display: none !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-team i.has-crest,
+  .fc27-central-v2-approved .central-v3-team > i {
+    width: 52px !important;
+    height: 56px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-team strong {
+    max-width: 100% !important;
+    font-size: 12px !important;
+    line-height: 1.05 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .fc27-central-v2-approved .fc-vs {
+    min-width: 52px !important;
+    width: 52px !important;
+  }
+
+  .fc27-central-v2-approved .fc-vs b {
+    font-size: 27px !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-match-meta {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-match-meta > span {
+    padding: 6px !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-status-row,
+  .fc27-central-v2-approved .central-v3-lineup {
+    display: none !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+    padding-top: 0 !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-actions > button,
+  .fc27-central-v2-approved .central-v3-actions > .central-v3-action-main {
+    min-height: 38px !important;
+    font-size: 10px !important;
+  }
+
+  .fc27-central-v2-approved .fc27-v2-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .fc27-central-v2-approved .fc27-v2-panel {
+    padding: 10px !important;
+  }
+
+  .fc27-central-v2-approved .fc27-v2-panel-head {
+    padding-bottom: 6px !important;
+  }
+
+  .fc27-central-v2-approved .fc27-v2-agenda-row,
+  .fc27-central-v2-approved .fc27-v2-competition,
+  .fc27-central-v2-approved .fc27-v2-alert {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .fc27-central-v2-approved .fc27-v2-stats {
+    margin: 7px 0 !important;
+  }
+
+  .fc27-central-v2-approved .fc27-v2-number {
+    padding: 5px 2px !important;
+  }
+
+  .fc27-central-v2-approved .fc27-v2-number strong {
+    font-size: 17px !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-grid > .central-v3-tile {
+    min-height: 0 !important;
+  }
+
+  /* Telas densas preservam painel lateral em vez de empilhar tudo. */
+  .season-center {
+    grid-template-columns: minmax(190px, .42fr) minmax(0, 1.58fr);
+    gap: 10px;
+  }
+
+  .season-nav {
+    position: sticky;
+    top: calc(var(--pl-nav-height) + 8px);
+    max-height: calc(100dvh - var(--pl-nav-height) - 16px);
+    padding: 12px !important;
+  }
+
+  .season-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .pl-calendar-screen {
+    grid-template-columns: minmax(210px, .45fr) minmax(0, 1.55fr);
+    grid-template-areas: "detail calendar" "agenda agenda";
+    gap: 10px;
+  }
+
+  .pl-calendar-screen > .cal-day-panel {
+    min-height: 0;
+  }
+
+  .pl-calendar-screen .calendar-day {
+    min-height: 52px;
+    padding: 4px;
+  }
+
+  .pl-calendar-screen .calendar-event {
+    height: 5px;
+    min-height: 5px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+  }
+
+  .pl-squad-screen .pl-squad-workspace {
+    grid-template-columns: minmax(430px, 1.35fr) minmax(230px, .65fr);
+  }
+
+  .pl-squad-screen .pl-squad-left {
+    padding: 10px;
+    border-right: 1px solid var(--pl-line);
+  }
+
+  .pl-squad-screen .pl-squad-pitch {
+    height: 470px;
+  }
+
+  .pl-squad-screen .pl-squad-detail {
+    border-top: 0;
+  }
+
+  .pl-player-showcase,
+  .coach-creation-grid,
+  .fc27-match-report {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pl-player-avatar,
+  .pl-player-avatar .avatar-stage {
+    min-height: 310px;
+  }
+
+  /* Partida ao vivo usa a largura: campo + comandos/eventos. */
+  .live-match-overlay {
+    overflow: hidden;
+  }
+
+  .lm-shell {
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  .lm-header {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 12px;
+    padding: 7px max(12px, env(safe-area-inset-right)) 7px max(12px, env(safe-area-inset-left));
+  }
+
+  .lm-header b {
+    font-size: 13px;
+  }
+
+  .lm-header b strong,
+  .lm-clock strong {
+    font-size: 20px;
+  }
+
+  .lm-layout {
+    grid-template-columns: minmax(430px, 1.55fr) minmax(240px, .7fr);
+    min-height: 0;
+    gap: 8px;
+    padding: 8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
+    overflow: hidden;
+  }
+
+  .lm-pitch {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .lm-panel {
+    min-height: 0;
+    padding: 10px;
+    overflow-y: auto;
+  }
+
+  .lm-controls {
+    min-height: 46px;
+    padding: 5px max(12px, env(safe-area-inset-right)) max(5px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .lm-controls span {
+    width: auto;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  /* Central de saves e criadores tambem aproveitam a largura horizontal. */
+  .landing,
+  .career-hub,
+  .wizard {
+    max-width: none;
+    padding: max(10px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  }
+
+  .landing header {
+    padding-top: 0;
+  }
+
+  .landing h1 {
+    margin: 8px 0 4px;
+    font-size: clamp(25px, 5vw, 38px);
+  }
+
+  .career-continue {
+    margin: 10px 0;
+    padding: 12px 16px;
+  }
+
+  .career-hub-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 10px 0 14px;
+  }
+
+  .career-hub-actions button {
+    min-height: 44px;
+  }
+
+  .career-slot {
+    padding: 10px 13px;
+  }
+
+  .simulation-stop-dialog {
+    max-width: min(680px, calc(100vw - 48px));
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+  }
+}
+
+/* Aparelhos extremamente baixos recebem uma reducao adicional sem diminuir
+   os alvos de toque. */
+@media (orientation: landscape) and (min-width: 568px) and (max-width: 900px) and (max-height: 400px) {
+  .game-shell .topbar {
+    padding: 4px 0;
+  }
+
+  .game-shell .topbar > div:first-child small,
+  .fc27-central-v2-approved > .central-v3-header .tag {
+    display: none;
+  }
+
+  .fc27-central-v2-approved > .central-v3-header {
+    min-height: 36px !important;
+  }
+
+  .fc27-central-v2-approved .central-v3-hero,
+  .fc27-central-v2-approved .central-v3-match {
+    min-height: 330px !important;
+  }
+}

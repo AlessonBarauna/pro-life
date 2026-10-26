@@ -122,6 +122,7 @@ const files = [
   "src/ui/fc27-06b-coach-creation.css",
   "src/ui/fc27-coach-squad-hub.css",
   "src/ui/fc27-central-v2.css",
+  "src/ui/fc27-mobile-landscape.css",
   "src/ui/fc27-player-central.css",
   "src/ui/fc27-player-stats.css",
   "src/ui/fc27-honors.css",
