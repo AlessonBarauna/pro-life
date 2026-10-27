@@ -726,7 +726,7 @@ case "tactic": {
         if(existing&&existing.status==="pending")throw Error("Já existe uma sondagem em andamento.");
         if(existing&&existing.status==="rejected"&&Number(s.day)<Number(existing.answeredDay||existing.responseDay)+14)throw Error("Aguarde 14 dias após a recusa para consultar novamente.");
         if(existing&&["accepted","asking_price"].includes(existing.status)&&Number(s.day)<=Number(existing.expiresDay))throw Error("Sondagem aprovada: você já pode negociar.");
-        const entry={id:"inq_"+s.season+"_"+s.day+"_"+p.id,playerId:p.id,clubId:seller.id,buyerClubId:buyer.id,startDay:Number(s.day)||0,responseDay:(Number(s.day)||0)+2,expiresDay:(Number(s.day)||0)+12,status:"pending"};
+        const entry={id:"inq_"+s.season+"_"+s.day+"_"+p.id,playerId:p.id,clubId:seller.id,buyerClubId:buyer.id,playerName:p.name,clubName:seller.name,position:p.primaryPosition||p.pos,startDay:Number(s.day)||0,responseDay:(Number(s.day)||0)+2,expiresDay:(Number(s.day)||0)+12,status:"pending"};
         if(existing)inquiries.splice(inquiries.indexOf(existing),1);
         inquiries.push(entry);
         break;
