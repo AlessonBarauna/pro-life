@@ -134,3 +134,18 @@ test("apresentação do reforço mostra reações nas redes e cresce nas contrat
   assert.match(big,/REAÇÕES NAS REDES/);assert.match(big,/@Bastidores/);
   assert.match(small,/REAÇÕES NAS REDES/);assert.doesNotMatch(small,/@Bastidores/);
 });
+test("Deadline Day destaca pendências no último dia da janela",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);Engine.CoachCareer.init(s,Engine);
+  let found=false;for(let d=0;d<400;d++){s.day=d;const w=Engine.Career.windowStatus(s);if(w.open&&Number(w.remaining)<=1){found=true;break;}}
+  assert.ok(found,"existe um último dia de janela");
+  s.coachCareer.inquiries=[{id:"i1",playerId:"p1",clubId:"gf_fc27_1",buyerClubId:s.clubId,playerName:"Fulano Teste",startDay:s.day,responseDay:s.day+2,expiresDay:s.day+12,status:"accepted"}];
+  View.setMarketArea("transferencias");View.setDealTab("propostas");
+  const html=View.renderMarket(s,Engine);
+  assert.match(html,/Último dia da janela de transferências/);assert.match(html,/Fulano Teste/);
+});
