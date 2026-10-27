@@ -149,3 +149,12 @@ test("Deadline Day destaca pendências no último dia da janela",()=>{
   const html=View.renderMarket(s,Engine);
   assert.match(html,/Último dia da janela de transferências/);assert.match(html,/Fulano Teste/);
 });
+test("mensagens da caixa de entrada têm botão de ação que leva à negociação",()=>{
+  const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+  const cc=fs.readFileSync(path.join(__dirname,"../src/domain/coach-career.js"),"utf8");
+  assert.match(cc,/action:\{label:inquiry\.status==="rejected"\?"Ver sondagens":"Negociar contratação",page:"market",area:"lists",list:"sondagens"/);
+  assert.match(app,/function messageAction\(m\)/);
+  assert.match(app,/\$\{messageAction\(m\)\}\$\{m\.read/);
+  assert.match(app,/b\.dataset\.msgId/);
+  assert.match(app,/setListScreen\?\.\(b\.dataset\.msgList\)/);
+});

@@ -527,7 +527,8 @@
       try{
         const label=inquiry.status==="accepted"?"aceita":inquiry.status==="asking_price"?"aceita, com exigência financeira":"recusada";
         root.ProLife?.Career?.addMessage?.(s,{category:"MERCADO",sender:"Departamento de scouting",subject:"Sondagem "+label+": "+(player?.name||"Jogador"),
-          body:inquiry.status==="rejected"?"A sondagem foi recusada. Você pode consultar de novo em 14 dias.":"Abra Listas > Sondagens para negociar a contratação até o prazo.",priority:inquiry.status==="rejected"?"NORMAL":"IMPORTANTE",eventId:"inquiry-answer:"+inquiry.id});
+          body:inquiry.status==="rejected"?"A sondagem foi recusada. Você pode consultar de novo em 14 dias.":"Abra Listas > Sondagens para negociar a contratação até o prazo.",priority:inquiry.status==="rejected"?"NORMAL":"IMPORTANTE",eventId:"inquiry-answer:"+inquiry.id,
+          action:{label:inquiry.status==="rejected"?"Ver sondagens":"Negociar contratação",page:"market",area:"lists",list:"sondagens",playerId:inquiry.playerId}});
       }catch(e){}
       settled++;
     }
