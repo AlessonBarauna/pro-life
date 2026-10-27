@@ -10,6 +10,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const app = read("src/ui/app.js");
 const css = read("src/ui/fc27-game-shell-desktop.css");
 const mobileMenuCss = read("src/ui/fc27-mobile-menu.css");
+const pwa = read("src/ui/pwa.js");
+const manifest = read("manifest.webmanifest");
 const html = read("index.html");
 const assets = read("tools/assets.cjs");
 
@@ -47,4 +49,20 @@ test("menu mobile: Central de Carreiras ocupa o viewport e orienta o modo horizo
   assert.match(mobileMenuCss, /height:100dvh/);
   assert.match(mobileMenuCss, /grid-template-rows:auto auto auto auto minmax\(0,1fr\) auto/);
   assert.match(mobileMenuCss, /\.career-slots\s*{[\s\S]*?overflow:auto/);
+});
+
+test("PWA: instala como aplicativo e abre a carreira somente em landscape", () => {
+  assert.match(html, /id="pwa-splash"/);
+  assert.match(html, /src\/ui\/pwa\.js/);
+  assert.match(assets, /"src\/ui\/pwa\.js"/);
+  assert.match(manifest, /"display":\s*"standalone"/);
+  assert.match(manifest, /"orientation":\s*"landscape"/);
+  assert.match(app, /class="mobile-landscape-gate"/);
+  assert.match(app, /data-enter-landscape/);
+  assert.match(app, /requestFullscreen/);
+  assert.match(app, /orientation\?\.lock\?\.\("landscape"\)/);
+  assert.match(mobileMenuCss, /\.game-shell > \.game-nav,[\s\S]*?visibility:hidden/);
+  assert.match(pwa, /beforeinstallprompt/);
+  assert.match(pwa, /Adicionar à Tela de Início/);
+  assert.match(pwa, /display-mode: standalone/);
 });

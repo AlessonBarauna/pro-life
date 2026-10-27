@@ -500,6 +500,7 @@
     const clubCrest = c?.id && window.ProLifeClubCrests ? window.ProLifeClubCrests.render(c.id, { size:"sm" }) : "";
     $("#app").innerHTML =
       `<div class="game-shell"><header class="game-nav"><button type="button" class="brand" data-page="home" aria-label="PRO LIFE · Central">PRO<span>LIFE</span></button><nav aria-label="Navegação principal">${quickNav.map(navButton).join("")}</nav><details class="global-more"><summary aria-label="Mais áreas">•••</summary><div><button type="button" data-page="inbox">Caixa</button><button type="button" data-page="national">Seleção</button><button type="button" data-page="history">Mundo</button><button type="button" data-page="save">Saves</button>${state.mode==="coach"?'<button type="button" data-coach-settings-open>Configurações da carreira</button>':""}</div></details><div class="club-chip">${clubCrest ? `<span class="club-chip-crest">${clubCrest}</span>` : ""}<span><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b><span class="sx-line">${esc(window.ProLifeShellExtras?.chipLine(state,D)||"")}</span></span></div>${window.ProLifeShellExtras?window.ProLifeShellExtras.bell(window.ProLifeShellExtras.pending(state,D)):""}</header><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${page === "englishCups" ? "FA Cup · EFL Cup · FA Community Shield" : page === "sudamericana" ? "CONMEBOL Sul-Americana · grupos, playoffs e fase eliminatória" : page === "libertadores" ? "CONMEBOL Libertadores · grupos e fase eliminatória" : page === "conference" ? "UEFA Conference League · classificação, rodadas e fase eliminatória" : page === "europa" ? "UEFA Europa League · classificação, rodadas e fase eliminatória" : page === "champions" ? "UEFA Champions League · classificação, rodadas e fase eliminatória" : (topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado")}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${subnavShell()}<div class="game-stage game-stage-${esc(page)}" data-page-stage="${esc(page)}"${page==="home"?` data-desktop-view="${esc(desktopHomeView)}"`:""}>${page==="home"?`<nav class="desktop-stage-tabs" aria-label="Visões da Central"><button type="button" data-desktop-home-view="match" class="${desktopHomeView==="match"?"active":""}" aria-selected="${desktopHomeView==="match"}">Dia de jogo</button><button type="button" data-desktop-home-view="management" class="${desktopHomeView==="management"?"active":""}" aria-selected="${desktopHomeView==="management"}">Gestão do clube</button></nav>`:""}${views[page]()}</div><div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
+    $("#app").querySelector(".game-shell")?.insertAdjacentHTML("afterbegin", `<aside class="mobile-landscape-gate" role="dialog" aria-modal="true" aria-label="Jogue no modo horizontal"><div class="mobile-landscape-gate-panel"><div class="mobile-landscape-phone" aria-hidden="true"><span>PRO<span>LIFE</span></span></div><div class="tag">MODO DE JOGO</div><h1>Gire o celular</h1><p>A carreira foi criada para jogar na horizontal, ocupando toda a tela.</p><button type="button" class="primary" data-enter-landscape>Ativar tela cheia</button><small>Se a tela não girar sozinha, desative o bloqueio de rotação do celular.</small></div></aside>`);
     mountInternationalOfferPreference();
     window.ProLifeTargetClubSelector?.mount?.(state,D,Career);
     mountAvatar();
@@ -637,6 +638,7 @@
     const last=slots.find(x=>x.id===active)||slots[0];
     const cards=slots.map(x=>`<article class="career-slot ${x.id===active?"active":""}"><div><small>${x.mode==="coach"?"TREINADOR":"JOGADOR"} · TEMPORADA ${x.season}</small> ${catalogBadge(x.id)}<h2>${esc(x.label||x.name)}</h2><p class="slot-club">${slotCrest(x)}${esc(x.club)}${x.pos?` · ${esc(x.pos)}`:""} · ${x.age} anos</p><small>Último acesso: ${new Date(x.updatedAt||Date.now()).toLocaleDateString("pt-BR")}</small></div><div class="career-slot-actions"><button class="primary" data-load-slot="${esc(x.id)}">Carregar</button><button data-rename-slot="${esc(x.id)}">Renomear</button><button data-export-slot="${esc(x.id)}">Exportar</button><button class="danger" data-delete-slot="${esc(x.id)}">Excluir</button></div></article>`).join("");
     $("#app").innerHTML=`<div class="landing career-hub"><header><div class="brand">PRO<span>LIFE</span></div><div class="tag">FOOTBALL CAREER</div></header><section class="career-hub-intro"><div class="tag">CENTRAL DE CARREIRAS</div><h1>Escolha sua carreira</h1><p class="intro">Continue de onde parou, carregue outro save ou comece uma nova história.</p><p class="career-orientation-hint"><span aria-hidden="true">↻</span> Gire o celular para jogar em tela cheia</p></section>${last?`<section class="career-continue"><div><small>ÚLTIMA CARREIRA</small> ${catalogBadge(last.id)}<h2>${esc(last.label||last.name)}</h2><p class="slot-club">${slotCrest(last)}${esc(last.club)} · Temporada ${last.season}</p></div><button class="primary" data-load-slot="${esc(last.id)}">Continuar carreira →</button></section>`:""}<nav class="career-hub-actions" aria-label="Criar ou importar carreira"><button class="primary" data-action="new-player">Nova carreira de jogador</button><button data-action="new-coach">Nova carreira de treinador</button><button data-action="import">Importar carreira</button></nav><section class="career-slots"><div class="split"><div><div class="tag">CARREIRAS SALVAS</div><h2>Carregar carreira</h2></div><span class="pill">${slots.length} save${slots.length===1?"":"s"}</span></div>${cards||'<div class="empty">Nenhuma carreira salva neste aparelho.</div>'}</section><p class="muted career-storage-note">Os saves ficam separados neste navegador. No iPhone, exporte uma carreira se quiser manter uma cópia fora do navegador.</p></div>`;
+    $("#app").querySelector(".career-hub-actions")?.insertAdjacentHTML("beforeend", `<button type="button" class="career-install-app" data-install-app>Instalar aplicativo</button>`);
   }
   function landing() {
     if (!setup) { careerHub(); return; }
@@ -8745,7 +8747,22 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (!S.save(state))
       toast("Autosave indisponível neste navegador. Use Exportar save.");
   }
+  async function enterLandscapeMode() {
+    try {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (_) {}
+    try {
+      await screen.orientation?.lock?.("landscape");
+    } catch (_) {}
+  }
   document.addEventListener("click", (event) => {
+    if (event.target.closest?.("[data-enter-landscape]")) {
+      event.preventDefault();
+      enterLandscapeMode();
+      return;
+    }
     const coachMarketAreaButton = event.target.closest?.(".cc-market-main-nav [data-coach-market-area]");
     if (coachMarketAreaButton && state?.mode === "coach") {
       event.preventDefault();
