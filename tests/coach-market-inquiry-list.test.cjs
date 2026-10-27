@@ -1,0 +1,160 @@
+const test=require("node:test"),assert=require("node:assert/strict");
+const fs=require("fs"),path=require("path");
+const view=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+const game=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"utf8");
+test("mercado tem aba Sondagens com a lista de interesses consultados",()=>{
+  assert.match(view,/\["sondagens","Sondagens"\]/);
+  assert.match(view,/ui\.scoutScreen==="sondagens"\)return scoutNav\+inquiryPanel/);
+  for(const l of ["Painel","Scouting","Transferências","Listas","Elenco"])assert.ok(view.includes('"'+l+'"'));
+  assert.match(view,/setListScreen:id=>/);
+  assert.match(view,/setScoutScreen:id=>\{if\(\["busca","alvos","sondagens"/);
+  assert.match(view,/Sondagens enviadas/);
+});
+test("sondagem nova guarda nome do jogador e do clube",()=>{
+  assert.match(game,/playerName:p\.name,clubName:seller\.name/);
+});
+test("aba Sondagens renderiza as sondagens enviadas pelo clube atual",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);
+  View.setListScreen("sondagens");
+  let html=View.renderMarket(s,Engine);
+  assert.match(html,/Nenhuma sondagem enviada ainda/);
+  const other=s.globalFootball.clubs.find(c=>c.id!==s.clubId&&(c.roster||[]).length)||null;
+  const seller=other||Engine.club(s,"gf_fc27_1");
+  const p=(seller.roster||Engine.GlobalFootball.playersByClub(s,seller.id))[0];
+  Engine.CoachCareer.init?.(s,Engine);s.coachCareer.inquiries=[
+    {id:"i1",playerId:p.id,clubId:seller.id,buyerClubId:s.clubId,playerName:"Fulano Teste",clubName:"Clube Teste",startDay:3,responseDay:5,expiresDay:15,status:"pending"},
+    {id:"i2",playerId:"x2",clubId:seller.id,buyerClubId:s.clubId,playerName:"Beltrano Recusado",clubName:"Clube Teste",startDay:1,responseDay:3,expiresDay:13,status:"rejected",playerDecision:"rejected"},
+    {id:"i3",playerId:"x3",clubId:seller.id,buyerClubId:"outro",playerName:"De Outro Clube",startDay:2,status:"pending"}];
+  html=View.renderMarket(s,Engine);
+  assert.match(html,/2 SONDAGENS/);assert.match(html,/Aguardando resposta/);assert.match(html,/Recusada · jogador sem interesse/);
+  assert.doesNotMatch(html,/De Outro Clube/);
+  // Selecionar a sondagem abre o perfil do jogador na própria aba, sem voltar à busca mundial.
+  assert.match(html,/cc-market-search-layout/);
+  View.selectScoutPlayer(p.id);
+  html=View.renderMarket(s,Engine);
+  assert.match(html,/cc-market-player-detail/);
+  assert.ok(html.includes(p.name),"perfil do jogador consultado");
+  assert.match(html,/cc-inquiry-row[^"]* is-selected/);
+  assert.doesNotMatch(html,/Filtros de pesquisa/);
+});
+test("Listas abre Alvos, Sondagens e Saídas sem passar pela busca mundial",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);
+  View.setListScreen("alvos");let html=View.renderMarket(s,Engine);
+  assert.match(html,/data-coach-market-area="lists" aria-pressed="true"/);assert.match(html,/Lista de alvos/);assert.match(html,/data-coach-list-screen="sondagens"/);
+  View.setListScreen("saidas");html=View.renderMarket(s,Engine);assert.match(html,/data-coach-list-screen="saidas" aria-pressed="true"/);
+  View.setMarketArea("observacao");html=View.renderMarket(s,Engine);
+  assert.match(html,/data-coach-scout-screen="olheiros"/);assert.doesNotMatch(html,/data-coach-scout-screen="alvos"/);
+});
+test("perfil mostra o relatório do olheiro em 4 áreas",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);
+  View.setMarketArea("observacao");View.setScoutScreen("busca");
+  const html=View.renderMarket(s,Engine);
+  for(const a of ["ENCAIXE TÁTICO","POTENCIAL FUTURO","AVALIAÇÃO FINANCEIRA","SITUAÇÃO DO JOGADOR"])assert.ok(html.includes(a),a);
+});
+test("atividades da central de transferências incluem sondagens com prazo e ação",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);
+  Engine.CoachCareer.init(s,Engine);
+  s.coachCareer.inquiries=[{id:"i1",playerId:"p1",clubId:"gf_fc27_1",buyerClubId:s.clubId,playerName:"Fulano Teste",startDay:s.day,responseDay:s.day+2,expiresDay:s.day+12,status:"pending"},
+    {id:"i2",playerId:"p2",clubId:"gf_fc27_1",buyerClubId:s.clubId,playerName:"Ciclano Aceito",startDay:s.day,responseDay:s.day+2,expiresDay:s.day+12,status:"accepted"}];
+  View.setDealTab("propostas");View.setMarketArea("transferencias");
+  const html=View.renderMarket(s,Engine);
+  assert.match(html,/Fulano Teste/);assert.match(html,/Sondagem enviada · aguardar resposta/);
+  assert.match(html,/Sondagem aceita · abrir negociação/);assert.match(html,/data-coach-list-screen="sondagens"/);
+});
+test("mesa de negociação tem medidor de tensão e opção de desistir; último dia da janela vira Deadline Day",()=>{
+  const view=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+  assert.match(view,/TENSÃO DA NEGOCIAÇÃO/);assert.match(view,/Desistir da negociação/);
+  assert.match(view,/DEADLINE DAY · ÚLTIMO DIA/);assert.match(view,/data-deadline=/);
+});
+test("aba Cláusulas lista recompra e direito de preferência",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);Engine.CoachCareer.init(s,Engine);
+  const p=Engine.club(s).roster.find(x=>x.id!=="hero");
+  s.coachCareer.rightsClauses=[{id:"r1",type:"buyback",playerId:p.id,holderClubId:"gf_fc27_1",ownerClubId:s.clubId,price:12000000,expiresDay:s.day+700,active:true},
+    {id:"r2",type:"first_refusal",playerId:p.id,holderClubId:"gf_fc27_1",ownerClubId:s.clubId,expiresDay:s.day+700,active:true}];
+  View.setMarketArea("transferencias");View.setDealTab("clausulas");
+  const html=View.renderMarket(s,Engine);
+  assert.match(html,/Recompra por R\$ 12\.000\.000/);assert.match(html,/Direito de preferência/);
+});
+test("mesa de negociação mostra os três lados e o custo total",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);Engine.CoachCareer.init(s,Engine);
+  const seller=Engine.club(s,"gf_fc27_1");const p=(seller.roster||Engine.GlobalFootball.playersByClub(s,seller.id))[0];
+  s.coachCareer.negotiations=[{id:"n1",day:s.day,playerId:p.id,sellerClubId:seller.id,buyerClubId:s.clubId,requested:5000000,finalFee:6000000,status:"pending",round:2,response:"accepted",expiresDay:s.day+9,
+    contractOffer:{round:1,status:"accepted",salary:80000,years:3,bonus:200000,role:"Titular"},history:[]}];
+  View.setMarketArea("transferencias");View.setDealTab("propostas");View.openDeal("n1");
+  const html=View.renderMarket(s,Engine);
+  for(const x of ["VOCÊ","CLUBE VENDEDOR","JOGADOR","Rodada 2/3","Custo total do acordo","R$ 6.200.000"])assert.ok(html.includes(x),x);
+});
+test("apresentação do reforço mostra reações nas redes e cresce nas contratações de destaque",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const mk=(overall,fee)=>{const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);Engine.CoachCareer.init(s,Engine);
+    s.coachCareer.presentations=[{id:"pr1",playerName:"Craque Teste",fromClubName:"Origem FC",toClubName:"Destino FC",toClubId:s.clubId,fee,overall,position:"ATA",age:23,type:"permanent",presented:false}];
+    View.setMarketArea("transferencias");return View.renderMarket(s,Engine);};
+  const big=mk(88,60000000),small=mk(70,1000000);
+  assert.match(big,/REAÇÕES NAS REDES/);assert.match(big,/@Bastidores/);
+  assert.match(small,/REAÇÕES NAS REDES/);assert.doesNotMatch(small,/@Bastidores/);
+});
+test("Deadline Day destaca pendências no último dia da janela",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);Engine.CoachCareer.init(s,Engine);
+  let found=false;for(let d=0;d<400;d++){s.day=d;const w=Engine.Career.windowStatus(s);if(w.open&&Number(w.remaining)<=1){found=true;break;}}
+  assert.ok(found,"existe um último dia de janela");
+  s.coachCareer.inquiries=[{id:"i1",playerId:"p1",clubId:"gf_fc27_1",buyerClubId:s.clubId,playerName:"Fulano Teste",startDay:s.day,responseDay:s.day+2,expiresDay:s.day+12,status:"accepted"}];
+  View.setMarketArea("transferencias");View.setDealTab("propostas");
+  const html=View.renderMarket(s,Engine);
+  assert.match(html,/Último dia da janela de transferências/);assert.match(html,/Fulano Teste/);
+});
+test("mensagens da caixa de entrada têm botão de ação que leva à negociação",()=>{
+  const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
+  const cc=fs.readFileSync(path.join(__dirname,"../src/domain/coach-career.js"),"utf8");
+  assert.match(cc,/action:\{label:inquiry\.status==="rejected"\?"Ver sondagens":"Negociar contratação",page:"market",area:"lists",list:"sondagens"/);
+  assert.match(app,/function messageAction\(m\)/);
+  assert.match(app,/\$\{messageAction\(m\)\}\$\{m\.read/);
+  assert.match(app,/b\.dataset\.msgId/);
+  assert.match(app,/setListScreen\?\.\(b\.dataset\.msgList\)/);
+});

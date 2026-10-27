@@ -188,6 +188,17 @@
   };
   const nb = (txt) => { const n = heroNat(); if (n.code === "BRA") return txt; const nm = esc(n.name); return String(txt).replace("SELEÇÃO BRASILEIRA", "SELEÇÃO · " + nm.toUpperCase()).replace("do Brasil", "de " + nm).replace("O Brasil", nm).replace("Brasil", nm); };
   const natCrest = (x) => (window.ProLifeNationalCrests ? window.ProLifeNationalCrests.inline(x, "sm") : "");
+  // Botão de ação das mensagens (como no FC 27): leva direto ao que a mensagem pede.
+  function messageAction(m) {
+    let a = m.action;
+    if (!a && String(m.eventId || "").startsWith("inquiry-answer:")) {
+      const inq = (state.coachCareer?.inquiries || []).find((x) => "inquiry-answer:" + x.id === m.eventId);
+      a = { label: /recusada/i.test(m.subject) ? "Ver sondagens" : "Negociar contratação", page: "market", area: "lists", list: "sondagens", playerId: inq?.playerId };
+    }
+    if (!a || !a.page) return "";
+    const attrs = [`data-page="${esc(a.page)}"`, `data-msg-area="${esc(a.area || "")}"`, `data-msg-list="${esc(a.list || "")}"`, `data-msg-player="${esc(a.playerId || "")}"`, `data-msg-id="${esc(m.id)}"`].join(" ");
+    return `<button type="button" class="primary msg-action" ${attrs}>${esc(a.label || "Abrir")}</button> `;
+  }
   const dayDate = (day) =>
     new Date(
       Date.UTC(2026, 0, state?.world === "legacy" ? 5 : 1) + day * 86400000,
@@ -8572,7 +8583,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     },
     inbox() {
       const comm=Career.init(state).communications, messages=comm.messages||[], articles=comm.articles||[], unread=messages.filter(m=>!m.read).length;
-      return `<div class="grid"><section class="card"><div class="tag">CAIXA DE ENTRADA · ${unread} NOVA${unread===1?"":"S"}</div><h2>Mensagens da carreira</h2><p class="muted">Treinador, agente, clube, Seleção, imprensa e carreira. Propostas continuam em Mercado → Minhas propostas.</p>${(()=>{const os=(state.offers||[]).filter(o=>o.expires>=state.day);return os.length?`<article class="news neg-note"><time>PROPOSTAS PENDENTES · ${os.length}</time>${os.map(o=>{const i=clubIdentityOf(o.clubId);return `<p><b>${esc(txt(i?.name))}</b> · ${esc(leagueLine(i))} · expira em ${Math.max(0,o.expires-state.day)} dia(s)</p>`}).join("")}<button type="button" data-page="proposals">Abrir central de propostas</button></article>`:""})()}${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life" data-target="current-decision">Responder agora</button></article>` : ""}${messages.slice(0,20).map(m=>`<article class="news ${m.read?"":"notice"}"><time>${esc(m.category)} · ${esc(m.priority)} · ${dayDate(m.day)}</time><h3>${esc(m.subject)}</h3><p><b>${esc(m.sender)}</b> · ${esc(m.body)}</p>${m.read?`<small>Lida</small>`:`<button data-message-read="${esc(m.id)}">Marcar como lida</button>`}</article>`).join("")||empty("Nenhuma mensagem registrada.")}${comm.interviews.filter(i=>!i.answered).slice(0,2).map(i=>`<article class="news notice" id="interview-${esc(i.id)}"><time>ENTREVISTA · ${dayDate(i.day)}</time><h3>${esc(i.question)}</h3><div class="actions">${i.choices.map(c=>`<button data-interview="${esc(i.id)}" data-interview-choice="${esc(c.id)}">${esc(c.label)}</button>`).join("")}</div></article>`).join("")}</section><section class="card"><div class="tag">NOTÃCIAS</div><h2>A carreira reage ao que acontece</h2>${articles.slice(0,16).map(n=>`<article class="news"><time>${esc(n.category)} · ${dayDate(n.day)}</time><h3>${esc(n.title)}</h3><p>${esc(n.body)}</p></article>`).join("")||empty("Nenhuma notícia contextual ainda.")}</section></div>`;
+      return `<div class="grid"><section class="card"><div class="tag">CAIXA DE ENTRADA · ${unread} NOVA${unread===1?"":"S"}</div><h2>Mensagens da carreira</h2><p class="muted">Treinador, agente, clube, Seleção, imprensa e carreira. Propostas continuam em Mercado → Minhas propostas.</p>${(()=>{const os=(state.offers||[]).filter(o=>o.expires>=state.day);return os.length?`<article class="news neg-note"><time>PROPOSTAS PENDENTES · ${os.length}</time>${os.map(o=>{const i=clubIdentityOf(o.clubId);return `<p><b>${esc(txt(i?.name))}</b> · ${esc(leagueLine(i))} · expira em ${Math.max(0,o.expires-state.day)} dia(s)</p>`}).join("")}<button type="button" data-page="proposals">Abrir central de propostas</button></article>`:""})()}${state.decision ? `<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life" data-target="current-decision">Responder agora</button></article>` : ""}${messages.slice(0,20).map(m=>`<article class="news ${m.read?"":"notice"}"><time>${esc(m.category)} · ${esc(m.priority)} · ${dayDate(m.day)}</time><h3>${esc(m.subject)}</h3><p><b>${esc(m.sender)}</b> · ${esc(m.body)}</p>${messageAction(m)}${m.read?`<small>Lida</small>`:`<button data-message-read="${esc(m.id)}">Marcar como lida</button>`}</article>`).join("")||empty("Nenhuma mensagem registrada.")}${comm.interviews.filter(i=>!i.answered).slice(0,2).map(i=>`<article class="news notice" id="interview-${esc(i.id)}"><time>ENTREVISTA · ${dayDate(i.day)}</time><h3>${esc(i.question)}</h3><div class="actions">${i.choices.map(c=>`<button data-interview="${esc(i.id)}" data-interview-choice="${esc(c.id)}">${esc(c.label)}</button>`).join("")}</div></article>`).join("")}</section><section class="card"><div class="tag">NOTÃCIAS</div><h2>A carreira reage ao que acontece</h2>${articles.slice(0,16).map(n=>`<article class="news"><time>${esc(n.category)} · ${dayDate(n.day)}</time><h3>${esc(n.title)}</h3><p>${esc(n.body)}</p></article>`).join("")||empty("Nenhuma notícia contextual ainda.")}</section></div>`;
     },
     contract() {
       if (state.mode !== "player") return '<section class="card"><div class="tag">CONTRATO</div><h2>Contrato</h2><p class="muted">Disponível apenas na carreira de jogador.</p></section>';
@@ -8871,7 +8882,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return;
     }
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
-    const el = event.target.closest?.("[data-coach-pay-clause],[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-signing-squad],[data-coach-signing-open],[data-coach-signing-close],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-screen],[data-coach-scout-select],[data-coach-scout-page],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-save-priority],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer],[data-coach-submit-offer],[data-coach-cancel-offer],[data-coach-squad-player],[data-coach-squad-apply],[data-coach-player-status],[data-coach-renew-open],[data-coach-renew-cancel],[data-coach-renew-confirm],[data-coach-player-release],[data-coach-player-offers],[data-coach-squad-lineup]");
+    const el = event.target.closest?.("[data-coach-pay-clause],[data-coach-list-screen],[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-signing-squad],[data-coach-signing-open],[data-coach-signing-close],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-screen],[data-coach-scout-select],[data-coach-scout-page],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-save-priority],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer],[data-coach-submit-offer],[data-coach-cancel-offer],[data-coach-squad-player],[data-coach-squad-apply],[data-coach-player-status],[data-coach-renew-open],[data-coach-renew-cancel],[data-coach-renew-confirm],[data-coach-player-release],[data-coach-player-offers],[data-coach-squad-lineup]");
     if (!el || !state || state.mode !== "coach") return;
     const V = window.ProLifeCoachCareerView;
     if (el.hasAttribute("data-coach-tab")) { V?.setTab(el.getAttribute("data-coach-tab")); render(); return; }
@@ -8901,6 +8912,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     }
     if(el.hasAttribute("data-coach-player-offers")){V?.setMarketArea("transferencias");V?.setDealTab("recebidas");render();return;}
     if(el.hasAttribute("data-coach-squad-lineup")){squadSelectedId=el.getAttribute("data-coach-squad-lineup");page="squad";render();return;}
+    if(el.hasAttribute("data-coach-list-screen")) { V?.setListScreen(el.getAttribute("data-coach-list-screen")); render(); return; }
     if(el.hasAttribute("data-coach-scout-screen")) { V?.setScoutScreen(el.getAttribute("data-coach-scout-screen")); render(); return; }
     if(el.hasAttribute("data-coach-scout-select")) { V?.selectScoutPlayer(el.getAttribute("data-coach-scout-select")); render(); return; }
     if(el.hasAttribute("data-coach-scout-page")) { V?.setScoutPage(el.getAttribute("data-coach-scout-page")); render(); return; }
@@ -9000,7 +9012,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     }
     if (el.hasAttribute("data-coach-deal-accept")) {
       const id=el.getAttribute("data-coach-deal-accept");
-      return command("acceptCoachDeal",{id,paymentPlan:document.querySelector('[data-coach-deal-plan="'+id+'"]')?.value||"upfront"});
+      return command("acceptCoachDeal",{id,paymentPlan:document.querySelector('[data-coach-deal-plan="'+id+'"]')?.value||"upfront",exchangeIds:[...document.querySelectorAll('[data-coach-exchange="'+id+'"]:checked')].map(x=>x.value),sellOn:Number(document.querySelector('[data-coach-deal-sellon="'+id+'"]')?.value||0),rights:document.querySelector('[data-coach-deal-rights="'+id+'"]')?.value||""});
     }
     if (el.hasAttribute("data-coach-deal-reject")) return command("rejectCoachDeal",{id:el.getAttribute("data-coach-deal-reject")});
     if (el.hasAttribute("data-coach-deal-buy")) return command("buyLoan",{loanId:el.getAttribute("data-coach-deal-buy")});
@@ -9823,6 +9835,13 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (b.dataset.stopChoice) { command("decide", { choice:b.dataset.stopChoice }); closeSimulationStop(); return; }
     if (b.dataset.stopInterview) { command("respondInterview", { id:b.dataset.stopInterview, choice:b.dataset.stopInterviewChoice }); closeSimulationStop(); return; }
     if (b.dataset.page) {
+      if (b.dataset.msgId) {
+        const V = window.ProLifeCoachCareerView;
+        if (b.dataset.msgList) V?.setListScreen?.(b.dataset.msgList);
+        else if (b.dataset.msgArea) V?.setMarketArea?.(b.dataset.msgArea);
+        if (b.dataset.msgPlayer) V?.selectScoutPlayer?.(b.dataset.msgPlayer);
+        try { A.execute(state, "markMessageRead", { id: b.dataset.msgId }); persist(); } catch (e) {}
+      }
       if(b.dataset.englishCup)englishCupKey=b.dataset.englishCup;
       page = b.dataset.page;
       if (page === "calendar" && !calendarMonth) calendarMonth = Calendar?.monthId(state);

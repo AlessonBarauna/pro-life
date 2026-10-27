@@ -21,5 +21,5 @@ test("Central do celular gera blocos clicáveis e ação principal",()=>{
 test("CSS do celular fica restrito à orientação horizontal de aparelhos baixos",()=>{
   const css=read("src/ui/fc27-mobile-sm27.css");
   assert.match(css,/@media \(orientation: landscape\) and \(min-width: 568px\) and \(max-width: 1024px\) and \(max-height: 560px\)/);
-  assert.match(css,/\.phone-only \{ display:none; \}/);
+  assert.match(css,/\.phone-only, \.sm27-backdrop, \.sm27-drawer \{ display:none !important; \}/);
 });

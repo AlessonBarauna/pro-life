@@ -524,6 +524,12 @@
       inquiry.reasons=result.reasons;
       inquiry.interest=result.playerScore>=70?"high":result.playerScore>=40?"medium":"low";
       (s.news||[]).unshift({day:s.day,season:s.season,title:"Resposta à sondagem",body:(player?.name||"Jogador")+" · "+(inquiry.status==="accepted"?"Clube e atleta aceitam abrir negociação.":inquiry.status==="asking_price"?"O atleta aceita conversar; o clube exige proposta financeira.":inquiry.playerDecision!=="accepted"?"O jogador não demonstrou interesse na transferência.":"Clube vendedor recusou a sondagem.")});
+      try{
+        const label=inquiry.status==="accepted"?"aceita":inquiry.status==="asking_price"?"aceita, com exigência financeira":"recusada";
+        root.ProLife?.Career?.addMessage?.(s,{category:"MERCADO",sender:"Departamento de scouting",subject:"Sondagem "+label+": "+(player?.name||"Jogador"),
+          body:inquiry.status==="rejected"?"A sondagem foi recusada. Você pode consultar de novo em 14 dias.":"Abra Listas > Sondagens para negociar a contratação até o prazo.",priority:inquiry.status==="rejected"?"NORMAL":"IMPORTANTE",eventId:"inquiry-answer:"+inquiry.id,
+          action:{label:inquiry.status==="rejected"?"Ver sondagens":"Negociar contratação",page:"market",area:"lists",list:"sondagens",playerId:inquiry.playerId}});
+      }catch(e){}
       settled++;
     }
     return settled;

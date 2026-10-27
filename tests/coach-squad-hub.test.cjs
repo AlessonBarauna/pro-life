@@ -80,7 +80,15 @@ test("central de transferências expõe navegação única e ações individuais
   const view=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
   const hub=fs.readFileSync(path.join(__dirname,"../src/ui/coach-squad-hub.js"),"utf8");
   const index=fs.readFileSync(path.join(__dirname,"../index.html"),"utf8");
-  for(const label of ["Visão geral","Observação","Meu elenco","Negociações","Listas"])assert.ok(view.includes(label));
+  for(const label of ["Painel","Scouting","Transferências","Listas","Elenco"])assert.ok(view.includes(label));
   for(const action of ["data-coach-player-status","data-coach-renew-open","data-coach-player-release","data-coach-squad-lineup"])assert.ok(hub.includes(action));
   assert.ok(index.indexOf("coach-squad-hub.js")<index.indexOf("coach-career-view.js"));
+});
+
+test("detalhe do elenco mostra GER dinâmico com forma, moral e condição",()=>{
+  const Hub=require("../src/ui/coach-squad-hub.js");const D=require("../src/domain/engine.js");
+  const s=D.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;D.join(s,"gf_fc27_5",90000);
+  const p=D.club(s).roster.find(x=>x.id!=="hero");p.morale=30;p.condition=40;
+  Hub.select(p.id);const html=Hub.render(s,D);
+  assert.match(html,/GER DINÂMICO/);assert.match(html,/Condição/);assert.match(html,/csh-dynamic-parts/);
 });

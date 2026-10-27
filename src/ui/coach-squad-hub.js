@@ -56,6 +56,20 @@
       '<div class="csh-renew-actions"><button type="button" data-coach-renew-confirm="'+esc(p.id)+'">Confirmar renovação</button><button type="button" data-coach-renew-cancel>Cancelar</button></div></form>';
   }
 
+  // GER dinâmico: o GER base ajustado por forma, moral e condição física, como no FC 27.
+  function dynamicOvr(D,p){
+    const base=overall(D,p),n=v=>Number.isFinite(Number(v))?Number(v):null;
+    const form=n(p.form),morale=n(p.morale),cond=n(p.condition??p.fitness);
+    const fx=form==null?0:Math.max(-2,Math.min(2,(form-50)/25)),mx=morale==null?0:Math.max(-3,Math.min(2,(morale-60)/20)),cx=cond==null?0:Math.max(-5,Math.min(0,(cond-85)/10));
+    const total=Math.round((fx+mx+cx)*10)/10;
+    return {base,value:Math.max(1,Math.round(base+total)),delta:Math.round(total),parts:[["Forma",Math.round(fx*10)/10],["Moral",Math.round(mx*10)/10],["Condição",Math.round(cx*10)/10]]};
+  }
+  function dynamicPanel(D,p){
+    const d=dynamicOvr(D,p),sign=v=>(v>0?"+":"")+v;
+    const injury=p.injury?'<p class="csh-injury">Lesão: '+esc(p.injury.name||p.injury.type||"em recuperação")+(p.injury.daysLeft!=null?' · '+esc(p.injury.daysLeft)+' dia(s)':'')+'. Escalar o jogador lesionado aumenta o risco de piora.</p>':'';
+    return '<section class="csh-dynamic"><small>GER DINÂMICO</small><div class="csh-dynamic-top"><b>'+esc(d.value)+'</b><span>base '+esc(d.base)+' · '+esc(sign(d.delta))+'</span></div><div class="csh-dynamic-parts">'+d.parts.map(([l,v])=>'<span class="'+(v<0?'is-neg':v>0?'is-pos':'')+'"><small>'+esc(l)+'</small><b>'+esc(sign(v))+'</b></span>').join("")+'</div>'+injury+'</section>';
+  }
+
   function detail(s,D,p,prefs){
     if(!p)return '<aside class="csh-detail"><p>Selecione um jogador do elenco.</p></aside>';
     const photo=portrait(p),status=statusOf(prefs,p),offer=activeOffer(s,p),loan=activeLoan(s,p),months=remaining(s,p),cost=releaseCost(s,p);
@@ -63,7 +77,7 @@
     return '<aside class="csh-detail"><header>'+(photo?'<img src="'+esc(photo)+'" alt="Retrato de '+esc(p.name)+'">':'<i>'+esc(String(p.name||"?").charAt(0))+'</i>')+'<div><small>GESTÃO DO ATLETA</small><h3>'+esc(p.name||"Jogador")+'</h3><p>'+esc(p.primaryPosition||p.pos||p.position||"—")+' · '+esc(p.age??"—")+' anos · '+esc(p.nationality||p.nation||"Nacionalidade não informada")+'</p></div><strong>'+esc(overall(D,p))+'<small>GER</small></strong></header>'+
       '<div class="csh-detail-kpis"><span><small>Potencial</small><b>'+esc(potential(D,p))+'</b></span><span><small>Valor</small><b>'+esc(money(marketValue(p)))+'</b></span><span><small>Salário mensal</small><b>'+esc(money(salary(p)))+'</b><small>'+esc(money(root.ProLifePlayerEconomy?.weeklySalary?.(salary(p))||0))+'/semana</small></span><span><small>Contrato</small><b>'+esc(months===null?"Não informado":months+" meses")+'</b></span></div>'+
       '<div class="csh-detail-grid"><span><small>Papel</small><b>'+esc(roleLabel(p.squadRole||p.contract?.role))+'</b></span><span><small>Forma</small><b>'+esc(p.form??"—")+'</b></span><span><small>Moral</small><b>'+esc(Math.round(Number(p.morale)||0))+'</b></span><span><small>Condição</small><b>'+esc(Math.round(Number(p.condition??p.fitness)||0))+'%</b></span><span><small>Jogos</small><b>'+esc(stats.appearances??p.appearances??"—")+'</b></span><span><small>Gols / assist.</small><b>'+esc(stats.goals??p.goals??0)+' / '+esc(stats.assists??p.assists??0)+'</b></span></div>'+
-      '<div class="csh-current-status"><small>STATUS NO MERCADO</small><b>'+esc(statusLabel[status])+'</b>'+(offer?'<span>'+esc(offer.dealType==="loan"?"Há proposta de empréstimo ativa.":"Há proposta de compra ativa.")+'</span>':'')+(loan?'<span>Empréstimo ativo até o dia '+esc(loan.dueDay)+'.</span>':'')+'</div>'+
+      dynamicPanel(D,p)+'<div class="csh-current-status"><small>STATUS NO MERCADO</small><b>'+esc(statusLabel[status])+'</b>'+(offer?'<span>'+esc(offer.dealType==="loan"?"Há proposta de empréstimo ativa.":"Há proposta de compra ativa.")+'</span>':'')+(loan?'<span>Empréstimo ativo até o dia '+esc(loan.dueDay)+'.</span>':'')+'</div>'+
       '<div class="csh-actions"><button type="button" data-coach-player-status="'+(status==="listed"?'available':'listed')+'" data-player="'+esc(p.id)+'">'+(status==="listed"?'Retirar da lista de transferências':'Colocar na lista de transferências')+'</button><button type="button" data-coach-player-status="'+(status==="loan_listed"?'available':'loan_listed')+'" data-player="'+esc(p.id)+'">'+(status==="loan_listed"?'Retirar da lista de empréstimos':'Colocar na lista de empréstimos')+'</button><button type="button" data-coach-player-status="'+(status==="blocked"?'available':'blocked')+'" data-player="'+esc(p.id)+'">'+(status==="blocked"?'Liberar ofertas':'Bloquear ofertas')+'</button><button type="button" data-coach-renew-open="'+esc(p.id)+'">Renovar contrato</button><button type="button" data-coach-player-offers="'+esc(p.id)+'"'+(offer?'':' disabled')+'>Abrir propostas</button><button type="button" data-coach-squad-lineup="'+esc(p.id)+'">Abrir elenco e tática</button><button type="button" class="danger" data-coach-player-release="'+esc(p.id)+'" data-cost="'+esc(cost)+'">Liberar jogador'+(cost?' · '+esc(money(cost)):'')+'</button></div>'+renewalForm(s,p)+'</aside>';
   }
 
