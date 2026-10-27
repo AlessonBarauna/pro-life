@@ -7,10 +7,6 @@
   const club=(s,id)=>(s.clubs||[]).find(x=>x.id===id)||(s.globalFootball?.clubs||[]).find(x=>x.id===id)||null;
   const clubName=(s,id,fallback)=>club(s,id)?.name||fallback||id||"A definir";
   const baseDay=s=>(Number(s.season||2026)-2026)*365;
-  const isCurrentWorldEdition=(s,state)=>!!state&&(
-    Number(state.season)===Number(s.season)||
-    (state.calendarMode==="european_v1"&&Number(state.season)+1===Number(s.season))
-  );
   function addUnique(out,seen,item){
     if(!item?.id||seen.ids.has(item.id))return;
     const equivalent=`${plain(item.name)}:${item.season}`;
@@ -31,7 +27,7 @@
     const world=s.globalFootball?.worldCompetitions,worldStates=world?.leagues||{};
     for(const league of s.globalFootball?.leagues||[]){
       if(league.active===false||league.competitionEligible===false)continue;
-      const state=worldStates[league.id],current=isCurrentWorldEdition(s,state);
+      const state=worldStates[league.id],current=!!state&&Number(state.season)===Number(s.season);
       addUnique(out,seen,{id:league.id,name:league.name,country:league.country||"Internacional",type:"world-league",format:"double-round-robin",season:state?.season||s.season,available:current,status:current?(state.status||"Em andamento"):"Sem calendário processado"});
     }
     const n=s.nationalTeam||{},q=n.qualifiers;
@@ -104,7 +100,7 @@
     return finish(meta,hasTable?standingsFromFixtures(s,fixtures.filter(x=>rounds.find(r=>r.fixtures.includes(x))?.kind==="group"),ids):[],fixtures,rounds);
   }
   function worldLeague(s,meta,api){
-    const state=s.globalFootball?.worldCompetitions?.leagues?.[meta.id];if(!isCurrentWorldEdition(s,state))return finish(meta,[],[],[]);
+    const state=s.globalFootball?.worldCompetitions?.leagues?.[meta.id];if(!state||Number(state.season)!==Number(s.season))return finish(meta,[],[],[]);
     const rawStandings=api.WorldClubCompetitions.standings(s,meta.id),rawResults=api.WorldClubCompetitions.results(s,meta.id),rawCalendar=api.WorldClubCompetitions.calendar(s,meta.id),resultMap=new Map(rawResults.map(x=>[`${x.round}:${x.home}:${x.away}`,x]));
     const rounds=rawCalendar.map(r=>{const matches=r.pairs.map(p=>{const result=resultMap.get(`${r.round}:${p.home}:${p.away}`);return fixture(s,result||{...p,date:r.date,round:r.round},{competitionId:meta.id,round:r.round,stage:`Rodada ${r.round}`});});return{id:`round-${r.round}`,name:`Rodada ${r.round}`,day:r.date,fixtures:matches};});
     const fixtures=rounds.flatMap(r=>r.fixtures),standings=rawStandings.map((row,index)=>({rank:index+1,clubId:row.id,clubName:row.name,points:row.points,played:row.played,wins:row.w,draws:row.d,losses:row.l,goalsFor:row.gf,goalsAgainst:row.ga,goalDifference:row.gd,recentForm:formFor(fixtures,row.id)}));

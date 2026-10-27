@@ -130,13 +130,3 @@ test("Calendario: Natal e Ano-Novo nao sao duplicados no mesmo ano",()=>{
   assert.equal(christmas.length,1);
   assert.equal(newYear.length,1);
 });
-
-test("Calendario: agenda mantém jogos europeus depois da virada do ano",()=>{
-  const s=D.create({mode:"coach",name:"Treinador",city:"Mogi",age:40,clubId:"gf_fc27_21",catalogVersion:"fc27_v1"},17002);
-  const league=s.globalFootball.worldCompetitions.leagues.gf_fc27_bundesliga;
-  s.season=2027;s.day=489;league.round=31;
-  const events=Calendar.events(s,D),next=events.find(x=>x.day===490&&x.clubs?.includes(s.clubId));
-  assert.ok(next);
-  assert.equal(next.title,"SV Werder Bremen × FC Bayern München");
-  assert.equal(next.detail,"Bundesliga");
-});

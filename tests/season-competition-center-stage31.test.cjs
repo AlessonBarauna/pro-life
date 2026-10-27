@@ -80,19 +80,6 @@ test("31.7B: liga mundial reutiliza standings, results e calendar oficiais",()=>
   assertTable(data.standings);
 });
 
-test("31.7B: calendário mantém a temporada europeia após a virada do ano",()=>{
-  const s=D.create({mode:"coach",name:"Treinador",city:"Mogi",age:40,clubId:"gf_fc27_21",catalogVersion:"fc27_v1"},317031);
-  const leagueId="gf_fc27_bundesliga",leagueState=s.globalFootball.worldCompetitions.leagues[leagueId];
-  assert.equal(leagueState.calendarMode,"european_v1");
-  s.season=2027;s.day=489;leagueState.round=31;
-  const next=D.WorldClubCompetitions.nextFixture(s,leagueId,s.clubId);
-  assert.deepEqual({day:next.date,home:next.home,away:next.away},{day:490,home:"gf_fc27_38",away:"gf_fc27_21"});
-  const competition=D.seasonCompetitionCatalog(s).find(x=>x.id===leagueId);
-  assert.equal(competition.available,true);
-  const events=D.seasonCalendarEvents(s,next.date,next.date,{competitionId:leagueId});
-  assert.ok(events.some(x=>x.isHeroEvent&&x.homeId===next.home&&x.awayId===next.away));
-});
-
 test("31.7B: copas e estaduais mantêm fases eliminatórias sem tabela fictícia",()=>{
   const s=career(31704),cup=D.seasonCompetitionOverview(s,"copaBrasil");
   assert.deepEqual(cup.standings,[]);assert.ok(cup.rounds.length>0);assert.ok(cup.fixtures.length>0);

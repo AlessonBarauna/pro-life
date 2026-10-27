@@ -1,11 +1,7 @@
 (function (root) {
   "use strict";
 
-  // Safari/iOS can report a landscape layout viewport taller than the visible
-  // area (browser chrome + safe areas). 560px left those devices in the
-  // desktop document flow, so the page itself scrolled and controls vanished.
-  const QUERY = "(orientation: landscape) and (min-width: 568px) and (max-width: 1024px) and (max-height: 720px)";
-  const MIN_PLAYABLE_SCALE = .42;
+  const QUERY = "(orientation: landscape) and (min-width: 568px) and (max-width: 1024px) and (max-height: 560px)";
   const doc = root.document;
   let queued = false;
 
@@ -25,9 +21,6 @@
   }
 
   function clear(pair) {
-    pair.viewport.classList.remove("is-mobile-scrollable");
-    pair.viewport.removeAttribute("data-mobile-scroll");
-    pair.viewport.style.removeProperty("--pl-mobile-scroll-height");
     pair.canvas.style.removeProperty("--pl-mobile-fit");
     pair.canvas.style.removeProperty("width");
   }
@@ -47,15 +40,8 @@
       if (Math.abs(next - scale) < .015) { scale = next; break; }
       scale = next;
     }
-    scale = Math.max(MIN_PLAYABLE_SCALE, Math.min(1, scale));
+    scale = Math.max(.3, Math.min(1, scale));
     canvas.style.width = `${width / scale}px`;
-    const fittedHeight = Math.ceil(Math.max(canvas.scrollHeight, 1) * scale);
-    const needsScroll = fittedHeight > height + 2;
-    viewport.classList.toggle("is-mobile-scrollable", needsScroll);
-    if (needsScroll) {
-      viewport.dataset.mobileScroll = "true";
-      viewport.style.setProperty("--pl-mobile-scroll-height", `${fittedHeight}px`);
-    }
     canvas.style.setProperty("--pl-mobile-fit", scale.toFixed(4));
   }
 

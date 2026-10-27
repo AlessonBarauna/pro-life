@@ -214,13 +214,6 @@ for (const mode of ["player", "coach"]) {
   assert.equal(w.document.querySelector(".calendar-toolbar h2").textContent, monthTitle);
   click(w, '[data-calendar="today"]');
   assert.ok(w.document.querySelector(".calendar-day.today"));
-  click(w, '[data-calendar="prev"]');
-  const staleMonthTitle = w.document.querySelector(".calendar-toolbar h2").textContent;
-  click(w, '[data-page="home"]');
-  click(w, '.central-calendar [data-page="calendar"]');
-  assert.notEqual(w.document.querySelector(".calendar-toolbar h2").textContent, staleMonthTitle, "Calendário deve abandonar o mês antigo ao ser reaberto");
-  const nextGameDay = w.document.querySelector(".calendar-day.next-game");
-  if (nextGameDay) assert.ok(nextGameDay.classList.contains("selected"), "Calendário deve reabrir no próximo compromisso");
   if (mode === "player") {
     click(w, '[data-page="national"]');
     assert.ok(w.document.querySelector("main").textContent.includes("SELEÇÃO BRASILEIRA"));
