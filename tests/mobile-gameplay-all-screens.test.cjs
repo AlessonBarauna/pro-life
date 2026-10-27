@@ -1,0 +1,31 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const css = fs.readFileSync(path.join(__dirname, "../src/ui/fc27-mobile-sm27.css"), "utf8");
+
+test("mobile landscape keeps every non-central screen inside a fixed game stage", () => {
+  assert.match(css, /\.game-stage:not\(\.game-stage-home\)[\s\S]*transform:scale\(var\(--sm27-screen-scale\)\)/);
+  assert.match(css, /\.game-stage:not\(\.game-stage-home\) > \.sm27-screen-body[\s\S]*overflow-y:auto/);
+  assert.match(css, /\.game-stage \{[^}]*overflow:hidden/);
+});
+
+test("the mobile shell wraps every non-central view in one independent screen body", () => {
+  const app = fs.readFileSync(path.join(__dirname, "../src/ui/app.js"), "utf8");
+  assert.match(app, /const mobileLandscape = window\.matchMedia/);
+  assert.match(app, /mobileLandscape \? `<div class="sm27-screen-body">\$\{stageView\}<\/div>` : stageView/);
+  assert.match(app, /\$\{stageContent\}<\/div><div class="footer">/);
+});
+
+test("mobile landscape keeps local navigation visible and scrolls dense panels independently", () => {
+  assert.match(css, /:is\(\.cc-tabs,\.cc-deal-nav,\.cc-market-screen-nav,\.pl-squad-tabs,\.life-tabs\)[\s\S]*position:sticky/);
+  assert.match(css, /\.game-stage-squad \.sm27-screen-body > \.pl-squad-screen[\s\S]*\.game-stage-squad \.pl-squad-workspace[\s\S]*overflow:hidden/);
+  assert.match(css, /\.game-stage-squad \.pl-squad-left,[\s\S]*overflow-y:auto/);
+  assert.match(css, /\.game-stage-season :is\([\s\S]*overflow-y:auto/);
+});
+
+test("market filters and cards are compact enough for the horizontal phone viewport", () => {
+  assert.match(css, /\.cc-market-screen \.cc-fc27-filter-area[\s\S]*repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(css, /\.cc-market-screen \.cc-fc27-result \{ padding:8px 10px !important; \}/);
+});

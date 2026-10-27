@@ -96,11 +96,124 @@
   .game-shell .main > .topbar { display:none; }
   .game-subnav { flex:0 0 36px; min-height:36px; max-height:36px; padding:2px 0; margin:0 0 4px; }
   .game-subnav button { min-height:30px !important; padding:4px 12px; font-size:11px; }
-  .game-stage { flex:1 1 auto; min-height:0; margin:0; overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+  .game-stage { flex:1 1 auto; min-height:0; margin:0; overflow:hidden; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
   .game-stage-home { overflow:hidden; }
-  /* Telas de gestao usam a mesma estrutura do desktop, em escala de aparelho. */
-  .game-stage:not(.game-stage-home) { zoom:.7; }
+  /* As telas de gestao usam um palco virtual de 1180px. O palco ocupa exatamente
+     a area livre do aparelho; a rolagem pertence a tela ativa, nunca ao jogo todo. */
+  .game-stage:not(.game-stage-home) {
+    --sm27-screen-scale:.7;
+    flex:none;
+    width:calc(100% / var(--sm27-screen-scale));
+    height:calc(100% / var(--sm27-screen-scale));
+    min-height:0;
+    overflow:hidden;
+    transform:scale(var(--sm27-screen-scale));
+    transform-origin:top left;
+    zoom:1;
+  }
+  .game-stage:not(.game-stage-home) > .sm27-screen-body {
+    box-sizing:border-box;
+    width:100%;
+    max-width:none;
+    height:100%;
+    min-height:0;
+    max-height:100%;
+    margin:0;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-gutter:stable;
+  }
+  .game-stage:not(.game-stage-home) > .sm27-screen-body > :first-child {
+    margin-top:0;
+  }
   .desktop-stage-tabs { display:none !important; }
+
+  /* Abas internas permanecem acessiveis enquanto o painel ativo rola. */
+  .game-stage:not(.game-stage-home) :is(.cc-tabs,.cc-deal-nav,.cc-market-screen-nav,.pl-squad-tabs,.life-tabs) {
+    position:sticky;
+    z-index:12;
+    top:0;
+    margin-top:0;
+    background:#07131d;
+    box-shadow:0 8px 16px rgba(0,0,0,.28);
+  }
+
+  /* Treinador e Mercado: cabecalho compacto, menu fixo e painel rolavel. */
+  .game-stage:not(.game-stage-home) > .cc-dark,
+  .game-stage:not(.game-stage-home) > .cc-market-screen {
+    padding:10px 12px 14px;
+  }
+  .cc-market-screen { min-height:0 !important; }
+  .cc-market-heading { margin-bottom:8px !important; padding:5px 12px !important; }
+  .cc-market-heading h2 { margin:3px 0 !important; font-size:20px !important; }
+  .cc-market-heading p { margin:2px 0 !important; }
+  .cc-market-screen .cc-market-screen-head,
+  .cc-market-screen .cc-fc27-scout-head { margin-bottom:8px; padding:10px 14px; }
+  .cc-market-screen .cc-fc27-filter-area {
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:7px;
+    margin-bottom:8px;
+    padding:10px;
+  }
+  .cc-market-screen .cc-fc27-filter-area input,
+  .cc-market-screen .cc-fc27-filter-area select { min-height:34px; }
+  .cc-market-screen .cc-market-pages { margin:6px 0; padding:7px 9px; }
+  .cc-market-screen .cc-fc27-result { padding:8px 10px !important; }
+
+  /* Elenco: campo e ficha permanecem lado a lado; cada coluna tem seu scroll. */
+  .game-stage-squad .sm27-screen-body > .pl-squad-screen {
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .game-stage-squad .pl-squad-tabs { flex:0 0 auto; }
+  .game-stage-squad .pl-squad-workspace {
+    flex:1 1 auto;
+    min-height:0;
+    overflow:hidden;
+  }
+  .game-stage-squad .pl-squad-left,
+  .game-stage-squad .pl-squad-detail,
+  .game-stage-squad .pl-squad-supplement {
+    min-height:0;
+    max-height:100%;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+  .game-stage-squad .pl-squad-actions {
+    position:sticky;
+    z-index:14;
+    bottom:0;
+    flex:0 0 auto;
+    margin:0;
+    background:#07131d;
+  }
+
+  /* Temporada e calendario: a coluna lateral e o calendario rolam separados. */
+  .game-stage-season .sm27-screen-body > :is(.season-center,.pl-calendar-screen),
+  .game-stage-calendar .sm27-screen-body > :is(.season-center,.pl-calendar-screen) {
+    height:100%;
+    min-height:0;
+    overflow:hidden;
+  }
+  .game-stage-season :is(.season-nav,.season-content,.cal-day-panel,.cal-month-panel,.calendar-agenda),
+  .game-stage-calendar :is(.season-nav,.season-content,.cal-day-panel,.cal-month-panel,.calendar-agenda) {
+    min-height:0;
+    max-height:100%;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+
+  /* Paginas com muitos cartoes ganham uma grade compacta antes de recorrer ao scroll. */
+  .game-stage:not(.game-stage-home) .cc-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .game-stage:not(.game-stage-home) :is(.cc-card,.card,.dash-card) { padding:12px; }
+  .game-stage:not(.game-stage-home) :is(.cc-card,.card,.dash-card) h2,
+  .game-stage:not(.game-stage-home) :is(.cc-card,.card,.dash-card) h3 { margin-block:5px 9px; }
 
   /* ---------- Central em blocos ---------- */
   .sm27-home * { letter-spacing:0; }
