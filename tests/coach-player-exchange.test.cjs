@@ -40,3 +40,11 @@ test("acordo com cláusula de revenda via mesa de negociação registra a cláus
   A.execute(s,"recruit",{clubId:src.id,playerId:p.id,paymentPlan:"upfront",dealType:"permanent",sellOn:20});
   assert.ok(s.coachCareer.sellOnClauses.some(c=>c.playerId===p.id&&c.percentage===20&&c.active));
 });
+test("resposta de sondagem gera mensagem na caixa de entrada",()=>{
+  const {s,src}=setup();D.CoachCareer.init(s,D);
+  const p=src.roster.find(x=>x.id!=="hero");
+  A.execute(s,"coachInquiry",{clubId:src.id,playerId:p.id});
+  for(let i=0;i<3;i++)D.advance(s,1);
+  assert.notEqual(s.coachCareer.inquiries[0].status,"pending");
+  assert.match(JSON.stringify(D.Career.init(s)),/Sondagem (aceita|recusada)/);
+});
