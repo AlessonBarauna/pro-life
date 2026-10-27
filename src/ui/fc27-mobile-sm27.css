@@ -1,7 +1,7 @@
 /* PRO LIFE — celular deitado no padrão de telas do SM 27.
    Barra superior com menu, voltar, clube e botão Continuar; Central em blocos;
    cada tela cabe na janela e só o conteúdo interno rola. */
-.phone-only { display:none; }
+.phone-only, .sm27-backdrop, .sm27-drawer { display:none !important; }
 
 @media (orientation: landscape) and (min-width: 568px) and (max-width: 1024px) and (max-height: 560px) {
   :root {
@@ -19,8 +19,9 @@
   .mobile-game-canvas { position:static !important; transform:none !important; width:auto !important; }
   .mobile-stage-viewport { overflow:visible; display:contents; }
 
-  .phone-only { display:inline-flex; }
-  .sm27-backdrop, .sm27-drawer { display:none; }
+  .game-nav > .phone-only { display:inline-flex !important; }
+  .game-nav > .phone-continue { display:inline-grid !important; }
+  .game-nav > .phone-back[hidden] { display:none !important; }
 
   /* ---------- barra superior ---------- */
   .game-nav {
@@ -44,7 +45,6 @@
     background:rgba(255,255,255,.06); color:var(--sm27-text);
     font-size:18px; line-height:1;
   }
-  .phone-back[hidden] { display:none; }
   .phone-club { align-items:center; gap:6px; flex:0 0 auto; color:var(--sm27-text); font-weight:900; font-size:13px; letter-spacing:.04em; }
   .phone-club .club-chip-crest { width:30px; height:30px; display:inline-flex; }
   .phone-club img { width:30px; height:30px; object-fit:contain; }
@@ -73,8 +73,8 @@
     background:#071420; border-right:1px solid var(--sm27-line); transform:translateX(-102%);
     transition:transform .18s ease; box-shadow:12px 0 30px rgba(0,0,0,.45);
   }
-  body.sm27-menu-open .sm27-backdrop { display:block; }
-  body.sm27-menu-open .sm27-drawer { display:flex; transform:none; }
+  body.sm27-menu-open .sm27-backdrop { display:block !important; }
+  body.sm27-menu-open .sm27-drawer { display:flex !important; transform:none; }
   .sm27-drawer-club { display:flex; align-items:center; gap:8px; padding:4px 6px 10px; border-bottom:1px solid var(--sm27-line); margin-bottom:6px; }
   .sm27-drawer-club .club-chip-crest, .sm27-drawer-club img { width:34px; height:34px; }
   .sm27-drawer-club small { display:block; color:var(--sm27-dim); font-size:8px; letter-spacing:.12em; }
