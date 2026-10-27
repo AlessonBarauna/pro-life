@@ -12,6 +12,7 @@ const css = read("src/ui/fc27-game-shell-desktop.css");
 const mobileMenuCss = read("src/ui/fc27-mobile-menu.css");
 const pwa = read("src/ui/pwa.js");
 const mobileViewport = read("src/ui/mobile-game-viewport.js");
+const coachCreationCss = read("src/ui/fc27-06b-coach-creation.css");
 const manifest = read("manifest.webmanifest");
 const html = read("index.html");
 const assets = read("tools/assets.cjs");
@@ -22,10 +23,18 @@ test("shell desktop: folha de estilo entra na pagina e no pacote offline", () =>
 });
 
 test("shell desktop: documento fica fixo e o palco recebe a rolagem", () => {
-  assert.match(css, /html,\s*body,\s*#app\s*{[\s\S]*?overflow:hidden/);
+  assert.match(css, /html:has\(\.game-shell\),\s*body:has\(\.game-shell\),\s*#app:has\(> \.game-shell\)\s*{[\s\S]*?overflow:hidden/);
   assert.match(css, /\.game-shell\s*{[\s\S]*?height:100dvh;[\s\S]*?overflow:hidden/);
   assert.match(css, /\.game-stage\s*{[\s\S]*?overflow:auto/);
   assert.match(app, /class="game-stage game-stage-\$\{esc\(page\)\}"/);
+});
+
+test("criador desktop se molda a altura sem cortar os controles", () => {
+  assert.match(coachCreationCss, /grid-template-rows:auto auto minmax\(0,1fr\)/);
+  assert.match(coachCreationCss, /height:100dvh/);
+  assert.match(coachCreationCss, /#coach-creation-form,[\s\S]*?\.coach-creation-grid[\s\S]*?height:100%/);
+  assert.match(coachCreationCss, /\.coach-profile-art[\s\S]*?height:clamp\(150px,34vh,330px\)/);
+  assert.match(coachCreationCss, /\.coach-creation-card[\s\S]*?overflow:auto/);
 });
 
 test("shell desktop: Central alterna entre dia de jogo e gestao", () => {
