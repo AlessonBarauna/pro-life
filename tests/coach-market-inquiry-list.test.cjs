@@ -69,3 +69,19 @@ test("perfil mostra o relatório do olheiro em 4 áreas",()=>{
   const html=View.renderMarket(s,Engine);
   for(const a of ["ENCAIXE TÁTICO","POTENCIAL FUTURO","AVALIAÇÃO FINANCEIRA","SITUAÇÃO DO JOGADOR"])assert.ok(html.includes(a),a);
 });
+test("atividades da central de transferências incluem sondagens com prazo e ação",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);
+  Engine.CoachCareer.init(s,Engine);
+  s.coachCareer.inquiries=[{id:"i1",playerId:"p1",clubId:"gf_fc27_1",buyerClubId:s.clubId,playerName:"Fulano Teste",startDay:s.day,responseDay:s.day+2,expiresDay:s.day+12,status:"pending"},
+    {id:"i2",playerId:"p2",clubId:"gf_fc27_1",buyerClubId:s.clubId,playerName:"Ciclano Aceito",startDay:s.day,responseDay:s.day+2,expiresDay:s.day+12,status:"accepted"}];
+  View.setDealTab("propostas");View.setMarketArea("transferencias");
+  const html=View.renderMarket(s,Engine);
+  assert.match(html,/Fulano Teste/);assert.match(html,/Sondagem enviada · aguardar resposta/);
+  assert.match(html,/Sondagem aceita · abrir negociação/);assert.match(html,/data-coach-list-screen="sondagens"/);
+});

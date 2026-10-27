@@ -555,10 +555,13 @@
     // never from invented AI replies or hidden probabilities.
     const activeTasks=[
       ...sales.map(o=>({kind:"sale",id:o.id,due:Number(o.expiresDay),label:"Responder oferta recebida",person:player(o.playerId)?.name||o.playerId,waiting:o.status==="awaiting_window"})),
-      ...pending.map(n=>({kind:"deal",id:n.id,due:Number(n.expiresDay),label:"Revisar negociação de compra",person:player(n.playerId)?.name||n.playerId,waiting:n.status==="awaiting_window"}))
+      ...pending.map(n=>({kind:"deal",id:n.id,due:Number(n.expiresDay),label:"Revisar negociação de compra",person:player(n.playerId)?.name||n.playerId,waiting:n.status==="awaiting_window"})),
+      ...(c.inquiries||[]).filter(x=>String(x.buyerClubId)===String(s.clubId)&&(x.status==="pending"||(["accepted","asking_price"].includes(x.status)&&Number(s.day)<=Number(x.expiresDay)))).map(x=>({kind:"inquiry",id:x.id,
+        due:x.status==="pending"?Number(x.responseDay):Number(x.expiresDay),label:x.status==="pending"?"Sondagem enviada · aguardar resposta":"Sondagem aceita · abrir negociação",
+        person:x.playerName||player(x.playerId)?.name||x.playerId,waiting:false,cta:x.status==="pending"?"Ver sondagem":"Negociar"}))
     ].sort((a,b)=>(a.waiting?1:0)-(b.waiting?1:0)||a.due-b.due);
-    const taskPanel='<section class="cc-card" aria-label="Atividades de mercado"><h3>Atividades da Central de Transferências</h3><p class="cc-note">Próximas ações baseadas nas negociações registradas. Sem respostas ou sondagens simuladas.</p>'+
-      (activeTasks.length?activeTasks.slice(0,6).map(t=>'<article class="cc-deal"><div class="cc-deal-player"><strong>'+esc(t.person)+'</strong><small>'+esc(t.label)+'</small></div><span class="cc-status">'+(t.waiting?'Aguardando janela':t.due<s.day?'Prazo vencido':t.due-s.day<=3?'Prazo urgente':'Até '+careerDate(s,t.due))+'</span><button type="button" '+(t.kind==="sale"?'data-coach-deal-tab="recebidas"':'data-coach-deal-open="'+esc(t.id)+'"')+'>Ver negociação</button></article>').join(""):'<p class="cc-note">Nenhuma ação pendente. Use Observação para localizar atletas.</p>')+'</section>';
+    const taskPanel='<section class="cc-card" aria-label="Atividades de mercado"><h3>Atividades da Central de Transferências</h3><p class="cc-note">Negociações, ofertas recebidas e sondagens, com o prazo e a próxima ação de cada uma. Você pode desistir a qualquer momento.</p>'+
+      (activeTasks.length?activeTasks.slice(0,6).map(t=>'<article class="cc-deal"><div class="cc-deal-player"><strong>'+esc(t.person)+'</strong><small>'+esc(t.label)+'</small></div><span class="cc-status">'+(t.waiting?'Aguardando janela':t.due<s.day?'Prazo vencido':t.due-s.day<=3?'Prazo urgente':'Até '+careerDate(s,t.due))+'</span><button type="button" '+(t.kind==="sale"?'data-coach-deal-tab="recebidas"':t.kind==="inquiry"?'data-coach-list-screen="sondagens"':'data-coach-deal-open="'+esc(t.id)+'"')+'>'+(t.cta||"Ver negociação")+'</button></article>').join(""):'<p class="cc-note">Nenhuma ação pendente. Use Scouting para localizar atletas.</p>')+'</section>';
     const prefs=c.offerPreferences||{mode:"all",blockedIds:[],listedIds:[]};
     const own=D?.club?.(s,s.clubId);
     const prefMode=["all","listed","none"].includes(prefs.mode)?prefs.mode:"all";
