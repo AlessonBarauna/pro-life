@@ -48,3 +48,26 @@ test("resposta de sondagem gera mensagem na caixa de entrada",()=>{
   assert.notEqual(s.coachCareer.inquiries[0].status,"pending");
   assert.match(JSON.stringify(D.Career.init(s)),/Sondagem (aceita|recusada)/);
 });
+function sellScenario(rights){
+  const {s,own,src}=setup();D.CoachCareer.init(s,D);if(!D.Career.windowStatus(s).open)s.day=1;
+  const p=src.roster.find(x=>x.id!=="hero");
+  A.execute(s,"recruit",{clubId:src.id,playerId:p.id,paymentPlan:"upfront",dealType:"permanent",rights});
+  const third=D.club(s,"gf_fc27_2");third.roster=D.GlobalFootball.playersByClub(s,third.id).slice();third.budget=900000000;
+  const fee=rights==="buyback"?Math.ceil(1000000000/1000)*1000:5000000;
+  src.budget=900000000;
+  s.coachCareer.saleOffers=[{id:"sale1",playerId:p.id,buyerClubId:third.id,sellerClubId:own.id,amount:Math.min(fee,800000000),requested:1,round:1,status:"pending",createdDay:s.day,expiresDay:s.day+10,dealType:"permanent"}];
+  return {s,own,src,third,p};
+}
+test("direito de preferência: clube de origem iguala a oferta e fica com o jogador",()=>{
+  const {s,src,p}=sellScenario("first_refusal");
+  A.execute(s,"acceptSaleOffer",{id:"sale1"});
+  assert.ok(D.club(s,src.id).roster.some(x=>x.id===p.id),"voltou ao clube de origem");
+  assert.equal(s.coachCareer.rightsClauses[0].active,false);
+});
+test("recompra: clube de origem compra pelo valor fixado quando a oferta é maior",()=>{
+  const {s,src,p}=sellScenario("buyback");
+  const price=s.coachCareer.rightsClauses[0].price;
+  A.execute(s,"acceptSaleOffer",{id:"sale1"});
+  assert.ok(D.club(s,src.id).roster.some(x=>x.id===p.id));
+  assert.equal(s.coachCareer.saleOffers[0].amount,price);
+});

@@ -461,19 +461,20 @@ case "tactic": {
         const exchangeIds=(Array.isArray(data.exchangeIds)?data.exchangeIds:[]).map(String).slice(0,3);
         const sellOnPct=Number(data.sellOn||0);if(![0,10,20].includes(sellOnPct))throw Error("Cláusula de revenda inválida.");
         n.sellOn=sellOnPct;
+        const rights=["first_refusal","buyback"].includes(data.rights)?data.rights:"";n.rights=rights;
         if(!D.Career.windowStatus(s).open){
           n.status="awaiting_window";n.paymentPlan=plan;n.agreedDay=s.day;n.expiresDay=null;n.exchangeIds=exchangeIds;
           (s.news||[]).unshift({day:s.day,season:s.season,title:"Contratação acordada",body:"Transferência programada para a próxima janela. Nenhum pagamento antecipado."});
           return s;
         }
-        return execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:plan,dealType:"permanent",exchangeIds,sellOn:sellOnPct});
+        return execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:plan,dealType:"permanent",exchangeIds,sellOn:sellOnPct,rights});
       }
       case "settleCoachWindowDeals": {
         if(s.mode!=="coach"||!D.Career.windowStatus(s).open)return s;
         for(const n of s.coachCareer?.negotiations||[]){
           if(n.status!=="awaiting_window"||n.buyerClubId!==s.clubId)continue;
           try{
-            execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:n.paymentPlan||"upfront",dealType:"permanent",exchangeIds:n.exchangeIds||[],sellOn:n.sellOn||0});
+            execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:n.paymentPlan||"upfront",dealType:"permanent",exchangeIds:n.exchangeIds||[],sellOn:n.sellOn||0,rights:n.rights||""});
           }catch(error){
             n.lastSettlementError=String(error.message||error);
             // Retain agreed deal so the manager can address a budget or availability problem.
@@ -645,9 +646,9 @@ case "tactic": {
           break;
         }
         if(!offer)throw Error("Proposta indisponível.");
-        const seller=D.club(s,offer.sellerClubId),buyer=D.club(s,offer.buyerClubId);
+        const seller=D.club(s,offer.sellerClubId);let buyer=D.club(s,offer.buyerClubId);
         const p=seller?.roster?.find(x=>x.id===offer.playerId);
-        const fee=Number(offer.amount);
+        let fee=Number(offer.amount);
         if(!p||p.id==="hero"||seller.id===buyer?.id||seller.roster.length<=18||!buyer||!Array.isArray(buyer.roster)||!Number.isSafeInteger(fee)||fee<=0||fee>100000000000||!Number.isFinite(Number(buyer.budget))||Number(buyer.budget)<fee||buyer.roster.some(x=>x.id===p.id))throw Error("Transferência indisponível ou orçamento insuficiente.");
         if((s.coachCareer?.loans||[]).some(l=>!l.returned&&l.playerId===p.id))throw Error("Jogador emprestado não pode ser vendido.");
         if(offer.dealType==="loan"){
@@ -667,6 +668,22 @@ case "tactic": {
           D.Career.init(s).transfers=history.slice(0,100);
           (s.news||[]).unshift({day:s.day,season:s.season,title:"Empréstimo concluído",body:p.name+" foi emprestado ao "+buyer.name+" por "+duration+" dias. Taxa: R$ "+fee.toLocaleString("pt-BR")+"."});
           break;
+        }
+        // Direito de preferência e recompra: o clube de origem pode ficar com o jogador antes de um terceiro.
+        const rightsClause=(s.coachCareer?.rightsClauses||[]).find(x=>x.active&&x.playerId===p.id&&x.ownerClubId===seller.id&&Number(s.day)<=Number(x.expiresDay));
+        if(rightsClause){
+          const holder=D.club(s,rightsClause.holderClubId);
+          if(holder&&holder.id!==buyer.id&&holder.id!==seller.id){
+            if(!Array.isArray(holder.roster)){holder.roster=(D.GlobalFootball?.playersByClub?.(s,holder.id)||[]).slice();holder.lineup||=[];}
+            const price=rightsClause.type==="buyback"?Number(rightsClause.price):fee;
+            const applies=rightsClause.type==="buyback"?fee>=price:true;
+            if(applies&&Number(holder.budget)>=price&&holder.roster.length>0){
+              (s.news||[]).unshift({day:s.day,season:s.season,title:rightsClause.type==="buyback"?"Cláusula de recompra acionada":"Direito de preferência exercido",
+                body:holder.name+" ficou com "+p.name+" por R$ "+price.toLocaleString("pt-BR")+(rightsClause.type==="buyback"?" (valor de recompra)":", igualando a melhor oferta")+"."});
+              buyer=holder;offer.buyerClubId=holder.id;fee=price;offer.amount=price;rightsClause.active=false;
+              if(!Array.isArray(buyer.roster))buyer.roster=[];
+            }
+          }
         }
         const clauses=(s.coachCareer?.sellOnClauses||[]).filter(x=>x.active&&x.playerId===p.id&&x.buyerClubId===seller.id);
         const payments=clauses.map(x=>({x,beneficiary:D.club(s,x.sellerClubId),value:Math.floor(fee*Number(x.percentage)/100)}));
@@ -888,6 +905,11 @@ case "tactic": {
         }else if(sellOn){
           s.coachCareer.sellOnClauses ||= [];
           s.coachCareer.sellOnClauses.push({playerId:p.id,buyerClubId:own.id,sellerClubId:source.id,percentage:sellOn,active:true});
+        }
+        if(!isLoan&&["first_refusal","buyback"].includes(data.rights)){
+          s.coachCareer.rightsClauses||=[];
+          s.coachCareer.rightsClauses.push({id:"rights_"+s.season+"_"+s.day+"_"+p.id,type:data.rights,playerId:p.id,holderClubId:source.id,ownerClubId:own.id,
+            price:data.rights==="buyback"?Math.ceil(fee*1.3/1000)*1000:null,createdDay:Number(s.day)||0,expiresDay:(Number(s.day)||0)+730,active:true});
         }
         D.Career.transfer(s, p, source, own, fee);
         queueCoachPresentation(s,p,source,own,fee,isLoan?"loan":"permanent");

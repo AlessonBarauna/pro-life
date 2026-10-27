@@ -90,3 +90,18 @@ test("mesa de negociação tem medidor de tensão e opção de desistir; último
   assert.match(view,/TENSÃO DA NEGOCIAÇÃO/);assert.match(view,/Desistir da negociação/);
   assert.match(view,/DEADLINE DAY · ÚLTIMO DIA/);assert.match(view,/data-deadline=/);
 });
+test("aba Cláusulas lista recompra e direito de preferência",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);Engine.CoachCareer.init(s,Engine);
+  const p=Engine.club(s).roster.find(x=>x.id!=="hero");
+  s.coachCareer.rightsClauses=[{id:"r1",type:"buyback",playerId:p.id,holderClubId:"gf_fc27_1",ownerClubId:s.clubId,price:12000000,expiresDay:s.day+700,active:true},
+    {id:"r2",type:"first_refusal",playerId:p.id,holderClubId:"gf_fc27_1",ownerClubId:s.clubId,expiresDay:s.day+700,active:true}];
+  View.setMarketArea("transferencias");View.setDealTab("clausulas");
+  const html=View.renderMarket(s,Engine);
+  assert.match(html,/Recompra por R\$ 12\.000\.000/);assert.match(html,/Direito de preferência/);
+});
