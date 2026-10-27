@@ -15,6 +15,18 @@
       const day = (s.season - 2026) * 365 + (s.calendarDays?.[index] ?? 7 + index * 21);
       result.push({ day, type: "club", title: `${clubName(pair[0])} × ${clubName(pair[1])}`, detail: s.leagues.find((league) => league.id === D.club(s)?.leagueId)?.name || "Liga", destination: "matches", clubs: [pair[0], pair[1]] });
     });
+    // Carreiras internacionais usam o calendário mundial, inclusive nas ligas
+    // europeias cuja edição atravessa a virada do ano (ex.: 2026/27).
+    try {
+      const currentClub = D.club(s), leagueId = currentClub?.leagueId;
+      const leagueName = (s.globalFootball?.leagues || []).find((league) => league.id === leagueId)?.name || "Liga";
+      for (const round of D.WorldClubCompetitions?.calendar?.(s, leagueId) || []) {
+        for (const pair of round.pairs || []) {
+          if (pair.played || ![pair.home, pair.away].includes(own)) continue;
+          result.push({ day: round.date, type: "club", title: `${clubName(pair.home)} × ${clubName(pair.away)}`, detail: leagueName, destination: "matches", clubs: [pair.home, pair.away] });
+        }
+      }
+    } catch { /* calendário mundial opcional em saves antigos */ }
     const schedule = s.competitionSchedule || {};
     for (const fixture of schedule.state?.fixtures || []) if (!fixture.played) result.push({ day: fixture.date, type: "state", title: `${clubName(fixture.home)} × ${clubName(fixture.away)}`, detail: schedule.state.name, destination: "competitions", clubs: [fixture.home, fixture.away] });
     for (const round of schedule.cup?.rounds || []) for (const pair of round.pairs || []) if (!pair.played && (pair.home === own || pair.away === own)) result.push({ day: round.date, type: "cup", title: `${clubName(pair.home)} × ${clubName(pair.away)}`, detail: `${schedule.cup.name} · ${round.name}`, destination: "competitions", clubs: [pair.home, pair.away] });
