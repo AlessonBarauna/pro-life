@@ -6,6 +6,27 @@
     --pl-landscape-gutter: max(12px, env(safe-area-inset-left));
   }
 
+  html,
+  body,
+  #app {
+    width:100%;
+    height:100%;
+    min-height:0;
+    overflow:hidden;
+  }
+
+  .landing,
+  .wizard,
+  .coach-creation {
+    width:100%;
+    height:100dvh;
+    min-height:0;
+    overflow-x:hidden;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-y:contain;
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
     scroll-padding-top: var(--pl-nav-height);
@@ -466,6 +487,76 @@
     margin: 8px 0 4px;
     font-size: clamp(25px, 5vw, 38px);
   }
+
+  .coach-creation {
+    padding:10px max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+  }
+
+  .coach-creation-header {
+    align-items:flex-start;
+    gap:16px;
+    margin-bottom:9px;
+    padding-bottom:8px;
+  }
+
+  .coach-creation h1 {
+    margin:3px 0 4px;
+    font-size:clamp(25px,4.5vw,36px);
+  }
+
+  .coach-creation .coach-subtitle {
+    max-width:720px;
+    margin:0;
+    font-size:11px;
+    line-height:1.35;
+  }
+
+  .coach-steps {
+    position:sticky;
+    z-index:20;
+    top:0;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:5px;
+    margin:7px 0 9px;
+    padding:5px 0;
+    background:linear-gradient(#07131a 82%,transparent);
+  }
+
+  .coach-steps button {
+    min-height:38px;
+    padding:6px 4px;
+    font-size:9px;
+  }
+
+  .coach-creation-grid {
+    grid-template-columns:minmax(0,1.35fr) minmax(220px,.65fr);
+    gap:10px;
+    margin-top:9px;
+  }
+
+  .coach-creation-card {
+    padding:13px;
+  }
+
+  .coach-creation-card h2 {
+    margin-bottom:11px;
+    padding-bottom:8px;
+    font-size:15px;
+  }
+
+  .coach-fields {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px 12px;
+  }
+
+  .coach-fields label { gap:5px; font-size:9px; }
+  .coach-fields input,
+  .coach-fields select { height:39px; font-size:12px; }
+  .coach-creation .coach-fields[data-coach-panel] { min-height:0; }
+  .coach-creation .coach-section-note { margin:7px 0; font-size:10px; line-height:1.35; }
+  .coach-navigation { position:sticky; bottom:0; z-index:25; margin:9px 0 0; padding:6px 0 max(4px,env(safe-area-inset-bottom)); background:linear-gradient(transparent,#07131a 25%); }
+  .coach-navigation button { min-height:42px; }
+  .coach-creation .coach-profile-art { position:static; max-height:245px; }
 
   .career-continue {
     margin: 10px 0;

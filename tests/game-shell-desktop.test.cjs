@@ -57,7 +57,7 @@ test("PWA: instala como aplicativo e abre a carreira somente em landscape", () =
   assert.match(assets, /"src\/ui\/pwa\.js"/);
   assert.match(manifest, /"display":\s*"standalone"/);
   assert.match(manifest, /"orientation":\s*"landscape"/);
-  assert.match(app, /class="mobile-landscape-gate"/);
+  assert.match(html, /class="mobile-landscape-gate"/);
   assert.match(app, /data-enter-landscape/);
   assert.match(app, /requestFullscreen/);
   assert.match(app, /orientation\?\.lock\?\.\("landscape"\)/);
@@ -65,4 +65,11 @@ test("PWA: instala como aplicativo e abre a carreira somente em landscape", () =
   assert.match(pwa, /beforeinstallprompt/);
   assert.match(pwa, /Adicionar à Tela de Início/);
   assert.match(pwa, /display-mode: standalone/);
+});
+
+test("mobile: criadores não herdam o bloqueio de rolagem do menu e rolam no horizontal", () => {
+  assert.match(mobileMenuCss, /html:has\(\.career-hub\),[\s\S]*?#app:has\(\.career-hub\)[\s\S]*?overflow:hidden/);
+  assert.doesNotMatch(mobileMenuCss, /@media \(max-width:767px\)[\s\S]*?\n\s*html,\s*\n\s*body,\s*\n\s*#app\s*{/);
+  assert.match(read("src/ui/fc27-mobile-landscape.css"), /\.coach-creation\s*{[\s\S]*?height:100dvh;[\s\S]*?overflow-y:auto/);
+  assert.match(read("src/ui/fc27-mobile-landscape.css"), /\.coach-creation-grid\s*{[\s\S]*?grid-template-columns:minmax\(0,1\.35fr\)/);
 });
