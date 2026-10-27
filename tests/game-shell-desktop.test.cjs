@@ -77,13 +77,16 @@ test("mobile: criadores não herdam o bloqueio do menu e cabem no viewport horiz
   assert.match(read("src/ui/fc27-mobile-landscape.css"), /\.coach-steps\s*{[\s\S]*?position:static/);
 });
 
-test("mobile: cada área usa viewport fixo e reduz o conteúdo para caber sem scroll", () => {
+test("mobile: cada área usa viewport fixo e rolagem interna apenas quando necessária", () => {
   const landscape = read("src/ui/fc27-mobile-landscape.css");
   assert.match(html, /src\/ui\/mobile-game-viewport\.js/);
   assert.match(assets, /"src\/ui\/mobile-game-viewport\.js"/);
   assert.match(landscape, /\.game-shell\s*{[\s\S]*?grid-template-rows:var\(--pl-nav-height\) minmax\(0,1fr\)[\s\S]*?height:100dvh/);
   assert.match(landscape, /\.mobile-stage-viewport\s*{[\s\S]*?flex:1 1 auto/);
   assert.match(landscape, /\.mobile-game-canvas\s*{[\s\S]*?transform:scale\(var\(--pl-mobile-fit,1\)\)/);
-  assert.match(mobileViewport, /Math\.max\(\.3, Math\.min\(1, scale\)\)/);
+  assert.match(mobileViewport, /MIN_PLAYABLE_SCALE = \.42/);
+  assert.match(mobileViewport, /is-mobile-scrollable/);
+  assert.match(mobileViewport, /--pl-mobile-scroll-height/);
+  assert.match(landscape, /\.mobile-stage-viewport\.is-mobile-scrollable[\s\S]*?overflow-y:auto/);
   assert.match(mobileViewport, /MutationObserver\(schedule\)/);
 });

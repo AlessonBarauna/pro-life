@@ -224,6 +224,36 @@
     height:100dvh;
   }
 
+  .mobile-stage-viewport.is-mobile-scrollable,
+  .mobile-screen-viewport.is-mobile-scrollable {
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(211,250,55,.65) rgba(255,255,255,.06);
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .mobile-stage-viewport.is-mobile-scrollable::after,
+  .mobile-screen-viewport.is-mobile-scrollable::after {
+    content:"";
+    display:block;
+    width:1px;
+    height:var(--pl-mobile-scroll-height,100%);
+    pointer-events:none;
+  }
+
+  .mobile-stage-viewport.is-mobile-scrollable::-webkit-scrollbar,
+  .mobile-screen-viewport.is-mobile-scrollable::-webkit-scrollbar {
+    width:5px;
+  }
+
+  .mobile-stage-viewport.is-mobile-scrollable::-webkit-scrollbar-thumb,
+  .mobile-screen-viewport.is-mobile-scrollable::-webkit-scrollbar-thumb {
+    border-radius:999px;
+    background:#d3fa37;
+  }
+
   .mobile-game-canvas {
     position:absolute;
     top:0;
