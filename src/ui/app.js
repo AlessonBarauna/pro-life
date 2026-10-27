@@ -1303,6 +1303,12 @@
   const CAL_EPOCH = Date.UTC(2026, 0, 1);
   const calDate = (day) => new Date(CAL_EPOCH + day * 86400000);
   const calMonthOf = (day) => calDate(day).toISOString().slice(0, 7);
+  function syncCalendarEntry() {
+    const next = D.nextCommitment?.(state);
+    const focusDay = next && Number.isInteger(next.date) ? next.date : state.day;
+    calSel = focusDay;
+    calendarMonth = calMonthOf(focusDay);
+  }
   function apiEvents(from, to) {
     if (typeof D.seasonCalendarEvents !== "function") return null;
     const key = `${state.season}|${state.day}|${from}|${to}|${(state.offers || []).length}|${(state.matches || []).length}`;
@@ -8789,8 +8795,10 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       event.preventDefault();
       event.stopImmediatePropagation();
       if (subnavPageButton.dataset.englishCup) englishCupKey = subnavPageButton.dataset.englishCup;
-      page = subnavPageButton.dataset.page;
-      if (page === "calendar" && !calendarMonth) calendarMonth = Calendar?.monthId(state);
+      const nextPage = subnavPageButton.dataset.page;
+      const enteringCalendar = nextPage === "calendar" && page !== "calendar";
+      page = nextPage;
+      if (enteringCalendar) syncCalendarEntry();
       render();
       document.querySelector(".game-stage")?.scrollTo?.(0, 0);
       window.scrollTo(0, 0);
@@ -9811,8 +9819,9 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (b.dataset.stopGo) {
       const anchor=b.dataset.stopAnchor || "", destination=b.dataset.stopGo;
       closeSimulationStop();
+      const enteringCalendar=destination === "calendar" && page !== "calendar";
       page=destination;
-      if (page === "calendar" && !calendarMonth) calendarMonth=Calendar?.monthId(state);
+      if (enteringCalendar) syncCalendarEntry();
       render();
       requestAnimationFrame(()=>{
         const target=anchor ? document.getElementById(anchor) : null;
@@ -9843,8 +9852,10 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         try { A.execute(state, "markMessageRead", { id: b.dataset.msgId }); persist(); } catch (e) {}
       }
       if(b.dataset.englishCup)englishCupKey=b.dataset.englishCup;
-      page = b.dataset.page;
-      if (page === "calendar" && !calendarMonth) calendarMonth = Calendar?.monthId(state);
+      const nextPage = b.dataset.page;
+      const enteringCalendar = nextPage === "calendar" && page !== "calendar";
+      page = nextPage;
+      if (enteringCalendar) syncCalendarEntry();
       const target = b.dataset.target;
       render();
       if (target) {
