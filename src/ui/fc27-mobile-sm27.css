@@ -232,4 +232,14 @@
   .fc27-match-hero .fc27-match-summary { font-size:11px; }
   .fc27-recent-match { grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) !important; }
   .fc27-recent-meta { display:none !important; }
+
+  /* Táticas, funções e hierarquia: campo à esquerda e painel à direita, como as abas do SM 27. */
+  .pl-squad-screen:has(> .pl-squad-supplement) { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); grid-template-rows:auto minmax(0,1fr) auto; gap:6px 8px; height:calc((100dvh - var(--sm27-bar) - 14px) / .7); }
+  .pl-squad-screen:has(> .pl-squad-supplement) > .pl-squad-tabs { grid-column:1 / -1; grid-row:1; }
+  .pl-squad-screen:has(> .pl-squad-supplement) > .pl-squad-workspace { display:contents; }
+  .pl-squad-screen:has(> .pl-squad-supplement) .pl-squad-left { grid-column:1; grid-row:2; min-height:0; overflow:auto; zoom:.84; }
+  .pl-squad-screen:has(> .pl-squad-supplement) .pl-squad-detail,
+  .pl-squad-screen:has(> .pl-squad-supplement) .pl-squad-bench { display:none; }
+  .pl-squad-screen:has(> .pl-squad-supplement) > .pl-squad-supplement { grid-column:2; grid-row:2; min-height:0; margin:0; overflow:auto; }
+  .pl-squad-screen:has(> .pl-squad-supplement) > .pl-squad-actions { grid-column:1 / -1; grid-row:3; position:static; }
 }
