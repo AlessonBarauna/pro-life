@@ -222,4 +222,14 @@
   .coach-creation .coach-navigation { position:fixed; right:max(12px,env(safe-area-inset-right)); bottom:max(8px,env(safe-area-inset-bottom)); z-index:30; display:flex; gap:8px; width:auto; padding:6px; border-radius:12px; background:rgba(5,13,22,.92); border:1px solid var(--sm27-line); zoom:1; }
   .coach-creation .coach-navigation button { min-height:38px !important; padding:0 16px; font-size:13px; }
   .coach-creation-grid { padding-bottom:64px; }
+
+  /* ---------- resultado da partida: placar, eventos e jogos recentes numa tela ---------- */
+  .fc27-match-report { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr); gap:8px; align-items:stretch; height:calc((100dvh - var(--sm27-bar) - 30px) / .7); }
+  .fc27-match-report > section { min-height:0; max-height:100%; overflow-y:auto; margin:0; }
+  .fc27-match-hero { background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(20,60,150,.35)); }
+  .fc27-match-hero .fc27-scoreboard { gap:8px; }
+  .fc27-match-hero .fc27-match-crest { width:52px; height:52px; }
+  .fc27-match-hero .fc27-match-summary { font-size:11px; }
+  .fc27-recent-match { grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) !important; }
+  .fc27-recent-meta { display:none !important; }
 }
