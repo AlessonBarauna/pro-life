@@ -105,3 +105,18 @@ test("aba Cláusulas lista recompra e direito de preferência",()=>{
   const html=View.renderMarket(s,Engine);
   assert.match(html,/Recompra por R\$ 12\.000\.000/);assert.match(html,/Direito de preferência/);
 });
+test("mesa de negociação mostra os três lados e o custo total",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);Engine.CoachCareer.init(s,Engine);
+  const seller=Engine.club(s,"gf_fc27_1");const p=(seller.roster||Engine.GlobalFootball.playersByClub(s,seller.id))[0];
+  s.coachCareer.negotiations=[{id:"n1",day:s.day,playerId:p.id,sellerClubId:seller.id,buyerClubId:s.clubId,requested:5000000,finalFee:6000000,status:"pending",round:2,response:"accepted",expiresDay:s.day+9,
+    contractOffer:{round:1,status:"accepted",salary:80000,years:3,bonus:200000,role:"Titular"},history:[]}];
+  View.setMarketArea("transferencias");View.setDealTab("propostas");View.openDeal("n1");
+  const html=View.renderMarket(s,Engine);
+  for(const x of ["VOCÊ","CLUBE VENDEDOR","JOGADOR","Rodada 2/3","Custo total do acordo","R$ 6.200.000"])assert.ok(html.includes(x),x);
+});
