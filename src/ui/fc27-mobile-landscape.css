@@ -1,5 +1,9 @@
 /* PRO LIFE — camada mobile horizontal.
    Mantem desktop e telefone em pe intactos; entra apenas em viewports baixas e largas. */
+.mobile-stage-viewport,
+.mobile-screen-viewport,
+.mobile-game-canvas { display:contents; }
+
 @media (orientation: landscape) and (min-width: 568px) and (max-width: 1024px) and (max-height: 560px) {
   :root {
     --pl-nav-height: 48px;
@@ -19,12 +23,10 @@
   .wizard,
   .coach-creation {
     width:100%;
-    height:100dvh;
+    height:auto;
     min-height:0;
     overflow-x:hidden;
-    overflow-y:auto;
-    -webkit-overflow-scrolling:touch;
-    overscroll-behavior-y:contain;
+    overflow-y:visible;
   }
 
   html {
@@ -38,16 +40,19 @@
   }
 
   .game-shell {
-    padding-top: var(--pl-nav-height);
+    display:grid;
+    grid-template-rows:var(--pl-nav-height) minmax(0,1fr);
+    width:100%;
+    height:100dvh;
+    min-height:0;
+    padding:0;
+    overflow:hidden;
   }
 
   /* Navegacao principal sempre no topo; a regra de celular em pe nao deve
      transformar o menu em barra inferior quando o aparelho esta deitado. */
   .game-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    position:relative;
     z-index: 80;
     height: var(--pl-nav-height);
     min-height: var(--pl-nav-height);
@@ -126,10 +131,12 @@
   }
 
   .game-subnav {
-    position: sticky;
-    top: var(--pl-nav-height);
+    position:relative;
+    top:auto;
     z-index: 60;
     min-height: 40px;
+    flex:0 0 40px;
+    max-height:40px;
     padding: 3px max(12px, env(safe-area-inset-right)) 3px max(12px, env(safe-area-inset-left));
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -144,17 +151,26 @@
 
   /* Estrutura compacta: acoes continuam acessiveis sem consumir metade da tela. */
   .game-shell .main {
+    display:flex;
+    flex-direction:column;
     width: 100%;
     max-width: none;
-    padding: 0 max(12px, env(safe-area-inset-right)) 18px max(12px, env(safe-area-inset-left));
+    height:100%;
+    min-height:0;
+    padding:0 max(12px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+    overflow:hidden;
   }
 
   .game-shell .topbar {
+    flex:0 0 50px;
+    min-height:50px;
+    max-height:50px;
     display: grid;
     grid-template-columns: minmax(170px, .7fr) minmax(390px, 1.3fr);
     align-items: center;
     gap: 10px;
     padding: 7px 0;
+    overflow:hidden;
   }
 
   .game-shell .topbar h1 {
@@ -188,6 +204,50 @@
   .game-shell .topbar .actions .primary {
     order: 0 !important;
   }
+
+  .mobile-stage-viewport,
+  .mobile-screen-viewport {
+    position:relative;
+    display:block;
+    min-width:0;
+    min-height:0;
+    overflow:hidden;
+  }
+
+  .mobile-stage-viewport {
+    flex:1 1 auto;
+    width:100%;
+  }
+
+  .mobile-screen-viewport {
+    width:100%;
+    height:100dvh;
+  }
+
+  .mobile-game-canvas {
+    position:absolute;
+    top:0;
+    left:0;
+    transform:scale(var(--pl-mobile-fit,1));
+    transform-origin:top left;
+    will-change:transform;
+  }
+
+  .mobile-stage-viewport .game-stage {
+    width:100%;
+    min-height:0;
+    margin:0;
+    overflow:visible;
+  }
+
+  .mobile-screen-viewport :is(.landing,.wizard,.coach-creation) {
+    width:100%;
+    height:auto;
+    min-height:0;
+    overflow:visible;
+  }
+
+  .game-shell .footer { display:none; }
 
   .game-shell button,
   .wizard button,
@@ -512,7 +572,7 @@
   }
 
   .coach-steps {
-    position:sticky;
+    position:static;
     z-index:20;
     top:0;
     grid-template-columns:repeat(6,minmax(0,1fr));
@@ -554,7 +614,7 @@
   .coach-fields select { height:39px; font-size:12px; }
   .coach-creation .coach-fields[data-coach-panel] { min-height:0; }
   .coach-creation .coach-section-note { margin:7px 0; font-size:10px; line-height:1.35; }
-  .coach-navigation { position:sticky; bottom:0; z-index:25; margin:9px 0 0; padding:6px 0 max(4px,env(safe-area-inset-bottom)); background:linear-gradient(transparent,#07131a 25%); }
+  .coach-navigation { position:static; z-index:25; margin:9px 0 0; padding:6px 0 max(4px,env(safe-area-inset-bottom)); background:none; }
   .coach-navigation button { min-height:42px; }
   .coach-creation .coach-profile-art { position:static; max-height:245px; }
 

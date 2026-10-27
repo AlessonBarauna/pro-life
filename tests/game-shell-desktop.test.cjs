@@ -11,6 +11,7 @@ const app = read("src/ui/app.js");
 const css = read("src/ui/fc27-game-shell-desktop.css");
 const mobileMenuCss = read("src/ui/fc27-mobile-menu.css");
 const pwa = read("src/ui/pwa.js");
+const mobileViewport = read("src/ui/mobile-game-viewport.js");
 const manifest = read("manifest.webmanifest");
 const html = read("index.html");
 const assets = read("tools/assets.cjs");
@@ -67,9 +68,22 @@ test("PWA: instala como aplicativo e abre a carreira somente em landscape", () =
   assert.match(pwa, /display-mode: standalone/);
 });
 
-test("mobile: criadores não herdam o bloqueio de rolagem do menu e rolam no horizontal", () => {
+test("mobile: criadores não herdam o bloqueio do menu e cabem no viewport horizontal", () => {
   assert.match(mobileMenuCss, /html:has\(\.career-hub\),[\s\S]*?#app:has\(\.career-hub\)[\s\S]*?overflow:hidden/);
   assert.doesNotMatch(mobileMenuCss, /@media \(max-width:767px\)[\s\S]*?\n\s*html,\s*\n\s*body,\s*\n\s*#app\s*{/);
-  assert.match(read("src/ui/fc27-mobile-landscape.css"), /\.coach-creation\s*{[\s\S]*?height:100dvh;[\s\S]*?overflow-y:auto/);
+  assert.match(read("src/ui/fc27-mobile-landscape.css"), /\.mobile-screen-viewport\s*{[\s\S]*?height:100dvh/);
+  assert.match(read("src/ui/fc27-mobile-landscape.css"), /\.mobile-screen-viewport :is\(\.landing,\.wizard,\.coach-creation\)[\s\S]*?overflow:visible/);
   assert.match(read("src/ui/fc27-mobile-landscape.css"), /\.coach-creation-grid\s*{[\s\S]*?grid-template-columns:minmax\(0,1\.35fr\)/);
+  assert.match(read("src/ui/fc27-mobile-landscape.css"), /\.coach-steps\s*{[\s\S]*?position:static/);
+});
+
+test("mobile: cada área usa viewport fixo e reduz o conteúdo para caber sem scroll", () => {
+  const landscape = read("src/ui/fc27-mobile-landscape.css");
+  assert.match(html, /src\/ui\/mobile-game-viewport\.js/);
+  assert.match(assets, /"src\/ui\/mobile-game-viewport\.js"/);
+  assert.match(landscape, /\.game-shell\s*{[\s\S]*?grid-template-rows:var\(--pl-nav-height\) minmax\(0,1fr\)[\s\S]*?height:100dvh/);
+  assert.match(landscape, /\.mobile-stage-viewport\s*{[\s\S]*?flex:1 1 auto/);
+  assert.match(landscape, /\.mobile-game-canvas\s*{[\s\S]*?transform:scale\(var\(--pl-mobile-fit,1\)\)/);
+  assert.match(mobileViewport, /Math\.max\(\.3, Math\.min\(1, scale\)\)/);
+  assert.match(mobileViewport, /MutationObserver\(schedule\)/);
 });

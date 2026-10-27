@@ -126,6 +126,7 @@ const files = [
   "src/ui/fc27-game-shell-desktop.css",
   "src/ui/fc27-mobile-menu.css",
   "src/ui/pwa.js",
+  "src/ui/mobile-game-viewport.js",
   "src/ui/fc27-player-central.css",
   "src/ui/fc27-player-stats.css",
   "src/ui/fc27-honors.css",
