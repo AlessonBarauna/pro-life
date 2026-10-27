@@ -32,4 +32,12 @@ test("aba Sondagens renderiza as sondagens enviadas pelo clube atual",()=>{
   html=View.renderMarket(s,Engine);
   assert.match(html,/2 SONDAGENS/);assert.match(html,/Aguardando resposta/);assert.match(html,/Recusada · jogador sem interesse/);
   assert.doesNotMatch(html,/De Outro Clube/);
+  // Selecionar a sondagem abre o perfil do jogador na própria aba, sem voltar à busca mundial.
+  assert.match(html,/cc-market-search-layout/);
+  View.selectScoutPlayer(p.id);
+  html=View.renderMarket(s,Engine);
+  assert.match(html,/cc-market-player-detail/);
+  assert.ok(html.includes(p.name),"perfil do jogador consultado");
+  assert.match(html,/cc-inquiry-row[^"]* is-selected/);
+  assert.doesNotMatch(html,/Filtros de pesquisa/);
 });

@@ -8884,7 +8884,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if(el.hasAttribute("data-coach-player-offers")){V?.setMarketArea("transferencias");V?.setDealTab("recebidas");render();return;}
     if(el.hasAttribute("data-coach-squad-lineup")){squadSelectedId=el.getAttribute("data-coach-squad-lineup");page="squad";render();return;}
     if(el.hasAttribute("data-coach-scout-screen")) { V?.setScoutScreen(el.getAttribute("data-coach-scout-screen")); render(); return; }
-    if(el.hasAttribute("data-coach-scout-select")) { if(el.dataset.coachScoutScreenAfter)V?.setScoutScreen(el.dataset.coachScoutScreenAfter); V?.selectScoutPlayer(el.getAttribute("data-coach-scout-select")); render(); return; }
+    if(el.hasAttribute("data-coach-scout-select")) { V?.selectScoutPlayer(el.getAttribute("data-coach-scout-select")); render(); return; }
     if(el.hasAttribute("data-coach-scout-page")) { V?.setScoutPage(el.getAttribute("data-coach-scout-page")); render(); return; }
     if(el.hasAttribute("data-coach-scout-apply")) { V?.setScoutFilters(document.querySelector("[data-coach-scout-search]")?.value, document.querySelector("[data-coach-scout-position]")?.value, {
       region:document.querySelector("[data-coach-scout-region]")?.value,
