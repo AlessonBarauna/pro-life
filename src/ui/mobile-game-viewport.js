@@ -1,7 +1,10 @@
 (function (root) {
   "use strict";
 
-  const QUERY = "(orientation: landscape) and (min-width: 568px) and (max-width: 1024px) and (max-height: 560px)";
+  // Safari/iOS can report a landscape layout viewport taller than the visible
+  // area (browser chrome + safe areas). 560px left those devices in the
+  // desktop document flow, so the page itself scrolled and controls vanished.
+  const QUERY = "(orientation: landscape) and (min-width: 568px) and (max-width: 1024px) and (max-height: 720px)";
   const MIN_PLAYABLE_SCALE = .42;
   const doc = root.document;
   let queued = false;

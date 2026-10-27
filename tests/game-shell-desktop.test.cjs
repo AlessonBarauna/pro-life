@@ -98,4 +98,6 @@ test("mobile: cada área usa viewport fixo e rolagem interna apenas quando neces
   assert.match(mobileViewport, /--pl-mobile-scroll-height/);
   assert.match(landscape, /\.mobile-stage-viewport\.is-mobile-scrollable[\s\S]*?overflow-y:auto/);
   assert.match(mobileViewport, /MutationObserver\(schedule\)/);
+  assert.match(mobileViewport, /max-height: 720px/);
+  assert.match(landscape, /max-height: 720px/);
 });
