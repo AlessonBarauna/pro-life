@@ -62,6 +62,8 @@
   .phone-continue b, .phone-continue small { display:block; }
   .phone-continue { display:inline-grid; grid-template-columns:auto auto; grid-template-rows:auto auto; column-gap:8px; }
   .phone-continue i { grid-row:1 / 3; grid-column:2; align-self:center; }
+  .game-nav .phone-continue { align-content:center; row-gap:1px; padding:2px 4px 2px 14px; height:40px; }
+  .game-nav .phone-continue b, .game-nav .phone-continue small { line-height:1.1; }
 
   /* ---------- menu lateral ---------- */
   .sm27-backdrop { position:fixed; inset:var(--sm27-bar) 0 0 0; z-index:190; background:rgba(0,0,0,.55); }
@@ -204,4 +206,20 @@
   .lm-shell .lm-score { padding-bottom:6px; font-size:11px; }
   .lm-shell .lm-score strong { font-size:22px; }
   .lm-shell .lm-feed article { padding:5px 0; font-size:10.5px; }
+
+  /* ---------- elenco / táticas: campo e detalhes lado a lado, sem cabeçalho extra ---------- */
+  .pl-squad-header, .pl-squad-fit-note { display:none; }
+  .pl-squad-tabs { min-height:0; }
+  .pl-squad-actions { position:sticky; bottom:0; z-index:3; flex-wrap:nowrap; overflow-x:auto; background:rgba(5,13,22,.94); }
+
+  /* ---------- telas sem a barra do jogo (carreiras, criação) ---------- */
+  .mobile-screen-viewport { display:contents; height:auto; }
+  #app > .coach-creation, #app > .wizard, #app > .landing, #app > .career-hub,
+  .mobile-screen-viewport > .mobile-game-canvas > :is(.coach-creation,.wizard,.landing,.career-hub) {
+    zoom:.72; height:calc(100dvh / .72); min-height:0; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain;
+  }
+  /* Botões de avançar/voltar da criação sempre visíveis no rodapé. */
+  .coach-creation .coach-navigation { position:fixed; right:max(12px,env(safe-area-inset-right)); bottom:max(8px,env(safe-area-inset-bottom)); z-index:30; display:flex; gap:8px; width:auto; padding:6px; border-radius:12px; background:rgba(5,13,22,.92); border:1px solid var(--sm27-line); zoom:1; }
+  .coach-creation .coach-navigation button { min-height:38px !important; padding:0 16px; font-size:13px; }
+  .coach-creation-grid { padding-bottom:64px; }
 }
