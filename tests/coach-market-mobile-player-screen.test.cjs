@@ -29,6 +29,8 @@ test("player screen has a game-style back action and reuses the full profile",()
   assert.ok(viewSource.includes("+sideDetail+'</section>'"));
   assert.match(viewSource,/cc-scout-technical/);
   assert.match(viewSource,/cc-scout-contract/);
+  assert.match(viewSource,/ui\.marketArea==="observacao"&&ui\.scoutScreen==="perfil"/);
+  assert.match(viewSource,/cc-market-profile-screen/);
 });
 
 test("app chooses the dedicated screen on touch phones and restores list position",()=>{
@@ -42,4 +44,5 @@ test("landscape CSS removes the side panel and fits the profile as one screen",(
   assert.match(cssSource,/\.cc-market-search-layout > \.cc-market-player-detail\s*\{\s*display:none/);
   assert.match(cssSource,/\.cc-mobile-scout-profile > \.cc-market-player-detail/);
   assert.match(cssSource,/grid-template-columns:210px 210px minmax\(270px,1fr\) minmax\(270px,1fr\)/);
+  assert.match(cssSource,/:has\(\.cc-market-profile-screen\) \.topbar/);
 });

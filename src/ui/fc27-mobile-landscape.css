@@ -656,6 +656,22 @@
     background:linear-gradient(120deg,#07131d 0%,#0b2029 55%,#102f2b 100%);
   }
 
+  .game-shell:has(.cc-market-profile-screen) .topbar {
+    display:none;
+  }
+
+  .game-shell:has(.cc-market-profile-screen) .main {
+    width:100%;
+    max-width:none;
+    padding:0;
+  }
+
+  .cc-market-profile-screen {
+    min-height:0;
+    padding:0;
+    background:#07131d;
+  }
+
   .cc-mobile-scout-profile-head {
     display:flex;
     align-items:center;
