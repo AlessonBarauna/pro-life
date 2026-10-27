@@ -5,6 +5,8 @@ const game=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"ut
 test("mercado tem aba Sondagens com a lista de interesses consultados",()=>{
   assert.match(view,/\["sondagens","Sondagens"\]/);
   assert.match(view,/ui\.scoutScreen==="sondagens"\)return scoutNav\+inquiryPanel/);
+  for(const l of ["Painel","Scouting","Transferências","Listas","Elenco"])assert.ok(view.includes('"'+l+'"'));
+  assert.match(view,/setListScreen:id=>/);
   assert.match(view,/setScoutScreen:id=>\{if\(\["busca","alvos","sondagens"/);
   assert.match(view,/Sondagens enviadas/);
 });
@@ -19,7 +21,7 @@ test("aba Sondagens renderiza as sondagens enviadas pelo clube atual",()=>{
   global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
   const View=require("../src/ui/coach-career-view.js");
   const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);
-  View.setMarketArea("observacao");View.setScoutScreen("sondagens");
+  View.setListScreen("sondagens");
   let html=View.renderMarket(s,Engine);
   assert.match(html,/Nenhuma sondagem enviada ainda/);
   const other=s.globalFootball.clubs.find(c=>c.id!==s.clubId&&(c.roster||[]).length)||null;
@@ -40,4 +42,18 @@ test("aba Sondagens renderiza as sondagens enviadas pelo clube atual",()=>{
   assert.ok(html.includes(p.name),"perfil do jogador consultado");
   assert.match(html,/cc-inquiry-row[^"]* is-selected/);
   assert.doesNotMatch(html,/Filtros de pesquisa/);
+});
+test("Listas abre Alvos, Sondagens e Saídas sem passar pela busca mundial",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);
+  View.setListScreen("alvos");let html=View.renderMarket(s,Engine);
+  assert.match(html,/data-coach-market-area="lists" aria-pressed="true"/);assert.match(html,/Lista de alvos/);assert.match(html,/data-coach-list-screen="sondagens"/);
+  View.setListScreen("saidas");html=View.renderMarket(s,Engine);assert.match(html,/data-coach-list-screen="saidas" aria-pressed="true"/);
+  View.setMarketArea("observacao");html=View.renderMarket(s,Engine);
+  assert.match(html,/data-coach-scout-screen="olheiros"/);assert.doesNotMatch(html,/data-coach-scout-screen="alvos"/);
 });

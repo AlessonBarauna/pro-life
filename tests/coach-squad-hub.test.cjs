@@ -80,7 +80,7 @@ test("central de transferências expõe navegação única e ações individuais
   const view=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
   const hub=fs.readFileSync(path.join(__dirname,"../src/ui/coach-squad-hub.js"),"utf8");
   const index=fs.readFileSync(path.join(__dirname,"../index.html"),"utf8");
-  for(const label of ["Visão geral","Observação","Meu elenco","Negociações","Listas"])assert.ok(view.includes(label));
+  for(const label of ["Painel","Scouting","Transferências","Listas","Elenco"])assert.ok(view.includes(label));
   for(const action of ["data-coach-player-status","data-coach-renew-open","data-coach-player-release","data-coach-squad-lineup"])assert.ok(hub.includes(action));
   assert.ok(index.indexOf("coach-squad-hub.js")<index.indexOf("coach-career-view.js"));
 });
