@@ -57,3 +57,15 @@ test("Listas abre Alvos, Sondagens e Saídas sem passar pela busca mundial",()=>
   View.setMarketArea("observacao");html=View.renderMarket(s,Engine);
   assert.match(html,/data-coach-scout-screen="olheiros"/);assert.doesNotMatch(html,/data-coach-scout-screen="alvos"/);
 });
+test("perfil mostra o relatório do olheiro em 4 áreas",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);
+  View.setMarketArea("observacao");View.setScoutScreen("busca");
+  const html=View.renderMarket(s,Engine);
+  for(const a of ["ENCAIXE TÁTICO","POTENCIAL FUTURO","AVALIAÇÃO FINANCEIRA","SITUAÇÃO DO JOGADOR"])assert.ok(html.includes(a),a);
+});
