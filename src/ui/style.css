@@ -1238,7 +1238,7 @@ body{background:radial-gradient(circle at 18% 18%,#14313a 0,transparent 30%),rad
 @media(max-width:760px){.national-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.national-tabs a{width:100%;min-width:0;white-space:normal;text-align:center;padding:9px 8px}}
 
 /* Etapa 11 V2 FIX — navegação interna da área Vida */
-.life-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:0 0 18px;padding:8px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;position:sticky;top:132px;z-index:12;backdrop-filter:blur(10px)}
+.life-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:0 0 18px;padding:8px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:12px;position:static;z-index:auto}
 .life-tabs a{display:flex;align-items:center;justify-content:center;min-height:40px;padding:8px 10px;border:1px solid rgba(255,255,255,.07);border-radius:9px;color:#91a0ae;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;background:rgba(255,255,255,.025)}
 .life-tabs a:hover,.life-tabs a:focus{color:#fff;border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.07);outline:none}
 @media(max-width:900px){.life-tabs{grid-template-columns:repeat(3,minmax(0,1fr));position:static}.life-tabs a{white-space:normal;text-align:center}}
