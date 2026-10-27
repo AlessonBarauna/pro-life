@@ -33,3 +33,10 @@ test("troca não aceita jogador de fora do elenco nem deixar o elenco abaixo de 
   own.roster=own.roster.slice(0,18);
   assert.throws(()=>A.execute(s,"recruit",{clubId:src.id,playerId:p.id,paymentPlan:"upfront",dealType:"permanent",exchangeIds:ids.slice(0,2)}),/abaixo do mínimo/);
 });
+test("acordo com cláusula de revenda via mesa de negociação registra a cláusula",()=>{
+  const {s,src}=setup();if(!D.Career.windowStatus(s).open)s.day=1;
+  const p=src.roster.find(x=>x.id!=="hero");
+  D.CoachCareer.init(s,D);
+  A.execute(s,"recruit",{clubId:src.id,playerId:p.id,paymentPlan:"upfront",dealType:"permanent",sellOn:20});
+  assert.ok(s.coachCareer.sellOnClauses.some(c=>c.playerId===p.id&&c.percentage===20&&c.active));
+});

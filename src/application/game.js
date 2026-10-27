@@ -459,19 +459,21 @@ case "tactic": {
         if(n.contractOffer&&n.contractOffer.status!=="accepted")throw Error("Acordo contratual pendente.");
         const plan=data.paymentPlan==="split"?"split":"upfront";
         const exchangeIds=(Array.isArray(data.exchangeIds)?data.exchangeIds:[]).map(String).slice(0,3);
+        const sellOnPct=Number(data.sellOn||0);if(![0,10,20].includes(sellOnPct))throw Error("Cláusula de revenda inválida.");
+        n.sellOn=sellOnPct;
         if(!D.Career.windowStatus(s).open){
           n.status="awaiting_window";n.paymentPlan=plan;n.agreedDay=s.day;n.expiresDay=null;n.exchangeIds=exchangeIds;
           (s.news||[]).unshift({day:s.day,season:s.season,title:"Contratação acordada",body:"Transferência programada para a próxima janela. Nenhum pagamento antecipado."});
           return s;
         }
-        return execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:plan,dealType:"permanent",exchangeIds});
+        return execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:plan,dealType:"permanent",exchangeIds,sellOn:sellOnPct});
       }
       case "settleCoachWindowDeals": {
         if(s.mode!=="coach"||!D.Career.windowStatus(s).open)return s;
         for(const n of s.coachCareer?.negotiations||[]){
           if(n.status!=="awaiting_window"||n.buyerClubId!==s.clubId)continue;
           try{
-            execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:n.paymentPlan||"upfront",dealType:"permanent",exchangeIds:n.exchangeIds||[]});
+            execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:n.paymentPlan||"upfront",dealType:"permanent",exchangeIds:n.exchangeIds||[],sellOn:n.sellOn||0});
           }catch(error){
             n.lastSettlementError=String(error.message||error);
             // Retain agreed deal so the manager can address a budget or availability problem.
