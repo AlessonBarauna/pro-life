@@ -18,6 +18,9 @@
 
   body { overscroll-behavior:none; }
 
+  /* Telas fora do shell (nova carreira, criador de treinador) rolam se não couberem nem reduzidas. */
+  #app:not(:has(.game-shell)) { overflow-y:auto; overflow-x:hidden; }
+
   .game-shell {
     display:grid;
     grid-template-rows:var(--pl-nav-height) minmax(0,1fr);
