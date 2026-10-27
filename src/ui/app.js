@@ -19,7 +19,8 @@
     squadUndo = null,
     coachProfileTab = "resumo",
     desktopHomeView = "match",
-    englishCupKey = null;
+    englishCupKey = null,
+    scoutReturnPosition = null;
   const $ = (q) => document.querySelector(q),
     esc = (v) =>
       String(v ?? "").replace(
@@ -8869,7 +8870,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return;
     }
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
-    const el = event.target.closest?.("[data-coach-pay-clause],[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-signing-squad],[data-coach-signing-open],[data-coach-signing-close],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-screen],[data-coach-scout-select],[data-coach-scout-page],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-save-priority],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer],[data-coach-submit-offer],[data-coach-cancel-offer],[data-coach-squad-player],[data-coach-squad-apply],[data-coach-player-status],[data-coach-renew-open],[data-coach-renew-cancel],[data-coach-renew-confirm],[data-coach-player-release],[data-coach-player-offers],[data-coach-squad-lineup]");
+    const el = event.target.closest?.("[data-coach-pay-clause],[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-signing-squad],[data-coach-signing-open],[data-coach-signing-close],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-screen],[data-coach-scout-select],[data-coach-scout-back],[data-coach-scout-page],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-save-priority],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer],[data-coach-submit-offer],[data-coach-cancel-offer],[data-coach-squad-player],[data-coach-squad-apply],[data-coach-player-status],[data-coach-renew-open],[data-coach-renew-cancel],[data-coach-renew-confirm],[data-coach-player-release],[data-coach-player-offers],[data-coach-squad-lineup]");
     if (!el || !state || state.mode !== "coach") return;
     const V = window.ProLifeCoachCareerView;
     if (el.hasAttribute("data-coach-tab")) { V?.setTab(el.getAttribute("data-coach-tab")); render(); return; }
@@ -8900,7 +8901,31 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if(el.hasAttribute("data-coach-player-offers")){V?.setMarketArea("transferencias");V?.setDealTab("recebidas");render();return;}
     if(el.hasAttribute("data-coach-squad-lineup")){squadSelectedId=el.getAttribute("data-coach-squad-lineup");page="squad";render();return;}
     if(el.hasAttribute("data-coach-scout-screen")) { V?.setScoutScreen(el.getAttribute("data-coach-scout-screen")); render(); return; }
-    if(el.hasAttribute("data-coach-scout-select")) { V?.selectScoutPlayer(el.getAttribute("data-coach-scout-select")); render(); return; }
+    if(el.hasAttribute("data-coach-scout-back")) {
+      V?.closeScoutPlayer();
+      render();
+      const position=scoutReturnPosition;
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        if(!position)return;
+        const stage=document.querySelector(".game-stage"),results=document.querySelector(".cc-market-results");
+        if(stage)stage.scrollTop=position.stageY;
+        if(results)results.scrollTop=position.resultsY;
+        window.scrollTo?.(position.windowX,position.windowY);
+      }));
+      return;
+    }
+    if(el.hasAttribute("data-coach-scout-select")) {
+      const stage=document.querySelector(".game-stage"),results=el.closest(".cc-market-results")||document.querySelector(".cc-market-results");
+      scoutReturnPosition={windowX:window.scrollX||0,windowY:window.scrollY||0,stageY:stage?.scrollTop||0,resultsY:results?.scrollTop||0};
+      const mobileProfile=window.matchMedia?.("(pointer: coarse) and (max-width: 1180px)")?.matches||window.matchMedia?.("(max-width: 760px)")?.matches||false;
+      V?.selectScoutPlayer(el.getAttribute("data-coach-scout-select"),mobileProfile);
+      render();
+      if(!mobileProfile){
+        const position=scoutReturnPosition;
+        requestAnimationFrame(()=>{const nextStage=document.querySelector(".game-stage");if(nextStage)nextStage.scrollTop=position.stageY;window.scrollTo?.(position.windowX,position.windowY);});
+      }
+      return;
+    }
     if(el.hasAttribute("data-coach-scout-page")) { V?.setScoutPage(el.getAttribute("data-coach-scout-page")); render(); return; }
     if(el.hasAttribute("data-coach-scout-apply")) { V?.setScoutFilters(document.querySelector("[data-coach-scout-search]")?.value, document.querySelector("[data-coach-scout-position]")?.value, {
       region:document.querySelector("[data-coach-scout-region]")?.value,
