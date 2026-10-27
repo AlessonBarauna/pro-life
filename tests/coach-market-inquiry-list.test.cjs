@@ -85,3 +85,8 @@ test("atividades da central de transferências incluem sondagens com prazo e aç
   assert.match(html,/Fulano Teste/);assert.match(html,/Sondagem enviada · aguardar resposta/);
   assert.match(html,/Sondagem aceita · abrir negociação/);assert.match(html,/data-coach-list-screen="sondagens"/);
 });
+test("mesa de negociação tem medidor de tensão e opção de desistir; último dia da janela vira Deadline Day",()=>{
+  const view=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
+  assert.match(view,/TENSÃO DA NEGOCIAÇÃO/);assert.match(view,/Desistir da negociação/);
+  assert.match(view,/DEADLINE DAY · ÚLTIMO DIA/);assert.match(view,/data-deadline=/);
+});
