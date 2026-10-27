@@ -8983,7 +8983,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     }
     if (el.hasAttribute("data-coach-deal-accept")) {
       const id=el.getAttribute("data-coach-deal-accept");
-      return command("acceptCoachDeal",{id,paymentPlan:document.querySelector('[data-coach-deal-plan="'+id+'"]')?.value||"upfront"});
+      return command("acceptCoachDeal",{id,paymentPlan:document.querySelector('[data-coach-deal-plan="'+id+'"]')?.value||"upfront",exchangeIds:[...document.querySelectorAll('[data-coach-exchange="'+id+'"]:checked')].map(x=>x.value)});
     }
     if (el.hasAttribute("data-coach-deal-reject")) return command("rejectCoachDeal",{id:el.getAttribute("data-coach-deal-reject")});
     if (el.hasAttribute("data-coach-deal-buy")) return command("buyLoan",{loanId:el.getAttribute("data-coach-deal-buy")});

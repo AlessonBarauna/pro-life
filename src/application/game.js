@@ -458,19 +458,20 @@ case "tactic": {
         if(n.response!=="accepted")throw Error("Aguarde o aceite do clube vendedor antes de concluir.");
         if(n.contractOffer&&n.contractOffer.status!=="accepted")throw Error("Acordo contratual pendente.");
         const plan=data.paymentPlan==="split"?"split":"upfront";
+        const exchangeIds=(Array.isArray(data.exchangeIds)?data.exchangeIds:[]).map(String).slice(0,3);
         if(!D.Career.windowStatus(s).open){
-          n.status="awaiting_window";n.paymentPlan=plan;n.agreedDay=s.day;n.expiresDay=null;
+          n.status="awaiting_window";n.paymentPlan=plan;n.agreedDay=s.day;n.expiresDay=null;n.exchangeIds=exchangeIds;
           (s.news||[]).unshift({day:s.day,season:s.season,title:"Contratação acordada",body:"Transferência programada para a próxima janela. Nenhum pagamento antecipado."});
           return s;
         }
-        return execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:plan,dealType:"permanent"});
+        return execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:plan,dealType:"permanent",exchangeIds});
       }
       case "settleCoachWindowDeals": {
         if(s.mode!=="coach"||!D.Career.windowStatus(s).open)return s;
         for(const n of s.coachCareer?.negotiations||[]){
           if(n.status!=="awaiting_window"||n.buyerClubId!==s.clubId)continue;
           try{
-            execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:n.paymentPlan||"upfront",dealType:"permanent"});
+            execute(s,"recruit",{clubId:n.sellerClubId,playerId:n.playerId,paymentPlan:n.paymentPlan||"upfront",dealType:"permanent",exchangeIds:n.exchangeIds||[]});
           }catch(error){
             n.lastSettlementError=String(error.message||error);
             // Retain agreed deal so the manager can address a budget or availability problem.
@@ -821,7 +822,14 @@ case "tactic": {
         if(byClause)fee=releaseClause(p);
         const agreedContract=negotiation?.contractOffer?.status==="accepted"?negotiation.contractOffer:null;
         const contractBonus=!isLoan&&agreedContract?agreedContract.bonus:0;
-        const due=plan==="split"?Math.floor(fee/2):0,upfront=fee-due;
+        // Troca de jogadores: atletas do seu elenco entram no negócio e abatem o valor em dinheiro.
+        const exchangeIds=isLoan?[]:[...new Set((Array.isArray(data.exchangeIds)?data.exchangeIds:(negotiation?.exchangeIds||[])).map(String))].slice(0,3);
+        const exchangePlayers=exchangeIds.map(id=>own.roster.find(x=>String(x.id)===id));
+        if(exchangePlayers.some(x=>!x||x.id==="hero"))throw Error("Jogador da troca indisponível no seu elenco.");
+        if(exchangePlayers.length&&own.roster.length+1-exchangePlayers.length<18)throw Error("Seu elenco ficaria abaixo do mínimo com esta troca.");
+        const exchangeCredit=Math.min(fee,Math.round(exchangePlayers.reduce((sum,x)=>sum+valuation(x),0)*0.9/1000)*1000);
+        const cashFee=fee-exchangeCredit;
+        const due=plan==="split"?Math.floor(cashFee/2):0,upfront=cashFee-due;
         if (own.budget < upfront+contractBonus) throw Error("Orçamento insuficiente para a entrada e bônus contratual.");
         // The deferred half becomes a persistent financial obligation, not free money.
         if (!byClause && D.overall(p) > own.structure + (rules?.marketStrictness==="strict"?7:rules?.marketStrictness==="flexible"?25:14))
@@ -855,6 +863,11 @@ case "tactic": {
         source.roster = source.roster.filter((x) => x.id !== p.id);
         source.lineup = source.lineup.filter((id) => id !== p.id);
         own.roster.push(p);
+        for(const x of exchangePlayers){
+          own.roster=own.roster.filter(y=>y.id!==x.id);own.lineup=(own.lineup||[]).filter(id=>id!==x.id);
+          source.roster.push(x);x.clubId=source.id;x.leagueId=source.leagueId||x.leagueId;
+        }
+        if(exchangePlayers.length)(s.news||[]).unshift({day:s.day,season:s.season,title:"Troca concluída",body:exchangePlayers.map(x=>x.name).join(", ")+" seguiu"+(exchangePlayers.length>1?"ram":"")+" para "+source.name+" na negociação por "+p.name+". Abatimento de R$ "+exchangeCredit.toLocaleString("pt-BR")+" no valor em dinheiro."});
         // Keep the global catalog's canonical player and avoid duplicate ownership.
         if(Array.isArray(s.internationalPlayers)){
           s.internationalPlayers=s.internationalPlayers.filter(x=>x.id!==p.id);
