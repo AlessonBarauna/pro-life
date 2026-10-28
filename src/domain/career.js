@@ -24,6 +24,7 @@
     return out;
   }
   const PlayerPersonality=root.ProLifePlayerPersonality||(typeof require==="function"?require("./player-personality.js"):null);
+  const ClubFinance=root.ProLifeClubFinance||(typeof require==="function"?require("./club-finance.js"):null);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const windows = [
     { name: "Início do ano", start: 0, end: 58 },
@@ -1688,6 +1689,7 @@
         if(!buyer||!seller)continue;
         buyer.budget=(Number(buyer.budget)||0)-debt.amount;
         seller.budget=(Number(seller.budget)||0)+debt.amount;
+        ClubFinance?.movement?.(s,buyer,"transferencia",-debt.amount,"Parcela de transferência · "+(debt.playerName||debt.playerId||"Jogador"));
         debt.paid=true;debt.paidDay=s.day;
         (s.news||[]).unshift({day:s.day,season:s.season,title:"Parcela de transferência liquidada",body:"Pagamento de R$ "+debt.amount.toLocaleString("pt-BR")+" concluído."});
       }
@@ -1704,7 +1706,7 @@
           while(Number(s.day)>=loan.nextSalaryDay&&loan.nextSalaryDay<loan.dueDay){
             const wage=Math.max(0,Math.round(Number(borrowerPlayer.salary)||2500));
             const share=Math.round(wage*(Number(loan.salaryShare)||0)/100);
-            if(share){borrowingClub.budget=(Number(borrowingClub.budget)||0)-share;parentClub.budget=(Number(parentClub.budget)||0)+share;}
+            if(share){borrowingClub.budget=(Number(borrowingClub.budget)||0)-share;parentClub.budget=(Number(parentClub.budget)||0)+share;ClubFinance?.movement?.(s,borrowingClub,"folha",-share,"Salário de jogador emprestado · "+(loan.playerName||loan.playerId||"Jogador"));}
             loan.nextSalaryDay+=30;
           }
         }

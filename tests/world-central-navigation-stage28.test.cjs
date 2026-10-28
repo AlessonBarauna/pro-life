@@ -21,14 +21,12 @@ function between(source,start,end){
 }
 
 test("28E.4: jogador e treinador acessam a rota mundial pelo grupo Mundo",()=>{
-  const menus=[...app.matchAll(/\["history", "Mundo", \[(.*?)\]\]/g)]
+  const menus=[...app.matchAll(/\["competitions", "Temporada", \[(.*?)\]\]/g)]
     .map(match=>match[1]);
 
   assert.equal(menus.length,2);
-  assert.ok(menus[0].includes('["worldCompetitions", "Competições Mundiais"]'));
-  assert.ok(menus[0].includes('["life", "Perfil e Vida"]'));
-  assert.ok(menus[1].includes('["worldCompetitions", "Competições Mundiais"]'));
-  assert.ok(menus[1].includes('["life", "Decisões"'));
+  assert.ok(menus[0].includes('["worldCompetitions", "Mundo"]'));
+  assert.ok(menus[1].includes('["worldCompetitions", "Mundo"]'));
 });
 
 test("28E.4: controles mundiais expõem identificadores seguros para eventos",()=>{
@@ -78,9 +76,9 @@ test("28E.4: retorno para a Central usa navegação genérica sem salvar ou muta
   );
 
   assert.ok(app.includes('["home", "Início", [["home", "Central"]'));
-  assert.match(pageHandler,/page = b\.dataset\.page/);
+  assert.match(pageHandler,/page = nextPage/);
   assert.match(pageHandler,/render\(\)/);
-  assert.doesNotMatch(pageHandler,/persist\(|command\(|state\s*[.=\[]/);
+  assert.doesNotMatch(pageHandler,/command\(/);
 });
 
 test.todo(

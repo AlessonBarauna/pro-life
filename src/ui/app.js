@@ -20,6 +20,7 @@
     coachProfileTab = "resumo",
     desktopHomeView = "match",
     englishCupKey = null,
+    matchCompetitionFilter = "all",
     scoutReturnPosition = null;
   const $ = (q) => document.querySelector(q),
     esc = (v) =>
@@ -1241,6 +1242,10 @@
   let fifaSeriesVenueId="AUSTRALIA";
   let worldCompetitionLeagueId=null;
   let worldCompetitionRound=null;
+  let worldCompetitionSection="overview";
+  let worldCompetitionTablePage=0;
+  let worldCompetitionCoachPage=0;
+  let worldCompetitionCoveragePage=0;
   let worldMarketTab="rumors";
   let worldMarketFilters={country:"ALL",league:"ALL",club:"ALL",period:"ALL"};
 
@@ -1694,7 +1699,11 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
             D,
             {
               leagueId:worldCompetitionLeagueId,
-              round:worldCompetitionRound
+              round:worldCompetitionRound,
+              section:worldCompetitionSection,
+              tablePage:worldCompetitionTablePage,
+              coachPage:worldCompetitionCoachPage,
+              coveragePage:worldCompetitionCoveragePage
             }
           )
         : '<section class="card"><h2>Competições Mundiais</h2><p class="muted">Módulo de competições mundiais indisponível.</p></section>';
@@ -8615,15 +8624,29 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     matches() {
       const own = state.matches.filter(
           (m) => m.home === state.clubId || m.away === state.clubId,
-        ),
-        list = own.length ? own : state.matches;
+        ).slice().sort((a,b)=>Number(b.date??b.day??0)-Number(a.date??a.day??0));
+      const competitionGroup=match=>{
+        const text=[match.competitionId,match.competitionName,match.leagueName,match.leagueId].filter(Boolean).join(" ").toLowerCase();
+        if(/libertadores/.test(text))return "libertadores";
+        if(/sudamericana|sul-americana/.test(text))return "sudamericana";
+        if(/champions|(^|[^a-z])ucl([^a-z]|$)/.test(text))return "ucl";
+        if(/europa league|(^|[^a-z])uel([^a-z]|$)/.test(text))return "uel";
+        if(/conference/.test(text))return "conference";
+        if(/copa|cup|coppa|taça|taca|del rey|dfb|coupe|carabao|community shield/.test(text))return "cups";
+        return "league";
+      };
+      const competitionTabs=[["all","Todos"],["league","Liga nacional"],["cups","Copas"],["ucl","UCL"],["uel","UEL"],["conference","Conference"],["libertadores","Libertadores"],["sudamericana","Sul-Americana"]];
+      const counts=Object.fromEntries(competitionTabs.map(([id])=>[id,id==="all"?own.length:own.filter(match=>competitionGroup(match)===id).length]));
+      if(matchCompetitionFilter!=="all"&&!counts[matchCompetitionFilter])matchCompetitionFilter="all";
+      const list=matchCompetitionFilter==="all"?own:own.filter(match=>competitionGroup(match)===matchCompetitionFilter);
+      const competitionFilters='<nav class="fc27-match-filters" aria-label="Filtrar partidas por competição">'+competitionTabs.filter(([id])=>id==="all"||counts[id]>0).map(([id,label])=>'<button type="button" data-match-competition="'+id+'" aria-pressed="'+(matchCompetitionFilter===id)+'">'+label+' <small>'+counts[id]+'</small></button>').join("")+'</nav>';
       const m = list[0];
       const report = state.mode === "player" ? Career.init(state).playerCareer?.lastMatchReport : null;
       const signed = (value) => `${Number(value || 0) >= 0 ? "+" : ""}${Number(value || 0).toFixed(1)}`;
       const changes = report?.attributeChanges || [];
       const postMatch = report ? `<section class="card section" id="post-match-stage25"><div class="tag">PÓS-JOGO · ${esc(report.competition || "Partida")} · ${esc(report.importance?.label || "Jogo oficial")}</div><h2>${report.national ? esc(heroNat().code === "BRA" ? "Seleção Brasileira" : "Seleção · " + heroNat().name) : "Relatório do jogador"} · ${esc(report.opponent || "Adversário")}</h2><p class="muted">${esc(String(report.status || "PARTICIPAÇÃO").replaceAll("_", " "))}${report.entryMinute != null ? ` · entrou aos ${report.entryMinute}'` : ""} · peso ${Number(report.importance?.factor || 1).toFixed(2)}x</p><div class="kpis"><div><b>${report.minutes || 0}</b><small>MINUTOS</small></div><div><b>${report.goals || 0}</b><small>GOLS</small></div><div><b>${report.assists || 0}</b><small>ASSIST.</small></div><div><b>${report.rating == null ? "—" : Number(report.rating).toFixed(1)}</b><small>NOTA</small></div><div><b>+${Number(report.xp || 0).toFixed(1)}</b><small>XP</small></div></div><div class="grid3"><div class="notice"><b>Evolução</b><p>${changes.length ? changes.map(x => `${esc(x.label || x.key)}: ${x.before} → ${x.after}`).join("<br>") : "Nenhum atributo subiu nesta partida."}</p></div><div class="notice"><b>Confiança e papel</b><p>${report.national ? "Sem alteração na confiança do clube." : `${signed(Number(report.coachTrustAfter || 0) - Number(report.coachTrustBefore || 0))} de confiança`}<br>${esc(report.squadRoleBefore || "—")} → ${esc(report.squadRoleAfter || report.squadRoleBefore || "—")}</p></div><div class="notice"><b>Reputação${report.national ? " e Seleção" : ""}</b><p>${signed(report.reputationDelta)} de reputação${report.nationalImpact ? `<br>${esc(report.nationalImpact)}` : ""}</p></div></div></section>` : "";
       if (!m)
-        return `${postMatch}${empty("Avance até a primeira rodada para ver os relatórios.")}`;
+        return `${postMatch}${competitionFilters}${empty("Avance até a primeira partida oficial para ver os relatórios.")}`;
       const clubName=id=>D.club(state,id)?.name||"Clube";
       const crest=(id,size="lg")=>window.ProLifeClubCrests?.inline?.(id,size)||`<span class="fc27-match-crest-fallback">${esc(clubName(id).split(/\s+/).slice(0,2).map(x=>x[0]).join(""))}</span>`;
       const penalties=m.penalties?(Array.isArray(m.penalties)?m.penalties:[m.penalties.home,m.penalties.away]):null;
@@ -8633,8 +8656,8 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const eventIcon=e=>e.type==="goal"?"●":e.type==="yellow"?"■":e.type==="red"?"■":/defesa/i.test(e.text||"")?"◆":"·";
       const eventClass=e=>e.type==="goal"?"goal":e.type==="yellow"?"yellow":e.type==="red"?"red":/defesa/i.test(e.text||"")?"save":"default";
       const resultOf=x=>{if(!state.clubId||![x.home,x.away].includes(state.clubId))return "neutral";const own=x.home===state.clubId?x.hg:x.ag,opp=x.home===state.clubId?x.ag:x.hg;return own>opp?"win":own<opp?"loss":"draw"};
-      const recent=list.slice(0,12).map(x=>`<article class="fc27-recent-match ${resultOf(x)}"><div class="fc27-recent-meta"><small>${esc(x.competitionName||leagueName(x.leagueId))}</small><span>Temporada ${x.season}</span></div><div class="fc27-recent-team home"><span>${esc(clubName(x.home))}</span><i>${crest(x.home,"sm")}</i></div><b class="fc27-recent-score">${x.hg}<em>–</em>${x.ag}</b><div class="fc27-recent-team away"><i>${crest(x.away,"sm")}</i><span>${esc(clubName(x.away))}</span></div></article>`).join("");
-      return `${postMatch}<div class="fc27-match-report"><section class="card fc27-match-hero"><header><span class="tag">${esc(m.competitionName||leagueName(m.leagueId))}</span><small>${m.stage?`${esc(m.stage)} · `:""}Etapa ${m.round} · Temporada ${m.season}</small></header><div class="fc27-scoreboard"><div class="fc27-score-team home"><div class="fc27-match-crest">${crest(m.home)}</div><b>${esc(homeName)}</b><span>CASA</span></div><div class="fc27-score-center"><small>ENCERRADO</small><strong class="score">${m.hg}<i>–</i>${m.ag}</strong>${penalties?`<span>Pênaltis ${penalties[0]} – ${penalties[1]}</span>`:""}</div><div class="fc27-score-team away"><div class="fc27-match-crest">${crest(m.away)}</div><b>${esc(awayName)}</b><span>FORA</span></div></div><p class="fc27-match-summary">${esc(m.summary||`${homeName} ${m.hg} a ${m.ag} ${awayName}.`)}</p>${m.ratings?.hero?`<div class="fc27-player-rating"><span>SUA NOTA</span><b>${Number(m.ratings.hero).toFixed(1)}</b></div>`:""}<div class="fc27-match-stats">${statRows}</div><p class="fc27-match-note">xG representa a qualidade estimada das chances antes da finalização.</p></section><section class="card fc27-match-events"><header><div><span class="tag">LINHA DO TEMPO</span><h2>Acontecimentos</h2></div><b>${(m.events||[]).length}</b></header><div class="fc27-event-list">${(m.events||[]).length?(m.events||[]).map(e=>`<article class="${eventClass(e)}"><time>${e.minute}'</time><i>${eventIcon(e)}</i><p>${esc(e.text)}</p></article>`).join(""):empty("Sem eventos relevantes registrados.")}</div></section><section class="card fc27-recent-results"><header><div><span class="tag">HISTÓRICO</span><h2>Resultados recentes</h2></div><small>Últimas ${Math.min(12,list.length)} partidas</small></header><div class="fc27-recent-list">${recent}</div></section></div>`;
+      const recent=list.slice(0,12).map(x=>`<article class="fc27-recent-match ${resultOf(x)}"><div class="fc27-recent-meta"><small>${esc(x.competitionName||leagueName(x.leagueId))}</small><span>${x.stage?esc(x.stage)+" · ":""}${dayDate(x.date??x.day)}</span></div><div class="fc27-recent-team home"><span>${esc(clubName(x.home))}</span><i>${crest(x.home,"sm")}</i></div><b class="fc27-recent-score">${x.hg}<em>–</em>${x.ag}</b><div class="fc27-recent-team away"><i>${crest(x.away,"sm")}</i><span>${esc(clubName(x.away))}</span></div></article>`).join("");
+      return `${postMatch}${competitionFilters}<div class="fc27-match-report"><section class="card fc27-match-hero"><header><span class="tag">${esc(m.competitionName||leagueName(m.leagueId))}</span><small>${m.stage?`${esc(m.stage)} · `:""}Etapa ${m.round} · Temporada ${m.season}</small></header><div class="fc27-scoreboard"><div class="fc27-score-team home"><div class="fc27-match-crest">${crest(m.home)}</div><b>${esc(homeName)}</b><span>CASA</span></div><div class="fc27-score-center"><small>ENCERRADO</small><strong class="score">${m.hg}<i>–</i>${m.ag}</strong>${penalties?`<span>Pênaltis ${penalties[0]} – ${penalties[1]}</span>`:""}</div><div class="fc27-score-team away"><div class="fc27-match-crest">${crest(m.away)}</div><b>${esc(awayName)}</b><span>FORA</span></div></div><p class="fc27-match-summary">${esc(m.summary||`${homeName} ${m.hg} a ${m.ag} ${awayName}.`)}</p>${m.ratings?.hero?`<div class="fc27-player-rating"><span>SUA NOTA</span><b>${Number(m.ratings.hero).toFixed(1)}</b></div>`:""}<div class="fc27-match-stats">${statRows}</div><p class="fc27-match-note">xG representa a qualidade estimada das chances antes da finalização.</p></section><section class="card fc27-match-events"><header><div><span class="tag">LINHA DO TEMPO</span><h2>Acontecimentos</h2></div><b>${(m.events||[]).length}</b></header><div class="fc27-event-list">${(m.events||[]).length?(m.events||[]).map(e=>`<article class="${eventClass(e)}"><time>${e.minute}'</time><i>${eventIcon(e)}</i><p>${esc(e.text)}</p></article>`).join(""):empty("Sem eventos relevantes registrados.")}</div></section><section class="card fc27-recent-results"><header><div><span class="tag">HISTÓRICO · ${esc(competitionTabs.find(([id])=>id===matchCompetitionFilter)?.[1]||"Todos")}</span><h2>Resultados recentes</h2></div><small>${Math.min(12,list.length)} de ${list.length} partida(s)</small></header><div class="fc27-recent-list">${recent}</div></section></div>`;
     },
     inbox() {
       const comm=Career.init(state).communications, messages=comm.messages||[], articles=comm.articles||[], unread=messages.filter(m=>!m.read).length;
@@ -8744,9 +8767,11 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         const cat=CF.CATEGORIES,cur=sm.current;
         const rows=sm.ledger.slice(0,14).map(x=>`<tr><td>${dayDate(x.day)}</td><td>${esc(cat[x.category]||x.category)}</td><td>${esc(x.label)}${x.attendance?` · ${Number(x.attendance).toLocaleString("pt-BR")} pagantes`:""}</td><td class="${x.amount<0?"neg":""}">${x.amount?money(x.amount):""}</td></tr>`).join("");
         const mrows=sm.months.map(m=>`<tr><td>Mês ${m.month+1}${m.month===sm.current.month?" (atual)":""}</td><td>${money(m.in)}</td><td>${money(m.out)}</td><td>${money(m.in-m.out)}</td></tr>`).join("");
-        return `<div class="profile-data"><span>Reserva salarial <b>${money(sm.wageReserve)}</b><small>cobre ${sm.monthsCovered} meses de custos</small></span><span>Folha mensal (elenco + comissão) <b>${money(sm.monthlyPayroll)}</b></span><span>Receita mensal esperada <b>${money(sm.expectedMonthlyRevenue)}</b></span><span>Resultado do mês até agora <b>${money(cur.in-cur.out)}</b></span></div>
+        const store=sm.store,storePanel=store?`<section class="club-store"><div class="split"><div><div class="tag">LOJA DO CLUBE · NÍVEL ${store.level}</div><h3>Camisas e produtos oficiais</h3><p class="muted">Demanda atual ${store.demand}% · previsão mensal ${money(store.expectedMonthly)}.</p></div>${store.level<store.maxLevel?`<button type="button" data-fin-store-upgrade>Ampliar loja · ${money(store.upgradeCost)}</button>`:'<span class="pill">NÍVEL MÁXIMO</span>'}</div><div class="club-store-grid">${store.products.map(product=>`<article><small>${esc(product.name)}</small><b>${money(product.revenue)}</b><span>${product.units.toLocaleString("pt-BR")} unidade(s) estimadas</span></article>`).join("")}</div></section>`:"";
+        return `<div class="profile-data"><span>Caixa total do clube <b>${money(sm.totalCash)}</b><small>transferências + reserva salarial</small></span><span>Orçamento de transferências <b>${money(sm.transferBudget)}</b></span><span>Reserva salarial <b>${money(sm.wageReserve)}</b><small>cobre ${sm.monthsCovered} meses de custos</small></span><span>Folha mensal (elenco + comissão) <b>${money(sm.monthlyPayroll)}</b></span><span>Bilheteria no mês <b>${money(cur.byCategory.bilheteria||0)}</b></span><span>Loja no mês <b>${money(cur.byCategory.camisas||0)}</b></span><span>Receita mensal esperada <b>${money(sm.expectedMonthlyRevenue)}</b></span><span>Resultado do mês até agora <b>${money(cur.in-cur.out)}</b></span></div>
         <p class="muted">Receitas (bilheteria, TV, patrocínios, camisas, premiações) entram durante a temporada: primeiro completam a reserva salarial e o excedente vai para o orçamento de transferências. Folha e operação saem da reserva.</p>
         <div class="actions"><button type="button" data-fin-move="-1000000">Reserva → transferências (1 mi)</button><button type="button" data-fin-move="1000000">Transferências → reserva (1 mi)</button><button type="button" data-fin-move="-10000000">10 mi → transferências</button><button type="button" data-fin-move="10000000">10 mi → reserva</button></div>
+        ${storePanel}
         ${mrows?`<h3>Resultado por mês</h3><div class="tablewrap"><table><thead><tr><th>Mês</th><th>Receitas</th><th>Despesas</th><th>Saldo</th></tr></thead><tbody>${mrows}</tbody></table></div>`:""}
         ${rows?`<h3>Extrato do clube</h3><div class="tablewrap"><table><thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${rows}</tbody></table></div>`:""}`;
       })();
@@ -8825,6 +8850,13 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     } catch (_) {}
   }
   document.addEventListener("click", (event) => {
+    const matchCompetitionButton=event.target.closest?.("[data-match-competition]");
+    if(matchCompetitionButton&&state&&page==="matches"){
+      event.preventDefault();
+      matchCompetitionFilter=matchCompetitionButton.getAttribute("data-match-competition")||"all";
+      render();
+      return;
+    }
     if (event.target.closest?.("[data-enter-landscape]")) {
       event.preventDefault();
       enterLandscapeMode();
@@ -9691,12 +9723,39 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (b.dataset.worldLeague !== undefined) {
       worldCompetitionLeagueId=b.dataset.worldLeague||null;
       worldCompetitionRound=null;
+      worldCompetitionTablePage=0;
+      worldCompetitionCoachPage=0;
+      worldCompetitionCoveragePage=0;
       render();
       return;
     }
 
     if (b.dataset.worldRound !== undefined) {
       worldCompetitionRound=Number(b.dataset.worldRound)||null;
+      render();
+      return;
+    }
+
+    if (b.dataset.worldSection !== undefined) {
+      worldCompetitionSection=b.dataset.worldSection||"overview";
+      render();
+      return;
+    }
+
+    if (b.dataset.worldTablePage !== undefined) {
+      worldCompetitionTablePage=Math.max(0,Number(b.dataset.worldTablePage)||0);
+      render();
+      return;
+    }
+
+    if (b.dataset.worldCoachPage !== undefined) {
+      worldCompetitionCoachPage=Math.max(0,Number(b.dataset.worldCoachPage)||0);
+      render();
+      return;
+    }
+
+    if (b.dataset.worldCoveragePage !== undefined) {
+      worldCompetitionCoveragePage=Math.max(0,Number(b.dataset.worldCoveragePage)||0);
       render();
       return;
     }
@@ -10097,6 +10156,11 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
       if (r?.ok && r.moved) { persist(); render(); toast("Caixa movido."); } else toast(r?.reason || "Sem saldo para mover.");
       return;
     }
+    if (b.hasAttribute("data-fin-store-upgrade")) {
+      const r = window.ProLifeClubFinance?.upgradeStore(state);
+      if (r?.ok) { persist(); render(); toast("Loja ampliada para o nível "+r.level+"."); } else toast(r?.reason || "Não foi possível ampliar a loja.");
+      return;
+    }
     if (b.dataset.loanBuy) { command("buyLoan",{loanId:b.dataset.loanBuy}); return; }
     if (b.dataset.recruit) {
       command("recruit", {
@@ -10331,6 +10395,20 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
 
 });
   document.addEventListener("change", (e) => {
+    if(e.target.matches?.("[data-world-league-select]")){
+      worldCompetitionLeagueId=e.target.value||null;
+      worldCompetitionRound=null;
+      worldCompetitionTablePage=0;
+      worldCompetitionCoachPage=0;
+      worldCompetitionCoveragePage=0;
+      render();
+      return;
+    }
+    if(e.target.matches?.("[data-world-round-select]")){
+      worldCompetitionRound=Number(e.target.value)||null;
+      render();
+      return;
+    }
     const worldMarketFilter = [
       ["worldMarketCountry","country"],
       ["worldMarketLeague","league"],

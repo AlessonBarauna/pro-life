@@ -117,7 +117,7 @@ test("28E.1B: preserva a classificação e os critérios definidos pelo motor",(
 
   const engineOrder=W.standings(s,league.id);
   const snap=View.snapshot(s,D,{leagueId:league.id});
-  const html=View.render(s,D,{leagueId:league.id});
+  const html=View.render(s,D,{leagueId:league.id,section:"standings"});
 
   assert.deepEqual(
     snap.standings.map(row=>row.id),
@@ -208,13 +208,13 @@ test("28E.1B: dados incompletos usam estados vazios sem inventar conteúdo",()=>
 
 test("28E.2B: rota mundial existe nos modos jogador e treinador sem substituir a Central",()=>{
   const app=fs.readFileSync(path.join(base,"src/ui/app.js"),"utf8");
-  const route='["worldCompetitions", "Competições Mundiais"]';
+  const route='["worldCompetitions", "Mundo"]';
 
   assert.equal((app.match(new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"g"))||[]).length,2);
   assert.ok(app.includes("worldCompetitions()"));
   assert.ok(app.includes("window.ProLifeWorldCompetitionsView.render("));
   assert.ok(app.includes('home() {'));
-  assert.ok(app.includes('page = b.dataset.page'));
+  assert.ok(app.includes('page = nextPage'));
 });
 
 test("28E.2B: seleções de liga e rodada são transitórias e precedem data-page",()=>{

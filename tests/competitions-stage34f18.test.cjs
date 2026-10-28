@@ -40,12 +40,14 @@ test("34F.18 (3) coverage() so le: nao altera o estado/save", () => {
 
 test("34F.18 (4) a tela mostra a cobertura e as ligas sem calendario com o motivo", () => {
   const s = fc27(); W.init(s);
-  const html = View.render(s, D, {});
+  const snap = View.snapshot(s, D, {});
+  const noted = snap.coverage.filter((row) => row.status !== "playable" || row.note);
+  const coveragePage = Math.max(0, Math.floor(noted.findIndex((row) => row.name === "Hellas Liga") / 10));
+  const html = View.render(s, D, { section: "coverage", coveragePage });
   assert.match(html, /data-world-coverage/);
   assert.match(html, /37 de 49 ligas com calend/);
   assert.match(html, /Somente cat/);
   assert.match(html, /Hellas Liga/);
-  const snap = View.snapshot(s, D, {});
   assert.equal(snap.coverage.length, 49);
 });
 

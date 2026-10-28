@@ -31,4 +31,6 @@ test("mobile landscape keeps local navigation visible and scrolls dense panels i
 test("market filters and cards are compact enough for the horizontal phone viewport", () => {
   assert.match(css, /\.cc-market-screen \.cc-fc27-filter-area[\s\S]*repeat\(4,minmax\(0,1fr\)\)/);
   assert.match(css, /\.cc-market-screen \.cc-fc27-result \{ padding:8px 10px !important; \}/);
+  assert.match(css, /\.game-stage-market \.cc-market-screen-nav[\s\S]*repeat\(8,minmax\(0,1fr\)\)/);
+  assert.match(css, /\.game-stage-market \.cc-market-task-panel[\s\S]*padding:9px 12px/);
 });

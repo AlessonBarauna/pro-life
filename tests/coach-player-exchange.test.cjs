@@ -48,6 +48,14 @@ test("resposta de sondagem gera mensagem na caixa de entrada",()=>{
   assert.notEqual(s.coachCareer.inquiries[0].status,"pending");
   assert.match(JSON.stringify(D.Career.init(s)),/Sondagem (aceita|recusada)/);
 });
+test("contratação concluída encerra a sondagem correspondente",()=>{
+  const {s,own,src}=setup();D.CoachCareer.init(s,D);if(!D.Career.windowStatus(s).open)s.day=1;
+  const p=src.roster.find(x=>x.id!=="hero");
+  s.coachCareer.inquiries=[{id:"inq",playerId:p.id,clubId:src.id,buyerClubId:own.id,status:"accepted",expiresDay:s.day+10}];
+  A.execute(s,"recruit",{clubId:src.id,playerId:p.id,paymentPlan:"upfront",dealType:"permanent"});
+  assert.equal(s.coachCareer.inquiries[0].status,"converted");
+  assert.equal(s.coachCareer.inquiries[0].convertedDay,s.day);
+});
 function sellScenario(rights){
   const {s,own,src}=setup();D.CoachCareer.init(s,D);if(!D.Career.windowStatus(s).open)s.day=1;
   const p=src.roster.find(x=>x.id!=="hero");

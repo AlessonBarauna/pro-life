@@ -655,6 +655,32 @@ tbody tr.highlight {
   color: #dce6ed;
   margin-top: 5px;
 }
+.club-store {
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid #405966;
+  border-left: 4px solid #c9f43d;
+  border-radius: 10px;
+  background: #132936;
+}
+.club-store .split { align-items: center; }
+.club-store-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.club-store-grid article {
+  display: grid;
+  gap: 5px;
+  padding: 11px;
+  border: 1px solid #3c5360;
+  border-radius: 7px;
+  background: #1a3440;
+}
+.club-store-grid small, .club-store-grid span { color: #9fb4bf; font-size: 10px; }
+.club-store-grid b { color: #d3fa37; font-size: 15px; }
+@media (max-width: 760px) { .club-store-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .character-profile .avatar-stage {
   height: 390px;
 }

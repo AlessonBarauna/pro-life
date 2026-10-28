@@ -178,12 +178,29 @@
   function statistics(s, selected) {
     if (s.mode === "coach") {
       const api=root.ProLifeCoachCareer, career=api?.snapshot?.(s,root.ProLife)||null;
-      const club=(s.clubs||[]).find(c=>c.id===s.clubId)||null, st=club?.stats||{};
+      const club=root.ProLife?.club?.(s,s.clubId)||(s.clubs||[]).find(c=>c.id===s.clubId)||(s.globalFootball?.clubs||[]).find(c=>c.id===s.clubId)||null;
+      const seasonMatches=(s.matches||[]).filter(m=>club&&[m.home,m.away].includes(club.id)&&Number(m.season??s.season)===Number(s.season));
+      const matchRecord=seasonMatches.reduce((record,m)=>{
+        const own=m.home===club.id?Number(m.hg):Number(m.ag),opponent=m.home===club.id?Number(m.ag):Number(m.hg);
+        if(!Number.isFinite(own)||!Number.isFinite(opponent))return record;
+        record.played++;record.gf+=own;record.ga+=opponent;if(own>opponent)record.w++;else if(own<opponent)record.l++;else record.d++;
+        return record;
+      },{played:0,w:0,d:0,l:0,gf:0,ga:0});
+      const leagueOverview=club?.leagueId?root.ProLife?.seasonCompetitionOverview?.(s,club.leagueId):null;
+      const leagueRow=(leagueOverview?.standings||[]).find(row=>String(row.clubId)===String(club?.id));
+      const stored=club?.stats||{},fallbackPlayed=Number(stored.played)||Number(stored.w||0)+Number(stored.d||0)+Number(stored.l||0);
+      const st=matchRecord.played?matchRecord:leagueRow?{played:leagueRow.played,w:leagueRow.wins,d:leagueRow.draws,l:leagueRow.losses,gf:leagueRow.goalsFor,ga:leagueRow.goalsAgainst}:stored;
       const stints=Array.isArray(career?.stints)?career.stints:[];
       const total=stints.reduce((a,x)=>{for(const r of (x.rows||[])){a.w+=Number(r.w)||0;a.d+=Number(r.d)||0;a.l+=Number(r.l)||0;}a.titles+=Number(x.titles)||0;return a;},{w:0,d:0,l:0,titles:0});
-      const played=Number(st.played)||Number(st.w||0)+Number(st.d||0)+Number(st.l||0);
-      const w=Number(st.w)||0,d=Number(st.d)||0,l=Number(st.l)||0,pts=Number(st.points)||0;
+      const played=Number(st.played)||Number(st.w||0)+Number(st.d||0)+Number(st.l||0)||fallbackPlayed;
+      const w=Number(st.w)||0,d=Number(st.d)||0,l=Number(st.l)||0,pts=Number(leagueRow?.points??stored.points)||0;
       const pct=played?Math.round(w/played*100):0;
+      const currentCompetitions=[...seasonMatches.reduce((map,m)=>{
+        const name=m.competitionName||m.leagueName||m.competitionId||m.leagueId||"Partida oficial",key=String(name),row=map.get(key)||{name,j:0,w:0,d:0,l:0,gf:0,ga:0};
+        const own=m.home===club.id?Number(m.hg):Number(m.ag),opponent=m.home===club.id?Number(m.ag):Number(m.hg);if(!Number.isFinite(own)||!Number.isFinite(opponent))return map;
+        row.j++;row.gf+=own;row.ga+=opponent;if(own>opponent)row.w++;else if(own<opponent)row.l++;else row.d++;map.set(key,row);return map;
+      },new Map()).values()];
+      const currentRows=currentCompetitions.length?currentCompetitions.map(r=>`<tr><td>${esc(r.name)}</td><td>${r.j}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}</td><td>${r.ga}</td></tr>`).join(""):'<tr><td colspan="7">Nenhuma partida oficial registrada nesta temporada.</td></tr>';
       const seasonEntries=stints.flatMap(x=>(x.rows||[]).map(r=>({stint:x,record:r})))
         .filter(x=>x.record&&typeof x.record==="object")
         .sort((a,b)=>Number(a.record.season??a.stint.fromSeason??0)-Number(b.record.season??b.stint.fromSeason??0));
@@ -193,7 +210,8 @@
         const titles=Number.isFinite(Number(r.titles))?Number(r.titles):(Number(r.pos)===1?1:0);
         return `<tr><td><span class="stat-club">${crestFor(s, x.clubId, x.club)}${esc(x.club||"-")}</span></td><td>${esc(season)}</td><td>${w+d+l}</td><td>${w}</td><td>${d}</td><td>${l}</td><td>${titles}</td></tr>`;
       }).join(""):'<tr><td colspan="7">Nenhuma temporada concluida registrada.</td></tr>';
-      return `<section class="card"><div class="tag">ESTATÍSTICAS DO TREINADOR</div><h2>${esc(club?.name||"Sem clube")} · Temporada ${s.season}</h2><p class="muted">Dados do clube e do histórico de carreira do treinador; não são estatísticas individuais de jogador.</p><div class="profile-data"><span>Jogos na liga <b>${played}</b></span><span>Vitórias <b>${w}</b></span><span>Empates <b>${d}</b></span><span>Derrotas <b>${l}</b></span><span>Pontos <b>${pts}</b></span><span>Aproveitamento em vitórias <b>${pct}%</b></span><span>Gols pró <b>${Number(st.gf)||0}</b></span><span>Gols contra <b>${Number(st.ga)||0}</b></span><span>Títulos registrados <b>${total.titles}</b></span></div></section>
+      return `<section class="card"><div class="tag">ESTATÍSTICAS DO TREINADOR</div><h2>${esc(club?.name||"Sem clube")} · Temporada ${s.season}</h2><p class="muted">Dados atuais de todas as competições oficiais do clube e do histórico da carreira.</p><div class="profile-data"><span>Jogos na temporada <b>${played}</b></span><span>Vitórias <b>${w}</b></span><span>Empates <b>${d}</b></span><span>Derrotas <b>${l}</b></span><span>Pontos na liga <b>${pts}</b></span><span>Aproveitamento em vitórias <b>${pct}%</b></span><span>Gols pró <b>${Number(st.gf)||0}</b></span><span>Gols contra <b>${Number(st.ga)||0}</b></span><span>Títulos registrados <b>${total.titles}</b></span></div></section>
+      <section class="card section"><h2>Temporada atual por competição</h2><div class="tablewrap"><table><thead><tr><th>Competição</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th></tr></thead><tbody>${currentRows}</tbody></table></div></section>
       <section class="card section"><h2>Histórico da carreira</h2><div class="tablewrap"><table><thead><tr><th>Clube</th><th>Temporada</th><th>J</th><th>V</th><th>E</th><th>D</th><th>Títulos</th></tr></thead><tbody>${row}</tbody></table></div><p class="muted">V/E/D históricos são somados apenas a partir dos registros de passagem já salvos.</p></section>
       <section class="card section"><h2>Diretoria</h2><div class="profile-data"><span>Confiança <b>${Number.isFinite(Number(career?.board))?Math.round(Number(career.board))+"%":"—"}</b></span><span>Risco de demissão <b>${esc(career?.risk?.label || (typeof career?.risk === "string" ? career.risk : "—"))}</b></span><span>Reputação <b>${Number(s.reputation || 0).toLocaleString("pt-BR", {maximumFractionDigits: 1})}</b></span><span>Temporadas registradas <b>${Number(career?.totals?.seasons)||0}</b></span></div></section>${coachWorldStats(s, selected)}`;
     }

@@ -113,10 +113,11 @@ test("34F.23 (8) tela de competicoes mundiais lista tecnicos, estilo, meta e mov
   const V = require("../src/ui/world-competitions-view.js");
   const s = fc27(); for (const m of Object.values(s.globalFootball.intel.clubs)) m.board = 30;
   CI.closeSeason(s, { log() {} });
-  const html = V.render(s, D, { leagueId: "gf_fc27_premier_league" });
+  const html = V.render(s, D, { leagueId: "gf_fc27_premier_league", section: "coaches" });
   assert.ok(html.includes("data-world-coaches"));
-  assert.ok((html.match(/wc-coach-row/g) || []).length >= 20);
+  assert.equal((html.match(/<div class="wc-coach-row/g) || []).length, 10);
+  assert.ok(html.includes("data-world-coach-page"));
   assert.ok(/Ofensivo|Defensivo|Posse de bola|Contra-ataque|Equilibrado|Formador/.test(html));
   const legacy = D.create({ mode: "coach", clubId: "c0" }, 3);
-  assert.ok(!V.render(legacy, D, {}).includes("data-world-coaches"));
+  assert.ok(!V.render(legacy, D, { section: "coaches" }).includes("data-world-coaches"));
 });

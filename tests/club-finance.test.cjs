@@ -41,3 +41,27 @@ test("novo patrocinador no meio da temporada só aparece com vaga e bom momento"
   let found=null;for(let d=30;d<400&&!found;d+=30){s.day=d;found=F.maybeExtraSponsor(s);}
   if(found){assert.equal(found.role,"partner");assert.equal(found.status,"pending");}
 });
+test("loja do clube detalha camisas e outros produtos no mesmo caixa",()=>{
+  const s=make(),c=D.club(s,s.clubId),before=F.summary(s);
+  assert.equal(before.totalCash,before.transferBudget+before.wageReserve);
+  assert.deepEqual(before.store.products.map(x=>x.id),["shirts","training","accessories","souvenirs"]);
+  assert.equal(before.store.products.reduce((sum,x)=>sum+x.revenue,0),before.store.expectedMonthly);
+  F.closeClub(s,c);
+  const rows=F.summary(s).ledger.filter(x=>x.category==="camisas");
+  assert.equal(rows.length,4);
+  assert.ok(rows.every(x=>x.label.startsWith("Loja do clube")));
+});
+test("ampliar loja usa o caixa existente e aumenta a projeção sem criar dinheiro",()=>{
+  const s=make(),c=D.club(s,s.clubId),entry=F.ensure(s,c),before=F.summary(s),level=before.store.level;
+  c.budget=Math.max(c.budget,before.store.upgradeCost);
+  const total=c.budget+entry.reserve,result=F.upgradeStore(s),after=F.summary(s);
+  assert.equal(result.ok,true);assert.equal(after.store.level,level+1);
+  assert.equal(c.budget+entry.reserve,total-result.cost);
+  assert.ok(after.store.expectedMonthly>before.store.expectedMonthly);
+});
+test("movimentação externa entra no extrato sem reaplicar o valor",()=>{
+  const s=make(),c=D.club(s,s.clubId),budget=c.budget;
+  F.movement(s,c,"transferencia",-500000,"Contratação teste");
+  assert.equal(c.budget,budget);
+  assert.equal(F.summary(s).ledger[0].amount,-500000);
+});

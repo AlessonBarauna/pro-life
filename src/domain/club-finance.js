@@ -10,6 +10,13 @@
     premios:"Premiações",outras:"Outras receitas",folha:"Folha salarial",operacao:"Operação do clube",
     transferencia:"Transferência de caixa"
   });
+  const STORE_PRODUCTS=Object.freeze([
+    Object.freeze({id:"shirts",name:"Camisas oficiais",share:.52,price:349}),
+    Object.freeze({id:"training",name:"Linha de treino",share:.18,price:229}),
+    Object.freeze({id:"accessories",name:"Acessórios",share:.17,price:119}),
+    Object.freeze({id:"souvenirs",name:"Souvenires",share:.13,price:69})
+  ]);
+  const STORE_MULTIPLIERS=Object.freeze([1,1.15,1.32]);
   let resolver=null;
   const getClub=(state,id)=>resolver?resolver(state,id):root.ProLife?.club?.(state,id);
   const bind=fn=>{resolver=fn;};
@@ -52,6 +59,8 @@
       e=store.clubs[id]={reserve:Math.round(reserveCap(club,state)*.5),ledger:[],lastClose:null,created:num(state.day)};
     }
     if(!Array.isArray(e.ledger))e.ledger=[];
+    if(!e.store||typeof e.store!=="object")e.store={level:1,lastUpgradeDay:null};
+    e.store.level=clamp(Math.round(num(e.store.level,1)),1,STORE_MULTIPLIERS.length);
     return e;
   }
   const isUser=(state,club)=>String(state.clubId)===String(club.id);
@@ -59,6 +68,13 @@
     if(!isUser(state,club))return;
     e.ledger.unshift({day:num(state.day),month:monthOf(state.day),category,amount:Math.round(amount),label,...(meta||{})});
     if(e.ledger.length>LEDGER_MAX)e.ledger.length=LEDGER_MAX;
+  }
+  // Registra uma movimentação já aplicada por outro domínio (ex.: transferência),
+  // sem creditar ou debitar o caixa uma segunda vez.
+  function movement(state,club,category,amount,label,meta){
+    if(!club||!Number.isFinite(Number(amount))||Number(amount)===0)return 0;
+    record(state,club,ensure(state,club),category,Number(amount),label,meta);
+    return Math.round(Number(amount));
   }
   // Receita: primeiro completa a reserva salarial, o resto vai para o orçamento de transferências.
   function income(state,club,category,amount,label,meta){
@@ -106,11 +122,35 @@
     if(win){const e=ensure(state,home);e.winBoost=Math.min(.25,num(e.winBoost)+.04);}
     return g;
   }
+  function storeDemand(state,club,e){
+    const rep=clamp(num(club?.reputation,num(club?.structure,60)),20,100)/100;
+    const star=(club.roster||[]).some(p=>num(p.ovr??p.overall)>=85)?1.1:1;
+    return clamp((.72+form(club)*.36+num(e.winBoost))*(.75+rep*.35)*star,.55,1.55);
+  }
   function merchMonth(state,club,e){
     const base=annualRevenue(club,state)*SHARE.merch/12;
     const m=calendarMonth(state.day),seasonal=m===11?1.4:m===7||m===0?1.2:m===5||m===6?.8:1;
-    const star=(club.roster||[]).some(p=>num(p.ovr??p.overall)>=85)?1.1:1;
-    return Math.round(base*seasonal*(.8+form(club)*.4+num(e.winBoost))*star);
+    const level=clamp(Math.round(num(e.store?.level,1)),1,STORE_MULTIPLIERS.length);
+    return Math.round(base*seasonal*storeDemand(state,club,e)*STORE_MULTIPLIERS[level-1]);
+  }
+  function storeSnapshot(state,club){
+    club=club||(state?.clubId?getClub(state,state.clubId):null);if(!club)return null;
+    const e=ensure(state,club),level=e.store.level,total=merchMonth(state,club,e),demand=storeDemand(state,club,e);
+    const products=STORE_PRODUCTS.map((product,index)=>{
+      const revenue=index===STORE_PRODUCTS.length-1?total-STORE_PRODUCTS.slice(0,-1).reduce((sum,x)=>sum+Math.round(total*x.share),0):Math.round(total*product.share);
+      return {...product,revenue,units:Math.max(0,Math.round(revenue/product.price))};
+    });
+    const upgradeCost=level>=STORE_MULTIPLIERS.length?0:Math.max(500000,Math.round(annualRevenue(club,state)*(.018+.012*level)/10000)*10000);
+    return {level,maxLevel:STORE_MULTIPLIERS.length,demand:Math.round(demand*100),expectedMonthly:total,products,upgradeCost,lastUpgradeDay:e.store.lastUpgradeDay};
+  }
+  function upgradeStore(state){
+    const club=state?.clubId?getClub(state,state.clubId):null;if(!club)return {ok:false,reason:"Sem clube."};
+    const e=ensure(state,club),shop=storeSnapshot(state,club);
+    if(shop.level>=shop.maxLevel)return {ok:false,reason:"A loja já está no nível máximo."};
+    if(num(club.budget)+num(e.reserve)<shop.upgradeCost)return {ok:false,reason:"Caixa insuficiente para ampliar a loja."};
+    expense(state,club,"operacao",shop.upgradeCost,`Ampliação da loja do clube · nível ${shop.level+1}`);
+    e.store.level=shop.level+1;e.store.lastUpgradeDay=num(state.day);
+    return {ok:true,level:e.store.level,cost:shop.upgradeCost};
   }
   // Fechamento do mês de um clube. Clubes da IA usam o modelo simplificado (sem extrato).
   function closeClub(state,club){
@@ -120,7 +160,8 @@
     const add=(cat,amount,label)=>{amount=Math.round(amount);detail[cat]=(detail[cat]||0)+amount;income(state,club,cat,amount,label);};
     add("tv",ar*SHARE.tv/12,"Direitos de TV (parcela mensal)");
     add("patrocinio",ar*SHARE.sponsor/12,"Patrocínios e publicidade fixos");
-    add("camisas",merchMonth(state,club,e),"Venda de camisas e produtos");
+    const store=storeSnapshot(state,club);
+    for(const product of store.products)add("camisas",product.revenue,`Loja do clube · ${product.name}`);
     add("outras",ar*SHARE.other/12,"Estádio, museu e eventos");
     if(!user)add("bilheteria",ar*SHARE.gate/12*(.8+f*.4)*jitter,"Bilheteria (média do mês)");
     e.winBoost=num(e.winBoost)*.5;
@@ -210,14 +251,14 @@
       m.byCategory[x.category]=(m.byCategory[x.category]||0)+x.amount;
     }
     const ar=annualRevenue(club,state);
-    return {transferBudget:Math.round(num(club.budget)),wageReserve:Math.round(num(e.reserve)),reserveCap:reserveCap(club,state),
+    return {totalCash:Math.round(num(club.budget)+num(e.reserve)),transferBudget:Math.round(num(club.budget)),wageReserve:Math.round(num(e.reserve)),reserveCap:reserveCap(club,state),
       monthlyPayroll:pay.players+staff,monthlyCost,monthsCovered:monthlyCost?Math.round(num(e.reserve)/monthlyCost*10)/10:0,
       expectedMonthlyRevenue:Math.round(ar*(SHARE.tv+SHARE.sponsor+SHARE.merch+SHARE.other+SHARE.gate)/12),
       current:months[cur]||{month:cur,in:0,out:0,byCategory:{}},months:Object.values(months).sort((a,b)=>b.month-a.month),
-      ledger:e.ledger.slice(0,60),lastClose:e.lastClose||null,capacity:capacityOf(club)};
+      ledger:e.ledger.slice(0,60),lastClose:e.lastClose||null,capacity:capacityOf(club),store:storeSnapshot(state,club)};
   }
-  const api={VERSION,bind,CATEGORIES,SHARE,payroll,annualRevenue,reserveCap,ensure,income,expense,matchGate,onMatch,monthlyClose,closeClub,
-    syncContracts,maybeExtraSponsor,moveFunds,summary,capacityOf};
+  const api={VERSION,bind,CATEGORIES,SHARE,STORE_PRODUCTS,payroll,annualRevenue,reserveCap,ensure,income,expense,movement,matchGate,onMatch,monthlyClose,closeClub,
+    syncContracts,maybeExtraSponsor,moveFunds,summary,capacityOf,storeSnapshot,upgradeStore};
   root.ProLifeClubFinance=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
