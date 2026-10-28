@@ -52,4 +52,6 @@ test("mobile landscape displays the player data as a dedicated game screen",()=>
   assert.match(cssSource,/\.cc-mobile-scout-profile \{[\s\S]*?min-width:0/);
   assert.match(cssSource,/grid-template-columns:minmax\(150px,\.8fr\) minmax\(140px,\.72fr\) minmax\(180px,1\.15fr\) minmax\(190px,1\.15fr\)/);
   assert.match(cssSource,/\.cc-mobile-scout-profile > \.cc-market-player-detail > \* \{ min-width:0; \}/);
+  assert.match(cssSource,/\.cc-mobile-scout-profile \.cc-four-areas \{ grid-column:3 \/ 5;grid-row:2; \}/);
+  assert.match(cssSource,/\.cc-mobile-scout-profile \.cc-market-detail-portrait \{ grid-column:1;grid-row:1 \/ -1/);
 });

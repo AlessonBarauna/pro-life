@@ -24,6 +24,8 @@ test("mobile landscape keeps local navigation visible and scrolls dense panels i
   assert.match(css, /\.game-stage-squad \.pl-squad-left,[\s\S]*overflow-y:auto/);
   assert.match(css, /\.game-stage-season :is\([\s\S]*overflow-y:auto/);
   assert.match(css, /\.game-stage-calendar \.pl-calendar-screen > \.career-calendar[\s\S]*overflow-y:auto[\s\S]*touch-action:pan-y/);
+  assert.match(css, /\.game-stage-calendar \.sm27-screen-body > \.pl-calendar-screen[\s\S]*height:auto[\s\S]*overflow:visible/);
+  assert.match(css, /\.game-stage-calendar \.pl-calendar-screen > \.career-calendar[\s\S]*max-height:none[\s\S]*touch-action:auto/);
 });
 
 test("market filters and cards are compact enough for the horizontal phone viewport", () => {

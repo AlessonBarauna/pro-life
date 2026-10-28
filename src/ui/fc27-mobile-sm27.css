@@ -219,6 +219,19 @@
     -webkit-overflow-scrolling:touch;
   }
 
+  /* No calendario, um unico scroll e mais previsivel no toque do que dois
+     painéis aninhados. A tela ativa inteira passa a rolar, inclusive a agenda. */
+  .game-stage-calendar .sm27-screen-body > .pl-calendar-screen {
+    height:auto;
+    min-height:100%;
+    overflow:visible;
+  }
+  .game-stage-calendar .pl-calendar-screen > .career-calendar {
+    max-height:none;
+    overflow:visible;
+    touch-action:auto;
+  }
+
   /* Paginas com muitos cartoes ganham uma grade compacta antes de recorrer ao scroll. */
   .game-stage:not(.game-stage-home) .cc-grid {
     grid-template-columns:repeat(2,minmax(0,1fr));
