@@ -51,8 +51,10 @@
     if (!position) return;
     const apply = () => {
       const stage = document.querySelector(".game-stage");
+      const screen = document.querySelector(".sm27-screen-body");
       const results = document.querySelector(".cc-market-results");
       if (stage) stage.scrollTop = position.stageY;
+      if (screen) screen.scrollTop = position.screenY;
       if (restoreResults && results) results.scrollTop = position.resultsY;
       window.scrollTo?.(position.windowX, position.windowY);
     };
@@ -60,6 +62,18 @@
     requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(apply)));
     setTimeout(apply, 80);
     setTimeout(apply, 220);
+  }
+  function captureScoutPosition() {
+    const stage = document.querySelector(".game-stage");
+    const screen = document.querySelector(".sm27-screen-body");
+    const results = document.querySelector(".cc-market-results");
+    return {
+      windowX: window.scrollX || 0,
+      windowY: window.scrollY || 0,
+      stageY: stage?.scrollTop || 0,
+      screenY: screen?.scrollTop || 0,
+      resultsY: results?.scrollTop || 0,
+    };
   }
   function updateDesktopScoutDetail(view, playerId) {
     const currentDetail = document.querySelector(".cc-market-player-detail");
@@ -8964,13 +8978,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return;
     }
     if(el.hasAttribute("data-coach-scout-select")) {
-      const stage=document.querySelector(".game-stage"),results=el.closest(".cc-market-results")||document.querySelector(".cc-market-results");
-      scoutReturnPosition={
-        windowX:window.scrollX||0,
-        windowY:window.scrollY||0,
-        stageY:stage?.scrollTop||0,
-        resultsY:results?.scrollTop||0
-      };
+      scoutReturnPosition=captureScoutPosition();
       const dedicatedProfile=window.matchMedia?.("(pointer: coarse) and (max-width: 1180px)")?.matches||window.matchMedia?.("(max-width: 760px)")?.matches||false;
       const playerId=el.getAttribute("data-coach-scout-select");
       V?.selectScoutPlayer(playerId,dedicatedProfile);
@@ -8995,6 +9003,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       category:document.querySelector("[data-coach-scout-category]")?.value
     }); render(); return; }
     if(el.hasAttribute("data-coach-start-scout")){
+      const position=captureScoutPosition();
       const scout=window.ProLifeCoachScoutingV2;
       if(!scout?.start){toast("Sistema de observacao indisponivel.");return;}
       const playerId=el.getAttribute("data-coach-start-scout");
@@ -9004,7 +9013,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const duration=Number(document.querySelector("[data-coach-scout-duration]")?.value||14);
       const outcome=scout.start(state,{playerId,region,duration,scoutQuality:50,cost:0,specialty});
       if(!outcome.ok){toast(outcome.error||"Falha ao iniciar observacao.");return;}
-      persist();render();toast("Observacao iniciada. Relatorio evolui ao avancar os dias.");
+      persist();render();restoreScoutPosition(position,true);toast("Observação iniciada.");
       return;
     }
     if(el.hasAttribute("data-coach-save-priority")){
@@ -9021,7 +9030,10 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return command("payReleaseClause",{clubId,playerId});
     }
     if(el.hasAttribute("data-coach-inquire")){
-      return command("coachInquiry",{clubId:el.getAttribute("data-coach-inquire"),playerId:el.getAttribute("data-coach-player")});
+      const position=captureScoutPosition();
+      const completed=command("coachInquiry",{clubId:el.getAttribute("data-coach-inquire"),playerId:el.getAttribute("data-coach-player")});
+      if(completed)restoreScoutPosition(position,true);
+      return completed;
     }
     if(el.hasAttribute("data-coach-scout-offer")){
       const clubId=el.getAttribute("data-coach-scout-offer"),playerId=el.getAttribute("data-coach-player");
