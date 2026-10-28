@@ -338,8 +338,13 @@
           '<p>'+esc(why)+'</p></div>':'')+'</section>';
       }
       const primaryAction=selectedPending?'<p class="cc-action-wait">Sondagem enviada · resposta prevista em '+careerDate(s,selectedInquiry.responseDay)+'</p>':
-        selectedReady?'<button type="button" class="cc-action-primary" data-coach-scout-offer="'+esc(selectedClub?.id)+'" data-coach-player="'+esc(selectedPlayer?.id)+'">Negociar contratação</button>':
+        selectedReady?'<button type="button" class="cc-action-primary" data-coach-scout-offer="'+esc(selectedClub?.id)+'" data-coach-player="'+esc(selectedPlayer?.id)+'">Iniciar contratação</button>':
         '<button type="button" class="cc-action-primary" data-coach-inquire="'+esc(selectedClub?.id)+'" data-coach-player="'+esc(selectedPlayer?.id)+'"'+(selectedCooldown?' disabled':'')+'>'+(selectedCooldown?"Aguardar nova sondagem":"Consultar interesse")+'</button>';
+      const profilePrimaryAction=selectedPlayer&&selectedClub?'<div class="cc-mobile-scout-profile-cta">'+(
+        selectedReady?'<button type="button" data-coach-scout-offer="'+esc(selectedClub.id)+'" data-coach-player="'+esc(selectedPlayer.id)+'">Iniciar contratação</button>':
+        selectedPending?'<span>Sondagem em análise</span>':
+        '<button type="button" data-coach-inquire="'+esc(selectedClub.id)+'" data-coach-player="'+esc(selectedPlayer.id)+'"'+(selectedCooldown?' disabled':'')+'>'+(selectedCooldown?'Aguardar sondagem':'Consultar interesse')+'</button>'
+      )+'</div>':"";
       const selectedActions=selectedPlayer&&selectedClub?
         '<div class="cc-market-detail-actions cc-player-actions"><small>AÇÕES DO JOGADOR</small>'+primaryAction+
         '<div class="cc-action-secondary"><button type="button" data-coach-start-scout="'+esc(selectedPlayer.id)+'" data-coach-region="'+esc(selectedClub.leagueId||selectedClub.country||"Brasil")+'">Pedir relatório ao olheiro</button>'+
@@ -456,7 +461,7 @@
       const inquiryPanel='<section class="cc-card cc-fc27-scout"><div class="cc-fc27-scout-head"><div><small>MERCADO · INTERESSE CONSULTADO</small><h2>Sondagens enviadas</h2><p>Todos os jogadores cujo interesse você consultou. Selecione um para ver o perfil, negociar ou acompanhar.</p></div><b>'+inquiryList.length+' SONDAGENS</b></div>'+
         (inquiryList.length?'<div class="cc-market-search-layout"><div class="cc-market-results">'+inquiryRows+'</div>'+sideDetail+'</div>':'<p class="cc-note">Nenhuma sondagem enviada ainda. Consulte o interesse de um jogador pela busca mundial.</p>')+'</section>';
       const scoutNav=listsOnScouting?listNav:'<nav class="cc-deal-nav cc-scout-subnav" aria-label="Menus de scouting">'+[["busca","Busca mundial"],["olheiros","Rede de olheiros"],["recomendacoes","Recomendações"]].map(([id,label])=>'<button type="button" data-coach-scout-screen="'+id+'" aria-pressed="'+(ui.scoutScreen===id)+'">'+label+'</button>').join("")+'</nav>';
-      if(ui.scoutScreen==="perfil")return '<section class="cc-mobile-scout-profile" aria-label="Perfil completo do jogador"><header class="cc-mobile-scout-profile-head"><button type="button" data-coach-scout-back aria-label="Voltar aos resultados">← <span>Voltar</span></button><div><small>SCOUTING · PERFIL DO ATLETA</small><h2>'+esc(selectedPlayer?.name||"Jogador")+'</h2><p>'+esc(selectedClub?.name||"Agente livre")+'</p></div></header>'+sideDetail+'</section>';
+      if(ui.scoutScreen==="perfil")return '<section class="cc-mobile-scout-profile" aria-label="Perfil completo do jogador"><header class="cc-mobile-scout-profile-head"><button type="button" data-coach-scout-back aria-label="Voltar aos resultados">← <span>Voltar</span></button><div class="cc-mobile-scout-profile-title"><small>SCOUTING · PERFIL DO ATLETA</small><h2>'+esc(selectedPlayer?.name||"Jogador")+'</h2><p>'+esc(selectedClub?.name||"Agente livre")+'</p></div>'+profilePrimaryAction+'</header>'+sideDetail+'</section>';
       if(ui.scoutScreen==="alvos")return scoutNav+targetPanel;
       if(ui.scoutScreen==="sondagens")return scoutNav+inquiryPanel;
       if(ui.scoutScreen==="olheiros")return scoutNav+missionPanel;

@@ -25,6 +25,9 @@ test("scouting opens a dedicated mobile player screen and returns to its source"
 test("profile screen exposes a back action and preserves every existing scouting route",()=>{
   assert.match(viewSource,/data-coach-scout-back/);
   assert.match(viewSource,/cc-market-profile-screen/);
+  assert.match(viewSource,/cc-mobile-scout-profile-cta/);
+  assert.match(viewSource,/selectedReady\?'<button type="button" data-coach-scout-offer=/);
+  assert.match(viewSource,/>Iniciar contratação<\/button>/);
   for(const screen of ["busca","alvos","sondagens","olheiros","recomendacoes"]){
     assert.ok(viewSource.includes('"'+screen+'"'));
   }
