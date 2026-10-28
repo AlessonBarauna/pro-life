@@ -14,6 +14,7 @@ test("Central do celular gera blocos clicáveis e ação principal",()=>{
   const H={c:{id:"a",name:"Alfa",budget:1000},next:{home:"Alfa",away:"Beta",homeClubId:"a",awayClubId:"b",date:12,competitionName:"Liga",stage:"Rodada 1"},messages:[{subject:"Oi",read:false}],unread:1,competitionTable:{rows:[{id:"a",name:"Alfa",position:1,stats:{played:0,points:0}}]},recent:[],events:[{day:12,title:"Jogo"}],news:[]};
   const html=M.home(state,D,H,{esc,dayDate:d=>"d"+d,money:v=>"R$ "+v});
   assert.match(html,/data-live-match/);
+  assert.match(html,/class="sm27-skip-match" data-simulate="nextMatch">Pular partida/);
   for(const page of ["inbox","profile","league","market","calendar","matches"])assert.ok(html.includes(`data-page="${page}"`),page);
   assert.ok(!/<ul|<li/.test(html),"sem listas dentro de botões");
   assert.match(html,/<button type="button" class="sm27-card sm27-tile"/);

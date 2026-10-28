@@ -38,7 +38,7 @@
             <div class="sm27-team">${crestOf(next.awayClubId, next.away, esc)}<b>${esc(next.away)}</b></div>
           </div>
           <div class="sm27-meta"><span><i>${esc(next.competitionName || "Jogo")}</i>${esc(next.stage || "")}</span><span><i>Data</i>${dayDate(next.date)}</span><span><i>Em</i>${days === 0 ? "Hoje" : days + " dia" + (days === 1 ? "" : "s")}</span><span><i>Mando</i>${next.national ? "Seleção" : isHome ? "Em casa" : "Fora"}</span></div>
-          <div class="sm27-match-actions"><button type="button" class="primary" data-live-match>Acompanhar partida</button><button type="button" data-page="squad">Equipe</button>${state.mode === "coach" ? `<button type="button" data-coach-plan-official-sub>Substituição</button>` : ""}<button type="button" data-simulate="nextCommitment">Simular</button></div>
+          <div class="sm27-match-actions"><button type="button" class="primary" data-live-match>Acompanhar partida</button><button type="button" data-page="squad">Equipe</button>${state.mode === "coach" ? `<button type="button" data-coach-plan-official-sub>Substituição</button>` : ""}<button type="button" data-simulate="nextCommitment">Simular</button><button type="button" class="sm27-skip-match" data-simulate="nextMatch">Pular partida</button></div>
         </section>`
       : `<section class="sm27-card sm27-match sm27-match-empty"><h3>Sem jogo agendado</h3><p>Abra o calendário ou avance o dia.</p><div class="sm27-match-actions"><button type="button" class="primary" data-page="calendar">Calendário</button><button type="button" data-advance="1">+1 dia</button></div></button>`;
 

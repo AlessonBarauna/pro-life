@@ -287,6 +287,7 @@
   .sm27-match-actions { display:flex; gap:6px; }
   .sm27-match-actions button { clip-path:none; flex:1 1 0; height:34px; min-height:34px !important; padding:0 8px; border:1px solid var(--sm27-line); border-radius:8px; background:rgba(255,255,255,.07); color:var(--sm27-text); font-size:11px; font-weight:800; text-transform:none; letter-spacing:0; }
   .sm27-match-actions button.primary { flex:1.6 1 0; background:var(--sm27-accent); border-color:var(--sm27-accent); color:var(--sm27-accent-ink); font-size:12px; font-weight:900; }
+  .sm27-match-actions .sm27-skip-match { border-color:rgba(201,244,61,.55);color:var(--sm27-accent); }
   .sm27-match-empty { place-content:center; text-align:center; }
 
   .sm27-rings { display:flex; justify-content:space-around; align-items:center; flex:1 1 auto; }
