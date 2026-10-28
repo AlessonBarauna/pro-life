@@ -49,5 +49,7 @@ test("desktop swaps only the player detail instead of rebuilding the whole game"
 test("mobile landscape displays the player data as a dedicated game screen",()=>{
   assert.match(cssSource,/\.cc-market-search-layout > \.cc-market-player-detail\s*\{\s*display:none/);
   assert.match(cssSource,/\.cc-mobile-scout-profile > \.cc-market-player-detail/);
-  assert.match(cssSource,/grid-template-columns:210px 210px minmax\(270px,1fr\) minmax\(270px,1fr\)/);
+  assert.match(cssSource,/\.cc-mobile-scout-profile \{[\s\S]*?min-width:0/);
+  assert.match(cssSource,/grid-template-columns:minmax\(150px,\.8fr\) minmax\(140px,\.72fr\) minmax\(180px,1\.15fr\) minmax\(190px,1\.15fr\)/);
+  assert.match(cssSource,/\.cc-mobile-scout-profile > \.cc-market-player-detail > \* \{ min-width:0; \}/);
 });

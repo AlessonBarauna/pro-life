@@ -23,6 +23,7 @@ test("mobile landscape keeps local navigation visible and scrolls dense panels i
   assert.match(css, /\.game-stage-squad \.sm27-screen-body > \.pl-squad-screen[\s\S]*\.game-stage-squad \.pl-squad-workspace[\s\S]*overflow:hidden/);
   assert.match(css, /\.game-stage-squad \.pl-squad-left,[\s\S]*overflow-y:auto/);
   assert.match(css, /\.game-stage-season :is\([\s\S]*overflow-y:auto/);
+  assert.match(css, /\.game-stage-calendar \.pl-calendar-screen > \.career-calendar[\s\S]*overflow-y:auto[\s\S]*touch-action:pan-y/);
 });
 
 test("market filters and cards are compact enough for the horizontal phone viewport", () => {
