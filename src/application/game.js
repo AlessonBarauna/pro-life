@@ -420,7 +420,7 @@ case "tactic": {
       }
       case "rejectCoachDeal": {
         if(s.mode!=="coach")throw Error("Disponível apenas no modo treinador.");
-        const n=s.coachCareer?.negotiations?.find(n=>n.id===data.id && n.status==="pending");
+        const n=s.coachCareer?.negotiations?.find(n=>n.id===data.id && n.status==="pending"&&(!Number.isFinite(Number(n.expiresDay))||Number(s.day)<=Number(n.expiresDay)));
         if(!n)throw Error("Proposta indisponível.");
         n.status="rejected";n.closedDay=s.day;
         (s.news||[]).unshift({day:s.day,season:s.season,title:"Negociação recusada",body:"Proposta recusada pelo treinador."});
@@ -630,7 +630,7 @@ case "tactic": {
         break;
       }
       case "rejectSaleOffer": {
-        const offer=s.coachCareer?.saleOffers?.find(o=>o.id===data.id&&o.status==="pending"&&o.sellerClubId===s.clubId);
+        const offer=s.coachCareer?.saleOffers?.find(o=>o.id===data.id&&o.status==="pending"&&o.sellerClubId===s.clubId&&(!Number.isFinite(Number(o.expiresDay))||Number(s.day)<=Number(o.expiresDay)));
         if(s.mode!=="coach"||!offer)throw Error("Proposta indisponível.");
         offer.status="rejected";offer.closedDay=s.day;
         (s.news||[]).unshift({day:s.day,season:s.season,title:"Proposta recusada",body:"Você recusou a oferta recebida. O jogador permanece no clube."});

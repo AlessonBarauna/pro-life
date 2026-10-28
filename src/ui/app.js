@@ -532,7 +532,8 @@
       },
       subnavShell = () => subnav.length ? `<div class="game-subnav" role="navigation" aria-label="Navegação da área">${subnavHtml()}</div>` : "";
     const unread = Career.unreadCount(state) + (state.decision ? 1 : 0),
-      offerCount = (state.offers||[]).filter((o) => o.expires >= state.day).length;
+      activeCoachDeals = [...(Array.isArray(state.coachCareer?.negotiations)?state.coachCareer.negotiations:[]),...(Array.isArray(state.coachCareer?.saleOffers)?state.coachCareer.saleOffers:[])].filter((item)=>item.status==="awaiting_window"||(item.status==="pending"&&(!Number.isFinite(Number(item.expiresDay))||Number(item.expiresDay)>=Number(state.day)))),
+      offerCount = state.mode==="coach"?activeCoachDeals.length:(state.offers||[]).filter((o) => !Number.isFinite(Number(o.expires))||Number(o.expires)>=Number(state.day)).length;
     const quickNav = state.mode === "player"
       ? [
           ["home", "Central", "⌂", ["home"]],

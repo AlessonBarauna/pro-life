@@ -555,6 +555,32 @@
     }
     return count;
   }
+  // FC 27: itens com prazo encerrado deixam imediatamente as filas acionáveis.
+  // A normalização também corrige saves antigos que avançaram sem executar o ciclo diário.
+  function expireMarketItems(s){
+    if(!isCoach(s))return {negotiations:0,saleOffers:0,inquiries:0};
+    const c=state(s),day=Number(s.day)||0;
+    const counts={negotiations:0,saleOffers:0,inquiries:0};
+    for(const n of c.negotiations||[]){
+      if(n.status!=="pending"||!Number.isFinite(Number(n.expiresDay))||day<=Number(n.expiresDay))continue;
+      n.status="expired";n.response="expired";n.closedDay=day;
+      delete n.pendingOutcome;delete n.replyDay;
+      counts.negotiations++;
+      (s.news||[]).unshift({day,season:s.season,title:"Negociação expirada",body:"O prazo da negociação por "+String(n.playerName||n.playerId||"jogador")+" terminou sem acordo."});
+    }
+    for(const o of c.saleOffers||[]){
+      if(o.status!=="pending"||!Number.isFinite(Number(o.expiresDay))||day<=Number(o.expiresDay))continue;
+      o.status="expired";o.closedDay=day;
+      counts.saleOffers++;
+      (s.news||[]).unshift({day,season:s.season,title:o.dealType==="loan"?"Proposta de empréstimo expirada":"Proposta de transferência expirada",body:"A oferta por "+String(o.playerName||o.playerId||"jogador")+" expirou sem resposta."});
+    }
+    for(const inquiry of c.inquiries||[]){
+      if(!["accepted","asking_price"].includes(inquiry.status)||!Number.isFinite(Number(inquiry.expiresDay))||day<=Number(inquiry.expiresDay))continue;
+      inquiry.status="expired";inquiry.closedDay=day;
+      counts.inquiries++;
+    }
+    return counts;
+  }
   // M03.7: financial accrual snapshots only. Never debit transfer budget.
   // This ledger is an estimate, not proof of a wage payment.
   function recordPayrollForecast(s,api){
@@ -609,6 +635,7 @@
       economy.processSponsorshipBonuses?.(s,currentClub,tableOf(s,api,currentClub));
     }
     root.ProLifeCoachScoutingV2?.advance?.(s);
+    expireMarketItems(s);
     settleInquiries(s,api);
     settleTransferReplies(s);
     root.ProLifeClubEconomy?.settleSponsorshipReplies?.(s);
@@ -637,7 +664,7 @@
       focus:c.focus,foci:FOCI,stints:c.stints,totals,license:s.license,reputation:s.reputation};
   }
 
-  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
+  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

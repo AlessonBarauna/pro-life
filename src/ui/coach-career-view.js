@@ -490,13 +490,16 @@
     const draftPanel=draft?'<section class="cc-card cc-neg-dialog" aria-label="Preparar proposta"><small>01 · PREPARAÇÃO</small><h3>Preparar proposta de contratação</h3><p class="cc-note">Nenhuma proposta foi enviada ainda. Escolha o valor e confirme o envio.</p><div class="cc-deal-player"><strong>'+esc(draftPlayer?.name||draft.playerId)+'</strong><small>'+esc(draftPlayer?.pos||"")+'</small></div><label class="cc-neg-offer">Valor da proposta (R$)<input type="number" min="1000" step="1000" data-coach-new-offer value="'+esc(draft.suggestedOffer)+'"></label><div class="cc-deal-actions"><button type="button" data-coach-submit-offer="1">Enviar proposta ao clube</button><button type="button" data-coach-cancel-offer="1">Cancelar</button></div></section>':'';
     const own=D?.club?.(s,s.clubId);
     const ownedPlayerIds=new Set((own?.roster||[]).map(p=>String(p.id)));
-    const pending=(c.negotiations||[]).filter(n=>(n.status==="pending"||n.status==="awaiting_window")&&String(n.buyerClubId)===String(s.clubId)&&!ownedPlayerIds.has(String(n.playerId)));
-    const sales=(c.saleOffers||[]).filter(o=>o.status==="pending"||o.status==="awaiting_window");
+    const currentDay=Number(s.day)||0;
+    const normalizedNegotiations=(c.negotiations||[]).map(n=>n.status==="pending"&&Number.isFinite(Number(n.expiresDay))&&currentDay>Number(n.expiresDay)?{...n,status:"expired",response:"expired",closedDay:currentDay}:n);
+    const normalizedSales=(c.saleOffers||[]).map(o=>o.status==="pending"&&Number.isFinite(Number(o.expiresDay))&&currentDay>Number(o.expiresDay)?{...o,status:"expired",closedDay:currentDay}:o);
+    const pending=normalizedNegotiations.filter(n=>(n.status==="pending"||n.status==="awaiting_window")&&String(n.buyerClubId)===String(s.clubId)&&!ownedPlayerIds.has(String(n.playerId)));
+    const sales=normalizedSales.filter(o=>o.status==="pending"||o.status==="awaiting_window");
     const loans=(c.loans||[]).filter(l=>!l.returned);
     const debts=(c.transferDebts||[]).filter(d=>!d.paid);
     const clauses=(c.sellOnClauses||[]).filter(x=>x.active);
-    const negotiationHistory=(c.negotiations||[]).filter(n=>n.status!=="pending"&&n.status!=="awaiting_window");
-    const saleHistory=(c.saleOffers||[]).filter(o=>o.status!=="pending"&&o.status!=="awaiting_window");
+    const negotiationHistory=normalizedNegotiations.filter(n=>n.status!=="pending"&&n.status!=="awaiting_window");
+    const saleHistory=normalizedSales.filter(o=>o.status!=="pending"&&o.status!=="awaiting_window");
     const paid=(c.transferDebts||[]).filter(d=>d.paid);
     const finishedLoans=(c.loans||[]).filter(l=>l.returned);
     const transactions=(D?.Career?.init?.(s)?.transfers||[]).filter(x=>x&&x.day!==undefined);
@@ -596,7 +599,7 @@
         person:x.playerName||player(x.playerId)?.name||x.playerId,waiting:false,cta:x.status==="pending"?"Ver sondagem":"Negociar"}))
     ].sort((a,b)=>(a.waiting?1:0)-(b.waiting?1:0)||a.due-b.due);
     const taskPanel='<section class="cc-card cc-market-task-panel" aria-label="Atividades de mercado"><h3>Atividades da Central de Transferências</h3><p class="cc-note">As quatro próximas decisões aparecem aqui. Cada jogador ocupa uma única linha, mesmo após a sondagem virar negociação.</p>'+
-      (activeTasks.length?activeTasks.slice(0,4).map(t=>'<article class="cc-deal"><div class="cc-deal-player"><strong>'+esc(t.person)+'</strong><small>'+esc(t.label)+'</small></div><span class="cc-status">'+(t.waiting?'Aguardando janela':t.due<s.day?'Prazo vencido':t.due-s.day<=3?'Prazo urgente':'Até '+careerDate(s,t.due))+'</span><button type="button" '+(t.kind==="sale"?'data-coach-deal-tab="recebidas"':t.kind==="inquiry"?'data-coach-list-screen="sondagens"':'data-coach-deal-open="'+esc(t.id)+'"')+'>'+(t.cta||"Ver negociação")+'</button></article>').join(""):'<p class="cc-note">Nenhuma ação pendente. Use Scouting para localizar atletas.</p>')+'</section>';
+      (activeTasks.length?activeTasks.slice(0,4).map(t=>'<article class="cc-deal"><div class="cc-deal-player"><strong>'+esc(t.person)+'</strong><small>'+esc(t.label)+'</small></div><span class="cc-status">'+(t.waiting?'Aguardando janela':t.due-s.day<=3?'Prazo urgente':'Até '+careerDate(s,t.due))+'</span><button type="button" '+(t.kind==="sale"?'data-coach-deal-tab="recebidas"':t.kind==="inquiry"?'data-coach-list-screen="sondagens"':'data-coach-deal-open="'+esc(t.id)+'"')+'>'+(t.cta||"Ver negociação")+'</button></article>').join(""):'<p class="cc-note">Nenhuma ação pendente. Use Scouting para localizar atletas.</p>')+'</section>';
     const prefs=c.offerPreferences||{mode:"all",blockedIds:[],listedIds:[]};
     const prefMode=["all","listed","none"].includes(prefs.mode)?prefs.mode:"all";
     const options=[["all","Receber propostas por todos"],["listed","Somente jogadores na lista"],["none","Não receber propostas"]].map(([id,label])=>'<option value="'+id+'"'+(prefMode===id?' selected':'')+'>'+label+'</option>').join("");
@@ -815,8 +818,10 @@
     if(!own||!economy)return css()+'<section class="cc-dark"><section class="cc-card"><h2>Patrocínios do clube</h2><p class="cc-note">Assine com um clube para administrar contratos comerciais.</p></section></section>';
     economy.initializeSponsorships?.(s,own,brands);
     const finance=s.coachCareer?.finance||{},offers=finance.sponsorshipOffers||[],contracts=(finance.revenueContracts||[]).filter(x=>x.type==="sponsorship"&&String(x.clubId)===String(own.id));
-    const pending=offers.filter(x=>["pending","proposal","awaiting_brand","counter","brand_accepted","brand_countered"].includes(x.status));
-    const concluded=offers.filter(x=>!["pending","proposal","awaiting_brand","counter","brand_accepted","brand_countered"].includes(x.status));
+    const activeSponsorStatuses=["pending","proposal","awaiting_brand","counter","brand_accepted","brand_countered"];
+    const normalizedOffers=offers.map(x=>{const deadline=Number(x.responseExpiresDay??x.expiresDay);return activeSponsorStatuses.includes(x.status)&&Number.isFinite(deadline)&&deadline<Number(s.day)?{...x,status:"expired"}:x;});
+    const pending=normalizedOffers.filter(x=>activeSponsorStatuses.includes(x.status));
+    const concluded=normalizedOffers.filter(x=>!activeSponsorStatuses.includes(x.status));
     const statusLabel={pending:"Pendente",proposal:"Pendente",awaiting_brand:"Aguardando resposta",counter:"Aguardando resposta",brand_accepted:"Marca aceitou",brand_countered:"Contraproposta da marca",brand_rejected:"Recusada pela marca",accepted:"Ativa",rejected:"Recusada",expired:"Expirada"};
     const proposalCard=o=>{
       const conflict=economy.sponsorshipConflict?.(s,o),days=Math.max(0,Number(o.responseExpiresDay??o.expiresDay)-Number(s.day));
@@ -905,8 +910,8 @@
     const presented=(s.coachCareer?.presentations||[]).filter(x=>x.presented&&x.toClubId===s.clubId).slice(-5).reverse();
     const intro=current?signingPresentation(current,s):'<div class="cc-card"><small>ÚLTIMOS REFORÇOS</small><p class="cc-note">'+(presented.length?presented.map(x=>esc(x.playerName)).join(" · "):"Nenhum reforço apresentado nesta carreira.")+'</p></div>';
     const career=s.coachCareer||{};
-    const inquiries=(career.inquiries||[]).filter(x=>x.status==="pending").length;
-    const offers=(career.negotiations||career.deals||[]).filter(x=>x.status==="pending").length;
+    const inquiries=(career.inquiries||[]).filter(x=>x.status==="pending"||(["accepted","asking_price"].includes(x.status)&&Number(x.expiresDay)>=Number(s.day))).length;
+    const offers=(career.negotiations||career.deals||[]).filter(x=>x.status==="awaiting_window"||(x.status==="pending"&&(!Number.isFinite(Number(x.expiresDay))||Number(x.expiresDay)>=Number(s.day)))).length;
     const observation=(career.shortlist||[]).length;
     const navigation='<section class="cc-market-entry" aria-label="Acesso rápido ao mercado"><div class="cc-market-entry-title"><small>PAINEL DO DIRETOR ESPORTIVO</small><h3>Central de Transferências</h3><p>Gestão do elenco, observação e negociações sem caminhos duplicados.</p></div><nav class="cc-market-main-nav" aria-label="Áreas do mercado">'+
       [["overview","Painel"],["observacao","Scouting"],["transferencias","Transferências"],["lists","Listas"],["squad","Elenco"]].map(([id,label])=>'<button type="button" data-coach-market-area="'+id+'" aria-pressed="'+(ui.marketArea===id)+'">'+label+'</button>').join("")+'</nav></section>';

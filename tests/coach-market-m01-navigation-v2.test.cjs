@@ -10,13 +10,14 @@ test("M01 market entry exposes distinct scouting and transfer navigation",()=>{
  new vm.Script(source);
  assert.match(source,/cc-market-entry/);
  assert.match(source,/PAINEL DO DIRETOR ESPORTIVO/);
- assert.match(source,/data-coach-market-area="observacao"/);
- assert.match(source,/data-coach-market-area="transferencias"/);
+ assert.match(source,/cc-market-main-nav/);
+ assert.match(source,/\[\["overview","Painel"\],\["observacao","Scouting"\],\["transferencias","Transferências"\]/);
  view.setMarketArea("observacao");assert.equal(view.state.marketArea,"observacao");
  view.setMarketArea("transferencias");assert.equal(view.state.marketArea,"transferencias");
 });
 test("M01 reuses existing market commands and negotiation detail",()=>{
- assert.match(source,/\+intro\+navigation\+negotiations\(s,D\)/);
+ assert.match(source,/const marketContent=negotiations\(s,D\)/);
+ assert.match(source,/\+intro\+navigation\+marketContent/);
  assert.match(source,/data-coach-deal-tab/);
  assert.match(source,/data-coach-deal-open/);
 });

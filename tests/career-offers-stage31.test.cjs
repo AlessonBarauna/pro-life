@@ -162,7 +162,8 @@ test("31.4.1 (7) proposta fica acessível: s.offers, caixa de entrada e contador
   assert.match(msg.body,/R\$/);assert.match(msg.body,/ano/);
   assert.ok(C.unreadCount(s)>unreadBefore);
   const app=fs.readFileSync(path.join(__dirname,"..","src","ui","app.js"),"utf8");
-  assert.match(app,/offerCount = \(state\.offers\|\|\[\]\)\.filter\(\(o\) => o\.expires >= state\.day\)\.length/);
+  assert.match(app,/offerCount = state\.mode==="coach"\?activeCoachDeals\.length:/);
+  assert.match(app,/Number\(o\.expires\)>=Number\(state\.day\)/);
 });
 
 test("31.4.1 (8) aceitar, recusar e negociar proposta funcionam sem erro",()=>{

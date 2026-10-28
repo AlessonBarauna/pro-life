@@ -60,9 +60,9 @@
     const comp = tile(CT.page || "league", "Competições", `<span class="sm27-table"><small>${esc(next?.competitionName || "Liga")}<em>J</em><em>Pts</em></small>${rows.slice(from, from + 3).map((x) => `<span class="${x.id === state.clubId ? "me" : ""}"><span>${x.position}</span>${miniCrest(x.id, x.name, esc)}<b>${esc(abbr(D.club(state, x.id)) || x.name)}</b><em>${x.stats?.played ?? 0}</em><em>${x.stats?.points ?? 0}</em></span>`).join("") || "<span><b>Sem tabela</b></span>"}</span>`);
 
     const offers = (state.offers || []).filter((o) => o.expires >= state.day).length;
-    const negs = state.coachCareer?.negotiations;
-    const deals = Array.isArray(negs) ? negs.length : Object.keys(negs || {}).length;
-    const open = offers + deals;
+    const coachItems = [...(Array.isArray(state.coachCareer?.negotiations) ? state.coachCareer.negotiations : []), ...(Array.isArray(state.coachCareer?.saleOffers) ? state.coachCareer.saleOffers : [])];
+    const deals = coachItems.filter((o) => o.status === "awaiting_window" || (o.status === "pending" && (!Number.isFinite(Number(o.expiresDay)) || Number(o.expiresDay) >= Number(state.day)))).length;
+    const open = state.mode === "coach" ? deals : offers;
     const transfers = tile("market", "Transferências", `<span class="sm27-list">${row("", `<span>${open ? open + " negociaç" + (open === 1 ? "ão aberta" : "ões abertas") : "Nenhuma negociação aberta"}</span>`)}${row("", `<span>Orçamento <b>${esc(h.money(c.budget || 0))}</b></span>`)}</span>`);
 
     const form = (H.recent || []).filter((x) => !x.national && x.result).slice(0, 5).map((x) => `<b class="r-${esc(x.result)}">${esc(x.result)}</b>`).join("") || "<small>Sem jogos ainda.</small>";

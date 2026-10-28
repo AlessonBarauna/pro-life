@@ -21,7 +21,7 @@
   const roleLabel=value=>({rotation:"Rotação",important:"Importante",starter:"Titular",star:"Estrela"})[value]||value||"Não definido";
   const remaining=(s,p)=>{const end=endDay(p);return Number.isFinite(end)?Math.max(0,Math.ceil((end-Number(s.day||0))/30)):null;};
   const releaseCost=(s,p)=>salary(p)*Math.min(12,remaining(s,p)||0);
-  const activeOffer=(s,p)=>((s.coachCareer?.saleOffers)||[]).find(o=>o.playerId===p.id&&(o.status==="pending"||o.status==="awaiting_window"));
+  const activeOffer=(s,p)=>((s.coachCareer?.saleOffers)||[]).find(o=>o.playerId===p.id&&(o.status==="awaiting_window"||(o.status==="pending"&&(!Number.isFinite(Number(o.expiresDay))||Number(o.expiresDay)>=Number(s.day)))));
   const activeLoan=(s,p)=>((s.coachCareer?.loans)||[]).find(l=>l.playerId===p.id&&!l.returned);
 
   function filteredRoster(s,D){
@@ -106,7 +106,7 @@
   }
 
   function renderOverview(s,D){
-    const club=D?.club?.(s,s.clubId),players=(club?.roster||[]).filter(p=>p&&p.id!=="hero"),prefs=s.coachCareer?.offerPreferences||{},offers=(s.coachCareer?.saleOffers||[]).filter(o=>o.status==="pending"||o.status==="awaiting_window"),renewals=(s.coachCareer?.contractRenewals||[]).slice(-3).reverse();
+    const club=D?.club?.(s,s.clubId),players=(club?.roster||[]).filter(p=>p&&p.id!=="hero"),prefs=s.coachCareer?.offerPreferences||{},offers=(s.coachCareer?.saleOffers||[]).filter(o=>o.status==="awaiting_window"||(o.status==="pending"&&(!Number.isFinite(Number(o.expiresDay))||Number(o.expiresDay)>=Number(s.day)))),renewals=(s.coachCareer?.contractRenewals||[]).slice(-3).reverse();
     const listed=players.filter(p=>statusOf(prefs,p)==="listed").length,loanListed=players.filter(p=>statusOf(prefs,p)==="loan_listed").length;
     return '<section class="csh-shell"><div class="csh-heading"><div><small>PAINEL DO DIRETOR ESPORTIVO</small><h2>Visão geral do mercado</h2><p>Contratos, saídas e negociações do seu clube em um único lugar.</p></div></div><div class="csh-overview"><button data-coach-market-area="squad"><b>'+players.length+'</b><span>Meu elenco</span><small>Administrar jogadores e contratos</small></button><button data-coach-market-area="transferencias"><b>'+offers.length+'</b><span>Propostas recebidas</span><small>Responder negociações pendentes</small></button><button data-coach-market-area="lists"><b>'+listed+'</b><span>Lista de transferências</span><small>'+loanListed+' atleta(s) para empréstimo</small></button><button data-coach-market-area="observacao"><b>'+((s.coachCareer?.shortlist)||[]).length+'</b><span>Lista de alvos</span><small>Observar e contratar jogadores</small></button></div><section class="csh-list-card"><header><div><small>CONTRATOS</small><h3>Renovações recentes</h3></div></header>'+(renewals.length?renewals.map(r=>'<p><b>'+esc(r.playerName)+'</b> · '+esc(r.years)+' ano(s) · '+esc(money(r.salary))+'/mês</p>').join(""):'<p class="csh-empty">Nenhuma renovação registrada nesta carreira.</p>')+'</section></section>';
   }
