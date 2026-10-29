@@ -83,8 +83,8 @@
   .sm27-drawer-club small { display:block; color:var(--sm27-dim); font-size:7px; line-height:1.2; letter-spacing:.14em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .sm27-drawer-club b { display:block; color:var(--sm27-text); font-size:13px; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .sm27-drawer .sm27-drawer-close { display:grid !important; place-items:center; width:27px; height:27px; min-height:27px !important; padding:0 !important; border:1px solid var(--sm27-line); border-radius:50%; background:rgba(255,255,255,.04); color:var(--sm27-dim); font-size:18px; font-weight:400; }
-  .sm27-drawer-nav { flex:1 1 auto; min-height:0; display:grid; grid-template-columns:1fr; align-content:start; gap:1px; padding:7px 8px 5px; overflow:hidden; }
-  .sm27-drawer-group { min-width:0; }
+  .sm27-drawer-nav { flex:1 1 auto; width:100%; min-width:0; min-height:0; display:grid; grid-template-columns:minmax(0,1fr); align-content:start; justify-items:stretch; gap:1px; margin:0; padding:7px 8px 5px; overflow:hidden; }
+  .sm27-drawer-group { position:relative; width:100%; min-width:0; max-width:100%; margin:0; padding:0; overflow:hidden; transform:none !important; }
   .sm27-drawer-group > small { display:block; margin:0 5px 2px; color:#657d90; font-size:6.5px; font-weight:900; line-height:12px; letter-spacing:.16em; text-transform:uppercase; }
   .sm27-drawer button {
     display:flex !important; flex-direction:row !important; align-items:center; gap:7px;
@@ -104,7 +104,9 @@
   .sm27-drawer-footer .nav-icon { flex-basis:14px; width:14px; }
 
   @media (max-height:440px) {
-    .sm27-drawer-nav { grid-template-columns:1fr 1fr; gap:3px 6px; }
+    .sm27-drawer { width:min(264px,52vw); }
+    .sm27-drawer-nav { grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-flow:row; gap:3px 6px; }
+    .sm27-drawer-group > small, .sm27-drawer-group > button { max-width:100%; margin-left:0; transform:none !important; }
     .sm27-drawer button { height:28px; min-height:28px !important; font-size:10px; }
   }
 

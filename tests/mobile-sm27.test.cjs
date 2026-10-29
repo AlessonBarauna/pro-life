@@ -32,6 +32,9 @@ test("menu lateral usa navegação profissional, compacta e sem rolagem",()=>{
   assert.match(app,/drawerIcon\("settings"\)/);
   assert.match(css,/width:min\(232px,44vw\)/);
   assert.match(css,/\.sm27-drawer-nav \{[\s\S]*?overflow:hidden/);
+  assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/\.sm27-drawer-group \{[\s\S]*?width:100%[\s\S]*?max-width:100%[\s\S]*?overflow:hidden/);
+  assert.match(css,/\.sm27-drawer-group > small, \.sm27-drawer-group > button \{[\s\S]*?max-width:100%[\s\S]*?margin-left:0/);
   assert.match(css,/\.sm27-drawer button\.active::before/);
   assert.match(css,/backdrop-filter:blur\(2px\)/);
   assert.match(mobile,/ev\.key === "Escape"/);
