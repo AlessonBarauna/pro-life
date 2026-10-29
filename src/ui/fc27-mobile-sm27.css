@@ -67,30 +67,46 @@
   .game-nav .phone-continue b, .game-nav .phone-continue small { line-height:1.1; }
 
   /* ---------- menu lateral ---------- */
-  .sm27-backdrop { position:fixed; inset:var(--sm27-bar) 0 0 0; z-index:190; background:rgba(0,0,0,.55); }
+  .sm27-backdrop { position:fixed; inset:var(--sm27-bar) 0 0 0; z-index:190; background:rgba(0,7,13,.38); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); }
   .sm27-drawer {
-    position:fixed; top:var(--sm27-bar); bottom:0; left:0; z-index:200; width:min(260px,52vw);
-    flex-direction:column; gap:2px; padding:8px; overflow-y:auto;
-    background:#071420; border-right:1px solid var(--sm27-line); transform:translateX(-102%);
-    transition:transform .18s ease; box-shadow:12px 0 30px rgba(0,0,0,.45);
+    position:fixed; top:var(--sm27-bar); bottom:0; left:0; z-index:200; width:min(232px,44vw);
+    flex-direction:column; padding:0; overflow:hidden;
+    background:linear-gradient(165deg,#091a28 0%,#06111d 72%,#07131b 100%);
+    border-right:1px solid rgba(140,190,220,.28); transform:translateX(-102%);
+    transition:transform .2s cubic-bezier(.2,.8,.2,1); box-shadow:16px 0 44px rgba(0,0,0,.48);
   }
   body.sm27-menu-open .sm27-backdrop { display:block !important; }
   body.sm27-menu-open .sm27-drawer { display:flex !important; transform:none; }
-  .sm27-drawer-club { display:flex; align-items:center; gap:8px; padding:4px 6px 10px; border-bottom:1px solid var(--sm27-line); margin-bottom:6px; }
-  .sm27-drawer-club .club-chip-crest, .sm27-drawer-club img { width:34px; height:34px; }
-  .sm27-drawer-club small { display:block; color:var(--sm27-dim); font-size:8px; letter-spacing:.12em; }
-  .sm27-drawer-club b { font-size:14px; color:var(--sm27-text); }
+  .sm27-drawer-club { display:grid; grid-template-columns:34px minmax(0,1fr) 28px; align-items:center; gap:9px; min-height:54px; padding:7px 8px 7px 12px; border-bottom:1px solid var(--sm27-line); background:rgba(255,255,255,.025); }
+  .sm27-drawer-club .club-chip-crest, .sm27-drawer-club img { width:32px; height:32px; object-fit:contain; }
+  .sm27-drawer-club > span:nth-child(2) { min-width:0; }
+  .sm27-drawer-club small { display:block; color:var(--sm27-dim); font-size:7px; line-height:1.2; letter-spacing:.14em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sm27-drawer-club b { display:block; color:var(--sm27-text); font-size:13px; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sm27-drawer .sm27-drawer-close { display:grid !important; place-items:center; width:27px; height:27px; min-height:27px !important; padding:0 !important; border:1px solid var(--sm27-line); border-radius:50%; background:rgba(255,255,255,.04); color:var(--sm27-dim); font-size:18px; font-weight:400; }
+  .sm27-drawer-nav { flex:1 1 auto; min-height:0; display:grid; grid-template-columns:1fr; align-content:start; gap:1px; padding:7px 8px 5px; overflow:hidden; }
+  .sm27-drawer-group { min-width:0; }
+  .sm27-drawer-group > small { display:block; margin:0 5px 2px; color:#657d90; font-size:6.5px; font-weight:900; line-height:12px; letter-spacing:.16em; text-transform:uppercase; }
   .sm27-drawer button {
-    display:flex !important; flex-direction:row !important; align-items:center; gap:10px;
-    width:100%; height:34px; min-height:34px !important; padding:0 12px !important;
-    border:0; border-radius:8px; background:transparent; color:var(--sm27-text);
-    font-size:13px; font-weight:700; text-align:left; text-transform:none; letter-spacing:0;
+    display:flex !important; flex-direction:row !important; align-items:center; gap:7px;
+    width:100%; height:29px; min-height:29px !important; padding:0 7px !important;
+    border:0; border-radius:5px; background:transparent; color:#b8c9d5;
+    font-size:10.5px; font-weight:800; text-align:left; text-transform:none; letter-spacing:.01em;
   }
-  .sm27-drawer button.active { background:rgba(201,244,61,.14); color:var(--sm27-accent); }
-  .sm27-drawer .nav-icon { display:inline-block; width:18px; text-align:center; }
-  .sm27-drawer button i { margin-left:auto; font-style:normal; background:var(--sm27-accent); color:var(--sm27-accent-ink); border-radius:9px; padding:0 6px; font-size:10px; }
-  .sm27-drawer > button:not(:has(.nav-icon)) { padding-left:40px !important; }
-  .sm27-drawer-sep { height:1px; margin:6px 4px; background:var(--sm27-line); }
+  .sm27-drawer button > span:not(.nav-icon) { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sm27-drawer button:hover, .sm27-drawer button:focus-visible { background:rgba(255,255,255,.055); color:#fff; }
+  .sm27-drawer button.active { position:relative; background:linear-gradient(90deg,rgba(201,244,61,.17),rgba(201,244,61,.045)); color:var(--sm27-accent); }
+  .sm27-drawer button.active::before { content:""; position:absolute; left:0; top:5px; bottom:5px; width:2px; border-radius:0 2px 2px 0; background:var(--sm27-accent); box-shadow:0 0 8px rgba(201,244,61,.5); }
+  .sm27-drawer .nav-icon { display:grid; place-items:center; flex:0 0 16px; width:16px; height:16px; color:currentColor; }
+  .sm27-drawer .nav-icon svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  .sm27-drawer button i { margin-left:auto; min-width:15px; height:15px; line-height:15px; text-align:center; font-style:normal; font-weight:900; background:var(--sm27-accent); color:var(--sm27-accent-ink); border-radius:8px; padding:0 4px; font-size:8px; }
+  .sm27-drawer-footer { flex:0 0 auto; display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:6px 8px max(7px,env(safe-area-inset-bottom)); border-top:1px solid var(--sm27-line); background:rgba(0,0,0,.14); }
+  .sm27-drawer-footer button { justify-content:center; height:29px; min-height:29px !important; border:1px solid rgba(140,190,220,.18); background:rgba(255,255,255,.025); color:var(--sm27-dim); font-size:9px; }
+  .sm27-drawer-footer .nav-icon { flex-basis:14px; width:14px; }
+
+  @media (max-height:440px) {
+    .sm27-drawer-nav { grid-template-columns:1fr 1fr; gap:3px 6px; }
+    .sm27-drawer button { height:28px; min-height:28px !important; font-size:10px; }
+  }
 
   /* ---------- area da tela ---------- */
   .game-shell .main { width:100% !important; max-width:none !important; margin:0 !important; padding:var(--sm27-gap) max(10px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left)) !important; }

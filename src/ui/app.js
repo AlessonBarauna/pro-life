@@ -555,7 +555,42 @@
       const active = pages.includes(page), count = id === "inbox" ? unread : id === "market" ? offerCount : 0;
       return `<button type="button" data-page="${id}" class="${active ? "active" : ""}" ${active ? 'aria-current="page"' : ""}><span class="nav-icon" aria-hidden="true">${icon}</span><span>${esc(label)}</span>${count ? `<i aria-label="${count} pendente${count === 1 ? "" : "s"}">${count}</i>` : ""}</button>`;
     };
+    const drawerIcon = (id) => {
+      const paths = {
+        home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5M9 21v-7h6v7"/>',
+        profile:'<circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',
+        squad:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20a6 6 0 0 1 12 0M14 15a5 5 0 0 1 7 4.5"/>',
+        competitions:'<path d="M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="m9 13 2 2 4-4"/>',
+        market:'<path d="M4 7h14l-3-3M20 17H6l3 3"/><path d="m18 7-3 3M6 17l3-3"/>',
+        life:'<path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10Z"/>',
+        inbox:'<path d="M3 5h18v14H3z"/><path d="m3 7 9 7 9-7"/>',
+        national:'<path d="M5 21V4m1 1h11l-2 4 2 4H6"/>',
+        history:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+        save:'<path d="M5 3h12l3 3v15H4V4a1 1 0 0 1 1-1Z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/>',
+        settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/>',
+        export:'<path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v8h14v-8"/>'
+      };
+      return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths[id]||paths.home}</svg>`;
+    };
+    const drawerButton = ([id,label,,pages],count=0) => {
+      const active=pages.includes(page);
+      return `<button type="button" data-page="${id}" class="sm27-drawer-item${active?' active':''}"${active?' aria-current="page"':''}><span class="nav-icon">${drawerIcon(id)}</span><span>${esc(label)}</span>${count?`<i aria-label="${count} pendente${count===1?'':'s'}">${count}</i>`:''}</button>`;
+    };
+    const drawerFind=id=>quickNav.find(item=>item[0]===id);
+    const drawerUtilities={
+      inbox:["inbox","Caixa","",["inbox"]],
+      national:["national","Seleção","",["national"]],
+      history:["history","Mundo","",["history","youth"]],
+      save:["save","Saves","",["save"]]
+    };
+    const drawerGroups=[
+      ["Carreira",[drawerFind("home"),drawerFind("profile")]],
+      ["Clube",[drawerFind("squad"),drawerFind("market")]],
+      ["Competições",[drawerFind("competitions"),drawerUtilities.national,drawerUtilities.history]],
+      ["Gestão",[drawerFind("life"),drawerUtilities.inbox,drawerUtilities.save]]
+    ];
     const clubCrest = c?.id && window.ProLifeClubCrests ? window.ProLifeClubCrests.render(c.id, { size:"sm" }) : "";
+    const drawerMarkup=`<aside class="phone-only sm27-drawer" aria-label="Navegação principal do jogo"><header class="sm27-drawer-club">${clubCrest?`<span class="club-chip-crest">${clubCrest}</span>`:""}<span><small>${state.mode==="player"?"CARREIRA DE JOGADOR":"CARREIRA DE TREINADOR"}</small><b>${esc(c?.name||"Livre no mercado")}</b></span><button type="button" class="sm27-drawer-close" data-phone-menu aria-label="Fechar menu">×</button></header><nav class="sm27-drawer-nav">${drawerGroups.map(([label,items])=>`<section class="sm27-drawer-group"><small>${label}</small>${items.filter(Boolean).map(item=>drawerButton(item,item[0]==="inbox"?unread:item[0]==="market"?offerCount:0)).join("")}</section>`).join("")}</nav><footer class="sm27-drawer-footer"><button type="button" data-action="export"><span class="nav-icon">${drawerIcon("export")}</span><span>Salvar agora</span></button>${state.mode==="coach"?`<button type="button" data-coach-settings-open><span class="nav-icon">${drawerIcon("settings")}</span><span>Configurações</span></button>`:""}</footer></aside>`;
     const stageView = views[page]();
     const mobileLandscape = window.matchMedia?.("(orientation: landscape) and (min-width: 568px) and (max-width: 1024px) and (max-height: 560px)")?.matches;
     const stageContent = page === "home"
@@ -563,6 +598,8 @@
       : mobileLandscape ? `<div class="sm27-screen-body">${stageView}</div>` : stageView;
     $("#app").innerHTML =
       `<div class="game-shell"><header class="game-nav"><button type="button" class="phone-only phone-btn phone-menu" data-phone-menu aria-label="Abrir menu">☰</button><button type="button" class="phone-only phone-btn phone-back" data-page="home" aria-label="Voltar à Central"${page==="home"?" hidden":""}>‹</button><span class="phone-only phone-club">${clubCrest ? `<span class="club-chip-crest">${clubCrest}</span>` : ""}<b>${esc(window.ProLifeMobileSM27?.abbr(c)||"")}</b></span><span class="phone-only phone-title">${esc(activeGroup[1] || "Início")}</span><button type="button" class="brand" data-page="home" aria-label="PRO LIFE · Central">PRO<span>LIFE</span></button><nav aria-label="Navegação principal">${quickNav.map(navButton).join("")}</nav><details class="global-more"><summary aria-label="Mais áreas">•••</summary><div><button type="button" data-page="inbox">Caixa</button><button type="button" data-page="national">Seleção</button><button type="button" data-page="history">Mundo</button><button type="button" data-page="save">Saves</button>${state.mode==="coach"?'<button type="button" data-coach-settings-open>Configurações da carreira</button>':""}</div></details><div class="club-chip">${clubCrest ? `<span class="club-chip-crest">${clubCrest}</span>` : ""}<span><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b><span class="sx-line">${esc(window.ProLifeShellExtras?.chipLine(state,D)||"")}</span></span></div>${window.ProLifeShellExtras?window.ProLifeShellExtras.bell(window.ProLifeShellExtras.pending(state,D)):""}<span class="phone-only phone-money" title="Orçamento de transferências">${esc(money(c?.budget||0))}</span><button type="button" class="phone-only phone-continue" data-simulate="nextCommitment"><b>Continuar</b><small>${esc(date())}</small><i aria-hidden="true">›</i></button></header><div class="phone-only sm27-backdrop"></div><aside class="phone-only sm27-drawer" aria-label="Menu"><div class="sm27-drawer-club">${clubCrest ? `<span class="club-chip-crest">${clubCrest}</span>` : ""}<span><small>${state.mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"}</small><b>${esc(c?.name || "Livre no mercado")}</b></span></div>${quickNav.map(navButton).join("")}<button type="button" data-page="inbox">Caixa${unread?` <i>${unread}</i>`:""}</button><button type="button" data-page="national">Seleção</button><button type="button" data-page="history">Mundo</button><button type="button" data-page="save">Saves</button><div class="sm27-drawer-sep"></div><button type="button" data-action="export">Salvar</button><button type="button" data-advance="1">+1 dia</button><button type="button" data-simulate="30days">+30 dias</button><button type="button" data-simulate="season">Até fim da temporada</button>${state.mode==="coach"?'<button type="button" data-coach-settings-open>Configurações da carreira</button>':""}</aside><main class="main"><div class="topbar"><div><div class="tag">TEMPORADA ${state.season} · ${date()}</div><h1>${esc(allPages.find((n) => n[0] === page)?.[1] || activeGroup[1] || "Início")}</h1><small>${page === "englishCups" ? "FA Cup · EFL Cup · FA Community Shield" : page === "sudamericana" ? "CONMEBOL Sul-Americana · grupos, playoffs e fase eliminatória" : page === "libertadores" ? "CONMEBOL Libertadores · grupos e fase eliminatória" : page === "conference" ? "UEFA Conference League · classificação, rodadas e fase eliminatória" : page === "europa" ? "UEFA Europa League · classificação, rodadas e fase eliminatória" : page === "champions" ? "UEFA Champions League · classificação, rodadas e fase eliminatória" : (topNext ? `${esc(topNext.competitionName)} · ${esc(topStage)} · ${dayDate(topNext.date)}` : "Sem compromisso oficial agendado")}</small></div><div class="actions"><button data-action="export">Salvar</button><button data-advance="1">+1 dia</button><button class="primary" data-simulate="nextCommitment">Até próximo jogo →</button><button data-simulate="30days">+30 dias</button><button data-simulate="season">Até fim da temporada</button></div></div>${subnavShell()}<div class="game-stage game-stage-${esc(page)}" data-page-stage="${esc(page)}"${page==="home"?` data-desktop-view="${esc(desktopHomeView)}"`:""}>${stageContent}</div><div class="footer">PRO LIFE 0.5 · Interface de carreira · Autosave ativo.</div></main></div>`;
+    const legacyDrawer=$(".sm27-drawer");
+    if(legacyDrawer)legacyDrawer.outerHTML=drawerMarkup;
     mountInternationalOfferPreference();
     window.ProLifeTargetClubSelector?.mount?.(state,D,Career);
     mountAvatar();

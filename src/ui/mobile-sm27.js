@@ -79,8 +79,10 @@
   function toggleMenu(force) {
     const on = force === undefined ? !document.body.classList.contains("sm27-menu-open") : !!force;
     document.body.classList.toggle("sm27-menu-open", on);
+    document.querySelectorAll("[data-phone-menu]").forEach((button)=>button.setAttribute("aria-expanded",String(on)));
   }
   if (root.document) {
+    let drawerPointerX=null;
     root.document.addEventListener("click", (ev) => {
       const t = ev.target;
       if (!(t instanceof Element)) return;
@@ -90,8 +92,11 @@
     });
     root.document.addEventListener("keydown", (ev) => {
       const t = ev.target;
+      if(ev.key === "Escape" && document.body.classList.contains("sm27-menu-open")){toggleMenu(false);document.querySelector("[data-phone-menu]")?.focus?.();return;}
       if ((ev.key === "Enter" || ev.key === " ") && t instanceof Element && t.matches(".sm27-tile[data-page]")) { ev.preventDefault(); t.click(); }
     });
+    root.document.addEventListener("pointerdown",(ev)=>{drawerPointerX=ev.target instanceof Element&&ev.target.closest(".sm27-drawer")?ev.clientX:null;},{passive:true});
+    root.document.addEventListener("pointerup",(ev)=>{if(drawerPointerX!==null&&drawerPointerX-ev.clientX>42)toggleMenu(false);drawerPointerX=null;},{passive:true});
   }
 
   root.ProLifeMobileSM27 = { QUERY, isPhone, home, toggleMenu, abbr };

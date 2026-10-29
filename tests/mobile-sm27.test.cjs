@@ -24,3 +24,16 @@ test("CSS do celular fica restrito à orientação horizontal de aparelhos baixo
   assert.match(css,/@media \(orientation: landscape\) and \(min-width: 568px\) and \(max-width: 1024px\) and \(max-height: 560px\)/);
   assert.match(css,/\.phone-only, \.sm27-backdrop, \.sm27-drawer \{ display:none !important; \}/);
 });
+test("menu lateral usa navegação profissional, compacta e sem rolagem",()=>{
+  const app=read("src/ui/app.js"),css=read("src/ui/fc27-mobile-sm27.css"),mobile=read("src/ui/mobile-sm27.js");
+  for(const group of ["Carreira","Clube","Competições","Gestão"])assert.ok(app.includes('["'+group+'",'),group);
+  assert.match(app,/class="sm27-drawer-nav"/);
+  assert.match(app,/class="sm27-drawer-footer"/);
+  assert.match(app,/drawerIcon\("settings"\)/);
+  assert.match(css,/width:min\(232px,44vw\)/);
+  assert.match(css,/\.sm27-drawer-nav \{[\s\S]*?overflow:hidden/);
+  assert.match(css,/\.sm27-drawer button\.active::before/);
+  assert.match(css,/backdrop-filter:blur\(2px\)/);
+  assert.match(mobile,/ev\.key === "Escape"/);
+  assert.match(mobile,/drawerPointerX-ev\.clientX>42/);
+});
