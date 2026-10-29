@@ -2891,8 +2891,9 @@
         (Number.isInteger(nextCivilYear)&&s.day>=nextCivilYear):
         s.day%365===0) newSeason(s, rng);
       if (s.day % 7 === 0 || s.day % 365 === 0) recordDevelopment(s);
+      const personalIntensity=s.mode==="player"?s.intensity:"normal";
       s.stress = clamp(
-        s.stress + (s.intensity === "hard" ? 0.3 : -0.1),
+        s.stress + (personalIntensity === "hard" ? 0.3 : -0.1),
         0,
         100,
       );

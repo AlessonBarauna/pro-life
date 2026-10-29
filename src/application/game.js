@@ -130,6 +130,8 @@
         break;
       }
       case "train":
+        if (s.mode !== "player")
+          throw Error("O treino individual pertence à carreira de jogador. No modo treinador, defina o foco coletivo da equipe.");
         if (
           !["balanced", ...Object.keys(D.Training.skills)].includes(data.focus) ||
           !["rest", "normal", "hard"].includes(data.intensity)
