@@ -4,7 +4,7 @@ const source=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js
 const view=require("../src/ui/coach-career-view.js");
 test("M02 player profile is selectable within visible search results",()=>{
  new vm.Script(source);
- assert.match(source,/visibleCandidates\.find\(x=>String\(x\.p\.id\)===String\(ui\.selectedScoutPlayer\)\)/);
+ assert.match(source,/visibleCandidates\.find\(x=>String\(x\.p\.id\)===String\(id\)\)/);
  assert.match(source,/data-coach-scout-select/);
  view.selectScoutPlayer("test-athlete");
  assert.equal(view.state.selectedScoutPlayer,"test-athlete");

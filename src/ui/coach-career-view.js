@@ -249,6 +249,18 @@
       const scouting=root.ProLifeCoachScoutingV2;
       const missions=Array.isArray(c.scoutingV2?.missions)?c.scoutingV2.missions:[];
       const playerLookup=new Map(pool.filter(p=>p?.id!=null).map(p=>[String(p.id),p]));
+      // Saves antigos podem carregar uma sondagem com o id de catálogo obsoleto
+      // (ou, em versões afetadas, repetido), embora preservem o nome correto.
+      // Nunca deixe esse registro abrir o primeiro atleta da busca mundial.
+      const resolveInquiryPlayer=entry=>{
+        if(!entry)return null;
+        const storedName=normalizeText(entry.playerName);
+        const byId=playerLookup.get(String(entry.playerId));
+        if(byId&&(!storedName||normalizeText(byId.name)===storedName))return byId;
+        if(!storedName)return byId||null;
+        const matches=pool.filter(player=>player?.id!=null&&normalizeText(player.name)===storedName);
+        return matches.find(player=>String(player.clubId)===String(entry.clubId))||matches[0]||null;
+      };
       const recommendations=scouting?.recommend?.(s,pool,5)||[];
       const savedRecommendations=new Set((c.shortlist||[]).map(x=>String(x.playerId)+"|"+String(x.clubId)));
       const recommendationRows=recommendations.map(x=>'<article class="cc-scout-mission"><div class="cc-scout-mission-heading"><div><b>'+esc(x.name)+'</b><small>'+esc(x.position)+' · '+esc(x.reason)+'</small></div><strong>'+esc(x.score)+' PTS</strong></div><div class="cc-scout-mission-data"><span>GER '+esc(x.overallRange.join("–"))+' · POT '+esc(x.potentialRange.join("–"))+'</span><span>Confiança '+esc(x.certainty)+'%</span></div><div class="cc-target-actions">'+(x.clubId==null?'<small>Clube indisponível</small>':savedRecommendations.has(String(x.playerId)+"|"+String(x.clubId))?'<small>Já está na lista</small>':'<button type="button" data-coach-shortlist="'+esc(x.clubId)+'" data-coach-player="'+esc(x.playerId)+'">Adicionar à lista</button>')+'</div></article>').join("");
@@ -276,17 +288,18 @@
       const targetClub=selectedTarget?clubIndex.get(selectedTarget.clubId)||gf?.clubById?.(s,selectedTarget.clubId):null;
       const myInquiries=(c.inquiries||[]).filter(x=>String(x.buyerClubId)===String(s.clubId)).slice().sort((a,b)=>Number(b.startDay)-Number(a.startDay));
       const onInquiries=ui.scoutScreen==="sondagens";
-      const wantedId=onInquiries?(myInquiries.some(x=>String(x.playerId)===String(ui.selectedScoutPlayer))?ui.selectedScoutPlayer:myInquiries[0]?.playerId):ui.selectedScoutPlayer;
+      const selectedInquiryEntry=onInquiries?myInquiries.find(x=>String(resolveInquiryPlayer(x)?.id??x.playerId)===String(ui.selectedScoutPlayer)):null;
+      const wantedId=onInquiries?(selectedInquiryEntry?ui.selectedScoutPlayer:myInquiries[0]?.playerId):ui.selectedScoutPlayer;
       // Abre o jogador escolhido mesmo que ele não esteja nos filtros atuais da busca (ex.: vindo de Sondagens).
       const resolveCandidate=id=>{
         if(id==null)return null;
         const inVisible=visibleCandidates.find(x=>String(x.p.id)===String(id));if(inVisible)return inVisible;
-        const p=pool.find(x=>String(x.id)===String(id));if(!p)return null;
-        const ref=myInquiries.find(x=>String(x.playerId)===String(id))||shortlist.find(x=>String(x.playerId)===String(id));
+        const ref=myInquiries.find(x=>String(resolveInquiryPlayer(x)?.id??x.playerId)===String(id))||shortlist.find(x=>String(x.playerId)===String(id));
+        const p=pool.find(x=>String(x.id)===String(id))||(ref?.playerName?resolveInquiryPlayer(ref):null);if(!p)return null;
         const cl=(ref&&(clubIndex.get(ref.clubId)||gf?.clubById?.(s,ref.clubId)))||(p.clubId&&(clubIndex.get(p.clubId)||gf?.clubById?.(s,p.clubId)))||null;
         return cl?{p,cl,free:false}:null;
       };
-      const selectedCandidate=(selectedTarget&&targetClub?{p:selectedTarget,cl:targetClub,free:false}:null)||(onInquiries?resolveCandidate(wantedId):null)||resolveCandidate(ui.selectedScoutPlayer)||visibleCandidates[0]||null;
+      const selectedCandidate=(selectedTarget&&targetClub?{p:selectedTarget,cl:targetClub,free:false}:null)||(onInquiries?resolveCandidate(wantedId):null)||resolveCandidate(ui.selectedScoutPlayer)||(ui.selectedScoutPlayer==null?visibleCandidates[0]:null)||null;
       const selectedPlayer=selectedCandidate?.p||null;
       const selectedClub=selectedCandidate?.cl||null;
       const scoutingReport=selectedPlayer?missions.find(m=>String(m.playerId)===String(selectedPlayer.id)):null;
@@ -310,7 +323,7 @@
       }).join("");
       const targetPanel='<section class="cc-card cc-target-hub"><div class="cc-target-heading"><div><small>PLANEJAMENTO DE ELENCO</small><h3>Lista de alvos</h3><p class="cc-note">Atletas acompanhados pelo treinador, sem alterar as negociações.</p></div><b>'+shortlist.length+' ALVOS</b></div>'+(targetRows||'<p class="cc-note">Sua lista está vazia. Adicione jogadores pela busca mundial.</p>')+'</section>';
       const selectedSaved=!!(selectedPlayer&&selectedClub&&shortlist.some(x=>String(x.playerId)===String(selectedPlayer.id)&&String(x.clubId)===String(selectedClub.id)));
-      const selectedInquiry=selectedPlayer&&(c.inquiries||[]).find(x=>String(x.playerId)===String(selectedPlayer.id)&&String(x.clubId)===String(selectedClub?.id)&&String(x.buyerClubId)===String(s.clubId));
+      const selectedInquiry=selectedPlayer&&(c.inquiries||[]).find(x=>String(resolveInquiryPlayer(x)?.id)===String(selectedPlayer.id)&&String(x.clubId)===String(selectedClub?.id)&&String(x.buyerClubId)===String(s.clubId));
       const selectedPending=selectedInquiry?.status==="pending";
       const selectedReady=["accepted","asking_price"].includes(selectedInquiry?.status)&&Number(s.day)<=Number(selectedInquiry.expiresDay);
       const selectedCooldown=selectedInquiry?.status==="rejected"&&Number(s.day)<Number(selectedInquiry.answeredDay??selectedInquiry.responseDay)+14;
@@ -449,14 +462,15 @@
         x.status==="asking_price"?"Clube exige proposta financeira":x.status==="accepted"?(Number(s.day)<=Number(x.expiresDay)?"Aceita · pode negociar até "+careerDate(s,x.expiresDay):"Aceita · prazo expirado"):
         x.status==="converted"?"Contratação concluída":x.status==="rejected"?"Recusada · "+(x.playerDecision==="rejected"?"jogador sem interesse":"clube não autoriza"):"Encerrada";
       const inquiryRows=inquiryList.map(x=>{
-        const player=playerLookup.get(String(x.playerId));
+        const player=resolveInquiryPlayer(x);
         const club=clubIndex.get(x.clubId)||gf?.clubById?.(s,x.clubId);
         const name=player?.name||x.playerName||x.playerId,clubName=club?.name||x.clubName||x.clubId;
         const tone=x.status==="pending"?"pending":["accepted","asking_price"].includes(x.status)?"ok":"no";
         const overall=player?(player.overall??player.ovr??D?.overall?.(player)):null;
         const ger=Number.isFinite(Number(overall))?Math.round(Number(overall)):"—";
-        const selected=String(selectedPlayer?.id)===String(x.playerId);
-        return '<article class="cc-deal cc-fc27-result cc-inquiry-row is-'+tone+(selected?' is-selected':'')+'"><button type="button" class="cc-market-select-player" data-coach-scout-select="'+esc(x.playerId)+'" aria-label="Ver perfil de '+esc(name)+'"><div class="cc-deal-player cc-fc27-player"><span class="cc-fc27-ger">'+esc(ger)+'</span><div><strong>'+esc(name)+'</strong><small>'+esc([x.position||player?.primaryPosition||player?.pos,careerDate(s,x.startDay)].filter(Boolean).join(" · "))+'</small></div></div><div class="cc-deal-team">'+(root.ProLifeClubCrests?.render?.(x.clubId,{size:"sm"})||"")+'<span>'+esc(clubName)+'</span></div><span class="cc-status">'+esc(inquiryStatusLabel(x))+'</span></button></article>';
+        const resolvedPlayerId=player?.id??x.playerId;
+        const selected=String(selectedPlayer?.id)===String(resolvedPlayerId);
+        return '<article class="cc-deal cc-fc27-result cc-inquiry-row is-'+tone+(selected?' is-selected':'')+'"><button type="button" class="cc-market-select-player" data-coach-scout-select="'+esc(resolvedPlayerId)+'" aria-label="Ver perfil de '+esc(name)+'"><div class="cc-deal-player cc-fc27-player"><span class="cc-fc27-ger">'+esc(ger)+'</span><div><strong>'+esc(name)+'</strong><small>'+esc([x.position||player?.primaryPosition||player?.pos,careerDate(s,x.startDay)].filter(Boolean).join(" · "))+'</small></div></div><div class="cc-deal-team">'+(root.ProLifeClubCrests?.render?.(x.clubId,{size:"sm"})||"")+'<span>'+esc(clubName)+'</span></div><span class="cc-status">'+esc(inquiryStatusLabel(x))+'</span></button></article>';
       }).join("");
       const inquiryPanel='<section class="cc-card cc-fc27-scout"><div class="cc-fc27-scout-head"><div><small>MERCADO · INTERESSE CONSULTADO</small><h2>Sondagens enviadas</h2><p>Todos os jogadores cujo interesse você consultou. Selecione um para ver o perfil, negociar ou acompanhar.</p></div><b>'+inquiryList.length+' SONDAGENS</b></div>'+
         (inquiryList.length?'<div class="cc-market-search-layout"><div class="cc-market-results">'+inquiryRows+'</div>'+sideDetail+'</div>':'<p class="cc-note">Nenhuma sondagem enviada ainda. Consulte o interesse de um jogador pela busca mundial.</p>')+'</section>';

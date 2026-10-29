@@ -43,6 +43,32 @@ test("aba Sondagens renderiza as sondagens enviadas pelo clube atual",()=>{
   assert.match(html,/cc-inquiry-row[^"]* is-selected/);
   assert.doesNotMatch(html,/Filtros de pesquisa/);
 });
+test("sondagens antigas resolvem cada atleta pelo nome sem cair no primeiro jogador da busca",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);Engine.CoachCareer.init(s,Engine);
+  const players=Engine.GlobalFootball.activePlayers(s);
+  const haaland=players.find(p=>p.name==="Erling Haaland");
+  const lamine=players.find(p=>p.name==="Lamine Yamal");
+  const doue=players.find(p=>p.name==="Désiré Doué");
+  assert.ok(haaland&&lamine&&doue,"catálogo contém os atletas do cenário");
+  // Reproduz o save afetado: ids legados apontavam para o mesmo atleta,
+  // mas nome e clube da sondagem continuavam corretos.
+  s.coachCareer.inquiries=[lamine,doue].map((p,index)=>({id:"legacy_"+index,playerId:haaland.id,playerName:p.name,clubId:p.clubId,buyerClubId:s.clubId,startDay:3-index,responseDay:5,expiresDay:15,status:"closed"}));
+  View.setListScreen("sondagens");
+  let html=View.renderMarket(s,Engine);
+  assert.ok(html.includes('data-coach-scout-select="'+lamine.id+'"'));
+  assert.ok(html.includes('data-coach-scout-select="'+doue.id+'"'));
+  View.selectScoutPlayer(doue.id,true);
+  html=View.renderMarket(s,Engine);
+  assert.match(html,/<h2>Désiré Doué<\/h2>/);
+  assert.doesNotMatch(html,/<h2>Erling Haaland<\/h2>/);
+  View.closeScoutPlayer();
+});
 test("Listas abre Alvos, Sondagens e Saídas sem passar pela busca mundial",()=>{
   const Engine=require("../src/domain/engine.js");
   global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
