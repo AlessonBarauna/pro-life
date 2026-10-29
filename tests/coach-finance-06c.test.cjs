@@ -499,6 +499,7 @@ test("Signing reveal actions and market presentation stay manager-only",()=>{
  vm.runInNewContext(ui,root);
  const state={mode:"coach",clubId:"a",season:2026,day:1,clubs:[{id:"a",name:"Clube",budget:100000,roster:[]}],coachCareer:{presentations:[{id:"q1",playerId:"p1",playerName:"Reforço",toClubId:"a",toClubName:"Clube",fromClubName:"Origem",fee:25000,presented:false}]}};
  const D={club:s=>s.clubs[0]};
+ root.ProLifeCoachCareerView.setMarketArea("overview");
  const html=root.ProLifeCoachCareerView.renderMarket(state,D);
  for(const attr of ["data-coach-signing-done","data-coach-signing-squad","data-coach-signing-history"])assert.ok(html.includes(attr),attr);
  assert.match(html,/CONTRATAÇÃO CONFIRMADA/);

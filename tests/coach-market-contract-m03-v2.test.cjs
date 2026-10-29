@@ -5,8 +5,12 @@ const view=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js")
 const app=fs.readFileSync(path.join(__dirname,"../src/ui/app.js"),"utf8");
 test("M03 agent contract is accessible through UI and command dispatcher",()=>{
  assert.match(view,/data-coach-contract-negotiate/);
+ assert.match(view,/data-coach-contract-accept/);
+ assert.match(view,/Aceitar pedido · /);
+ assert.match(view,/Ajustar proposta · rodada /);
  for(const term of ["salary","years","bonus","role"])assert.match(view,new RegExp("data-coach-contract-"+term));
  assert.match(app,/command\("negotiateCoachContract"/);
+ assert.match(app,/salary:Number\(terms\.requiredSalary\)/);
  assert.match(game,/case "negotiateCoachContract":/);
 });
 test("M03 contract negotiation checks seller agreement and limits rounds",()=>{
@@ -20,4 +24,9 @@ test("M03 contract cash and terms settle exclusively through recruit",()=>{
  assert.match(game,/if \(own\.budget < upfront\+contractBonus\)/);
  assert.match(game,/p\.contractEndDay=Number\(s\.day\)\+agreedContract\.years\*365/);
  assert.match(game,/p\.salary=agreedContract\.salary/);
+});
+test("completed purchase returns to market overview instead of trapping the user",()=>{
+ const block=app.split('if (el.hasAttribute("data-coach-deal-accept")) {')[1]?.split('if (el.hasAttribute("data-coach-deal-reject"))')[0];
+ assert.ok(block);
+ assert.match(block,/if\(completed\)\{V\?\.completeDeal\(\);render\(\);toast\("Contratação concluída\. O jogador já está no elenco\."\);\}/);
 });

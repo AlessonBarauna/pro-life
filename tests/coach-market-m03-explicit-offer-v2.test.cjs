@@ -18,4 +18,12 @@ test("M03 only explicit submit invokes counterRecruit",()=>{
  assert.doesNotMatch(first,/command\("counterRecruit"/);
  assert.match(submit,/command\("counterRecruit",\{clubId,playerId,offer\}\)/);
  assert.match(submit,/offer<1000/);
+ assert.match(submit,/if\(completed\)\{V\?\.awaitDealResponse\(\);render\(\);toast\("Proposta enviada\. Aguarde a resposta do clube\."\);\}/);
+ assert.doesNotMatch(submit,/V\?\.clearOffer\(\)[\s\S]*command\("counterRecruit"/,"falha no envio preserva o rascunho");
+});
+test("M03 successful offer leaves the negotiation table and returns to market overview",()=>{
+ assert.match(view,/awaitDealResponse:\(\)=>\{ui\.draftOffer=null;ui\.selectedDeal=null;ui\.dealTab="propostas";ui\.marketArea="overview";\}/);
+ const revise=app.split('if(el.hasAttribute("data-coach-deal-revise")){')[1]?.split('if (el.hasAttribute("data-coach-deal-accept"))')[0];
+ assert.ok(revise);
+ assert.match(revise,/if\(completed\)\{V\?\.awaitDealResponse\(\);render\(\);toast\("Contraproposta enviada\. Aguarde a resposta do clube\."\);\}/);
 });

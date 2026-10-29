@@ -101,9 +101,9 @@ function click(w, sel) {
 test("33B (5) primeiro contrato: sem apresentação antes da assinatura; com apresentação única na chegada efetiva", () => {
   const dom = new JSDOM(html, { runScripts: "outside-only", url: "https://offline-test.invalid" }), w = dom.window;
   w.confirm = () => true; w.scrollTo = () => {}; w.URL.createObjectURL = () => "blob:t"; w.URL.revokeObjectURL = () => {};
-  files.slice(0, -1).forEach((f) => w.eval(fs.readFileSync(base + f, "utf8")));
+  files.slice(0, -1).forEach((f) => w.eval(fs.readFileSync(base + f.split("?")[0], "utf8")));
   assert.ok(w.ProLifeSave.saveAsNew(w.ProLife.create({ mode: "player", age: 16 }, 44))); // 34F.15: base legada via slot existente
-  w.eval(fs.readFileSync(base + files[files.length - 1], "utf8"));
+  w.eval(fs.readFileSync(base + files[files.length - 1].split("?")[0], "utf8"));
   if (q(w, "[data-load-slot]")) q(w, "[data-load-slot]").click();
   const get = () => w.ProLifeSave.loadSlot(w.ProLifeSave.activeId());
   assert.equal(get().clubId, null, "primeiro contrato ainda não assinado");

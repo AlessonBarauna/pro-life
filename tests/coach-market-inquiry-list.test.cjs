@@ -155,7 +155,7 @@ test("apresentação do reforço mostra reações nas redes e cresce nas contrat
   const View=require("../src/ui/coach-career-view.js");
   const mk=(overall,fee)=>{const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);Engine.CoachCareer.init(s,Engine);
     s.coachCareer.presentations=[{id:"pr1",playerName:"Craque Teste",fromClubName:"Origem FC",toClubName:"Destino FC",toClubId:s.clubId,fee,overall,position:"ATA",age:23,type:"permanent",presented:false}];
-    View.setMarketArea("transferencias");return View.renderMarket(s,Engine);};
+    View.setMarketArea("overview");return View.renderMarket(s,Engine);};
   const big=mk(88,60000000),small=mk(70,1000000);
   assert.match(big,/REAÇÕES NAS REDES/);assert.match(big,/@Bastidores/);
   assert.match(small,/REAÇÕES NAS REDES/);assert.doesNotMatch(small,/@Bastidores/);

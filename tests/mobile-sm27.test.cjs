@@ -24,6 +24,11 @@ test("CSS do celular fica restrito à orientação horizontal de aparelhos baixo
   assert.match(css,/@media \(orientation: landscape\) and \(min-width: 568px\) and \(max-width: 1024px\) and \(max-height: 560px\)/);
   assert.match(css,/\.phone-only, \.sm27-backdrop, \.sm27-drawer \{ display:none !important; \}/);
 });
+test("botão Continuar do celular avança somente um dia",()=>{
+  const app=read("src/ui/app.js");
+  assert.match(app,/class="phone-only phone-continue" data-advance="1"/);
+  assert.doesNotMatch(app,/class="phone-only phone-continue" data-simulate="nextCommitment"/);
+});
 test("menu lateral usa navegação profissional, compacta e sem rolagem",()=>{
   const app=read("src/ui/app.js"),css=read("src/ui/fc27-mobile-sm27.css"),mobile=read("src/ui/mobile-sm27.js");
   for(const group of ["Carreira","Clube","Competições","Gestão"])assert.ok(app.includes('["'+group+'",'),group);

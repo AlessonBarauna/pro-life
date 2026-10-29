@@ -10,6 +10,6 @@ test("M05.5 preview only follows accepted proposal and contract",()=>{
 test("M05.5 reinforcement tracking derives from persisted presentations",()=>{
  assert.match(source,/c\.presentations\|\|\[\]/);
  assert.match(source,/x\.toClubId/);
- assert.match(source,/x\.presented\?"Apresentação realizada":"Apresentação pendente"/);
+ assert.match(source,/x\.presented\?"Apresentação registrada":"Apresentação opcional disponível"/);
  assert.match(source,/detail\+signingPanel/);
 });
