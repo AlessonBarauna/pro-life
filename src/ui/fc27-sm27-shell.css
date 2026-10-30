@@ -109,3 +109,4 @@ html.pl-large-text { font-size:112.5%; }
 .fac-up:focus-visible { outline:2px solid #fff; outline-offset:2px; }
 .fac-max { font-size:11px; font-weight:800; color:var(--fc-lime,#c9f23a); } .fac-warn { font-size:10.5px; color:#ff9b8a; }
 @media (orientation:landscape) and (max-height:560px) { .fac-list { grid-template-columns:repeat(2,minmax(0,1fr)); } .fac-card { padding:7px 9px; gap:4px; } .fac-card p { display:none; } .fac-up { min-height:30px; } }
+.sc-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); }

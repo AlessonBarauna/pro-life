@@ -599,7 +599,7 @@
         drawerItem("market","Transferências",["market","proposals","clubs"]),
         state.mode==="player"?drawerItem("profile","Meu jogador",drawerFind("profile")?.[3]||["profile"]):drawerItem("profile","Treinador",drawerFind("profile")?.[3]||["profile"]),
         drawerItem("competitions","Competições",["competitions","league","statistics","awards","worldCompetitions","englishCups","champions","europa","conference","libertadores","sudamericana"]),
-        drawerItem("youth","Instalações",[],' data-sm27-facilities')
+        drawerItem("home","Instalações",[],' data-sm27-facilities'),drawerItem("home","Olheiros",[],' data-sm27-scouts')
       ]],
       ["Mais",[drawerItem("home","Objetivos",[],' data-sm27-objectives'),drawerFind("life")?drawerItem("life","Vida",drawerFind("life")[3]):null,drawerUtilities.history,drawerUtilities.national,drawerUtilities.inbox,drawerUtilities.save]]
     ];
@@ -9137,6 +9137,9 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const region=chosenRegion==="auto"?(el.getAttribute("data-coach-region")||"Brasil"):chosenRegion;
       const specialty=document.querySelector("[data-coach-scout-specialty]")?.value||"geral";
       const duration=Number(document.querySelector("[data-coach-scout-duration]")?.value||14);
+      const slots=D.Facilities?.effects(state,D.club(state)).scoutSlots??99;
+      const busy=(state.coachCareer?.scoutingV2?.missions||[]).filter(m=>m.status==="active").length;
+      if(busy>=slots){toast("Limite de observações simultâneas atingido ("+slots+"). Melhore a Rede de olheiros.");return;}
       const outcome=scout.start(state,{playerId,region,duration,scoutQuality:50,cost:0,specialty});
       if(!outcome.ok){toast(outcome.error||"Falha ao iniciar observacao.");return;}
       persist();render();restoreScoutPosition(position,true);toast("Observação iniciada.");

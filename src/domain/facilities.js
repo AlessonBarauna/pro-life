@@ -10,7 +10,7 @@
     stadium: { label: "Estádio", base: 6000000, blurb: "Capacidade e atmosfera do estádio.", effects: ["Capacidade de público", "Base de adeptos"], active: false },
     academy: { label: "Academia", base: 3000000, blurb: "Formação de jovens e evolução dos mais novos.", effects: ["Evolução de jogadores até 21 anos"], active: true },
     training: { label: "Centro de treino", base: 2500000, blurb: "Qualidade do treino coletivo e recuperação.", effects: ["Chance de evolução no treino", "Recuperação de condição"], active: true },
-    scouting: { label: "Rede de olheiros", base: 1500000, blurb: "Alcance e velocidade da observação.", effects: ["Vagas de tarefa do olheiro"], active: true },
+    scouting: { label: "Rede de olheiros", base: 1500000, blurb: "Alcance e velocidade da observação.", effects: ["Observações simultâneas do olheiro"], active: true },
     clubzone: { label: "Zona do clube", base: 4000000, blurb: "Receitas comerciais do clube.", effects: ["Receita comercial mensal"], active: true }
   });
   const IDS = Object.keys(DEFS);
@@ -47,7 +47,7 @@
       trainingGrowthMult: 1 + 0.2 * t,
       trainingRecoveryBonus: 0.5 * t,
       academyGrowthBonus: 0.01 * a,
-      scoutSlots: 1 + Math.floor((sc + 1) / 2),
+      scoutSlots: 3 + 2 * sc,
       commercialMonthly: Math.round((cz * (60000 + rep * 3000)) / 1000) * 1000,
       stadiumCapacity: Math.round(baseCap * (1 + 0.12 * st) / 100) * 100,
       stadiumBase: baseCap
@@ -61,7 +61,7 @@
       stadium: (x) => `${x.stadiumCapacity.toLocaleString("pt-BR")} lugares`,
       academy: (x) => `+${Math.round(x.academyGrowthBonus * 100)}% de chance de evolução (até 21 anos)`,
       training: (x) => `+${Math.round((x.trainingGrowthMult - 1) * 100)}% de evolução · +${x.trainingRecoveryBonus.toFixed(1).replace(".", ",")} de recuperação/semana`,
-      scouting: (x) => `${x.scoutSlots} vaga(s) de olheiro`,
+      scouting: (x) => `${x.scoutSlots} observações simultâneas`,
       clubzone: (x) => (x.commercialMonthly ? `+R$ ${Math.round(x.commercialMonthly / 1000)} mil/mês` : "Sem receita extra")
     }[id];
     return { id, ...DEFS[id], level: lv, max: MAX, current: fmt(cur), next: lv >= MAX ? null : fmt(nxt), cost: upgradeCost(s, club, id) };
