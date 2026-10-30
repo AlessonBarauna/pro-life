@@ -66,3 +66,24 @@ test("Esc fecha a janela e devolve o foco", () => {
   d.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
   assert.equal(d.querySelector(".sm27-dialog"), null);
 });
+
+test("Plantel e Relatórios do Elenco: renderizam com dados reais e sem regras novas", () => {
+  const squad = require("../src/ui/sm27-squad.js");
+  const mk = (id, pos, age, extra = {}) => ({ id, name: "J" + id, pos, primaryPosition: pos, age, potential: 80, overall: 70, morale: 60, condition: 90, marketValue: 1e6, contract: { salary: 5e4, endDay: 200, role: "rotation" }, attrs: { pace: 60 }, ...extra });
+  const roster = [mk("a", "GOL", 30), mk("b", "ZAG", 19, { injury: 5 }), mk("c", "CA", 22, { suspension: 2 }), mk("d", "MC", 34, { morale: 30 })];
+  const ctx = { s: { day: 100, coachCareer: { loans: [] } }, D: { overall: (p) => p.overall }, club: { id: "x", roster } };
+  const roster_html = squad.render("roster", ctx);
+  assert.match(roster_html, /Equipe A/);
+  assert.equal((roster_html.match(/data-sm27sq-open=/g) || []).length, 4);
+  for (const key of ["lesoes", "suspensoes", "moral", "contratos", "desenvolvimento", "juventude", "geral"]) {
+    squad.set("report", key);
+    const html = squad.render("reports", ctx);
+    assert.match(html, /Relatórios do plantel/);
+    assert.ok(html.length > 200, key);
+  }
+  squad.set("report", "lesoes");
+  assert.match(squad.render("reports", ctx), /Jb|Lesionado/);
+  squad.set("roster", "loan");
+  assert.match(squad.render("roster", ctx), /Nenhum jogador emprestado/);
+  squad.set("roster", "A");
+});
