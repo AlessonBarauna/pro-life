@@ -231,7 +231,7 @@ for (const mode of ["player", "coach"]) {
     click(w, '[data-page="squad"]');
     assert.ok(w.document.querySelector("main").textContent.includes("atletas"), "Elenco do treinador deve abrir");
     assert.ok(w.document.querySelector(".pl-squad-screen"), "A central visual de escalação deve abrir");
-    assert.equal(w.document.querySelectorAll(".pl-squad-tabs [data-squad-tab]").length, 4, "A tela deve expor as quatro áreas do elenco");
+    assert.equal(w.document.querySelectorAll(".pl-squad-tabs [data-squad-tab]").length, 6, "A tela deve expor as seis áreas do elenco (escalação, táticas, funções, hierarquia, plantel e relatórios)");
     assert.equal(w.document.querySelectorAll(".pl-squad-pitch .pl-squad-player").length, 11, "O campo deve mostrar o XI inicial");
     assert.ok(w.document.querySelector(".pl-squad-detail"), "O painel do atleta selecionado deve existir");
     const reserve = w.document.querySelector(".pl-squad-bench [data-squad-player]");
