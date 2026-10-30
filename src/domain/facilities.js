@@ -42,7 +42,8 @@
   function effects(s, club) {
     const t = levelOf(s, "training"), a = levelOf(s, "academy"), sc = levelOf(s, "scouting"), cz = levelOf(s, "clubzone"), st = levelOf(s, "stadium");
     const rep = clamp(Number(club?.reputation) || 50, 0, 100);
-    const baseCap = Math.round((8000 + rep * 450) / 100) * 100;
+    const CF = root.ProLifeClubFinance || (typeof require === "function" ? (() => { try { return require("./club-finance.js"); } catch (e) { return null; } })() : null);
+    const baseCap = CF?.capacityOf ? CF.capacityOf(club) : Math.round((8000 + rep * 450) / 100) * 100;
     return {
       trainingGrowthMult: 1 + 0.2 * t,
       trainingRecoveryBonus: 0.5 * t,
