@@ -65,3 +65,8 @@
 .shd-tabs.sq-dtabs { grid-template-columns:repeat(6,minmax(0,1fr)); } .shd-tabs.sq-dtabs button { font-size:10px; padding-inline:2px; } .sq-note { margin:0 0 6px; font-size:11px; color:var(--pl-text-3,#7f8f9f); } .sq-dl small { color:var(--pl-text-3,#7f8f9f); }
 .sq-pos, .sq-card-top b { white-space:nowrap; }
 .sq-card-top .sq-pos { flex:none; }
+
+/* Plantel e Relatórios: o corpo da tela rola (nada fica recortado). */
+@media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px) {
+  .pl-squad-screen:has(> .pl-squad-sm27) > .pl-squad-sm27 { min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; padding-bottom:8px; }
+}

@@ -116,3 +116,32 @@ html.pl-large-text { font-size:112.5%; }
 /* Menu principal: arte original de três jogadores */
 .hub-hero { display:block; width:min(300px,60%); height:auto; margin:10px 0 4px; opacity:.92; }
 @media (orientation:landscape) and (max-height:560px) { .hub-hero { position:absolute; right:16px; top:50%; transform:translateY(-50%); width:clamp(90px,17vw,150px); margin:0; z-index:0; pointer-events:none; } .career-hub-intro { position:relative; } }
+
+/* Criação de carreira (celular deitado): uma tela só. Rola apenas o miolo dos painéis; botões fixos no rodapé do fluxo. */
+@media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px) {
+  #app > .coach-creation { display:flex; flex-direction:column; overflow:hidden; padding-top:6px; padding-bottom:max(6px,env(safe-area-inset-bottom)); }
+  #app > .coach-creation .coach-creation-header { flex:none; align-items:center; margin:0 0 4px; padding-bottom:4px; }
+  #app > .coach-creation .coach-subtitle { display:none; }
+  #app > .coach-creation h1 { font-size:20px; margin:0; }
+  #app > .coach-creation .coach-kicker { font-size:9px; }
+  #app > .coach-creation .coach-return { min-height:32px; padding:0 12px; }
+  #app > .coach-creation .coach-steps { flex:none; margin:4px 0; padding:0; background:none; }
+  #app > .coach-creation .coach-steps button { min-height:30px; padding:2px 3px; }
+  #app > .coach-creation #coach-creation-form { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+  #app > .coach-creation .coach-creation-grid { flex:1 1 auto; min-height:0; margin:0; padding-bottom:0; align-items:stretch; grid-template-rows:minmax(0,1fr); }
+  #app > .coach-creation .coach-creation-grid > section { min-height:0; max-height:100%; overflow-y:auto; overscroll-behavior:contain; }
+  #app > .coach-creation .coach-profile-art { max-height:110px; }
+  #app > .coach-creation .coach-navigation { position:sticky; bottom:-13px; z-index:5; margin:6px -13px -13px; padding:8px 13px; border:0; border-top:1px solid #28454e; background:#0b1b24; justify-content:flex-end; width:auto; }
+  #app > .coach-creation .coach-navigation button { min-height:36px !important; }
+}
+
+/* Treinador · Visão geral: avatar compacto e indicadores em 4 colunas (menos rolagem). */
+@media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px) {
+  .coach-prof-hero { grid-template-columns:minmax(150px,.6fr) minmax(0,1.4fr); gap:8px; }
+  .coach-prof-identity .avatar-stage, .coach-prof-identity .avatar-canvas { height:96px !important; min-height:0; }
+  .coach-prof-identity .muted { font-size:10px; line-height:1.2; margin:1px 0 !important; } .coach-prof-identity .muted:last-child { display:none; } .coach-prof-hero { padding:0 !important; } .coach-prof-identity, .coach-prof-summary { padding:10px 12px !important; }
+  .coach-prof-identity h1 { font-size:17px !important; margin:2px 0 !important; line-height:1.15 !important; }
+  .coach-prof-kpis { grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:5px !important; }
+  .coach-prof-stat { padding:6px 8px !important; min-height:0; }
+  .coach-prof-stat small { font-size:9px; } .coach-prof-stat strong { font-size:16px !important; }
+}

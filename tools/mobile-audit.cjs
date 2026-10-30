@@ -56,6 +56,12 @@ function measure() {
     const s = getComputedStyle(el);
     if (/hidden|clip/.test(s.overflowX) && s.textOverflow !== "ellipsis" && el.scrollWidth > el.clientWidth + 2 && el.clientWidth > 0) out.issues.push({ t: "texto-cortado", el: name(el), by: el.scrollWidth - el.clientWidth });
   }
+  // área travada: conteúdo maior que a caixa e nenhuma rolagem possível (informação perdida)
+  for (const el of document.querySelectorAll("#app .pl-squad-screen, #app .pl-squad-sm27, #app .coach-creation, #app .sm27-screen-body, #app .coach-creation-card")) {
+    if (!vis(el)) continue;
+    const s = getComputedStyle(el);
+    if (/hidden|clip/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 8 && el.clientHeight > 60) out.issues.push({ t: "area-travada", el: name(el), by: el.scrollHeight - el.clientHeight });
+  }
   // sobreposição entre controles
   const ctrls = [...document.querySelectorAll("#app button, #app select, #app input")].filter(vis).filter((e) => { const r = e.getBoundingClientRect(); return r.bottom > 0 && r.top < vh; });
   for (let i = 0; i < ctrls.length; i++) for (let j = i + 1; j < ctrls.length; j++) {
@@ -135,6 +141,18 @@ async function main() {
         const mm = await page.evaluate(measure);
         report.push({ vp: `${w}x${h}`, screen: `${id} › ${tabs[i]}`, ...mm });
         if (only.length || w === 844) await page.screenshot({ path: path.join(outDir, `${stem}-tab${i}.png`) });
+      }
+      if (id === "squad") {
+        // todas as abas do elenco, incluindo Plantel e Relatórios (já tiveram conteúdo recortado sem rolagem)
+        for (const tab of ["lineup", "tactics", "roles", "hierarchy", "roster", "reports"]) {
+          await page.evaluate(() => { const b = document.querySelector('[data-page="squad"]'); if (b) b.click(); });
+          await delay(250);
+          const ok = await page.evaluate((v) => { const el = document.querySelector(`[data-squad-tab="${v}"]`); if (el) { el.click(); return true; } return false; }, tab);
+          if (!ok) continue;
+          await delay(300);
+          const mm = await page.evaluate(measure);
+          report.push({ vp: `${w}x${h}`, screen: `squad › ${tab}`, ...mm });
+        }
       }
     }
   }
