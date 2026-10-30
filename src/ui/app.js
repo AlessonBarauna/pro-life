@@ -1304,7 +1304,7 @@
   let worldMarketFilters={country:"ALL",league:"ALL",club:"ALL",period:"ALL"};
 
   // ===== Stage 31.7A/C — Central de Temporada e Calendário V2 (UI; dados reais da API do domínio) =====
-  let seasonUi = { comp: null, q: "", country: "", kind: "", tab: "table", view: "", club: null };
+  let seasonUi = { comp: null, q: "", country: "", kind: "", tab: "table", view: "", club: null, split: "normal" };
   let calSel = null, calHidden = new Set(), advancePending = null, calCache = { key: "", list: [] };
   const CAL_KINDS = [["mine", "Meus jogos"], ["state", "Estadual"], ["national", "Nacional"], ["world", "Mundo"], ["selecao", "Seleções"], ["market", "Mercado"], ["events", "Eventos"]];
   const normText = (v) => String(v ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -1355,7 +1355,29 @@
     return `<div class="season-game ${mine ? "mine" : ""} ${played ? "played" : ""} ${g.status ? `status-${String(g.status).toLowerCase()}` : ""}"><time>${hasVal(g.day) ? esc(dayDate(g.day)) : "—"}</time><span>${crestImg(g.homeId)}${esc(g.home ?? g.homeId ?? "—")}</span><b>${esc(score)}</b><span>${crestImg(g.awayId)}${esc(g.away ?? g.awayId ?? "—")}</span>${g.stage || stateLabel ? `<small>${esc([g.stage, stateLabel].filter(Boolean).join(" · "))}${g.penalties ? " · pên. " + esc(typeof g.penalties === "object" ? Object.values(g.penalties).join("-") : g.penalties) : ""}</small>` : ""}</div>`;
   };
   function seasonTableHtml(ov) {
-    const rows = ov.standings.map(stRow), hasForm = rows.some((x) => x.form.length), sel = rows.find((r) => r.id && r.id === seasonUi.club);
+    let rows = ov.standings.map(stRow);
+    const split = ["casa", "fora", "forma"].includes(seasonUi.split) ? seasonUi.split : "normal";
+    const splitCount = (ov.fixtures || []).filter((g) => (g.played || g.status === "PLAYED") && hasVal(g.homeScore) && hasVal(g.awayScore)).length;
+    if (split !== "normal" && rows.length) {
+      const by = new Map(rows.map((r) => [r.id, { ...r, pts: 0, j: 0, v: 0, e: 0, d: 0, gp: 0, gc: 0 }]));
+      if (split === "casa" || split === "fora") {
+        for (const g of ov.fixtures || []) {
+          if (!(g.played || g.status === "PLAYED") || !hasVal(g.homeScore) || !hasVal(g.awayScore)) continue;
+          const side = split === "casa" ? g.homeId : g.awayId, mine = split === "casa" ? Number(g.homeScore) : Number(g.awayScore), other = split === "casa" ? Number(g.awayScore) : Number(g.homeScore), r = by.get(side);
+          if (!r) continue;
+          r.j++; r.gp += mine; r.gc += other;
+          if (mine > other) { r.v++; r.pts += 3; } else if (mine === other) { r.e++; r.pts += 1; } else r.d++;
+        }
+        for (const r of by.values()) r.sg = r.gp - r.gc;
+        rows = [...by.values()].sort((a, b) => b.pts - a.pts || b.sg - a.sg || b.gp - a.gp || String(a.name).localeCompare(String(b.name), "pt-BR"));
+      } else {
+        const pts = (f) => f.reduce((a, x) => a + (x === "V" || x === "W" ? 3 : x === "E" ? 1 : 0), 0);
+        rows = [...rows].sort((a, b) => pts(b.form) - pts(a.form) || b.pts - a.pts);
+      }
+      rows = rows.map((r, i) => ({ ...r, pos: i + 1 }));
+    }
+    const hasForm = rows.some((x) => x.form.length), sel = rows.find((r) => r.id && r.id === seasonUi.club);
+    const splitBar = `<div class="season-split" role="group" aria-label="Exibir classificação">${[["normal", "Normal"], ["casa", "Casa"], ["fora", "Fora"], ["forma", "Forma"]].map(([id, l]) => `<button type="button" data-season-split="${id}" aria-pressed="${split === id}"${id === "casa" || id === "fora" ? (splitCount ? "" : " disabled title=\"Sem jogos disputados\"") : ""}>${l}</button>`).join("")}</div>`;
     const zones=window.ProLifeCompetitionZonesV2?.zones?.(ov.competition,rows.length)||[];
     const zoneAt=pos=>window.ProLifeCompetitionZonesV2?.forPosition?.(zones,Number(pos));
     const body = rows.map((r) => `<tr tabindex="0" data-season-club="${esc(r.id ?? "")}" class="${r.id === state.clubId ? "highlight" : ""} ${r.id && r.id === seasonUi.club ? "selected" : ""} ${zoneAt(r.pos)?`season-zone-${zoneAt(r.pos).key}`:""}" title="${esc(zoneAt(r.pos)?.label||"")}" aria-selected="${r.id === seasonUi.club}"><td class="num">${cell(r.pos)}</td><td class="club">${crestImg(r.id)}${esc(r.name)}${r.id === state.clubId ? ' <span class="pill">VOCÊ</span>' : ""}</td><td class="num pts">${cell(r.pts)}</td><td class="num">${cell(r.j)}</td><td class="num">${cell(r.v)}</td><td class="num">${cell(r.e)}</td><td class="num">${cell(r.d)}</td><td class="num">${cell(r.gp)}</td><td class="num">${cell(r.gc)}</td><td class="num">${sgText(r.sg)}</td>${hasForm ? `<td class="form">${r.form.map((f) => `<i class="f-${esc(f)}">${esc(f)}</i>`).join("")}</td>` : ""}</tr>`).join("");
@@ -1365,7 +1387,7 @@
       return `<aside class="card season-club-detail"><div class="tag">CLUBE SELECIONADO</div><h3>${crestImg(sel.id, "lg")}${esc(sel.name)}</h3><div class="stats"><div class="stat"><small>Posição</small><b>${cell(sel.pos)}º</b></div><div class="stat"><small>Pontos</small><b>${cell(sel.pts)}</b></div><div class="stat"><small>Saldo</small><b>${sgText(sel.sg)}</b></div></div>${sel.form.length ? `<p class="muted">Forma: ${sel.form.map((f) => esc(f)).join(" ")}</p>` : ""}${last.length ? `<h3>Últimos resultados</h3>${last.map(gameLine).join("")}` : ""}${next.length ? `<h3>Próximos jogos</h3>${next.map(gameLine).join("")}` : ""}${!last.length && !next.length ? '<p class="muted">Sem mais detalhes disponíveis para este clube nesta competição.</p>' : ""}<button type="button" data-season-club="">Fechar detalhes</button></aside>`;
     })() : "";
     const legend=zones.length?`<div class="season-zone-legend" aria-label="Vagas e rebaixamento">${zones.map(z=>`<span class="season-zone-key season-zone-${esc(z.key)}">${esc(z.label)} (${z.from}${z.to!==z.from?"–"+z.to:""}º)</span>`).join("")}</div>`:"";
-    return `<div class="season-table-wrap ${sel ? "with-detail" : ""}"><div><div class="tablewrap season-scroll" tabindex="0" aria-label="Classificação completa"><table class="season-table"><thead><tr><th class="num">#</th><th class="club">Clube</th><th class="num">PTS</th><th class="num">J</th><th class="num">V</th><th class="num">E</th><th class="num">D</th><th class="num">GP</th><th class="num">GC</th><th class="num">SG</th>${hasForm ? "<th>Forma</th>" : ""}</tr></thead><tbody>${body}</tbody></table></div>${legend}<p class="muted">${esc(ov.competition?.country)==="Brasil"&&/série a|serie a/i.test(ov.competition?.name||"")?"Copa do Brasil: classificação por participação na Série A e por competições específicas, não por faixa isolada na tabela. Vagas continentais adicionais dependem dos resultados das copas. ":""}Selecione um clube para consultar os detalhes disponíveis.</p></div>${detail}</div>`;
+    return `<div class="season-table-wrap ${sel ? "with-detail" : ""}"><div>${splitBar}<div class="tablewrap season-scroll" tabindex="0" aria-label="Classificação completa"><table class="season-table"><thead><tr><th class="num">#</th><th class="club">Clube</th><th class="num">PTS</th><th class="num">J</th><th class="num">V</th><th class="num">E</th><th class="num">D</th><th class="num">GP</th><th class="num">GC</th><th class="num">SG</th>${hasForm ? "<th>Forma</th>" : ""}</tr></thead><tbody>${body}</tbody></table></div>${legend}<p class="muted">${esc(ov.competition?.country)==="Brasil"&&/série a|serie a/i.test(ov.competition?.name||"")?"Copa do Brasil: classificação por participação na Série A e por competições específicas, não por faixa isolada na tabela. Vagas continentais adicionais dependem dos resultados das copas. ":""}Selecione um clube para consultar os detalhes disponíveis.</p></div>${detail}</div>`;
   }
   const koRounds = (ov) => (ov.rounds || []).filter((r) => r.kind === "knockout" || (!r.kind && /mata|knockout/.test(ov.competition?.format || ""))).filter((r) => (r.fixtures || []).length);
   function seasonBracketHtml(ov) {
@@ -10579,6 +10601,8 @@ Ao confirmar, o contrato com ${current.brand} será encerrado e ${proposal.brand
   document.addEventListener("click", (e) => {
     if (!state || setup) return;
     const t = e.target;
+    const splitBtn = t.closest?.("[data-season-split]");
+    if (splitBtn) { seasonUi.split = splitBtn.dataset.seasonSplit; render(); return; }
     const season = t.closest?.("[data-season-comp],[data-season-tab],[data-season-view],[data-season-mine],[data-season-club]");
     if (season) {
       const d = season.dataset;
