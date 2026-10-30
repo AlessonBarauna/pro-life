@@ -527,7 +527,7 @@
           if (!CUP_MENU.includes(item[0])) return btn(item);
           if (done) return "";
           done = true;
-          return `<details class="subnav-menu ${activeCup?"active":""}"${activeCup?" open":""}><summary>${esc(activeCup?activeCup[1]:"Copas e torneios")} <span aria-hidden="true">▾</span></summary><div class="subnav-pop">${cups.map(btn).join("")}</div></details>`;
+          return `<details class="subnav-menu ${activeCup?"active":""}"${activeCup?" open":""}><summary>${activeCup?esc(activeCup[1]):'<span class="lbl-long">Copas e torneios</span><span class="lbl-short">Copas</span>'} <span aria-hidden="true">▾</span></summary><div class="subnav-pop">${cups.map(btn).join("")}</div></details>`;
         }).join("");
       },
       subnavShell = () => subnav.length ? `<div class="game-subnav" role="navigation" aria-label="Navegação da área">${subnavHtml()}</div>` : "";

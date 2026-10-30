@@ -75,6 +75,71 @@
     return `<div class="sm27-home">${tasks}<div class="sm27-grid"><div class="sm27-main">${matchCard}<div class="sm27-row">${inbox}${coach}${comp}${transfers}</div></div>${side}</div></div>`;
   }
 
+  // Visões do celular que não existem no desktop. O estado fica em memória e é
+  // reaplicado quando a tela é redesenhada (o app recria o DOM a cada ação).
+  const view = { squad:"campo", life:"life" };
+  function enhance() {
+    if (!root.document || !isPhone()) return;
+    const squad = root.document.querySelector(".pl-squad-screen");
+    if (squad) {
+      if (squad.dataset.mView !== view.squad) squad.dataset.mView = view.squad;
+      const head = squad.querySelector(".pl-squad-pitch-head");
+      if (head && !head.querySelector(".pl-m-switch")) {
+        const sw = root.document.createElement("span");
+        sw.className = "pl-m-switch";
+        sw.setAttribute("role", "group");
+        sw.setAttribute("aria-label", "Visão do elenco");
+        sw.innerHTML = '<button type="button" data-m-view="campo">Campo</button><button type="button" data-m-view="banco">Banco</button>';
+        head.insertBefore(sw, head.firstChild);
+      }
+      head?.querySelectorAll("[data-m-view]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mView === view.squad)));
+    }
+    lifeSections();
+  }
+
+  // Vida: cada aba mostra só a sua seção (resumo, finanças, patrimônio, atividades...).
+  function lifeSections() {
+    const tabs = root.document.querySelector(".life-tabs");
+    if (!tabs) return;
+    const ids = [...tabs.querySelectorAll("a[href^='#']")].map((a) => a.getAttribute("href").slice(1));
+    const wanted = ids.includes(view.life) ? view.life : "life";
+    const targets = ids.filter((id) => id !== "life").map((id) => root.document.getElementById(id)).filter(Boolean);
+    const container = tabs.parentElement;
+    for (const child of container.children) {
+      if (child === tabs) continue;
+      const holds = targets.filter((t) => child === t || child.contains(t));
+      const own = holds.length === 1 && holds[0] === child;
+      let show;
+      if (wanted === "life") show = holds.length === 0 || (!own && holds.length > 0);
+      else show = holds.some((t) => t.id === wanted);
+      child.toggleAttribute("data-m-hide", !show);
+      if (holds.length && child !== holds[0]) for (const t of holds) t.toggleAttribute("data-m-hide", wanted === "life" ? true : t.id !== wanted);
+    }
+    tabs.querySelectorAll("a[href^='#']").forEach((a) => {
+      const on = a.getAttribute("href").slice(1) === wanted;
+      a.classList.toggle("active", on);
+      if (on) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current");
+    });
+  }
+  if (root.document) {
+    root.document.addEventListener("click", (ev) => {
+      const a = ev.target instanceof Element ? ev.target.closest(".life-tabs a[href^='#']") : null;
+      if (a && isPhone()) { ev.preventDefault(); view.life = a.getAttribute("href").slice(1); lifeSections(); const body = root.document.querySelector(".sm27-screen-body"); if (body) body.scrollTop = 0; return; }
+      const b = ev.target instanceof Element ? ev.target.closest("[data-m-view]") : null;
+      if (!b) return;
+      view.squad = b.dataset.mView === "banco" ? "banco" : "campo";
+      enhance();
+    });
+    const start = () => {
+      const app = root.document.getElementById("app");
+      if (!app) return;
+      let queued = false;
+      new MutationObserver(() => { if (queued) return; queued = true; (root.requestAnimationFrame || setTimeout)(() => { queued = false; enhance(); }); }).observe(app, { childList:true, subtree:true });
+      enhance();
+    };
+    if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start, { once:true }); else start();
+  }
+
   // Menu lateral (☰): abre e fecha sem re-renderizar a tela.
   function toggleMenu(force) {
     const on = force === undefined ? !document.body.classList.contains("sm27-menu-open") : !!force;
@@ -99,6 +164,6 @@
     root.document.addEventListener("pointerup",(ev)=>{if(drawerPointerX!==null&&drawerPointerX-ev.clientX>42)toggleMenu(false);drawerPointerX=null;},{passive:true});
   }
 
-  root.ProLifeMobileSM27 = { QUERY, isPhone, home, toggleMenu, abbr };
+  root.ProLifeMobileSM27 = { QUERY, isPhone, home, toggleMenu, abbr, enhance };
   if (typeof module !== "undefined" && module.exports) module.exports = root.ProLifeMobileSM27;
 })(typeof window !== "undefined" ? window : globalThis);

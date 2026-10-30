@@ -97,3 +97,5 @@
 .subnav-pop button:hover{border-color:rgba(200,249,50,.32)!important;background:rgba(255,255,255,.055)!important}
 .subnav-pop button.active{color:var(--pl-accent,#c8f932)!important;border-color:rgba(200,249,50,.48)!important;background:rgba(200,249,50,.10)!important}
 @media(max-width:760px){.game-subnav:has(.subnav-menu[open]){padding-bottom:59px}.subnav-pop{top:48px;left:12px;right:12px;padding-top:7px}.subnav-pop button{min-height:36px;padding-inline:11px!important}}
+
+.subnav-menu .lbl-short{display:none}

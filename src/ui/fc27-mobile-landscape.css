@@ -205,46 +205,15 @@
     order: 0 !important;
   }
 
-  .mobile-stage-viewport,
-  .mobile-screen-viewport {
-    position:relative;
-    display:block;
-    min-width:0;
+  /* Telas sem a barra do jogo (landing, criação, carreiras) ocupam a janela e rolam por dentro. */
+  #app > :is(.landing,.wizard,.coach-creation,.career-hub) {
+    box-sizing:border-box;
+    width:100%;
+    height:var(--pl-vh,100dvh);
     min-height:0;
-    overflow:hidden;
-  }
-
-  .mobile-stage-viewport {
-    flex:1 1 auto;
-    width:100%;
-  }
-
-  .mobile-screen-viewport {
-    width:100%;
-    height:100dvh;
-  }
-
-  .mobile-game-canvas {
-    position:absolute;
-    top:0;
-    left:0;
-    transform:scale(var(--pl-mobile-fit,1));
-    transform-origin:top left;
-    will-change:transform;
-  }
-
-  .mobile-stage-viewport .game-stage {
-    width:100%;
-    min-height:0;
-    margin:0;
-    overflow:visible;
-  }
-
-  .mobile-screen-viewport :is(.landing,.wizard,.coach-creation) {
-    width:100%;
-    height:auto;
-    min-height:0;
-    overflow:visible;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior:contain;
   }
 
   .game-shell .footer { display:none; }
