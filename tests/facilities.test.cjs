@@ -55,3 +55,16 @@ test("trocar de clube zera as instalações do clube anterior", () => {
   s.clubId = "outro";
   assert.equal(F.levelOf(s, "stadium"), 0);
 });
+
+test("habilidades do treinador: pontos, pré-requisito e efeitos", () => {
+  const S = require("../src/domain/coach-skills.js");
+  const s = coach();
+  assert.equal(S.unlocked(s).length, 0);
+  assert.equal(S.effects(s).growth, 0);
+  assert.ok(S.available(s) >= 1);
+  assert.throws(() => G.execute(s, "unlockCoachSkill", { id: "metodo" }), /Desbloqueie antes/);
+  G.execute(s, "unlockCoachSkill", { id: "prep_fisico" });
+  assert.equal(S.effects(s).recovery, 1);
+  assert.throws(() => G.execute(s, "unlockCoachSkill", { id: "prep_fisico" }), /já desbloqueada/);
+  assert.throws(() => G.execute(s, "unlockCoachSkill", { id: "mestre" }), /Desbloqueie antes|insuficientes/);
+});

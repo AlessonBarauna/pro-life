@@ -419,6 +419,12 @@ case "tactic": {
         D.CoachCareer.setFocus(s, data.focus);
         break;
       }
+      case "unlockCoachSkill": {
+        if (s.mode !== "coach") throw Error("Disponível para treinadores.");
+        D.CoachCareer.init?.(s, D);
+        D.CoachSkills.unlock(s, data.id);
+        break;
+      }
       case "upgradeFacility": {
         if (s.mode !== "coach") throw Error("Disponível para treinadores.");
         D.CoachCareer.init?.(s, D);

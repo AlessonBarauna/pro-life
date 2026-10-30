@@ -428,12 +428,15 @@
     c.lastTrainDay=s.day;
     const roster=(club.roster||[]).filter(p=>p.status!=="retired"),f=c.focus;let grown=0;
     const fx=(root.ProLifeFacilities||(typeof require==="function"?require("./facilities.js"):null))?.effects(s,club)||{trainingGrowthMult:1,trainingRecoveryBonus:0,academyGrowthBonus:0};
+    const sk=(root.ProLifeCoachSkills||(typeof require==="function"?require("./coach-skills.js"):null))?.effects(s)||{growth:0,recovery:0,morale:0,youth:0};
+    fx.trainingGrowthMult+=sk.growth;fx.trainingRecoveryBonus+=sk.recovery;fx.academyGrowthBonus+=sk.youth;
     const keys=["pace","finish","pass","defense","strength","stamina"];
     for(const p of roster){
       const age=Number(p.age)||25;
       if(f==="equilibrado")p.morale=clamp((Number(p.morale)||60)+0.3,0,100);
       if(f==="fisico"){p.condition=clamp((Number(p.condition)||90)+3,0,100);p.morale=clamp((Number(p.morale)||60)-0.6,0,100);}
       if(f==="recuperacao")p.condition=clamp((Number(p.condition)||90)+5,0,100);
+      if(sk.morale>0)p.morale=clamp((Number(p.morale)||60)+sk.morale,0,100);
       if(fx.trainingRecoveryBonus>0)p.condition=clamp((Number(p.condition)||90)+fx.trainingRecoveryBonus,0,100);
       const baseChance=f==="tecnico"?(age<=29?0.02:0):f==="jovens"?(age<=21?0.05:0):0;
       const chance=baseChance?baseChance*fx.trainingGrowthMult+(age<=21?fx.academyGrowthBonus:0):0;
