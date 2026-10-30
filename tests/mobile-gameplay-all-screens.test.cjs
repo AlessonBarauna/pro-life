@@ -22,6 +22,8 @@ test("mobile landscape turns dense panels into pages instead of nested scrolls",
   assert.match(css, /:is\(\.cc-tabs,\.cc-deal-nav,\.cc-market-screen-nav,\.pl-squad-tabs,\.life-tabs\)[\s\S]*position:sticky/);
   assert.match(css, /\.game-stage-squad \.sm27-screen-body > \.pl-squad-screen[\s\S]*\.game-stage-squad \.pl-squad-workspace[\s\S]*overflow:hidden/);
   assert.match(css, /\[data-sm27-unscroll\][\s\S]*overflow:visible !important/);
+  assert.match(css, /\[data-sm27-page-content\][\s\S]*transform:scale\(var\(--sm27-page-fit/);
+  assert.match(css, /\[data-sm27-page-hidden\][\s\S]*display:none !important/);
   assert.match(css, /\.sm27-screen-pager[\s\S]*position:absolute/);
   assert.match(css, /\.game-stage-season :is\([\s\S]*overflow-y:visible/);
   assert.match(css, /\.game-stage-calendar \.pl-calendar-screen > \.career-calendar[\s\S]*overflow-y:visible[\s\S]*touch-action:manipulation/);
@@ -30,8 +32,9 @@ test("mobile landscape turns dense panels into pages instead of nested scrolls",
   const viewport = fs.readFileSync(path.join(__dirname, "../src/ui/mobile-game-viewport.js"), "utf8");
   assert.match(viewport, /function releaseNestedScroll\(body\)/);
   assert.match(viewport, /function paginate\(\)/);
+  assert.match(viewport, /function groupWholeBlocks\(blocks, capacity\)/);
   assert.match(viewport, /data-sm27-page-status/);
-  assert.match(viewport, /pageCount = Math\.max\(1, Math\.ceil\(contentHeight \/ usable\)\)/);
+  assert.match(viewport, /pageGroups = groupWholeBlocks\(pageBlocks, blockCapacity\)/);
 });
 
 test("market filters and cards are compact enough for the horizontal phone viewport", () => {

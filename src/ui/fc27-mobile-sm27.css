@@ -113,8 +113,28 @@
   /* ---------- area da tela ---------- */
   .game-shell .main { width:100% !important; max-width:none !important; margin:0 !important; padding:var(--sm27-gap) max(10px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left)) !important; }
   .game-shell .main > .topbar { display:none; }
-  .game-subnav { flex:0 0 36px; min-height:36px; max-height:36px; padding:2px 0; margin:0 0 4px; }
-  .game-subnav button { min-height:30px !important; padding:4px 12px; font-size:11px; }
+  .game-subnav {
+    flex:0 0 34px;
+    display:grid !important;
+    grid-auto-flow:column;
+    grid-auto-columns:minmax(0,1fr);
+    align-items:stretch;
+    gap:3px;
+    min-height:34px;
+    max-height:34px;
+    padding:2px 0;
+    margin:0 0 3px;
+    overflow:hidden;
+  }
+  .game-subnav button {
+    min-width:0;
+    min-height:28px !important;
+    padding:3px 5px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:clamp(7px,1.15vw,10px);
+  }
   .game-stage { flex:1 1 auto; min-height:0; margin:0; overflow:hidden; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
   .game-stage-home { overflow:hidden; }
   /* As telas de gestao usam um palco virtual de 1180px. O palco ocupa exatamente
@@ -147,8 +167,8 @@
   .game-stage:not(.game-stage-home) > .sm27-screen-body > :first-child {
     margin-top:0;
   }
-  /* O paginador global remove rolagens herdadas de telas antigas. Cada avanço
-     troca um viewport inteiro e mantém os controles legíveis e previsíveis. */
+  /* O paginador usa blocos semânticos inteiros. Conteúdo nunca é deslocado por
+     uma distância arbitrária: cada tela é recomposta e dimensionada para caber. */
   .game-stage:not(.game-stage-home) > .sm27-screen-body [data-sm27-unscroll] {
     height:auto !important;
     max-height:none !important;
@@ -159,10 +179,103 @@
   .game-stage:not(.game-stage-home) > .sm27-screen-body.sm27-paged {
     padding-bottom:44px;
   }
-  .game-stage:not(.game-stage-home) > .sm27-screen-body.sm27-paged > :first-child {
-    transform:translate3d(0,var(--sm27-page-offset,0),0);
+  .game-stage:not(.game-stage-home) > .sm27-screen-body > [data-sm27-page-content] {
+    width:calc(100% / var(--sm27-page-fit, .92));
+    transform:scale(var(--sm27-page-fit, .92));
     transform-origin:top left;
     transition:transform .18s ease-out;
+  }
+  .game-stage:not(.game-stage-home) > .sm27-screen-body [data-sm27-page-hidden] {
+    display:none !important;
+  }
+
+  /* Densidade responsiva comum a todas as centrais. O conteúdo mantém a
+     hierarquia visual, mas deixa de usar dimensões de desktop no telefone. */
+  .game-stage:not(.game-stage-home) > .sm27-screen-body {
+    font-size:11px;
+    line-height:1.28;
+  }
+  .game-stage:not(.game-stage-home) > .sm27-screen-body :is(h1,h2,h3,h4,p) {
+    max-width:100%;
+  }
+  .game-stage:not(.game-stage-home) > .sm27-screen-body :is(h1,h2) {
+    margin-block:4px 7px;
+    font-size:clamp(17px,2.7vw,24px) !important;
+    line-height:1.05;
+  }
+  .game-stage:not(.game-stage-home) > .sm27-screen-body :is(h3,h4) {
+    margin-block:3px 6px;
+    font-size:clamp(12px,1.8vw,16px) !important;
+    line-height:1.12;
+  }
+  .game-stage:not(.game-stage-home) > .sm27-screen-body p { margin-block:4px 7px; }
+  .game-stage:not(.game-stage-home) > .sm27-screen-body :is(button,input,select,textarea) {
+    min-height:28px;
+    padding:4px 8px;
+    font-size:10px;
+  }
+  .game-stage:not(.game-stage-home) > .sm27-screen-body :is(
+    .cc-card,.card,.dash-card,.cc-market-task-panel,.cc-market-heading,
+    .pl-ucl-card,.pl-uel-card,.wa-card,.world-competition-card
+  ) { padding:8px 10px; }
+  .game-stage:not(.game-stage-home) > .sm27-screen-body :is(
+    .cc-tabs,.cc-deal-nav,.cc-market-screen-nav,.cc-market-screen-tabs,
+    .pl-squad-tabs,.life-tabs,.season-nav,.pl-ucl-nav,.pl-uel-nav,.world-page-tabs
+  ) {
+    gap:3px;
+    min-height:28px;
+    padding:2px;
+  }
+  .game-stage:not(.game-stage-home) > .sm27-screen-body :is(
+    .cc-tabs,.cc-deal-nav,.cc-market-screen-nav,.cc-market-screen-tabs,
+    .pl-squad-tabs,.life-tabs,.season-nav,.pl-ucl-nav,.pl-uel-nav,.world-page-tabs
+  ) button {
+    min-height:26px !important;
+    padding:3px 7px;
+    font-size:8.5px;
+    line-height:1.05;
+  }
+  .game-stage:not(.game-stage-home) > .sm27-screen-body :is(
+    .empty,.ps-empty,.csh-empty,.pl-ucl-empty,.pl-uel-empty,.world-market-empty,
+    .world-competition-empty,.club-browser-empty,.calendar-empty-result
+  ) { min-height:72px !important; padding:10px !important; }
+  .game-stage:not(.game-stage-home) > .sm27-screen-body table :is(th,td) {
+    padding:5px 7px;
+    font-size:9px;
+  }
+  .game-stage-life .life-tabs {
+    display:grid !important;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    width:100%;
+  }
+  .game-stage-life .life-tabs a {
+    min-width:0;
+    padding:6px 4px;
+    overflow:hidden;
+    text-align:center;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:8.5px;
+  }
+  .game-stage-life :is(.grid,.grid3) { gap:6px; }
+  .game-stage-life :is(.grid3,.life-summary) { grid-template-columns:repeat(3,minmax(0,1fr)); }
+
+  @media (max-width:760px) {
+    .phone-title { font-size:9px; letter-spacing:.08em; }
+    .phone-money { max-width:122px; padding-inline:7px; overflow:hidden; text-overflow:ellipsis; font-size:10px; }
+    .phone-money::before { display:none; }
+    .game-nav .phone-continue { max-width:126px; padding-left:9px; }
+    .game-nav .phone-continue b { font-size:12px; }
+    .game-nav .phone-continue small { font-size:7.5px; }
+  }
+
+  @media (max-height:430px) {
+    .game-stage:not(.game-stage-home) { --sm27-screen-scale:.64; }
+    .game-subnav { flex-basis:31px; min-height:31px; max-height:31px; }
+    .game-subnav button { min-height:25px !important; }
+    .sm27-screen-pager { height:34px; }
+    .sm27-screen-pager button { height:28px; min-height:28px !important; }
+    .game-stage:not(.game-stage-home) > .sm27-screen-body.sm27-paged { padding-bottom:39px; }
   }
   .sm27-screen-pager {
     position:absolute;

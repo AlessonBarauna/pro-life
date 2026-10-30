@@ -5,8 +5,13 @@
   const doc = root.document;
   let queued = false;
   let pagedBody = null;
+  let pagedContent = null;
   let currentPage = 0;
   let pageCount = 1;
+  let pageGroups = [];
+  let pageBlocks = [];
+  let persistentBlocks = [];
+  let pageUsableHeight = 1;
 
   function wrap(content, kind) {
     const parentClass = kind === "stage" ? "mobile-stage-viewport" : "mobile-screen-viewport";
@@ -51,12 +56,18 @@
   function clearPager() {
     if (!pagedBody) return;
     pagedBody.classList.remove("sm27-paged");
-    pagedBody.style.removeProperty("--sm27-page-offset");
     pagedBody.querySelector("[data-sm27-pager]")?.remove();
     pagedBody.querySelectorAll("[data-sm27-unscroll]").forEach((node) => node.removeAttribute("data-sm27-unscroll"));
+    pagedBody.querySelectorAll("[data-sm27-page-hidden]").forEach((node) => node.removeAttribute("data-sm27-page-hidden"));
+    pagedContent?.style.removeProperty("--sm27-page-fit");
+    pagedContent?.removeAttribute("data-sm27-page-content");
     pagedBody = null;
+    pagedContent = null;
     currentPage = 0;
     pageCount = 1;
+    pageGroups = [];
+    pageBlocks = [];
+    persistentBlocks = [];
   }
 
   function releaseNestedScroll(body) {
@@ -82,13 +93,82 @@
     }
   }
 
+  function isPersistentBlock(node) {
+    if (!(node instanceof root.HTMLElement)) return false;
+    if (node.matches("nav,[role='tablist'],[data-sm27-pager]")) return true;
+    return /(^|[-_])(tabs?|subnav|navigation|menu)([-_]|$)/i.test(node.className || "");
+  }
+
+  function blockHeight(node) {
+    const rect = node.getBoundingClientRect();
+    return Math.max(1, Math.ceil(node.offsetHeight || node.scrollHeight || rect.height || 1));
+  }
+
+  function resolvePageBlocks(content, capacity) {
+    let children = Array.from(content.children).filter((node) =>
+      !node.matches("script,style,[data-sm27-pager]") && root.getComputedStyle(node).display !== "none"
+    );
+    children = children.flatMap((node) => root.getComputedStyle(node).display === "contents"
+      ? Array.from(node.children).filter((child) => root.getComputedStyle(child).display !== "none")
+      : [node]);
+    let persistent = children.filter(isPersistentBlock);
+    let blocks = children.filter((node) => !persistent.includes(node));
+
+    // Algumas telas antigas possuem apenas um invólucro alto. Nelas, os cartões
+    // internos são as páginas lógicas, evitando cortar um cartão ao meio.
+    const only = blocks[0];
+    const atomic = only?.matches?.(".pl-squad-workspace,.career-calendar,.cc-mobile-scout-profile,.fc27-match-report,.pl-pitch,.pitch");
+    if (blocks.length === 1 && !atomic && blockHeight(only) > capacity * 1.15) {
+      const nested = Array.from(only.children).filter((node) =>
+        !node.matches("script,style") && root.getComputedStyle(node).display !== "none"
+      );
+      if (nested.length > 1) {
+        const nestedPersistent = nested.filter(isPersistentBlock);
+        persistent = persistent.concat(nestedPersistent);
+        blocks = nested.filter((node) => !nestedPersistent.includes(node));
+      }
+    }
+    return { persistent, blocks };
+  }
+
+  function groupWholeBlocks(blocks, capacity) {
+    const groups = [];
+    let group = [];
+    let used = 0;
+    for (const block of blocks) {
+      const height = blockHeight(block);
+      if (group.length && used + height > capacity) {
+        groups.push(group);
+        group = [];
+        used = 0;
+      }
+      group.push(block);
+      used += height;
+    }
+    if (group.length) groups.push(group);
+    return groups.length ? groups : [[]];
+  }
+
+  function fitCurrentPage() {
+    if (!pagedContent) return;
+    pagedContent.style.removeProperty("--sm27-page-fit");
+    const visible = persistentBlocks.concat(pageGroups[currentPage] || []);
+    const naturalHeight = visible.reduce((total, node) => total + blockHeight(node), 0);
+    const naturalWidth = Math.max(pagedContent.scrollWidth, pagedBody?.clientWidth || 1);
+    const widthFit = (pagedBody?.clientWidth || naturalWidth) / Math.max(1, naturalWidth);
+    const fit = Math.max(.36, Math.min(.92, widthFit, pageUsableHeight / Math.max(1, naturalHeight)));
+    pagedContent.style.setProperty("--sm27-page-fit", fit.toFixed(4));
+  }
+
   function applyPage() {
     if (!pagedBody) return;
     currentPage = Math.max(0, Math.min(pageCount - 1, currentPage));
-    const usable = Math.max(1, Number(pagedBody.dataset.sm27PageHeight) || pagedBody.clientHeight);
-    const total = Math.max(usable, Number(pagedBody.dataset.sm27ContentHeight) || usable);
-    const offset = Math.min(currentPage * usable, Math.max(0, total - usable));
-    pagedBody.style.setProperty("--sm27-page-offset", `${-Math.round(offset)}px`);
+    const visible = new Set(pageGroups[currentPage] || []);
+    for (const block of pageBlocks) {
+      if (visible.has(block)) block.removeAttribute("data-sm27-page-hidden");
+      else block.setAttribute("data-sm27-page-hidden", "true");
+    }
+    fitCurrentPage();
     const pager = pagedBody.querySelector("[data-sm27-pager]");
     if (!pager) return;
     const status = pager.querySelector("[data-sm27-page-status]");
@@ -113,18 +193,32 @@
     releaseNestedScroll(body);
     const content = body.firstElementChild;
     if (!content) return;
+    if (pagedContent !== content) {
+      pagedBody.querySelectorAll("[data-sm27-page-hidden]").forEach((node) => node.removeAttribute("data-sm27-page-hidden"));
+      pagedContent?.style.removeProperty("--sm27-page-fit");
+      pagedContent = content;
+      pagedContent.setAttribute("data-sm27-page-content", "true");
+      currentPage = 0;
+    }
     body.classList.remove("sm27-paged");
-    body.style.removeProperty("--sm27-page-offset");
+    content.style.removeProperty("--sm27-page-fit");
+    body.querySelectorAll("[data-sm27-page-hidden]").forEach((node) => node.removeAttribute("data-sm27-page-hidden"));
     const viewportHeight = body.clientHeight;
-    const contentHeight = Math.ceil(Math.max(content.scrollHeight, content.getBoundingClientRect().height));
     const pagerHeight = 44;
     const usable = Math.max(1, viewportHeight - pagerHeight);
-    pageCount = Math.max(1, Math.ceil(contentHeight / usable));
+    const resolved = resolvePageBlocks(content, usable);
+    persistentBlocks = resolved.persistent;
+    pageBlocks = resolved.blocks;
+    const persistentHeight = persistentBlocks.reduce((total, node) => total + blockHeight(node), 0);
+    const blockCapacity = Math.max(80, (usable / .92) - persistentHeight);
+    pageGroups = groupWholeBlocks(pageBlocks, blockCapacity);
+    pageCount = pageGroups.length;
+    pageUsableHeight = usable;
     body.dataset.sm27PageHeight = String(usable);
-    body.dataset.sm27ContentHeight = String(contentHeight);
     if (pageCount <= 1) {
       body.querySelector("[data-sm27-pager]")?.remove();
       currentPage = 0;
+      applyPage();
       return;
     }
     body.classList.add("sm27-paged");
