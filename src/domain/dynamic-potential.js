@@ -103,6 +103,36 @@
     return out(delta, reason, { exceptional });
   }
 
+  // Matriz anual pedida para o modo carreira: 40% minutagem, 40% nota e 20% producao.
+  // E deterministica por jogador/temporada para que carregar o mesmo save nunca altere o resultado.
+  function seasonTurnReview(player, seasonStats, context) {
+    const st=seasonStats||{},ctx=context||{},age=ageOf(player),current=potentialOf(player).value,overall=baseOvr(player);
+    const season=num(st.season??ctx.season,0),already=Number(player?.potentialReviewSeason)===season;
+    if(age>=30)return {previous:current,potential:current,delta:0,fm:0,applied:false,reason:"idade igual ou superior a 30"};
+    if(already)return {previous:current,potential:current,delta:0,fm:0,applied:false,repeated:true,reason:"temporada já avaliada"};
+    const minutesShare=clamp(num(st.minutesShare,Number.isFinite(num(st.minutes,NaN))&&num(st.teamMatches)>0?num(st.minutes)/(num(st.teamMatches)*90):0),0,1);
+    const rating=clamp(num(st.avgRating??st.averageRating,0),0,10);
+    if(!(rating>0)&&!(num(st.teamMatches)>0||Number.isFinite(num(st.minutesShare,NaN))))return {previous:current,potential:current,delta:0,fm:0,applied:false,reason:"sem dados suficientes"};
+    const group=String(player?.pos||player?.position||"").toUpperCase(),defensive=["GOL","GK","ZAG","CB","DEF","LD","RB","LE","LB"].includes(group);
+    const production=defensive?num(st.cleanSheets,0):num(st.goals,0)+num(st.assists,0),target=defensive?10:15;
+    const minutesScore=clamp(minutesShare/.7,0,1),ratingScore=clamp((rating-5.5)/2,0,1),productionScore=clamp(production/target,0,1);
+    const fm=round2(minutesScore*.4+ratingScore*.4+productionScore*.2);
+    const elite=minutesShare>.7&&rating>=7.5&&production>=target;
+    const poor=minutesShare<.25||rating<6.2;
+    let delta=0,reason="temporada estável";
+    const seed=String(player?.id||"player")+"|"+season+"|potential";let h=2166136261;for(const ch of seed){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}
+    const magnitude=3+((h>>>0)%3);
+    if(elite){delta=magnitude;reason="metas de elite atingidas";}else if(poor){delta=-magnitude;reason=minutesShare<.25?"pouca minutagem":"notas ruins";}
+    const next=clamp(current+delta,Math.min(overall,99),99);
+    return {previous:current,potential:next,delta:next-current,fm,applied:false,reason,metrics:{minutesShare:round2(minutesShare),rating:round2(rating),production,target,minutesScore:round2(minutesScore),ratingScore:round2(ratingScore),productionScore:round2(productionScore)}};
+  }
+
+  function applySeasonTurn(player,seasonStats,context){
+    const result=seasonTurnReview(player,seasonStats,context);
+    if(!result.repeated&&result.reason!=="sem dados suficientes"&&ageOf(player)<30){player.potential=result.potential;player.potentialReviewSeason=num(seasonStats?.season??context?.season,0);result.applied=true;}
+    return result;
+  }
+
   const tierOf = (pot) => (pot < LIMITS.tiers.low ? "baixo" : pot < LIMITS.tiers.mid ? "medio" : pot < LIMITS.tiers.high ? "alto" : "elite");
   // Panorama sem efeito colateral: faixa, teto e pico projetado usando as variações esperadas da 32B.
   function potentialOutlook(player, context) {
@@ -117,7 +147,7 @@
       projectedPeak: peak, peakAge: prof.params.peakAge, profile: prof.id, profileSource: prof.source, goalkeeper: isGK(player) };
   }
 
-  const api = { LIMITS, effectiveCeiling, reviewPotential, potentialOutlook, potentialOf, tierOf };
+  const api = { LIMITS, effectiveCeiling, reviewPotential, seasonTurnReview, applySeasonTurn, potentialOutlook, potentialOf, tierOf };
   root.ProLifeDynamicPotential = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

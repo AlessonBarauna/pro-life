@@ -2112,6 +2112,26 @@
     Competitions?.closeSeason(s, table);
     try { Continental?.closeSeason(s, { orders }); } catch (e) { /* infraestrutura continental nunca bloqueia o fim da temporada */ }
     const seasonAwards = Statistics?.closeSeason(s) || [];
+    // Revisao unica na virada: somente atletas sub-30 com dados reais da temporada.
+    // Recalcula o xTV imediatamente depois de uma alteracao do potencial oculto.
+    try{
+      const DP=root.ProLifeDynamicPotential||(typeof require==="function"?require("./dynamic-potential.js"):null);
+      const TM=root.ProLifeTransferMarketRules||(typeof require==="function"?require("./transfer-market-rules.js"):null);
+      if(DP?.applySeasonTurn){
+        const seen=new Set(),players=[];
+        for(const c of s.clubs||[])for(const p of c.roster||[])if(p?.id&&!seen.has(p.id)){seen.add(p.id);players.push({p,club:c});}
+        if(s.person?.id&&!seen.has(s.person.id))players.push({p:s.person,club:club(s)});
+        const reviews=[];
+        for(const {p,club:owner} of players){
+          const row=s.statistics?.players?.[p.id]||(p.id==="hero"?s.statistics?.players?.hero:null);if(!row)continue;
+          const apps=Number(row.appearances)||0,teamMatches=Math.max(apps,Number(owner?.stats?.played)||0);
+          const stats={season:s.season,teamMatches,minutes:Number(row.minutes)||0,minutesShare:teamMatches?Math.min(1,(Number(row.minutes)||0)/(teamMatches*90)):0,avgRating:apps?Number(row.ratingTotal||0)/apps:0,goals:Number(row.goals)||0,assists:Number(row.assists)||0,cleanSheets:Number(row.cleanSheets)||0};
+          const result=DP.applySeasonTurn(p,stats,{season:s.season});
+          if(result.applied){if(TM&&!result.repeated)p.marketValue=TM.marketValue(p,{day:s.day,sellerClub:owner}).xTV||p.marketValue;reviews.push({playerId:p.id,...result});}
+        }
+        s.dynamicPotentialReviews=(s.dynamicPotentialReviews||[]).concat(reviews).slice(-500);
+      }
+    }catch(e){s.dynamicPotentialLastError=String(e?.message||e);}
     if (s.mode === "player" && Career && seasonAwards.length) {
       const heroAwards=seasonAwards.filter(a=>a?.winner===s.person.name);
       for(const a of heroAwards){

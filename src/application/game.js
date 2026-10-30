@@ -4,6 +4,7 @@
     root.ProLife ||
     (typeof require === "function" ? require("../domain/engine.js") : null);
   const PlayerEconomy=root.ProLifePlayerEconomy||(typeof require==="function"?require("../domain/player-economy.js"):null);
+  const TransferRules=root.ProLifeTransferMarketRules||(typeof require==="function"?require("../domain/transfer-market-rules.js"):null);
   const ClubFinance=root.ProLifeClubFinance||(typeof require==="function"?require("../domain/club-finance.js"):null);
   function queueCoachPresentation(s,p,from,to,fee,type){
     if(s.mode!=="coach"||to?.id!==s.clubId||!p?.id)return;
@@ -13,6 +14,19 @@
     if(entries.some(x=>x.id===id))return;
     entries.push({id,playerId:p.id,playerName:p.name,fromClubId:from?.id||null,fromClubName:from?.name||"Sem clube",toClubId:to.id,toClubName:to.name,fee,type,day:s.day,season:s.season,overall:p.overall??p.ovr??null,position:p.pos||p.position||null,age:p.age??null,presented:false});
     s.coachCareer.presentations=entries.slice(-100);
+  }
+  function isHistoricalRival(a,b){
+    const ids=value=>Array.isArray(value)?value.map(String):value==null?[]:[String(value)];
+    return ids(a?.rivals??a?.rivalIds??a?.rivalId).includes(String(b?.id))||ids(b?.rivals??b?.rivalIds??b?.rivalId).includes(String(a?.id));
+  }
+  function dynamicValuation(s,p,seller,buyer){
+    if(!TransferRules)return {xTV:valuation(p),blocked:false};
+    const recent=(s.matches||[]).filter(m=>m?.ratings&&Number.isFinite(Number(m.ratings[p.id]))).slice(-5).map(m=>Number(m.ratings[p.id]));
+    const strict=s.coachCareer?.settings?.marketStrictness;
+    const result=TransferRules.marketValue(p,{day:s.day,sellerClub:seller,buyerClub:buyer,recentRatings:recent,historicalRival:isHistoricalRival(seller,buyer),rivalPolicy:strict==="strict"?"block":"inflate"});
+    if(result.blocked)return result;
+    result.xTV=Math.ceil(result.xTV*(strict==="strict"?1.12:strict==="flexible"?.9:1)/1000)*1000;
+    return result;
   }
   function execute(s, action, data = {}) {
     switch (action) {
@@ -730,12 +744,13 @@ case "tactic": {
         const currentInquiry=s.coachCareer?.inquiries?.find(x=>x.playerId===p.id&&x.clubId===seller.id&&x.buyerClubId===buyer.id);
         if(currentInquiry&&(!["accepted","asking_price"].includes(currentInquiry.status)||Number(s.day)>Number(currentInquiry.expiresDay)))
           throw Error("Clube e jogador ainda não autorizaram esta negociação.");
-        const base=valuation(p)*(s.coachCareer?.settings?.marketStrictness==="strict"?1.25:s.coachCareer?.settings?.marketStrictness==="flexible"?0.85:1);
-        const threshold=Math.ceil(base*((s.coachCareer?.settings?.marketStrictness==="flexible"?0.78:0.9)+Math.min(n.round||1,2)*0.025)/1000)*1000;
-        const accepted=offer>=threshold;
-        const finalFee=accepted?offer:Math.ceil(base*(1+Math.min(n.round||1,2)*0.025)/1000)*1000;
+        const quote=dynamicValuation(s,p,seller,buyer);if(quote.blocked)throw Error("O clube não negocia com este rival histórico.");
+        const decision=TransferRules?TransferRules.evaluateOffer(n,{amount:offer,sellOn:data.sellOn,performanceBonuses:data.performanceBonuses},{xTV:n.xTV||quote.xTV,day:s.day,acceptRatio:s.coachCareer?.settings?.marketStrictness==="flexible"?.85:.95}):null;
+        const accepted=decision?decision.accepted:offer>=quote.xTV*.95;
+        const finalFee=accepted?offer:(decision?.counterAmount||quote.xTV);
         n.history ||= [{round:1,day:n.day??s.day,offered:n.requested,response:n.finalFee,accepted:n.requested>=n.finalFee}];
         n.round=(n.round||1)+1;
+        if(decision){n.tension=decision.tension;n.lastOffer=offer;if(decision.walkedAway){n.status="walked_away";n.response="rejected";n.lockUntilDay=decision.lockUntilDay;n.closedDay=s.day;n.history.push({round:n.round,day:s.day,offered:offer,status:"walked_away",tension:n.tension});return s;}}
         n.requested=offer;n.finalFee=null;n.response="awaiting_reply";n.replyDay=Number(s.day)+2;n.pendingOutcome={accepted,finalFee};
         n.expiresDay=s.day+(D.Career.windowStatus(s).open?7:Math.max(7,Number(D.Career.windowStatus(s).remaining)||7)+7);
         n.history.push({round:n.round,day:s.day,offered:offer,status:"sent"});
@@ -750,6 +765,8 @@ case "tactic": {
         s.coachCareer||={version:1};
         const inquiries=s.coachCareer.inquiries||=[];
         const existing=inquiries.find(x=>x.clubId===seller.id&&x.playerId===p.id&&x.buyerClubId===buyer.id);
+        const locked=(s.coachCareer?.negotiations||[]).find(n=>n.playerId===p.id&&n.buyerClubId===buyer.id&&Number(n.lockUntilDay)>Number(s.day));
+        if(locked)throw Error("O clube encerrou as conversas. Tente novamente após "+locked.lockUntilDay+".");
         if(existing&&existing.status==="pending")throw Error("Já existe uma sondagem em andamento.");
         if(existing&&existing.status==="rejected"&&Number(s.day)<Number(existing.answeredDay||existing.responseDay)+14)throw Error("Aguarde 14 dias após a recusa para consultar novamente.");
         if(existing&&["accepted","asking_price"].includes(existing.status)&&Number(s.day)<=Number(existing.expiresDay))throw Error("Sondagem aprovada: você já pode negociar.");
@@ -763,7 +780,6 @@ case "tactic": {
         const buyer=D.club(s),seller=D.club(s,data.clubId);
         const p=seller?.roster?.find(x=>x.id===data.playerId)||D.GlobalFootball?.playersByClub?.(s,seller?.id)?.find(x=>x.id===data.playerId);
         if(!buyer||!seller||buyer.id===seller.id||!p||p.id==="hero")throw Error("Jogador indisponível.");
-        const base=valuation(p)*(s.coachCareer?.settings?.marketStrictness==="strict"?1.25:s.coachCareer?.settings?.marketStrictness==="flexible"?0.85:1);
         const requested=Number(data.offer);
         if(!Number.isFinite(requested)||requested<=0)throw Error("Proposta inválida.");
         if(!Array.isArray(seller.roster)){
@@ -772,15 +788,19 @@ case "tactic": {
           seller.roster=roster.slice();
           seller.lineup ||= [];
         }
-        const minimum=Math.ceil(base*(s.coachCareer?.settings?.marketStrictness==="flexible"?0.78:0.9)/1000)*1000;
         s.coachCareer ||= {version:1};
         s.coachCareer.negotiations ||= [];
+        const locked=s.coachCareer.negotiations.find(n=>n.playerId===p.id&&n.buyerClubId===buyer.id&&Number(n.lockUntilDay)>Number(s.day));
+        if(locked)throw Error("Negociação bloqueada até o dia "+locked.lockUntilDay+".");
         s.coachCareer.negotiations=s.coachCareer.negotiations.filter(n=>!(n.playerId===p.id&&n.buyerClubId===buyer.id&&n.status==="pending"));
-        const accepted=requested>=minimum;
-        const finalFee=accepted?Math.ceil(requested/1000)*1000:Math.ceil(base/1000)*1000;
-        const entry={id:"neg_"+s.season+"_"+s.day+"_"+p.id,day:s.day,playerId:p.id,sellerClubId:seller.id,buyerClubId:buyer.id,requested,finalFee:null,status:"pending",round:1,response:"awaiting_reply",replyDay:Number(s.day)+2,pendingOutcome:{accepted,finalFee},expiresDay:s.day+(D.Career.windowStatus(s).open?10:Math.max(10,Number(D.Career.windowStatus(s).remaining)||10)+10),history:[{round:1,day:s.day,offered:requested,status:"sent"}]};
+        const quote=dynamicValuation(s,p,seller,buyer);if(quote.blocked)throw Error("O clube bloqueou a venda para este rival histórico.");
+        const decision=TransferRules?TransferRules.evaluateOffer({}, {amount:requested,sellOn:data.sellOn,performanceBonuses:data.performanceBonuses},{xTV:quote.xTV,day:s.day,acceptRatio:s.coachCareer?.settings?.marketStrictness==="flexible"?.85:.95}):null;
+        const accepted=decision?decision.accepted:requested>=quote.xTV*.95;
+        const finalFee=accepted?Math.ceil(requested/1000)*1000:(decision?.counterAmount||quote.xTV);
+        const walked=decision?.walkedAway===true;
+        const entry={id:"neg_"+s.season+"_"+s.day+"_"+p.id,day:s.day,playerId:p.id,sellerClubId:seller.id,buyerClubId:buyer.id,xTV:quote.xTV,xTVBreakdown:quote,requested,finalFee:walked?null:null,status:walked?"walked_away":"pending",round:1,tension:decision?.tension||0,lastOffer:requested,lockUntilDay:decision?.lockUntilDay||null,response:walked?"rejected":"awaiting_reply",replyDay:walked?null:Number(s.day)+2,pendingOutcome:walked?null:{accepted,finalFee},expiresDay:s.day+(D.Career.windowStatus(s).open?10:Math.max(10,Number(D.Career.windowStatus(s).remaining)||10)+10),history:[{round:1,day:s.day,offered:requested,status:walked?"walked_away":"sent",tension:decision?.tension||0}]};
         s.coachCareer.negotiations.push(entry);
-        (s.news||[]).unshift({day:s.day,season:s.season,title:"Proposta enviada",body:"O clube recebeu a oferta. Resposta prevista em dois dias da carreira."});
+        (s.news||[]).unshift({day:s.day,season:s.season,title:walked?"Negociação encerrada":"Proposta enviada",body:walked?"A oferta rompeu as conversas por 21 dias.":"O clube recebeu a oferta. Resposta prevista em dois dias da carreira."});
         return s;
       }
       case "buyLoan": {
@@ -833,7 +853,9 @@ case "tactic": {
         const salaryShare=isLoan?Number(data.salaryShare??50):0;
         if(isLoan&&![0,50,100].includes(salaryShare))throw Error("Divisão salarial inválida.");
         const optionPrice=isLoan&&data.buyOption==="on"?Math.ceil(valuation(p)*1.1/1000)*1000:0;
-        const plan=rules?.installments==="on"&&data.paymentPlan==="split"&&!isLoan?"split":"upfront";
+        const requestedYears=Number(data.installmentYears||(data.paymentPlan==="split"?2:1));
+        const installmentYears=rules?.installments==="on"&&!isLoan?Math.max(1,Math.min(6,Math.floor(requestedYears)||1)):1;
+        const plan=installmentYears>1?"installments":"upfront";
         if(isLoan)fee=Math.ceil(fee*0.08*(duration/180)/1000)*1000;
         const byClause=data.releaseClause===true&&!isLoan;
         if(data.releaseClause===true&&isLoan)throw Error("A rescisória só vale para compra definitiva.");
@@ -853,10 +875,12 @@ case "tactic": {
         const exchangeIds=isLoan?[]:[...new Set((Array.isArray(data.exchangeIds)?data.exchangeIds:(negotiation?.exchangeIds||[])).map(String))].slice(0,3);
         const exchangePlayers=exchangeIds.map(id=>own.roster.find(x=>String(x.id)===id));
         if(exchangePlayers.some(x=>!x||x.id==="hero"))throw Error("Jogador da troca indisponível no seu elenco.");
+        if(exchangePlayers.some(x=>x.contract?.type==="loan"||(s.coachCareer?.loans||[]).some(l=>l.playerId===x.id&&!l.returned)))throw Error("Jogador emprestado não pode entrar em troca definitiva.");
         if(exchangePlayers.length&&own.roster.length+1-exchangePlayers.length<18)throw Error("Seu elenco ficaria abaixo do mínimo com esta troca.");
         const exchangeCredit=Math.min(fee,Math.round(exchangePlayers.reduce((sum,x)=>sum+valuation(x),0)*0.9/1000)*1000);
         const cashFee=fee-exchangeCredit;
-        const due=plan==="split"?Math.floor(cashFee/2):0,upfront=cashFee-due;
+        const schedule=TransferRules?TransferRules.installmentSchedule(cashFee,installmentYears,{day:s.day,season:s.season}):[{number:1,amount:cashFee,dueDay:s.day,dueSeason:s.season,paid:false}];
+        const upfront=schedule[0]?.amount||cashFee,due=Math.max(0,cashFee-upfront);
         if (own.budget < upfront+contractBonus) throw Error("Orçamento insuficiente para a entrada e bônus contratual.");
         // The deferred half becomes a persistent financial obligation, not free money.
         if (!byClause && D.overall(p) > own.structure + (rules?.marketStrictness==="strict"?7:rules?.marketStrictness==="flexible"?25:14))
@@ -886,7 +910,7 @@ case "tactic": {
         if(due){
           if(!s.coachCareer)s.coachCareer={version:1};
           if(!Array.isArray(s.coachCareer.transferDebts))s.coachCareer.transferDebts=[];
-          s.coachCareer.transferDebts.push({id:"coach_debt_"+s.season+"_"+s.day+"_"+p.id,sourceClubId:source.id,buyerClubId:own.id,playerId:p.id,amount:due,dueDay:(Number(s.day)||0)+180,paid:false});
+          for(const item of schedule.slice(1))s.coachCareer.transferDebts.push({id:"coach_debt_"+s.season+"_"+s.day+"_"+p.id+"_"+item.number,sourceClubId:source.id,buyerClubId:own.id,playerId:p.id,amount:item.amount,dueDay:item.dueDay,dueSeason:item.dueSeason,installment:item.number,totalInstallments:schedule.length,paid:false});
         }
         source.roster = source.roster.filter((x) => x.id !== p.id);
         source.lineup = source.lineup.filter((id) => id !== p.id);
@@ -919,6 +943,11 @@ case "tactic": {
           s.coachCareer.rightsClauses||=[];
           s.coachCareer.rightsClauses.push({id:"rights_"+s.season+"_"+s.day+"_"+p.id,type:data.rights,playerId:p.id,holderClubId:source.id,ownerClubId:own.id,
             price:data.rights==="buyback"?Math.ceil(fee*1.3/1000)*1000:null,createdDay:Number(s.day)||0,expiresDay:(Number(s.day)||0)+730,active:true});
+        }
+        if(!isLoan&&Array.isArray(data.performanceBonuses)&&data.performanceBonuses.length){
+          const terms=TransferRules?TransferRules.validateTerms({installmentYears,performanceBonuses:data.performanceBonuses}):{performanceBonuses:data.performanceBonuses};
+          s.coachCareer.performanceClauses||=[];
+          for(const bonus of terms.performanceBonuses)s.coachCareer.performanceClauses.push({id:"perf_"+s.season+"_"+s.day+"_"+p.id+"_"+bonus.type,playerId:p.id,buyerClubId:own.id,sellerClubId:source.id,createdDay:Number(s.day)||0,...bonus});
         }
         D.Career.transfer(s, p, source, own, fee);
         // A sondagem deixa de ser uma pendência assim que o atleta passa a

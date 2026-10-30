@@ -555,6 +555,30 @@
     }
     return count;
   }
+  function settleTransferObligations(s,api){
+    if(!isCoach(s))return {installments:0,bonuses:0};
+    const out={installments:0,bonuses:0},day=Number(s.day)||0;
+    for(const debt of s.coachCareer?.transferDebts||[]){
+      if(debt.paid||day<Number(debt.dueDay))continue;
+      const buyer=api?.club?.(s,debt.buyerClubId)||(s.clubs||[]).find(c=>c.id===debt.buyerClubId);
+      const seller=api?.club?.(s,debt.sourceClubId)||(s.clubs||[]).find(c=>c.id===debt.sourceClubId);
+      const amount=Math.max(0,Number(debt.amount)||0);
+      if(!buyer||!seller||Number(buyer.budget)<amount){debt.overdue=true;continue;}
+      buyer.budget-=amount;seller.budget=(Number(seller.budget)||0)+amount;debt.paid=true;debt.paidDay=day;debt.overdue=false;out.installments++;
+      (s.news||[]).unshift({day,season:s.season,title:"Parcela de transferência paga",body:"Parcela "+(debt.installment||"")+" de R$ "+amount.toLocaleString("pt-BR")+" quitada."});
+    }
+    for(const clause of s.coachCareer?.performanceClauses||[]){
+      if(clause.paid)continue;
+      const stats=s.statistics?.players?.[clause.playerId]||{};
+      const value=clause.type==="appearances"?Number(stats.appearances||0):clause.type==="goals"?Number(stats.goals||0):clause.type==="titles"?(s.history||[]).filter(h=>h?.trophy&&h?.championId===clause.buyerClubId&&Number(h.season)>=Number(s.season)).length:0;
+      if(value<Number(clause.target))continue;
+      const buyer=api?.club?.(s,clause.buyerClubId)||(s.clubs||[]).find(c=>c.id===clause.buyerClubId),seller=api?.club?.(s,clause.sellerClubId)||(s.clubs||[]).find(c=>c.id===clause.sellerClubId),amount=Math.max(0,Number(clause.amount)||0);
+      if(!buyer||!seller||Number(buyer.budget)<amount){clause.overdue=true;continue;}
+      buyer.budget-=amount;seller.budget=(Number(seller.budget)||0)+amount;clause.paid=true;clause.paidDay=day;clause.overdue=false;out.bonuses++;
+      (s.news||[]).unshift({day,season:s.season,title:"Bônus de transferência pago",body:"Meta de "+clause.type+" atingida: R$ "+amount.toLocaleString("pt-BR")+" pagos."});
+    }
+    return out;
+  }
   // FC 27: itens com prazo encerrado deixam imediatamente as filas acionáveis.
   // A normalização também corrige saves antigos que avançaram sem executar o ciclo diário.
   function expireMarketItems(s){
@@ -638,6 +662,7 @@
     expireMarketItems(s);
     settleInquiries(s,api);
     settleTransferReplies(s);
+    settleTransferObligations(s,api);
     root.ProLifeClubEconomy?.settleSponsorshipReplies?.(s);
     recordPayrollForecast(s,api);
     if(s.day%7===0&&s.clubId){
@@ -664,7 +689,7 @@
       focus:c.focus,foci:FOCI,stints:c.stints,totals,license:s.license,reputation:s.reputation};
   }
 
-  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
+  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
