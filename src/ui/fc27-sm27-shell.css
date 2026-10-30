@@ -111,3 +111,4 @@ html.pl-large-text { font-size:112.5%; }
 @media (orientation:landscape) and (max-height:560px) { .fac-list { grid-template-columns:repeat(2,minmax(0,1fr)); } .fac-card { padding:7px 9px; gap:4px; } .fac-card p { display:none; } .fac-up { min-height:30px; } }
 .sc-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .rc-tabs { grid-template-columns:repeat(4,minmax(0,1fr)); } .rc-tabs button { font-size:11px; padding-inline:4px; }
+.tr-tabs { grid-template-columns:repeat(5,minmax(0,1fr)); } .tr-tabs button { font-size:10.5px; padding-inline:2px; }
