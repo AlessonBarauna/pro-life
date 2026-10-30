@@ -4,7 +4,7 @@
   // (Perspetiva geral, Lesões, Suspensões, Moral, Contratos, Desenvolvimento).
   // Só leitura dos dados do jogo: não altera regras nem saves.
 
-  const state = { roster:"A", rosterView:"geral", report:"geral", sort:"pos" };
+  const state = { trainGroup:"main", roster:"A", rosterView:"geral", report:"geral", sort:"pos" };
   const ROSTER_TABS = [["A", "Equipe A"], ["loan", "Emprestado"]];
   const ROSTER_VIEWS = [["geral", "Geral"], ["stats", "Estatísticas"], ["contrato", "Contrato"]];
   const REPORT_TABS = [["geral", "Perspetiva geral"], ["lesoes", "Lesões"], ["suspensoes", "Suspensões"], ["moral", "Moral"], ["contratos", "Contratos"], ["desenvolvimento", "Desenvolvimento"], ["juventude", "Juventude"]];
@@ -228,6 +228,31 @@
     });
   }
 
+  // ---------- Treino: jogadores e resumo (leitura) ----------
+  function renderTraining(ctx) {
+    const club = ctx?.club;
+    if (!club) return "";
+    const all = (club.roster || []).filter((p) => p.status !== "retired").map((p) => info(p, ctx));
+    const group = state.trainGroup === "youth" ? "youth" : "main";
+    const list = (group === "youth" ? all.filter((r) => (r.age ?? 99) <= 21) : all).sort((a, b) => (POS_ORDER[a.pos] ?? 99) - (POS_ORDER[b.pos] ?? 99) || (b.ovr ?? 0) - (a.ovr ?? 0));
+    const count = (fn) => all.filter(fn).length;
+    const sum = [
+      ["Em evolução", count((r) => (r.age ?? 99) <= 24 && (r.pot ?? 0) - (r.ovr ?? 0) >= 3)],
+      ["Em boa condição", count((r) => (r.cond ?? 0) >= 85)],
+      ["Cansados", count((r) => r.cond !== null && r.cond < 60)],
+      ["Moral baixa", count((r) => r.morale !== null && r.morale < 50)],
+      ["Lesionados", count((r) => r.injured)],
+      ["Em declínio", count((r) => (r.age ?? 0) >= 33)]
+    ];
+    const focusLabel = { equilibrado: "Equilibrado", velocidade: "Velocidade", finalizacao: "Finalização", criacao: "Criação", marcacao: "Marcação", fisico: "Físico" };
+    const rows = list.map((r) => {
+      const [ml, mc] = moraleFace(r.morale);
+      const gap = r.pot !== null && r.ovr !== null ? r.pot - r.ovr : null;
+      return `<tr class="sq-row" data-sm27sq-open="${esc(r.id)}" tabindex="0"><td>${posChip(r.pos)}</td><td class="sq-name"><b>${esc(r.name)}</b></td><td>${r.ovr ?? "—"}</td><td>${gap !== null && gap > 0 ? `<em class="sq-gain">+${gap}</em>` : "—"}</td><td>${r.cond === null ? "—" : r.cond + "%"}</td><td class="${mc}">${ml}</td><td>${esc(focusLabel[r.p.developmentPlan?.focus] || "—")}</td></tr>`;
+    }).join("");
+    return `<section class="sq-panel sq-training" aria-label="Jogadores em treino"><div class="sq-train-head"><nav class="sq-subtabs" aria-label="Grupo">${[["main", "Equipe principal"], ["youth", "Juventude (até 21)"]].map(([id, l]) => `<button type="button" data-sm27sq-set="trainGroup" data-value="${id}" aria-pressed="${group === id}">${l}</button>`).join("")}</nav></div><div class="sq-stat-row">${sum.map(([k, v]) => `<span><small>${k}</small><b>${v}</b></span>`).join("")}</div>${rows ? `<div class="sq-table-wrap"><table class="sq-table"><thead><tr><th>Pos</th><th>Jogador</th><th>GER</th><th>Evolução</th><th>Condição</th><th>Moral</th><th>Foco</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="sq-empty">Nenhum jogador neste grupo.</p>`}</section>`;
+  }
+
   function render(tab, ctx) {
     lastCtx = ctx;
     closePlayer();
@@ -235,6 +260,6 @@
     return tab === "reports" ? renderReports(ctx) : renderRoster(ctx);
   }
 
-  root.ProLifeSM27Squad = { render, set, state, TABS: [["roster", "Plantel"], ["reports", "Relatórios"]], fmtMoney, leftLabel };
+  root.ProLifeSM27Squad = { render, renderTraining, set, state, TABS: [["roster", "Plantel"], ["reports", "Relatórios"]], fmtMoney, leftLabel };
   if (typeof module !== "undefined" && module.exports) module.exports = root.ProLifeSM27Squad;
 })(typeof window !== "undefined" ? window : globalThis);

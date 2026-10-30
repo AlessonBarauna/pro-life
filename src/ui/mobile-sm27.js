@@ -70,7 +70,7 @@
     const side = `<aside class="sm27-side">${tile("calendar", "Calendário", `<span class="sm27-list sm27-agenda">${events || row("", "<span>Sem eventos.</span>")}</span>`)}${tile("matches", "Forma recente", `<span class="sm27-form">${form}</span>`)}</aside>`;
 
     const news = (H.news || [])[0];
-    const tasks = `<div class="sm27-tasks"><span class="sm27-tasks-label">Tarefas</span><button type="button" data-page="training">Treino</button><button type="button" data-page="market">Olheiros</button><button type="button" data-page="profile">Objetivos</button><span class="sm27-ticker">${esc(news?.title || news?.headline || "")}</span><button type="button" class="sm27-icon" data-page="calendar" aria-label="Calendário">▦</button><button type="button" class="sm27-icon" data-page="save" aria-label="Saves">⚙</button></div>`;
+    const tasks = `<div class="sm27-tasks"><span class="sm27-tasks-label">Tarefas</span><button type="button" data-page="training">Treino</button><button type="button" data-page="market">Olheiros</button><button type="button" data-sm27-objectives>Objetivos</button><span class="sm27-ticker">${esc(news?.title || news?.headline || "")}</span><button type="button" class="sm27-icon" data-page="calendar" aria-label="Calendário">▦</button><button type="button" class="sm27-icon" data-page="save" aria-label="Saves">⚙</button></div>`;
 
     return `<div class="sm27-home">${tasks}<div class="sm27-grid"><div class="sm27-main">${matchCard}<div class="sm27-row">${inbox}${coach}${comp}${transfers}</div></div>${side}</div></div>`;
   }

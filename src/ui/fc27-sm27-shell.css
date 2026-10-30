@@ -82,3 +82,15 @@ html.pl-large-text { font-size:112.5%; }
 @media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px) {
   .season-split { gap:4px; margin-bottom:4px; } .season-split button { min-height:26px; padding:0 9px; font-size:9.5px; }
 }
+
+/* Objetivos */
+.obj-tabs { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.obj-list { display:grid; gap:6px; margin:0; padding:0; list-style:none; }
+.obj-row { display:grid; gap:4px; padding:8px 10px; border:1px solid var(--pl-line,rgba(180,205,230,.085)); border-left:3px solid var(--pl-line-strong,rgba(180,205,230,.2)); background:rgba(255,255,255,.025); }
+.obj-row.done { border-left-color:var(--fc-lime,#c9f23a); }
+.obj-top { display:flex; justify-content:space-between; gap:10px; align-items:baseline; }
+.obj-top b { font-size:12.5px; } .obj-top em { flex:none; font-style:normal; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--pl-text-3,#7f8f9f); }
+.obj-row.done .obj-top em { color:var(--fc-lime,#c9f23a); }
+.obj-bar { display:block; height:5px; background:rgba(255,255,255,.08); } .obj-bar i { display:block; height:100%; background:var(--fc-lime,#c9f23a); }
+.obj-row small { color:var(--pl-text-3,#7f8f9f); font-size:10.5px; }
+@media (orientation:landscape) and (max-height:560px) { .obj-row { padding:5px 8px; gap:3px; } .obj-top b { font-size:11px; } }

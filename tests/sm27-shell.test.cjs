@@ -87,3 +87,16 @@ test("Plantel e Relatórios do Elenco: renderizam com dados reais e sem regras n
   assert.match(squad.render("roster", ctx), /Nenhum jogador emprestado/);
   squad.set("roster", "A");
 });
+
+test("Objetivos: metas derivadas dos dados reais, sem gravar no save", () => {
+  const { JSDOM: J } = require("jsdom");
+  const dom = new J("<!doctype html><body></body>", { runScripts: "outside-only", url: "http://localhost/" });
+  const roster = Array.from({ length: 14 }, (_, i) => ({ id: "p" + i, age: 20 + i, condition: 90, morale: 70, potential: 80, overall: 72, contract: { endDay: 900 } }));
+  dom.window.ProLifeSM27Ctx = () => ({ s: { day: 10, mode: "coach", reputation: 40, coachCareer: { goals: { leagueSize: 20, items: [{ kind: "posicao", label: "Evitar o rebaixamento", target: 17, progress: 5, status: "em_andamento" }] } } }, D: { overall: (p) => p.overall, club: () => ({ budget: 1e6, roster, stats: { wins: 2, points: 7, played: 4 } }) } });
+  dom.window.eval(fs.readFileSync(path.join(__dirname, "../src/ui/sm27-objectives.js"), "utf8"));
+  const d = dom.window.ProLifeSM27Objectives.build();
+  assert.equal(d.diario.length, 5);
+  assert.ok(d.epoca.some((g) => /rebaixamento/.test(g.label)));
+  assert.equal(d.clube.length, 4);
+  assert.ok(d.diario.every((g) => g.target > 0));
+});
