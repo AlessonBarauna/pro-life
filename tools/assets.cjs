@@ -137,6 +137,7 @@ const files = [
   "src/ui/sm27-objectives.js",
   "src/ui/sm27-facilities.js",
   "src/ui/sm27-scouting.js",
+  "src/ui/sm27-records.js",
   "src/ui/fc27-player-central.css",
   "src/ui/fc27-player-stats.css",
   "src/ui/fc27-honors.css",
