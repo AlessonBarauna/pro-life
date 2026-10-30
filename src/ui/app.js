@@ -471,6 +471,7 @@
   }
   try { const mq = window.matchMedia(window.ProLifeMobileSM27?.QUERY || "(max-width:0px)"); mq.addEventListener("change", () => { if (state && !setup) render(); }); } catch (e) { /* sem matchMedia */ }
   window.ProLifeSM27Ctx=()=>({s:state,D});
+  window.ProLifeSM27Cmd=(action,data)=>command(action,data);
   function render() {
     window.ProLifeChampionsUI?.sync?.(state);
     window.ProLifeEuropaUI?.sync?.(state);
@@ -598,7 +599,7 @@
         drawerItem("market","Transferências",["market","proposals","clubs"]),
         state.mode==="player"?drawerItem("profile","Meu jogador",drawerFind("profile")?.[3]||["profile"]):drawerItem("profile","Treinador",drawerFind("profile")?.[3]||["profile"]),
         drawerItem("competitions","Competições",["competitions","league","statistics","awards","worldCompetitions","englishCups","champions","europa","conference","libertadores","sudamericana"]),
-        drawerItem("youth","Instalações",["youth"])
+        drawerItem("youth","Instalações",[],' data-sm27-facilities')
       ]],
       ["Mais",[drawerItem("home","Objetivos",[],' data-sm27-objectives'),drawerFind("life")?drawerItem("life","Vida",drawerFind("life")[3]):null,drawerUtilities.history,drawerUtilities.national,drawerUtilities.inbox,drawerUtilities.save]]
     ];

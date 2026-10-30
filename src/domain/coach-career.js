@@ -427,13 +427,16 @@
     const c=state(s),club=clubOf(s,api);if(!c||!club||c.lastTrainDay===s.day)return null;
     c.lastTrainDay=s.day;
     const roster=(club.roster||[]).filter(p=>p.status!=="retired"),f=c.focus;let grown=0;
+    const fx=(root.ProLifeFacilities||(typeof require==="function"?require("./facilities.js"):null))?.effects(s,club)||{trainingGrowthMult:1,trainingRecoveryBonus:0,academyGrowthBonus:0};
     const keys=["pace","finish","pass","defense","strength","stamina"];
     for(const p of roster){
       const age=Number(p.age)||25;
       if(f==="equilibrado")p.morale=clamp((Number(p.morale)||60)+0.3,0,100);
       if(f==="fisico"){p.condition=clamp((Number(p.condition)||90)+3,0,100);p.morale=clamp((Number(p.morale)||60)-0.6,0,100);}
       if(f==="recuperacao")p.condition=clamp((Number(p.condition)||90)+5,0,100);
-      const chance=f==="tecnico"?(age<=29?0.02:0):f==="jovens"?(age<=21?0.05:0):0;
+      if(fx.trainingRecoveryBonus>0)p.condition=clamp((Number(p.condition)||90)+fx.trainingRecoveryBonus,0,100);
+      const baseChance=f==="tecnico"?(age<=29?0.02:0):f==="jovens"?(age<=21?0.05:0):0;
+      const chance=baseChance?baseChance*fx.trainingGrowthMult+(age<=21?fx.academyGrowthBonus:0):0;
       if(chance&&unit(`train|${s.season}|${s.day}|${p.id}`)<chance&&p.attrs&&Number(p.ovr||p.overall)<Number(p.potential||99)){
         const options=FOCUS_ATTRIBUTES[p.developmentPlan?.focus]||keys;
         const key=options[Math.floor(unit(`trainkey|${s.day}|${p.id}`)*options.length)];
@@ -657,6 +660,11 @@
       economy.processSponsorshipLifecycle?.(s,currentClub,brands);
       economy.processRevenuePayments?.(s,currentClub);
       economy.processSponsorshipBonuses?.(s,currentClub,tableOf(s,api,currentClub));
+    }
+    if(currentClub&&s.day%30===0){
+      const Fac=root.ProLifeFacilities||(typeof require==="function"?require("./facilities.js"):null);
+      const inc=Fac?.monthlyIncome(s,currentClub)||0;
+      if(inc>0)currentClub.budget=Math.round((Number(currentClub.budget)||0)+inc);
     }
     root.ProLifeCoachScoutingV2?.advance?.(s);
     expireMarketItems(s);

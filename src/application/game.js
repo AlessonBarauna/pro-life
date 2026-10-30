@@ -419,6 +419,12 @@ case "tactic": {
         D.CoachCareer.setFocus(s, data.focus);
         break;
       }
+      case "upgradeFacility": {
+        if (s.mode !== "coach") throw Error("Disponível para treinadores.");
+        D.CoachCareer.init?.(s, D);
+        D.Facilities.upgrade(s, D.club(s), data.id);
+        break;
+      }
       case "license": {
         if (s.mode !== "coach") throw Error("Disponível para treinadores.");
         const next = { C: "B", B: "A", A: "PRO" },

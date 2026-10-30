@@ -19,6 +19,7 @@
   const ClubFinance=root.ProLifeClubFinance||(typeof require==="function"?require("./club-finance.js"):null);
   const PlayerEconomy=root.ProLifePlayerEconomy||(typeof require==="function"?require("./player-economy.js"):null);
   const ClubEconomy=root.ProLifeClubEconomy||(typeof require==="function"?require("./club-economy.js"):null);
+  const Facilities=root.ProLifeFacilities||(typeof require==="function"?require("./facilities.js"):null);
   const CoachCareer=root.ProLifeCoachCareer||(typeof require==="function"?require("./coach-career.js"):null);
   const WorldLiveMarket=root.ProLifeWorldLiveMarket||(typeof require==="function"?require("./world-live-market.js"):null);
   const SeasonCompetitionCenter=root.ProLifeSeasonCompetitionCenter||(typeof require==="function"?require("./season-competition-center.js"):null);
@@ -3430,6 +3431,7 @@
     WorldClubCompetitions,
     ClubIntelligence,
     CoachCareer,
+    Facilities,
     PlayerEconomy,
     OffField,
     WorldStats,
