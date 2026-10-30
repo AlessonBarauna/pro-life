@@ -1,5 +1,5 @@
 /* PRO LIFE — celular deitado no padrão de telas do SM 27.
-   Barra superior com menu, voltar, clube e botão Continuar; Central em blocos;
+   Barra superior com menu, voltar, clube e botão Pular 1 dia; Central em blocos;
    cada tela cabe na janela e só o conteúdo interno rola. */
 .phone-only, .sm27-backdrop, .sm27-drawer { display:none !important; }
 
@@ -69,7 +69,7 @@
   /* ---------- menu lateral ---------- */
   .sm27-backdrop { position:fixed; inset:var(--sm27-bar) 0 0 0; z-index:190; background:rgba(0,7,13,.38); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); }
   .sm27-drawer {
-    position:fixed; top:var(--sm27-bar); bottom:0; left:0; z-index:200; width:min(232px,44vw);
+    position:fixed !important; top:var(--sm27-bar); bottom:0; left:max(0px,env(safe-area-inset-left)) !important; right:auto !important; z-index:200; width:min(232px,44vw);
     flex-direction:column; padding:0; overflow:hidden;
     background:linear-gradient(165deg,#091a28 0%,#06111d 72%,#07131b 100%);
     border-right:1px solid rgba(140,190,220,.28); transform:translateX(-102%);
