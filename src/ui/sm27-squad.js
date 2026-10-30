@@ -182,11 +182,28 @@
     if (!p) return "";
     const r = info(p, lastCtx);
     const [ml, mc] = moraleFace(r.morale);
-    const tabs = [["perfil", "Perfil"], ["atributos", "Atributos"], ["contrato", "Contrato"]];
+    const tabs = [["perfil", "Perfil"], ["atributos", "Atributos"], ["estatisticas", "Estatísticas"], ["contrato", "Contrato"], ["comparar", "Comparar"], ["olheiro", "Olheiro"]];
     let body = "";
     if (dlgTab === "atributos") {
       const entries = Object.entries(p.attrs || {}).filter(([, v]) => Number.isFinite(Number(v))).sort((a, b) => b[1] - a[1]);
       body = entries.length ? `<div class="sq-attrs">${entries.map(([k, v]) => `<span><small>${esc(ATTR_LABELS[k] || k)}</small><i style="--w:${Math.max(0, Math.min(100, v))}%"></i><b>${Math.round(v)}</b></span>`).join("")}</div>` : `<p class="sq-empty">Sem atributos registrados.</p>`;
+    } else if (dlgTab === "estatisticas") {
+      const keys = [["goals", "Gols"], ["assists", "Assistências"], ["minutes", "Minutos"], ["appearances", "Jogos"], ["yellow", "Cartões amarelos"], ["red", "Cartões vermelhos"], ["avgRating", "Nota média"]];
+      const st = { ...(p.stats || {}), ...p };
+      const rows = keys.filter(([k]) => Number.isFinite(Number(st[k]))).map(([k, l]) => [l, k === "avgRating" ? Number(st[k]).toFixed(1) : Math.round(st[k])]);
+      body = rows.length ? `<dl class="sq-dl">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : `<p class="sq-empty">Sem estatísticas registradas.</p>`;
+    } else if (dlgTab === "comparar") {
+      const mates = (lastCtx?.club?.roster || []).filter((x) => x.id !== p.id && x.status !== "retired" && String(x.pos) === String(p.pos));
+      const keys = Object.keys(p.attrs || {});
+      if (!mates.length || !keys.length) body = `<p class="sq-empty">Sem outros jogadores na mesma posição para comparar.</p>`;
+      else {
+        const avg = (k) => mates.reduce((a, m) => a + (num(m.attrs?.[k]) || 0), 0) / mates.length;
+        const ovrAvg = Math.round(mates.reduce((a, m) => a + (num(m.ovr ?? m.overall) || 0), 0) / mates.length);
+        body = `<p class="sq-note">Comparado à média de ${mates.length} jogador(es) do elenco na posição ${esc(p.pos)}.</p><dl class="sq-dl"><div><dt>GER</dt><dd>${esc(r.ovr ?? "—")} <small>(média ${ovrAvg})</small></dd></div>${keys.map((k) => { const d = Math.round((num(p.attrs[k]) || 0) - avg(k)); return `<div><dt>${esc(ATTR_LABELS[k] || k)}</dt><dd>${Math.round((num(p.attrs[k]) || 0))} <small>(${d >= 0 ? "+" : ""}${d})</small></dd></div>`; }).join("")}</dl>`;
+      }
+    } else if (dlgTab === "olheiro") {
+      const rep = (lastCtx?.s?.coachCareer?.scoutingV2?.missions || []).slice().reverse().map((m) => ({ m, i: root.ProLifeCoachScoutingV2?.report?.(lastCtx.s, m.id, p) })).find((x) => x.i?.available);
+      body = rep ? `<dl class="sq-dl"><div><dt>GER estimado</dt><dd>${rep.i.estimatedOverall.join("–")}</dd></div><div><dt>POT estimado</dt><dd>${rep.i.potentialRange.join("–")}</dd></div><div><dt>Confiança</dt><dd>${rep.i.certainty}%</dd></div><div><dt>Situação</dt><dd>${rep.m.status === "complete" ? "Relatório final" : "Em observação"}</dd></div></dl>` : `<p class="sq-empty">Nenhum relatório de olheiro para este jogador. Inicie uma observação em Transferências.</p>`;
     } else if (dlgTab === "contrato") {
       const rows = [["Salário mensal", fmtMoney(r.wage)], ["Valor de mercado", fmtMoney(r.value)], ["Termina em", leftLabel(r.left)], ["Função no elenco", p.contract?.role || "—"], ["Tipo", p.contract?.type === "loan" ? "Empréstimo" : "Permanente"]];
       body = `<dl class="sq-dl">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>`;
