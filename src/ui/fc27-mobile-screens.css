@@ -219,7 +219,7 @@
   .cc-fc27-filter-area label { min-width:0; font-size:8.5px; }
   .cc-fc27-filter-area input, .cc-fc27-filter-area select { width:100%; min-height:28px !important; height:auto !important; padding:3px 6px !important; font-size:10px !important; }
   .cc-fc27-filter-area .cc-deal-actions button { width:100%; min-height:var(--m-touch) !important; }
-  .cc-market-results-grid { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:5px; }
+  .cc-market-results-grid { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:4px; }
   .cc-fc27-result { padding:5px 8px !important; min-height:0 !important; }
   .cc-fc27-ger { width:34px; height:34px; font-size:15px; }
   .cc-fc27-player strong { font-size:10.5px; }
@@ -279,13 +279,101 @@
   .game-stage:not(.game-stage-home) table :is(th,td) { padding:3px 4px !important; font-size:9px !important; white-space:nowrap; }
   .game-stage:not(.game-stage-home) table td:nth-child(2), .game-stage:not(.game-stage-home) table td.club { max-width:120px; overflow:hidden; text-overflow:ellipsis; }
   .game-stage:not(.game-stage-home) table .club-crest, .game-stage:not(.game-stage-home) table img { width:14px; height:14px; }
-  .wa-tabs, .season-nav, .world-page-tabs, .pl-ucl-nav, .pl-uel-nav {
+  .wa-tabs, .world-page-tabs, .pl-ucl-nav, .pl-uel-nav {
     display:grid !important; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:3px; overflow:hidden !important; width:100%;
   }
-  .wa-tabs button, .season-nav button, .world-page-tabs button, .pl-ucl-nav button, .pl-uel-nav button {
+  .wa-tabs button, .world-page-tabs button, .pl-ucl-nav button, .pl-uel-nav button {
     min-width:0; min-height:var(--m-touch) !important; padding:3px 4px !important; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:var(--m-fs-s) !important; letter-spacing:0;
   }
   .pl-calendar-screen .calendar-grid, .pl-calendar-screen .calendar-weekdays { grid-template-columns:repeat(7,minmax(0,1fr)) !important; }
   .pl-calendar-screen .career-calendar { overflow:hidden; }
   .sm27-table b { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ================= TREINADOR E ABAS INTERNAS ================= */
+  .coach-prof-tabs, .cc-tabs, .cc-deal-nav, .pl-player-tabs {
+    position:sticky; top:0; z-index:12; display:grid !important; grid-template-columns:repeat(auto-fit,minmax(86px,1fr)); gap:3px !important;
+    width:100%; min-height:0 !important; margin:0 0 6px !important; padding:3px !important; overflow:hidden !important;
+    background:#07131d !important; border-radius:var(--m-radius);
+  }
+  .coach-prof-tabs button, .cc-tabs button, .cc-deal-nav button, .pl-player-tabs a, .pl-player-tabs button {
+    min-width:0; min-height:var(--m-touch) !important; padding:3px 5px !important; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    font-size:var(--m-fs-s) !important; letter-spacing:0 !important; text-align:center; justify-content:center;
+  }
+  .cc-dark { padding:6px 8px 10px !important; }
+  .cc-dark > :is(h1,h2,h3):first-child { margin:0 0 6px !important; font-size:14px !important; }
+  .cc-dark :is(.cc-note,small.cc-note) { font-size:9px; }
+  .cc-grid { display:grid !important; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)) !important; gap:6px !important; }
+  .cc-card, .cc-deal { padding:8px 10px !important; }
+  .cc-card h3, .cc-card h2 { margin:2px 0 6px !important; font-size:12px !important; }
+
+  /* ================= PARTIDA AO VIVO em telas estreitas ================= */
+  @media (max-width:760px) {
+    .lm-shell .lm-header { padding-right:300px !important; gap:6px; }
+    .lm-shell .lm-header > button[disabled] { display:none; }
+    .lm-shell .lm-header b { font-size:10px; gap:5px; }
+    .lm-shell .lm-header b strong { padding:2px 6px; font-size:12px; }
+    .lm-shell .lm-header > .lm-clock { display:none; }
+    .lm-shell .lm-header > button { flex:0 1 auto; min-width:0; max-width:64px; padding:0 6px !important; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:8.5px !important; }
+    .lm-shell .lm-controls button { padding-inline:7px !important; font-size:10px !important; }
+  }
+
+  /* ================= CENTRAL em telas estreitas ================= */
+  .sm27-match-actions { display:flex; gap:4px; }
+  .sm27-match-actions > button { flex:1 1 0; }
+  .sm27-match-actions > .primary { flex:1.8 1 0; }
+  .sm27-match-actions button { min-width:0; padding:0 5px !important; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:clamp(8.5px,1.5vw,11px) !important; }
+  .sm27-tasks-label { white-space:nowrap; }
+  .sm27-card h3, .sm27-h { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* mercado: etapas mais enxutas */
+  .cc-market-entry { padding:0 !important; border:0 !important; background:transparent !important; box-shadow:none !important; }
+  .cc-market-entry-title { display:none !important; }
+  .cc-scout-subnav { position:sticky; top:0; z-index:12; padding:3px; background:#07131d; border-radius:var(--m-radius); }
+  .cc-scout-search-screen, .cc-scout-results-screen { padding:6px 8px !important; margin:0 !important; }
+  .cc-fc27-scout-head { padding:2px 6px !important; background:transparent !important; border:0 !important; }
+  .cc-fc27-scout-head > div:first-child { display:none; }
+  .cc-fc27-scout-count { display:flex; align-items:baseline; gap:6px; margin-left:auto; text-align:right; }
+  .cc-fc27-scout-count b, .cc-fc27-scout-count strong { font-size:16px !important; }
+  .cc-fc27-scout-count small, .cc-fc27-scout-count span { font-size:8.5px; }
+  .cc-fc27-filter-area > h3, .cc-fc27-filter-area > .cc-note { display:none; }
+  /* resultado da busca: linha compacta e tocável (ações ficam no perfil) */
+  .cc-fc27-result { display:block !important; padding:0 !important; }
+  .cc-fc27-result .cc-market-select-player { display:grid !important; grid-template-columns:minmax(0,1fr) minmax(0,.7fr); align-items:center; gap:6px; width:100%; min-height:42px; padding:4px 8px !important; text-align:left; }
+  .cc-fc27-result .cc-fc27-player { display:grid; grid-template-columns:34px minmax(0,1fr); align-items:center; gap:6px; min-width:0; }
+  .cc-fc27-result .cc-fc27-ger { width:32px !important; height:32px !important; min-width:0; display:grid; place-items:center; font-size:14px !important; }
+  .cc-fc27-result .cc-fc27-player strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10.5px; }
+  .cc-fc27-result .cc-fc27-player small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:8px; }
+  .cc-fc27-result .cc-deal-team { display:flex; align-items:center; gap:5px; min-width:0; }
+  .cc-fc27-result .cc-deal-team > span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cc-market-results-grid .cc-fc27-result > .cc-deal-actions { display:none !important; }
+  .cc-scout-results-screen .cc-fc27-results-head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:3px 2px; font-size:9px; }
+  .cc-scout-results-screen .cc-fc27-results-head h3 { margin:0 !important; font-size:10px !important; }
+  /* perfil do atleta: três colunas (identidade · observação · decisão) */
+  .cc-mobile-scout-profile-head { display:grid !important; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:8px; padding:4px 6px !important; }
+  .cc-mobile-scout-profile-title h2 { margin:0 !important; font-size:clamp(13px,3.2vw,17px) !important; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cc-mobile-scout-profile-title p, .cc-mobile-scout-profile-title small { margin:0 !important; font-size:9px !important; }
+  .cc-mobile-scout-profile-head button { min-height:34px; padding:0 12px !important; font-size:10px !important; }
+  .cc-mobile-scout-profile .cc-market-player-detail { display:grid !important; grid-template-columns:minmax(150px,.8fr) minmax(0,1.3fr) minmax(0,1.2fr); gap:6px; align-items:start; padding:6px !important; height:auto !important; max-height:none !important; overflow:visible !important; }
+  .cc-mobile-scout-profile .cc-market-detail-portrait { display:none !important; }
+  .cc-mobile-scout-profile .cc-market-player-overall { display:grid !important; grid-template-columns:auto 1fr; align-items:baseline; gap:0 6px; }
+  .cc-mobile-scout-profile .cc-market-player-overall strong { font-size:clamp(14px,3.6vw,20px) !important; line-height:1.1; overflow-wrap:anywhere; }
+  .cc-mobile-scout-profile .cc-market-player-overall span { font-size:8px !important; writing-mode:horizontal-tb !important; }
+  .cc-mobile-scout-profile .cc-market-player-fields { font-size:9.5px; }
+  .cc-mobile-scout-profile .cc-market-detail-section h4 { margin:0 0 3px !important; font-size:9.5px !important; }
+  .cc-mobile-scout-profile .cc-market-detail-note { grid-column:1 / -1; font-size:8px; margin:0 !important; }
+  .cc-mobile-scout-profile .cc-market-profile-basics { grid-column:1 !important; gap:4px !important; }
+  .cc-mobile-scout-profile .cc-market-profile-scout { grid-column:2 !important; gap:4px !important; }
+  .cc-mobile-scout-profile .cc-market-profile-decision { grid-column:3 !important; gap:4px !important; }
+  .cc-mobile-scout-profile > .cc-market-player-detail { margin-top:4px !important; gap:6px !important; }
+  .cc-mobile-scout-profile .cc-market-detail-section { padding:5px 6px !important; }
+  .cc-mobile-scout-profile .cc-market-player-overall { grid-template-columns:minmax(0,1fr) auto !important; }
+  .cc-mobile-scout-profile .cc-market-player-overall span { white-space:nowrap; text-align:right; }
+  /* classificação: a tabela sempre cabe na largura do painel */
+  .season-table { width:100% !important; min-width:0 !important; table-layout:auto; }
+  .season-table :is(th,td) { padding:3px 3px !important; font-size:9.5px !important; white-space:nowrap; }
+  .season-table :is(th,td).num { width:1%; text-align:right; }
+  .season-table td:nth-child(2), .season-table th:nth-child(2) { max-width:0; width:99%; overflow:hidden; text-overflow:ellipsis; }
+  .season-nav { display:flex !important; flex-direction:column; gap:6px; width:auto; overflow:hidden; position:static !important; max-height:none !important; padding:6px !important; }
+  .season-nav .season-list { max-height:none; overflow:visible; }
+  .season-center { grid-template-columns:minmax(150px,.38fr) minmax(0,1.62fr) !important; align-items:start; }
 }
