@@ -203,6 +203,39 @@
   .cc-market-screen .cc-market-pages { margin:6px 0; padding:7px 9px; }
   .cc-market-screen .cc-fc27-result { padding:8px 10px !important; }
 
+  /* Mercado em fluxo: uma tarefa por tela, sem empilhar busca, lista e perfil. */
+  .game-stage-market .sm27-screen-body:has(.cc-market-flow-screen),
+  .game-stage-market .sm27-screen-body:has(.cc-market-profile-screen) { overflow:hidden !important; }
+  .cc-market-flow-screen { height:100%; min-height:0 !important; display:flex; flex-direction:column; overflow:hidden; }
+  .cc-market-flow-screen > .cc-scout-subnav { flex:0 0 auto; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; margin:0 0 6px; }
+  .cc-market-flow-screen > .cc-scout-subnav button { min-width:0; min-height:31px !important; padding:4px 7px; font-size:9px; }
+  .cc-scout-search-screen,.cc-scout-results-screen { flex:1 1 auto; min-height:0; margin:0 !important; padding:8px 10px !important; overflow:hidden; }
+  .cc-scout-search-screen .cc-fc27-scout-head,.cc-scout-results-screen .cc-fc27-scout-head { min-height:54px; padding:7px 11px !important; }
+  .cc-scout-search-screen .cc-fc27-scout-head h2,.cc-scout-results-screen .cc-fc27-scout-head h2 { margin:2px 0 !important; font-size:17px !important; }
+  .cc-scout-search-screen .cc-fc27-scout-head p,.cc-scout-results-screen .cc-fc27-scout-head p { margin:0 !important; font-size:9px; }
+  .cc-scout-filter-tabs { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin:0 0 6px; }
+  .cc-scout-filter-tabs button { min-height:30px !important; padding:4px 8px; font-size:9px; }
+  .cc-scout-filter-tabs button[aria-pressed="true"] { border-color:var(--sm27-accent); color:var(--sm27-accent); background:rgba(201,244,61,.1); }
+  .cc-scout-search-screen .cc-fc27-filter-area { grid-template-columns:repeat(4,minmax(0,1fr)) !important; align-content:start; margin:0 !important; padding:8px !important; gap:5px 7px !important; }
+  .cc-scout-search-screen .cc-fc27-filter-area>h3 { font-size:12px; }
+  .cc-scout-search-screen .cc-fc27-filter-area>.cc-note { font-size:8px; line-height:1.2; }
+  .cc-scout-search-screen .cc-scout-filters { display:contents; }
+  .cc-scout-search-screen .cc-fc27-filter-area label { font-size:8px; }
+  .cc-scout-search-screen .cc-fc27-filter-area input,.cc-scout-search-screen .cc-fc27-filter-area select { min-height:28px !important; height:28px; padding:3px 6px; font-size:9px; }
+  .cc-scout-search-screen .cc-fc27-filter-area>.cc-deal-actions { margin:2px 0 0; }
+  .cc-scout-search-screen .cc-fc27-filter-area>.cc-deal-actions button { width:100%; min-height:30px !important; padding:4px; font-size:10px; }
+  .cc-scout-results-screen { display:flex; flex-direction:column; }
+  .cc-scout-results-screen .cc-fc27-results-head { flex:0 0 auto; padding:5px 4px; }
+  .cc-scout-results-screen .cc-market-results-grid { flex:1 1 auto; min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(2,minmax(0,1fr)); gap:5px; overflow:hidden; }
+  .cc-scout-results-screen .cc-fc27-result { min-height:0; display:flex !important; padding:5px 7px !important; border:1px solid #344957; }
+  .cc-scout-results-screen .cc-fc27-result .cc-market-select-player { grid-column:auto; width:100%; gap:7px; }
+  .cc-scout-results-screen .cc-fc27-result .cc-deal-actions { display:none !important; }
+  .cc-scout-results-screen .cc-fc27-ger { width:34px; height:34px; font-size:15px; }
+  .cc-scout-results-screen .cc-fc27-player strong { font-size:10px; }
+  .cc-scout-results-screen .cc-fc27-player small,.cc-scout-results-screen .cc-deal-team { font-size:8px; }
+  .cc-scout-results-screen>.cc-market-pages { flex:0 0 auto; min-height:32px; margin:5px 0 0; }
+  .cc-scout-results-screen>.cc-market-pages button { min-height:26px !important; padding:3px 8px; font-size:8px; }
+
   /* Elenco: campo e ficha permanecem lado a lado; cada coluna tem seu scroll. */
   .game-stage-squad .sm27-screen-body > .pl-squad-screen {
     display:flex;

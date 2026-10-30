@@ -9023,7 +9023,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return;
     }
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
-    const el = event.target.closest?.("[data-coach-pay-clause],[data-coach-list-screen],[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-signing-squad],[data-coach-signing-open],[data-coach-signing-close],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-accept],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-screen],[data-coach-scout-select],[data-coach-scout-back],[data-coach-scout-page],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-save-priority],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer],[data-coach-submit-offer],[data-coach-cancel-offer],[data-coach-squad-player],[data-coach-squad-apply],[data-coach-player-status],[data-coach-renew-open],[data-coach-renew-cancel],[data-coach-renew-confirm],[data-coach-player-release],[data-coach-player-offers],[data-coach-squad-lineup]");
+    const el = event.target.closest?.("[data-coach-pay-clause],[data-coach-list-screen],[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-signing-squad],[data-coach-signing-open],[data-coach-signing-close],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-accept],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-screen],[data-coach-scout-filter-tab],[data-coach-scout-select],[data-coach-scout-back],[data-coach-scout-page],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-save-priority],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer],[data-coach-submit-offer],[data-coach-cancel-offer],[data-coach-squad-player],[data-coach-squad-apply],[data-coach-player-status],[data-coach-renew-open],[data-coach-renew-cancel],[data-coach-renew-confirm],[data-coach-player-release],[data-coach-player-offers],[data-coach-squad-lineup]");
     if (!el || !state || state.mode !== "coach") return;
     const V = window.ProLifeCoachCareerView;
     if (el.hasAttribute("data-coach-tab")) { V?.setTab(el.getAttribute("data-coach-tab")); render(); return; }
@@ -9055,6 +9055,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if(el.hasAttribute("data-coach-squad-lineup")){squadSelectedId=el.getAttribute("data-coach-squad-lineup");page="squad";render();return;}
     if(el.hasAttribute("data-coach-list-screen")) { V?.setListScreen(el.getAttribute("data-coach-list-screen")); render(); return; }
     if(el.hasAttribute("data-coach-scout-screen")) { V?.setScoutScreen(el.getAttribute("data-coach-scout-screen")); render(); return; }
+    if(el.hasAttribute("data-coach-scout-filter-tab")) { V?.setScoutFilterTab(el.getAttribute("data-coach-scout-filter-tab")); render(); return; }
     if(el.hasAttribute("data-coach-scout-back")) {
       V?.closeScoutPlayer();
       render();
@@ -9071,20 +9072,20 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return;
     }
     if(el.hasAttribute("data-coach-scout-page")) { V?.setScoutPage(el.getAttribute("data-coach-scout-page")); render(); return; }
-    if(el.hasAttribute("data-coach-scout-apply")) { V?.setScoutFilters(document.querySelector("[data-coach-scout-search]")?.value, document.querySelector("[data-coach-scout-position]")?.value, {
-      region:document.querySelector("[data-coach-scout-region]")?.value,
-      club:document.querySelector("[data-coach-scout-club]")?.value,
-      competition:document.querySelector("[data-coach-scout-competition]")?.value,
-      country:document.querySelector("[data-coach-scout-country]")?.value,
-      overallMin:document.querySelector("[data-coach-scout-overall-min]")?.value,
-      overallMax:document.querySelector("[data-coach-scout-overall-max]")?.value,
-      potentialMin:document.querySelector("[data-coach-scout-potential-min]")?.value,
-      potentialMax:document.querySelector("[data-coach-scout-potential-max]")?.value,
-      ageMin:document.querySelector("[data-coach-scout-age-min]")?.value,
-      ageMax:document.querySelector("[data-coach-scout-age-max]")?.value,
-      sort:document.querySelector("[data-coach-scout-sort]")?.value,
-      sortDirection:document.querySelector("[data-coach-scout-sort-direction]")?.value,
-      category:document.querySelector("[data-coach-scout-category]")?.value
+    if(el.hasAttribute("data-coach-scout-apply")) { V?.setScoutFilters(document.querySelector("[data-coach-scout-search]")?.value??V?.state?.scoutQuery, document.querySelector("[data-coach-scout-position]")?.value??V?.state?.scoutPosition, {
+      region:document.querySelector("[data-coach-scout-region]")?.value??V?.state?.scoutRegion,
+      club:document.querySelector("[data-coach-scout-club]")?.value??V?.state?.scoutClub,
+      competition:document.querySelector("[data-coach-scout-competition]")?.value??V?.state?.scoutCompetition,
+      country:document.querySelector("[data-coach-scout-country]")?.value??V?.state?.scoutCountry,
+      overallMin:document.querySelector("[data-coach-scout-overall-min]")?.value??V?.state?.scoutOverallMin,
+      overallMax:document.querySelector("[data-coach-scout-overall-max]")?.value??V?.state?.scoutOverallMax,
+      potentialMin:document.querySelector("[data-coach-scout-potential-min]")?.value??V?.state?.scoutPotentialMin,
+      potentialMax:document.querySelector("[data-coach-scout-potential-max]")?.value??V?.state?.scoutPotentialMax,
+      ageMin:document.querySelector("[data-coach-scout-age-min]")?.value??V?.state?.scoutAgeMin,
+      ageMax:document.querySelector("[data-coach-scout-age-max]")?.value??V?.state?.scoutAgeMax,
+      sort:document.querySelector("[data-coach-scout-sort]")?.value??V?.state?.scoutSort,
+      sortDirection:document.querySelector("[data-coach-scout-sort-direction]")?.value??V?.state?.scoutSortDirection,
+      category:document.querySelector("[data-coach-scout-category]")?.value??V?.state?.scoutCategory
     }); render(); return; }
     if(el.hasAttribute("data-coach-start-scout")){
       const position=captureScoutPosition();

@@ -19,6 +19,6 @@ test("Observação renderiza jogadores reais sem usar formatadores antes da inic
 
   const html = View.renderMarket(state, Engine);
   assert.match(html, /data-coach-market-area="observacao" aria-pressed="true"/);
-  assert.match(html, /class="cc-card cc-fc27-scout"/);
+  assert.match(html, /class="cc-card cc-fc27-scout cc-scout-search-screen"/);
   assert.match(html, /Buscar jogadores/);
 });

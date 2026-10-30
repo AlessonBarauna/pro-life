@@ -92,8 +92,11 @@ test("perfil mostra o relatório do olheiro em 4 áreas",()=>{
   const View=require("../src/ui/coach-career-view.js");
   const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);
   View.setMarketArea("observacao");View.setScoutScreen("busca");
+  const candidate=Engine.GlobalFootball.activePlayers(s).find(player=>player.id!=="hero"&&player.clubId!==s.clubId);
+  View.selectScoutPlayer(candidate.id,true);
   const html=View.renderMarket(s,Engine);
   for(const a of ["ENCAIXE TÁTICO","POTENCIAL FUTURO","AVALIAÇÃO FINANCEIRA","SITUAÇÃO DO JOGADOR"])assert.ok(html.includes(a),a);
+  View.closeScoutPlayer();View.setMarketArea("overview");
 });
 test("atividades da central de transferências incluem sondagens com prazo e ação",()=>{
   const Engine=require("../src/domain/engine.js");
