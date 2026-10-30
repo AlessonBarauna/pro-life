@@ -112,3 +112,7 @@ html.pl-large-text { font-size:112.5%; }
 .sc-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .rc-tabs { grid-template-columns:repeat(4,minmax(0,1fr)); } .rc-tabs button { font-size:11px; padding-inline:4px; }
 .tr-tabs { grid-template-columns:repeat(5,minmax(0,1fr)); } .tr-tabs button { font-size:10.5px; padding-inline:2px; }
+
+/* Menu principal: arte original de três jogadores */
+.hub-hero { display:block; width:min(300px,60%); height:auto; margin:10px 0 4px; opacity:.92; }
+@media (orientation:landscape) and (max-height:560px) { .hub-hero { position:absolute; right:16px; top:50%; transform:translateY(-50%); width:clamp(90px,17vw,150px); margin:0; z-index:0; pointer-events:none; } .career-hub-intro { position:relative; } }
