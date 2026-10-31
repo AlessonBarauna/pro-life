@@ -233,3 +233,11 @@ html.pl-large-text { font-size:112.5%; }
 @media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px) {
   .pl-calendar-screen b, .pl-calendar-screen strong, .pl-calendar-screen small { white-space:normal !important; overflow:visible !important; text-overflow:clip !important; overflow-wrap:anywhere; }
 }
+
+/* Tablet deitado (ex.: 1024×600): nomes e calendário sem corte. */
+@media (min-width:569px) and (max-width:1100px) and (min-height:561px) and (max-height:760px) {
+  .pl-squad-screen .pl-squad-player-copy b { white-space:normal !important; overflow:visible !important; text-overflow:clip !important; font-size:10px !important; line-height:1.1; overflow-wrap:normal; }
+  .pl-calendar-screen .calendar-event { max-height:none !important; height:auto !important; overflow:visible !important; white-space:normal !important; text-overflow:clip !important; line-height:1.1; }
+  .pl-calendar-screen .calendar-day { overflow:visible !important; height:auto; }
+  .pl-calendar-screen b, .pl-calendar-screen strong, .pl-calendar-screen small { white-space:normal !important; overflow:visible !important; text-overflow:clip !important; overflow-wrap:anywhere; }
+}
