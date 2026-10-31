@@ -244,12 +244,9 @@
         '<label>Clube<input type="search" data-coach-scout-club list="cc-scout-club-options" placeholder="Digite o nome do clube" value="'+esc(ui.scoutClub)+'"><datalist id="cc-scout-club-options">'+availableClubs.map(cl=>'<option value="'+esc(cl.name||cl.id)+'"></option>').join("")+'</datalist></label>'+ 
         '<label>Competição<input type="search" data-coach-scout-competition list="cc-scout-competition-options" placeholder="Digite a competição ou liga" value="'+esc(ui.scoutCompetition)+'"><datalist id="cc-scout-competition-options">'+competitionOptions.map(name=>'<option value="'+esc(name)+'"></option>').join("")+'</datalist></label>'+
         '<label>País / nacionalidade<select data-coach-scout-country>'+opt("all","Todos os países",ui.scoutCountry)+nations.map(n=>opt(n,n,ui.scoutCountry)).join("")+'</select></label>'+
-        '<label>GER mínimo<select data-coach-scout-overall-min>'+rangeOptions(1,99,ui.scoutOverallMin,"Qualquer")+'</select></label>'+
-        '<label>GER máximo<select data-coach-scout-overall-max>'+rangeOptions(1,99,ui.scoutOverallMax,"Qualquer")+'</select></label>'+
-        '<label>POT mínimo<select data-coach-scout-potential-min>'+rangeOptions(1,99,ui.scoutPotentialMin,"Qualquer")+'</select></label>'+
-        '<label>POT máximo<select data-coach-scout-potential-max>'+rangeOptions(1,99,ui.scoutPotentialMax,"Qualquer")+'</select></label>'+
-        '<label>Idade mínima<select data-coach-scout-age-min>'+rangeOptions(15,50,ui.scoutAgeMin,"Qualquer")+'</select></label>'+
-        '<label>Idade máxima<select data-coach-scout-age-max>'+rangeOptions(15,50,ui.scoutAgeMax,"Qualquer")+'</select></label>'+
+        '<label class="cc-range"><span>GER (mínimo a máximo)</span><span class="cc-range-pair"><select data-coach-scout-overall-min aria-label="GER mínimo">'+rangeOptions(1,99,ui.scoutOverallMin,"Mín.")+'</select><i>a</i><select data-coach-scout-overall-max aria-label="GER máximo">'+rangeOptions(1,99,ui.scoutOverallMax,"Máx.")+'</select></span></label>'+
+        '<label class="cc-range"><span>POT (mínimo a máximo)</span><span class="cc-range-pair"><select data-coach-scout-potential-min aria-label="POT mínimo">'+rangeOptions(1,99,ui.scoutPotentialMin,"Mín.")+'</select><i>a</i><select data-coach-scout-potential-max aria-label="POT máximo">'+rangeOptions(1,99,ui.scoutPotentialMax,"Máx.")+'</select></span></label>'+
+        '<label class="cc-range"><span>Idade (mínima a máxima)</span><span class="cc-range-pair"><select data-coach-scout-age-min aria-label="Idade mínima">'+rangeOptions(15,50,ui.scoutAgeMin,"Mín.")+'</select><i>a</i><select data-coach-scout-age-max aria-label="Idade máxima">'+rangeOptions(15,50,ui.scoutAgeMax,"Máx.")+'</select></span></label>'+
         '<label>Ordenar por<select data-coach-scout-sort>'+opt("overall","GER",ui.scoutSort)+opt("potential","Potencial",ui.scoutSort)+opt("age","Idade",ui.scoutSort)+'</select></label>'+
         '<label>Ordem<select data-coach-scout-sort-direction>'+opt("desc","Maior para menor",ui.scoutSortDirection)+opt("asc","Menor para maior",ui.scoutSortDirection)+'</select></label></div>';
       const scouting=root.ProLifeCoachScoutingV2;

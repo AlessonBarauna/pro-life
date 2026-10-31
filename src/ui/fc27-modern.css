@@ -103,3 +103,16 @@ body,#app,#app button,#app input,#app select,#app textarea{font-family:var(--fc-
 #app .cc-strip b{font-family:var(--pl-title);font-size:18px;font-weight:600;line-height:1.1}
 #app .cc-strip span{font-size:10.5px;color:var(--fc-text-3,#8396a8)}
 @media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){#app .cc-strip{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}#app .cc-strip > div{padding:6px 9px}#app .cc-strip b{font-size:14px}#app .cc-strip span{font-size:9px}}
+
+/* Busca de jogadores: faixas (mín. a máx.) e resultados em cartão moderno */
+#app .cc-range{display:grid;gap:4px}
+#app .cc-range-pair{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px;align-items:center}
+#app .cc-range-pair i{font-style:normal;color:var(--fc-text-3,#8396a8);font-size:11px}
+#app .cc-fc27-ger{display:grid;place-items:center;min-width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#c6f432,#8fd11a);color:#0b1405;font-family:var(--pl-title);font-weight:700;font-size:15px}
+#app .cc-fc27-result{border-radius:18px}
+#app .cc-fc27-result .cc-deal-team span:last-child{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.15}
+#app .cc-fc27-result .cc-deal-player{display:flex;align-items:center;gap:10px}
+@media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){
+  .cc-scout-filters-advanced{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
+  #app .cc-fc27-ger{min-width:32px;height:32px;font-size:13px;border-radius:10px}
+}
