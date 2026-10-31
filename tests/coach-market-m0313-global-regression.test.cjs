@@ -16,7 +16,7 @@ test("M03.13 accepted player contract is stored on arrival",()=>{
 });
 test("M03.13 settled window transfers honor original deal amount",()=>{
  const game=read("src/application/game.js");
- assert.match(game,/if\(negotiation\)fee=negotiation\.finalFee/);
+ assert.match(game,/const agreedFee=Number\(negotiation\.finalFee\)/);
  assert.match(game,/n\.status="awaiting_window"/);
  assert.match(game,/n\.status="accepted"|negotiation\.status="accepted"/);
 });

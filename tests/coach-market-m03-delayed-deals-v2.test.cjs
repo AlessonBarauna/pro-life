@@ -4,7 +4,7 @@ const game=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"ut
 const domain=fs.readFileSync(path.join(__dirname,"../src/domain/coach-career.js"),"utf8");
 const view=fs.readFileSync(path.join(__dirname,"../src/ui/coach-career-view.js"),"utf8");
 test("M03: new and revised offers wait for a two-day response",()=>{
- assert.match(game,/response:"awaiting_reply",replyDay:Number\(s\.day\)\+2/);
+ assert.match(game,/response:walked\?"rejected":"awaiting_reply",replyDay:walked\?null:Number\(s\.day\)\+2/);
  assert.match(game,/n\.response="awaiting_reply";n\.replyDay=Number\(s\.day\)\+2/);
  assert.match(game,/if\(n\.response==="awaiting_reply"\)throw Error/);
 });

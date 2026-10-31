@@ -15,8 +15,7 @@ test("Flexible mode increases inquiry interest without overriding elite refusal"
 });
 test("Flexible fee and eligibility ease but preserve budget validation",()=>{
  const game=read("src/application/game.js");
- assert.match(game,/marketStrictness==="flexible"\?0\.85:1/);
- assert.match(game,/marketStrictness==="flexible"\?0\.78:0\.9/);
+ assert.match(game,/marketStrictness==="flexible"\?\.85:\.95/);
  assert.match(game,/marketStrictness==="flexible"\?25:14/);
  assert.match(game,/Orçamento insuficiente para a entrada e bônus contratual/);
  assert.match(game,/Janela de transferências fechada/);

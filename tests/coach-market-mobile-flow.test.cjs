@@ -42,8 +42,8 @@ test("mercado mobile separa busca, resultados e perfil em telas",()=>{
   assert.match(html,/cc-scout-results-screen/);
 });
 
-test("layout mobile fixa resultados em grade 2 por 2 sem rolagem da tela",()=>{
-  const css=fs.readFileSync(path.join(__dirname,"../src/ui/fc27-mobile-sm27.css"),"utf8");
-  assert.match(css,/\.cc-market-flow-screen\s*\{[^}]*overflow:hidden/s);
-  assert.match(css,/\.cc-scout-results-screen \.cc-market-results-grid\s*\{[^}]*grid-template-columns:1fr 1fr;[^}]*grid-template-rows:repeat\(2,minmax\(0,1fr\)\);[^}]*overflow:hidden/s);
+test("layout mobile mostra resultados em grade responsiva dentro do corpo rolável",()=>{
+  const css=fs.readFileSync(path.join(__dirname,"../src/ui/fc27-mobile-screens.css"),"utf8");
+  assert.match(css,/\.cc-market-flow-screen\s*\{[^}]*min-height:0/s);
+  assert.match(css,/\.cc-market-results-grid\s*\{[^}]*display:grid[^}]*grid-template-columns:repeat\(auto-fill,minmax\(270px,1fr\)\)/s);
 });

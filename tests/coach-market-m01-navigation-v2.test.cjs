@@ -17,7 +17,7 @@ test("M01 market entry exposes distinct scouting and transfer navigation",()=>{
 });
 test("M01 reuses existing market commands and negotiation detail",()=>{
  assert.match(source,/const marketContent=negotiations\(s,D\)/);
- assert.match(source,/\+intro\+navigation\+marketContent/);
+ assert.match(source,/\+navigation\+intro\+marketContent/);
  assert.match(source,/data-coach-deal-tab/);
  assert.match(source,/data-coach-deal-open/);
 });

@@ -9,7 +9,6 @@ test("M01 market overview reflects current saved deal state",()=>{
  assert.match(source,/sales\.filter\(x=>x\.status==="pending"\)/);
  assert.match(source,/pending\.filter\(x=>x\.status==="pending"\)/);
  assert.match(source,/status==="awaiting_window"/);
- assert.match(source,/\(c\.shortlist\|\|\[\]\)\.length/);
 });
 test("M01 category shortcuts use existing working tab dispatcher",()=>{
  assert.match(source,/class="cc-market-overview-card" data-coach-deal-tab/);

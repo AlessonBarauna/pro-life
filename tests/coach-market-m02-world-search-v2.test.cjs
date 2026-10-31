@@ -9,7 +9,7 @@ const source=fs.readFileSync(viewPath,"utf8");
 const app=fs.readFileSync(appPath,"utf8");
 const view=require(viewPath);
 test("M02 searches the full player pool and uses paged output",()=>{
- assert.match(source,/const pageSize=40/);
+ assert.match(source,/const pageSize=compactMarket\?4:40/);
  assert.match(source,/const visibleCandidates=candidates\.slice/);
  assert.doesNotMatch(source,/if\(candidates\.length>=80\)break/);
  assert.match(source,/normalizeText\(p\.name\)\.includes\(needle\)/);
