@@ -755,9 +755,7 @@
       '<p class="cc-note">'+(settlementAudit.reasons||[]).map(esc).join(' · ')+'</p>'+
       '<p class="cc-note">Validação de segurança: nenhuma cobrança automática será feita.</p></section>':'';
     const payrollPanel='<section class="cc-card" aria-label="Projeção da folha salarial"><h4>Projeção da folha salarial</h4>'+
-      '<p><b>Salários contratuais:</b> '+esc(money(registeredMonthly))+'/mês · <b>Fallbacks pendentes:</b> '+esc(money(estimatedMonthly))+'/mês</p>'+
-      '<p><b>Folha mensal projetada:</b> '+esc(money(forecastMonthly))+' · <b>Folha anual projetada:</b> '+esc(money(forecastMonthly*12))+'</p>'+
-      '<p><b>Projeção com rateio de empréstimos:</b> '+esc(money(wageBudgetProjection.monthly))+'/mês · <b>Anual:</b> '+esc(money(wageBudgetProjection.annual))+'</p>'+ 
+      '<div class="cc-kpis"><div><small>Salários contratuais:</small><b>'+esc(money(registeredMonthly))+'/mês</b></div><div><small>Fallbacks pendentes:</small><b>'+esc(money(estimatedMonthly))+'/mês</b></div><div><small>Folha mensal projetada:</small><b>'+esc(money(forecastMonthly))+'</b></div><div><small>Folha anual projetada:</small><b>'+esc(money(forecastMonthly*12))+'</b></div><div><small>Com rateio de empréstimos:</small><b>'+esc(money(wageBudgetProjection.monthly))+'/mês</b></div><div><small>Anual com rateio:</small><b>'+esc(money(wageBudgetProjection.annual))+'</b></div></div>'+
       '<p class="cc-note">Orçamento de transferências: '+esc(money(wageBudgetProjection.transferBudget))+' · Ajuste líquido de empréstimos: '+esc(money(wageBudgetProjection.loanAdjustment))+'/mês. Orçamento salarial informativo e separado; nenhuma movimentação financeira.</p>'+ 
       '<p class="cc-note">'+affordabilityNote+' '+payrollReadiness+'</p>'+ 
       '<p class="cc-note">Contratos sincronizados: '+esc(knownSalaries.length)+' · Registros incompletos: '+esc(missingSalaries.length)+
@@ -801,7 +799,7 @@
       const weekly=Number(root.ProLifePlayerEconomy?.weeklySalary?.(monthly))||Math.round(monthly*12/52);
       const value=Number(p.marketValue??p.value??root.ProLifePlayerEconomy?.marketValue?.(p,own))||0;
       const expiry=Number(p.contractEndDay??p.contract?.endDay??p.contract?.expiresDay);
-      const role=String(p.squadRole||p.contract?.role||"Rotação").replace(/_/g," ");
+      const roleRaw=String(p.squadRole||p.contract?.role||"rotation").toLowerCase();const role=({rotation:"Rotação",important:"Importante",starter:"Titular",star:"Estrela",prospect:"Promessa",backup:"Reserva",key_player:"Jogador-chave",regular:"Regular"})[roleRaw]||roleRaw.replace(/_/g," ").replace(/^./,c=>c.toUpperCase());
       return '<article class="cc-deal"><div class="cc-deal-player"><strong>'+esc(p.name||"Atleta")+'</strong><small>'+esc(p.pos||p.position||"")+' · GER '+esc(p.ovr??p.overall??"—")+'</small></div><div class="cc-deal-terms"><b>'+esc(money(monthly))+'/mês</b><small>'+esc(money(weekly))+'/semana · Valor '+esc(money(value))+'</small><small>Contrato até '+esc(Number.isFinite(expiry)?careerDate(s,expiry):"Não informado")+' · '+esc(role)+'</small></div></article>';
     },"Nenhum contrato encontrado.");
     const summaryCards=[

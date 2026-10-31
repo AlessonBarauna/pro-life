@@ -83,3 +83,23 @@ body,#app,#app button,#app input,#app select,#app textarea{font-family:var(--fc-
 }
 .look-subnav button[aria-pressed="true"]{background:var(--fc-lime,#c6f432);color:#0b1405;border-color:transparent;border-radius:999px}
 .look-subnav button{border-radius:999px}
+
+/* Mercado: painéis internos em indicadores e linhas de contrato como cartões */
+#app .cc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}
+#app .cc-kpis > div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 12px;display:grid;gap:2px;min-width:0}
+#app .cc-kpis small{color:var(--fc-text-3,#8396a8);font-size:10.5px;letter-spacing:0;text-transform:none}
+#app .cc-kpis b{font-family:var(--pl-title);font-size:14px;font-weight:600;overflow-wrap:anywhere}
+#app .cc-card h4{font-family:var(--pl-title);font-weight:600;font-size:12px;text-transform:none;letter-spacing:0}
+#app .cc-card .cc-note{font-size:11px;line-height:1.4}
+@media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){
+  #app .cc-kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  #app .cc-kpis > div{padding:6px 9px}#app .cc-kpis small{font-size:9px}#app .cc-kpis b{font-size:11.5px}
+  #app .cc-card .cc-note{font-size:9.5px}
+}
+#app .cc-deal:not(:has(.cc-deal-parties)){grid-template-columns:minmax(0,1fr) minmax(0,1.7fr)}
+#app .cc-deal:not(:has(.cc-deal-parties)) .cc-deal-terms small{white-space:normal}
+#app .cc-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:8px 0}
+#app .cc-strip > div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 12px;display:grid;gap:2px;min-width:0}
+#app .cc-strip b{font-family:var(--pl-title);font-size:18px;font-weight:600;line-height:1.1}
+#app .cc-strip span{font-size:10.5px;color:var(--fc-text-3,#8396a8)}
+@media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){#app .cc-strip{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}#app .cc-strip > div{padding:6px 9px}#app .cc-strip b{font-size:14px}#app .cc-strip span{font-size:9px}}
