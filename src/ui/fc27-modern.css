@@ -1,0 +1,49 @@
+/* PRO LIFE — camada visual moderna: Manrope + Unbounded, cartões arredondados, botões em pílula, abas em cápsula.
+   Carregada por último; só muda aparência, nunca estrutura. */
+@font-face{font-family:"Manrope";font-weight:400;font-display:swap;src:url("../assets/fonts/manrope-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Manrope";font-weight:500 600;font-display:swap;src:url("../assets/fonts/manrope-latin-500-normal.woff2") format("woff2")}
+@font-face{font-family:"Manrope";font-weight:700 900;font-display:swap;src:url("../assets/fonts/manrope-latin-700-normal.woff2") format("woff2")}
+@font-face{font-family:"Unbounded";font-weight:400 600;font-display:swap;src:url("../assets/fonts/unbounded-latin-500-normal.woff2") format("woff2")}
+@font-face{font-family:"Unbounded";font-weight:700 900;font-display:swap;src:url("../assets/fonts/unbounded-latin-700-normal.woff2") format("woff2")}
+
+:root{
+  --fc-display:"Manrope","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --fc-body:"Manrope","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --pl-title:"Unbounded","Manrope","Segoe UI",system-ui,sans-serif;
+  --pl-r-card:18px; --pl-r-btn:14px; --pl-r-pill:999px;
+  --pl-glow:0 0 18px rgba(198,244,50,.28);
+}
+body,#app,#app button,#app input,#app select,#app textarea{font-family:var(--fc-body)}
+/* sem recortes angulares: tudo arredondado (camisas e escudos mantêm a própria forma) */
+#app :where(button,section,article,aside,header,nav,label,a,div,li,form,dialog,select,input,table):not(.fc-shirt):not([class*="crest"]):not([class*="shirt"]):not([class*="hex"]):not([class*="avatar"]):not([class*="portrait"]):not([class*="photo"]){clip-path:none}
+.sm27-dialog-layer :where(button,section,article,div,header,nav){clip-path:none}
+/* cartões */
+#app :where(section.card,.card,.sm27-card,.cc-card,.panel,.pl-squad-player,.coach-training-side-card,.coach-training-main,.sq-panel,.career-calendar,.cc-market-entry,.cc-market-overview,.coach-prof-identity,.coach-prof-summary,.hub-hero){border-radius:var(--pl-r-card)}
+/* botões */
+#app button{border-radius:var(--pl-r-btn);letter-spacing:0;text-transform:none;font-weight:700}
+#app button.primary,#app button.active,#app .primary,#app .sm27-skip-match,#app .phone-continue,#app .game-subnav button,#app .cal-chip,#app .coach-team-focus,#app .sm27-chip,#app .chip{border-radius:var(--pl-r-pill)}
+#app button.primary,#app .primary{box-shadow:var(--pl-glow);border:0}
+#app button:not(.primary):not(.active):hover{border-color:rgba(198,244,50,.5)}
+#app button:focus-visible{outline:2px solid var(--fc-lime,#c6f432);outline-offset:2px}
+/* abas em cápsula */
+#app .game-subnav{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--pl-r-pill);padding:4px;gap:4px}
+#app .game-subnav button{border:0;background:transparent;box-shadow:none}
+#app .game-subnav button.active{background:var(--fc-lime,#c6f432);color:#0b1405;box-shadow:var(--pl-glow)}
+/* títulos com a fonte larga */
+#app :where(h1,h2,.phone-title,.hub-title,.sm27-title,.sm27-h){font-family:var(--pl-title);font-weight:600;letter-spacing:-.01em;text-transform:none}
+/* campos */
+#app :where(input,select,textarea){border-radius:12px}
+/* diálogos */
+.sm27-dialog-layer :where(.sm27-dialog,.sm27-panel,[role="dialog"]){border-radius:22px}
+@media (prefers-reduced-motion:no-preference){#app button{transition:background-color .15s,border-color .15s,box-shadow .15s,transform .1s}#app button:active{transform:scale(.98)}}
+
+/* tipografia: nada em itálico, títulos na fonte larga */
+#app :where(h1,h2,h3,h4,strong,b,button,.brand,.neg-crest,.tag){font-style:normal}
+#app .phone-title{font-family:var(--pl-title);font-weight:600;font-size:13px;letter-spacing:.02em;text-transform:none;color:var(--fc-text,#eef4f9)}
+#app :where(h2,h3,th){text-transform:none;letter-spacing:0}
+#app :where(h1,h2){font-family:var(--pl-title);font-weight:600}
+#app h3{font-weight:800}
+#app .phone-club{font-family:var(--pl-title);font-weight:600;font-size:12px}
+/* números grandes em fonte larga */
+#app :where(.big,.num,.ovr,.rating,.score,[class*="-ovr"],[class*="score"] b){font-family:var(--pl-title);font-weight:700}
+@media (orientation:landscape) and (max-height:560px){#app .phone-title{font-size:11px}}
