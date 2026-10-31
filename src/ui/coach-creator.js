@@ -84,6 +84,14 @@ function render(ctx){
    lp.insertBefore(nav,lp.firstChild);lp.dataset.look="modelos";
    const mark=()=>nav.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.lookTab===lp.dataset.look)));mark();
    nav.addEventListener("click",e=>{const b=e.target.closest("[data-look-tab]");if(!b)return;lp.dataset.look=b.dataset.lookTab;mark();});}}
+ {const cp=app.querySelector('[data-coach-panel="5"]');
+  if(cp){[...cp.children].forEach(k=>{const rev=k.classList.contains("coach-section-note")&&k.querySelector("#coach-confirm-details");k.setAttribute("data-cfg-page",rev?"revisao":k.classList.contains("coach-settings-core")?"inicio":"ajustes");});
+   cp.querySelector(".coach-section-note")?.setAttribute("data-cfg-note","1");
+   const nav=document.createElement("div");nav.className="look-subnav cfg-subnav";
+   nav.innerHTML='<button type="button" class="coach-return" data-cfg-tab="ajustes">Ajustes</button><button type="button" class="coach-return" data-cfg-tab="inicio">Início</button><button type="button" class="coach-return" data-cfg-tab="revisao">Revisão</button>';
+   cp.insertBefore(nav,cp.firstChild);cp.dataset.cfg="ajustes";
+   const mark=()=>nav.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.cfgTab===cp.dataset.cfg)));mark();
+   nav.addEventListener("click",e=>{const b=e.target.closest("[data-cfg-tab]");if(!b)return;cp.dataset.cfg=b.dataset.cfgTab;mark();});}}
  const settingsButtons=[...app.querySelectorAll("[data-settings-tab]")];
  function settingsTab(name){app.querySelectorAll("[data-settings-panel]").forEach(p=>p.hidden=p.dataset.settingsPanel!==name);settingsButtons.forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.settingsTab===name)));}
  settingsButtons.forEach(b=>b.addEventListener("click",()=>settingsTab(b.dataset.settingsTab)));
