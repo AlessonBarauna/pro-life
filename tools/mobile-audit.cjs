@@ -57,10 +57,15 @@ function measure() {
     if (/hidden|clip/.test(s.overflowX) && s.textOverflow !== "ellipsis" && el.scrollWidth > el.clientWidth + 2 && el.clientWidth > 0) out.issues.push({ t: "texto-cortado", el: name(el), by: el.scrollWidth - el.clientWidth });
   }
   // área travada: conteúdo maior que a caixa e nenhuma rolagem possível (informação perdida)
-  for (const el of document.querySelectorAll("#app .pl-squad-screen, #app .pl-squad-sm27, #app .coach-creation, #app .sm27-screen-body, #app .coach-creation-card")) {
+  for (const el of document.querySelectorAll("#app *")) {
     if (!vis(el)) continue;
     const s = getComputedStyle(el);
-    if (/hidden|clip/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 8 && el.clientHeight > 60) out.issues.push({ t: "area-travada", el: name(el), by: el.scrollHeight - el.clientHeight });
+    if (/hidden|clip/.test(s.overflowY) && !/ellipsis/.test(s.textOverflow) && s.display !== "inline" && el.scrollHeight > el.clientHeight + 8 && el.clientHeight > 24 && el.children.length) {
+      // só conta se algum filho realmente passa da borda inferior (conteúdo perdido)
+      const er = el.getBoundingClientRect();
+      const lost = [...el.children].some((c) => { const cr = c.getBoundingClientRect(); const cs = getComputedStyle(c); return cs.position !== "absolute" && cs.position !== "fixed" && cr.height > 4 && cr.bottom > er.bottom + 6 && cr.top < er.bottom; });
+      if (lost) out.issues.push({ t: "area-travada", el: name(el), by: el.scrollHeight - el.clientHeight });
+    }
   }
   // sobreposição entre controles
   const ctrls = [...document.querySelectorAll("#app button, #app select, #app input")].filter(vis).filter((e) => { const r = e.getBoundingClientRect(); return r.bottom > 0 && r.top < vh; });

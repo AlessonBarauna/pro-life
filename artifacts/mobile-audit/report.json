@@ -1,0 +1,3437 @@
+{
+  "report": [
+    {
+      "vp": "667x375",
+      "screen": "home",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 317,
+        "scrollH": 317
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "profile",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 2,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 502
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "training",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 1457
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "training › Equipe principal",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 1457
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "squad",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 317,
+        "scrollH": 317
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "squad › Escalação",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 317,
+        "scrollH": 317
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "squad › lineup",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 317,
+        "scrollH": 317
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "squad › tactics",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 12,
+      "panel": {
+        "clientH": 317,
+        "scrollH": 333
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "squad › roles",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 12,
+      "panel": {
+        "clientH": 317,
+        "scrollH": 333
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "squad › hierarchy",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 317,
+        "scrollH": 317
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "squad › roster",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 317,
+        "scrollH": 317
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "squad › reports",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 317,
+        "scrollH": 317
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "calendar",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 6,
+      "tinyText": 17,
+      "panel": {
+        "clientH": 249,
+        "scrollH": 907
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "matches",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 249,
+        "scrollH": 249
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "league",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 249,
+        "scrollH": 5926
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "league › Minha competição",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 249,
+        "scrollH": 5926
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "competitions",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 249,
+        "scrollH": 994
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "competitions › Minhas competições",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 249,
+        "scrollH": 994
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "statistics",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 249,
+        "scrollH": 2088
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "awards",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 249,
+        "scrollH": 604
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "awards › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 249,
+        "scrollH": 604
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "worldCompetitions",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 249,
+        "scrollH": 651
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "market",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 7,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 956
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "market › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 7,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 482
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "proposals",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 715
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "clubs",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 7,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 482
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "clubs › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 7,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 482
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "life",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 5,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 723
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "life › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 5,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 723
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "life › Finanças",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 439
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "life › Patrimônio",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 1642
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "life › Atividades",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 282
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "life › Família",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 282
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "life › Investimentos",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 1268
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "finance",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 1268
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "finance › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 5,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 723
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "finance › Finanças",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 439
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "finance › Patrimônio",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 1642
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "finance › Atividades",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 282
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "finance › Família",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 282
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "finance › Investimentos",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 1268
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "inbox",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 317,
+        "scrollH": 536
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "history",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 282,
+        "scrollH": 1697
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "save",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 317,
+        "scrollH": 582
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "home",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "profile",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 2,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 502
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "training",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1432
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "training › Equipe principal",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1432
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "squad",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "squad › Escalação",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "squad › lineup",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "squad › tactics",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 12,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 318
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "squad › roles",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 12,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 318
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "squad › hierarchy",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "squad › roster",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "squad › reports",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "calendar",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 6,
+      "tinyText": 13,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 907
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "matches",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 267
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "league",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 5926
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "league › Minha competição",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 5926
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "competitions",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 994
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "competitions › Minhas competições",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 994
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "statistics",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 2088
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "awards",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 567
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "awards › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 567
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "worldCompetitions",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 651
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "market",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 6,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "market › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 6,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "proposals",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 715
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "clubs",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 6,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "clubs › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 6,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "life",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1161
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "life › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 5,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 723
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "life › Finanças",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 439
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "life › Patrimônio",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1642
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "life › Atividades",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 267
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "life › Família",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 267
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "life › Investimentos",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1161
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "finance",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1161
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "finance › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 5,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 723
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "finance › Finanças",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 439
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "finance › Patrimônio",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1642
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "finance › Atividades",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 267
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "finance › Família",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 267
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "finance › Investimentos",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1161
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "inbox",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 514
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "history",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1697
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "save",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 582
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "home",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "profile",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 2,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 502
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "training",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1432
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "training › Equipe principal",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1432
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "squad",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "squad › Escalação",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "squad › lineup",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "squad › tactics",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 12,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 318
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "squad › roles",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 12,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 318
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "squad › hierarchy",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "squad › roster",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "squad › reports",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 302
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "calendar",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 6,
+      "tinyText": 19,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 885
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "matches",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 267
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "league",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 5914
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "league › Minha competição",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 5914
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "competitions",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 958
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "competitions › Minhas competições",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 958
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "statistics",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 2170
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "awards",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 567
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "awards › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 567
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "worldCompetitions",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 646
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "market",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 6,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "market › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 6,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "proposals",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 725
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "clubs",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 6,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "clubs › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 6,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "life",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1053
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "life › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 5,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 717
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "life › Finanças",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 433
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "life › Patrimônio",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1340
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "life › Atividades",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 267
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "life › Família",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 267
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "life › Investimentos",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1053
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "finance",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1053
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "finance › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 5,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 717
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "finance › Finanças",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 433
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "finance › Patrimônio",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1340
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "finance › Atividades",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 267
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "finance › Família",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 267
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "finance › Investimentos",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1053
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "inbox",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 530
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "history",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 267,
+        "scrollH": 1715
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "save",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 302,
+        "scrollH": 577
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "home",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 332,
+        "scrollH": 332
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "profile",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 2,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 502
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "training",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 1413
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "training › Equipe principal",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 1413
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "squad",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 332,
+        "scrollH": 332
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "squad › Escalação",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 332,
+        "scrollH": 332
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "squad › lineup",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 332,
+        "scrollH": 332
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "squad › tactics",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 12,
+      "panel": {
+        "clientH": 332,
+        "scrollH": 348
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "squad › roles",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 12,
+      "panel": {
+        "clientH": 332,
+        "scrollH": 348
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "squad › hierarchy",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 332,
+        "scrollH": 332
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "squad › roster",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 332,
+        "scrollH": 332
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "squad › reports",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 332,
+        "scrollH": 332
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "calendar",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 6,
+      "tinyText": 19,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 860
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "matches",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 297
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "league",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 5818
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "league › Minha competição",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 5818
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "competitions",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 894
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "competitions › Minhas competições",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 894
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "statistics",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 1502
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "awards",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 567
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "awards › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 567
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "worldCompetitions",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 646
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "market",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 7,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "market › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 7,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "proposals",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 725
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "clubs",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 7,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "clubs › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 7,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "life",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 1053
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "life › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 5,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 717
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "life › Finanças",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 433
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "life › Patrimônio",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 1303
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "life › Atividades",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 297
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "life › Família",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 297
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "life › Investimentos",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 1053
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "finance",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 1053
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "finance › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 5,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 717
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "finance › Finanças",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 433
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "finance › Patrimônio",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 1303
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "finance › Atividades",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 297
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "finance › Família",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 297
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "finance › Investimentos",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 1053
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "inbox",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 332,
+        "scrollH": 530
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "history",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 297,
+        "scrollH": 1715
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "save",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 332,
+        "scrollH": 577
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "home",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 356,
+        "scrollH": 356
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "profile",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 2,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 332
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "training",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 1413
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "training › Equipe principal",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 1413
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "squad",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 356,
+        "scrollH": 356
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "squad › Escalação",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 356,
+        "scrollH": 356
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "squad › lineup",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 356,
+        "scrollH": 356
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "squad › tactics",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 12,
+      "panel": {
+        "clientH": 356,
+        "scrollH": 372
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "squad › roles",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 12,
+      "panel": {
+        "clientH": 356,
+        "scrollH": 372
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "squad › hierarchy",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 15,
+      "panel": {
+        "clientH": 356,
+        "scrollH": 356
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "squad › roster",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 356,
+        "scrollH": 356
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "squad › reports",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 356,
+        "scrollH": 356
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "calendar",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 6,
+      "tinyText": 19,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 860
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "matches",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 321
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "league",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 5384
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "league › Minha competição",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 5384
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "competitions",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 821
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "competitions › Minhas competições",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 821
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "statistics",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 1502
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "awards",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 548
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "awards › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 548
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "worldCompetitions",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 646
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "market",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 8,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "market › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 8,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "proposals",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 725
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "clubs",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 8,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "clubs › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 8,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "life",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 1031
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "life › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 5,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 717
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "life › Finanças",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 433
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "life › Patrimônio",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 1282
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "life › Atividades",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 321
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "life › Família",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 321
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "life › Investimentos",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 1031
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "finance",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 1031
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "finance › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 5,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 717
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "finance › Finanças",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 433
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "finance › Patrimônio",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 1282
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "finance › Atividades",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 321
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "finance › Família",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 321
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "finance › Investimentos",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 1031
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "inbox",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 356,
+        "scrollH": 530
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "history",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 321,
+        "scrollH": 1694
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "save",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 356,
+        "scrollH": 577
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "home",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 372,
+        "scrollH": 372
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "profile",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 2,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 337
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "training",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 9,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 1306
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "training › Equipe principal",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 9,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 1306
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "squad",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 372,
+        "scrollH": 372
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "squad › Escalação",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 21,
+      "panel": {
+        "clientH": 372,
+        "scrollH": 372
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "squad › lineup",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 21,
+      "panel": {
+        "clientH": 372,
+        "scrollH": 372
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "squad › tactics",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 12,
+      "panel": {
+        "clientH": 372,
+        "scrollH": 388
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "squad › roles",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 12,
+      "panel": {
+        "clientH": 372,
+        "scrollH": 388
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "squad › hierarchy",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 21,
+      "panel": {
+        "clientH": 372,
+        "scrollH": 372
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "squad › roster",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 372,
+        "scrollH": 372
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "squad › reports",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 372,
+        "scrollH": 372
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "calendar",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 6,
+      "tinyText": 19,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 710
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "matches",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 3,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 337
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "league",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 5355
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "league › Minha competição",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 5355
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "competitions",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 807
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "competitions › Minhas competições",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 807
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "statistics",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 1454
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "awards",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 531
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "awards › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 531
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "worldCompetitions",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 457
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "market",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 8,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "market › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 8,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "proposals",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 5,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 473
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "clubs",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 8,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "clubs › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 8,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 467
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "life",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 1031
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "life › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 5,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 717
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "life › Finanças",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 433
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "life › Patrimônio",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 1282
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "life › Atividades",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 337
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "life › Família",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 337
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "life › Investimentos",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 1031
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "finance",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 1031
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "finance › Visão geral",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 5,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 717
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "finance › Finanças",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 433
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "finance › Patrimônio",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 1282
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "finance › Atividades",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 337
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "finance › Família",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 337
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "finance › Investimentos",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 1031
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "inbox",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 372,
+        "scrollH": 372
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "history",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 337,
+        "scrollH": 1382
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "save",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 1,
+      "panel": {
+        "clientH": 372,
+        "scrollH": 372
+      },
+      "docScrollY": 0
+    }
+  ],
+  "errors": []
+}
