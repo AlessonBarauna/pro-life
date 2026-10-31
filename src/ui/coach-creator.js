@@ -75,6 +75,15 @@ function render(ctx){
     <p class="coach-helper">O jogo preserva o fluxo de saves existente. Nenhuma habilidade, posição ou ponto de atleta será solicitado.</p>
    </aside>
   </div></form></main>`;
+ {const lp=app.querySelector('[data-coach-panel="3"]');
+  if(lp){const keys=["rosto","pele","cabelo","corpo","roupa"],names={modelos:"Modelos",rosto:"Rosto",pele:"Pele",cabelo:"Cabelo",corpo:"Corpo",roupa:"Roupa"};
+   const kids=[...lp.children];kids.slice(0,3).forEach(k=>k.setAttribute("data-look-page","modelos"));
+   [...lp.querySelectorAll("fieldset.look-group")].forEach((f,i)=>f.setAttribute("data-look-page",keys[i]||"roupa"));
+   const nav=document.createElement("div");nav.className="look-subnav";nav.setAttribute("role","tablist");
+   nav.innerHTML=["modelos",...keys].map(k=>'<button type="button" class="coach-return" data-look-tab="'+k+'">'+names[k]+'</button>').join("");
+   lp.insertBefore(nav,lp.firstChild);lp.dataset.look="modelos";
+   const mark=()=>nav.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.lookTab===lp.dataset.look)));mark();
+   nav.addEventListener("click",e=>{const b=e.target.closest("[data-look-tab]");if(!b)return;lp.dataset.look=b.dataset.lookTab;mark();});}}
  const settingsButtons=[...app.querySelectorAll("[data-settings-tab]")];
  function settingsTab(name){app.querySelectorAll("[data-settings-panel]").forEach(p=>p.hidden=p.dataset.settingsPanel!==name);settingsButtons.forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.settingsTab===name)));}
  settingsButtons.forEach(b=>b.addEventListener("click",()=>settingsTab(b.dataset.settingsTab)));
