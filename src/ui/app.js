@@ -9203,7 +9203,10 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const hadOpen=(state.coachCareer?.negotiations||[]).some(n=>n.playerId===playerId&&n.buyerClubId===state.clubId&&n.status==="pending");
       const completed=command("counterRecruit",{clubId,playerId,offer});
       if(completed){
-        V?.awaitDealResponse();render();
+        V?.awaitDealResponse();
+        const made0=(state.coachCareer?.negotiations||[]).filter(n=>n.playerId===playerId&&n.buyerClubId===state.clubId).slice(-1)[0];
+        if(made0&&made0.status!=="walked_away"){page="proposals";V?.setMarketArea?.("transferencias");V?.setDealTab?.("propostas");}
+        render();
         const made=(state.coachCareer?.negotiations||[]).filter(n=>n.playerId===playerId&&n.buyerClubId===state.clubId).slice(-1)[0];
         toast(made?.status==="walked_away"?"Oferta muito baixa: o clube rompeu as conversas por 21 dias. Nada foi adicionado às propostas.":hadOpen?"Você já tinha uma negociação aberta por este jogador: a proposta foi atualizada (continua contando como uma só).":"Proposta enviada. Aguarde a resposta do clube.");
       }

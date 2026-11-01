@@ -18,7 +18,7 @@ test("M03 only explicit submit invokes counterRecruit",()=>{
  assert.doesNotMatch(first,/command\("counterRecruit"/);
  assert.match(submit,/command\("counterRecruit",\{clubId,playerId,offer\}\)/);
  assert.match(submit,/offer<1000/);
- assert.match(submit,/if\(completed\)\{\s*V\?\.awaitDealResponse\(\);render\(\);/);
+ assert.match(submit,/if\(completed\)\{\s*V\?\.awaitDealResponse\(\);[\s\S]*render\(\);/);
  assert.match(submit,/Proposta enviada\. Aguarde a resposta do clube\./);
  assert.doesNotMatch(submit,/V\?\.clearOffer\(\)[\s\S]*command\("counterRecruit"/,"falha no envio preserva o rascunho");
 });

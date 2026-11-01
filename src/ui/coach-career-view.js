@@ -650,7 +650,7 @@
       const controls=waiting?'<span class="cc-status">'+(loanOffer?'Empréstimo programado':'Venda programada')+'</span>':expired?'<span class="cc-status">Expirada</span>':'<button type="button" data-coach-sale-accept="'+esc(o.id)+'">'+(D.Career.windowStatus(s).open?(loanOffer?'Aceitar empréstimo':'Aceitar e vender'):"Aceitar acordo futuro")+'</button><button type="button" data-coach-sale-reject="'+esc(o.id)+'">Recusar</button>'+(o.round>=3?'':'<input type="number" min="1000" step="1000" value="'+esc(o.amount)+'" data-coach-sale-amount="'+esc(o.id)+'" aria-label="Valor da contraproposta"><button type="button" data-coach-sale-counter="'+esc(o.id)+'">Contraproposta</button>');
       return '<article class="cc-deal cc-inbox-offer'+(days<=3&&!waiting&&!expired?' cc-inbox-urgent':'')+'"><div class="cc-deal-player">'+athlete(o.playerId)+'</div><div>'+team(o.buyerClubId)+'<small> '+(loanOffer?'Interesse em empréstimo':'Interesse em contratar')+' · rodada '+esc(o.round||1)+'/3</small></div><div class="cc-deal-terms"><b>'+esc(money(o.amount))+'</b><small>'+esc(urgency)+'</small></div><div class="cc-deal-actions">'+controls+'</div></article>';
     },"Nenhuma proposta recebida.")+offerSettings;
-    const deals=wrap(pending,n=>{
+    const deals=wrap(pending.slice().reverse(),n=>{
       const waiting=n.status==="awaiting_window";
       const waitingReply=n.response==="awaiting_reply";
       const expired=!waiting&&Number(s.day)>Number(n.expiresDay);
