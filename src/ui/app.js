@@ -9200,8 +9200,13 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const draft=V?.state?.draftOffer,offer=Number(document.querySelector("[data-coach-new-offer]")?.value);
       if(!draft||!Number.isFinite(offer)||offer<1000){toast("Informe um valor válido antes de enviar.");return;}
       const {clubId,playerId}=draft;
+      const hadOpen=(state.coachCareer?.negotiations||[]).some(n=>n.playerId===playerId&&n.buyerClubId===state.clubId&&n.status==="pending");
       const completed=command("counterRecruit",{clubId,playerId,offer});
-      if(completed){V?.awaitDealResponse();render();toast("Proposta enviada. Aguarde a resposta do clube.");}
+      if(completed){
+        V?.awaitDealResponse();render();
+        const made=(state.coachCareer?.negotiations||[]).filter(n=>n.playerId===playerId&&n.buyerClubId===state.clubId).slice(-1)[0];
+        toast(made?.status==="walked_away"?"Oferta muito baixa: o clube rompeu as conversas por 21 dias. Nada foi adicionado às propostas.":hadOpen?"Você já tinha uma negociação aberta por este jogador: a proposta foi atualizada (continua contando como uma só).":"Proposta enviada. Aguarde a resposta do clube.");
+      }
       return completed;
     }
     if(el.hasAttribute("data-coach-offer-save")) return command("setCoachOfferPreference",{mode:document.querySelector("[data-coach-offer-mode]")?.value});
