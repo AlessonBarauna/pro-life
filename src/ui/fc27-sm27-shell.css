@@ -428,3 +428,45 @@ html.pl-large-text { font-size:112.5%; }
   #app > .coach-creation .coach-summary strong { font-size:9px; overflow-wrap:normal; word-break:normal; hyphens:none; letter-spacing:-.01em; }
   #app > .coach-creation aside.coach-creation-card > .coach-navigation button, #app > .coach-creation aside.coach-creation-card > [data-coach-finish] { min-height:30px !important; font-size:10.5px; }
 }
+
+/* Mercado > Transferências no celular deitado: menu de abas no topo, lista paginada sem rolagem */
+@media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){
+  .cc-market-screen:has(> .cc-market-screen-nav){display:block !important}
+  .cc-market-screen:has(> .cc-market-screen-nav) > .cc-market-heading{display:flex;align-items:center;justify-content:space-between;padding:2px 8px !important;margin:0 0 4px !important;min-height:0 !important}
+  .cc-market-screen:has(> .cc-market-screen-nav) > .cc-market-heading h2,.cc-market-screen:has(> .cc-market-screen-nav) > .cc-market-heading > small,.cc-market-screen:has(> .cc-market-screen-nav) > .cc-market-heading .cc-note{display:none}
+  .cc-market-screen:has(> .cc-market-screen-nav) .cc-window-badge{margin:0 0 0 auto;padding:2px 8px;gap:6px}
+  .cc-market-screen:has(> .cc-market-screen-nav) .cc-window-badge span{font-size:9px}
+  .cc-market-screen:has(> .cc-market-screen-nav) > .cc-market-screen-nav{position:static !important;display:grid !important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);flex-direction:row;gap:3px;width:100%;margin:0 0 4px !important;padding:3px !important;border-radius:999px}
+  .cc-market-screen-nav button{justify-content:center !important;min-height:24px !important;padding:2px 4px !important;font-size:9.5px !important;border-radius:999px;overflow:hidden;text-overflow:ellipsis}
+  .cc-market-screen-nav button small{font-size:8px}
+  .cc-market-screen:has(> .cc-market-screen-nav) > .cc-deal-section{padding:4px 6px !important;margin:0 !important}
+  .cc-market-screen .cc-deal-section .cc-deal{padding:4px 8px !important;margin:0 0 3px !important;min-height:0 !important}
+  .cc-market-screen .cc-deal-section .cc-deal strong{font-size:11px}
+  .cc-market-screen .cc-deal-section .cc-deal small{font-size:9px}
+  .cc-market-screen .cc-deal-section .cc-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin:0 0 3px}
+  .cc-market-screen .cc-deal-section .cc-kpis>*{padding:2px 6px !important;min-height:0 !important}
+  .cc-pager{display:flex;align-items:center;justify-content:center;gap:10px;margin:2px 0 0}
+  .cc-pager span{font-size:9.5px;opacity:.8}
+  .cc-pager button{min-width:34px;min-height:24px;padding:0 10px;border-radius:999px;font-size:14px;line-height:1}
+  .cc-pager button:disabled{opacity:.35}
+}
+.cc-pager{display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0 0}
+.cc-pager button{min-width:38px;min-height:30px;border-radius:999px;border:1px solid var(--cc-line,#1d3a4d);background:rgba(255,255,255,.04);color:inherit;cursor:pointer}
+.cc-pager button:disabled{opacity:.35;cursor:default}
+@media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){
+  .cc-market-screen:has(> .cc-market-screen-nav) > .cc-market-heading{display:none !important}
+  .cc-market-screen:has(> .cc-market-screen-nav) .cc-market-entry{margin:0 0 3px !important;padding:0 !important}
+  .cc-market-screen:has(> .cc-market-screen-nav) .cc-market-main-nav button{min-height:26px !important}
+  .cc-deal-section > .cc-card[aria-label="Projeção da folha salarial"]{display:none}
+}
+@media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){
+  #app .cc-market-screen .cc-deal-section .cc-deal{grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) !important;gap:6px !important;padding:3px 8px !important;margin:0 0 3px !important;line-height:1.15}
+  #app .cc-market-screen .cc-deal-section .cc-deal-terms{display:flex;flex-wrap:wrap;gap:0 8px;align-items:baseline}
+  #app .cc-market-screen .cc-deal-section .cc-deal-terms b,#app .cc-market-screen .cc-deal-section .cc-deal b{font-size:11.5px}
+  #app .cc-market-screen .cc-deal-section .cc-deal-player strong{font-size:11.5px}
+  #app .cc-market-screen .cc-deal-section .cc-deal small,#app .cc-market-screen .cc-deal-section .cc-deal span{font-size:9px;line-height:1.15}
+}
+@media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){
+  #app .cc-market-screen .cc-card.cc-deal-section{min-height:0 !important}
+  #app .cc-market-screen:has(> .cc-market-screen-nav){padding-bottom:4px !important}
+}

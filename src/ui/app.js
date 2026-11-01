@@ -8983,6 +8983,10 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       event.stopImmediatePropagation();
       if (subnavPageButton.dataset.englishCup) englishCupKey = subnavPageButton.dataset.englishCup;
       const nextPage = subnavPageButton.dataset.page;
+      if (nextPage === "market" && state.mode === "coach") {
+        const mv = window.ProLifeCoachCareerView?.state;
+        if (mv) { mv.marketArea = "overview"; mv.dealTab = "propostas"; mv.dealPage = 0; mv.draftOffer = null; mv.selectedDeal = null; mv.scoutScreen = "busca"; }
+      }
       const enteringCalendar = nextPage === "calendar" && page !== "calendar";
       page = nextPage;
       if (enteringCalendar) syncCalendarEntry();
@@ -9077,10 +9081,11 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       return;
     }
     if (event.target.closest?.("[data-legacy-awards]")) { legacyAwardsOpen = !legacyAwardsOpen; render(); return; }
-    const el = event.target.closest?.("[data-coach-pay-clause],[data-coach-list-screen],[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-signing-squad],[data-coach-signing-open],[data-coach-signing-close],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-accept],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-screen],[data-coach-scout-filter-tab],[data-coach-scout-select],[data-coach-scout-back],[data-coach-scout-page],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-save-priority],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer],[data-coach-submit-offer],[data-coach-cancel-offer],[data-coach-squad-player],[data-coach-squad-apply],[data-coach-player-status],[data-coach-renew-open],[data-coach-renew-cancel],[data-coach-renew-confirm],[data-coach-player-release],[data-coach-player-offers],[data-coach-squad-lineup]");
+    const el = event.target.closest?.("[data-coach-pay-clause],[data-coach-list-screen],[data-coach-tab],[data-coach-talk],[data-coach-setcaptain],[data-coach-focus],[data-coach-deal-accept],[data-coach-deal-reject],[data-coach-deal-buy],[data-coach-deal-tab],[data-coach-deal-page],[data-coach-signing-squad],[data-coach-signing-open],[data-coach-signing-close],[data-coach-deal-open],[data-coach-deal-close],[data-coach-deal-revise],[data-coach-deal-preset],[data-coach-contract-accept],[data-coach-contract-negotiate],[data-coach-offer-save],[data-coach-offer-player-save],[data-coach-sale-generate],[data-coach-sale-accept],[data-coach-sale-reject],[data-coach-sale-counter],[data-coach-market-area],[data-coach-scout-screen],[data-coach-scout-filter-tab],[data-coach-scout-select],[data-coach-scout-back],[data-coach-scout-page],[data-coach-scout-apply],[data-coach-start-scout],[data-coach-save-priority],[data-coach-shortlist],[data-coach-inquire],[data-coach-scout-offer],[data-coach-submit-offer],[data-coach-cancel-offer],[data-coach-squad-player],[data-coach-squad-apply],[data-coach-player-status],[data-coach-renew-open],[data-coach-renew-cancel],[data-coach-renew-confirm],[data-coach-player-release],[data-coach-player-offers],[data-coach-squad-lineup]");
     if (!el || !state || state.mode !== "coach") return;
     const V = window.ProLifeCoachCareerView;
     if (el.hasAttribute("data-coach-tab")) { V?.setTab(el.getAttribute("data-coach-tab")); render(); return; }
+    if (el.hasAttribute("data-coach-deal-page")) { V?.setDealPage(Number(el.getAttribute("data-coach-deal-page"))); render(); return; }
     if (el.hasAttribute("data-coach-deal-tab")) { V?.setDealTab(el.getAttribute("data-coach-deal-tab")); render(); return; }
     if (el.hasAttribute("data-coach-signing-squad")) { page="squad"; render(); return; }
     if (el.hasAttribute("data-coach-signing-open")) { V?.openSigning(el.getAttribute("data-coach-signing-open")); render(); return; }

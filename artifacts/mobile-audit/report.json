@@ -291,11 +291,11 @@
       "screen": "market",
       "overflowX": 0,
       "issues": [],
-      "smallTargets": 0,
-      "tinyText": 6,
+      "smallTargets": 1,
+      "tinyText": 8,
       "panel": {
         "clientH": 273,
-        "scrollH": 821
+        "scrollH": 542
       },
       "docScrollY": 0
     },
@@ -304,11 +304,11 @@
       "screen": "market › Recebidas 0",
       "overflowX": 0,
       "issues": [],
-      "smallTargets": 0,
-      "tinyText": 6,
+      "smallTargets": 1,
+      "tinyText": 8,
       "panel": {
         "clientH": 273,
-        "scrollH": 390
+        "scrollH": 319
       },
       "docScrollY": 0
     },
@@ -317,11 +317,11 @@
       "screen": "proposals",
       "overflowX": 0,
       "issues": [],
-      "smallTargets": 0,
-      "tinyText": 6,
+      "smallTargets": 1,
+      "tinyText": 8,
       "panel": {
         "clientH": 273,
-        "scrollH": 821
+        "scrollH": 542
       },
       "docScrollY": 0
     },
@@ -330,11 +330,11 @@
       "screen": "proposals › Recebidas 0",
       "overflowX": 0,
       "issues": [],
-      "smallTargets": 0,
-      "tinyText": 6,
+      "smallTargets": 1,
+      "tinyText": 8,
       "panel": {
         "clientH": 273,
-        "scrollH": 390
+        "scrollH": 319
       },
       "docScrollY": 0
     },
@@ -903,10 +903,10 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 6,
+      "tinyText": 9,
       "panel": {
         "clientH": 258,
-        "scrollH": 758
+        "scrollH": 542
       },
       "docScrollY": 0
     },
@@ -916,10 +916,10 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 6,
+      "tinyText": 9,
       "panel": {
         "clientH": 258,
-        "scrollH": 390
+        "scrollH": 319
       },
       "docScrollY": 0
     },
@@ -1488,10 +1488,10 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 6,
+      "tinyText": 9,
       "panel": {
         "clientH": 258,
-        "scrollH": 758
+        "scrollH": 542
       },
       "docScrollY": 0
     },
@@ -1501,10 +1501,10 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 6,
+      "tinyText": 9,
       "panel": {
         "clientH": 258,
-        "scrollH": 390
+        "scrollH": 319
       },
       "docScrollY": 0
     },
@@ -2073,10 +2073,10 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 7,
+      "tinyText": 9,
       "panel": {
         "clientH": 288,
-        "scrollH": 758
+        "scrollH": 542
       },
       "docScrollY": 0
     },
@@ -2086,10 +2086,10 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 7,
+      "tinyText": 9,
       "panel": {
         "clientH": 288,
-        "scrollH": 390
+        "scrollH": 319
       },
       "docScrollY": 0
     },
@@ -2658,10 +2658,10 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 8,
+      "tinyText": 9,
       "panel": {
         "clientH": 312,
-        "scrollH": 673
+        "scrollH": 442
       },
       "docScrollY": 0
     },
@@ -2671,10 +2671,10 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 8,
+      "tinyText": 9,
       "panel": {
         "clientH": 312,
-        "scrollH": 390
+        "scrollH": 319
       },
       "docScrollY": 0
     },
@@ -3243,10 +3243,10 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 8,
+      "tinyText": 9,
       "panel": {
         "clientH": 328,
-        "scrollH": 673
+        "scrollH": 442
       },
       "docScrollY": 0
     },
@@ -3256,10 +3256,10 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 8,
+      "tinyText": 9,
       "panel": {
         "clientH": 328,
-        "scrollH": 390
+        "scrollH": 328
       },
       "docScrollY": 0
     },
