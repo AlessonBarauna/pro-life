@@ -486,6 +486,13 @@
     }
     // Compatibilidade com links/estado de interface antigos: Panorama foi consolidado em Competições.
     if (page === "panorama") page = "competitions";
+    // Treinador: "Propostas" abre o mercado na aba de negociações (e "Visão geral" volta ao painel), sem perder a navegação do mercado.
+    if (state.mode === "coach" && window.ProLifeCoachCareerView?.state) {
+      const mv = window.ProLifeCoachCareerView.state;
+      if (page === "proposals" && window.__plPrevPage !== "proposals") { mv.marketArea = "transferencias"; mv.dealTab = "propostas"; }
+      else if (page === "market" && window.__plPrevPage === "proposals") mv.marketArea = "overview";
+    }
+    window.__plPrevPage = page;
     Career.init(state);
     const c = D.club(state),
       topNext = D.nextCommitment(state),
@@ -8762,7 +8769,13 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const doc = ct && api ? api.documentHtml(cineModel(ct, "contract"), "signed") : '<p class="empty">Nenhum contrato registrado para o clube atual.</p>';
       return `<div class="grid"><section class="card cine-page"><div class="tag">CONTRATO ATUAL</div><h2>Contrato assinado</h2>${cineBanner()}${doc}<div class="actions">${ct ? '<button type="button" data-cine-open="contract">Abrir documento</button>' : ""}${cineArrival() ? '<button type="button" data-cine-open="present">Rever apresentação</button>' : ""}</div></section></div>`;
     },
-    proposals() {
+    proposals(forceClassic) {
+      if (!forceClassic && state.mode === "coach" && state.clubId && window.ProLifeCoachCareerView?.renderMarket) {
+        const marketHtml = window.ProLifeCoachCareerView.renderMarket(state, D);
+        const pendingJobOffers = (state.offers || []).filter((o) => !Number.isFinite(Number(o.expires)) || Number(o.expires) >= Number(state.day));
+        if (!pendingJobOffers.length) return marketHtml;
+        return marketHtml + views.proposals(true);
+      }
       const eligible = Career.canTransfer(state),
         w = Career.windowStatus(state),
         e = Career.init(state);
