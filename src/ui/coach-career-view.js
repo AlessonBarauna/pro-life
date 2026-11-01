@@ -499,12 +499,18 @@
       for(const x of all){const p=x.roster?.find(p=>p.id===id);if(p)return p;}
       return D?.GlobalFootball?.playerById?.(s,id)||root.ProLifeGlobalFootball?.playerById?.(s,id)||null;
     };
-    const athlete=id=>{
+    const nameHints=new Map();
+    const hint=(id,name)=>{if(id&&name&&!nameHints.has(String(id)))nameHints.set(String(id),String(name));};
+    [c.negotiations,c.saleOffers,c.sales,c.loans,c.shortlist,c.signings,c.signingHistory,c.transfers,s.extras?.transfers,c.history].forEach(l=>{if(Array.isArray(l))l.forEach(x=>x&&hint(x.playerId,x.playerName||x.player?.name||(typeof x.player==="string"?x.player:"")));});
+    const statusPt={accepted:"Aceita",rejected:"Recusada",declined:"Recusada",expired:"Expirada",cancelled:"Cancelada",canceled:"Cancelada",countered:"Contraproposta",completed:"Concluída",withdrawn:"Retirada",closed:"Encerrada",failed:"Sem acordo",agreed:"Acordo fechado"};
+    const stPt=v=>statusPt[String(v||"").toLowerCase()]||String(v||"").replace(/_/g," ");
+    const athlete=(id,rec)=>{
       const p=player(id);
-      if(!p)return '<strong>'+esc(id||"Jogador")+'</strong><small>Dados individuais indisponíveis neste save</small>';
+      const nm=p?.name||rec?.playerName||nameHints.get(String(id));
+      if(!p){return '<strong>'+esc(nm||"Jogador sem ficha")+'</strong><small>'+(nm?'Ficha detalhada indisponível':'Registro antigo · nome não guardado')+'</small>';}
       const overall=p.overall??p.ovr??(D?.overall?.(p));
       const facts=[p.primaryPosition||p.pos||p.position,Number.isFinite(Number(overall))?'GER '+Math.round(Number(overall)):null,Number.isFinite(Number(p.age))?'Idade '+p.age:null,p.nationality||p.nation].filter(Boolean).join(' · ');
-      return '<strong>'+esc(p.name||id)+'</strong><small>'+esc(facts)+'</small>';
+      return '<strong>'+esc(p.name||nm||"Jogador")+'</strong><small>'+esc(facts)+'</small>';
     };
     const draft=ui.draftOffer;
     const draftPlayer=draft?(D?.GlobalFootball?.playerById?.(s,draft.playerId)||(s.clubs||[]).flatMap(x=>x.roster||[]).find(x=>x.id===draft.playerId)):null;
@@ -779,10 +785,10 @@
     const rightsRows=rights.map(x=>'<article class="cc-deal"><div class="cc-deal-player">'+athlete(x.playerId)+'</div><div class="cc-deal-parties">'+team(x.holderClubId)+'<span aria-hidden="true">→</span>'+team(x.ownerClubId)+'</div><div class="cc-deal-terms"><b>'+(x.type==="buyback"?"Recompra por "+money(x.price):"Direito de preferência")+'</b><small>Vale até '+careerDate(s,x.expiresDay)+'</small></div></article>').join("");
     const clauseRows=wrap(clauses,x=>'<article class="cc-deal"><div class="cc-deal-player">'+athlete(x.playerId)+'</div><div class="cc-deal-parties">'+team(x.sellerClubId)+'<span aria-hidden="true">→</span>'+team(x.buyerClubId)+'</div><div class="cc-deal-terms"><b>'+esc(x.percentage)+'% de revenda</b><small>Ativa até uma próxima venda definitiva</small></div></article>',(rights.length?"":"Nenhuma cláusula ativa."));
     const historyRows=[
-      ...saleHistory.map(o=>({day:o.closedDay??o.expiresDay,html:'<div class="cc-deal"><div class="cc-deal-player">'+athlete(o.playerId)+'</div><span>'+esc(clubName(o.buyerClubId))+' · '+esc(o.status)+'</span><b>'+esc(money(o.finalFee??o.amount))+'</b></div>'})),
-      ...negotiationHistory.map(n=>({day:n.closedDay??n.expiresDay,html:'<div class="cc-deal"><div class="cc-deal-player">'+athlete(n.playerId)+'</div><div>'+esc(money(n.finalFee))+'</div><small>'+esc(n.status)+'</small></div>'})),
+      ...saleHistory.map(o=>({day:o.closedDay??o.expiresDay,html:'<div class="cc-deal"><div class="cc-deal-player">'+athlete(o.playerId,o)+'</div><span>'+esc(clubName(o.buyerClubId))+' · '+esc(stPt(o.status))+'</span><b>'+esc(money(o.finalFee??o.amount))+'</b></div>'})),
+      ...negotiationHistory.map(n=>({day:n.closedDay??n.expiresDay,html:'<div class="cc-deal"><div class="cc-deal-player">'+athlete(n.playerId,n)+'</div><div>'+esc(money(n.finalFee))+'</div><small>'+esc(stPt(n.status))+'</small></div>'})),
       ...paid.map(d=>({day:d.paidDay??d.dueDay,html:'<div class="cc-deal"><div>'+team(d.buyerClubId)+' → '+team(d.sourceClubId)+'</div><b>'+esc(money(d.amount))+'</b><small>Parcela liquidada · dia '+esc(d.paidDay??d.dueDay)+'</small></div>'})),
-      ...finishedLoans.map(l=>({day:l.returnDay??l.purchaseDay??l.dueDay,html:'<div class="cc-deal"><div class="cc-deal-player">'+athlete(l.playerId)+'</div><span>'+(l.purchased?'Compra definitiva':'Empréstimo encerrado')+'</span><small>Dia '+esc(l.returnDay??l.purchaseDay??l.dueDay)+'</small></div>'})),
+      ...finishedLoans.map(l=>({day:l.returnDay??l.purchaseDay??l.dueDay,html:'<div class="cc-deal"><div class="cc-deal-player">'+athlete(l.playerId,l)+'</div><span>'+(l.purchased?'Compra definitiva':'Empréstimo encerrado')+'</span><small>Dia '+esc(l.returnDay??l.purchaseDay??l.dueDay)+'</small></div>'})),
       ...transactions.slice(0,30).map(t=>({day:t.day,html:'<div class="cc-deal"><span>'+esc(t.player||"Jogador")+' · '+esc(t.from||"Origem")+' → '+esc(t.to||"Destino")+'</span><b>'+esc(money(t.fee))+'</b><small>Dia '+esc(t.day)+'</small></div>'}))
     ].sort((a,b)=>Number(b.day||0)-Number(a.day||0)).slice(0,45).map(x=>x.html).join("")||'<p class="cc-note">Nenhuma movimentação registrada.</p>';
     const listRows=wrap(c.shortlist||[],x=>{

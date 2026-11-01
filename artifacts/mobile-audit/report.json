@@ -21,7 +21,7 @@
       "smallTargets": 0,
       "tinyText": 2,
       "panel": {
-        "clientH": 282,
+        "clientH": 273,
         "scrollH": 502
       },
       "docScrollY": 0
@@ -34,8 +34,8 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 282,
-        "scrollH": 1457
+        "clientH": 273,
+        "scrollH": 1443
       },
       "docScrollY": 0
     },
@@ -47,8 +47,8 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 282,
-        "scrollH": 1457
+        "clientH": 273,
+        "scrollH": 1443
       },
       "docScrollY": 0
     },
@@ -164,7 +164,7 @@
       "smallTargets": 6,
       "tinyText": 17,
       "panel": {
-        "clientH": 249,
+        "clientH": 239,
         "scrollH": 907
       },
       "docScrollY": 0
@@ -177,8 +177,8 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 249,
-        "scrollH": 249
+        "clientH": 239,
+        "scrollH": 239
       },
       "docScrollY": 0
     },
@@ -190,8 +190,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 249,
-        "scrollH": 5926
+        "clientH": 239,
+        "scrollH": 5580
       },
       "docScrollY": 0
     },
@@ -203,8 +203,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 249,
-        "scrollH": 5926
+        "clientH": 239,
+        "scrollH": 5580
       },
       "docScrollY": 0
     },
@@ -216,7 +216,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 249,
+        "clientH": 239,
         "scrollH": 994
       },
       "docScrollY": 0
@@ -229,7 +229,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 249,
+        "clientH": 239,
         "scrollH": 994
       },
       "docScrollY": 0
@@ -242,7 +242,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 249,
+        "clientH": 239,
         "scrollH": 2088
       },
       "docScrollY": 0
@@ -255,7 +255,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 249,
+        "clientH": 239,
         "scrollH": 604
       },
       "docScrollY": 0
@@ -268,7 +268,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 249,
+        "clientH": 239,
         "scrollH": 604
       },
       "docScrollY": 0
@@ -281,7 +281,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 249,
+        "clientH": 239,
         "scrollH": 651
       },
       "docScrollY": 0
@@ -292,10 +292,10 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 7,
+      "tinyText": 6,
       "panel": {
-        "clientH": 282,
-        "scrollH": 956
+        "clientH": 273,
+        "scrollH": 821
       },
       "docScrollY": 0
     },
@@ -305,10 +305,10 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 7,
+      "tinyText": 6,
       "panel": {
-        "clientH": 282,
-        "scrollH": 482
+        "clientH": 273,
+        "scrollH": 390
       },
       "docScrollY": 0
     },
@@ -318,10 +318,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 1,
+      "tinyText": 6,
       "panel": {
-        "clientH": 282,
-        "scrollH": 715
+        "clientH": 273,
+        "scrollH": 821
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "667x375",
+      "screen": "proposals › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 6,
+      "panel": {
+        "clientH": 273,
+        "scrollH": 390
       },
       "docScrollY": 0
     },
@@ -331,23 +344,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 7,
+      "tinyText": 1,
       "panel": {
-        "clientH": 282,
-        "scrollH": 482
+        "clientH": 273,
+        "scrollH": 940
       },
       "docScrollY": 0
     },
     {
       "vp": "667x375",
-      "screen": "clubs › Recebidas 0",
+      "screen": "clubs › Painel",
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 7,
+      "tinyText": 1,
       "panel": {
-        "clientH": 282,
-        "scrollH": 482
+        "clientH": 273,
+        "scrollH": 940
       },
       "docScrollY": 0
     },
@@ -359,7 +372,7 @@
       "smallTargets": 0,
       "tinyText": 5,
       "panel": {
-        "clientH": 282,
+        "clientH": 273,
         "scrollH": 723
       },
       "docScrollY": 0
@@ -372,7 +385,7 @@
       "smallTargets": 0,
       "tinyText": 5,
       "panel": {
-        "clientH": 282,
+        "clientH": 273,
         "scrollH": 723
       },
       "docScrollY": 0
@@ -385,7 +398,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 282,
+        "clientH": 273,
         "scrollH": 439
       },
       "docScrollY": 0
@@ -398,8 +411,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 282,
-        "scrollH": 1642
+        "clientH": 273,
+        "scrollH": 1616
       },
       "docScrollY": 0
     },
@@ -411,8 +424,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 282,
-        "scrollH": 282
+        "clientH": 273,
+        "scrollH": 273
       },
       "docScrollY": 0
     },
@@ -424,8 +437,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 282,
-        "scrollH": 282
+        "clientH": 273,
+        "scrollH": 273
       },
       "docScrollY": 0
     },
@@ -437,7 +450,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 282,
+        "clientH": 273,
         "scrollH": 1268
       },
       "docScrollY": 0
@@ -450,7 +463,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 282,
+        "clientH": 273,
         "scrollH": 1268
       },
       "docScrollY": 0
@@ -463,7 +476,7 @@
       "smallTargets": 0,
       "tinyText": 5,
       "panel": {
-        "clientH": 282,
+        "clientH": 273,
         "scrollH": 723
       },
       "docScrollY": 0
@@ -476,7 +489,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 282,
+        "clientH": 273,
         "scrollH": 439
       },
       "docScrollY": 0
@@ -489,8 +502,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 282,
-        "scrollH": 1642
+        "clientH": 273,
+        "scrollH": 1616
       },
       "docScrollY": 0
     },
@@ -502,8 +515,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 282,
-        "scrollH": 282
+        "clientH": 273,
+        "scrollH": 273
       },
       "docScrollY": 0
     },
@@ -515,8 +528,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 282,
-        "scrollH": 282
+        "clientH": 273,
+        "scrollH": 273
       },
       "docScrollY": 0
     },
@@ -528,7 +541,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 282,
+        "clientH": 273,
         "scrollH": 1268
       },
       "docScrollY": 0
@@ -554,7 +567,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 282,
+        "clientH": 273,
         "scrollH": 1697
       },
       "docScrollY": 0
@@ -593,7 +606,7 @@
       "smallTargets": 0,
       "tinyText": 2,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 502
       },
       "docScrollY": 0
@@ -606,7 +619,7 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1432
       },
       "docScrollY": 0
@@ -619,7 +632,7 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1432
       },
       "docScrollY": 0
@@ -736,7 +749,7 @@
       "smallTargets": 6,
       "tinyText": 13,
       "panel": {
-        "clientH": 267,
+        "clientH": 224,
         "scrollH": 907
       },
       "docScrollY": 0
@@ -749,8 +762,8 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 267,
-        "scrollH": 267
+        "clientH": 224,
+        "scrollH": 224
       },
       "docScrollY": 0
     },
@@ -762,8 +775,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 5926
+        "clientH": 224,
+        "scrollH": 5580
       },
       "docScrollY": 0
     },
@@ -775,8 +788,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 5926
+        "clientH": 224,
+        "scrollH": 5580
       },
       "docScrollY": 0
     },
@@ -788,8 +801,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 994
+        "clientH": 224,
+        "scrollH": 952
       },
       "docScrollY": 0
     },
@@ -801,8 +814,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 994
+        "clientH": 224,
+        "scrollH": 952
       },
       "docScrollY": 0
     },
@@ -814,7 +827,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 224,
         "scrollH": 2088
       },
       "docScrollY": 0
@@ -827,7 +840,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 224,
         "scrollH": 567
       },
       "docScrollY": 0
@@ -840,7 +853,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 224,
         "scrollH": 567
       },
       "docScrollY": 0
@@ -853,7 +866,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 224,
         "scrollH": 651
       },
       "docScrollY": 0
@@ -864,23 +877,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 6,
+      "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 467
+        "clientH": 258,
+        "scrollH": 940
       },
       "docScrollY": 0
     },
     {
       "vp": "740x360",
-      "screen": "market › Recebidas 0",
+      "screen": "market › Painel",
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 6,
+      "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 467
+        "clientH": 258,
+        "scrollH": 940
       },
       "docScrollY": 0
     },
@@ -890,10 +903,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 1,
+      "tinyText": 6,
       "panel": {
-        "clientH": 267,
-        "scrollH": 715
+        "clientH": 258,
+        "scrollH": 758
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "740x360",
+      "screen": "proposals › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 6,
+      "panel": {
+        "clientH": 258,
+        "scrollH": 390
       },
       "docScrollY": 0
     },
@@ -903,23 +929,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 6,
+      "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 467
+        "clientH": 258,
+        "scrollH": 940
       },
       "docScrollY": 0
     },
     {
       "vp": "740x360",
-      "screen": "clubs › Recebidas 0",
+      "screen": "clubs › Painel",
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 6,
+      "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 467
+        "clientH": 258,
+        "scrollH": 940
       },
       "docScrollY": 0
     },
@@ -931,7 +957,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1161
       },
       "docScrollY": 0
@@ -944,7 +970,7 @@
       "smallTargets": 0,
       "tinyText": 5,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 723
       },
       "docScrollY": 0
@@ -957,7 +983,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 439
       },
       "docScrollY": 0
@@ -970,8 +996,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 1642
+        "clientH": 258,
+        "scrollH": 1616
       },
       "docScrollY": 0
     },
@@ -983,8 +1009,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 267
+        "clientH": 258,
+        "scrollH": 258
       },
       "docScrollY": 0
     },
@@ -996,8 +1022,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 267
+        "clientH": 258,
+        "scrollH": 258
       },
       "docScrollY": 0
     },
@@ -1009,7 +1035,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1161
       },
       "docScrollY": 0
@@ -1022,7 +1048,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1161
       },
       "docScrollY": 0
@@ -1035,7 +1061,7 @@
       "smallTargets": 0,
       "tinyText": 5,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 723
       },
       "docScrollY": 0
@@ -1048,7 +1074,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 439
       },
       "docScrollY": 0
@@ -1061,8 +1087,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 1642
+        "clientH": 258,
+        "scrollH": 1616
       },
       "docScrollY": 0
     },
@@ -1074,8 +1100,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 267
+        "clientH": 258,
+        "scrollH": 258
       },
       "docScrollY": 0
     },
@@ -1087,8 +1113,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 267
+        "clientH": 258,
+        "scrollH": 258
       },
       "docScrollY": 0
     },
@@ -1100,7 +1126,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1161
       },
       "docScrollY": 0
@@ -1126,7 +1152,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1697
       },
       "docScrollY": 0
@@ -1165,7 +1191,7 @@
       "smallTargets": 0,
       "tinyText": 2,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 502
       },
       "docScrollY": 0
@@ -1178,7 +1204,7 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1432
       },
       "docScrollY": 0
@@ -1191,7 +1217,7 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1432
       },
       "docScrollY": 0
@@ -1308,8 +1334,8 @@
       "smallTargets": 6,
       "tinyText": 19,
       "panel": {
-        "clientH": 267,
-        "scrollH": 885
+        "clientH": 258,
+        "scrollH": 860
       },
       "docScrollY": 0
     },
@@ -1321,8 +1347,8 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 267,
-        "scrollH": 267
+        "clientH": 258,
+        "scrollH": 258
       },
       "docScrollY": 0
     },
@@ -1334,8 +1360,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 5914
+        "clientH": 258,
+        "scrollH": 5568
       },
       "docScrollY": 0
     },
@@ -1347,8 +1373,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 5914
+        "clientH": 258,
+        "scrollH": 5568
       },
       "docScrollY": 0
     },
@@ -1360,8 +1386,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 958
+        "clientH": 258,
+        "scrollH": 916
       },
       "docScrollY": 0
     },
@@ -1373,8 +1399,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 958
+        "clientH": 258,
+        "scrollH": 916
       },
       "docScrollY": 0
     },
@@ -1386,7 +1412,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 2170
       },
       "docScrollY": 0
@@ -1399,7 +1425,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 567
       },
       "docScrollY": 0
@@ -1412,7 +1438,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 567
       },
       "docScrollY": 0
@@ -1425,7 +1451,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 646
       },
       "docScrollY": 0
@@ -1436,23 +1462,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 6,
+      "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 467
+        "clientH": 258,
+        "scrollH": 673
       },
       "docScrollY": 0
     },
     {
       "vp": "780x360",
-      "screen": "market › Recebidas 0",
+      "screen": "market › Painel",
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 6,
+      "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 467
+        "clientH": 258,
+        "scrollH": 673
       },
       "docScrollY": 0
     },
@@ -1462,10 +1488,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 1,
+      "tinyText": 6,
       "panel": {
-        "clientH": 267,
-        "scrollH": 725
+        "clientH": 258,
+        "scrollH": 758
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "780x360",
+      "screen": "proposals › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 6,
+      "panel": {
+        "clientH": 258,
+        "scrollH": 390
       },
       "docScrollY": 0
     },
@@ -1475,23 +1514,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 6,
+      "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 467
+        "clientH": 258,
+        "scrollH": 673
       },
       "docScrollY": 0
     },
     {
       "vp": "780x360",
-      "screen": "clubs › Recebidas 0",
+      "screen": "clubs › Painel",
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 6,
+      "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 467
+        "clientH": 258,
+        "scrollH": 673
       },
       "docScrollY": 0
     },
@@ -1503,7 +1542,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1053
       },
       "docScrollY": 0
@@ -1516,7 +1555,7 @@
       "smallTargets": 0,
       "tinyText": 5,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 717
       },
       "docScrollY": 0
@@ -1529,7 +1568,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 433
       },
       "docScrollY": 0
@@ -1542,7 +1581,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1340
       },
       "docScrollY": 0
@@ -1555,8 +1594,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 267
+        "clientH": 258,
+        "scrollH": 258
       },
       "docScrollY": 0
     },
@@ -1568,8 +1607,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 267
+        "clientH": 258,
+        "scrollH": 258
       },
       "docScrollY": 0
     },
@@ -1581,7 +1620,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1053
       },
       "docScrollY": 0
@@ -1594,7 +1633,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1053
       },
       "docScrollY": 0
@@ -1607,7 +1646,7 @@
       "smallTargets": 0,
       "tinyText": 5,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 717
       },
       "docScrollY": 0
@@ -1620,7 +1659,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 433
       },
       "docScrollY": 0
@@ -1633,7 +1672,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1340
       },
       "docScrollY": 0
@@ -1646,8 +1685,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 267
+        "clientH": 258,
+        "scrollH": 258
       },
       "docScrollY": 0
     },
@@ -1659,8 +1698,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
-        "scrollH": 267
+        "clientH": 258,
+        "scrollH": 258
       },
       "docScrollY": 0
     },
@@ -1672,7 +1711,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1053
       },
       "docScrollY": 0
@@ -1698,7 +1737,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 267,
+        "clientH": 258,
         "scrollH": 1715
       },
       "docScrollY": 0
@@ -1737,7 +1776,7 @@
       "smallTargets": 0,
       "tinyText": 2,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 502
       },
       "docScrollY": 0
@@ -1750,8 +1789,8 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 297,
-        "scrollH": 1413
+        "clientH": 288,
+        "scrollH": 1400
       },
       "docScrollY": 0
     },
@@ -1763,8 +1802,8 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 297,
-        "scrollH": 1413
+        "clientH": 288,
+        "scrollH": 1400
       },
       "docScrollY": 0
     },
@@ -1880,7 +1919,7 @@
       "smallTargets": 6,
       "tinyText": 19,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 860
       },
       "docScrollY": 0
@@ -1893,8 +1932,8 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 297,
-        "scrollH": 297
+        "clientH": 288,
+        "scrollH": 288
       },
       "docScrollY": 0
     },
@@ -1906,8 +1945,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
-        "scrollH": 5818
+        "clientH": 288,
+        "scrollH": 5447
       },
       "docScrollY": 0
     },
@@ -1919,8 +1958,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
-        "scrollH": 5818
+        "clientH": 288,
+        "scrollH": 5447
       },
       "docScrollY": 0
     },
@@ -1932,7 +1971,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 894
       },
       "docScrollY": 0
@@ -1945,7 +1984,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 894
       },
       "docScrollY": 0
@@ -1958,7 +1997,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 1502
       },
       "docScrollY": 0
@@ -1971,7 +2010,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 567
       },
       "docScrollY": 0
@@ -1984,7 +2023,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 567
       },
       "docScrollY": 0
@@ -1997,7 +2036,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 646
       },
       "docScrollY": 0
@@ -2008,23 +2047,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 7,
+      "tinyText": 1,
       "panel": {
-        "clientH": 297,
-        "scrollH": 467
+        "clientH": 288,
+        "scrollH": 673
       },
       "docScrollY": 0
     },
     {
       "vp": "844x390",
-      "screen": "market › Recebidas 0",
+      "screen": "market › Painel",
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 7,
+      "tinyText": 1,
       "panel": {
-        "clientH": 297,
-        "scrollH": 467
+        "clientH": 288,
+        "scrollH": 673
       },
       "docScrollY": 0
     },
@@ -2034,10 +2073,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 1,
+      "tinyText": 7,
       "panel": {
-        "clientH": 297,
-        "scrollH": 725
+        "clientH": 288,
+        "scrollH": 758
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "844x390",
+      "screen": "proposals › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 7,
+      "panel": {
+        "clientH": 288,
+        "scrollH": 390
       },
       "docScrollY": 0
     },
@@ -2047,23 +2099,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 7,
+      "tinyText": 1,
       "panel": {
-        "clientH": 297,
-        "scrollH": 467
+        "clientH": 288,
+        "scrollH": 673
       },
       "docScrollY": 0
     },
     {
       "vp": "844x390",
-      "screen": "clubs › Recebidas 0",
+      "screen": "clubs › Painel",
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 7,
+      "tinyText": 1,
       "panel": {
-        "clientH": 297,
-        "scrollH": 467
+        "clientH": 288,
+        "scrollH": 673
       },
       "docScrollY": 0
     },
@@ -2075,7 +2127,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 1053
       },
       "docScrollY": 0
@@ -2088,7 +2140,7 @@
       "smallTargets": 0,
       "tinyText": 5,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 717
       },
       "docScrollY": 0
@@ -2101,7 +2153,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 433
       },
       "docScrollY": 0
@@ -2114,7 +2166,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 1303
       },
       "docScrollY": 0
@@ -2127,8 +2179,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
-        "scrollH": 297
+        "clientH": 288,
+        "scrollH": 288
       },
       "docScrollY": 0
     },
@@ -2140,8 +2192,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
-        "scrollH": 297
+        "clientH": 288,
+        "scrollH": 288
       },
       "docScrollY": 0
     },
@@ -2153,7 +2205,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 1053
       },
       "docScrollY": 0
@@ -2166,7 +2218,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 1053
       },
       "docScrollY": 0
@@ -2179,7 +2231,7 @@
       "smallTargets": 0,
       "tinyText": 5,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 717
       },
       "docScrollY": 0
@@ -2192,7 +2244,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 433
       },
       "docScrollY": 0
@@ -2205,7 +2257,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 1303
       },
       "docScrollY": 0
@@ -2218,8 +2270,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
-        "scrollH": 297
+        "clientH": 288,
+        "scrollH": 288
       },
       "docScrollY": 0
     },
@@ -2231,8 +2283,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
-        "scrollH": 297
+        "clientH": 288,
+        "scrollH": 288
       },
       "docScrollY": 0
     },
@@ -2244,7 +2296,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 1053
       },
       "docScrollY": 0
@@ -2270,7 +2322,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 297,
+        "clientH": 288,
         "scrollH": 1715
       },
       "docScrollY": 0
@@ -2309,7 +2361,7 @@
       "smallTargets": 0,
       "tinyText": 2,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 332
       },
       "docScrollY": 0
@@ -2322,8 +2374,8 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 321,
-        "scrollH": 1413
+        "clientH": 312,
+        "scrollH": 1400
       },
       "docScrollY": 0
     },
@@ -2335,8 +2387,8 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 321,
-        "scrollH": 1413
+        "clientH": 312,
+        "scrollH": 1400
       },
       "docScrollY": 0
     },
@@ -2452,7 +2504,7 @@
       "smallTargets": 6,
       "tinyText": 19,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 860
       },
       "docScrollY": 0
@@ -2465,8 +2517,8 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 321,
-        "scrollH": 321
+        "clientH": 312,
+        "scrollH": 312
       },
       "docScrollY": 0
     },
@@ -2478,8 +2530,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
-        "scrollH": 5384
+        "clientH": 312,
+        "scrollH": 5155
       },
       "docScrollY": 0
     },
@@ -2491,8 +2543,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
-        "scrollH": 5384
+        "clientH": 312,
+        "scrollH": 5155
       },
       "docScrollY": 0
     },
@@ -2504,7 +2556,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 821
       },
       "docScrollY": 0
@@ -2517,7 +2569,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 821
       },
       "docScrollY": 0
@@ -2530,7 +2582,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 1502
       },
       "docScrollY": 0
@@ -2543,7 +2595,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 548
       },
       "docScrollY": 0
@@ -2556,7 +2608,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 548
       },
       "docScrollY": 0
@@ -2569,7 +2621,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 646
       },
       "docScrollY": 0
@@ -2580,23 +2632,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 8,
+      "tinyText": 1,
       "panel": {
-        "clientH": 321,
-        "scrollH": 467
+        "clientH": 312,
+        "scrollH": 673
       },
       "docScrollY": 0
     },
     {
       "vp": "896x414",
-      "screen": "market › Recebidas 0",
+      "screen": "market › Painel",
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 8,
+      "tinyText": 1,
       "panel": {
-        "clientH": 321,
-        "scrollH": 467
+        "clientH": 312,
+        "scrollH": 673
       },
       "docScrollY": 0
     },
@@ -2606,10 +2658,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 1,
+      "tinyText": 8,
       "panel": {
-        "clientH": 321,
-        "scrollH": 725
+        "clientH": 312,
+        "scrollH": 673
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "896x414",
+      "screen": "proposals › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 8,
+      "panel": {
+        "clientH": 312,
+        "scrollH": 390
       },
       "docScrollY": 0
     },
@@ -2619,23 +2684,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 8,
+      "tinyText": 1,
       "panel": {
-        "clientH": 321,
-        "scrollH": 467
+        "clientH": 312,
+        "scrollH": 673
       },
       "docScrollY": 0
     },
     {
       "vp": "896x414",
-      "screen": "clubs › Recebidas 0",
+      "screen": "clubs › Painel",
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 8,
+      "tinyText": 1,
       "panel": {
-        "clientH": 321,
-        "scrollH": 467
+        "clientH": 312,
+        "scrollH": 673
       },
       "docScrollY": 0
     },
@@ -2647,7 +2712,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 1031
       },
       "docScrollY": 0
@@ -2660,7 +2725,7 @@
       "smallTargets": 0,
       "tinyText": 5,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 717
       },
       "docScrollY": 0
@@ -2673,7 +2738,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 433
       },
       "docScrollY": 0
@@ -2686,8 +2751,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
-        "scrollH": 1282
+        "clientH": 312,
+        "scrollH": 1255
       },
       "docScrollY": 0
     },
@@ -2699,8 +2764,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
-        "scrollH": 321
+        "clientH": 312,
+        "scrollH": 312
       },
       "docScrollY": 0
     },
@@ -2712,8 +2777,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
-        "scrollH": 321
+        "clientH": 312,
+        "scrollH": 312
       },
       "docScrollY": 0
     },
@@ -2725,7 +2790,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 1031
       },
       "docScrollY": 0
@@ -2738,7 +2803,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 1031
       },
       "docScrollY": 0
@@ -2751,7 +2816,7 @@
       "smallTargets": 0,
       "tinyText": 5,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 717
       },
       "docScrollY": 0
@@ -2764,7 +2829,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 433
       },
       "docScrollY": 0
@@ -2777,8 +2842,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
-        "scrollH": 1282
+        "clientH": 312,
+        "scrollH": 1255
       },
       "docScrollY": 0
     },
@@ -2790,8 +2855,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
-        "scrollH": 321
+        "clientH": 312,
+        "scrollH": 312
       },
       "docScrollY": 0
     },
@@ -2803,8 +2868,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
-        "scrollH": 321
+        "clientH": 312,
+        "scrollH": 312
       },
       "docScrollY": 0
     },
@@ -2816,7 +2881,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 1031
       },
       "docScrollY": 0
@@ -2842,7 +2907,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 321,
+        "clientH": 312,
         "scrollH": 1694
       },
       "docScrollY": 0
@@ -2881,8 +2946,8 @@
       "smallTargets": 0,
       "tinyText": 2,
       "panel": {
-        "clientH": 337,
-        "scrollH": 337
+        "clientH": 328,
+        "scrollH": 332
       },
       "docScrollY": 0
     },
@@ -2894,8 +2959,8 @@
       "smallTargets": 0,
       "tinyText": 9,
       "panel": {
-        "clientH": 337,
-        "scrollH": 1306
+        "clientH": 328,
+        "scrollH": 1293
       },
       "docScrollY": 0
     },
@@ -2907,8 +2972,8 @@
       "smallTargets": 0,
       "tinyText": 9,
       "panel": {
-        "clientH": 337,
-        "scrollH": 1306
+        "clientH": 328,
+        "scrollH": 1293
       },
       "docScrollY": 0
     },
@@ -3024,8 +3089,8 @@
       "smallTargets": 6,
       "tinyText": 19,
       "panel": {
-        "clientH": 337,
-        "scrollH": 710
+        "clientH": 328,
+        "scrollH": 667
       },
       "docScrollY": 0
     },
@@ -3037,8 +3102,8 @@
       "smallTargets": 0,
       "tinyText": 3,
       "panel": {
-        "clientH": 337,
-        "scrollH": 337
+        "clientH": 328,
+        "scrollH": 328
       },
       "docScrollY": 0
     },
@@ -3050,8 +3115,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
-        "scrollH": 5355
+        "clientH": 328,
+        "scrollH": 5075
       },
       "docScrollY": 0
     },
@@ -3063,8 +3128,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
-        "scrollH": 5355
+        "clientH": 328,
+        "scrollH": 5075
       },
       "docScrollY": 0
     },
@@ -3076,7 +3141,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 807
       },
       "docScrollY": 0
@@ -3089,7 +3154,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 807
       },
       "docScrollY": 0
@@ -3102,7 +3167,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 1454
       },
       "docScrollY": 0
@@ -3115,7 +3180,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 531
       },
       "docScrollY": 0
@@ -3128,7 +3193,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 531
       },
       "docScrollY": 0
@@ -3141,7 +3206,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 457
       },
       "docScrollY": 0
@@ -3152,23 +3217,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 8,
+      "tinyText": 1,
       "panel": {
-        "clientH": 337,
-        "scrollH": 467
+        "clientH": 328,
+        "scrollH": 674
       },
       "docScrollY": 0
     },
     {
       "vp": "932x430",
-      "screen": "market › Recebidas 0",
+      "screen": "market › Painel",
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 8,
+      "tinyText": 1,
       "panel": {
-        "clientH": 337,
-        "scrollH": 467
+        "clientH": 328,
+        "scrollH": 674
       },
       "docScrollY": 0
     },
@@ -3177,11 +3242,24 @@
       "screen": "proposals",
       "overflowX": 0,
       "issues": [],
-      "smallTargets": 5,
-      "tinyText": 1,
+      "smallTargets": 0,
+      "tinyText": 8,
       "panel": {
-        "clientH": 337,
-        "scrollH": 473
+        "clientH": 328,
+        "scrollH": 673
+      },
+      "docScrollY": 0
+    },
+    {
+      "vp": "932x430",
+      "screen": "proposals › Recebidas 0",
+      "overflowX": 0,
+      "issues": [],
+      "smallTargets": 0,
+      "tinyText": 8,
+      "panel": {
+        "clientH": 328,
+        "scrollH": 390
       },
       "docScrollY": 0
     },
@@ -3191,23 +3269,23 @@
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 8,
+      "tinyText": 1,
       "panel": {
-        "clientH": 337,
-        "scrollH": 467
+        "clientH": 328,
+        "scrollH": 674
       },
       "docScrollY": 0
     },
     {
       "vp": "932x430",
-      "screen": "clubs › Recebidas 0",
+      "screen": "clubs › Painel",
       "overflowX": 0,
       "issues": [],
       "smallTargets": 0,
-      "tinyText": 8,
+      "tinyText": 1,
       "panel": {
-        "clientH": 337,
-        "scrollH": 467
+        "clientH": 328,
+        "scrollH": 674
       },
       "docScrollY": 0
     },
@@ -3219,7 +3297,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 1031
       },
       "docScrollY": 0
@@ -3232,7 +3310,7 @@
       "smallTargets": 0,
       "tinyText": 5,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 717
       },
       "docScrollY": 0
@@ -3245,7 +3323,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 433
       },
       "docScrollY": 0
@@ -3258,8 +3336,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
-        "scrollH": 1282
+        "clientH": 328,
+        "scrollH": 1255
       },
       "docScrollY": 0
     },
@@ -3271,8 +3349,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
-        "scrollH": 337
+        "clientH": 328,
+        "scrollH": 328
       },
       "docScrollY": 0
     },
@@ -3284,8 +3362,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
-        "scrollH": 337
+        "clientH": 328,
+        "scrollH": 328
       },
       "docScrollY": 0
     },
@@ -3297,7 +3375,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 1031
       },
       "docScrollY": 0
@@ -3310,7 +3388,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 1031
       },
       "docScrollY": 0
@@ -3323,7 +3401,7 @@
       "smallTargets": 0,
       "tinyText": 5,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 717
       },
       "docScrollY": 0
@@ -3336,7 +3414,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 433
       },
       "docScrollY": 0
@@ -3349,8 +3427,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
-        "scrollH": 1282
+        "clientH": 328,
+        "scrollH": 1255
       },
       "docScrollY": 0
     },
@@ -3362,8 +3440,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
-        "scrollH": 337
+        "clientH": 328,
+        "scrollH": 328
       },
       "docScrollY": 0
     },
@@ -3375,8 +3453,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
-        "scrollH": 337
+        "clientH": 328,
+        "scrollH": 328
       },
       "docScrollY": 0
     },
@@ -3388,7 +3466,7 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
+        "clientH": 328,
         "scrollH": 1031
       },
       "docScrollY": 0
@@ -3414,8 +3492,8 @@
       "smallTargets": 0,
       "tinyText": 1,
       "panel": {
-        "clientH": 337,
-        "scrollH": 1382
+        "clientH": 328,
+        "scrollH": 1378
       },
       "docScrollY": 0
     },
