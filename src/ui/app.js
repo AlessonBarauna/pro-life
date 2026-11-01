@@ -8983,6 +8983,11 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       event.stopImmediatePropagation();
       if (subnavPageButton.dataset.englishCup) englishCupKey = subnavPageButton.dataset.englishCup;
       const nextPage = subnavPageButton.dataset.page;
+      if (nextPage === "proposals" && state.mode === "coach") {
+        const mv = window.ProLifeCoachCareerView?.state;
+        if (mv) { mv.marketArea = "transferencias"; mv.dealTab = "propostas"; mv.dealPage = 0; mv.draftOffer = null; mv.scoutScreen = mv.scoutScreen === "perfil" ? "busca" : mv.scoutScreen; }
+        window.__plPrevPage = "proposals";
+      }
       if (nextPage === "market" && state.mode === "coach") {
         const mv = window.ProLifeCoachCareerView?.state;
         if (mv) { mv.marketArea = "overview"; mv.dealTab = "propostas"; mv.dealPage = 0; mv.draftOffer = null; mv.selectedDeal = null; mv.scoutScreen = "busca"; }
