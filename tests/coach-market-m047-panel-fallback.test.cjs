@@ -6,5 +6,5 @@ test("M04.7 forecast has fallback without economy module",()=>{
  assert.match(src,/ProLifeClubEconomy\?\.revenueProjection\?\.\(own\)\|\|\(\(\)=>\{/);
  assert.match(src,/const sponsorshipAnnual=Math\.round/);
  assert.match(src,/const broadcastAnnual=Math\.round/);
- assert.match(src,/futureRevenuePanel\+sponsorCatalogPanel\+sponsorshipOfferPanel\+revenueContractPanel\+revenueSchedulePanel\+settlementPanel/);
+ assert.match(src,/futureRevenuePanel\],\["patro","Patrocínios",sponsorCatalogPanel\+sponsorshipOfferPanel\+revenueContractPanel\+revenueSchedulePanel\],\["dividas","Dívidas e auditoria",settlementPanel/);
 });
