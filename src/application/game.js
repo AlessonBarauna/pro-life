@@ -414,6 +414,19 @@ case "tactic": {
         s.coachCareer.settings.marketStrictness=difficulty;
         break;
       }
+      case "cnApply": case "cnAccept": case "cnDecline": case "cnResign": case "cnToggle": case "cnAuto": case "cnFormation": {
+        if (s.mode !== "coach") throw Error("Disponível para treinadores.");
+        const CN = D.CoachNational;
+        if (!CN) throw Error("Módulo de seleções indisponível.");
+        if (action === "cnApply") CN.apply(s, D, data.code);
+        else if (action === "cnAccept") CN.acceptOffer(s, D, data.code);
+        else if (action === "cnDecline") CN.declineOffer(s, D, data.code);
+        else if (action === "cnResign") CN.leave(s, D, "pedido");
+        else if (action === "cnToggle") CN.toggleCall(s, D, String(data.playerId || ""));
+        else if (action === "cnAuto") CN.autoCallup(s, D);
+        else CN.setFormation(s, D, String(data.formation || ""));
+        break;
+      }
       case "coachFocus": {
         if (s.mode !== "coach") throw Error("Disponível para treinadores.");
         D.CoachCareer.setFocus(s, data.focus);

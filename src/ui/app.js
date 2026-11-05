@@ -523,7 +523,7 @@
             ["save", "Saves", [["save", "Gerenciar saves"]]],
           ],
       allPages = groups.flatMap((g) => g[2]),
-      activeGroup = page === "squad" ? ["squad", "Elenco", []] : groups.find((g) => g[2].some(([id]) => id === page)) || groups[0],
+      activeGroup = page === "squad" ? ["squad", "Elenco", []] : page === "national" ? ["national", "Seleção", []] : groups.find((g) => g[2].some(([id]) => id === page)) || groups[0],
       subnav = activeGroup[2],
       CUP_MENU = ["englishCups","champions","europa","conference","libertadores","sudamericana"],
       subnavHtml = () => {
@@ -9310,6 +9310,30 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (el.hasAttribute("data-nh-tab")) H.setTab(el.getAttribute("data-nh-tab"));
     else H.setClassic(el.getAttribute("data-nh-classic") === "1");
     render();
+  });
+  // Seleção do treinador: abas, paginação, convocação, candidatura e convites.
+  document.addEventListener("click", (event) => {
+    const el = event.target.closest?.("[data-cn-tab],[data-cn-page],[data-cn-pos],[data-cn-toggle],[data-cn-apply],[data-cn-accept],[data-cn-decline],[data-cn-act]");
+    const V = window.ProLifeCoachNationalView;
+    if (!el || !state || !V) return;
+    const keep = () => document.querySelector(".sm27-screen-body")?.scrollTo?.(0, 0);
+    if (el.hasAttribute("data-cn-tab")) { V.setTab(el.getAttribute("data-cn-tab")); render(); keep(); return; }
+    if (el.hasAttribute("data-cn-page")) { const [key, n] = el.getAttribute("data-cn-page").split(":"); V.setPage(key, n); render(); return; }
+    if (el.hasAttribute("data-cn-pos")) { V.setPos(el.getAttribute("data-cn-pos")); render(); return; }
+    if (el.hasAttribute("data-cn-toggle")) { command("cnToggle", { playerId: el.getAttribute("data-cn-toggle") }); return; }
+    if (el.hasAttribute("data-cn-apply")) { if (command("cnApply", { code: el.getAttribute("data-cn-apply") })) V.setTab("geral"); render(); return; }
+    if (el.hasAttribute("data-cn-accept")) { if (command("cnAccept", { code: el.getAttribute("data-cn-accept") })) V.setTab("geral"); render(); return; }
+    if (el.hasAttribute("data-cn-decline")) { command("cnDecline", { code: el.getAttribute("data-cn-decline") }); return; }
+    const act = el.getAttribute("data-cn-act");
+    if (act === "auto") command("cnAuto", {});
+    else if (act === "leave-ask") { V.setConfirmLeave(true); render(); }
+    else if (act === "leave-cancel") { V.setConfirmLeave(false); render(); }
+    else if (act === "resign") { V.setConfirmLeave(false); if (command("cnResign", {})) V.setTab("convites"); render(); }
+  });
+  document.addEventListener("change", (event) => {
+    const el = event.target.closest?.("[data-cn-formation]");
+    if (!el || !state) return;
+    command("cnFormation", { formation: el.value });
   });
   // Europa League has an independent navigation state.
   document.addEventListener("click", event => {

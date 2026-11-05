@@ -22,6 +22,7 @@
   const Facilities=root.ProLifeFacilities||(typeof require==="function"?require("./facilities.js"):null);
   const CoachSkills=root.ProLifeCoachSkills||(typeof require==="function"?require("./coach-skills.js"):null);
   const CoachCareer=root.ProLifeCoachCareer||(typeof require==="function"?require("./coach-career.js"):null);
+  const CoachNational=root.ProLifeCoachNational||(typeof require==="function"?require("./coach-national.js"):null);
   const WorldLiveMarket=root.ProLifeWorldLiveMarket||(typeof require==="function"?require("./world-live-market.js"):null);
   const SeasonCompetitionCenter=root.ProLifeSeasonCompetitionCenter||(typeof require==="function"?require("./season-competition-center.js"):null);
   const Character =
@@ -2798,6 +2799,7 @@
       processEnglishCupsDay(s,rng);
       ClubIntelligence?.daily(s, { log: (title, body) => log(s, title, body) });
       CoachCareer?.daily(s, API, { log: (title, body) => log(s, title, body) });
+      if (s.mode === "coach") { try { CoachNational?.daily(s, API); } catch (e) { s.coachNationalError = String(e?.message || e); } }
       OffField?.daily(s, API, { log: (title, body) => log(s, title, body) });
       NationalTeam?.daily(s, rng, API, log);
       const pendingBefore = new Set((NationalCallups?.pending?.(s) || []).map((r) => r.id));
@@ -3452,6 +3454,7 @@
     WorldClubCompetitions,
     ClubIntelligence,
     CoachCareer,
+    CoachNational,
     Facilities,
     CoachSkills,
     PlayerEconomy,

@@ -88,6 +88,7 @@
   function render(s,D){
     const NIm=NI();
     if(!s||!NIm)return `<section class="card"><h2>Seleção</h2><p class="muted">Módulo indisponível.</p></section>`;
+    if(s.mode==="coach"&&root.ProLifeCoachNationalView)return root.ProLifeCoachNationalView.render(s,D);
     if(s.mode!=="player"){
       const c=NIm.coachTeam(s);
       return `${css()}<section class="nh-dark" data-national-hub><small>SELEÇÕES</small><h2>Carreira de treinador</h2><p class="nh-note">${esc(c.reason)}</p></section>`;

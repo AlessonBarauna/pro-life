@@ -11,7 +11,7 @@ const baseUrl = process.env.PRO_LIFE_URL || "http://127.0.0.1:5173/";
 const outDir = path.resolve(process.argv[2] || "artifacts/mobile-audit");
 const only = (process.argv[3] || "").split(",").filter(Boolean);
 const VIEWPORTS = [[667, 375], [740, 360], [780, 360], [844, 390], [896, 414], [932, 430]];
-const PAGES = ["home", "profile", "training", "squad", "calendar", "matches", "league", "competitions", "statistics", "awards", "worldCompetitions", "market", "proposals", "clubs", "life", "finance", "inbox", "history", "save"];
+const PAGES = ["home", "profile", "training", "squad", "calendar", "matches", "league", "competitions", "statistics", "awards", "worldCompetitions", "market", "proposals", "clubs", "life", "finance", "inbox", "history", "national", "save"];
 const PARENT = { calendar: "competitions", matches: "competitions", league: "competitions", statistics: "competitions", awards: "competitions", worldCompetitions: "competitions", proposals: "market", clubs: "market", training: "profile", finance: "life" };
 const TAB_SELECTORS = [".game-subnav button", ".cc-market-screen-nav button", ".pl-squad-tabs button", ".sq-subtabs button", ".life-tabs button", ".life-tabs a", ".cc-tabs button", ".cc-market-main-nav button", ".cc-scout-subnav button", ".pl-player-tabs button", ".wa-tabs button", ".season-nav button", ".wc-tabs button", "[role='tablist'] [role='tab']"];
 
