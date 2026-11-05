@@ -6819,6 +6819,12 @@
       )
     );
 
+    return applyQualifierResult(q,match,hg,ag);
+  }
+
+  function applyQualifierResult(q,match,hg,ag){
+    const home=q.table.find(x=>x.id===match.homeId),away=q.table.find(x=>x.id===match.awayId);
+    if(!home||!away) return null;
     match.played=true;
     match.hg=hg;
     match.ag=ag;
@@ -6900,7 +6906,9 @@
 
     const q=n.qualifiers;
 
+    const coachTeam=s.mode==="coach"&&s.coachNational&&s.coachNational.teamId&&q.table.some(x=>x.id===s.coachNational.teamId)?s.coachNational.teamId:null;
     for(const match of q.fixtures){
+      if(coachTeam&&(match.homeId===coachTeam||match.awayId===coachTeam)) continue;
       if(
         !match.played &&
         Number.isFinite(match.day) &&
@@ -6936,6 +6944,29 @@
     }
 
     return q;
+  }
+
+  // Treinador de selecao (CONMEBOL): resolve as eliminatorias da selecao dele com o simulador do treinador.
+  function coachResolveQualifiers(s,sim){
+    if(!s||s.mode!=="coach"||typeof sim!=="function") return 0;
+    const n=init(s),T=s.coachNational&&s.coachNational.teamId;
+    ensureQualifiers(s,n,null);
+    const q=n.qualifiers;
+    if(!q||!T||!q.table.some(x=>x.id===T)) return 0;
+    let played=0;
+    for(const match of q.fixtures.filter(m=>!m.played&&Number.isFinite(m.day)&&m.day<=s.day&&(m.homeId===T||m.awayId===T)).sort((a,b)=>a.day-b.day)){
+      const home=match.homeId===T,opponentId=home?match.awayId:match.homeId;
+      const res=sim({match,opponentId,opponentName:(q.table.find(x=>x.id===opponentId)||{}).name,home,round:match.round,year:q.worldCupYear});
+      applyQualifierResult(q,match,home?res.gf:res.ga,home?res.ga:res.gf);
+      played++;
+    }
+    if(played) ensureQualifiers(s,n,null);
+    return played;
+  }
+  function coachQualifiersView(s){
+    if(!s||s.mode!=="coach") return null;
+    const n=init(s);ensureQualifiers(s,n,null);
+    return n.qualifiers||null;
   }
 
   function tournamentStatus(s){
@@ -8600,7 +8631,7 @@
 
     archiveInternationalHistory(
       n
-    ); if (s.mode !== "player") return; ensureQualifiers(s,n,rng);ensureWorldCupOfficialSquads(s,n,api,log);
+    ); if (s.mode === "coach") { ensureQualifiers(s,n,rng); return; } if (s.mode !== "player") return; ensureQualifiers(s,n,rng);ensureWorldCupOfficialSquads(s,n,api,log);
     const relative = s.day % 365;
     const callWindow = windows.find((day) => relative === day - 7);
     if (callWindow !== undefined) callup(s, api, log);
@@ -8722,7 +8753,7 @@
     if (!activeCup&&windows.some((day) => relative === day + 4)) { n.calledUp = false; n.currentCallupWindow=null; n.status = "Aguardando próxima convocação"; }
     n.nextWindow = n.schedule.find((match) => !match.played && match.day >= s.day)?.day ?? nextWindowDay(s);
   }
-  const api={coachRetrack,coachResolveWorldCup,windows,nations,init,score,threshold,radar,role,upcoming,nextWindowDay,protectedDay,protectClubCalendar,callup,play,daily,competition,buildSquad,positionCompetition,onDuty,ensureQualifiers,tournamentStatus,normalizedNationality,windowDecision,matchLineup,fixtureCallupStatus,ensureWorldCup,ensureWorldCupGroupSchedule,ensureWorldCupOfficialSquads,progressWorldCupBackground,recordWorldCupFixture,qualifyWorldCupGroups,syncBrazilWorldCupKnockout,worldCupSummary,worldCupPhaseLabel,copaAmericaSummary,ensureCopaAmerica,isCopaAmericaYear,recordCopaAmericaFixture,progressCopaAmericaBackground,scheduleBrazilCopaAmericaKnockout,ensureEuro,isEuroYear,progressEuroBackground,euroSummary,ensureFinalissima,isFinalissimaYear,ensureFinalissimaSchedule,recordFinalissimaFixture,progressFinalissimaBackground,finalissimaSummary,ensureNationsLeague,isNationsLeagueYear,progressNationsLeagueBackground,nationsLeagueSummary,ensureAfcon,isAfconYear,progressAfconBackground,afconSummary,ensureAsianCup,isAsianCupYear,progressAsianCupBackground,asianCupSummary,ensureGoldCup,isGoldCupYear,progressGoldCupBackground,goldCupSummary,ensureConcacafNationsLeague,isConcacafNationsLeagueYear,progressConcacafNationsLeagueBackground,concacafNationsLeagueSummary,ensureOfcNationsCup,isOfcNationsCupYear,progressOfcNationsCupBackground,ofcNationsCupSummary,ensureFifaArabCup,isFifaArabCupYear,progressFifaArabCupBackground,fifaArabCupSummary,ensureFifaSeries,isFifaSeriesYear,progressFifaSeriesBackground,fifaSeriesSummary,archiveInternationalHistory,internationalHistorySummary};
+  const api={coachRetrack,coachResolveWorldCup,coachResolveQualifiers,coachQualifiersView,windows,nations,init,score,threshold,radar,role,upcoming,nextWindowDay,protectedDay,protectClubCalendar,callup,play,daily,competition,buildSquad,positionCompetition,onDuty,ensureQualifiers,tournamentStatus,normalizedNationality,windowDecision,matchLineup,fixtureCallupStatus,ensureWorldCup,ensureWorldCupGroupSchedule,ensureWorldCupOfficialSquads,progressWorldCupBackground,recordWorldCupFixture,qualifyWorldCupGroups,syncBrazilWorldCupKnockout,worldCupSummary,worldCupPhaseLabel,copaAmericaSummary,ensureCopaAmerica,isCopaAmericaYear,recordCopaAmericaFixture,progressCopaAmericaBackground,scheduleBrazilCopaAmericaKnockout,ensureEuro,isEuroYear,progressEuroBackground,euroSummary,ensureFinalissima,isFinalissimaYear,ensureFinalissimaSchedule,recordFinalissimaFixture,progressFinalissimaBackground,finalissimaSummary,ensureNationsLeague,isNationsLeagueYear,progressNationsLeagueBackground,nationsLeagueSummary,ensureAfcon,isAfconYear,progressAfconBackground,afconSummary,ensureAsianCup,isAsianCupYear,progressAsianCupBackground,asianCupSummary,ensureGoldCup,isGoldCupYear,progressGoldCupBackground,goldCupSummary,ensureConcacafNationsLeague,isConcacafNationsLeagueYear,progressConcacafNationsLeagueBackground,concacafNationsLeagueSummary,ensureOfcNationsCup,isOfcNationsCupYear,progressOfcNationsCupBackground,ofcNationsCupSummary,ensureFifaArabCup,isFifaArabCupYear,progressFifaArabCupBackground,fifaArabCupSummary,ensureFifaSeries,isFifaSeriesYear,progressFifaSeriesBackground,fifaSeriesSummary,archiveInternationalHistory,internationalHistorySummary};
   root.ProLifeNationalTeam = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

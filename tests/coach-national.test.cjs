@@ -129,3 +129,26 @@ test("treinador: seleção fora da Copa não gera jogos de Copa; sair devolve a 
   CN.apply(s,E,"URU");
   assert.equal(cup.trackedTeamId,"URU");
 });
+
+test("treinador: seleção sul-americana joga as eliminatórias e a tabela reflete os jogos", {timeout:0},()=>{
+  const s=coach(60);
+  CN.apply(s,E,"URU");
+  while(s.day<700){s.board=100;E.advance(s,Math.min(30,700-s.day));}
+  assert.equal(s.coachNationalError,undefined);
+  const ov=CN.overview(s,E);
+  assert.equal(ov.qual.kind,"conmebol");
+  const games=ov.results.filter(m=>/Eliminatórias/.test(m.competition));
+  assert.ok(games.length>=2,"rodadas 1 e 2 já disputadas");
+  const row=ov.qual.table.find(r=>r.id==="URU");
+  assert.equal(row.j,games.length,"a tabela conta exatamente os jogos que o treinador disputou");
+  assert.equal(ov.qual.fixtures.filter(f=>f.played).length,games.length);
+  assert.equal(ov.qual.table.length,10);
+});
+
+test("treinador: seleção fora da América do Sul recebe a explicação de vaga por ranking", {timeout:0},()=>{
+  const s=coach(60);
+  CN.apply(s,E,"SCO");
+  const q=CN.overview(s,E).qual;
+  assert.equal(q.kind,"allocation");
+  assert.match(q.note,/ranking/);
+});

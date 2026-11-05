@@ -210,7 +210,7 @@
     const entry={...fx,played:true,gf:sim.gf,ga:sim.ga,result,scorers:sim.scorers,power:sim.power,formation:cn.formation,...extra};
     Object.assign(fx,entry);
     cn.matches.unshift({...entry});cn.matches.length=Math.min(cn.matches.length,HISTORY_LIMIT);
-    const big=extra.cup?1.5:1;
+    const big=extra.cup?1.5:extra.qualifier?1.25:1;
     cn.board=clamp(cn.board+(result==="V"?(sim.gf-sim.ga>=3?6:4):result==="D"?(sim.ga-sim.gf>=3?-8:-5):-1)*big,0,100);
     s.reputation=clamp((Number(s.reputation)||0)+(result==="V"?1:result==="D"?-1:0)*(extra.cup?2:1),0,100);
     message(s,D,`${cn.teamId} ${sim.gf} × ${sim.ga} ${fx.opponent}`,`${fx.competition}: ${result==="V"?"vitória":result==="D"?"derrota":"empate"} da sua seleção${extra.pens?` (${extra.pens==="win"?"classificada":"eliminada"} nos pênaltis)`:""}. Confiança da confederação: ${Math.round(cn.board)}%.`);
@@ -233,6 +233,17 @@
         if(match&&phase!=="group"&&match.winnerId&&match.winnerId!==cn.teamId&&!(match.phase==="THIRD_PLACE"))message(s,D,"Fim da Copa para a sua seleção",`${cn.teamId} foi eliminada: ${PHASE[phase]||"mata-mata"}.`);
         if(match&&match.phase==="FINAL"&&match.winnerId===cn.teamId)message(s,D,"CAMPEÃ DO MUNDO!",`A seleção de ${cn.teamId} conquistou a Copa do Mundo ${year} sob o seu comando.`);
       }};
+    });
+  }
+  // Eliminatórias (CONMEBOL): jogos da seleção do treinador no ciclo da Copa seguinte.
+  function playQualifiers(s,D){
+    const NT=D.NationalTeam||root.ProLifeNationalTeam;
+    if(!NT?.coachResolveQualifiers)return 0;
+    return NT.coachResolveQualifiers(s,({match,opponentId,opponentName,home,round,year})=>{
+      const fx={id:`q:${year}:${match.id||match.day+":"+match.homeId}`,day:match.day,season:s.season,opponentCode:opponentId,opponent:opponentName||opponentId,home,competition:`Eliminatórias ${year} · Rodada ${round}`,qualifier:true};
+      const sim=simulate(s,D,fx);
+      record(s,D,fx,sim,{qualifier:true});
+      return {gf:sim.gf,ga:sim.ga};
     });
   }
   function maybeOffers(s,D){
@@ -259,6 +270,7 @@
         if(fx.day<s.day-1){cn.schedule=cn.schedule.filter(m=>m!==fx);continue;}
         playFixture(s,D,fx);
       }
+      if(cn.teamId)playQualifiers(s,D);
       if(cn.teamId)playWorldCup(s,D);
     }else maybeOffers(s,D);
   }
@@ -275,10 +287,25 @@
       const eff=effectiveSquad(s,D),calledIds=new Set(eff.squad.map(p=>p.id)),starters=new Set(eff.lineup.starters.map(p=>p.id));
       out.strength=table[cn.teamId]?.strength??null;out.power=+teamPower(eff.lineup.starters).toFixed(1);out.called=eff.squad.length;out.max=SQUAD_MAX;
       out.players=eff.pool.map(p=>({id:p.id,name:p.name,pos:p.pos,club:p.club,age:p.age,overall:Math.round(p.overall),available:p.available,called:calledIds.has(p.id),starter:starters.has(p.id),caps:cn.stats[p.id]?.caps||0,goals:cn.stats[p.id]?.goals||0}));
-      out.cup=cupView(s,D,out.team);
+      out.cup=cupView(s,D,out.team);out.qual=qualView(s,D,out.team);
       out.scorers=Object.entries(cn.stats).filter(([,v])=>v.goals>0).map(([id,v])=>({id,...v})).sort((a,b)=>b.goals-a.goals).slice(0,5);
     }
     return out;
+  }
+
+  function qualView(s,D,team){
+    const NT=D.NationalTeam||root.ProLifeNationalTeam;
+    let q=null;try{q=NT?.coachQualifiersView?.(s)||null;}catch(e){}
+    if(!q)return {kind:"none",note:"Ciclo de eliminatórias ainda não iniciado."};
+    const inTable=q.table.some(r=>r.id===team.code);
+    if(!inTable)return {kind:"allocation",year:q.worldCupYear,note:`${team.name} não faz parte das eliminatórias sul-americanas simuladas. A vaga para a Copa ${q.worldCupYear} é definida pelo ranking das seleções ao fim do ciclo.`};
+    const mine=q.fixtures.filter(m=>m.homeId===team.code||m.awayId===team.code).sort((a,b)=>a.day-b.day);
+    const name=id=>(q.table.find(r=>r.id===id)||{}).name||id;
+    const row=m=>({id:m.id,round:m.round,day:m.day,home:name(m.homeId),away:name(m.awayId),played:!!m.played,hg:m.hg??null,ag:m.ag??null,mine:true});
+    return {kind:"conmebol",year:q.worldCupYear,complete:!!q.complete,directSpots:q.directSpots,playoffSpot:q.playoffSpot,
+      table:q.table.map((r,i)=>({pos:i+1,id:r.id,name:r.name,j:r.played,p:r.points,sg:r.gd,me:r.id===team.code,zone:i<q.directSpots?"direta":i===q.directSpots?"repescagem":""})),
+      fixtures:mine.map(row),
+      qualified:q.complete?q.qualified.includes(team.code):null,playoff:q.complete?q.playoff===team.code:null};
   }
 
   function cupView(s,D,team){
