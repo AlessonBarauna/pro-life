@@ -101,6 +101,7 @@
     cn.history.unshift({code,name:t.name,from:s.day,to:null,how});
     cn.history.length=Math.min(cn.history.length,30);
     init(s);ensureSchedule(s,D);
+    try{(D.NationalTeam||root.ProLifeNationalTeam)?.coachRetrack?.(s,code);}catch(e){}
     message(s,D,`Você é o novo treinador de ${t.name}`,`A confederação confirmou o seu nome. A primeira convocação já foi montada automaticamente; ajuste a lista e a formação na aba Seleção.`);
     return cn;
   }
@@ -129,6 +130,7 @@
     message(s,D,reason==="demissão"?`Demissão da seleção de ${t?.name||cn.teamId}`:`Saída da seleção de ${t?.name||cn.teamId}`,reason==="demissão"?"A confederação encerrou o seu contrato após a sequência de resultados.":"Você deixou o cargo de treinador da seleção.");
     Object.assign(cn,{teamId:null,since:null,manual:false,called:[],schedule:cn.schedule.filter(m=>m.played),cooldownUntil:s.day+COOLDOWN});
     init(s);
+    try{(D.NationalTeam||root.ProLifeNationalTeam)?.coachRetrack?.(s,null);}catch(e){}
   }
 
   // ---- convocação ----
@@ -184,7 +186,9 @@
     do{k++;p*=unit(`${key}|${k}`);}while(p>L&&k<9);
     return k-1;
   }
-  function playFixture(s,D,fx){
+  const PHASE={group:"Fase de grupos",ROUND_OF_32:"16 avos de final",ROUND_OF_16:"Oitavas de final",QUARTERFINAL:"Quartas de final",SEMIFINAL:"Semifinal",THIRD_PLACE:"Disputa do 3º lugar",FINAL:"Final"};
+  // Simula uma partida da seleção com a convocação/formação atuais e registra elenco, placar e confiança.
+  function simulate(s,D,fx){
     const cn=init(s),table=strengthTable(s,D),opp=table[fx.opponentCode];
     const {lineup:lu}=effectiveSquad(s,D),own=teamPower(lu.starters),other=opp?.strength??72;
     const lamOwn=clamp(1.35*Math.exp((own-other)/14)*(fx.home?1.08:1),.25,4.5),lamOpp=clamp(1.1*Math.exp((other-own)/14)*(fx.home?1:1.08),.25,4.5);
@@ -199,14 +203,37 @@
     scorers.sort((a,b)=>a.minute-b.minute);
     for(const p of lu.starters){const st=cn.stats[p.id]||(cn.stats[p.id]={name:p.name,pos:p.pos,caps:0,goals:0});st.caps++;st.name=p.name;}
     for(const sc of scorers)cn.stats[sc.id].goals++;
-    const result=gf>ga?"V":gf<ga?"D":"E";
-    Object.assign(fx,{played:true,gf,ga,result,scorers,power:+own.toFixed(1),formation:cn.formation});
-    cn.matches.unshift({...fx});cn.matches.length=Math.min(cn.matches.length,HISTORY_LIMIT);
-    cn.board=clamp(cn.board+(result==="V"?(gf-ga>=3?6:4):result==="D"?(ga-gf>=3?-8:-5):-1),0,100);
-    s.reputation=clamp((Number(s.reputation)||0)+(result==="V"?1:result==="D"?-1:0),0,100);
-    message(s,D,`${cn.teamId} ${gf} × ${ga} ${fx.opponent}`,`${fx.competition}: ${result==="V"?"vitória":result==="D"?"derrota":"empate"} da sua seleção. Confiança da confederação: ${Math.round(cn.board)}%.`);
+    return {gf,ga,scorers,power:+own.toFixed(1)};
+  }
+  function record(s,D,fx,sim,extra={}){
+    const cn=init(s),result=sim.gf>sim.ga?"V":sim.gf<sim.ga?"D":"E";
+    const entry={...fx,played:true,gf:sim.gf,ga:sim.ga,result,scorers:sim.scorers,power:sim.power,formation:cn.formation,...extra};
+    Object.assign(fx,entry);
+    cn.matches.unshift({...entry});cn.matches.length=Math.min(cn.matches.length,HISTORY_LIMIT);
+    const big=extra.cup?1.5:1;
+    cn.board=clamp(cn.board+(result==="V"?(sim.gf-sim.ga>=3?6:4):result==="D"?(sim.ga-sim.gf>=3?-8:-5):-1)*big,0,100);
+    s.reputation=clamp((Number(s.reputation)||0)+(result==="V"?1:result==="D"?-1:0)*(extra.cup?2:1),0,100);
+    message(s,D,`${cn.teamId} ${sim.gf} × ${sim.ga} ${fx.opponent}`,`${fx.competition}: ${result==="V"?"vitória":result==="D"?"derrota":"empate"} da sua seleção${extra.pens?` (${extra.pens==="win"?"classificada":"eliminada"} nos pênaltis)`:""}. Confiança da confederação: ${Math.round(cn.board)}%.`);
     const recent=cn.matches.filter(m=>m.day>=cn.since);
-    if(cn.board<15&&recent.length>=3)leave(s,D,"demissão");
+    if(cn.board<15&&recent.length>=3&&!extra.cup)leave(s,D,"demissão");
+  }
+  function playFixture(s,D,fx){record(s,D,fx,simulate(s,D,fx));}
+  // Copa do Mundo: o motor de torneios chama este simulador para os jogos da seleção do treinador.
+  function playWorldCup(s,D){
+    const NT=D.NationalTeam||(root.ProLifeNationalTeam);
+    if(!NT?.coachResolveWorldCup)return 0;
+    const cn=init(s);
+    return NT.coachResolveWorldCup(s,({fixture,opponentId,opponentName,home,phase,year})=>{
+      const fx={id:fixture.id,day:fixture.day,season:s.season,opponentCode:opponentId,opponent:opponentName||opponentId,home,competition:`Copa do Mundo ${year} · ${PHASE[phase]||"Mata-mata"}`,cup:true};
+      const sim=simulate(s,D,fx);
+      let pens=null;
+      record(s,D,fx,sim,{cup:true});
+      return {gf:sim.gf,ga:sim.ga,after:({match})=>{
+        if(match&&sim.gf===sim.ga&&match.winnerId){pens=match.winnerId===cn.teamId?"win":"lose";const e=cn.matches[0];if(e&&e.id===fx.id){e.pens=pens;e.result=pens==="win"?"V":"D";}}
+        if(match&&phase!=="group"&&match.winnerId&&match.winnerId!==cn.teamId&&!(match.phase==="THIRD_PLACE"))message(s,D,"Fim da Copa para a sua seleção",`${cn.teamId} foi eliminada: ${PHASE[phase]||"mata-mata"}.`);
+        if(match&&match.phase==="FINAL"&&match.winnerId===cn.teamId)message(s,D,"CAMPEÃ DO MUNDO!",`A seleção de ${cn.teamId} conquistou a Copa do Mundo ${year} sob o seu comando.`);
+      }};
+    });
   }
   function maybeOffers(s,D){
     const cn=init(s);
@@ -232,6 +259,7 @@
         if(fx.day<s.day-1){cn.schedule=cn.schedule.filter(m=>m!==fx);continue;}
         playFixture(s,D,fx);
       }
+      if(cn.teamId)playWorldCup(s,D);
     }else maybeOffers(s,D);
   }
 
@@ -247,9 +275,24 @@
       const eff=effectiveSquad(s,D),calledIds=new Set(eff.squad.map(p=>p.id)),starters=new Set(eff.lineup.starters.map(p=>p.id));
       out.strength=table[cn.teamId]?.strength??null;out.power=+teamPower(eff.lineup.starters).toFixed(1);out.called=eff.squad.length;out.max=SQUAD_MAX;
       out.players=eff.pool.map(p=>({id:p.id,name:p.name,pos:p.pos,club:p.club,age:p.age,overall:Math.round(p.overall),available:p.available,called:calledIds.has(p.id),starter:starters.has(p.id),caps:cn.stats[p.id]?.caps||0,goals:cn.stats[p.id]?.goals||0}));
+      out.cup=cupView(s,D,out.team);
       out.scorers=Object.entries(cn.stats).filter(([,v])=>v.goals>0).map(([id,v])=>({id,...v})).sort((a,b)=>b.goals-a.goals).slice(0,5);
     }
     return out;
+  }
+
+  function cupView(s,D,team){
+    let w=null;try{w=NI().worldCupOf(s,D,{code:team.code,name:team.name});}catch(e){}
+    if(!w)return {available:false,note:"Nenhuma Copa do Mundo em andamento nesta temporada."};
+    if(!w.qualified)return {available:true,year:w.year,qualified:false,status:w.status,note:w.note||`${team.name} não disputa a Copa do Mundo ${w.year}.`};
+    const mk=m=>{const hg=m.homeGoals??m.hg??null,ag=m.awayGoals??m.ag??null,pens=!!(m.played&&hg!==null&&hg===ag&&m.winnerId);
+      return {id:m.id,phase:PHASE[m.phase]||(m.round?`Rodada ${m.round}`:"Mata-mata"),home:m.home||m.homeId,away:m.away||m.awayId,played:!!m.played,hg,ag,winner:m.winnerId||null,pens:pens?(m.winnerId===team.code?"avançou nos pênaltis":"eliminada nos pênaltis"):null};};
+    const ko=(w.knockout||[]).map(mk),lost=(w.knockout||[]).find(m=>m.played&&m.winnerId&&m.winnerId!==team.code&&m.phase!=="THIRD_PLACE");
+    const won=(w.knockout||[]).find(m=>m.phase==="FINAL"&&m.played&&m.winnerId===team.code);
+    const phaseLabel=won?"Campeã do mundo":lost?`Eliminada: ${PHASE[lost.phase]||"mata-mata"}`:w.phase;
+    return {available:true,year:w.year,qualified:true,status:w.status,phaseLabel,group:w.group,
+      table:(w.table||[]).map((r,i)=>({pos:i+1,id:r.id,name:r.name,p:r.points,j:r.played,sg:r.gd,me:r.id===team.code})),
+      matches:(w.matches||[]).map(mk),knockout:ko};
   }
 
   const api={VERSION,WINDOWS,FORMATIONS,CODES,SQUAD_MAX,init,daily,overview,apply,acceptOffer,declineOffer,leave,setFormation,autoCallup,toggleCall,strengthTable,requiredReputation,effectiveSquad,ensureSchedule};

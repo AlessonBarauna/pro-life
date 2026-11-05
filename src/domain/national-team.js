@@ -4878,7 +4878,9 @@
   function wcAssignTracked(s,tournament){
     if(!tournament||tournament.trackedTeamId!==undefined)return tournament;
     let code=null;
-    try{code=root.ProLifeNationalIdentity?.heroTeam?.(s,root.ProLife)?.code||null;}catch(e){}
+    // Modo treinador: a selecao acompanhada e a que ele comanda (se houver).
+    if(s&&s.mode==="coach"&&s.coachNational&&s.coachNational.teamId)code=String(s.coachNational.teamId);
+    if(!code)try{code=root.ProLifeNationalIdentity?.heroTeam?.(s,root.ProLife)?.code||null;}catch(e){}
     const ids=wcParticipantIds(tournament);
     if(!code&&ids.has("BRA"))code="BRA";
     tournament.trackedTeamId=code&&ids.has(code)?code:"";
@@ -5316,6 +5318,62 @@
 
   // 34F.30E - jogos da selecao acompanhada que ficaram para tras sem serem jogados (ex.: Copa criada tarde numa carreira antiga)
   // sao resolvidos em segundo plano para nao travar o torneio. Nunca mexe em partidas ja jogadas.
+  // Treinador de selecao: aponta a selecao acompanhada da Copa para a que ele comanda (ou volta ao padrao ao sair).
+  // So muda enquanto a Copa nao comecou; depois disso a edicao em andamento fica como esta.
+  function coachRetrack(s,code){
+    if(!s||s.mode!=="coach") return false;
+    const n=init(s);let changed=false;
+    for(const tournament of n.tournaments||[]){
+      if(!tournament||tournament.type!=="WORLD_CUP"||tournament.status==="COMPLETED") continue;
+      if((tournament.groups||[]).some(g=>(g.matches||[]).some(m=>m.played))) continue;
+      const ids=wcParticipantIds(tournament);
+      let target;
+      if(code) target=ids.has(code)?code:"";
+      else{
+        let def=null;
+        try{def=root.ProLifeNationalIdentity?.heroTeam?.(s,root.ProLife)?.code||null;}catch(e){}
+        if(!def&&ids.has("BRA")) def="BRA";
+        target=def&&ids.has(def)?def:"";
+      }
+      if(String(tournament.trackedTeamId??"BRA")===target) continue;
+      tournament.trackedTeamId=target;
+      n.schedule=(n.schedule||[]).filter(f=>f.played||!(f.tournamentType==="WORLD_CUP"&&Number(f.tournamentYear)===Number(tournament.year)));
+      changed=true;
+    }
+    if(changed) ensureSchedule(s,n);
+    return changed;
+  }
+  function coachTournamentMatch(tournament,fixture){
+    if(fixture.tournamentPhase==="group"){
+      const g=(tournament.groups||[]).find(x=>x.name===fixture.tournamentGroup||x.id===fixture.tournamentGroup);
+      return (g?g.matches:(tournament.groups||[]).flatMap(x=>x.matches||[])).find(m=>m.id===fixture.tournamentMatchId)||null;
+    }
+    return (tournament.knockout||[]).find(m=>m.id===fixture.tournamentMatchId)||null;
+  }
+  // Resolve os jogos de Copa da selecao do treinador com o simulador dele (convocacao/formacao dele).
+  function coachResolveWorldCup(s,sim){
+    if(!s||s.mode!=="coach"||typeof sim!=="function") return 0;
+    const n=init(s);let played=0;
+    for(let guard=0;guard<8;guard++){
+      const fixture=(n.schedule||[]).filter(f=>f&&!f.played&&f.tournamentType==="WORLD_CUP"&&Number.isFinite(f.day)&&f.day<=s.day).sort((a,b)=>a.day-b.day)[0];
+      if(!fixture) break;
+      const tournament=(n.tournaments||[]).find(x=>x&&x.type==="WORLD_CUP"&&Number(x.year)===Number(fixture.tournamentYear));
+      const T=tournament?wcT(tournament):"";
+      if(!tournament||!T||T!==(s.coachNational&&s.coachNational.teamId)) break;
+      const match=coachTournamentMatch(tournament,fixture);
+      if(!match||match.played){fixture.played=true;continue;}
+      const home=match.homeId===T,oppId=home?match.awayId:match.homeId;
+      const rng=worldCupStableRng(tournament,{id:fixture.id});
+      const res=sim({fixture,opponentId:oppId,opponentName:fixture.opponent,home,phase:fixture.tournamentPhase,year:tournament.year});
+      Object.assign(fixture,{played:true,participated:false,status:"Disputado",brazil:res.gf,other:res.ga});
+      recordWorldCupFixture(s,n,fixture,res.gf,res.ga,rng);
+      const after=coachTournamentMatch(tournament,fixture);
+      if(typeof res.after==="function") res.after({match:after,tournament});
+      played++;
+    }
+    return played;
+  }
+
   function settleOverdueWorldCupFixtures(s,n,tournament){
     if(!tournament||tournament.status==="COMPLETED"||!wcT(tournament)) return false;
     let changed=false;
@@ -8664,7 +8722,7 @@
     if (!activeCup&&windows.some((day) => relative === day + 4)) { n.calledUp = false; n.currentCallupWindow=null; n.status = "Aguardando próxima convocação"; }
     n.nextWindow = n.schedule.find((match) => !match.played && match.day >= s.day)?.day ?? nextWindowDay(s);
   }
-  const api={windows,nations,init,score,threshold,radar,role,upcoming,nextWindowDay,protectedDay,protectClubCalendar,callup,play,daily,competition,buildSquad,positionCompetition,onDuty,ensureQualifiers,tournamentStatus,normalizedNationality,windowDecision,matchLineup,fixtureCallupStatus,ensureWorldCup,ensureWorldCupGroupSchedule,ensureWorldCupOfficialSquads,progressWorldCupBackground,recordWorldCupFixture,qualifyWorldCupGroups,syncBrazilWorldCupKnockout,worldCupSummary,worldCupPhaseLabel,copaAmericaSummary,ensureCopaAmerica,isCopaAmericaYear,recordCopaAmericaFixture,progressCopaAmericaBackground,scheduleBrazilCopaAmericaKnockout,ensureEuro,isEuroYear,progressEuroBackground,euroSummary,ensureFinalissima,isFinalissimaYear,ensureFinalissimaSchedule,recordFinalissimaFixture,progressFinalissimaBackground,finalissimaSummary,ensureNationsLeague,isNationsLeagueYear,progressNationsLeagueBackground,nationsLeagueSummary,ensureAfcon,isAfconYear,progressAfconBackground,afconSummary,ensureAsianCup,isAsianCupYear,progressAsianCupBackground,asianCupSummary,ensureGoldCup,isGoldCupYear,progressGoldCupBackground,goldCupSummary,ensureConcacafNationsLeague,isConcacafNationsLeagueYear,progressConcacafNationsLeagueBackground,concacafNationsLeagueSummary,ensureOfcNationsCup,isOfcNationsCupYear,progressOfcNationsCupBackground,ofcNationsCupSummary,ensureFifaArabCup,isFifaArabCupYear,progressFifaArabCupBackground,fifaArabCupSummary,ensureFifaSeries,isFifaSeriesYear,progressFifaSeriesBackground,fifaSeriesSummary,archiveInternationalHistory,internationalHistorySummary};
+  const api={coachRetrack,coachResolveWorldCup,windows,nations,init,score,threshold,radar,role,upcoming,nextWindowDay,protectedDay,protectClubCalendar,callup,play,daily,competition,buildSquad,positionCompetition,onDuty,ensureQualifiers,tournamentStatus,normalizedNationality,windowDecision,matchLineup,fixtureCallupStatus,ensureWorldCup,ensureWorldCupGroupSchedule,ensureWorldCupOfficialSquads,progressWorldCupBackground,recordWorldCupFixture,qualifyWorldCupGroups,syncBrazilWorldCupKnockout,worldCupSummary,worldCupPhaseLabel,copaAmericaSummary,ensureCopaAmerica,isCopaAmericaYear,recordCopaAmericaFixture,progressCopaAmericaBackground,scheduleBrazilCopaAmericaKnockout,ensureEuro,isEuroYear,progressEuroBackground,euroSummary,ensureFinalissima,isFinalissimaYear,ensureFinalissimaSchedule,recordFinalissimaFixture,progressFinalissimaBackground,finalissimaSummary,ensureNationsLeague,isNationsLeagueYear,progressNationsLeagueBackground,nationsLeagueSummary,ensureAfcon,isAfconYear,progressAfconBackground,afconSummary,ensureAsianCup,isAsianCupYear,progressAsianCupBackground,asianCupSummary,ensureGoldCup,isGoldCupYear,progressGoldCupBackground,goldCupSummary,ensureConcacafNationsLeague,isConcacafNationsLeagueYear,progressConcacafNationsLeagueBackground,concacafNationsLeagueSummary,ensureOfcNationsCup,isOfcNationsCupYear,progressOfcNationsCupBackground,ofcNationsCupSummary,ensureFifaArabCup,isFifaArabCupYear,progressFifaArabCupBackground,fifaArabCupSummary,ensureFifaSeries,isFifaSeriesYear,progressFifaSeriesBackground,fifaSeriesSummary,archiveInternationalHistory,internationalHistorySummary};
   root.ProLifeNationalTeam = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

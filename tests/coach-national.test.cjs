@@ -102,3 +102,30 @@ test("treinador: o mesmo estado dá o mesmo resultado (determinismo)", {timeout:
   const run=()=>{const s=coach();const code="URU";CN.apply(s,E,code);for(let i=0;i<8;i++){s.board=100;E.advance(s,30);}return CN.overview(s,E).results.map(m=>`${m.id}:${m.gf}-${m.ga}`).join("|");};
   assert.equal(run(),run());
 });
+
+test("treinador: a seleção comandada disputa a Copa do Mundo 2026 com a convocação dele", {timeout:0},()=>{
+  const s=coach(60);
+  CN.apply(s,E,"URU");
+  const n=E.NationalTeam.init(s),cup=n.tournaments.find(t=>t.type==="WORLD_CUP"&&t.year===2026);
+  assert.equal(cup.trackedTeamId,"URU","a seleção acompanhada passa a ser a do treinador");
+  assert.equal(n.schedule.filter(f=>f.tournamentType==="WORLD_CUP"&&!f.played).length,3);
+  for(let i=0;i<9;i++){s.board=100;E.advance(s,30);}
+  assert.equal(s.coachNationalError,undefined);
+  const ov=CN.overview(s,E),games=ov.results.filter(m=>/Copa do Mundo 2026/.test(m.competition));
+  assert.ok(games.length>=3,"pelo menos os 3 jogos da fase de grupos");
+  assert.equal(new Set(games.map(m=>m.id)).size,games.length);
+  assert.ok(ov.cup&&ov.cup.qualified&&ov.cup.table.length===4&&ov.cup.matches.length===3);
+  assert.equal(cup.status,"COMPLETED");
+});
+
+test("treinador: seleção fora da Copa não gera jogos de Copa; sair devolve a seleção acompanhada ao padrão", {timeout:0},()=>{
+  const s=coach(60);
+  CN.apply(s,E,"PER");
+  const cup=E.NationalTeam.init(s).tournaments.find(t=>t.type==="WORLD_CUP");
+  assert.equal(cup.trackedTeamId,"","Peru não está na Copa 2026");
+  CN.leave(s,E,"pedido");
+  assert.equal(cup.trackedTeamId,"BRA","volta ao padrão (nacionalidade do treinador)");
+  s.day+=61;
+  CN.apply(s,E,"URU");
+  assert.equal(cup.trackedTeamId,"URU");
+});

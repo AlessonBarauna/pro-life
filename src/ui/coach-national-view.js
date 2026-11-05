@@ -1,7 +1,7 @@
 (function(root){
   "use strict";
   // Tela "Seleção" do modo treinador: convites, candidatura, convocação, formação, calendário e resultados.
-  const ui={tab:null,page:{players:0,nations:0,fixtures:0,results:0},pos:"TODOS",confirmLeave:false};
+  const ui={tab:null,page:{players:0,nations:0,fixtures:0,results:0,cup:0},pos:"TODOS",confirmLeave:false};
   const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const CN=()=>root.ProLifeCoachNational||(typeof require==="function"?require("../domain/coach-national.js"):null);
   const isPhone=()=>{try{return !!root.ProLifeMobileSM27?.isPhone?.();}catch(e){return false;}};
@@ -77,7 +77,7 @@
     if(!o.team)return `<header class="cn-head"><div class="grow"><h2>Seleções</h2><p>Você não comanda nenhuma seleção. Candidate-se ou espere um convite da confederação.</p></div><div class="cn-meter"><b>${o.rep}</b><small>sua reputação</small></div></header>`;
     return `<header class="cn-head">${crest(o.team.code,o.team.name)}<div class="grow"><h2>Seleção de ${esc(o.team.name)}</h2><p>${esc(o.team.confederation||"")} · ${esc(o.formation)} · ${o.called}/${o.max} convocados</p></div><div class="cn-meter"><b>${o.board}%</b><small>confiança da confederação</small></div></header>`;
   }
-  function tabsFor(o){return o.team?[["geral","Visão geral"],["convocacao","Convocação"],["calendario","Calendário"],["selecoes","Seleções"]]:[["convites","Convites"],["selecoes","Seleções"]];}
+  function tabsFor(o){return o.team?[["geral","Visão geral"],["convocacao","Convocação"],["copa","Copa do Mundo"],["calendario","Calendário"],["selecoes","Seleções"]]:[["convites","Convites"],["selecoes","Seleções"]];}
 
   function resultLine(m){
     return `<div class="cn-row"><div class="who"><span class="cn-res ${esc(m.result)}">${esc(m.result)}</span><span><b>${m.home?"":"@ "}${esc(m.opponent)} · ${m.gf} × ${m.ga}</b><small>Dia ${m.day} · ${esc(m.competition)}${m.scorers?.length?" · "+esc([...new Set(m.scorers.map(x=>x.name.split(" ").slice(-1)[0]))].join(", ")):""}</small></span></div></div>`;
@@ -109,6 +109,16 @@
       <section class="cn-card" style="margin-top:8px;padding-top:4px">${rows}${pager("players",list.length,S.players)}</section>`;
   }
 
+  function copa(o,S){
+    const c=o.cup;
+    if(!c||!c.available)return `<section class="cn-card"><small>COPA DO MUNDO</small><div class="cn-empty">${esc(c?.note||"Sem Copa do Mundo em andamento.")}</div></section>`;
+    if(!c.qualified)return `<section class="cn-card"><small>COPA DO MUNDO ${c.year}</small><div class="cn-empty">${esc(c.note)}</div></section>`;
+    const table=c.table.map(r=>`<div class="cn-row" ${r.me?'style="color:var(--cn-gold)"':""}><div class="who"><span class="cn-code">${r.pos}</span><span><b>${esc(r.name)}</b><small>${r.j} jogos · saldo ${r.sg>0?"+":""}${r.sg}</small></span></div><div class="end"><span class="cn-tag ${r.me?"st":""}">${r.p} pts</span></div></div>`).join("");
+    const games=[...c.matches,...c.knockout];
+    const rows=slice("cup",games,S.results).map(m=>`<div class="cn-row"><div class="who"><span><b>${esc(m.home)} ${m.played?`${m.hg} × ${m.ag}`:"×"} ${esc(m.away)}</b><small>${esc(m.phase)}${m.pens?" · "+esc(m.pens):""}${m.played?"":" · a disputar"}</small></span></div></div>`).join("")||'<div class="cn-empty">Sem jogos.</div>';
+    return `<div class="cn-grid"><section class="cn-card"><small>GRUPO ${esc(c.group)} · COPA ${c.year}</small>${table}<p class="cn-note">${esc(c.phaseLabel||c.status)}</p></section><section class="cn-card"><small>JOGOS DA SUA SELEÇÃO</small>${rows}${pager("cup",games.length,S.results)}</section></div>`;
+  }
+
   function calendario(o,S){
     const fx=slice("fixtures",o.fixtures,S.fixtures).map(m=>fixtureLine(m,o.day)).join("")||'<div class="cn-empty">Sem jogos marcados.</div>';
     const rs=slice("results",o.results,S.results).map(resultLine).join("")||'<div class="cn-empty">Nenhum jogo disputado ainda.</div>';
@@ -136,7 +146,7 @@
     const tabs=tabsFor(o);
     if(!tabs.some(([id])=>id===ui.tab))ui.tab=tabs[0][0];
     const S=SIZE();
-    const body=ui.tab==="geral"?geral(o,S):ui.tab==="convocacao"?convocacao(o,S):ui.tab==="calendario"?calendario(o,S):ui.tab==="selecoes"?selecoes(o,S):convites(o,S);
+    const body=ui.tab==="geral"?geral(o,S):ui.tab==="convocacao"?convocacao(o,S):ui.tab==="calendario"?calendario(o,S):ui.tab==="copa"?copa(o,S):ui.tab==="selecoes"?selecoes(o,S):convites(o,S);
     const badge=!o.team&&o.offers.length?` <i>${o.offers.length}</i>`:"";
     return `${css()}<section class="cn" data-coach-national>${head(o)}<nav class="cn-sub" aria-label="Seções da seleção">${tabs.map(([id,l])=>`<button type="button" class="${ui.tab===id?"on":""}" data-cn-tab="${id}">${esc(l)}${id==="convites"?badge:""}</button>`).join("")}</nav>${body}</section>`;
   }
