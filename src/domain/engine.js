@@ -2496,7 +2496,17 @@
         },
 
         heroFixture(match) {
-          if (s.mode !== "player" || !s.clubId) return null;
+          if (!["player","coach"].includes(s.mode) || !s.clubId) return null;
+
+          const existing = (s.matches || []).find(m =>
+            m.competitionId === "uel" &&
+            m.home === match.homeId &&
+            m.away === match.awayId &&
+            Number(m.season) === Number(s.season) &&
+            Number(m.round) === Number(match.round) &&
+            Number(m.date) === Number(match.day)
+          );
+          if (existing) return {hg:existing.hg,ag:existing.ag};
 
           const hero = worldMatchClub(s, s.clubId);
           if (!hero || match.day < (hero.joinedDay ?? s.day)) return null;
@@ -2600,7 +2610,17 @@
         },
 
         heroFixture(match) {
-          if (s.mode !== "player" || !s.clubId) return null;
+          if (!["player","coach"].includes(s.mode) || !s.clubId) return null;
+
+          const existing = (s.matches || []).find(m =>
+            m.competitionId === "uecl" &&
+            m.home === match.homeId &&
+            m.away === match.awayId &&
+            Number(m.season) === Number(s.season) &&
+            Number(m.round) === Number(match.round) &&
+            Number(m.date) === Number(match.day)
+          );
+          if (existing) return {hg:existing.hg,ag:existing.ag};
 
           const hero = worldMatchClub(s, s.clubId);
           if (!hero || match.day < (hero.joinedDay ?? s.day)) return null;
