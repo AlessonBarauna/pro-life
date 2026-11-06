@@ -3089,8 +3089,11 @@
           );
         }
       }
+      if (s.decision?.id === "coach_press_conference") {
+        try { const nc = nextCommitment(s); if (!nc || nc.national || !(nc.date - s.day <= 7)) s.decision = null; } catch (e) {}
+      }
       if (s.day % 21 === 0 && !s.decision) {
-        s.decision = Life?.next(s, rng);
+        s.decision = Life?.next(s, rng, { matchSoon: (() => { try { const nc = nextCommitment(s); return !!nc && !nc.national && Number.isFinite(nc.date) && nc.date - s.day <= 7; } catch (e) { return true; } })() });
         if (s.decision) {
           s.decision.createdDay = s.day;
           s.decision.deadline = s.day + 7;

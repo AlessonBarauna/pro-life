@@ -175,7 +175,7 @@
     rememberCriticism(life,candidate.reportId);
     return true;
   }
-  function next(s, rng) {
+  function next(s, rng, ctx) {
     const life = init(s), candidate=criticismCandidate(s);
     const playerOnly = new Set(["agent", "sponsor", "criticism", "fans", "social"]);
     const coachOnly = new Set(["coach_board_meeting", "coach_locker_tension", "coach_press_conference"]);
@@ -183,7 +183,8 @@
       !(s.mode === "coach" && playerOnly.has(d.id)) &&
       !(s.mode !== "coach" && coachOnly.has(d.id)) &&
       !(life.agency && d.id === "agent") &&
-      (d.id !== "criticism" || !!candidate)
+      (d.id !== "criticism" || !!candidate) &&
+      (d.id !== "coach_press_conference" || ctx?.matchSoon !== false)
     );
     life.lastDecisionDay = s.day;
     const decision=JSON.parse(JSON.stringify(rng.pick(pool)));
