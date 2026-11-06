@@ -2079,7 +2079,8 @@
     if (s.matches.length > 800) {
       // Partidas do próprio clube têm prioridade: jogos de outros clubes não podem expulsar o histórico do treinador/jogador.
       const mineOf = (x) => s.clubId && [x.home, x.away].includes(s.clubId);
-      let ownLeft = 450, otherLeft = 350;
+      const ownTotal = s.matches.filter(mineOf).length;
+      let ownLeft = Math.min(450, ownTotal), otherLeft = 800 - ownLeft;
       s.matches = s.matches.filter((x) => (mineOf(x) ? ownLeft-- > 0 : otherLeft-- > 0)).slice(0, 800);
     }
     for (const old of s.matches.slice(120)) {
