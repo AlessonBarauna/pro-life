@@ -70,7 +70,7 @@
 @media (max-width:760px){.acad-layout{grid-template-columns:minmax(0,1fr)}.acad-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}}
 /* celular deitado: painel de efeitos mais estreito, cartões compactos, botões sempre inteiros */
 @media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){
-  .sm27-dialog.acad-dialog{width:min(100%,900px);max-height:calc(var(--pl-vh,100dvh) - 8px)}
+  .sm27-dialog.acad-dialog{width:100%;max-height:calc(var(--pl-vh,100dvh) - max(4px,env(safe-area-inset-top)) - max(4px,env(safe-area-inset-bottom)));height:calc(var(--pl-vh,100dvh) - max(4px,env(safe-area-inset-top)) - max(4px,env(safe-area-inset-bottom)))}
   .acad-layout{grid-template-columns:minmax(0,1fr) 200px;gap:10px}
   .acad-grid{grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:8px}
   .acad-card{padding:8px;gap:6px}

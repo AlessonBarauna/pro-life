@@ -470,3 +470,11 @@ html.pl-large-text { font-size:112.5%; }
   #app .cc-market-screen .cc-card.cc-deal-section{min-height:0 !important}
   #app .cc-market-screen:has(> .cc-market-screen-nav){padding-bottom:4px !important}
 }
+
+/* Celular deitado: o diálogo usa a tela inteira, sem estourar a borda de baixo (margem segura incluída). */
+@media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){
+  .sm27-dialog-layer{padding:max(4px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
+  .sm27-dialog{max-height:calc(var(--pl-vh,100dvh) - max(4px,env(safe-area-inset-top)) - max(4px,env(safe-area-inset-bottom)));width:min(100%,960px)}
+  .sm27-dialog.acad-dialog{width:100%;max-height:calc(var(--pl-vh,100dvh) - max(4px,env(safe-area-inset-top)) - max(4px,env(safe-area-inset-bottom)));height:calc(var(--pl-vh,100dvh) - max(4px,env(safe-area-inset-top)) - max(4px,env(safe-area-inset-bottom)))}
+  .sm27-dialog-body{padding-bottom:max(14px,env(safe-area-inset-bottom))}
+}
