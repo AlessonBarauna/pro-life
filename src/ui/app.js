@@ -1885,6 +1885,14 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const summaryStats=[["Jogos",seasonPlayed],["Vitórias",seasonWins],["Empates",seasonDraws],["Derrotas",seasonLosses]];
       const summaryHtml=summaryStats.map(([label,value])=>`<div class="fc27-v2-number"><strong>${safe(value,0)}</strong><small>${label}</small></div>`).join("");
       const alertRows=[];
+      try{
+        const ws=Career.windowStatus(state);
+        if(ws){
+          alertRows.push(ws.open
+            ?["Janela de transferências aberta",`${ws.name||"Mercado aberto"} · fecha em ${ws.remaining} dia(s)`,"market"]
+            :["Janela de transferências fechada",`Reabre em ${ws.remaining} dia(s)${ws.next?" · "+ws.next:""}`,"market"]);
+        }
+      }catch(e){}
       if(state.decision)alertRows.push(["Decisão pendente",state.decision.title||"Ação necessária","life"]);
       if((state.offers||[]).length)alertRows.push(["Propostas",`${state.offers.length} aguardando resposta`,"proposals"]);
       if(c?.roster?.length){

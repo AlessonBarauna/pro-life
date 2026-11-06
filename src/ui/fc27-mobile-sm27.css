@@ -285,3 +285,7 @@
   .pl-squad-screen:has(> .pl-squad-supplement) > .pl-squad-supplement { grid-column:2; grid-row:2; min-height:0; margin:0; overflow:auto; }
   .pl-squad-screen:has(> .pl-squad-supplement) > .pl-squad-actions { grid-column:1 / -1; grid-row:3; position:static; }
 }
+
+/* Aviso da janela de transferências no cartão da tela principal. */
+.sm27-window.is-open b{color:#c6f432}
+.sm27-window.is-closed b{color:#f0b35c}

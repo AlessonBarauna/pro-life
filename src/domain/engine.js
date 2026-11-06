@@ -2786,6 +2786,15 @@
       WorldLiveMarket?.tick?.(s, rng);
       applyMarketBudgets(s, WorldLiveMarket?.executeCompleted?.(s, { canExecute: worldMarketCanExecute })?.executed);
       Career.daily(s);
+      // Aviso de janela de transferências: uma mensagem quando abre e outra quando fecha.
+      try {
+        const ws = Career.windowStatus(s), prev = s.marketWindowState;
+        if (prev && prev.open !== ws.open) {
+          if (ws.open) log(s, "Janela de transferências aberta", `${ws.name || "A janela"} está aberta e fecha em ${ws.remaining} dia(s). Propostas e negociações já podem ser concluídas.`);
+          else log(s, "Janela de transferências fechada", `A janela fechou. Novas contratações só serão concluídas quando ela reabrir (${ws.next || "próxima janela"}, em ${ws.remaining} dia(s)). Negociações em andamento ficam aguardando.`);
+        }
+        s.marketWindowState = { open: !!ws.open, name: ws.name || "", day: s.day };
+      } catch (e) { /* o aviso nunca bloqueia o avanço do dia */ }
       birthdayTick(s);
       World2?.daily(s, API);
       WorldClubCompetitions?.daily(s, { heroFixture: (...a) => worldHeroFixture(s, rng, ...a) });

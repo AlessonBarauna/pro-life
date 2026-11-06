@@ -63,7 +63,9 @@
     const coachItems = [...(Array.isArray(state.coachCareer?.negotiations) ? state.coachCareer.negotiations : []), ...(Array.isArray(state.coachCareer?.saleOffers) ? state.coachCareer.saleOffers : [])];
     const deals = coachItems.filter((o) => o.status === "awaiting_window" || (o.status === "pending" && (!Number.isFinite(Number(o.expiresDay)) || Number(o.expiresDay) >= Number(state.day)))).length;
     const open = state.mode === "coach" ? deals : offers;
-    const transfers = tile("market", "Transferências", `<span class="sm27-list">${row("", `<span>${open ? open + " negociaç" + (open === 1 ? "ão aberta" : "ões abertas") : "Nenhuma negociação aberta"}</span>`)}${row("", `<span>Orçamento <b>${esc(h.money(c.budget || 0))}</b></span>`)}</span>`);
+    let win = null; try { win = D.Career?.windowStatus?.(state) || null; } catch (e) { win = null; }
+    const winRow = win ? row("", `<span class="sm27-window ${win.open ? "is-open" : "is-closed"}"><b>${win.open ? "Janela aberta" : "Janela fechada"}</b> · ${win.open ? "fecha em " : "abre em "}${esc(win.remaining)} d</span>`) : "";
+    const transfers = tile("market", "Transferências", `<span class="sm27-list">${winRow}${row("", `<span>${open ? open + " negociaç" + (open === 1 ? "ão aberta" : "ões abertas") : "Nenhuma negociação aberta"}</span>`)}${row("", `<span>Orçamento <b>${esc(h.money(c.budget || 0))}</b></span>`)}</span>`);
 
     const form = (H.recent || []).filter((x) => !x.national && x.result).slice(0, 5).map((x) => `<b class="r-${esc(x.result)}">${esc(x.result)}</b>`).join("") || "<small>Sem jogos ainda.</small>";
     const events = (H.events || []).slice(0, 3).map((e) => row("", `<time>${dayDate(e.day)}</time><span>${esc(e.title || "Compromisso")}</span>`)).join("");
