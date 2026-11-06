@@ -749,13 +749,36 @@
     const bench=[];
     for(const g of ["GOL","DEF","MEI","ATA"]){const b=pool.find(p=>p.pos===g&&avail(p)&&!bench.includes(p.id));if(b)bench.push(b.id);}
     for(const p of pool){if(bench.length>=7)break;if(avail(p)&&!bench.includes(p.id)&&p.pos!=="GOL")bench.push(p.id);}
+    // Jovem de potencial ganha vaga no banco (substituição de "minutos para a base" no 2º tempo).
+    const prospect=pool.filter(p=>avail(p)&&p.pos!=="GOL"&&!bench.includes(p.id)&&Number(p.age)<=21&&Number(p.potential||0)>=72&&Number(p.potential)-overall(p)>=4)
+      .sort((x,y)=>(Number(y.potential)-Number(x.potential))||byGer(x,y))[0];
+    if(prospect&&!bench.some(id=>{const p=pool.find(q=>q.id===id);return p&&Number(p.age)<=21&&Number(p.potential||0)>=72;})){
+      if(bench.length>=7)bench.pop();
+      bench.push(prospect.id);
+    }
     bench.sort((x,y)=>byGer(pool.find(p=>p.id===x),pool.find(p=>p.id===y)));
-    c.benchOrder=[...bench,...pool.filter(p=>!bench.includes(p.id)).map(p=>p.id)];
+    // Indisponíveis (lesão, suspensão, sem condição) ficam sempre no fim da lista, fora do banco.
+    c.benchOrder=[...bench,...pool.filter(p=>!bench.includes(p.id)&&avail(p)).map(p=>p.id),...pool.filter(p=>!bench.includes(p.id)&&!avail(p)).map(p=>p.id)];
     const changed=before!==JSON.stringify([club.lineup,c.pitchSlots,c.benchOrder]);
     if(changed)c.autoIdealDay=Number(s.day)||0;
     return {changed,formation};
   }
-  const api={autoIdealXI,VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
+  // Mantém lesionados e suspensos fora do banco mesmo com escalação manual ou lesão nova.
+  function sanitizeBench(s,api){
+    if(!isCoach(s))return false;
+    const c=state(s),club=clubOf(s,api);
+    if(!club||!Array.isArray(club.roster)||!Array.isArray(c.benchOrder))return false;
+    const unavailable=p=>p&&(p.injury||Number(p.suspension)>0||Number(p.condition??100)<=35);
+    const byId=new Map(club.roster.map(p=>[String(p.id),p]));
+    const ids=c.benchOrder.filter(id=>byId.has(String(id)));
+    for(const p of club.roster)if(!ids.some(id=>String(id)===String(p.id)))ids.push(p.id);
+    const lineup=new Set((club.lineup||[]).map(String));
+    const next=[...ids.filter(id=>lineup.has(String(id))||!unavailable(byId.get(String(id)))),...ids.filter(id=>!lineup.has(String(id))&&unavailable(byId.get(String(id))))];
+    const changed=JSON.stringify(next)!==JSON.stringify(c.benchOrder);
+    if(changed)c.benchOrder=next;
+    return changed;
+  }
+  const api={sanitizeBench,autoIdealXI,VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

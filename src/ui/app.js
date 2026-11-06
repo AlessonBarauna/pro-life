@@ -2594,7 +2594,8 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const reservePool=selection?.bench||c.roster.filter(p=>!starters.includes(p));
       const benchOrder=coach&&Array.isArray(state.coachCareer?.benchOrder)?state.coachCareer.benchOrder:[];
       const rank=new Map(benchOrder.map((id,i)=>[id,i]));
-      const bench=coach?[...reservePool].sort((a,b)=>(rank.get(a.id)??99999)-(rank.get(b.id)??99999)):reservePool;
+      const benchOut=(p)=>coach&&(p.injury||Number(p.suspension)>0||Number(p.condition??100)<=35)?1:0;
+      const bench=coach?[...reservePool].sort((a,b)=>benchOut(a)-benchOut(b)||(rank.get(a.id)??99999)-(rank.get(b.id)??99999)):reservePool;
       const formation=coach?(c.formation||"4-3-3"):(sq?.formation||c.formation||autoSelection?.formation||"4-3-3");
       const canUndo=coach&&squadUndo?.clubId===c.id&&squadUndo?.day===state.day;
       const selected=c.roster.find(p=>p.id===squadSelectedId)||c.roster.find(p=>p.id==="hero")||starters[0]||c.roster[0];

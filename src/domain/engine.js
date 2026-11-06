@@ -1313,6 +1313,35 @@
           m.events.push({minute,type:"substitution",side,player:incoming.name,playerId:incoming.id,outPlayer:outgoing.name,outPlayerId:outgoing.id,text:`Substituição: sai ${outgoing.name}, entra ${incoming.name}.`});
         }
       }
+      // Minutos para a base: o treinador usa uma substituição para colocar um jovem de potencial em campo.
+      if(context?.mode==="coach"&&minute===64&&context.coachCareer?.youthMinutes!==false){
+        for(const side of [0,1]){
+          const club=clubs[side],ps=squads[side];
+          if(!club||!ps||club.id!==context.clubId||coachSubs[side]>0)continue;
+          if(plannedActions.some(a=>a?.type==="substitution"&&Number(a.side)===side))continue;
+          const diff=side===0?m.hg-m.ag:m.ag-m.hg;
+          if(diff<0)continue;
+          const rankMap=new Map((context.coachCareer.benchOrder||[]).map((id,i)=>[String(id),i]));
+          const bench=(club.roster||[]).filter(p=>p&&!ps.includes(p)&&p.id!=="hero"&&!p.injury&&!(Number(p.suspension)>0)&&
+            !p._competitionSuspended&&Number(p.condition??100)>35)
+            .sort((a,b)=>(rankMap.get(String(a.id))??99999)-(rankMap.get(String(b.id))??99999)).slice(0,7);
+          const prospect=bench.filter(p=>p.pos!=="GOL"&&Number(p.age)<=21&&Number(p.potential||0)>=72&&Number(p.potential)-overall(p)>=4)
+            .sort((a,b)=>(Number(b.potential)-Number(a.potential))||(overall(b)-overall(a)))[0];
+          if(!prospect)continue;
+          const outgoing=ps.filter(p=>p.id!=="hero"&&p.pos===prospect.pos&&!m.events.some(ev=>ev.type==="red"&&ev.playerId===p.id))
+            .sort((a,b)=>(Number(a.condition??100)-Number(b.condition??100))||(overall(a)-overall(b)))[0];
+          if(!outgoing||overall(outgoing)-overall(prospect)>12)continue;
+          const index=ps.indexOf(outgoing);
+          ps[index]=prospect;coachSubs[side]++;usedIncoming[side].add(prospect.id);
+          if(positionRoles[side]?.has(outgoing.id)){
+            const role=positionRoles[side].get(outgoing.id);positionRoles[side].delete(outgoing.id);positionRoles[side].set(prospect.id,role);
+          }
+          if(m.participation[outgoing.id]){m.participation[outgoing.id].exitMinute=minute;m.participation[outgoing.id].minutes=minute-m.participation[outgoing.id].entryMinute;}
+          m.participation[prospect.id]={side,starter:false,entryMinute:minute,exitMinute:94,minutes:94-minute};
+          m.participants[side].push(prospect.id);
+          m.events.push({minute,type:"substitution",side,player:prospect.name,playerId:prospect.id,outPlayer:outgoing.name,outPlayerId:outgoing.id,youth:true,text:`Substituição: sai ${outgoing.name}, entra ${prospect.name} (minutos para a base).`});
+        }
+      }
       // Active individual tactical roles affect buildup after substitutions.
       const roleBuildUp=squads.map((players,side)=>{
         let control=0,attack=0;
@@ -2959,6 +2988,7 @@
           const nc = nextCommitment(s);
           if (nc && !nc.national && Number.isFinite(nc.date) && nc.date <= s.day + 1) CoachCareer?.autoIdealXI?.(s, API);
         } catch (e) { s.coachAutoIdealError = String(e?.message || e); }
+        try { CoachCareer?.sanitizeBench?.(s, API); } catch (e) { s.coachBenchError = String(e?.message || e); }
       }
       if (s.mode === "coach" && s.clubId) { try { YouthAcademy?.daily(s, API, { log: (title, body) => log(s, title, body) }); } catch (e) { s.youthError = String(e?.message || e); } }
       try { awardCupPrizes(s); payLeagueInstallments(s); } catch (e) { s.cupPrizeError = String(e?.message || e); }
