@@ -700,7 +700,62 @@
       focus:c.focus,foci:FOCI,stints:c.stints,totals,license:s.license,reputation:s.reputation};
   }
 
-  const api={VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
+  // Time ideal automático: antes de cada partida o XI é refeito com os melhores GER disponíveis (lesionados,
+  // suspensos e sem condição saem sozinhos) e o banco recebe pelo menos um reserva por grupo.
+  const IDEAL_ROLES={
+    "4-3-3":["PE","CA","PD","MC","VOL","MC","LE","ZAG","ZAG","LD","GOL"],
+    "4-4-2":["CA","CA","ME","MC","MC","MD","LE","ZAG","ZAG","LD","GOL"],
+    "4-2-3-1":["CA","PE","MEI","PD","VOL","VOL","LE","ZAG","ZAG","LD","GOL"]
+  };
+  function autoIdealXI(s,api){
+    if(!isCoach(s))return {changed:false,reason:"not-coach"};
+    const c=state(s);
+    if(c.autoIdeal===false)return {changed:false,reason:"off"};
+    const club=clubOf(s,api),selector=root.ProLifeSquadPositionSelection||(typeof require==="function"?require("./squad-position-selection.js"):null);
+    if(!club||!Array.isArray(club.roster)||!club.roster.length)return {changed:false,reason:"no-club"};
+    const overall=p=>Number(api?.overall?.(p))||0;
+    const formation=club.formation||"4-3-3";
+    const ok=p=>p&&p.id!=="hero"&&!p.injury&&!(Number(p.suspension)>0);
+    const byGer=(x,y)=>overall(y)-overall(x)||String(x.id).localeCompare(String(y.id));
+    const before=JSON.stringify([club.lineup,c.pitchSlots,c.benchOrder]);
+    let chosen=null;
+    const roles=IDEAL_ROLES[formation];
+    const suggestion=roles&&selector?.suggestIdeal?selector.suggestIdeal({formation,roster:club.roster,overall}):null;
+    if(suggestion){
+      const remaining=[...suggestion.assignments];
+      chosen=roles.map(role=>{const i=remaining.findIndex(x=>x.role===role);return i<0?null:remaining.splice(i,1)[0].player.id;});
+      if(chosen.some(id=>!id)||new Set(chosen).size!==11)chosen=null;
+    }
+    if(!chosen){
+      // Formação sem sugestão pronta: mantém o XI e troca só quem está indisponível pelo melhor reserva do mesmo grupo.
+      const roster=new Map(club.roster.map(p=>[String(p.id),p]));
+      const current=(club.lineup||[]).map(id=>roster.get(String(id))).filter(Boolean);
+      if(current.length!==11)return {changed:false,reason:"no-suggestion"};
+      const used=new Set(current.map(p=>String(p.id)));
+      const next=current.map(p=>{
+        if(ok(p))return p;
+        const sub=club.roster.filter(x=>ok(x)&&!used.has(String(x.id))&&x.pos===p.pos).sort(byGer)[0];
+        if(!sub)return p;
+        used.add(String(sub.id));return sub;
+      });
+      chosen=next.map(p=>p.id);
+      if(!next.some(p=>p.pos==="GOL"&&ok(p)))return {changed:false,reason:"no-goalkeeper"};
+    }
+    club.lineup=[...chosen];
+    if(suggestion){c.pitchSlots=[...chosen];c.pitchFormation=formation;}
+    const set=new Set(chosen.map(String));
+    const pool=club.roster.filter(p=>!set.has(String(p.id))).sort(byGer);
+    const avail=p=>ok(p)&&Number(p.condition??100)>35;
+    const bench=[];
+    for(const g of ["GOL","DEF","MEI","ATA"]){const b=pool.find(p=>p.pos===g&&avail(p)&&!bench.includes(p.id));if(b)bench.push(b.id);}
+    for(const p of pool){if(bench.length>=7)break;if(avail(p)&&!bench.includes(p.id)&&p.pos!=="GOL")bench.push(p.id);}
+    bench.sort((x,y)=>byGer(pool.find(p=>p.id===x),pool.find(p=>p.id===y)));
+    c.benchOrder=[...bench,...pool.filter(p=>!bench.includes(p.id)).map(p=>p.id)];
+    const changed=before!==JSON.stringify([club.lineup,c.pitchSlots,c.benchOrder]);
+    if(changed)c.autoIdealDay=Number(s.day)||0;
+    return {changed,formation};
+  }
+  const api={autoIdealXI,VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

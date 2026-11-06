@@ -2801,6 +2801,13 @@
       CoachCareer?.daily(s, API, { log: (title, body) => log(s, title, body) });
       if (s.mode === "coach") { try { CoachNational?.daily(s, API); } catch (e) { s.coachNationalError = String(e?.message || e); } }
       OffField?.daily(s, API, { log: (title, body) => log(s, title, body) });
+      // Treinador: com jogo hoje ou amanhã, o time ideal já está montado (lesionados saem sozinhos).
+      if (s.mode === "coach" && s.clubId) {
+        try {
+          const nc = nextCommitment(s);
+          if (nc && !nc.national && Number.isFinite(nc.date) && nc.date <= s.day + 1) CoachCareer?.autoIdealXI?.(s, API);
+        } catch (e) { s.coachAutoIdealError = String(e?.message || e); }
+      }
       NationalTeam?.daily(s, rng, API, log);
       const pendingBefore = new Set((NationalCallups?.pending?.(s) || []).map((r) => r.id));
       try { NationalCallups?.daily(s, API, log); } catch (e) { /* convocacao nunca bloqueia o avanco do dia */ }
