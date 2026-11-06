@@ -206,3 +206,27 @@ test("proposta enviada tira a sondagem da lista e leva para Propostas",()=>{
   assert.match(html,/1 SONDAGEM\b/);assert.doesNotMatch(html,/Lamine Yamal/);assert.match(html,/Outro Alvo/);
   assert.match(html,/1 proposta enviada · saíram desta lista/);assert.match(html,/data-coach-goto-proposals/);
 });
+test("sondagem encerrada pode ser tirada da lista, uma a uma ou em bloco, sem liberar a espera de 14 dias",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const Game=require("../src/application/game.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);Engine.CoachCareer.init(s,Engine);
+  View.setListScreen("sondagens");
+  const mk=(id,name,status)=>({id,playerId:"p-"+id,clubId:"gf_fc27_1",buyerClubId:s.clubId,playerName:name,clubName:"Clube",startDay:1,responseDay:2,answeredDay:2,expiresDay:90,status,playerDecision:status==="rejected"?"rejected":undefined});
+  s.coachCareer.inquiries=[mk("a","Recusado Um","rejected"),mk("b","Recusado Dois","rejected"),mk("c","Aguardando","pending")];
+  let html=View.renderMarket(s,Engine);
+  assert.match(html,/Limpar 2 encerradas/);assert.equal((html.match(/cc-inquiry-dismiss"/g)||[]).length,2);
+  const run=(a,d)=>(Game.execute||Engine.execute||(()=>{throw Error("sem execute");}))(s,a,d);
+  assert.throws(()=>run("dismissInquiry",{id:"c"}),/encerradas/);
+  run("dismissInquiry",{id:"a"});
+  html=View.renderMarket(s,Engine);
+  assert.doesNotMatch(html,/Recusado Um/);assert.match(html,/Recusado Dois/);
+  run("dismissInquiry",{all:true});
+  html=View.renderMarket(s,Engine);
+  assert.doesNotMatch(html,/Recusado Dois/);assert.match(html,/Aguardando/);assert.doesNotMatch(html,/Limpar/);
+  assert.equal(s.coachCareer.inquiries.length,3,"os registros continuam guardando a espera de 14 dias");
+});

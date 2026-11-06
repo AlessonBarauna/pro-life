@@ -800,6 +800,16 @@ case "tactic": {
         inquiries.push(entry);
         break;
       }
+      case "dismissInquiry": {
+        if(s.mode!=="coach")throw Error("Sondagem disponível apenas ao treinador.");
+        const list=s.coachCareer?.inquiries||[];
+        const closed=x=>x&&String(x.buyerClubId)===String(s.clubId)&&!x.dismissed&&(["rejected","expired","closed","converted"].includes(x.status)||(["accepted","asking_price"].includes(x.status)&&Number(s.day)>Number(x.expiresDay)));
+        const targets=data.all?list.filter(closed):list.filter(x=>x.id===data.id&&closed(x));
+        if(!targets.length)throw Error("Só sondagens encerradas podem sair da lista.");
+        // Marca como dispensada (mantém a espera de 14 dias para consultar o mesmo jogador de novo).
+        for(const x of targets){x.dismissed=true;x.dismissedDay=Number(s.day)||0;}
+        break;
+      }
       case "counterRecruit": {
         if(s.mode!=="coach")throw Error("Negociação disponível apenas ao treinador.");
         const buyer=D.club(s),seller=D.club(s,data.clubId);
