@@ -101,10 +101,13 @@
     const used=rows.filter(k=>!k.loaned).length;
     const fac=FACm();
     const upCost=fac?.upgradeCost?.(s,club,"academy")??null;
-    const nextRules=r.level<5?(()=>{const fake={...s,coachCareer:{...s.coachCareer,facilities:{...(s.coachCareer.facilities||{}),version:1,clubId:s.clubId,levels:{...(s.coachCareer.facilities?.levels||{}),academy:r.level+1}}}};return rules(fake);})():null;
+    const rulesAt=(acad,scout)=>{const f=s.coachCareer.facilities||{};return rules({...s,coachCareer:{...s.coachCareer,facilities:{...f,version:1,clubId:s.clubId,levels:{...(f.levels||{}),academy:acad,scouting:scout}}}});};
+    const nextRules=r.level<5?rulesAt(r.level+1,r.scoutLevel):null;
+    const nextScoutRules=r.scoutLevel<5?rulesAt(r.level,r.scoutLevel+1):null;
+    const scoutUpgradeCost=fac?.upgradeCost?.(s,club,"scouting")??null;
     const missions=y.missions.slice().reverse().map(m=>({...m,remaining:Math.max(0,Math.ceil(m.startDay+m.duration-num(s.day))),progress:m.status==="complete"?100:Math.round(clamp((num(s.day)-m.startDay)/Math.max(1,m.duration),0,1)*100)}));
     return {
-      rules:r,nextRules,level:r.level,maxLevel:5,upgradeCost:upCost,budget:num(club?.budget),
+      rules:r,nextRules,nextScoutRules,scoutUpgradeCost,level:r.level,scoutLevel:r.scoutLevel,maxLevel:5,upgradeCost:upCost,budget:num(club?.budget),
       capacity:r.capacity,used,loanedCount:rows.length-used,free:Math.max(0,r.capacity-used),
       nextIntakeDay:y.nextIntakeDay,daysToIntake:Math.max(0,y.nextIntakeDay-num(s.day)),
       kids:rows,reports:y.reports.map(x=>reportRow(s,x)),

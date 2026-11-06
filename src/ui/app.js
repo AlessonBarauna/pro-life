@@ -606,7 +606,7 @@
         drawerItem("market","Transferências",["market","proposals","clubs"]),
         state.mode==="player"?drawerItem("profile","Meu jogador",drawerFind("profile")?.[3]||["profile"]):drawerItem("profile","Treinador",drawerFind("profile")?.[3]||["profile"]),
         drawerItem("competitions","Competições",["competitions","league","statistics","awards","worldCompetitions","englishCups","champions","europa","conference","libertadores","sudamericana"]),
-        drawerItem("home","Instalações",[],' data-sm27-facilities'),drawerItem("home","Olheiros",[],' data-sm27-scouts')
+        drawerItem("home","Instalações",[],' data-sm27-facilities'),drawerItem("home","Olheiros",[],' data-sm27-scouts'),state.mode==="coach"?drawerItem("home","Academia",[],' data-sm27-academy'):null
       ]],
       ["Mais",[drawerItem("home","Objetivos",[],' data-sm27-objectives'),drawerItem("home","Registros",[],' data-sm27-records'),state.mode==="coach"?drawerItem("home","Vagas de emprego",[],' data-sm27-jobs'):null,state.mode==="coach"?drawerItem("home","Movimentações",[],' data-sm27-transfers'):null,state.mode==="coach"?drawerItem("home","Finanças",[],' data-sm27-finance'):null,state.mode==="coach"?drawerItem("home","Habilidades",[],' data-sm27-skills'):null,drawerFind("life")?drawerItem("life","Vida",drawerFind("life")[3]):null,drawerUtilities.history,drawerUtilities.national,drawerUtilities.inbox,drawerUtilities.save]]
     ];
@@ -1893,6 +1893,14 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
             :["Janela de transferências fechada",`Reabre em ${ws.remaining} dia(s)${ws.next?" · "+ws.next:""}`,"market"]);
         }
       }catch(e){}
+      if(state.mode==="coach"&&state.catalogVersion==="fc27_v1"&&D.YouthAcademy){
+        try{
+          const yv=D.YouthAcademy.view(state,D);
+          if(yv){const al=D.YouthAcademy.alerts(state);
+            if(al.length)for(const a of al.slice(0,2))alertRows.push(["Academia",a.text,"academy"]);
+            else alertRows.push(["Academia",`${yv.used}/${yv.capacity} jovens na base · próxima admissão em ${yv.daysToIntake} dia(s)`,"academy"]);}
+        }catch(e){}
+      }
       if(state.decision)alertRows.push(["Decisão pendente",state.decision.title||"Ação necessária","life"]);
       if((state.offers||[]).length)alertRows.push(["Propostas",`${state.offers.length} aguardando resposta`,"proposals"]);
       if(c?.roster?.length){
@@ -1900,7 +1908,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         if(injured)alertRows.push(["Departamento médico",`${injured} jogador(es) lesionado(s)`,"squad"]);
       }
       if(!alertRows.length)alertRows.push(["Situação da carreira","Nenhuma decisão urgente registrada","inbox"]);
-      const alertsHtml=alertRows.slice(0,4).map(([label,detail,page])=>`<button class="fc27-v2-alert" data-page="${esc(page)}"><b>${esc(label)}</b><small>${esc(detail)}</small><span aria-hidden="true">›</span></button>`).join("");
+      const alertsHtml=alertRows.slice(0,4).map(([label,detail,page])=>`<button class="fc27-v2-alert" ${page==="academy"?"data-sm27-academy":`data-page="${esc(page)}"`}><b>${esc(label)}</b><small>${esc(detail)}</small><span aria-hidden="true">›</span></button>`).join("");
       return `<div class="career-dashboard fc27-central-v2-approved">
         <header class="central-v3-header"><div><span>TEMPORADA ${safe(state.season)}</span><time>${dayDate(state.day)}</time><h2 class="central-v3-title">${esc(c?.name||"Carreira")}</h2></div><p>${esc(next?.competitionName||H.table.league||"Temporada atual")} <b>·</b> ${esc(next?.stage||"Visão geral")}</p></header>
         <div class="fc27-v2-layout" aria-label="Dashboard da temporada">
