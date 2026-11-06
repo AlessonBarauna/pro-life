@@ -17,6 +17,7 @@
   const NationalCallups=root.ProLifeNationalCallups||(typeof require==="function"?require("./national-callups.js"):null);
   const OffField=root.ProLifeOffField||(typeof require==="function"?require("./off-field.js"):null);
   const ClubFinance=root.ProLifeClubFinance||(typeof require==="function"?require("./club-finance.js"):null);
+  const LeaguePrizes=root.ProLifeLeaguePrizes||(typeof require==="function"?require("./league-prizes.js"):null);
   const PlayerEconomy=root.ProLifePlayerEconomy||(typeof require==="function"?require("./player-economy.js"):null);
   const ClubEconomy=root.ProLifeClubEconomy||(typeof require==="function"?require("./club-economy.js"):null);
   const Facilities=root.ProLifeFacilities||(typeof require==="function"?require("./facilities.js"):null);
@@ -2135,6 +2136,30 @@
     const englishCup=englishCupMatch&&{home:englishCupMatch.homeId,away:englishCupMatch.awayId,date:englishCupMatch.day,round:englishCupMatch.round,competitionId:englishCupMatch.competitionId,competitionName:englishCupMatch.competitionName,stage:englishCupMatch.stage,knockout:true};
     return [league, extra, national, world, englishCup, continental, knockout, europa, europaKo,conference,conferenceKo,...conmebol].filter(Boolean).sort((a,b)=>a.date-b.date)[0] || null;
   }
+  // Premiação da liga no fim da temporada: dinheiro por posição (e título) no caixa do clube do usuário.
+  function awardLeaguePrize(s, orders) {
+    if (!LeaguePrizes || !["player", "coach"].includes(s.mode) || !s.clubId) return null;
+    const own = club(s);
+    if (!own || !Number.isFinite(Number(own.budget))) return null;
+    if ((s.leaguePrizes || []).some((x) => x.season === s.season && x.clubId === s.clubId)) return null;
+    let order = null;
+    if (own.worldMatch && WorldClubCompetitions?.standings) order = WorldClubCompetitions.standings(s, own.leagueId) || [];
+    else order = orders?.[own.leagueId] || [];
+    const position = order.findIndex((c) => c.id === s.clubId) + 1;
+    if (!position || order.length < 2) return null;
+    const peers = own.worldMatch ? (s.globalFootball?.clubs || []).filter((c) => c.leagueId === own.leagueId) : (s.clubs || []).filter((c) => c.leagueId === own.leagueId);
+    const revenues = peers.map((c) => Number(ClubFinance?.annualRevenue?.(c, s)) || 0).filter((v) => v > 0);
+    const avgRevenue = revenues.length ? revenues.reduce((a, b) => a + b, 0) / revenues.length : 0;
+    const prize = LeaguePrizes.prizeFor({ leagueId: own.leagueId, position, count: order.length, avgRevenue });
+    if (!(prize.amount > 0)) return null;
+    const title = prize.titleBonus ? ` Inclui R$ ${prize.titleBonus.toLocaleString("pt-BR")} pelo título.` : "";
+    const reason = `${prize.label}: ${position}º lugar`;
+    if (ClubFinance) ClubFinance.income(s, own, "premios", prize.amount, reason); else own.budget += prize.amount;
+    (s.leaguePrizes ||= []).unshift({ season: s.season, clubId: s.clubId, leagueId: own.leagueId, position, count: order.length, amount: prize.amount, titleBonus: prize.titleBonus, label: prize.label });
+    s.leaguePrizes = s.leaguePrizes.slice(0, 40);
+    log(s, "Premiação da liga", `${prize.label}: ${own.name} terminou em ${position}º entre ${order.length} clubes e recebeu R$ ${prize.amount.toLocaleString("pt-BR")}.${title}`);
+    return prize;
+  }
   function newSeason(s, rng) {
     WorldClubCompetitions?.closeSeason(s);
     EnglishCups?.closeSeason?.(s);
@@ -2219,6 +2244,7 @@
       }
     }
     s.history = s.history.slice(0, 300);
+    try { awardLeaguePrize(s, orders); } catch (e) { s.leaguePrizeError = String(e?.message || e); }
     const movement = [];
     if (s.world === "brazil2026") {
       for (const [upper, lower] of [["serieA", "serieB"], ["serieB", "serieC"], ["serieC", "serieD"]]) {

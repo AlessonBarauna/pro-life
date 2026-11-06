@@ -175,6 +175,7 @@ const files = [
   "src/domain/club-intelligence.js",
   "src/domain/club-economy.js",
   "src/domain/club-finance.js",
+  "src/domain/league-prizes.js",
   "src/domain/player-economy.js",
   "src/domain/transfer-market-rules.js",
   "src/domain/facilities.js",
