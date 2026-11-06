@@ -18,6 +18,7 @@
   const OffField=root.ProLifeOffField||(typeof require==="function"?require("./off-field.js"):null);
   const ClubFinance=root.ProLifeClubFinance||(typeof require==="function"?require("./club-finance.js"):null);
   const LeaguePrizes=root.ProLifeLeaguePrizes||(typeof require==="function"?require("./league-prizes.js"):null);
+  const CupPrizes=root.ProLifeCupPrizes||(typeof require==="function"?require("./cup-prizes.js"):null);
   const PlayerEconomy=root.ProLifePlayerEconomy||(typeof require==="function"?require("./player-economy.js"):null);
   const ClubEconomy=root.ProLifeClubEconomy||(typeof require==="function"?require("./club-economy.js"):null);
   const Facilities=root.ProLifeFacilities||(typeof require==="function"?require("./facilities.js"):null);
@@ -2160,7 +2161,35 @@
     log(s, "Premiação da liga", `${prize.label}: ${own.name} terminou em ${position}º entre ${order.length} clubes e recebeu R$ ${prize.amount.toLocaleString("pt-BR")}.${title}`);
     return prize;
   }
+  // Premiação de copas no fim da temporada (continentais + Copa do Brasil), uma vez por competição/temporada.
+  function awardCupPrizes(s) {
+    if (!CupPrizes || !["player", "coach"].includes(s.mode) || !s.clubId) return [];
+    const own = club(s);
+    if (!own || !Number.isFinite(Number(own.budget))) return [];
+    const done = (s.cupPrizes ||= []);
+    const found = [];
+    for (const ed of Object.values(s.continental?.editions || {})) {
+      if (!ed || Number(ed.season) !== Number(s.season)) continue;
+      const r = CupPrizes.continental(ed, s.clubId);
+      if (r) found.push(r);
+    }
+    const cup = s.competitionSchedule?.cup;
+    if (cup && Number(cup.season) === Number(s.season)) { const r = CupPrizes.domesticCup(cup, s.clubId); if (r) found.push(r); }
+    const paid = [];
+    for (const r of found) {
+      if (!(r.amount > 0) || done.some((x) => x.season === s.season && x.competitionId === r.competitionId && x.clubId === s.clubId)) continue;
+      const amount = Math.round(r.amount);
+      const reason = `${r.label}: ${r.lines.map((l) => l.reason).slice(-2).join(" e ")}`;
+      if (ClubFinance) ClubFinance.income(s, own, "premios", amount, reason); else own.budget += amount;
+      done.unshift({ season: s.season, clubId: s.clubId, competitionId: r.competitionId, label: r.label, amount, champion: !!r.champion });
+      log(s, "Premiação de copa", `${r.label}: ${own.name} recebeu R$ ${amount.toLocaleString("pt-BR")} (${r.lines.map((l) => l.reason).join("; ")}).`);
+      paid.push(r);
+    }
+    s.cupPrizes = done.slice(0, 80);
+    return paid;
+  }
   function newSeason(s, rng) {
+    try { awardCupPrizes(s); } catch (e) { s.cupPrizeError = String(e?.message || e); }
     WorldClubCompetitions?.closeSeason(s);
     EnglishCups?.closeSeason?.(s);
     try{WorldHonors?.compute(s,API);}catch(e){}
