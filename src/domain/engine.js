@@ -650,6 +650,38 @@
     for (const [pos, n] of [["GOL", 1], ["DEF", 4], ["MEI", 3], ["ATA", 3]]) roster.filter((p) => p.pos === pos).sort((x, y) => y.ovr - x.ovr).slice(0, n).forEach((p) => lineup.push(p.id));
     return { id: gc.id, name: gc.name, shortName: gc.shortName || gc.name, city: gc.city || "", color: gc.color || "#456", country: gc.country, leagueId: gc.leagueId, division: gc.division || 1, reputation: gc.reputation, strength: gc.strength, budget: gc.budget || 0, active: true, structure: gc.strength || 60, coverage: "complete", tactic: "balanced", formation: "4-3-3", roster, lineup, stats: { points: 0, played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 }, worldMatch: true, joinedDay: s.day };
   }
+  // Atualiza o clube persistido do treinador na virada de temporada sem perder o que ele fez:
+  // mantém elenco comprado, caixa, formação e contratos; aplica idade/evolução do mundo,
+  // tira aposentados e recebe os jovens novos do clube.
+  function refreshOwnWorldClub(s, old) {
+    const gc = GlobalFootball?.clubById?.(s, old.id);
+    if (!gc || !Array.isArray(old.roster)) return null;
+    const fresh = buildWorldClub(s, gc), freshById = new Map(fresh.roster.map((p) => [p.id, p]));
+    const roster = [];
+    for (const p of old.roster) {
+      if (!p) continue;
+      if (p.id === "hero") { roster.push(p); continue; }
+      const gp = GlobalFootball?.playerById?.(s, p.id);
+      if (gp && (gp.status === "retired" || gp.active === false)) continue;
+      const f = freshById.get(p.id);
+      if (f) { p.age = f.age; p.attrs = f.attrs; p.potential = f.potential; } else p.age = (Number(p.age) || 22) + 1;
+      p.minutes = 0; p.goals = 0; p.suspension = 0;
+      roster.push(p);
+    }
+    if (Array.isArray(old.baseIds)) {
+      const known = new Set(old.baseIds), have = new Set(roster.map((p) => p.id));
+      for (const f of fresh.roster) if (!have.has(f.id) && !known.has(f.id) && !String(f.id).includes("_wm_")) roster.push(f);
+    }
+    old.baseIds = fresh.roster.map((p) => p.id).filter((id) => !String(id).includes("_wm_"));
+    old.roster = roster;
+    const ids = new Set(roster.map((p) => p.id));
+    let lineup = (old.lineup || []).filter((id) => ids.has(id));
+    for (const id of fresh.lineup || []) if (lineup.length < 11 && ids.has(id) && !lineup.includes(id)) lineup.push(id);
+    for (const p of roster.slice().sort((x, y) => overall(y) - overall(x))) if (lineup.length < 11 && !lineup.includes(p.id)) lineup.push(p.id);
+    old.lineup = lineup.slice(0, 11);
+    old.stats = { points: 0, played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 };
+    return old;
+  }
   function linkWorldHero(s, c) {
     if (s.mode !== "player" || c.id !== s.clubId || !s.person) return c;
     const i = c.roster.findIndex((p) => p.id === "hero");
@@ -667,6 +699,7 @@
     const gc = GlobalFootball?.clubById?.(s, id);
     if (!gc || !gc.leagueId || (s.clubs || []).some((c) => c.id === id)) return null;
     const built = buildWorldClub(s, gc);
+    built.baseIds = built.roster.map((p) => p.id).filter((id) => !String(id).includes("_wm_"));
     if (own) { (s.worldMatchClubs ||= {})[id] = built; return linkWorldHero(s, built); }
     worldMatchScope.cache[id] = built;
     return built;
@@ -2197,8 +2230,14 @@
       log(s, "Acesso e rebaixamento", movement.map((m) => m.club.name + " " + (m.type === "promovido" ? "subiu para " : "caiu para ") + (Competitions?.leagueNames[m.to] || m.to)).join("; ") + ".");
     }
     s.season++;
+    // Treinador: o clube dele (contratações, vendas, caixa, escalação) sobrevive à virada; os demais são reconstruídos.
+    const keepOwnClub = s.mode === "coach" && s.clubId ? s.worldMatchClubs?.[s.clubId] : null;
     s.worldMatchClubs = {};
     GlobalFootball?.rollSeason(s);
+    if (keepOwnClub) {
+      try { s.worldMatchClubs[s.clubId] = refreshOwnWorldClub(s, keepOwnClub) || keepOwnClub; }
+      catch (e) { s.worldMatchClubs[s.clubId] = keepOwnClub; s.worldClubRefreshError = String(e?.message || e); }
+    }
     WorldClubCompetitions?.nextSeason(s);
     try { Continental?.startSeason(s); } catch (e) { /* idem */ }
     // UCL annual lifecycle: initialize fixtures immediately on season rollover.
