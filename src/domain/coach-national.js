@@ -239,12 +239,16 @@
   function playQualifiers(s,D){
     const NT=D.NationalTeam||root.ProLifeNationalTeam;
     if(!NT?.coachResolveQualifiers)return 0;
-    return NT.coachResolveQualifiers(s,({match,opponentId,opponentName,home,round,year})=>{
-      const fx={id:`q:${year}:${match.id||match.day+":"+match.homeId}`,day:match.day,season:s.season,opponentCode:opponentId,opponent:opponentName||opponentId,home,competition:`Eliminatórias ${year} · Rodada ${round}`,qualifier:true};
-      const sim=simulate(s,D,fx);
+    const run=({match,opponentId,opponentName,home,round,year,playoff})=>{
+      const fx={id:`q:${year}:${match.id||match.day+":"+match.homeId}`,day:match.day,season:s.season,opponentCode:opponentId,opponent:opponentName||opponentId,home,competition:playoff?`Repescagem da Copa ${year}`:`Eliminatórias ${year} · Rodada ${round}`,qualifier:true};
+      let sim=simulate(s,D,fx);
+      if(playoff&&sim.gf===sim.ga){/* a repescagem decide o vencedor nos pênaltis no motor nacional */}
       record(s,D,fx,sim,{qualifier:true});
       return {gf:sim.gf,ga:sim.ga};
-    });
+    };
+    let n=NT.coachResolveQualifiers(s,run)||0;
+    if(NT.coachResolveGroupQualifiers)n+=NT.coachResolveGroupQualifiers(s,run)||0;
+    return n;
   }
   function maybeOffers(s,D){
     const cn=init(s);
@@ -287,7 +291,7 @@
       const eff=effectiveSquad(s,D),calledIds=new Set(eff.squad.map(p=>p.id)),starters=new Set(eff.lineup.starters.map(p=>p.id));
       out.strength=table[cn.teamId]?.strength??null;out.power=+teamPower(eff.lineup.starters).toFixed(1);out.called=eff.squad.length;out.max=SQUAD_MAX;
       out.players=eff.pool.map(p=>({id:p.id,name:p.name,pos:p.pos,club:p.club,age:p.age,overall:Math.round(p.overall),available:p.available,called:calledIds.has(p.id),starter:starters.has(p.id),caps:cn.stats[p.id]?.caps||0,goals:cn.stats[p.id]?.goals||0}));
-      out.cup=cupView(s,D,out.team);out.qual=qualView(s,D,out.team);
+      out.cup=cupView(s,D,out.team);out.qual=qualView(s,D,out.team);out.tours=tournamentsView(s,D,out.team);
       out.scorers=Object.entries(cn.stats).filter(([,v])=>v.goals>0).map(([id,v])=>({id,...v})).sort((a,b)=>b.goals-a.goals).slice(0,5);
     }
     return out;
@@ -296,6 +300,17 @@
   function qualView(s,D,team){
     const NT=D.NationalTeam||root.ProLifeNationalTeam;
     let q=null;try{q=NT?.coachQualifiersView?.(s)||null;}catch(e){}
+    let cq=null;try{cq=NT?.coachQualView?.(s)||null;}catch(e){}
+    if(cq&&cq.teamId===team.code){
+      const name=id=>(cq.table.find(r=>r.id===id)||{}).name||id;
+      const mine=cq.fixtures.filter(m=>m.homeId===team.code||m.awayId===team.code).sort((a,b)=>a.day-b.day);
+      const rows=mine.map(m=>({id:m.id,round:m.round,day:m.day,home:name(m.homeId),away:name(m.awayId),played:!!m.played,hg:m.hg??null,ag:m.ag??null,mine:true}));
+      const po=cq.playoffMatch;
+      if(po)rows.push({id:po.id,round:"Repescagem",day:po.day,home:po.home?team.name:po.opponentName,away:po.home?po.opponentName:team.name,played:!!po.played,hg:po.hg,ag:po.ag,mine:true});
+      return {kind:"conmebol",title:cq.label,year:cq.worldCupYear,complete:!!cq.complete,directSpots:cq.directSpots,playoffSpot:cq.playoffSpot,groupMode:true,
+        table:cq.table.map((r,i)=>({pos:i+1,id:r.id,name:r.name,j:r.played,p:r.points,sg:r.gd,me:r.id===team.code,zone:i<cq.directSpots?"vaga direta":i===cq.playoffSpot-1?"repescagem":""})),
+        fixtures:rows,qualified:cq.final,playoff:cq.complete&&cq.final===null&&cq.playoffTeam===team.code};
+    }
     if(!q)return {kind:"none",note:"Ciclo de eliminatórias ainda não iniciado."};
     const inTable=q.table.some(r=>r.id===team.code);
     if(!inTable)return {kind:"allocation",year:q.worldCupYear,note:`${team.name} não faz parte das eliminatórias sul-americanas simuladas. A vaga para a Copa ${q.worldCupYear} é definida pelo ranking das seleções ao fim do ciclo.`};
@@ -306,6 +321,24 @@
       table:q.table.map((r,i)=>({pos:i+1,id:r.id,name:r.name,j:r.played,p:r.points,sg:r.gd,me:r.id===team.code,zone:i<q.directSpots?"direta":i===q.directSpots?"repescagem":""})),
       fixtures:mine.map(row),
       qualified:q.complete?q.qualified.includes(team.code):null,playoff:q.complete?q.playoff===team.code:null};
+  }
+
+  const TOUR_NAMES={EURO:"Eurocopa",COPA_AMERICA:"Copa América",AFCON:"Copa Africana de Nações",ASIAN_CUP:"Copa da Ásia",GOLD_CUP:"Copa Ouro",UEFA_NATIONS_LEAGUE:"Liga das Nações da UEFA",CONCACAF_NATIONS_LEAGUE:"Liga das Nações da Concacaf",OFC_NATIONS_CUP:"Copa das Nações da Oceania",FIFA_ARAB_CUP:"Copa Árabe da FIFA",FIFA_SERIES:"FIFA Series",FINALISSIMA:"Finalíssima"};
+  function tourName(x){return TOUR_NAMES[x.type]||x.name||x.type;}
+  function inTournament(tn,code){
+    const has=v=>v&&(v===code||v.id===code||v.teamId===code);
+    if((tn.participants||[]).some(has))return true;
+    if((tn.groups||[]).some(g=>(g.teams||[]).some(has)))return true;
+    if((tn.teams||[]).some(has))return true;
+    return false;
+  }
+  // Torneios continentais e demais competições: campeões e participação da seleção do treinador.
+  function tournamentsView(s,D,team){
+    const n=s.nationalTeam||{},code=team.code;
+    const hist=[];try{for(const h of (root.ProLifeInternationalHistory||D.InternationalHistory||{}).timeline?.(n)||[])hist.push(h);}catch(e){}
+    const done=hist.filter(h=>h.type!=="WORLD_CUP").map(h=>({key:h.key,name:tourName(h),year:h.year,champion:h.champion,runnerUp:h.runnerUp,thirdPlace:h.thirdPlace,mine:h.championId===code?"Campeã":h.runnerUpId===code?"Vice-campeã":h.thirdPlaceId===code?"3º lugar":""}));
+    const live=(n.tournaments||[]).filter(x=>x&&x.type!=="WORLD_CUP"&&x.status!=="COMPLETED").map(x=>({key:x.type+":"+x.year,name:tourName(x),year:x.year,status:String(x.status||"Em andamento"),playing:inTournament(x,code)}));
+    return {live:live.sort((a,b)=>Number(b.playing)-Number(a.playing)),done:done.sort((a,b)=>b.year-a.year||a.name.localeCompare(b.name))};
   }
 
   function cupView(s,D,team){

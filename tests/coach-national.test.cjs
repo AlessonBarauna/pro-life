@@ -145,10 +145,19 @@ test("treinador: seleção sul-americana joga as eliminatórias e a tabela refle
   assert.equal(ov.qual.table.length,10);
 });
 
-test("treinador: seleção fora da América do Sul recebe a explicação de vaga por ranking", {timeout:0},()=>{
-  const s=coach(60);
-  CN.apply(s,E,"SCO");
-  const q=CN.overview(s,E).qual;
-  assert.equal(q.kind,"allocation");
-  assert.match(q.note,/ranking/);
+test("treinador: seleção europeia joga um grupo de eliminatórias e o resultado decide a vaga na Copa 2030", {timeout:0},()=>{
+  const s=coach(95);
+  CN.apply(s,E,"ESP");
+  while(s.day<1700){s.board=100;E.advance(s,Math.min(60,1700-s.day));}
+  assert.equal(s.coachNationalError,undefined);
+  const ov=CN.overview(s,E);
+  assert.equal(ov.qual.kind,"conmebol");
+  assert.equal(ov.qual.groupMode,true);
+  assert.equal(ov.qual.table.length,5);
+  const games=s.coachNational.matches.filter(m=>/Eliminatórias/.test(m.competition));
+  assert.equal(ov.qual.table.find(r=>r.id==="ESP").j,games.length);
+  assert.equal(typeof ov.qual.qualified,"boolean");
+  const cup=(s.nationalTeam.tournaments||[]).find(t=>t.type==="WORLD_CUP"&&t.year===2030);
+  const inCup=cup.groups.some(g=>g.teams.some(x=>x.id==="ESP"));
+  assert.equal(inCup,ov.qual.qualified,"a Copa reflete exatamente o resultado do treinador");
 });
