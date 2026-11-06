@@ -101,14 +101,36 @@
     return c;
   }
   const clubOf=(s,api)=>api?.club?api.club(s):(s.clubs||[]).find(c=>c.id===s.clubId)||null;
-  const tableOf=(s,api,club)=>club?(api?.table?api.table(s,club.leagueId):[]):[];
+  const WCC=()=>root.ProLifeWorldClubCompetitions||(typeof require==="function"?require("./world-club-competitions.js"):null);
+  // Clubes de ligas mundiais usam a tabela da competição mundial; os brasileiros, a tabela nacional.
+  // Entre o fim de uma edição e o início da próxima vale a posição final registrada no histórico da liga.
+  function worldFinalPos(s,club){
+    const h=(s.globalFootball?.worldCompetitions?.history||[]).find(x=>x.leagueId===club.leagueId&&Array.isArray(x.orderIds)&&x.orderIds.includes(club.id));
+    return h?h.orderIds.indexOf(club.id)+1:0;
+  }
+  const tableOf=(s,api,club)=>{
+    if(!club)return [];
+    if(club.worldMatch){
+      try{const rows=WCC()?.standings?.(s,club.leagueId)||[];if(rows.length)return rows;}catch(e){}
+      return [];
+    }
+    return api?.table?api.table(s,club.leagueId):[];
+  };
+  const posOf=(s,api,club)=>{
+    const order=tableOf(s,api,club),i=order.findIndex(x=>x.id===club.id);
+    if(club.worldMatch){
+      const started=order.some(x=>Number(x.played)>0);
+      if(!started||i<0){const f=worldFinalPos(s,club);if(f)return f;}
+    }
+    return i+1;
+  };
 
   // ---------- metas da diretoria ----------
   function limitFor(kind,n){return kind==="titulo"?Math.max(2,Math.round(n*0.12)):kind==="continental"?Math.round(n*0.35):kind==="meio"?Math.round(n*0.7):Math.max(1,n-3);}
   const OBJ_LABEL={titulo:"Brigar pelo título",continental:"Terminar na parte de cima (vaga continental)",meio:"Terminar no meio da tabela",permanencia:"Evitar o rebaixamento"};
   function buildGoals(s,api){
     const c=state(s),club=clubOf(s,api);if(!c||!club)return null;
-    const peers=(s.clubs||[]).filter(x=>x.leagueId===club.leagueId&&x.active!==false).sort((a,b)=>Number(b.strength||0)-Number(a.strength||0)||(a.id<b.id?-1:1));
+    const peers=(club.worldMatch?(s.globalFootball?.clubs||[]):(s.clubs||[])).filter(x=>x.leagueId===club.leagueId&&x.active!==false).sort((a,b)=>Number(b.strength||0)-Number(a.strength||0)||(a.id<b.id?-1:1));
     const n=Math.max(1,peers.length),rank=Math.max(1,peers.findIndex(x=>x.id===club.id)+1),r=(rank-1)/Math.max(1,n-1);
     const kind=rank<=Math.max(1,Math.round(n*0.12))?"titulo":r<0.35?"continental":r<0.7?"meio":"permanencia";
     const limit=limitFor(kind,n);
@@ -123,7 +145,7 @@
   function moraleOf(club){const list=(club?.roster||[]).filter(p=>p.status!=="retired");return list.length?list.reduce((n,p)=>n+(Number(p.morale)||60),0)/list.length:60;}
   function refreshGoals(s,api){
     const c=state(s),club=clubOf(s,api);if(!c?.goals||!club)return;
-    const order=tableOf(s,api,club),pos=order.findIndex(x=>x.id===club.id)+1;
+    const pos=posOf(s,api,club);
     for(const g of c.goals.items){
       if(g.status!=="em_andamento")continue;
       if(g.kind==="posicao")g.progress=pos||null;
@@ -271,6 +293,15 @@
       if(Number(title.season)!==season)continue;
       add(title.key,title.name,club.id,title.day);
     }
+    // Título de liga mundial já fechado no histórico da competição (cobre saves em que o registro direto falhou).
+    for(const h of s.globalFootball?.worldCompetitions?.history||[]){
+      if(!h||String(h.championId)!==String(club.id)||!h.leagueId)continue;
+      if(Number(h.season)<Number(st?.fromSeason??0)||Number(h.season)>season)continue;
+      const key=`world-league:${h.season}:${h.leagueId}`;
+      if(seen.has(key)||previous.has(key))continue;
+      seen.add(key);
+      trophies.push({key,name:h.league||h.leagueId});
+    }
     const finalDay=(rounds,championId)=>{
       for(const round of [...(rounds||[])].reverse()){
         const matches=round.matches||round.pairs||[];
@@ -353,7 +384,7 @@
   function closeSeason(s,api,hooks){
     const c=state(s),club=clubOf(s,api);if(!c||!club||!c.goals)return null;
     refreshGoals(s,api);
-    const order=tableOf(s,api,club),pos=Math.max(1,order.findIndex(x=>x.id===club.id)+1),stats=club.stats||{};
+    const order=tableOf(s,api,club),pos=Math.max(1,posOf(s,api,club)),stats=club.stats||{};
     let score=0,total=0;
     for(const g of c.goals.items){
       g.status=g.kind==="posicao"?(pos<=g.target?"cumprida":"falhou"):g.kind==="orcamento"?((Number(club.budget)||0)>=0?"cumprida":"falhou"):((moraleOf(club))>=g.target?"cumprida":"falhou");

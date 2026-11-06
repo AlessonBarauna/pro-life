@@ -24,3 +24,7 @@
 .inv-buy button{min-height:40px;padding:0 16px;font-weight:800}
 .inv-empty{margin:6px 0;padding:14px;text-align:center;border:1px dashed var(--pl-line-strong,rgba(180,205,230,.2));color:var(--pl-text-3,#7f8f9f);font-size:13px}
 @media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){.inv-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.inv-card{padding:10px}}
+
+/* Menus internos do mercado: as abas quebram de linha em vez de ficarem cortadas no fim. */
+.cc-deal-nav{flex-wrap:wrap !important;overflow:visible !important}
+.cc-deal-nav>button{flex:0 1 auto;min-width:0}
