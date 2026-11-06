@@ -24,3 +24,22 @@ test("fim da temporada paga copas no caixa, uma vez só",{timeout:0},()=>{
   for(const p of s.cupPrizes||[])assert.ok(p.amount>0);
   assert.equal(new Set((s.cupPrizes||[]).map(p=>p.season+p.competitionId)).size,n);
 });
+test("premiação é paga em etapas: participação antes do título, e nada duplicado",()=>{
+  const ed={comp:"ucl",season:2026,entrants:[["A"]],leagueSchedule:{matches:[{homeId:"A",awayId:"X",played:false}]}};
+  assert.equal(CP.continental(ed,"A")?.amount||0,0,"sem jogo disputado ainda, nada a pagar");
+  ed.leagueSchedule.matches[0]={homeId:"A",awayId:"X",played:true,hg:1,ag:0};
+  const r1=CP.continental(ed,"A");assert.ok(r1.amount>=CP.COMPS.ucl.part*1e6&&!r1.champion);
+  ed.knockout={stages:[{key:"round16",matches:[{homeId:"A",awayId:"Z"}]}]};
+  assert.ok(CP.continental(ed,"A").amount>r1.amount,"chegar às oitavas rende mais");
+});
+test("Copa do Brasil paga cota a cada fase concluída",()=>{
+  const cup={season:2026,rounds:[{name:"Primeira fase",pairs:[{home:"A",away:"B",played:true,winnerId:"A"}]},{name:"Oitavas de final",pairs:[{home:"A",away:"C",played:false}]},{name:"Quartas",pairs:[]},{name:"Semifinal",pairs:[]},{name:"Final",pairs:[]}]};
+  const a=CP.domesticCup(cup,"A").amount;assert.equal(a,CP.CDB.rounds[0]*1e6);
+  cup.rounds[1].pairs[0].played=true;assert.ok(CP.domesticCup(cup,"A").amount>a);
+});
+test("ao longo da temporada a cota da liga entra em parcelas",{timeout:0},()=>{
+  const s=E.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;E.join(s,"gf_fc27_449",90000);
+  while(s.day<200){s.board=100;E.advance(s,Math.min(30,200-s.day));}
+  assert.ok((s.leagueInstallments||{})[`2026:${s.clubId}`]>=1,"parcelas pagas antes do fim");
+  assert.ok(s.news.some(n=>n.title==="Cota da liga"));
+});

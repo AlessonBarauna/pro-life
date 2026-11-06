@@ -11,7 +11,7 @@
     sud:{label:"CONMEBOL Sul-Americana",part:1,win:.2,draw:.08,stages:{playoffs:.3,round16:.8,quarters:1.2,semis:2,final:3},champion:5}
   };
   // Copa do Brasil: valor por fase alcançada (índice da rodada) + vice e campeão.
-  const CDB={label:"Copa do Brasil",rounds:[1.2,2,3.6,6,10],runnerUp:40,champion:78};
+  const CDB={label:"Copa do Brasil",rounds:[1.2,2,3.6,6],runnerUp:40,champion:78};
   const KEY={quarterfinal:"quarters",semifinal:"semis",semi:"semis",quarter:"quarters",playoff:"playoffs"};
   const STAGE_NAME={playoffs:"playoffs",round16:"oitavas",quarters:"quartas",semis:"semifinais",final:"final"};
   const played=m=>m&&m.played&&Number.isFinite(Number(m.hg))&&Number.isFinite(Number(m.ag));
@@ -25,7 +25,10 @@
     if(!ids.size&&!inEntrants&&!inGroup)return null;
     let wins=0,draws=0;
     for(const m of lm){if(!played(m)||(m.homeId!==clubId&&m.awayId!==clubId))continue;const own=m.homeId===clubId?m.hg:m.ag,opp=m.homeId===clubId?m.ag:m.hg;if(own>opp)wins++;else if(own===opp)draws++;}
-    const lines=[{reason:`cota de participação`,amount:rule.part*M}];
+    const anyPlayed=lm.some(m=>played(m)&&(m.homeId===clubId||m.awayId===clubId));
+    const lines=[];
+    // A cota de participação é paga quando a competição começa para o clube (primeiro jogo disputado).
+    if(anyPlayed||wins||draws)lines.push({reason:`cota de participação`,amount:rule.part*M});
     if(wins||draws)lines.push({reason:`${wins} vitória(s) e ${draws} empate(s) na fase inicial`,amount:(wins*rule.win+draws*rule.draw)*M});
     const stages=Object.values((ed.knockout&&ed.knockout.stages)||{});
     let best=null;
@@ -34,23 +37,26 @@
       const k=KEY[st.key]||st.key,v=rule.stages[k];
       if(v){lines.push({reason:`${STAGE_NAME[k]||k} alcançada`,amount:v*M});best=k;}
     }
+    if(best&&!lines.some(l=>l.reason==="cota de participação"))lines.unshift({reason:`cota de participação`,amount:rule.part*M});
     const champion=ed.championId===clubId||(ed.knockout&&ed.knockout.championId===clubId);
     if(champion)lines.push({reason:"título",amount:rule.champion*M});
     return {competitionId:ed.comp,label:rule.label,season:ed.season,lines,amount:lines.reduce((a,l)=>a+l.amount,0),reached:best,champion};
   }
   function domesticCup(cup,clubId){
     if(!cup||!Array.isArray(cup.rounds))return null;
-    let reached=-1;
-    cup.rounds.forEach((r,i)=>{if((r.pairs||[]).some(p=>p.home===clubId||p.away===clubId))reached=i;});
-    if(reached<0)return null;
+    const lines=[];let seen=false;
+    const last=cup.rounds.length-1;
+    cup.rounds.forEach((r,i)=>{
+      const pair=(r.pairs||[]).find(p=>p.home===clubId||p.away===clubId);
+      if(!pair)return;seen=true;
+      // Cada fase concluída paga a cota da fase (vencedor e perdedor); a final paga vice/campeão.
+      if(pair.played&&i<last)lines.push({reason:`cota da fase: ${String(r.name||"fase").toLowerCase()}`,amount:CDB.rounds[Math.min(i,CDB.rounds.length-1)]*M});
+    });
+    if(!seen)return null;
     const champion=cup.championId===clubId,runnerUp=cup.runnerUpId===clubId;
-    // quem caiu na rodada i recebe o valor da rodada i; finalista/campeão recebem o prêmio de final.
-    const lines=[];
-    const base=CDB.rounds[Math.min(reached,CDB.rounds.length-1)];
     if(champion)lines.push({reason:"título",amount:CDB.champion*M});
     else if(runnerUp)lines.push({reason:"vice-campeonato",amount:CDB.runnerUp*M});
-    else lines.push({reason:`eliminação na ${String((cup.rounds[reached]||{}).name||"fase").toLowerCase()}`,amount:base*M});
-    return {competitionId:"copaBrasil",label:CDB.label,season:cup.season,lines,amount:lines.reduce((a,l)=>a+l.amount,0),reached:reached,champion};
+    return {competitionId:"copaBrasil",label:CDB.label,season:cup.season,lines,amount:lines.reduce((a,l)=>a+l.amount,0),champion};
   }
   const api={COMPS,CDB,continental,domesticCup};
   root.ProLifeCupPrizes=api;

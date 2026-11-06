@@ -2155,13 +2155,18 @@
     if (!(prize.amount > 0)) return null;
     const title = prize.titleBonus ? ` Inclui R$ ${prize.titleBonus.toLocaleString("pt-BR")} pelo título.` : "";
     const reason = `${prize.label}: ${position}º lugar`;
-    if (ClubFinance) ClubFinance.income(s, own, "premios", prize.amount, reason); else own.budget += prize.amount;
+    // As 3 primeiras parcelas da cota igual já foram pagas durante a temporada; aqui entra o restante.
+    const alreadyPaid = Math.round((prize.equalShare || 0) / 4) * Math.min(3, (s.leagueInstallments || {})[`${s.season}:${s.clubId}`] || 0);
+    const payNow = Math.max(0, prize.amount - alreadyPaid);
+    if (ClubFinance) ClubFinance.income(s, own, "premios", payNow, reason); else own.budget += payNow;
     (s.leaguePrizes ||= []).unshift({ season: s.season, clubId: s.clubId, leagueId: own.leagueId, position, count: order.length, amount: prize.amount, titleBonus: prize.titleBonus, label: prize.label });
     s.leaguePrizes = s.leaguePrizes.slice(0, 40);
-    log(s, "Premiação da liga", `${prize.label}: ${own.name} terminou em ${position}º entre ${order.length} clubes e recebeu R$ ${prize.amount.toLocaleString("pt-BR")}.${title}`);
+    log(s, "Premiação da liga", `${prize.label}: ${own.name} terminou em ${position}º entre ${order.length} clubes e recebeu R$ ${payNow.toLocaleString("pt-BR")} no fim da temporada (total da temporada: R$ ${prize.amount.toLocaleString("pt-BR")}).${title}`);
     return prize;
   }
-  // Premiação de copas no fim da temporada (continentais + Copa do Brasil), uma vez por competição/temporada.
+  // Premiações de copas, pagas como na vida real: cota de participação quando a competição começa para o clube,
+  // bônus por vitória/empate a cada jogo, valor por fase ao alcançá-la e o prêmio do título após a final.
+  // Idempotente: paga só a diferença entre o que já foi conquistado e o que já foi pago.
   function awardCupPrizes(s) {
     if (!CupPrizes || !["player", "coach"].includes(s.mode) || !s.clubId) return [];
     const own = club(s);
@@ -2177,16 +2182,47 @@
     if (cup && Number(cup.season) === Number(s.season)) { const r = CupPrizes.domesticCup(cup, s.clubId); if (r) found.push(r); }
     const paid = [];
     for (const r of found) {
-      if (!(r.amount > 0) || done.some((x) => x.season === s.season && x.competitionId === r.competitionId && x.clubId === s.clubId)) continue;
-      const amount = Math.round(r.amount);
-      const reason = `${r.label}: ${r.lines.map((l) => l.reason).slice(-2).join(" e ")}`;
-      if (ClubFinance) ClubFinance.income(s, own, "premios", amount, reason); else own.budget += amount;
-      done.unshift({ season: s.season, clubId: s.clubId, competitionId: r.competitionId, label: r.label, amount, champion: !!r.champion });
-      log(s, "Premiação de copa", `${r.label}: ${own.name} recebeu R$ ${amount.toLocaleString("pt-BR")} (${r.lines.map((l) => l.reason).join("; ")}).`);
+      const earned = Math.round(r.amount);
+      let entry = done.find((x) => x.season === s.season && x.competitionId === r.competitionId && x.clubId === s.clubId);
+      const delta = earned - Number(entry?.paid || 0);
+      if (!(delta > 0)) continue;
+      if (!entry) { entry = { season: s.season, clubId: s.clubId, competitionId: r.competitionId, label: r.label, paid: 0, items: 0, amount: 0, champion: false }; done.unshift(entry); }
+      const newest = r.lines.slice(Math.min(r.lines.length, Number(entry.items || 0)));
+      const reason = `${r.label}: ${(newest.length ? newest : r.lines.slice(-1)).map((l) => l.reason).join(" e ")}`;
+      if (ClubFinance) ClubFinance.income(s, own, "premios", delta, reason); else own.budget += delta;
+      entry.paid = earned; entry.amount = earned; entry.champion = !!r.champion;
+      // Notícia só quando surge algo novo (participação, fase, título), não a cada vitória.
+      if (r.lines.length > Number(entry.items || 0)) log(s, "Premiação de copa", `${r.label}: ${own.name} recebeu R$ ${delta.toLocaleString("pt-BR")} (${newest.map((l) => l.reason).join("; ")}).`);
+      entry.items = r.lines.length;
       paid.push(r);
     }
     s.cupPrizes = done.slice(0, 80);
     return paid;
+  }
+  // Parcelas da liga durante a temporada: a cota igual de todos os clubes é paga em 4 parcelas (a última no fim).
+  function payLeagueInstallments(s) {
+    if (!LeaguePrizes || !["player", "coach"].includes(s.mode) || !s.clubId) return;
+    const own = club(s);
+    if (!own || !Number.isFinite(Number(own.budget))) return;
+    const doy = s.day - (Number(s.season) - 2026) * 365;
+    const due = doy >= 273 ? 3 : doy >= 182 ? 2 : doy >= 91 ? 1 : 0;
+    const ledger = (s.leagueInstallments ||= {});
+    const key = `${s.season}:${s.clubId}`;
+    if ((ledger[key] || 0) >= due) return;
+    const order = own.worldMatch && WorldClubCompetitions?.standings ? (WorldClubCompetitions.standings(s, own.leagueId) || []) : table(s, own.leagueId);
+    if (!order || order.length < 2) return;
+    const peers = own.worldMatch ? (s.globalFootball?.clubs || []).filter((c) => c.leagueId === own.leagueId) : (s.clubs || []).filter((c) => c.leagueId === own.leagueId);
+    const revenues = peers.map((c) => Number(ClubFinance?.annualRevenue?.(c, s)) || 0).filter((v) => v > 0);
+    const avgRevenue = revenues.length ? revenues.reduce((a, b) => a + b, 0) / revenues.length : 0;
+    const prize = LeaguePrizes.prizeFor({ leagueId: own.leagueId, position: order.length, count: order.length, avgRevenue });
+    const part = Math.round((prize.equalShare || 0) / 4);
+    const n = due - (ledger[key] || 0);
+    if (part > 0) {
+      const amount = part * n;
+      if (ClubFinance) ClubFinance.income(s, own, "premios", amount, `${prize.label}: cota de direitos (${due}/4)`); else own.budget += amount;
+      log(s, "Cota da liga", `${prize.label}: parcela ${due}/4 da cota de direitos — R$ ${amount.toLocaleString("pt-BR")} entraram no caixa.`);
+    }
+    ledger[key] = due;
   }
   function newSeason(s, rng) {
     try { awardCupPrizes(s); } catch (e) { s.cupPrizeError = String(e?.message || e); }
@@ -2911,6 +2947,7 @@
           if (nc && !nc.national && Number.isFinite(nc.date) && nc.date <= s.day + 1) CoachCareer?.autoIdealXI?.(s, API);
         } catch (e) { s.coachAutoIdealError = String(e?.message || e); }
       }
+      try { awardCupPrizes(s); payLeagueInstallments(s); } catch (e) { s.cupPrizeError = String(e?.message || e); }
       NationalTeam?.daily(s, rng, API, log);
       const pendingBefore = new Set((NationalCallups?.pending?.(s) || []).map((r) => r.id));
       try { NationalCallups?.daily(s, API, log); } catch (e) { /* convocacao nunca bloqueia o avanco do dia */ }

@@ -38,7 +38,8 @@
     // 40% do bolo é dividido igualmente (todo clube recebe) e 60% depende da posição final.
     const byPosition=Math.round(pool*(.4/n+.6*w(pos)/total));
     const titleBonus=pos===1?Math.round(avg*rule.title*rule.weight):0;
-    return {amount:byPosition+titleBonus,byPosition,titleBonus,position:pos,count:n,label:rule.label,pool:Math.round(pool)};
+    const equalShare=Math.round(pool*.4/n);
+    return {amount:byPosition+titleBonus,byPosition,equalShare,titleBonus,position:pos,count:n,label:rule.label,pool:Math.round(pool)};
   }
   const api={VERSION,RULES,ruleFor,prizeFor};
   root.ProLifeLeaguePrizes=api;
