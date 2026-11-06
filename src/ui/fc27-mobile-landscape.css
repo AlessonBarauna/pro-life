@@ -686,3 +686,16 @@
     min-height: 330px !important;
   }
 }
+
+/* Escalação > Banco no celular deitado: a lista de reservas rola dentro do próprio painel.
+   Antes o painel cortava os cartões (overflow:hidden) e só os quatro primeiros ficavam à vista. */
+@media (orientation: landscape) and (min-width: 568px) and (max-width: 1024px) and (max-height: 560px) {
+  #app .pl-squad-screen .pl-squad-bench {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    min-height: 0 !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+}
