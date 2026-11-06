@@ -187,3 +187,22 @@ test("mensagens da caixa de entrada têm botão de ação que leva à negociaç�
   assert.match(app,/b\.dataset\.msgId/);
   assert.match(app,/setListScreen\?\.\(b\.dataset\.msgList\)/);
 });
+test("proposta enviada tira a sondagem da lista e leva para Propostas",()=>{
+  const Engine=require("../src/domain/engine.js");
+  global.ProLifeGlobalFootball=Engine.GlobalFootball;global.ProLifeCoachCareer=Engine.CoachCareer;
+  global.ProLifeCoachScoutingV2=require("../src/domain/coach-scouting-v2.js");
+  global.ProLifePlayerEconomy=require("../src/domain/player-economy.js");
+  global.ProLifeCoachSquadHub=require("../src/ui/coach-squad-hub.js");
+  const View=require("../src/ui/coach-career-view.js");
+  const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);Engine.CoachCareer.init(s,Engine);
+  View.setListScreen("sondagens");
+  s.coachCareer.inquiries=[
+    {id:"i1",playerId:"p-yamal",clubId:"gf_fc27_1",buyerClubId:s.clubId,playerName:"Lamine Yamal",clubName:"FC Barcelona",startDay:3,responseDay:5,expiresDay:90,status:"asking_price"},
+    {id:"i2",playerId:"p-outro",clubId:"gf_fc27_1",buyerClubId:s.clubId,playerName:"Outro Alvo",clubName:"FC Barcelona",startDay:4,responseDay:6,expiresDay:90,status:"asking_price"}];
+  let html=View.renderMarket(s,Engine);
+  assert.match(html,/2 SONDAGENS/);
+  s.coachCareer.negotiations=[{id:"n1",playerId:"p-yamal",buyerClubId:s.clubId,sellerClubId:"gf_fc27_1",status:"pending",response:"awaiting_reply",replyDay:s.day+3,expiresDay:s.day+30,requested:1000000}];
+  html=View.renderMarket(s,Engine);
+  assert.match(html,/1 SONDAGEM\b/);assert.doesNotMatch(html,/Lamine Yamal/);assert.match(html,/Outro Alvo/);
+  assert.match(html,/1 proposta enviada · saíram desta lista/);assert.match(html,/data-coach-goto-proposals/);
+});
