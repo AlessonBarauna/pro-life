@@ -240,6 +240,21 @@
       const inq = (state.coachCareer?.inquiries || []).find((x) => "inquiry-answer:" + x.id === m.eventId);
       a = { label: /recusada/i.test(m.subject) ? "Ver sondagens" : "Negociar contratação", page: "market", area: "lists", list: "sondagens", playerId: inq?.playerId };
     }
+    if (!a) {
+      const text = [m.sender, m.subject, m.body].join(" ");
+      const rules = [
+        [/seleção|selecao|confederação|convocação/i, { label: "Abrir Seleção", page: "national" }],
+        [/sondagem/i, { label: "Ver sondagens", page: "market", area: "lists", list: "sondagens" }],
+        [/proposta|oferta|renovação|contrato|rescis/i, { label: "Ver propostas", page: "proposals" }],
+        [/decisão pendente|decisão de vida|responda na aba vida/i, { label: "Responder decisão", page: "life" }],
+        [/escalação|titular|banco de reservas|lesão|lesionad|suspens/i, { label: "Abrir elenco", page: "squad" }],
+        [/treino|treinamento/i, { label: "Abrir treino", page: "training" }],
+        [/campeonato|copa|classificação|rodada/i, { label: "Ver competições", page: "competitions" }],
+        [/prêmio|título|conquist/i, { label: "Ver histórico", page: "history" }],
+      ];
+      const hit = rules.find(([re]) => re.test(text));
+      if (hit) a = hit[1];
+    }
     if (!a || !a.page) return "";
     const attrs = [`data-page="${esc(a.page)}"`, `data-msg-area="${esc(a.area || "")}"`, `data-msg-list="${esc(a.list || "")}"`, `data-msg-player="${esc(a.playerId || "")}"`, `data-msg-id="${esc(m.id)}"`].join(" ");
     return `<button type="button" class="primary msg-action" ${attrs}>${esc(a.label || "Abrir")}</button> `;

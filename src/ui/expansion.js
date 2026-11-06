@@ -192,6 +192,7 @@
       const st=matchRecord.played?matchRecord:leagueRow?{played:leagueRow.played,w:leagueRow.wins,d:leagueRow.draws,l:leagueRow.losses,gf:leagueRow.goalsFor,ga:leagueRow.goalsAgainst}:stored;
       const stints=Array.isArray(career?.stints)?career.stints:[];
       const total=stints.reduce((a,x)=>{for(const r of (x.rows||[])){a.w+=Number(r.w)||0;a.d+=Number(r.d)||0;a.l+=Number(r.l)||0;}a.titles+=Number(x.titles)||0;return a;},{w:0,d:0,l:0,titles:0});
+      try{total.titles+=Number(root.ProLifeCoachCareer?.liveTitleCount?.(s,root.ProLife||null))||0;}catch(e){}
       const played=Number(st.played)||Number(st.w||0)+Number(st.d||0)+Number(st.l||0)||fallbackPlayed;
       const w=Number(st.w)||0,d=Number(st.d)||0,l=Number(st.l)||0,pts=Number(leagueRow?.points??stored.points)||0;
       const pct=played?Math.round(w/played*100):0;

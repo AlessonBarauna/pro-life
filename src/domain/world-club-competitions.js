@@ -1199,8 +1199,9 @@
     const meta=(s.globalFootball?.leagues||[]).find(l=>l.id===leagueId);
     const country=calendar?.leagueCountry?.(meta);
     const window=country&&calendar.seasonWindow(country,leagueState.season);
-    if(!window||s.day<window.endDay)return false;
+    if(!window)return false;
     const schedule=makeSchedule(leagueState.clubIds);
+    // O campeão é conhecido assim que a última rodada é jogada; não espera o fim da janela do calendário.
     if(leagueState.round<schedule.length)return false;
     const order=standings(s,leagueId);
     const champion=order[0]||null;

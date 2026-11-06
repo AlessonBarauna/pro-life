@@ -19,3 +19,9 @@ test("jovem com potencial ganha vaga no banco e minutos",()=>{
   const hasKid=b.some(id=>{const p=club.roster.find(x=>x.id===id);return Number(p.age)<=21&&p.potential>=72;});
   assert.ok(hasKid,"jovem no banco");
 });
+test("título de liga mundial conta na hora, não só no fim do ano",()=>{
+  const s=mk(),API=E.API||E,CC=E.CoachCareer;CC.syncClub(s,API);
+  assert.equal(CC.liveTitleCount(s,API),0);
+  assert.equal(CC.recordWorldLeagueTitle(s,{leagueId:"x",season:s.season,championId:s.clubId,day:s.day,name:"Liga X"}),true);
+  assert.equal(CC.liveTitleCount(s,API),1);
+});

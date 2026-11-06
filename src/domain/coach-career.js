@@ -325,6 +325,21 @@
 
     return trophies;
   }
+  // Títulos já conquistados na temporada em andamento (campeonato mundial encerrado, copas decididas),
+  // contados na hora e não só no balanço de fim de ano. O que já foi fechado no balanço não conta duas vezes.
+  function liveTitleCount(s,api){
+    try{
+      if(!isCoach(s)||!s.clubId)return 0;
+      const club=clubOf(s,api),st=currentStint(s);
+      if(!club||!st)return 0;
+      const closed=(st.rows||[]).some(r=>r.season===s.season);
+      if(closed)return 0;
+      const order=club.worldMatch?[]:tableOf(s,api,club);
+      const pos=club.worldMatch?0:Math.max(1,order.findIndex(x=>x.id===club.id)+1);
+      const leagueDone=!club.worldMatch&&Number(s.day)>=364;
+      return officialTrophies(s,club,st,leagueDone?pos:0).length;
+    }catch(e){return 0;}
+  }
   function closeSeason(s,api,hooks){
     const c=state(s),club=clubOf(s,api);if(!c||!club||!c.goals)return null;
     refreshGoals(s,api);
@@ -694,6 +709,7 @@
     const roster=club?(club.roster||[]).filter(p=>p.status!=="retired").slice().sort((a,b)=>Number(b.ovr||b.overall||0)-Number(a.ovr||a.overall||0)):[];
     const totals={w:0,d:0,l:0,titles:0,seasons:0};
     for(const st of c.stints){for(const r of st.rows){totals.w+=r.w;totals.d+=r.d;totals.l+=r.l;totals.seasons++;}totals.titles+=st.titles||0;}
+    totals.liveTitles=liveTitleCount(s,api);totals.titles+=totals.liveTitles;
     return {enabled:true,nationality:String(s.person?.nationality||"Brasil"),hasClub:!!club,club:club?{id:club.id,name:club.name}:null,board:Number(s.board)||0,risk:riskOf(Number(s.board)||0),detail:c.board.risk,breakdown:c.board.breakdown,history:c.board.history.slice(0,12),
       goals:c.goals,locker:club?lockerRoom(s,api):null,captain:club?(roster.find(p=>p.id===c.captainId)||null):null,
       candidates:roster.slice(0,16).map(p=>({id:p.id,name:p.name,pos:p.pos,age:p.age,ovr:Number(p.ovr||p.overall)||0,morale:Math.round(Number(p.morale)||0)})),
@@ -778,7 +794,7 @@
     if(changed)c.benchOrder=next;
     return changed;
   }
-  const api={sanitizeBench,autoIdealXI,VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
+  const api={liveTitleCount,sanitizeBench,autoIdealXI,VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
