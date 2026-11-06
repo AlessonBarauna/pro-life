@@ -18,6 +18,7 @@
   const OffField=root.ProLifeOffField||(typeof require==="function"?require("./off-field.js"):null);
   const ClubFinance=root.ProLifeClubFinance||(typeof require==="function"?require("./club-finance.js"):null);
   const LeaguePrizes=root.ProLifeLeaguePrizes||(typeof require==="function"?require("./league-prizes.js"):null);
+  const YouthAcademy=root.ProLifeYouthAcademy||(typeof require==="function"?require("./youth-academy.js"):null);
   const CupPrizes=root.ProLifeCupPrizes||(typeof require==="function"?require("./cup-prizes.js"):null);
   const PlayerEconomy=root.ProLifePlayerEconomy||(typeof require==="function"?require("./player-economy.js"):null);
   const ClubEconomy=root.ProLifeClubEconomy||(typeof require==="function"?require("./club-economy.js"):null);
@@ -636,7 +637,8 @@
     return p;
   }
   function buildWorldClub(s, gc) {
-    const real = (GlobalFootball?.playersByClub?.(s, gc.id) || []).filter((p) => p.id !== "hero" && p.status !== "retired" && p.active !== false && ["GOL", "DEF", "MEI", "ATA"].includes(p.pos));
+    const ownClub = s.mode === "coach" && s.clubId === gc.id;
+    const real = (GlobalFootball?.playersByClub?.(s, gc.id) || []).filter((p) => p.id !== "hero" && p.status !== "retired" && p.active !== false && !(ownClub && p.academy) && ["GOL", "DEF", "MEI", "ATA"].includes(p.pos));
     const need = { GOL: 3, DEF: 7, MEI: 7, ATA: 5 }, roster = [];
     real.sort((x, y) => (y.ovr || 0) - (x.ovr || 0) || String(x.id).localeCompare(String(y.id)));
     real.forEach((gp, i) => roster.push(worldPlayer(s, gp, gc, i + 1)));
@@ -655,6 +657,16 @@
   // Atualiza o clube persistido do treinador na virada de temporada sem perder o que ele fez:
   // mantém elenco comprado, caixa, formação e contratos; aplica idade/evolução do mundo,
   // tira aposentados e recebe os jovens novos do clube.
+  // Promoção da base: o jovem entra no elenco persistido do clube do treinador.
+  function adoptIntoOwnRoster(s, gp) {
+    const own = worldMatchClub(s, s.clubId), gc = GlobalFootball?.clubById?.(s, s.clubId);
+    if (!own || !gc || !gp) return null;
+    if ((own.roster || []).some((p) => p.id === gp.id)) return own.roster.find((p) => p.id === gp.id);
+    const p = worldPlayer(s, gp, gc, (own.roster || []).length + 1);
+    own.roster.push(p);
+    if (Array.isArray(own.baseIds) && !own.baseIds.includes(p.id)) own.baseIds.push(p.id);
+    return p;
+  }
   function refreshOwnWorldClub(s, old) {
     const gc = GlobalFootball?.clubById?.(s, old.id);
     if (!gc || !Array.isArray(old.roster)) return null;
@@ -2329,6 +2341,7 @@
       try { s.worldMatchClubs[s.clubId] = refreshOwnWorldClub(s, keepOwnClub) || keepOwnClub; }
       catch (e) { s.worldMatchClubs[s.clubId] = keepOwnClub; s.worldClubRefreshError = String(e?.message || e); }
     }
+    if (s.mode === "coach" && s.clubId) { try { YouthAcademy?.closeSeason(s, API, { log: (title, body) => log(s, title, body) }); } catch (e) { s.youthError = String(e?.message || e); } }
     WorldClubCompetitions?.nextSeason(s);
     try { Continental?.startSeason(s); } catch (e) { /* idem */ }
     // UCL annual lifecycle: initialize fixtures immediately on season rollover.
@@ -2947,6 +2960,7 @@
           if (nc && !nc.national && Number.isFinite(nc.date) && nc.date <= s.day + 1) CoachCareer?.autoIdealXI?.(s, API);
         } catch (e) { s.coachAutoIdealError = String(e?.message || e); }
       }
+      if (s.mode === "coach" && s.clubId) { try { YouthAcademy?.daily(s, API, { log: (title, body) => log(s, title, body) }); } catch (e) { s.youthError = String(e?.message || e); } }
       try { awardCupPrizes(s); payLeagueInstallments(s); } catch (e) { s.cupPrizeError = String(e?.message || e); }
       NationalTeam?.daily(s, rng, API, log);
       const pendingBefore = new Set((NationalCallups?.pending?.(s) || []).map((r) => r.id));
@@ -3603,6 +3617,8 @@
     CoachCareer,
     CoachNational,
     Facilities,
+    YouthAcademy,
+    adoptIntoOwnRoster,
     CoachSkills,
     PlayerEconomy,
     OffField,

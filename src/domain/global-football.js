@@ -405,13 +405,13 @@
   const weightedPick=(entries,r)=>{let total=0;for(const e of entries)total+=e[1];let x=r()*total;for(const e of entries){x-=e[1];if(x<=0)return e[0];}return entries[entries.length-1][0];};
   function clubLevel(club){const st=Number(club.strength),rep=Number(club.reputation);return clamp(Number.isFinite(st)?st:Number.isFinite(rep)?rep*0.9:55,40,92);}
   const TIER_PROFILES={craque:[["prodigy",5],["career_burst",2],["steady_rise",1]],promessa:[["prodigy",3],["steady_rise",3],["career_burst",2],["early_unstable",1]],normal:[["steady_rise",5],["late_bloomer",3],["longevity",2],["career_burst",1]]};
-  function buildYouthPlayer(s,pools,r,{club,level,age,pos,season,boost=1,freeAgent=false}){
+  function buildYouthPlayer(s,pools,r,{club,level,age,pos,season,boost=1,freeAgent=false,nationality:forcedNat=null}){
     const roll=r(),craque=0.004*boost,promessa=craque+0.07*boost;
     const tier=roll<craque?"craque":roll<promessa?"promessa":"normal";
     let pot=tier==="craque"?88+Math.floor(r()*8):tier==="promessa"?77+Math.floor(r()*11):clamp(Math.round(48+(level-40)*0.55+r()*14),50,76);
     const k=tier==="craque"?3.0:tier==="promessa"?2.8:2.3,ovr=clamp(Math.round(pot-Math.max(2,25-age)*k+(r()-0.5)*6),32,pot-3);
     const leagueMix=!freeAgent&&club?pools.leagueNat.get(club.leagueId):null;
-    const nationality=weightedPick(leagueMix&&leagueMix.length?leagueMix:pools.nat,r);
+    const nationality=forcedNat||weightedPick(leagueMix&&leagueMix.length?leagueMix:pools.nat,r);
     const fl=pools.first.get(nationality)||pools.allFirst,ll=pools.last.get(nationality)||pools.allLast;
     let name="",tries=0;
     do{name=`${pickFrom(fl,r)} ${pickFrom(ll,r)}`;tries++;}while(pools.used.has(identityKey({name,birthYear:season-age}))&&tries<12);
@@ -427,6 +427,14 @@
     return player;
   }
   function addYouth(s,player){s.internationalPlayers.push(player);return normalizePlayer(s,player,{preserveAge:true});}
+  // Gera um jovem novo para a base de um clube (admissão periódica do modo treinador).
+  function generateYouth(s,{clubId,age=16,pos,boost=1,nationality=null,tag="intake"}){
+    init(s);const club=catalogClubs(s).find(c=>c.id===clubId)||(state(s).clubs||[]).find(c=>c.id===clubId);
+    if(!club)return null;
+    const g=state(s),season=seasonOf(s),r=rngFor(`fc27-gen|${tag}|${season}|${clubId}|${g.youthSeq||0}|${s.day||0}`),pools=youthPools(s);
+    const p=pos||(()=>{const x=r();return x<0.1?"GOL":x<0.45?"DEF":x<0.8?"MEI":"ATA";})();
+    return addYouth(s,buildYouthPlayer(s,pools,r,{club,level:clubLevel(club),age,pos:p,season,boost,nationality}));
+  }
   function academyPositions(have,need,r){
     const out=[],base={GOL:1,DEF:2,MEI:2,ATA:1};
     for(const pos of ["GOL","DEF","MEI","ATA"]){let n=(have[pos]||0);while(n<base[pos]&&out.length<need){out.push(pos);n++;}}
@@ -469,17 +477,19 @@
     const firstTeam=new Map(),academy=new Map();
     for(const p of pool){if(p.status==="retired"||!p.clubId)continue;const m=p.academy?academy:firstTeam;m.set(p.clubId,(m.get(p.clubId)||0)+1);}
     const clubById=new Map(clubs.map(c=>[c.id,c]));
+    // Base do clube do treinador é gerida pela Academia (promover/dispensar/admissão): o mundo não mexe nela.
+    const ownId=s.mode==="coach"&&s.clubId?s.clubId:null,signClubs=clubs.filter(c=>c.id!==ownId);
     // 1) livres da temporada anterior: assinam com um clube ou encerram a carreira
     for(const p of pool){
       if(p.status==="retired"||p.clubId||p.id==="hero")continue;
-      const ok=(p.age<=21&&p.potential>=58)||(p.ovr>=55&&p.age<=34)||(p.age<=27&&p.ovr>=48),club=ok?pickSigningClub(s,p,clubs,firstTeam,academy,r):null;
+      const ok=(p.age<=21&&p.potential>=58)||(p.ovr>=55&&p.age<=34)||(p.age<=27&&p.ovr>=48),club=ok?pickSigningClub(s,p,signClubs,firstTeam,academy,r):null;
       if(club){p.clubId=club.id;p.leagueId=club.leagueId||null;p.externalClub=club.name;p.clubHistory.push({season,fromClubId:null,toClubId:club.id});p.clubHistory=p.clubHistory.slice(-30);
         if(p.age<=19&&p.generated){p.academy=true;academy.set(club.id,(academy.get(club.id)||0)+1);}else firstTeam.set(club.id,(firstTeam.get(club.id)||0)+1);summary.signed++;}
       else{retirePlayer(s,p.id,season,p.age<30?"dispensado":"sem clube");summary.retiredFree++;}
     }
     // 2) base: aos 20 anos sobe para o elenco principal ou e dispensada
     for(const p of pool){
-      if(!p.academy||p.status==="retired"||p.age<20)continue;
+      if(!p.academy||p.status==="retired"||p.age<20||(ownId&&p.clubId===ownId))continue;
       const club=clubById.get(p.clubId),level=club?clubLevel(club):55;
       delete p.academy;academy.set(p.clubId,Math.max(0,(academy.get(p.clubId)||0)-1));
       const formador=s.globalFootball?.intel?.coaches?.[p.clubId]?.style==="formador";
@@ -499,7 +509,7 @@
     }
     // 4) novas turmas da base (minimo 6 por clube) e jovens livres
     const by=academyByClub(s),created=[];
-    for(const club of clubs){const level=clubLevel(club);created.push(...seedClubAcademy(s,pools,club,by.get(club.id)||[],season,[16,17,17,18],over?0:1+(Number(club.reputation)>=70?1:0),"yearly"));}
+    for(const club of clubs){if(club.id===ownId)continue;const level=clubLevel(club);created.push(...seedClubAcademy(s,pools,club,by.get(club.id)||[],season,[16,17,17,18],over?0:1+(Number(club.reputation)>=70?1:0),"yearly"));}
     const fr=rngFor(`fc27-free|${season}`);
     for(let i=0;i<(over?Math.round(FREE_YOUTH*0.25):FREE_YOUTH);i++){const x=fr(),pos=x<0.1?"GOL":x<0.45?"DEF":x<0.8?"MEI":"ATA";created.push(addYouth(s,buildYouthPlayer(s,pools,fr,{club:null,level:58,age:[17,18,18,19,19,20][Math.floor(fr()*6)],pos,season,boost:1.5,freeAgent:true})));summary.free++;}
     summary.created=created.length;
@@ -534,6 +544,6 @@
     return {players:added.length,clubs:(data.clubs||[]).length,leagues:(data.leagues||[]).length};
   }
   function diagnostics(){return {...diagnosticsCounters};}
-  const api={VERSION:1,diagnostics,packInfo,clubByName,nationName:code=>resolveNationality(code,null),nationCode:value=>{const identity=normalizedNationality(value);if(identity==='brasil')return 'BRA';return Object.keys(NATIONS).find(key=>plain(NATIONS[key][0])===identity)||null;},nationalityCatalog,resolveNationality,init,allPlayers,playerById,clubById,leagueById,clubIdentity,clubPrestige,playersByNationality,playersByClub,playersByLeague,activePlayers,eligibleNationalTeamPlayers,registerPlayer,transferPlayer,retirePlayer,rollSeason,developCatalog,ensureAcademies,renewYouth,importData,normalizedNationality,seasonOf};
+  const api={VERSION:1,diagnostics,packInfo,clubByName,nationName:code=>resolveNationality(code,null),nationCode:value=>{const identity=normalizedNationality(value);if(identity==='brasil')return 'BRA';return Object.keys(NATIONS).find(key=>plain(NATIONS[key][0])===identity)||null;},nationalityCatalog,resolveNationality,init,allPlayers,playerById,clubById,leagueById,clubIdentity,clubPrestige,playersByNationality,playersByClub,playersByLeague,activePlayers,eligibleNationalTeamPlayers,registerPlayer,transferPlayer,retirePlayer,rollSeason,developCatalog,ensureAcademies,generateYouth,youthPools,renewYouth,importData,normalizedNationality,seasonOf};
   root.ProLifeGlobalFootball=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

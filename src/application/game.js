@@ -438,6 +438,20 @@ case "tactic": {
         D.CoachSkills.unlock(s, data.id);
         break;
       }
+      case "youthPromote": case "youthRelease": case "youthLoan": case "youthRecall": case "youthStartMission": case "youthCancelMission": case "youthSign": case "youthDismissReport": {
+        if (s.mode !== "coach") throw Error("Disponível para treinadores.");
+        D.CoachCareer.init?.(s, D);
+        const Y = D.YouthAcademy, ctx = { log: (title, body) => D.log ? D.log(s, title, body) : null };
+        if (action === "youthPromote") Y.promote(s, D, data.id, ctx);
+        else if (action === "youthRelease") Y.release(s, D, data.id, ctx);
+        else if (action === "youthLoan") Y.loan(s, D, data.id, ctx);
+        else if (action === "youthRecall") Y.recall(s, D, data.id, ctx);
+        else if (action === "youthStartMission") Y.startMission(s, D, data);
+        else if (action === "youthCancelMission") Y.cancelMission(s, data.id);
+        else if (action === "youthSign") Y.signProspect(s, D, data.id, ctx);
+        else Y.dismissReport(s, data.id);
+        break;
+      }
       case "upgradeFacility": {
         if (s.mode !== "coach") throw Error("Disponível para treinadores.");
         D.CoachCareer.init?.(s, D);
