@@ -327,6 +327,16 @@
   }
   // Títulos já conquistados na temporada em andamento (campeonato mundial encerrado, copas decididas),
   // contados na hora e não só no balanço de fim de ano. O que já foi fechado no balanço não conta duas vezes.
+  function liveTrophies(s,api){
+    try{
+      if(!isCoach(s)||!s.clubId)return [];
+      const club=clubOf(s,api),st=currentStint(s);
+      if(!club||!st||(st.rows||[]).some(r=>r.season===s.season))return [];
+      const order=club.worldMatch?[]:tableOf(s,api,club);
+      const pos=club.worldMatch?0:Math.max(1,order.findIndex(x=>x.id===club.id)+1);
+      return officialTrophies(s,club,st,(!club.worldMatch&&Number(s.day)>=364)?pos:0);
+    }catch(e){return [];}
+  }
   function liveTitleCount(s,api){
     try{
       if(!isCoach(s)||!s.clubId)return 0;
@@ -794,7 +804,7 @@
     if(changed)c.benchOrder=next;
     return changed;
   }
-  const api={liveTitleCount,sanitizeBench,autoIdealXI,VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
+  const api={liveTrophies,liveTitleCount,sanitizeBench,autoIdealXI,VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

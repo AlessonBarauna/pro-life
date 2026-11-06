@@ -28,7 +28,35 @@
     const rows = stints.flatMap((st) => (st.rows || []).map((r) => ({ ...r, club: st.club })));
     const bestSeason = [...rows].filter((r) => num(r.pos) > 0).sort((a, b) => num(a.pos) - num(b.pos) || num(b.points) - num(a.points))[0] || null;
     const trophies = rows.flatMap((r) => (Array.isArray(r.trophies) ? r.trophies : []).map((t) => ({ season: r.season, club: r.club, name: typeof t === "string" ? t : t?.name || t?.label || t?.competition || "Título" })));
+    try {
+      const live = root.ProLifeCoachCareer?.liveTrophies?.(s, D) || [];
+      const stint = stints.find((x) => x.exit === null) || stints[0];
+      for (const t of live) trophies.push({ season: s.season, club: stint?.club || nameOf(id), name: t?.name || "Título" });
+    } catch (e) {}
     const history = (s.history || []).map((h) => ({ season: h.season, league: h.league, champion: h.champion, position: h.position }));
+    try {
+      const seen = new Set(history.map((h) => h.season + "|" + h.league));
+      for (const h of s.globalFootball?.worldCompetitions?.history || []) {
+        const key = h.season + "|" + h.league;
+        if (!h?.champion || seen.has(key)) continue;
+        seen.add(key);
+        const pos = Array.isArray(h.orderIds) && id ? h.orderIds.indexOf(id) + 1 : 0;
+        history.push({ season: h.season, league: h.league, champion: h.champion, position: pos || null });
+      }
+      const CONT = { ucl: "Liga dos Campeões", uel: "Liga Europa", uecl: "Liga Conferência", lib: "Libertadores", sud: "Sul-Americana" };
+      for (const ed of Object.values(s.continental?.editions || {})) {
+        const champ = ed?.championId || ed?.knockout?.championId;
+        const label = CONT[ed?.comp];
+        if (!champ || !label) continue;
+        const key = ed.season + "|" + label;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        history.push({ season: ed.season, league: label, champion: nameOf(champ), position: null });
+      }
+      const cup = s.competitionSchedule?.cup;
+      if (cup?.championId && !seen.has(cup.season + "|" + (cup.name || "Copa do Brasil"))) history.push({ season: cup.season, league: cup.name || "Copa do Brasil", champion: nameOf(cup.championId), position: null });
+      history.sort((a, b) => num(b.season) - num(a.season));
+    } catch (e) {}
     return { s, res, w, d, l, gf, ga, best, worst, mostGoals, rows, bestSeason, trophies, history, stints, clubName: id ? nameOf(id) : null };
   }
 
@@ -55,7 +83,7 @@
     if (tab === "trofeus") {
       return c.trophies.length ? kv(c.trophies.map((t) => [t.name, `${t.club} · ${t.season}`])) : `<p class="shd-note">Nenhum troféu ainda. Vença campeonatos e copas para encher esta estante.</p>`;
     }
-    return c.history.length ? kv(c.history.slice(0, 40).map((h) => [`${h.season} · ${h.league || "Liga"}`, `${h.champion}${h.position ? " · você: " + h.position + "º" : ""}`])) : `<p class="shd-note">A galeria de honra mostra os campeões de cada temporada concluída.</p>`;
+    return c.history.length ? kv(c.history.slice(0, 120).map((h) => [`${h.season} · ${h.league || "Liga"}`, `${h.champion}${h.position ? " · você: " + h.position + "º" : ""}`])) : `<p class="shd-note">A galeria de honra mostra os campeões de cada temporada concluída.</p>`;
   }
 
   function html() {

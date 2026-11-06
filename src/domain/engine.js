@@ -2076,7 +2076,12 @@
       log(s, (m.competitionName || "Partida") + " · " + hc.name + " " + m.hg + " × " + m.ag + " " + ac.name, m.summary);
       if (s.mode === "player" && !m.participants.flat().includes("hero")) log(s, "Fora da escalação", "O treinador priorizou outros jogadores. Treino, moral, atributos e concorrência influenciam a escolha.");
     }
-    s.matches = s.matches.slice(0, 800);
+    if (s.matches.length > 800) {
+      // Partidas do próprio clube têm prioridade: jogos de outros clubes não podem expulsar o histórico do treinador/jogador.
+      const mineOf = (x) => s.clubId && [x.home, x.away].includes(s.clubId);
+      let ownLeft = 450, otherLeft = 350;
+      s.matches = s.matches.filter((x) => (mineOf(x) ? ownLeft-- > 0 : otherLeft-- > 0)).slice(0, 800);
+    }
     for (const old of s.matches.slice(120)) {
       if ([old.home, old.away].includes(s.clubId)) continue;
       old.events=[];
