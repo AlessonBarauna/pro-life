@@ -125,7 +125,7 @@ test("34F.12 (8) save completo: grava e carrega sem perda; hybrid FC27 faz round
 test("34F.12 (9) navegador simulado: manifesto registrado, sem fetch, mesma integridade", () => {
   const { JSDOM } = require("jsdom");
   const base = require("node:path").resolve(__dirname, "..") + "/", html = fs.readFileSync(base + "index.html", "utf8");
-  const files = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]).filter((f) => f !== "src/ui/app.js");
+  const files = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1].split("?")[0]).filter((f) => f !== "src/ui/app.js");
   assert.ok(files.indexOf("src/data/fc27/fc27-manifest-v1.js") >= 0 && files.indexOf("src/domain/fc27-catalog-adapter.js") < files.indexOf("src/domain/engine.js"));
   const w = new JSDOM(html, { runScripts: "outside-only", url: "https://offline-test.invalid" }).window;
   let fetched = 0; w.fetch = () => { fetched++; throw Error("fetch proibido"); };

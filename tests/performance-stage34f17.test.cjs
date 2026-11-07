@@ -4,7 +4,7 @@ const test = require("node:test"), assert = require("node:assert/strict"), fs = 
 const J = (x) => JSON.stringify(x);
 const base = path.join(__dirname, "..") + path.sep;
 const html = fs.readFileSync(base + "index.html", "utf8");
-const order = html.match(/src="(src\/[^"]+\.js)"/g).map((x) => x.slice(5, -1)).filter((f) => !/update\.js|avatar/.test(f));
+const order = html.match(/src="(src\/[^"?]+\.js)(?:\?[^"]*)?"/g).map((x) => x.slice(5, -1).split("?")[0].replace(/"$/, "")).filter((f) => !/update\.js|avatar/.test(f));
 const upto = order.indexOf("src/infrastructure/save.js");
 function page() {
   const w = new JSDOM(html, { runScripts: "outside-only", url: "https://offline-test.invalid" }).window;

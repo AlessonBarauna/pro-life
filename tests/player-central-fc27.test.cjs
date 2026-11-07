@@ -26,7 +26,7 @@ test("Central do jogador: arquivos publicados e CSS antes do Central 2.0",()=>{
   const index=read("index.html"),assets=read("tools/assets.cjs");
   assert.ok(index.includes("src/ui/player-central-view.js")&&index.includes("src/ui/fc27-player-central.css"));
   assert.match(assets,/"src\/ui\/player-central-view\.js"/);assert.match(assets,/"src\/ui\/fc27-player-central\.css"/);
-  const styles=[...index.matchAll(/<link[^>]*rel="stylesheet"[^>]*>/g)].map(x=>x[0]);assert.ok(styles.at(-1).includes("fc27-central-v2.css"));
+  const styles=[...index.matchAll(/<link[^>]*rel="stylesheet"[^>]*>/g)].map(x=>x[0]);assert.ok(styles.some(x=>x.includes("fc27-central-v2.css")),"Central 2.0 publicado (camadas SM27 vêm depois)");
 });
 
 test("Central do jogador: jogo pela Seleção aparece em 'Suas últimas atuações' e na temporada",()=>{

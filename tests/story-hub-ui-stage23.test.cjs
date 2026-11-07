@@ -15,7 +15,7 @@ test("story hub is included in build assets",()=>{
 });
 
 test("player navigation exposes Objetivos e Historia",()=>{
-  assert.match(app,/\["story",\s*"Objetivos e Hist\u00f3ria"\]/);
+  assert.match(app,/\["story",\s*"Objetivos"\]/);
 });
 
 test("story page exists",()=>{

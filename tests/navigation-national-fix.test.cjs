@@ -40,7 +40,7 @@ test("generic data-page handler can open national page",()=>{
 
   assert.ok(
     src.includes(
-      "page = b.dataset.page;"
+      "page = nextPage;"
     )
   );
 });

@@ -5,7 +5,7 @@ const app=read("src/ui/app.js"),css=read("src/ui/fc27-central-v2.css"),html=read
 test("Central 2.0: CSS isolado e publicado sem grid externo",()=>{
  const styles=[...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*>/g)].map(x=>x[0]);
  assert.ok(!styles.some(x=>x.includes("bootstrap-grid.min.css")));
- assert.ok(styles.at(-1).includes("fc27-central-v2.css"));
+ assert.ok(styles.some(x=>x.includes("fc27-central-v2.css")),"Central 2.0 publicado (camadas SM27 vêm depois)");
  assert.match(assets,/"src\/ui\/fc27-central-v2\.css"/);
 });
 test("Central 2.0: grid isolado envolve confronto, paineis e rodape",()=>{

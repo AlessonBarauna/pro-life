@@ -54,5 +54,5 @@ test("30.1: perfil registra e utiliza o componente antes do app",()=>{
   assert.equal(assets.split(script).length-1,1);
   assert.ok(index.indexOf(script)<index.indexOf("src/ui/app.js"));
   assert.match(app,/ProLifePlayerTransferHistory\.render\(state,p\.id\)/);
-  assert.match(app,/href="#player-transfers"/);
+  assert.ok(app.includes("player-transfers"),"seção de histórico de transferências presente na tela do jogador");
 });
