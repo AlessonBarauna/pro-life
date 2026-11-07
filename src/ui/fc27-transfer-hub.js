@@ -8,7 +8,7 @@
   const money = (v) => { const n = Number(v) || 0, a = Math.abs(n); return a >= 1e9 ? "R$ " + (a / 1e9).toFixed(2).replace(".", ",") + " bi" : a >= 1e6 ? "R$ " + (a / 1e6).toFixed(1).replace(".", ",") + " mi" : a >= 1e3 ? "R$ " + Math.round(a / 1e3) + " mil" : "R$ " + Math.round(a); };
   const TABS = [["geral", "Visão geral"], ["mundo", "Atividade mundial"], ["busca", "Buscar jogadores"], ["negociacoes", "Negociações"], ["elenco", "Meu elenco"]];
   const DEAL = { rumor: ["Rumor", "rumor"], scouting: ["Observando", "rumor"], negotiating: ["Em negociação", "neg"], offer: ["Proposta feita", "neg"], completed: ["Fechado", "done"], rejected: ["Recusado", "out"], cancelled: ["Cancelado", "out"] };
-  let layer = null, tab = "geral", negPid = null;
+  let layer = null, tab = "geral", negPid = null, flash = "";
   const wf = { status: "all", league: "" };
   const sf = { q: "", pos: "", ageMax: 40, ovrMin: 60, potMin: 0, valueMax: 0, league: "", free: false, page: 0 };
 
@@ -85,13 +85,14 @@
     const offers = (c.saleOffers || []).filter((o) => o.status === "pending" && o.sellerClubId === s.clubId && (!Number.isFinite(Number(o.expiresDay)) || s.day <= o.expiresDay));
     const waiting = (c.saleOffers || []).filter((o) => o.status === "awaiting_window" && o.sellerClubId === s.clubId);
     const negs = (c.negotiations || []).filter((n) => ["pending", "awaiting_window"].includes(n.status) && String(n.buyerClubId) === String(s.clubId));
-    const inqs = (c.inquiries || []).filter((i) => ["accepted", "asking_price"].includes(i.status));
+    const inqs = (c.inquiries || []).filter((i) => String(i.buyerClubId) === String(s.clubId) && !i.dismissed && (i.status === "pending" || (["accepted", "asking_price"].includes(i.status) && s.day <= Number(i.expiresDay)) || (i.status === "rejected" && s.day < Number(i.answeredDay ?? i.responseDay) + 14))).slice().reverse();
+    const inqLabel = (i) => i.status === "pending" ? `aguardando resposta (${Math.max(0, Number(i.responseDay) - s.day)} d)` : i.status === "rejected" ? "recusada" : i.status === "asking_price" ? "clube pediu valor" : "sondagem aceita";
     const offerRow = (o) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(o.playerName || nm(o.playerId))}</b><small>${esc(clubName(s, D, o.buyerClubId))} · ${o.dealType === "loan" ? "empréstimo" : "compra"}${Number.isFinite(Number(o.expiresDay)) ? ` · expira em ${Math.max(0, o.expiresDay - s.day)} d` : ""}</small></span><span class="tfh-side"><em>${money(o.amount)}</em><span class="tfh-acts"><button type="button" class="tfh-btn primary" data-tfh-cmd="acceptSaleOffer" data-id="${esc(o.id)}">Aceitar</button><button type="button" class="tfh-btn" data-tfh-cmd="rejectSaleOffer" data-id="${esc(o.id)}">Recusar</button></span></span></li>`;
     const sec = (t, inner, empty) => `<h3 class="tfh-h">${t}</h3>${inner || `<p class="tfh-note">${empty}</p>`}`;
     return sec("Propostas recebidas pelos seus jogadores", offers.length ? `<ul class="tfh-list">${offers.map(offerRow).join("")}</ul>` : "", "Nenhuma proposta no momento.") +
       (waiting.length ? sec("Vendas acordadas (aguardando a janela)", `<ul class="tfh-list">${waiting.map((o) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(o.playerName || nm(o.playerId))}</b><small>para ${esc(clubName(s, D, o.buyerClubId))}</small></span><span class="tfh-side"><em>${money(o.amount)}</em></span></li>`).join("")}</ul>`) : "") +
       sec("Suas negociações de compra", negs.length ? `<ul class="tfh-list">${negs.map((n) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(n.playerName || nm(n.playerId))}</b><small>${esc(clubName(s, D, n.sellerClubId))} · ${n.status === "awaiting_window" ? "acordo fechado, aguardando janela" : "em andamento"}</small></span><span class="tfh-side"><em>${money(n.amount ?? n.fee)}</em><button type="button" class="tfh-btn" data-tfh-negotiate="${esc(n.playerId)}">Abrir</button></span></li>`).join("")}</ul>` : "", "Nenhuma negociação aberta. Use Buscar jogadores.") +
-      sec("Sondagens em andamento", inqs.length ? `<ul class="tfh-list">${inqs.map((i) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(i.playerName || nm(i.playerId))}</b><small>${i.status === "asking_price" ? "clube pediu valor" : "sondagem aceita"}</small></span><span class="tfh-side"><button type="button" class="tfh-btn" data-tfh-negotiate="${esc(i.playerId)}">Abrir</button></span></li>`).join("")}</ul>` : "", "Sem sondagens abertas.") +
+      sec("Sondagens em andamento", inqs.length ? `<ul class="tfh-list">${inqs.map((i) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(i.playerName || nm(i.playerId))}</b><small>${esc(clubName(s, D, i.clubId))} · ${inqLabel(i)}</small></span><span class="tfh-side"><button type="button" class="tfh-btn" data-tfh-negotiate="${esc(i.playerId)}">Abrir</button></span></li>`).join("")}</ul>` : "", "Sem sondagens abertas.") +
       `<p class="tfh-actions"><button type="button" class="tfh-btn" data-tfh-cmd="generateSaleInterest">Ver quem tem interesse nos meus jogadores</button></p>`;
   }
 
@@ -143,6 +144,7 @@
     else {
       const club = c.D.club(c.s);
       body = !club ? `<p class="tfh-note">Assine com um clube para usar o mercado.</p>` : (negPid ? negotiation : ({ geral, mundo, busca: search, negociacoes, elenco }[tab] || geral))(c.s, c.D, club);
+      if (flash) body = `<p class="tfh-flash" role="status">${esc(flash)}</p>` + body;
     }
     const tabs = TABS.map(([id, l]) => `<button type="button" role="tab" class="${tab === id ? "active" : ""}" aria-selected="${tab === id}" data-tfh-tab="${id}">${l}</button>`).join("");
     return `<div class="sm27-dialog-backdrop" data-tfh-close></div><section class="sm27-dialog tfh-dialog" role="dialog" aria-modal="true" aria-label="Mercado"><header class="sm27-dialog-head"><span></span><h2>Mercado</h2><button type="button" class="sm27-dialog-x" data-tfh-close aria-label="Fechar">×</button></header><nav class="tfh-tabs" role="tablist">${tabs}</nav><div class="tfh-body">${body}</div></section>`;
@@ -154,10 +156,10 @@
     const b = layer.querySelector(".tfh-body"); if (b) b.scrollTop = keep;
     if (focused) { const el = layer.querySelector(`[data-tfh-sf="${focused}"]`); if (el && el.type === "search") { el.focus(); el.setSelectionRange?.(el.value.length, el.value.length); } }
   }
-  function close() { if (layer) { layer.remove(); layer = null; } negPid = null; }
-  const cmd = (a, d) => { const ok = root.ProLifeSM27Cmd?.(a, d); if (layer) open(); return ok; };
+  function close() { if (layer) { layer.remove(); layer = null; } negPid = null; flash = ""; }
+  const cmd = (a, d) => { const ok = root.ProLifeSM27Cmd?.(a, d); const tx = doc.getElementById("toast"); flash = (tx && tx.textContent) || (ok ? "Ação concluída." : "Não foi possível concluir."); if (tx) tx.style.display = "none"; if (layer) open(); return ok; };
 
-  function negotiate(id) { negPid = id; open(); }
+  function negotiate(id) { negPid = id; flash = ""; open(); }
   function send(el) {
     const c = ctx(); if (!c) return;
     const act = el.dataset.tfhSend, p = GF()?.playerById?.(c.s, negPid), sellerId = p?.clubId;
@@ -176,12 +178,12 @@
     if (!layer) return;
     let el;
     if (t.closest("[data-tfh-close]")) { close(); return; }
-    if ((el = t.closest("[data-tfh-tab]"))) { tab = el.dataset.tfhTab; negPid = null; open(); return; }
+    if ((el = t.closest("[data-tfh-tab]"))) { tab = el.dataset.tfhTab; negPid = null; flash = ""; open(); return; }
     if ((el = t.closest("[data-tfh-wf]"))) { wf.status = el.dataset.tfhWf; open(); return; }
     if ((el = t.closest("[data-tfh-page]"))) { sf.page = Math.max(0, sf.page + Number(el.dataset.tfhPage)); open(); return; }
     if ((el = t.closest("[data-tfh-star]"))) { cmd("toggleCoachShortlist", { clubId: el.dataset.club, playerId: el.dataset.tfhStar }); return; }
     if ((el = t.closest("[data-tfh-negotiate]"))) { negotiate(el.dataset.tfhNegotiate); return; }
-    if (t.closest("[data-tfh-negback]")) { negPid = null; open(); return; }
+    if (t.closest("[data-tfh-negback]")) { negPid = null; flash = ""; open(); return; }
     if ((el = t.closest("[data-tfh-send]"))) { send(el); return; }
     if ((el = t.closest("[data-tfh-cmd]"))) {
       const a = el.dataset.tfhCmd;

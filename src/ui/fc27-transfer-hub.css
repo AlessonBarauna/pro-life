@@ -46,3 +46,4 @@
 .tfh-offer{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:8px 0}
 .tfh-offer label{display:grid;gap:4px;font-size:12px}
 .tfh-offer input{min-width:120px;padding:10px 12px;border-radius:10px;border:1px solid rgba(190,255,0,.3);background:rgba(0,0,0,.35);color:inherit;font-size:16px}
+.tfh-flash{margin:6px 0 10px;padding:10px 14px;border-radius:12px;background:rgba(200,242,26,.12);border:1px solid rgba(200,242,26,.4);font-size:14px}

@@ -28,6 +28,14 @@
     result.xTV=Math.ceil(result.xTV*(strict==="strict"?1.12:strict==="flexible"?.9:1)/1000)*1000;
     return result;
   }
+  // Jogador que vai para um clube global (sem roster em s.clubs) precisa continuar no catalogo mundial.
+  function registerSoldPlayer(s,p,club){
+    p.clubId=club.id;p.leagueId=club.leagueId||p.leagueId;
+    if((s.clubs||[]).some(c=>c.id===club.id))return;
+    if(!Array.isArray(s.internationalPlayers))s.internationalPlayers=[];
+    s.internationalPlayers=s.internationalPlayers.filter(x=>x.id!==p.id);
+    s.internationalPlayers.push(p);
+  }
   function execute(s, action, data = {}) {
     switch (action) {
       case "ackCoachPresentation": {
@@ -646,7 +654,7 @@ case "tactic": {
       case "generateSaleInterest": {
         if(s.mode!=="coach"||!s.clubId)throw Error("Disponível apenas ao treinador com clube.");
         const own=D.club(s),clubs=(s.clubs||[]).concat(s.globalFootball?.clubs||[]);
-        const buyers=clubs.filter(c=>c.id!==own.id&&c.active!==false&&Array.isArray(c.roster)&&Number.isFinite(Number(c.budget))&&Number(c.budget)>0&&D.club(s,c.id)===c);
+        const buyers=clubs.filter(c=>c.id!==own.id&&c.active!==false&&Number.isFinite(Number(c.budget))&&Number(c.budget)>0&&D.club(s,c.id)===c&&(Array.isArray(c.roster)||c.generated!==true&&c.leagueId));
         const loans=s.coachCareer?.loans||[];
         const prefs=s.coachCareer?.offerPreferences||{mode:"all",blockedIds:[],listedIds:[],loanListedIds:[]};
         if(prefs.mode==="none")throw Error("Recebimento de propostas desativado nas preferências.");
@@ -662,6 +670,7 @@ case "tactic": {
         const amount=Math.ceil(price*(isLoan?0.08:(s.coachCareer?.settings?.marketStrictness==="strict"?1.1:0.95))/1000)*1000;
         const buyer=buyers.filter(c=>Number(c.budget)>=amount).sort((a,b)=>String(a.id).localeCompare(String(b.id)))[0];
         if(!buyer)throw Error("Nenhum clube possui orçamento para apresentar proposta.");
+        if(!Array.isArray(buyer.roster)){const r=D.GlobalFootball?.playersByClub?.(s,buyer.id)||[];if(r.length<=18)throw Error("Nenhum clube com elenco disponível para apresentar proposta.");buyer.roster=r.slice();buyer.lineup||=[];}
         s.coachCareer||={version:1};s.coachCareer.saleOffers||=[];
         const offer={id:"sale_"+s.season+"_"+s.day+"_"+p.id+"_"+s.coachCareer.saleOffers.length,playerId:p.id,buyerClubId:buyer.id,sellerClubId:own.id,amount,requested:amount,round:1,status:"pending",createdDay:s.day,expiresDay:s.day+10,dealType:isLoan?"loan":"permanent",loanDays:isLoan?180:null,salaryShare:isLoan?50:null,buyOption:0,history:[{day:s.day,round:1,offer:amount}]};
         s.coachCareer.saleOffers.push(offer);
@@ -705,6 +714,7 @@ case "tactic": {
         }
         if(!offer)throw Error("Proposta indisponível.");
         const seller=D.club(s,offer.sellerClubId);let buyer=D.club(s,offer.buyerClubId);
+        if(buyer&&!Array.isArray(buyer.roster)){const r=D.GlobalFootball?.playersByClub?.(s,buyer.id)||[];if(r.length>18){buyer.roster=r.slice();buyer.lineup||=[];}}
         const p=seller?.roster?.find(x=>x.id===offer.playerId);
         let fee=Number(offer.amount);
         if(!p||p.id==="hero"||seller.id===buyer?.id||seller.roster.length<=18||!buyer||!Array.isArray(buyer.roster)||!Number.isSafeInteger(fee)||fee<=0||fee>100000000000||!Number.isFinite(Number(buyer.budget))||Number(buyer.budget)<fee||buyer.roster.some(x=>x.id===p.id))throw Error("Transferência indisponível ou orçamento insuficiente.");
@@ -715,8 +725,7 @@ case "tactic": {
           seller.roster=seller.roster.filter(x=>x.id!==p.id);seller.lineup=(seller.lineup||[]).filter(id=>id!==p.id);
           buyer.roster.push(p);buyer.budget-=fee;seller.budget=(Number(seller.budget)||0)+fee;
           ClubFinance?.movement?.(s,seller,"transferencia",fee,"Taxa de empréstimo · "+p.name);
-          p.clubId=buyer.id;p.leagueId=buyer.leagueId||p.leagueId;
-          if(Array.isArray(s.internationalPlayers))s.internationalPlayers=s.internationalPlayers.filter(x=>x.id!==p.id);
+          p.clubId=buyer.id;p.leagueId=buyer.leagueId||p.leagueId;registerSoldPlayer(s,p,buyer);
           s.coachCareer.loans||=[];
           s.coachCareer.loans.push({id:"loan_out_"+s.season+"_"+s.day+"_"+p.id,playerId:p.id,fromClubId:seller.id,toClubId:buyer.id,startDay:Number(s.day)||0,dueDay:(Number(s.day)||0)+duration,fee,salaryShare,buyOption:Number(offer.buyOption)||0,nextSalaryDay:(Number(s.day)||0)+30,returned:false});
           offer.status="accepted";offer.closedDay=s.day;offer.finalFee=fee;
@@ -750,7 +759,7 @@ case "tactic": {
         const payable=payments.reduce((sum,v)=>sum+(v.beneficiary&&v.beneficiary.id!==seller.id&&v.beneficiary.id!==buyer.id?v.value:0),0);
         seller.roster=seller.roster.filter(x=>x.id!==p.id);
         seller.lineup=(seller.lineup||[]).filter(id=>id!==p.id);
-        buyer.roster.push(p);buyer.budget-=fee;seller.budget=(Number(seller.budget)||0)+fee-payable;
+        buyer.roster.push(p);buyer.budget-=fee;registerSoldPlayer(s,p,buyer);seller.budget=(Number(seller.budget)||0)+fee-payable;
         ClubFinance?.movement?.(s,seller,"transferencia",fee-payable,"Venda de jogador · "+p.name,{gross:fee,sellOnPaid:payable});
         for(const v of payments){if(v.beneficiary&&v.beneficiary.id!==seller.id&&v.beneficiary.id!==buyer.id)v.beneficiary.budget=(Number(v.beneficiary.budget)||0)+v.value;v.x.active=false;}
         offer.status="accepted";offer.closedDay=s.day;offer.finalFee=fee;offer.sellOnPaid=payable;
