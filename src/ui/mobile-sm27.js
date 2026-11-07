@@ -42,12 +42,12 @@
         </section>`
       : `<section class="sm27-card sm27-match sm27-match-empty"><h3>Sem jogo agendado</h3><p>Abra o calendário ou avance o dia.</p><div class="sm27-match-actions"><button type="button" class="primary" data-page="calendar">Calendário</button><button type="button" data-advance="1">+1 dia</button></div></section>`;
 
-    const tile = (page, title, body, badge = "") => `<button type="button" class="sm27-card sm27-tile" data-page="${esc(page)}"><span class="sm27-h">${title}${badge}</span>${body}</button>`;
+    const tile = (page, title, body, badge = "") => `<button type="button" class="sm27-card sm27-tile" data-page="${esc(page)}"><span class="sm27-h"><span class="sm27-ht">${title}</span>${badge}</span>${body}</button>`;
     const row = (cls, inner) => `<span class="sm27-li ${cls || ""}">${inner}</span>`;
 
-    const msgs = (H.messages || []).slice(0, 4);
+    const msgs = (H.messages || []).slice(0, 3);
     const unread = Number(H.unread) || 0;
-    const inbox = tile("inbox", "Caixa de entrada", `<span class="sm27-list">${msgs.map((m) => row(m.read ? "" : "new", `<b></b><span>${esc(m.subject || m.title || "Mensagem")}</span>`)).join("") || row("", "<span>Nenhuma mensagem.</span>")}</span>`, unread ? `<i class="sm27-badge">${unread}</i>` : "");
+    const inbox = tile("inbox", "Caixa", `<span class="sm27-list">${msgs.map((m) => row(m.read ? "" : "new", `<b></b><span>${esc(m.subject || m.title || "Mensagem")}</span>`)).join("") || row("", "<span>Nenhuma mensagem.</span>")}</span>`, unread ? `<i class="sm27-badge">${unread}</i>` : "");
 
     const rep = Number(state.reputation) || 0;
     const board = Number(state.board) || 0;
