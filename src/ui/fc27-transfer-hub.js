@@ -6,7 +6,7 @@
   if (!doc) return;
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const money = (v) => { const n = Number(v) || 0, a = Math.abs(n); return a >= 1e9 ? "R$ " + (a / 1e9).toFixed(2).replace(".", ",") + " bi" : a >= 1e6 ? "R$ " + (a / 1e6).toFixed(1).replace(".", ",") + " mi" : a >= 1e3 ? "R$ " + Math.round(a / 1e3) + " mil" : "R$ " + Math.round(a); };
-  const TABS = [["geral", "Visão geral"], ["mundo", "Atividade mundial"], ["busca", "Buscar jogadores"], ["negociacoes", "Negociações"], ["elenco", "Meu elenco"]];
+  const TABS = [["geral", "Visão geral"], ["mundo", "Atividade mundial"], ["busca", "Buscar jogadores"], ["negociacoes", "Negociações"], ["elenco", "Meu elenco"], ["gestao", "Gestão"]];
   const DEAL = { rumor: ["Rumor", "rumor"], scouting: ["Observando", "rumor"], negotiating: ["Em negociação", "neg"], offer: ["Proposta feita", "neg"], completed: ["Fechado", "done"], rejected: ["Recusado", "out"], cancelled: ["Cancelado", "out"] };
   let layer = null, tab = "geral", negPid = null, flash = "";
   const wf = { status: "all", league: "" };
@@ -137,13 +137,21 @@
     return back + head + panel;
   }
 
+  // "Gestão": scouting, listas, contratos, cláusulas, finanças e histórico (central completa de transferências), dentro do Mercado.
+  function gestao(s, D) {
+    const V = root.ProLifeCoachCareerView;
+    let inner = "";
+    try { inner = V?.renderMarket?.(s, D) || ""; } catch (e) { inner = ""; }
+    return `<div class="tfh-embed">${inner || '<p class="tfh-note">Gestão indisponível.</p>'}</div>`;
+  }
+
   function html() {
     const c = ctx();
     let body;
     if (!c) body = `<p class="tfh-note">O Mercado está disponível na carreira de treinador.</p>`;
     else {
       const club = c.D.club(c.s);
-      body = !club ? `<p class="tfh-note">Assine com um clube para usar o mercado.</p>` : (negPid ? negotiation : ({ geral, mundo, busca: search, negociacoes, elenco }[tab] || geral))(c.s, c.D, club);
+      body = !club ? `<p class="tfh-note">Assine com um clube para usar o mercado.</p>` : (negPid ? negotiation : ({ geral, mundo, busca: search, negociacoes, elenco, gestao }[tab] || geral))(c.s, c.D, club);
       if (flash) body = `<p class="tfh-flash" role="status">${esc(flash)}</p>` + body;
     }
     const tabs = TABS.map(([id, l]) => `<button type="button" role="tab" class="${tab === id ? "active" : ""}" aria-selected="${tab === id}" data-tfh-tab="${id}">${l}</button>`).join("");
@@ -171,9 +179,23 @@
     else if (act === "reject") cmd("rejectCoachDeal", { id: el.dataset.id });
   }
 
+  // Um só Mercado: atalhos antigos (data-page="market") abrem o Mercado novo, na aba Gestão.
+  // Escuta na janela (captura) para vir antes da navegação do app.
+  root.addEventListener("click", (ev) => {
+    const t = ev.target instanceof Element ? ev.target : null;
+    if (!t || !t.closest('[data-page="market"]') || t.closest(".tfh-dialog") || !ctx()) return;
+    ev.preventDefault(); ev.stopImmediatePropagation();
+    tab = "gestao"; negPid = null; flash = ""; setTimeout(open, 0);
+  }, true);
+
   doc.addEventListener("click", (ev) => {
     const t = ev.target instanceof Element ? ev.target : null;
     if (!t) return;
+    if (layer && t.closest(".tfh-embed")) {
+      if (t.closest("[data-page]")) { close(); return; }
+      setTimeout(() => { if (layer && tab === "gestao") open(); }, 90);
+      return;
+    }
     if (t.closest("[data-sm27-market-hub]")) { ev.preventDefault(); tab = "geral"; open(); return; }
     if (!layer) return;
     let el;
