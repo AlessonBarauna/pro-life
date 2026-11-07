@@ -9348,13 +9348,16 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
   });
   // Seleção do treinador: abas, paginação, convocação, candidatura e convites.
   document.addEventListener("click", (event) => {
-    const el = event.target.closest?.("[data-cn-tab],[data-cn-page],[data-cn-pos],[data-cn-toggle],[data-cn-apply],[data-cn-accept],[data-cn-decline],[data-cn-act]");
+    const el = event.target.closest?.("[data-cn-tab],[data-cn-page],[data-cn-pos],[data-cn-toggle],[data-cn-swap-in],[data-cn-swap-out],[data-cn-swap-cancel],[data-cn-apply],[data-cn-accept],[data-cn-decline],[data-cn-act]");
     const V = window.ProLifeCoachNationalView;
     if (!el || !state || !V) return;
     const keep = () => document.querySelector(".sm27-screen-body")?.scrollTo?.(0, 0);
     if (el.hasAttribute("data-cn-tab")) { V.setTab(el.getAttribute("data-cn-tab")); render(); keep(); return; }
     if (el.hasAttribute("data-cn-page")) { const [key, n] = el.getAttribute("data-cn-page").split(":"); V.setPage(key, n); render(); return; }
     if (el.hasAttribute("data-cn-pos")) { V.setPos(el.getAttribute("data-cn-pos")); render(); return; }
+    if (el.hasAttribute("data-cn-swap-in")) { V.setSwapIn(el.getAttribute("data-cn-swap-in")); render(); keep(); return; }
+    if (el.hasAttribute("data-cn-swap-cancel")) { V.setSwapIn(null); render(); return; }
+    if (el.hasAttribute("data-cn-swap-out")) { const inId = V.state.swapIn; if (command("cnSwap", { outId: el.getAttribute("data-cn-swap-out"), inId })) V.setSwapIn(null); render(); keep(); return; }
     if (el.hasAttribute("data-cn-toggle")) { command("cnToggle", { playerId: el.getAttribute("data-cn-toggle") }); return; }
     if (el.hasAttribute("data-cn-apply")) { if (command("cnApply", { code: el.getAttribute("data-cn-apply") })) V.setTab("geral"); render(); return; }
     if (el.hasAttribute("data-cn-accept")) { if (command("cnAccept", { code: el.getAttribute("data-cn-accept") })) V.setTab("geral"); render(); return; }

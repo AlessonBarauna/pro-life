@@ -160,6 +160,18 @@
     }
   }
 
+  function swapCall(s,D,outId,inId){
+    const cn=init(s);if(!cn.teamId)throw Error("Você não comanda uma seleção.");
+    const pool=poolOf(s,D,cn.teamId),pin=pool.find(x=>x.id===inId),pout=pool.find(x=>x.id===outId);
+    if(!pin||!pout)throw Error("Jogador não encontrado entre os elegíveis.");
+    if(!cn.manual){cn.called=effectiveSquad(s,D).squad.map(x=>x.id);cn.manual=true;}
+    if(!cn.called.includes(outId))throw Error(`${pout.name} não está na lista.`);
+    if(cn.called.includes(inId))throw Error(`${pin.name} já está convocado.`);
+    if(!pin.available)throw Error(`${pin.name} está lesionado ou suspenso.`);
+    if(pout.pos==="GOL"&&pin.pos!=="GOL"&&cn.called.filter(id=>pool.find(x=>x.id===id)?.pos==="GOL").length<=2)throw Error("A convocação precisa de pelo menos 2 goleiros.");
+    cn.called=cn.called.map(id=>id===outId?inId:id);
+  }
+
   // ---- calendário e jogos ----
   function ensureSchedule(s,D){
     const cn=init(s);if(!cn.teamId)return;
@@ -355,7 +367,7 @@
       matches:(w.matches||[]).map(mk),knockout:ko};
   }
 
-  const api={VERSION,WINDOWS,FORMATIONS,CODES,SQUAD_MAX,init,daily,overview,apply,acceptOffer,declineOffer,leave,setFormation,autoCallup,toggleCall,strengthTable,requiredReputation,effectiveSquad,ensureSchedule};
+  const api={VERSION,WINDOWS,FORMATIONS,CODES,SQUAD_MAX,init,daily,overview,apply,acceptOffer,declineOffer,leave,setFormation,autoCallup,toggleCall,swapCall,strengthTable,requiredReputation,effectiveSquad,ensureSchedule};
   root.ProLifeCoachNational=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

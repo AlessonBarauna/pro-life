@@ -1,7 +1,7 @@
 (function(root){
   "use strict";
   // Tela "Seleção" do modo treinador: convites, candidatura, convocação, formação, calendário e resultados.
-  const ui={tab:null,page:{players:0,nations:0,fixtures:0,results:0,cup:0,tour:0,qtable:0,qgames:0},pos:"TODOS",confirmLeave:false};
+  const ui={swapIn:null,tab:null,page:{players:0,nations:0,fixtures:0,results:0,cup:0,tour:0,qtable:0,qgames:0},pos:"TODOS",confirmLeave:false};
   const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const CN=()=>root.ProLifeCoachNational||(typeof require==="function"?require("../domain/coach-national.js"):null);
   const isPhone=()=>{try{return !!root.ProLifeMobileSM27?.isPhone?.();}catch(e){return false;}};
@@ -102,8 +102,14 @@
   }
 
   function convocacao(o,S){
+    const inP=ui.swapIn&&o.players.find(x=>x.id===ui.swapIn&&!x.called);
+    if(inP){
+      const called=o.players.filter(x=>x.called).sort((a,b)=>Number(b.pos===inP.pos)-Number(a.pos===inP.pos)||b.overall-a.overall);
+      const rows=called.map(x=>`<div class="cn-pl"><span class="cn-ovr ${x.overall>=82?"hi":""}">${x.overall}</span><span><b style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.name)}</b><small style="color:var(--cn-mut);font-size:11px">${esc(x.pos)} · ${esc(x.club)} · ${x.age} anos${x.starter?" · titular":""}</small></span><span>${x.pos===inP.pos?'<span class="cn-tag ok">Mesma posição</span>':""}</span><button type="button" class="cn-btn go" data-cn-swap-out="${esc(x.id)}">Substituir</button></div>`).join("");
+      return `<section class="cn-card"><div class="cn-tools"><span><b>${esc(inP.name)}</b> <small style="color:var(--cn-mut)">${esc(inP.pos)} · GER ${inP.overall} · ${esc(inP.club)}</small></span><button type="button" class="cn-btn" data-cn-swap-cancel>Cancelar</button></div><p style="margin:6px 0">A lista está cheia. Escolha quem sai para ${esc(inP.name)} entrar.</p>${rows}</section>`;
+    }
     const list=o.players.filter(p=>ui.pos==="TODOS"||p.pos===ui.pos).sort((a,b)=>Number(b.called)-Number(a.called)||b.overall-a.overall);
-    const rows=slice("players",list,S.players).map(p=>`<div class="cn-pl"><span class="cn-ovr ${p.overall>=82?"hi":""}">${p.overall}</span><span><b style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</b><small style="color:var(--cn-mut);font-size:11px">${esc(p.pos)} · ${esc(p.club)} · ${p.age} anos${p.caps?` · ${p.caps} jogos`:""}</small></span><span>${p.starter?'<span class="cn-tag st">Titular</span>':p.called?'<span class="cn-tag ok">Convocado</span>':!p.available?'<span class="cn-tag no">Indisponível</span>':""}</span><button type="button" class="cn-btn ${p.called?"":"go"}" data-cn-toggle="${esc(p.id)}" ${!p.available&&!p.called?"disabled":""}>${p.called?"Dispensar":"Convocar"}</button></div>`).join("")||'<div class="cn-empty">Nenhum jogador nesta posição.</div>';
+    const rows=slice("players",list,S.players).map(p=>`<div class="cn-pl"><span class="cn-ovr ${p.overall>=82?"hi":""}">${p.overall}</span><span><b style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</b><small style="color:var(--cn-mut);font-size:11px">${esc(p.pos)} · ${esc(p.club)} · ${p.age} anos${p.caps?` · ${p.caps} jogos`:""}</small></span><span>${p.starter?'<span class="cn-tag st">Titular</span>':p.called?'<span class="cn-tag ok">Convocado</span>':!p.available?'<span class="cn-tag no">Indisponível</span>':""}</span>${(!p.called&&o.players.filter(x=>x.called).length>=26)?`<button type="button" class="cn-btn go" data-cn-swap-in="${esc(p.id)}" ${p.available?"":"disabled"}>Trocar</button>`:`<button type="button" class="cn-btn ${p.called?"":"go"}" data-cn-toggle="${esc(p.id)}" ${!p.available&&!p.called?"disabled":""}>${p.called?"Dispensar":"Convocar"}</button>`}</div>`).join("")||'<div class="cn-empty">Nenhum jogador nesta posição.</div>';
     return `<div class="cn-tools"><label>Formação <select data-cn-formation>${o.formations.map(f=>`<option ${f===o.formation?"selected":""}>${esc(f)}</option>`).join("")}</select></label><button type="button" class="cn-btn" data-cn-act="auto" ${o.manual?"":"disabled"}>Convocação automática</button><span class="cn-tag ${o.manual?"st":"ok"}">${o.manual?"Lista manual":"Automática"}</span><span class="cn-tag">${o.called}/${o.max}</span></div>
       <div class="cn-chips" role="group" aria-label="Filtrar por posição">${["TODOS","GOL","DEF","MEI","ATA"].map(p=>`<button type="button" class="${ui.pos===p?"on":""}" data-cn-pos="${p}">${p==="TODOS"?"Todos":esc(POS_LABEL[p])}</button>`).join("")}</div>
       <section class="cn-card" style="margin-top:8px;padding-top:4px">${rows}${pager("players",list.length,S.players)}</section>`;
@@ -168,7 +174,7 @@
     return `${css()}<section class="cn" data-coach-national>${head(o)}<nav class="cn-sub" aria-label="Seções da seleção">${tabs.map(([id,l])=>`<button type="button" class="${ui.tab===id?"on":""}" data-cn-tab="${id}">${esc(l)}${id==="convites"?badge:""}</button>`).join("")}</nav>${body}</section>`;
   }
 
-  const api={render,state:ui,setTab(t){ui.tab=t;ui.confirmLeave=false;},setPage(key,n){if(key in ui.page)ui.page[key]=Math.max(0,Number(n)||0);},setPos(p){ui.pos=p;ui.page.players=0;},setConfirmLeave(v){ui.confirmLeave=!!v;}};
+  const api={render,state:ui,setTab(t){ui.tab=t;ui.confirmLeave=false;ui.swapIn=null;},setPage(key,n){if(key in ui.page)ui.page[key]=Math.max(0,Number(n)||0);},setPos(p){ui.pos=p;ui.page.players=0;},setSwapIn(id){ui.swapIn=id||null;},setConfirmLeave(v){ui.confirmLeave=!!v;}};
   root.ProLifeCoachNationalView=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
