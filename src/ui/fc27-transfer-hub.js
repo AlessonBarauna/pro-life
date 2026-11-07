@@ -8,7 +8,7 @@
   const money = (v) => { const n = Number(v) || 0, a = Math.abs(n); return a >= 1e9 ? "R$ " + (a / 1e9).toFixed(2).replace(".", ",") + " bi" : a >= 1e6 ? "R$ " + (a / 1e6).toFixed(1).replace(".", ",") + " mi" : a >= 1e3 ? "R$ " + Math.round(a / 1e3) + " mil" : "R$ " + Math.round(a); };
   const TABS = [["geral", "Visão geral"], ["mundo", "Atividade mundial"], ["busca", "Buscar jogadores"], ["negociacoes", "Negociações"], ["elenco", "Meu elenco"]];
   const DEAL = { rumor: ["Rumor", "rumor"], scouting: ["Observando", "rumor"], negotiating: ["Em negociação", "neg"], offer: ["Proposta feita", "neg"], completed: ["Fechado", "done"], rejected: ["Recusado", "out"], cancelled: ["Cancelado", "out"] };
-  let layer = null, tab = "geral";
+  let layer = null, tab = "geral", negPid = null;
   const wf = { status: "all", league: "" };
   const sf = { q: "", pos: "", ageMax: 40, ovrMin: 60, potMin: 0, valueMax: 0, league: "", free: false, page: 0 };
 
@@ -103,13 +103,46 @@
     return `<ul class="tfh-list">${ps.map((p) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(p.name)}</b><small>${esc(p.pos)} · ${esc(p.age)} anos · GER ${ovrOf(p)} · ${esc(st(p))}</small></span><span class="tfh-side"><em>${money(valueOf(p))}</em><span class="tfh-acts">${btn(p, "listed", "Vender")}${btn(p, "loan_listed", "Emprestar")}${btn(p, "blocked", "Segurar")}${btn(p, "available", "Limpar")}</span></span></li>`).join("")}</ul>`;
   }
 
+
+  function negotiation(s, D, club) {
+    const g = GF(), p = g?.playerById?.(s, negPid);
+    if (!p) return `<p class="tfh-note">Atleta indisponível.</p><p class="tfh-actions"><button type="button" class="tfh-btn" data-tfh-negback>Voltar</button></p>`;
+    const c = s.coachCareer || {}, sellerId = p.clubId, seller = sellerId ? (g.clubById?.(s, sellerId) || D.club(s, sellerId)) : null;
+    const back = `<p class="tfh-actions"><button type="button" class="tfh-btn" data-tfh-negback>← Voltar</button></p>`;
+    const head = `<div class="tfh-negcard"><span class="tfh-ger">${ovrOf(p)}</span><div><b>${esc(p.name)}</b><small>${esc(p.pos)} · ${esc(p.age)} anos · GER ${ovrOf(p)} / pot. ${Number(p.potential || 0) || "—"} · ${esc(seller?.name || "Sem clube")}</small></div><em>${money(valueOf(p))}</em></div>`;
+    if (!sellerId) return back + head + `<p class="tfh-note">Agente livre: a contratação direta ainda não está disponível no mercado.</p>`;
+    const mine = (x) => String(x.buyerClubId) === String(s.clubId);
+    const day = Number(s.day) || 0;
+    const neg = (c.negotiations || []).find((n) => n.playerId === p.id && mine(n) && ["pending", "awaiting_window"].includes(n.status) && (n.expiresDay == null || n.expiresDay >= day));
+    const inq = (c.inquiries || []).slice().reverse().find((x) => x.playerId === p.id && x.clubId === sellerId && mine(x) && !x.dismissed);
+    const ready = inq && ["accepted", "asking_price"].includes(inq.status) && day <= Number(inq.expiresDay);
+    const w = D.Career.windowStatus(s);
+    const winNote = w.open ? "" : `<p class="tfh-note">Janela fechada: o acordo fica programado e só é concluído quando o mercado abrir. Nada é pago antes.</p>`;
+    const offerBox = (label, def, act, extra) => `<div class="tfh-offer"><label>${label}<input type="number" min="1" step="0.1" data-tfh-offer value="${def}"> <small>mi</small></label><button type="button" class="tfh-btn primary" data-tfh-send="${act}" ${extra || ""}>Enviar proposta</button></div>`;
+    let panel;
+    if (neg) {
+      const awaiting = neg.response === "awaiting_reply";
+      if (neg.status === "awaiting_window") panel = `<p class="tfh-note"><b>Acordo fechado</b> por ${money(neg.finalFee ?? neg.requested)}. A transferência será concluída quando a janela abrir.</p>`;
+      else if (awaiting) panel = `<p class="tfh-note">Proposta de ${money(neg.requested)} enviada. O clube responde em ${Math.max(0, Number(neg.replyDay ?? day + 2) - day)} dia(s).</p>`;
+      else if (neg.response === "accepted") panel = `<p class="tfh-note"><b>${esc(seller.name)} aceitou</b> ${money(neg.finalFee)}. Falta concluir a contratação.</p><p class="tfh-actions"><button type="button" class="tfh-btn primary" data-tfh-send="accept" data-id="${esc(neg.id)}">${w.open ? "Concluir contratação" : "Fechar acordo para a janela"}</button><button type="button" class="tfh-btn" data-tfh-send="reject" data-id="${esc(neg.id)}">Desistir</button></p>${winNote}`;
+      else if (neg.status === "pending" && Number(neg.round || 1) < 3) panel = `<p class="tfh-note">O clube recusou a oferta e pede <b>${money(neg.finalFee ?? neg.xTV)}</b>. Rodada ${neg.round || 1} de 3.</p>${offerBox("Nova oferta", Math.max(1, Math.round((Number(neg.finalFee ?? neg.xTV) || valueOf(p)) / 1e5) / 10), "revise", `data-id="${esc(neg.id)}"`)}<p class="tfh-actions"><button type="button" class="tfh-btn" data-tfh-send="reject" data-id="${esc(neg.id)}">Desistir</button></p>`;
+      else panel = `<p class="tfh-note">Limite de rodadas atingido. Desista ou aguarde nova abertura.</p><p class="tfh-actions"><button type="button" class="tfh-btn" data-tfh-send="reject" data-id="${esc(neg.id)}">Desistir</button></p>`;
+    } else if (inq && inq.status === "pending") panel = `<p class="tfh-note">Sondagem enviada. Resposta prevista em ${Math.max(0, Number(inq.responseDay) - day)} dia(s).</p>`;
+    else if (ready) panel = `<p class="tfh-note"><b>${inq.status === "asking_price" ? "O clube exige proposta financeira." : "Sondagem aceita."}</b> Você pode negociar até o dia ${esc(inq.expiresDay)}.</p>${offerBox("Sua oferta", Math.max(1, Math.round(valueOf(p) / 1e5) / 10), "offer")}${winNote}`;
+    else if (inq && inq.status === "rejected") {
+      const left = Number(inq.answeredDay ?? inq.responseDay) + 14 - day;
+      panel = `<p class="tfh-note"><b>Sondagem recusada</b> (${inq.playerDecision === "rejected" ? "jogador sem interesse" : "clube não autoriza"}). ${left > 0 ? `Nova consulta em ${left} dia(s).` : ""}</p>` + (left > 0 ? "" : `<p class="tfh-actions"><button type="button" class="tfh-btn primary" data-tfh-send="inquire">Consultar interesse</button></p>`);
+    } else panel = `<p class="tfh-note">Antes de propor, consulte o interesse do jogador e a disposição do clube vendedor.</p><p class="tfh-actions"><button type="button" class="tfh-btn primary" data-tfh-send="inquire">Consultar interesse</button></p>`;
+    return back + head + panel;
+  }
+
   function html() {
     const c = ctx();
     let body;
     if (!c) body = `<p class="tfh-note">O Mercado está disponível na carreira de treinador.</p>`;
     else {
       const club = c.D.club(c.s);
-      body = !club ? `<p class="tfh-note">Assine com um clube para usar o mercado.</p>` : ({ geral, mundo, busca: search, negociacoes, elenco }[tab] || geral)(c.s, c.D, club);
+      body = !club ? `<p class="tfh-note">Assine com um clube para usar o mercado.</p>` : (negPid ? negotiation : ({ geral, mundo, busca: search, negociacoes, elenco }[tab] || geral))(c.s, c.D, club);
     }
     const tabs = TABS.map(([id, l]) => `<button type="button" role="tab" class="${tab === id ? "active" : ""}" aria-selected="${tab === id}" data-tfh-tab="${id}">${l}</button>`).join("");
     return `<div class="sm27-dialog-backdrop" data-tfh-close></div><section class="sm27-dialog tfh-dialog" role="dialog" aria-modal="true" aria-label="Mercado"><header class="sm27-dialog-head"><span></span><h2>Mercado</h2><button type="button" class="sm27-dialog-x" data-tfh-close aria-label="Fechar">×</button></header><nav class="tfh-tabs" role="tablist">${tabs}</nav><div class="tfh-body">${body}</div></section>`;
@@ -121,14 +154,19 @@
     const b = layer.querySelector(".tfh-body"); if (b) b.scrollTop = keep;
     if (focused) { const el = layer.querySelector(`[data-tfh-sf="${focused}"]`); if (el && el.type === "search") { el.focus(); el.setSelectionRange?.(el.value.length, el.value.length); } }
   }
-  function close() { if (layer) { layer.remove(); layer = null; } }
+  function close() { if (layer) { layer.remove(); layer = null; } negPid = null; }
   const cmd = (a, d) => { const ok = root.ProLifeSM27Cmd?.(a, d); if (layer) open(); return ok; };
 
-  function negotiate(id) {
-    const V = root.ProLifeCoachCareerView;
-    try { V?.setMarketArea?.("observacao"); V?.selectScoutPlayer?.(id); } catch (e) {}
-    close();
-    const go = doc.createElement("button"); go.type = "button"; go.dataset.page = "market"; go.hidden = true; doc.body.appendChild(go); go.click(); go.remove();
+  function negotiate(id) { negPid = id; open(); }
+  function send(el) {
+    const c = ctx(); if (!c) return;
+    const act = el.dataset.tfhSend, p = GF()?.playerById?.(c.s, negPid), sellerId = p?.clubId;
+    const val = Math.round((Number(layer.querySelector("[data-tfh-offer]")?.value) || 0) * 1e6);
+    if (act === "inquire") cmd("coachInquiry", { clubId: sellerId, playerId: negPid });
+    else if (act === "offer") cmd("counterRecruit", { clubId: sellerId, playerId: negPid, offer: val });
+    else if (act === "revise") cmd("reviseCoachDeal", { id: el.dataset.id, offer: val });
+    else if (act === "accept") cmd("acceptCoachDeal", { id: el.dataset.id, paymentPlan: "upfront" });
+    else if (act === "reject") cmd("rejectCoachDeal", { id: el.dataset.id });
   }
 
   doc.addEventListener("click", (ev) => {
@@ -138,11 +176,13 @@
     if (!layer) return;
     let el;
     if (t.closest("[data-tfh-close]")) { close(); return; }
-    if ((el = t.closest("[data-tfh-tab]"))) { tab = el.dataset.tfhTab; open(); return; }
+    if ((el = t.closest("[data-tfh-tab]"))) { tab = el.dataset.tfhTab; negPid = null; open(); return; }
     if ((el = t.closest("[data-tfh-wf]"))) { wf.status = el.dataset.tfhWf; open(); return; }
     if ((el = t.closest("[data-tfh-page]"))) { sf.page = Math.max(0, sf.page + Number(el.dataset.tfhPage)); open(); return; }
     if ((el = t.closest("[data-tfh-star]"))) { cmd("toggleCoachShortlist", { clubId: el.dataset.club, playerId: el.dataset.tfhStar }); return; }
     if ((el = t.closest("[data-tfh-negotiate]"))) { negotiate(el.dataset.tfhNegotiate); return; }
+    if (t.closest("[data-tfh-negback]")) { negPid = null; open(); return; }
+    if ((el = t.closest("[data-tfh-send]"))) { send(el); return; }
     if ((el = t.closest("[data-tfh-cmd]"))) {
       const a = el.dataset.tfhCmd;
       cmd(a, a === "setCoachPlayerOfferStatus" ? { playerId: el.dataset.pid, status: el.dataset.status } : el.dataset.id ? { id: el.dataset.id } : {});

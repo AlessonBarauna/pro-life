@@ -37,3 +37,12 @@
 .tfh-actions{margin:14px 0 0}
 @media (max-width:640px){.tfh-row{flex-wrap:wrap}.tfh-side{width:100%;justify-content:space-between}.tfh-search label.wide{grid-column:1/-1}}
 @media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){.sm27-dialog.tfh-dialog{max-height:calc(var(--pl-vh,100dvh) - 20px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}.tfh-row{padding:6px 8px}.tfh-search{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.tfh-search label.wide{grid-column:span 2}.tfh-tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* Painel de negociação dentro do Mercado */
+.tfh-negcard{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 14px;margin:6px 0 10px;border:1px solid var(--tfh-line,rgba(190,255,0,.28));border-radius:14px}
+.tfh-negcard .tfh-ger{display:grid;place-items:center;width:46px;height:46px;border-radius:10px;background:#c8f21a;color:#0c1822;font-weight:900;font-size:20px}
+.tfh-negcard b{display:block;font-size:16px}.tfh-negcard small{opacity:.75}
+.tfh-negcard em{font-style:normal;font-weight:800;white-space:nowrap}
+.tfh-offer{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:8px 0}
+.tfh-offer label{display:grid;gap:4px;font-size:12px}
+.tfh-offer input{min-width:120px;padding:10px 12px;border-radius:10px;border:1px solid rgba(190,255,0,.3);background:rgba(0,0,0,.35);color:inherit;font-size:16px}
