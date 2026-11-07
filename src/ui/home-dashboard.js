@@ -417,14 +417,26 @@
     const events=upcomingAgenda(s,D,Calendar,next);
     const objectives=s.mode==="player" && s.clubId ? D.Career.matchObjectives(s) : [];
     const news=(s.news||[]).slice().sort((a,b)=>(b.day||0)-(a.day||0)).slice(0,4);
-    const messages=[...(s.decision?[{day:s.day,title:s.decision.title,body:s.decision.body,kind:"decision"}]:[]), ...news].slice(0,4);
+    const comm=(D.Career&&D.Career.init?D.Career.init(s).communications:null)||{messages:[],interviews:[]};
+    const pendingOffers=(s.offers||[]).filter(o=>o.expires>=s.day);
+    const openInterviews=(comm.interviews||[]).filter(i=>!i.answered);
+    const unreadMsgs=(comm.messages||[]).filter(m=>!m.read);
+    // Mesma fonte e mesma ordem da Caixa de entrada: propostas, decisão, mensagens, entrevistas, notícias.
+    const messages=[
+      ...(pendingOffers.length?[{day:s.day,title:`Propostas pendentes · ${pendingOffers.length}`,kind:"offers",read:false}]:[]),
+      ...(s.decision?[{day:s.day,title:s.decision.title,body:s.decision.body,kind:"decision",read:false}]:[]),
+      ...(comm.messages||[]).slice(0,6).map(m=>({day:m.day,title:m.subject,read:!!m.read,kind:"message"})),
+      ...openInterviews.slice(0,2).map(i=>({day:i.day,title:"Entrevista: "+(i.question||"convite"),read:false,kind:"interview"})),
+      ...news.map(n=>({day:n.day,title:n.title,body:n.body,read:true,kind:"news"}))
+    ].slice(0,4);
+    const inboxUnread=(pendingOffers.length?1:0)+(s.decision?1:0)+unreadMsgs.length+openInterviews.length;
     const active=plan.activeMultiplier && plan.activeMultiplier.expiresDay>=s.day ? plan.activeMultiplier : null;
     const lineup=s.mode==="player" && s.clubId && !next?.national && D.Squad?.competition ? D.Squad.competition(s) : null;
     const subPlan=lineup?.heroRole==="Banco" && D.Squad?.substitutePlan ? D.Squad.substitutePlan(s,s.person) : null;
     const leadership=D.captaincy?.(s,c) || null;
     return { c, career, stats, current, plan, next, table, competitionTable, recent, events, objectives, news, messages, active, lineup, subPlan, leadership,
       player:{ name:s.person.name, pos:s.person.pos, age:s.person.age, overall:D.overall(s.person), condition:s.person.condition, morale:s.person.morale, form:(()=>{const ratings=recent.map(x=>validRating(x.rating)).filter(x=>x!==null);return ratings.length?+(ratings.reduce((n,x)=>n+x,0)/ratings.length).toFixed(1):null;})(), marketValue:pc.marketValue||0, squadRole:pc.squadRole||null },
-      unread:s.decision?1:0,
+      unread:inboxUnread,
       training:{ focus:D.Training.skills[s.training] || (s.training==="balanced"?"Equilibrado":s.training), intensity:{rest:"Recuperação",normal:"Normal",hard:"Intensa"}[s.intensity]||s.intensity, sessions:plan.sessions||0, improvements:plan.improvements||0, recent:active ? `${D.Training.trainingCategories[active.category]?.name || "Treino"} · nota ${active.grade}` : "Sem bônus temporário ativo", next:s.person.injury ? `Após ${s.person.injury} dia(s) de recuperação` : "Disponível na rotina diária" }
     };
   }
