@@ -484,3 +484,11 @@ html.pl-large-text { font-size:112.5%; }
   .sm27-dialog.acad-dialog{width:100%;max-height:calc(var(--pl-vh,100dvh) - max(4px,env(safe-area-inset-top)) - max(4px,env(safe-area-inset-bottom)));height:calc(var(--pl-vh,100dvh) - max(4px,env(safe-area-inset-top)) - max(4px,env(safe-area-inset-bottom)))}
   .sm27-dialog-body{padding-bottom:max(14px,env(safe-area-inset-bottom))}
 }
+
+/* Caixa de entrada: abas Novas / Lidas / Expiradas */
+.inbox-tabs{display:flex;gap:8px;margin:10px 0 12px;flex-wrap:wrap}
+.inbox-tabs button{min-height:36px;padding:0 14px;border:1px solid rgba(120,170,200,.28);border-radius:18px;background:rgba(255,255,255,.05);color:inherit;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.inbox-tabs button small{margin-left:4px;padding:1px 7px;border-radius:9px;background:rgba(255,255,255,.12);font-size:11px}
+.inbox-tabs button.on{background:#c8f21a;border-color:#c8f21a;color:#0c1822}
+.inbox-tabs button.on small{background:rgba(0,0,0,.18)}
+.news.expired{opacity:.72;border-left-color:rgba(255,160,90,.7)}
