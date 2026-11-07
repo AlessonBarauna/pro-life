@@ -4,8 +4,9 @@ const html = fs.readFileSync(base + "index.html", "utf8");
 const order = html.match(/src="(src\/[^"]+\.js)"/g).map((x) => x.slice(5, -1)).filter((f) => !/update\.js|avatar/.test(f));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function make() {
-  const dom = new JSDOM(html, { runScripts: "outside-only", url: "https://offline-test.invalid" }), w = dom.window;
-  w.confirm = () => true; w.scrollTo = () => {}; w.URL.createObjectURL = () => "blob:t"; w.URL.revokeObjectURL = () => {};
+  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, url: "https://offline-test.invalid" }), w = dom.window;
+  w.confirm = () => true; w.scrollTo = () => {};
+  w.matchMedia = w.matchMedia || (() => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} })); w.URL.createObjectURL = () => "blob:t"; w.URL.revokeObjectURL = () => {};
   for (const f of order) w.eval(fs.readFileSync(base + f, "utf8"));
   return w;
 }
@@ -23,7 +24,7 @@ const fillClassic = (w, mode) => {
 
 // 34F.15: FC 27 é a única base para novas carreiras; saves legados continuam abrindo.
 function makeWithLegacySlot() {
-  const dom = new JSDOM(html, { runScripts: "outside-only", url: "https://offline-test.invalid" }), w = dom.window;
+  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, url: "https://offline-test.invalid" }), w = dom.window;
   w.confirm = () => true; w.scrollTo = () => {}; w.URL.createObjectURL = () => "blob:t"; w.URL.revokeObjectURL = () => {};
   for (const f of order.slice(0, -1)) w.eval(fs.readFileSync(base + f, "utf8"));
   const id = w.ProLifeSave.saveAsNew(w.ProLife.create({ mode: "player", age: 16 }, 44));

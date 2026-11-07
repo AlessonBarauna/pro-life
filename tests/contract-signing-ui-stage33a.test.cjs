@@ -1,7 +1,7 @@
 const { JSDOM } = require("jsdom"), fs = require("fs"), assert = require("node:assert/strict"), test = require("node:test");
 const base = require("node:path").resolve(__dirname, "..") + "/";
 const html = fs.readFileSync(base + "index.html", "utf8");
-const files = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
+const files = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1].split("?")[0]);
 const Cine = require("../src/ui/contract-signing.js");
 const q = (w, s) => w.document.querySelector(s), qa = (w, s) => [...w.document.querySelectorAll(s)];
 const GROUP = { proposals: "market", contract: "profile" };
@@ -13,7 +13,7 @@ function click(w, sel) {
 const get = (w) => { const id = w.ProLifeSave.activeId(); assert.ok(id); return w.ProLifeSave.loadSlot(id); };
 const OFFER = { clubId: "gf_real_madrid", salary: 90000, role: "projeto", squadRole: "Titular", durationDays: 1095, signingBonus: 50000, transferType: "permanent" };
 function dom() {
-  const d = new JSDOM(html, { runScripts: "outside-only", url: "https://offline-test.invalid" }), w = d.window;
+  const d = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, url: "https://offline-test.invalid" }), w = d.window;
   w.confirm = () => true; w.scrollTo = () => {}; w.URL.createObjectURL = () => "blob:t"; w.URL.revokeObjectURL = () => {};
   files.slice(0, -1).forEach((f) => w.eval(fs.readFileSync(base + f, "utf8")));
   return w;

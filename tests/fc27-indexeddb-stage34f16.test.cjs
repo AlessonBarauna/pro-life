@@ -17,8 +17,9 @@ class FakeBackend {
 // "Navegador": localStorage persistente (Map) + IndexedDB falso, reaproveitados por varias janelas (recarregamentos).
 function browser() { return { backend: new FakeBackend(), ls: new Map() }; }
 function openPage(br, { lsQuota } = {}) {
-  const dom = new JSDOM(html, { runScripts: "outside-only", url: "https://offline-test.invalid" }), w = dom.window;
-  w.confirm = () => true; w.scrollTo = () => {}; w.URL.createObjectURL = () => "blob:t"; w.URL.revokeObjectURL = () => {};
+  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, url: "https://offline-test.invalid" }), w = dom.window;
+  w.confirm = () => true; w.scrollTo = () => {};
+  w.matchMedia = w.matchMedia || (() => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} })); w.URL.createObjectURL = () => "blob:t"; w.URL.revokeObjectURL = () => {};
   for (const [k, v] of br.ls) w.localStorage.setItem(k, v);
   for (const f of order.slice(0, -1)) w.eval(fs.readFileSync(base + f, "utf8"));
   w.ProLifeSave.useIdbBackend(br.backend);
@@ -138,7 +139,7 @@ test("34F.16 (4) renomear e excluir carreiras do IndexedDB; sem IndexedDB manté
   assert.equal(br.backend.rows.has(b), false); assert.equal(S.listSlots().length, 1);
   assert.equal(S.loadSlot(b), null);
   // sem backend: saveAsNewAsync cai no caminho sincrono anterior
-  const dom = new JSDOM(html, { runScripts: "outside-only", url: "https://offline-test.invalid" });
+  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, url: "https://offline-test.invalid" });
   for (const f of order.slice(0, -1)) dom.window.eval(fs.readFileSync(base + f, "utf8"));
   assert.equal(dom.window.ProLifeSave.ready(), null); assert.equal(dom.window.ProLifeSave.storageMode(), "localStorage");
 });
@@ -170,7 +171,7 @@ function fakeIndexedDB() {
 test("34F.16 (5) backend IndexedDB real: abre, grava, lista, apaga e reidrata após recarregar", async () => {
   const idb = fakeIndexedDB();
   const load = () => {
-    const dom = new JSDOM(html, { runScripts: "outside-only", url: "https://offline-test.invalid" }), w = dom.window;
+    const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, url: "https://offline-test.invalid" }), w = dom.window;
     w.indexedDB = idb;
     for (const f of order.slice(0, -1)) w.eval(fs.readFileSync(base + f, "utf8"));
     return w;

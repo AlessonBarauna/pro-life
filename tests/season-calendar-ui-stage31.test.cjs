@@ -3,15 +3,16 @@ const { JSDOM } = require("jsdom"),
   assert = require("node:assert/strict");
 const test = require("node:test");
 const base = require("node:path").resolve(__dirname, "..") + "/";
-const files = [...fs.readFileSync(base + "index.html", "utf8").matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
+const files = [...fs.readFileSync(base + "index.html", "utf8").matchAll(/<script src="([^"]+)"/g)].map((m) => m[1].split("?")[0]);
 function make(mode) {
   const dom = new JSDOM(fs.readFileSync(base + "index.html", "utf8"), {
-      runScripts: "outside-only",
+      runScripts: "outside-only", pretendToBeVisual: true,
       url: "https://offline-test.invalid",
     }),
-    w = dom.window;
+    w = dom.window; w.matchMedia = w.matchMedia || (() => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }));
   w.confirm = () => true;
   w.scrollTo = () => {};
+  w.matchMedia = w.matchMedia || (() => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }));
   w.URL.createObjectURL = () => "blob:test";
   w.URL.revokeObjectURL = () => {};
   // 34F.15: a criação pela interface é só FC 27; estes testes exercitam a base legada carregando um slot existente.
@@ -71,7 +72,7 @@ function toPage(w, p) { click(w, `[data-page="${p}"]`); }
 const MINE = (w) => get(w).clubId;
 
 function makeIntl() {
-  const dom = new JSDOM(fs.readFileSync(base + "index.html", "utf8"), { runScripts: "outside-only", url: "https://offline-test.invalid" }), w = dom.window;
+  const dom = new JSDOM(fs.readFileSync(base + "index.html", "utf8"), { runScripts: "outside-only", pretendToBeVisual: true, url: "https://offline-test.invalid" }), w = dom.window; w.matchMedia = w.matchMedia || (() => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }));
   w.confirm = () => true; w.scrollTo = () => {}; w.URL.createObjectURL = () => "blob:test"; w.URL.revokeObjectURL = () => {};
   files.slice(0, -1).forEach((f) => w.eval(fs.readFileSync(base + f, "utf8")));
   const D = w.ProLife, s = D.create({ mode: "player", clubId: "c0" }, 4242);
