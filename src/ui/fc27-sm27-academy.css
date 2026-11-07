@@ -85,3 +85,5 @@
   .acad-send{grid-column:1/-1;grid-template-columns:minmax(0,2fr) minmax(0,3fr);align-items:center}
   .acad-btn.big{min-height:38px}
 }
+.acad-why{display:block;margin-top:6px;font-size:12px;color:#ffb15c;line-height:1.3}
+.acad-flash{margin:0 0 8px;padding:9px 12px;border-radius:12px;background:rgba(200,242,26,.12);border:1px solid rgba(200,242,26,.4);font-size:13px}

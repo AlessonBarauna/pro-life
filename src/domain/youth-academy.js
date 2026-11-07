@@ -110,7 +110,7 @@
       rules:r,nextRules,nextScoutRules,scoutUpgradeCost,level:r.level,scoutLevel:r.scoutLevel,maxLevel:5,upgradeCost:upCost,budget:num(club?.budget),
       capacity:r.capacity,used,loanedCount:rows.length-used,free:Math.max(0,r.capacity-used),
       nextIntakeDay:y.nextIntakeDay,daysToIntake:Math.max(0,y.nextIntakeDay-num(s.day)),
-      kids:rows,reports:y.reports.map(x=>reportRow(s,x)),
+      kids:rows.map(k=>(k.canPromote&&(club?.roster||[]).filter(p=>p&&p.id!=="hero").length>=MAX_SQUAD)?{...k,canPromote:false,promoteReason:`Elenco principal cheio (${MAX_SQUAD}). Libere vagas vendendo ou dispensando jogadores.`}:k),reports:y.reports.map(x=>reportRow(s,x)),
       missions,openSlots:Math.max(0,r.missionSlots-y.missions.filter(m=>m.status==="active").length),countries:countries(s),
       log:y.log.slice(0,12),squadSize:(club?.roster||[]).filter(p=>p&&p.id!=="hero").length,maxSquad:MAX_SQUAD
     };

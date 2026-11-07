@@ -36,7 +36,7 @@
     } else if (k.loaned) {
       actions = `<div class="acad-actions two"><button type="button" class="acad-btn" data-acad-recall="${esc(k.id)}">Chamar de volta</button><button type="button" class="acad-btn danger" data-acad-ask="${esc(k.id)}">Dispensar</button></div>`;
     } else {
-      actions = `<div class="acad-actions"><button type="button" class="acad-btn primary" data-acad-promote="${esc(k.id)}" ${k.canPromote ? "" : "disabled"} title="${esc(k.promoteReason || "Promover ao elenco principal")}">Subir</button><button type="button" class="acad-btn" data-acad-loan="${esc(k.id)}" ${k.age >= 17 ? "" : "disabled"} title="${k.age >= 17 ? "Emprestar até o fim da temporada" : "Só a partir dos 17 anos"}">Emprestar</button><button type="button" class="acad-btn danger" data-acad-ask="${esc(k.id)}">Dispensar</button></div>`;
+      actions = `<div class="acad-actions"><button type="button" class="acad-btn primary" data-acad-promote="${esc(k.id)}" ${k.canPromote ? "" : "disabled"} title="${esc(k.promoteReason || "Promover ao elenco principal")}">Subir</button><button type="button" class="acad-btn" data-acad-loan="${esc(k.id)}" ${k.age >= 17 ? "" : "disabled"} title="${k.age >= 17 ? "Emprestar até o fim da temporada" : "Só a partir dos 17 anos"}">Emprestar</button><button type="button" class="acad-btn danger" data-acad-ask="${esc(k.id)}">Dispensar</button></div>${k.canPromote ? "" : `<small class="acad-why">${esc(k.promoteReason)}</small>`}`;
     }
     return `<li class="acad-card${k.loaned ? " is-loan" : ""}"><div class="acad-card-top"><span class="acad-pos ${posClass(k.pos)}">${esc(k.pos)}</span><span class="acad-name"><b>${esc(k.name)}</b><small>${esc(nat(k.nationality))} · ${k.age} anos${k.loaned ? " · emprestado: " + esc(k.loanTo) : ""}</small></span><span class="acad-ovr"><b>${k.ovr}</b><small>GER</small></span></div>` +
       `<div class="acad-card-mid"><span class="acad-pot">${stars(k.stars)}<small>POT ${k.potLo}–${k.potHi}</small></span><span class="acad-trend">${trend}${spark(k.history)}</span></div>${actions}</li>`;
@@ -98,7 +98,7 @@
       const tabs = [["base", "Jovens da base", v.kids.length], ["relatorios", "Relatórios", v.reports.length], ["olheiros", "Olheiros da base", 0]];
       const tabBar = `<nav class="acad-tabs" role="tablist">${tabs.map(([id, label, n]) => `<button type="button" role="tab" aria-selected="${tab === id}" class="${tab === id ? "on" : ""}" data-acad-tab="${id}">${label}${n ? ` <i>${n}</i>` : ""}</button>`).join("")}</nav>`;
       const main = tab === "base" ? baseTab(v) : tab === "relatorios" ? reportsTab(v) : scoutTab(v);
-      body = `<div class="acad-layout"><div class="acad-main">${tabBar}${main}</div>${aside(v)}</div>`;
+      body = `<div class="acad-layout"><div class="acad-main">${flash ? `<p class="acad-flash" role="status">${esc(flash)}</p>` : ""}${tabBar}${main}</div>${aside(v)}</div>`;
     }
     return `<div class="sm27-dialog-backdrop" data-acad-close></div><section class="sm27-dialog acad-dialog" role="dialog" aria-modal="true" aria-label="Academia"><header class="sm27-dialog-head"><span></span><h2>Academia</h2><button type="button" class="sm27-dialog-x" data-acad-close aria-label="Fechar">×</button></header><div class="sm27-dialog-body">${body}</div></section>`;
   }
@@ -111,8 +111,9 @@
     if (b) b.scrollTop = keep;
     if (!keep) layer.querySelector(".sm27-dialog-x")?.focus({ preventScroll: true });
   }
-  function close() { if (layer) { layer.remove(); layer = null; } }
-  const cmd = (action, data) => { const ok = root.ProLifeSM27Cmd?.(action, data); if (layer) open(); return ok; };
+  function close() { if (layer) { layer.remove(); layer = null; } flash = ""; }
+  let flash = "";
+  const cmd = (action, data) => { const ok = root.ProLifeSM27Cmd?.(action, data); const tx = doc.getElementById("toast"); flash = (tx && tx.textContent) || ""; if (tx) tx.style.display = "none"; if (layer) open(); return ok; };
 
   doc.addEventListener("click", (ev) => {
     const t = ev.target instanceof Element ? ev.target : null;
