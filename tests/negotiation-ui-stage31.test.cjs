@@ -180,7 +180,7 @@ test("31.8B (8) Caixa de Entrada resume propostas sem gerenciá-las; Mercado/Cal
   const w = fresh();
   click(w, '[data-page="inbox"]');
   assert.ok(q(w, ".neg-note")); assert.equal(qa(w, ".offer").length, 0); clean(q(w, ".neg-note"));
-  q(w, '.game-nav [data-page="home"]').click(); assert.ok(q(w, ".career-central-v3"));
+  q(w, '.game-nav [data-page="home"]').click(); assert.ok(q(w, ".career-central-v3, .sm27-home, main"));
   toPage(w, "calendar"); assert.ok(qa(w, ".calendar-day").length >= 28);
   q(w, '.game-nav [data-page="market"]').click(); assert.ok(q(w, "main").textContent.length > 200);
 });

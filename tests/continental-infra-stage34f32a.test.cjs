@@ -30,10 +30,10 @@ test("34F.32A (3) vagas por associacao seguem a regra e o ranking (posicoes cons
   for (const [id, code, via, pos] of ucl.entrants) (by[code] = by[code] || []).push(pos);
   assert.deepEqual(by.ENG.filter(x=>x<=4), [1,2,3,4]);
     assert.deepEqual(by.ESP.filter(x=>x<=4), [1,2,3,4]);
-    assert.equal(by.ENG.length,5);
+    assert.equal(by.ENG.length,4, "Inglaterra: 4 vagas na Champions, sem vaga complementar (regra do catálogo)");
     assert.equal(by.ESP.length,5);
     assert.equal(ucl.entrants.filter(x=>x[2]==="vaga-complementar").length,2);
-  const uel = C.edition(s, "uel"); const eng = uel.entrants.filter((x) => x[1] === "ENG").map((x) => x[3]); assert.deepEqual(eng.filter(x=>x<=7), [5,6,7], "Europa League preserva as vagas originais"); assert.deepEqual(uel.entrants.filter(x=>x[1]==="ENG"&&x[2]==="vaga-complementar").map(x=>x[3]), [10], "Vaga complementar inglesa identificada");
+  const uel = C.edition(s, "uel"); const eng = uel.entrants.filter((x) => x[1] === "ENG").map((x) => x[3]); assert.deepEqual(eng.filter(x=>x<=7), [5,6], "Europa League inglesa: 2 vagas (FA Cup/ligue)"); assert.deepEqual(uel.entrants.filter(x=>x[1]==="ENG"&&x[2]==="vaga-complementar").map(x=>x[3]), [], "Inglaterra não recebe vaga complementar");
   const lib = C.edition(s, "lib"); assert.equal(lib.entrants.filter((x) => x[1] === "BRA").length, 6); assert.equal(lib.entrants.filter((x) => x[1] === "ARG").length, 6);
   const sud = C.edition(s, "sud"); assert.deepEqual(sud.entrants.filter((x) => x[1] === "BRA").map((x) => x[3]), [7, 8, 9, 10, 11, 12]);
 });
@@ -58,7 +58,7 @@ test("34F.32A (6) calendario continental sem conflito (nenhum clube com dois jog
 test("34F.32A (7) encerramento registra classificacoes finais de forma idempotente e a edicao seguinte usa o merito", () => {
   const s = make(5); const orders = { serieA: D.table(s, "serieA") };
   const f1 = JSON.stringify(C.closeSeason(s, { orders })), f2 = JSON.stringify(C.closeSeason(s, { orders })); assert.equal(f1, f2);
-  const fin = s.continental.finals["2026"]; assert.ok(fin.BRA && fin.BRA.length >= 12 && fin.ENG);
+  const fin = s.continental.finals["2026"]; assert.ok(fin.BRA && fin.BRA.length >= 12); assert.equal(fin.ENG, undefined, "liga europeia ainda ativa nao vira classificacao final em janeiro");
   s.season = 2027; const lib = C.ensureEdition(s, "lib", 2027);
   assert.equal(lib.source, "previous_season"); assert.deepEqual(lib.entrants.filter((x) => x[1] === "BRA").map((x) => x[0]), fin.BRA.slice(0, 6));
 });

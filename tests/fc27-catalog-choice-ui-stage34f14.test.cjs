@@ -1,10 +1,10 @@
 const test = require("node:test"), assert = require("node:assert/strict"), fs = require("fs"), path = require("path"), { JSDOM } = require("jsdom");
 const base = path.join(__dirname, "..") + path.sep;
 const html = fs.readFileSync(base + "index.html", "utf8");
-const order = html.match(/src="(src\/[^"]+\.js)"/g).map((x) => x.slice(5, -1)).filter((f) => !/update\.js|avatar/.test(f));
+const order = html.match(/src="(src\/[^"?]+\.js)(?:\?[^"]*)?"/g).map((x) => x.slice(5, -1).split("?")[0].replace(/"$/, "")).filter((f) => !/update\.js|avatar/.test(f));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function make() {
-  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, url: "https://offline-test.invalid" }), w = dom.window;
+  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, beforeParse(w) { w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }); }, url: "https://offline-test.invalid" }), w = dom.window;
   w.confirm = () => true; w.scrollTo = () => {};
   w.matchMedia = w.matchMedia || (() => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} })); w.URL.createObjectURL = () => "blob:t"; w.URL.revokeObjectURL = () => {};
   for (const f of order) w.eval(fs.readFileSync(base + f, "utf8"));
@@ -16,7 +16,9 @@ async function settle(w) { await sleep(120); for (let i = 0; i < 600 && q(w, "#w
 async function go(w, s) { click(w, s); await settle(w); }
 const counts = (s) => ({ leagues: s.globalFootball.leagues.length, clubs: s.globalFootball.clubs.length, players: s.internationalPlayers.length });
 const toHub = (w) => { if (q(w, ".career-hub")) return; if (!q(w, '[data-action="careers"]')) click(w, '[data-page="save"]'); click(w, '[data-action="careers"]'); };
+const coachForm = (w, f) => { const form = q(w, "#coach-creation-form"); assert.ok(form, "formulário de treinador"); const set = (n, v) => { const el = form.elements[n]; if (el) el.value = v; }; set("name", "Treinador FC27"); set("city", "Santos"); set("age", "35"); set("seed", "44"); set("careerType", "original"); set("coachType", "custom"); return form; };
 const fillClassic = (w, mode) => {
+  if (mode === "coach" && q(w, "#coach-creation-form")) return coachForm(w);
   const form = q(w, "#creator"); assert.ok(form);
   form.elements.mode.value = mode; form.elements.age.value = mode === "coach" ? "35" : "16"; form.elements.seed.value = "44";
   return form;
@@ -24,7 +26,7 @@ const fillClassic = (w, mode) => {
 
 // 34F.15: FC 27 é a única base para novas carreiras; saves legados continuam abrindo.
 function makeWithLegacySlot() {
-  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, url: "https://offline-test.invalid" }), w = dom.window;
+  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, beforeParse(w) { w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }); }, url: "https://offline-test.invalid" }), w = dom.window;
   w.confirm = () => true; w.scrollTo = () => {}; w.URL.createObjectURL = () => "blob:t"; w.URL.revokeObjectURL = () => {};
   for (const f of order.slice(0, -1)) w.eval(fs.readFileSync(base + f, "utf8"));
   const id = w.ProLifeSave.saveAsNew(w.ProLife.create({ mode: "player", age: 16 }, 44));
@@ -32,7 +34,7 @@ function makeWithLegacySlot() {
   w.eval(fs.readFileSync(base + order[order.length - 1], "utf8"));
   return { w, id };
 }
-const submit = (w) => q(w, "#creator").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+const submit = (w) => (q(w, "#coach-creation-form") || q(w, "#creator")).dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
 const slotText = (w, id) => w.localStorage.getItem("prolife.v1.slot." + id);
 
 test("34F.15 (1) criação sem opção Clássica: assistente e formulário só oferecem FC 27", () => {

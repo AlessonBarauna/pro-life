@@ -3,7 +3,7 @@
 const test = require("node:test"), assert = require("node:assert/strict"), fs = require("fs"), path = require("path"), { JSDOM } = require("jsdom");
 const base = path.join(__dirname, "..") + path.sep;
 const html = fs.readFileSync(base + "index.html", "utf8");
-const order = html.match(/src="(src\/[^"]+\.js)"/g).map((x) => x.slice(5, -1)).filter((f) => !/update\.js|avatar/.test(f));
+const order = html.match(/src="(src\/[^"?]+\.js)(?:\?[^"]*)?"/g).map((x) => x.slice(5, -1).split("?")[0].replace(/"$/, "")).filter((f) => !/update\.js|avatar/.test(f));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const q = (w, s) => w.document.querySelector(s);
 const click = (w, s) => { const el = q(w, s); assert.ok(el, s); el.click(); };
@@ -17,7 +17,7 @@ class FakeBackend {
 // "Navegador": localStorage persistente (Map) + IndexedDB falso, reaproveitados por varias janelas (recarregamentos).
 function browser() { return { backend: new FakeBackend(), ls: new Map() }; }
 function openPage(br, { lsQuota } = {}) {
-  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, url: "https://offline-test.invalid" }), w = dom.window;
+  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, beforeParse(w) { w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }); }, url: "https://offline-test.invalid" }), w = dom.window;
   w.confirm = () => true; w.scrollTo = () => {};
   w.matchMedia = w.matchMedia || (() => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} })); w.URL.createObjectURL = () => "blob:t"; w.URL.revokeObjectURL = () => {};
   for (const [k, v] of br.ls) w.localStorage.setItem(k, v);
@@ -29,8 +29,9 @@ function openPage(br, { lsQuota } = {}) {
 }
 async function hubReady(w) { for (let i = 0; i < 100 && !q(w, ".career-hub"); i++) await sleep(50); assert.ok(q(w, ".career-hub"), "Central carregada"); }
 async function settle(w) { await sleep(150); for (let i = 0; i < 900 && (q(w, "#wiz-busy")); i++) await sleep(100); }
-const fill = (w, mode) => { const f = q(w, "#creator"); assert.ok(f); f.elements.mode.value = mode; f.elements.age.value = mode === "coach" ? "35" : "16"; f.elements.seed.value = "44"; return f; };
-const submit = (w) => q(w, "#creator").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+const coachForm = (w, f) => { const form = q(w, "#coach-creation-form"); assert.ok(form, "formulário de treinador"); const set = (n, v) => { const el = form.elements[n]; if (el) el.value = v; }; set("name", "Treinador FC27"); set("city", "Santos"); set("age", "35"); set("seed", "44"); set("careerType", "original"); set("coachType", "custom"); return form; };
+const fill = (w, mode) => { if (mode === "coach" && q(w, "#coach-creation-form")) return coachForm(w); const f = q(w, "#creator"); assert.ok(f); f.elements.mode.value = mode; f.elements.age.value = mode === "coach" ? "35" : "16"; f.elements.seed.value = "44"; return f; };
+const submit = (w) => (q(w, "#coach-creation-form") || q(w, "#creator")).dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
 const counts = (s) => [s.globalFootball.leagues.length, s.globalFootball.clubs.length, s.internationalPlayers.length];
 async function createFc27(w, mode) {
   click(w, mode === "coach" ? '[data-action="new-coach"]' : '[data-action="new-player"]');
@@ -139,7 +140,7 @@ test("34F.16 (4) renomear e excluir carreiras do IndexedDB; sem IndexedDB manté
   assert.equal(br.backend.rows.has(b), false); assert.equal(S.listSlots().length, 1);
   assert.equal(S.loadSlot(b), null);
   // sem backend: saveAsNewAsync cai no caminho sincrono anterior
-  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, url: "https://offline-test.invalid" });
+  const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, beforeParse(w) { w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }); }, url: "https://offline-test.invalid" });
   for (const f of order.slice(0, -1)) dom.window.eval(fs.readFileSync(base + f, "utf8"));
   assert.equal(dom.window.ProLifeSave.ready(), null); assert.equal(dom.window.ProLifeSave.storageMode(), "localStorage");
 });
@@ -171,7 +172,7 @@ function fakeIndexedDB() {
 test("34F.16 (5) backend IndexedDB real: abre, grava, lista, apaga e reidrata após recarregar", async () => {
   const idb = fakeIndexedDB();
   const load = () => {
-    const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, url: "https://offline-test.invalid" }), w = dom.window;
+    const dom = new JSDOM(html, { runScripts: "outside-only", pretendToBeVisual: true, beforeParse(w) { w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }); }, url: "https://offline-test.invalid" }), w = dom.window;
     w.indexedDB = idb;
     for (const f of order.slice(0, -1)) w.eval(fs.readFileSync(base + f, "utf8"));
     return w;

@@ -67,7 +67,12 @@ function get(w) {
 }
 
 const q = (w, s) => w.document.querySelector(s), qa = (w, s) => [...w.document.querySelectorAll(s)];
-function toLeague(w) { const g = q(w, '.game-nav [data-page="league"]'); assert.ok(g); g.click(); }
+// Navegação atual (SM27): Competições fica na gaveta; "Campeonatos" é a sub-aba (data-page="league") dentro dela.
+function toLeague(w) {
+  let g = q(w, '.game-nav [data-page="league"]') || q(w, 'main [data-page="league"]');
+  if (!g) { const d = q(w, '.sm27-drawer-item[data-page="competitions"]') || q(w, '[data-page="competitions"]'); assert.ok(d, "atalho de Competições"); d.click(); g = q(w, 'main [data-page="league"]') || q(w, '[data-page="league"]'); }
+  assert.ok(g); g.click();
+}
 function toPage(w, p) { click(w, `[data-page="${p}"]`); }
 const MINE = (w) => get(w).clubId;
 

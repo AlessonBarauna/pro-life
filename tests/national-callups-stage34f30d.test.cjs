@@ -9,7 +9,10 @@ const NC = require("../src/domain/national-callups.js"); global.ProLifeNationalC
 const CV = require("../src/ui/national-callup-view.js");
 const make = (nat = "Espanha", attr = 82, pos = "ATA", seed = 11) => {
   const s = D.create({ mode: "player", clubId: "c0", catalogVersion: "fc27_v1" }, seed);
-  s.person.nationality = nat; s.person.pos = pos; for (const k of Object.keys(s.person.attrs)) s.person.attrs[k] = attr; return s;
+  s.person.nationality = nat; s.person.pos = pos; for (const k of Object.keys(s.person.attrs)) s.person.attrs[k] = attr;
+  // Regra do jogo (f05d55e): só é convocado quem já estreou como profissional; o cenário parte de um atleta com jogos oficiais pelo clube.
+  s.statistics = s.statistics || {}; s.statistics.players = s.statistics.players || {};
+  s.statistics.players.hero = Object.assign({}, s.statistics.players.hero, { appearances: 12 }); return s;
 };
 const recs = (s) => s.nationalCallups ? s.nationalCallups.order.map((i) => s.nationalCallups.records[i]) : [];
 // Um dia do motor custa ~2 s: os testes avancam o gancho diario direto (tick) e usam o motor so em poucos dias.
