@@ -1321,7 +1321,7 @@
           if(plannedActions.some(a=>a?.type==="substitution"&&Number(a.side)===side))continue;
           const diff=side===0?m.hg-m.ag:m.ag-m.hg;
           if(diff<0)continue;
-          const rankMap=new Map((context.coachCareer.benchOrder||[]).map((id,i)=>[String(id),i]));
+          const rankMap=new Map((context.coachCareer?.benchOrder||[]).map((id,i)=>[String(id),i]));
           const bench=(club.roster||[]).filter(p=>p&&!ps.includes(p)&&p.id!=="hero"&&!p.injury&&!(Number(p.suspension)>0)&&
             !p._competitionSuspended&&Number(p.condition??100)>35)
             .sort((a,b)=>(rankMap.get(String(a.id))??99999)-(rankMap.get(String(b.id))??99999)).slice(0,7);
