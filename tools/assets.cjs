@@ -133,6 +133,7 @@ const files = [
   "src/ui/fc27-investments.css",
   "src/ui/fc27-sm27-squad.css",
   "src/ui/fc27-modern.css",
+  "src/ui/fc27-standard.css",
   "src/assets/fonts/manrope-latin-400-normal.woff2",
   "src/assets/fonts/manrope-latin-500-normal.woff2",
   "src/assets/fonts/manrope-latin-700-normal.woff2",
