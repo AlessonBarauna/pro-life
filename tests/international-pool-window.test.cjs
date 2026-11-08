@@ -14,7 +14,14 @@ function p(id,pos,ovr){
   };
 }
 
+// O pool internacional agora distribui atletas pelos clubes do catálogo; o cenário libera todos como agentes livres.
 function state(){
+  const s=rawState();
+  Pool.init(s);
+  for(const p of s.internationalPlayers){p.clubId=null;p.marketStatus="free_agent";}
+  return s;
+}
+function rawState(){
   return {
     day:20,
     season:2026,

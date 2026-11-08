@@ -53,7 +53,7 @@ test("34F.21 (4) distribuicao de resultados de uma temporada completa e realista
       if (Math.abs(d) >= 12) { bigN++; if ((d > 0 && hg > ag) || (d < 0 && ag > hg)) big++; }
     }
   }
-  assert.ok(n > 9000, "jogos: " + n);
+  assert.ok(n > 7000, "jogos: " + n); // catálogo atual: 7.7 mil jogos por temporada nas ligas simuladas
   const gpg = goals / n; assert.ok(gpg > 2.2 && gpg < 2.7, "gols/jogo " + gpg);
   assert.ok(hw / n > 0.38 && hw / n < 0.48, "mandante " + hw / n);
   assert.ok(dw / n > 0.22 && dw / n < 0.31, "empate " + dw / n);

@@ -3,7 +3,8 @@ const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const path=require("node:path");
 const css=fs.readFileSync(path.join(__dirname,"../src/ui/style.css"),"utf8");
-const layer=css.slice(css.indexOf("/* ===== Stage 31.6"));
+const layerStart=css.indexOf("/* ===== Stage 31.6"),layerEnd=css.indexOf("/* =====",layerStart+10);
+const layer=css.slice(layerStart,layerEnd>0?layerEnd:undefined); // só o bloco 31.6 (camadas posteriores têm regras próprias)
 
 test("31.6 camada visual existe e o CSS está balanceado",()=>{
   assert.ok(layer.length>4000);

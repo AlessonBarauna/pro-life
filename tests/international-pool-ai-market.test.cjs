@@ -14,7 +14,14 @@ function player(id,pos,ovr){
   };
 }
 
+// O pool internacional agora distribui atletas pelos clubes do catálogo; o cenário libera todos como agentes livres.
 function state(){
+  const s=rawState();
+  Pool.init(s);
+  for(const p of s.internationalPlayers){p.clubId=null;p.marketStatus="free_agent";}
+  return s;
+}
+function rawState(){
   return {
     clubs:[
       {
@@ -90,6 +97,7 @@ test("AI prefers a player that addresses squad need",()=>{
 test("best opportunity signs only one player",()=>{
   const s=state();
 
+  const poolIds=new Set(s.internationalPlayers.map(p=>p.id));
   const before=Pool.freeAgents(s).length;
   const deal=Pool.executeBestSigning(s);
 
@@ -101,7 +109,7 @@ test("best opportunity signs only one player",()=>{
 
   const signedCount=s.clubs
     .flatMap(c=>c.roster||[])
-    .filter(p=>String(p.id).startsWith("intl_"))
+    .filter(p=>poolIds.has(p.id))
     .length;
 
   assert.equal(signedCount,1);

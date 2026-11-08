@@ -13,6 +13,9 @@ function state(mode="player",seed=31320){
   s.day=120;
   s.matches=[];
   D.NationalTeam.init(s).matches=[];
+  // Regra atual: sem nenhuma partida do protagonista não há "últimas atuações"; o cenário parte de um atleta que já jogou.
+  s.statistics=s.statistics||{};s.statistics.players=s.statistics.players||{};
+  s.statistics.players.hero=Object.assign({},s.statistics.players.hero,{appearances:10});
   return s;
 }
 
@@ -51,7 +54,7 @@ test("Stage 31.3.2 preserva estatísticas internacionais para os detalhes clicá
   assert.equal(row.national,true);
   assert.equal(row.home,"Brasil");
   assert.equal(row.competition,"Eliminatórias");
-  assert.deepEqual(row.hero,{played:true,starter:false,entryMinute:64,minutes:26,goals:1,assists:1,rating:8.4});
+  assert.deepEqual(row.hero,{played:true,bench:false,starter:false,entryMinute:64,minutes:26,goals:1,assists:1,rating:8.4});
   assert.equal(row.goals,null);
   assert.equal(row.motm,null);
 });

@@ -59,9 +59,10 @@ test("34F.32B.4E.3 - processa a primeira janela", () => {
 test("34F.32B.4E.3 - nao duplica resultados", () => {
   const { s, ed } = setup();
   const matches = ed.leagueSchedule.matches;
-  const first = Math.min(...matches.map(m => m.day));
+  // A 1ª rodada se espalha por 3 dias; avança até o último dia dela e confere que um dia sem jogos não altera nada.
+  const last = Math.max(...matches.filter(m => m.round === 1).map(m => m.day));
 
-  advanceUntil(s, first);
+  advanceUntil(s, last);
 
   const snapshot = JSON.stringify(matches);
   const played = matches.filter(m => m.played).length;

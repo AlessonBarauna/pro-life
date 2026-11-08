@@ -3,8 +3,12 @@ const assert=require("node:assert/strict");
 
 const Pool=require("../src/domain/international-pool.js");
 
+// O pool internacional agora distribui atletas pelos clubes do catálogo; o cenário libera todos como agentes livres.
 function state(){
-  return {};
+  const s={};
+  Pool.init(s);
+  for(const p of s.internationalPlayers){p.clubId=null;p.marketStatus="free_agent";}
+  return s;
 }
 
 test("international market exposes value and salary",()=>{

@@ -107,7 +107,8 @@ test("31.4.6 F: finanças e pagamentos no ciclo mensal",()=>{
   run(s,60);run(b,60);
   assert.ok(s.wallet>0&&b.wallet>0);
   const w0=career(MAD).wallet;assert.ok(s.wallet>w0,"salário creditado no ciclo mensal");
-  assert.notEqual(D.club(s).budget,bud0,"orçamento do clube movimentado pelo ciclo mensal");
+  // O fechamento mensal agora lança receitas/folha no extrato (ClubFinance) em vez de mexer direto em club.budget.
+  assert.ok((s.news||[]).some(l=>/Fechamento financeiro/.test(JSON.stringify(l))),"fechamento financeiro mensal registrado");
   assert.equal(s.salary,90000);
   const moneyLogs=(x)=>(x.news||[]).filter(l=>/financeiro/i.test(JSON.stringify(l))).length;
   assert.equal(moneyLogs(s)>0,moneyLogs(b)>0);

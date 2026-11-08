@@ -13,6 +13,8 @@ function build(kind){
   s.person.attrs=Object.fromEntries(Object.keys(s.person.attrs).map(k=>[k,99]));
   s.reputation=99;
   const n=D.NationalTeam.init(s);n.calledUp=true;n.status="Titular";n.matches=[];
+  // Regra atual: o histórico recente só existe para quem já atuou; o cenário parte de um atleta com jogos oficiais.
+  s.statistics=s.statistics||{};s.statistics.players=s.statistics.players||{};s.statistics.players.hero=Object.assign({},s.statistics.players.hero,{appearances:10});
   if(kind==="wc"){s.day=156;D.NationalTeam.ensureWorldCupOfficialSquads(s,n,D,()=>{});n.calledUp=true;n.status="Titular";}
   return s;
 }

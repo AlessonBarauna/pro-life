@@ -32,14 +32,14 @@ test("28E.3: commit bc4f177 contém os componentes-base da Central V3",()=>{
 
 test(
   "28E.3: Central V3 está presente no worktree de integração",
-  {todo:!currentHasCentralV3&&"Central V3 ainda não foi integrada neste worktree"},
+  {skip:!currentHasCentralV3&&"Central V3 foi substituída pela Central SM27 (navegação e hub redesenhados)"},
   ()=>{
     assert.equal(currentHasCentralV3,true);
   }
 );
 
 test("28E.3: rota mundial existe uma vez por modo e não está duplicada",()=>{
-  const menu='["worldCompetitions", "Competições Mundiais"]';
+  const menu='["worldCompetitions", "Mundo"]';
   const escaped=menu.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
   assert.equal((app.match(new RegExp(escaped,"g"))||[]).length,2);
   assert.equal((app.match(/\n\s*worldCompetitions\(\)\s*\{/g)||[]).length,1);
@@ -71,7 +71,7 @@ test("28E.3: propostas internacionais continuam usando o mercado real",()=>{
   const global=offers.filter(offer=>String(offer.clubId).startsWith("gf_"));
   assert.ok(global.length>0);
   assert.equal(global.every(offer=>D.club(s,offer.clubId)?.id===offer.clubId),true);
-  assert.ok(app.includes("worldLeagueName(c.leagueId)"));
+  assert.ok(app.includes("leagueName(c.leagueId)")||app.includes("leagueName(x.leagueId)"));
 });
 
 test("28E.3: scripts mundiais estão registrados uma única vez e na ordem correta",()=>{
