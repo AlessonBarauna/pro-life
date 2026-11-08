@@ -9,7 +9,7 @@ test("M04.4 scenario is opt-in, coach-only and requires chosen club",()=>{
  assert.match(engine,/s\.coachInitialFinance=/);
 });
 test("M04.4 UI includes original budget fallback and loads economy module",()=>{
- const ui=read("src/ui/app.js"),html=read("index.html");
+ const ui=read("src/ui/app.js"),html=read("index.html").replace(/\.(js|css)\?v=[^"]*"/g,".$1\"");
  for(const id of ["legacy","conservative","standard","ambitious"])assert.ok(ui.includes('<option value="'+id+'"'));
  assert.ok(html.indexOf('src/domain/club-economy.js')>=0);
  assert.ok(html.indexOf('src/domain/club-economy.js')<html.indexOf('src/domain/engine.js'));

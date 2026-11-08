@@ -146,6 +146,7 @@ test("Coach negotiation centre renders five real finance sections from persisted
  ];
  for(const [tab,...markers] of expected){
    V.setDealTab(tab);
+   if(tab==="financeiro")V.setFinSub("dividas"); // obrigações de parcelas ficam na sub-tela de dívidas
    const html=V.render(state,D);
    assert.ok(html.includes('data-coach-deal-tab="'+tab+'"'),tab);
    assert.ok(html.includes('aria-label="Telas independentes de transferências"'));
@@ -187,11 +188,11 @@ test("Individual negotiation desk opens and closes without changing save state",
 test("Multiround negotiations persist and close after three rounds without spending budget",()=>{
  const appSource=fs.readFileSync(path.join(__dirname,"../src/application/game.js"),"utf8");
  const root={};root.globalThis=root;
- root.ProLife={club:(s,id=s.clubId)=>s.clubs.find(c=>c.id===id),overall:p=>p.overall,Career:{windowStatus:()=>({open:true}),transfer:()=>{}}};
+ root.ProLifeTransferMarketRules=require("../src/domain/transfer-market-rules.js");root.ProLife={club:(s,id=s.clubId)=>s.clubs.find(c=>c.id===id),overall:p=>p.overall,Career:{windowStatus:()=>({open:true}),transfer:()=>{}}};
  vm.runInNewContext(appSource,root,{filename:"game.js"});
  const p={id:"p",name:"Atleta",age:23,overall:70,pos:"ATA"};
  const source={id:"a",name:"Origem",roster:[p,...Array.from({length:18},(_,i)=>({id:"r"+i}))],budget:100000,structure:90,lineup:["p"]};
- const buyer={id:"b",name:"Destino",roster:[],budget:20000000,structure:90,lineup:[]};
+ const buyer={id:"b",name:"Destino",roster:[],budget:200000000,structure:90,lineup:[]};
  let state={mode:"coach",clubId:"b",day:1,season:2026,news:[],clubs:[source,buyer],coachCareer:{settings:{marketStrictness:"normal",installments:"on"}}};
  const original=buyer.budget;
  root.ProLifeApp.execute(state,"counterRecruit",{clubId:"a",playerId:"p",offer:20000});
@@ -203,7 +204,7 @@ test("Multiround negotiations persist and close after three rounds without spend
  assert.equal(state.coachCareer.negotiations[0].history.length,2);
  state=JSON.parse(JSON.stringify(state));
  settleTransferReply(state);
- root.ProLifeApp.execute(state,"reviseCoachDeal",{id,offer:10000000});
+ root.ProLifeApp.execute(state,"reviseCoachDeal",{id,offer:70000000});
  assert.equal(state.coachCareer.negotiations[0].round,3);
  settleTransferReply(state);
  assert.throws(()=>root.ProLifeApp.execute(state,"reviseCoachDeal",{id,offer:50000}),/três rodadas/);

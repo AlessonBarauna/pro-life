@@ -21,12 +21,18 @@ function fixture(){
  return {V:root.ProLifeCoachCareerView,state,D};
 }
 
+function filtersHtml(V,state,D,tab){ // filtros ficam na tela "busca"; resultados em outra tela
+ const keepTab=V.state.scoutFilterTab,keepScreen=V.state.scoutScreen;
+ if(tab)V.setScoutFilterTab(tab);V.setScoutScreen("busca");
+ const html=V.renderMarket(state,D);
+ V.setScoutScreen(keepScreen);V.setScoutFilterTab(keepTab);return html;
+}
 test("club region participates in scouting search and remains selected",()=>{
  const {V,state,D}=fixture();
  V.setScoutFilters("","all",{region:"Europa"});
  let html=V.renderMarket(state,D);
  assert.match(html,/Atleta Europa/);assert.doesNotMatch(html,/Atleta Brasil|Atleta Argentina|Atleta América Norte|Atleta Ásia/);
- assert.match(html,/<option value="Europa" selected>Europa<\/option>/);
+ assert.match(filtersHtml(V,state,D),/<option value="Europa" selected>Europa<\/option>/);
  V.setScoutFilters("","all",{region:"América do Sul"});
  html=V.renderMarket(state,D);
  assert.match(html,/Atleta Brasil/);assert.match(html,/Atleta Argentina/);assert.doesNotMatch(html,/Atleta Europa|Atleta América Norte/);
@@ -40,7 +46,7 @@ test("invalid club region safely returns to all regions",()=>{
  V.setScoutFilters("","all",{region:"região-inexistente"});
  const html=V.renderMarket(state,D);
  for(const name of ["Atleta Brasil","Atleta Argentina","Atleta Europa","Atleta América Norte","Atleta Ásia"])assert.match(html,new RegExp(name));
- assert.match(html,/<option value="all" selected>Todas as regiões<\/option>/);
+ assert.match(filtersHtml(V,state,D),/<option value="all" selected>Todas as regiões<\/option>/);
 });
 
 test("search action forwards the selected club region to the view",()=>{
@@ -55,7 +61,7 @@ test("GER and age ranges filter real player values and persist in the form",()=>
  V.setScoutFilters("","all",{overallMin:"80",overallMax:"90"});
  let html=V.renderMarket(state,D);
  assert.match(html,/Atleta Argentina/);assert.match(html,/Atleta Europa/);assert.doesNotMatch(html,/Atleta Brasil|Atleta América Norte|Atleta Ásia/);
- assert.match(html,/<option value="80" selected>80<\/option>/);assert.match(html,/<option value="90" selected>90<\/option>/);
+ {const f=filtersHtml(V,state,D,"avancada");assert.match(f,/<option value="80" selected>80<\/option>/);assert.match(f,/<option value="90" selected>90<\/option>/);}
  V.setScoutFilters("","all",{overallMin:"85",ageMin:"20",ageMax:"23"});
  html=V.renderMarket(state,D);
  assert.match(html,/Atleta Europa/);assert.doesNotMatch(html,/Atleta Argentina|Atleta Brasil|Atleta América Norte|Atleta Ásia/);
@@ -86,8 +92,7 @@ test("results sort by GER or age in both directions before pagination",()=>{
  V.setScoutFilters("","all",{sort:"age",sortDirection:"desc"});
  html=V.renderMarket(state,D);
  assert.ok(html.indexOf("Atleta América Norte")<html.indexOf("Atleta Brasil"));
- assert.match(html,/<option value="age" selected>Idade<\/option>/);
- assert.match(html,/<option value="desc" selected>Maior para menor<\/option>/);
+ {const f=filtersHtml(V,state,D,"avancada");assert.match(f,/<option value="age" selected>Idade<\/option>/);assert.match(f,/<option value="desc" selected>Maior para menor<\/option>/);}
 });
 
 test("potential can be filtered, displayed and sorted in both directions",()=>{
@@ -97,7 +102,7 @@ test("potential can be filtered, displayed and sorted in both directions",()=>{
  assert.match(html,/Atleta Europa/);assert.match(html,/Atleta Brasil/);assert.match(html,/Atleta Ásia/);assert.doesNotMatch(html,/Atleta Argentina|Atleta América Norte/);
  assert.ok(html.indexOf("Atleta Europa")<html.indexOf("Atleta Brasil"));
  assert.ok(html.indexOf("Atleta Brasil")<html.indexOf("Atleta Ásia"));
- assert.match(html,/POT 95/);assert.match(html,/<option value="potential" selected>Potencial<\/option>/);
+ assert.match(html,/POT 95/);assert.match(filtersHtml(V,state,D,"avancada"),/<option value="potential" selected>Potencial<\/option>/);
  V.setScoutFilters("","all",{potentialMin:"88",sort:"potential",sortDirection:"asc"});
  html=V.renderMarket(state,D);
  assert.ok(html.indexOf("Atleta Ásia")<html.indexOf("Atleta Brasil"));

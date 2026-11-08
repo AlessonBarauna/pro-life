@@ -13,7 +13,7 @@ const mobileMenuCss = read("src/ui/fc27-mobile-menu.css");
 const pwa = read("src/ui/pwa.js");
 const mobileViewport = read("src/ui/mobile-game-viewport.js");
 const manifest = read("manifest.webmanifest");
-const html = read("index.html");
+const html = read("index.html").replace(/\.(js|css)\?v=[^"]*"/g,".$1\"");
 const assets = read("tools/assets.cjs");
 
 test("shell desktop: folha de estilo entra na pagina e no pacote offline", () => {

@@ -2,7 +2,7 @@
 const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const root=path.join(__dirname,"..");
 const read=p=>fs.readFileSync(path.join(root,p),"utf8");
-const app=read("src/ui/app.js"),view=read("src/ui/coach-career-view.js"),game=read("src/application/game.js"),index=read("index.html");
+const app=read("src/ui/app.js"),view=read("src/ui/coach-career-view.js"),game=read("src/application/game.js"),index=read("index.html").replace(/\.(js|css)\?v=[^"]*"/g,".$1\"");
 test("M06 market navigation routes are handled in the app",()=>{
  for(const route of ["data-coach-market-area","data-coach-scout-screen","data-coach-deal-tab","data-coach-signing-open","data-coach-signing-close","data-coach-signing-squad","data-coach-deal-open","data-coach-deal-close"]) {
   assert.ok(view.includes(route),"Missing UI route "+route);

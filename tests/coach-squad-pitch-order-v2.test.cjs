@@ -5,17 +5,17 @@ const css=fs.readFileSync(path.join(__dirname,"../src/ui/fc27-05b-squad.css"),"u
 test("coach pitch preserves explicit position order between renders",()=>{
  assert.match(app,/const saved=state\.coachCareer\?\.pitchSlots/);
  assert.match(app,/const valid=state\.coachCareer\?\.pitchFormation===formation&&Array\.isArray\(saved\)/);
- assert.match(app,/row\.players=saved\.slice\(cursor,cursor\+count\)\.map/);
- assert.match(app,/state\.coachCareer\.pitchSlots=nextPitch/);
+ assert.match(app.replace(/\s+/g,""),/row\.players=saved\.slice\(cursor,cursor\+count\)\.map/);
+ assert.match(app.replace(/\s+/g,""),/state\.coachCareer\.pitchSlots=nextPitch/);
 });
 test("coach swapping keeps original squad transfer logic and validates XI",()=>{
- assert.match(app,/if\(fi>=0&&ti>=0\)/);
- assert.match(app,/if\(chosen\.length!==11\|\|!hasGoalkeeper\(\)\)/);
- assert.match(app,/A\.execute\(state,"lineup",\{ids:chosen\}\)/);
+ assert.match(app.replace(/\s+/g,""),/if\(fi>=0&&ti>=0\)/);
+ assert.match(app.replace(/\s+/g,""),/if\(chosen\.length!==11\|\|!hasGoalkeeper\(\)\)/);
+ assert.match(app.replace(/\s+/g,""),/A\.execute\(state,"lineup",\{ids:chosen\}\)/);
 });
-test("selection supports pointer swap and visibly identifies source",()=>{
- assert.match(app,/squadSwapSource===id\?null:id/);
- assert.match(app,/swap-source/);
+test("selection supports drag swap and visibly identifies source",()=>{
+ assert.match(app.replace(/\s+/g,""),/squadSwapSource=tile\.dataset\.squadPlayer/);
+ assert.match(app.replace(/\s+/g,""),/swap-source/);
  assert.match(css,/\.pl-squad-player\.swap-source/);
 });
 
@@ -36,8 +36,8 @@ test("render regression: slot restore must not depend on exhausted remaining pla
 });
 
 test("E01 resets pitch slots when formation changes and avoids automatic reassignment",()=>{
- assert.match(app,/pitchFormation===formation&&Array\.isArray\(saved\)/);
- assert.match(app,/state\.coachCareer\.pitchFormation=formation/);
- assert.match(app,/state\.coachCareer\.pitchFormation=club\.formation/);
- assert.match(app,/assignedPositions:null/);
+ assert.match(app.replace(/\s+/g,""),/pitchFormation===formation&&Array\.isArray\(saved\)/);
+ assert.match(app.replace(/\s+/g,""),/state\.coachCareer\.pitchFormation=formation/);
+ assert.match(app.replace(/\s+/g,""),/state\.coachCareer\.pitchFormation=club\.formation/);
+ assert.match(app.replace(/\s+/g,""),/assignedPositions:null/);
 });

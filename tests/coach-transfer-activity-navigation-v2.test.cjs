@@ -7,7 +7,7 @@ const source = fs.readFileSync(path.join(__dirname, "../src/ui/coach-career-view
 const view = require("../src/ui/coach-career-view.js");
 
 test("market activities open the selected purchase negotiation, not just a generic tab", () => {
-  assert.match(source, /t\.kind==="sale"\?'data-coach-deal-tab="recebidas"':'data-coach-deal-open="'\+esc\(t\.id\)/);
+  assert.match(source.replace(/\s+/g,""),/t\.kind==="sale"\?'data-coach-deal-tab="recebidas"':t\.kind==="inquiry"\?'data-coach-list-screen="sondagens"':'data-coach-deal-open="'\+esc\(t\.id\)/);
   view.openDeal("neg-42");
   assert.equal(view.state.selectedDeal, "neg-42");
   assert.equal(view.state.dealTab, "propostas");
@@ -16,7 +16,7 @@ test("market activities open the selected purchase negotiation, not just a gener
 });
 
 test("incoming sale activity preserves the received offers route", () => {
-  assert.match(source, /data-coach-deal-tab="recebidas"/);
+  assert.match(source.replace(/\s+/g,""),/data-coach-deal-tab="recebidas"/);
   view.setDealTab("recebidas");
   assert.equal(view.state.dealTab, "recebidas");
 });

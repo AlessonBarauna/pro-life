@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 test("05A loads the centralized design system after the approved 04J layers", () => {
-  const html = read("index.html");
+  const html = read("index.html").replace(/\.(js|css)\?v=[^"]*"/g,".$1\"");
   const approved = html.indexOf("fc27-04j-approved.css");
   const cinematic = html.indexOf("fc27-cinematic.css");
   const system = html.indexOf("fc27-05a-design-system.css");

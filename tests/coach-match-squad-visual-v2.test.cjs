@@ -18,7 +18,7 @@ test("named substitutions reject duplicates, invalid players and exhausted slots
 });
 test("new animated match pitch and named substitution controls are shipped",()=>{
  const read=p=>fs.readFileSync(path.join(__dirname,"..",p),"utf8");
- const html=read("index.html"),assets=read("tools/assets.cjs"),live=read("src/ui/live-match.js");
+ const html=read("index.html").replace(/\.(js|css)\?v=[^"]*"/g,".$1\""),assets=read("tools/assets.cjs"),live=read("src/ui/live-match.js");
  assert.match(html,/match-pitch-v2\.js/);assert.match(assets,/match-pitch-v2\.js/);
  assert.match(live,/data-live-lab-swap/);assert.match(live,/coachPitch\(min,home,away\)/);
 });

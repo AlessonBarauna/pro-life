@@ -9,7 +9,7 @@ const View=require("../src/ui/world-live-market-view.js");
 const root=path.resolve(__dirname,"..");
 const read=(file)=>fs.readFileSync(path.join(root,file),"utf8");
 const app=read("src/ui/app.js");
-const index=read("index.html");
+const index=read("index.html").replace(/\.(js|css)\?v=[^"]*"/g,".$1\"");
 const assets=read("tools/assets.cjs");
 const script="src/ui/world-live-market-view.js";
 

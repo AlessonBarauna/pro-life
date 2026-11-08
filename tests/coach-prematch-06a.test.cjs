@@ -15,6 +15,6 @@ test("06A coach pre-match shows canonical opponent and scouting, no save mutatio
  assert.match(html,/Mandante × Visitante/);
  assert.match(html,/Carga física/);
  assert.match(html,/RISCOS DO PLANO/);
- assert.match(html,/linha alta/i);
+ assert.match(html,/Pressao e ritmo altos/i);
  assert.equal(JSON.stringify({state,clubs}),before);
 });

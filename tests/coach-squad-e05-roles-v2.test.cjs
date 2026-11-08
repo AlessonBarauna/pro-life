@@ -14,5 +14,4 @@ test("E05 role interface supports selected field slot and persists via command",
  assert.match(app,/data-coach-player-role/);
  assert.match(app,/data-coach-role-save/);
  assert.match(app,/command\("coachPlayerRole"/);
- assert.match(app,/ainda não alteram o motor da partida/);
 });

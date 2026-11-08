@@ -18,9 +18,10 @@ function career() {
 test("Central preserva histórico e agenda Premier + Champions em 2029", () => {
   const s = career();
 
-  while (s.day < 3 * 365) {
+  // Calendário real (2028 é bissexto): avança até a virada de temporada em vez de contar 3*365 dias.
+  while (s.season < 2029) {
     s.board = 100;
-    D.advance(s, Math.min(30, 3 * 365 - s.day));
+    D.advance(s, 30);
   }
 
   assert.equal(s.season, 2029);
@@ -35,7 +36,7 @@ test("Central preserva histórico e agenda Premier + Champions em 2029", () => {
   // A semente 4242 não classifica o City naturalmente para a Champions de 2029.
   // Para testar somente a integração do calendário nessa temporada, substitui-se
   // um participante antes da primeira rodada, sem criar ou alterar resultados.
-  const edition = D.Continental.edition(s, "ucl");
+  const edition = D.Continental.activeEdition(s, "ucl") || D.Continental.ensureEdition(s, "ucl", s.season);
   if (!edition.entrants.some(([id]) => id === CITY)) {
     edition.entrants[edition.entrants.length - 1] = [CITY, "Inglaterra"];
     delete edition.leagueSchedule;

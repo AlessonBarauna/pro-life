@@ -20,7 +20,7 @@ test("E04 selection is available in the coach pitch and resets stale undo",()=>{
 test("E04 positional fit prefers compatible athletes and reports forced improvisation",()=>{
  assert.match(app,/const fit=\(role,p\)=>/);
  assert.match(app,/Array\.isArray\(p\.secondaryPositions\)/);
- assert.match(app,/if\(role==="GOL"\|\|all\.includes\("GOL"\)\)return 0/);
+ assert.match(app,/ProLifePlayerPositions/);assert.match(app,/kind==='OUT_OF_POSITION'\)return 0/);
  assert.match(app,/const pitchFitWarnings=coach\?/);
  assert.match(app,/pl-squad-fit-note/);
  assert.match(app,/pitchSlots=rows\.flatMap/);

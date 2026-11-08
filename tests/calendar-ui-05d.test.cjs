@@ -7,7 +7,7 @@ const root = path.join(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 test("05D: folha visual do calendário participa da aplicação e do build", () => {
-  const index = read("index.html");
+  const index = read("index.html").replace(/\.(js|css)\?v=[^"]*"/g,".$1\"");
   const assets = read("tools/assets.cjs");
   assert.match(index, /fc27-05d-calendar\.css/);
   assert.match(assets, /fc27-05d-calendar\.css/);

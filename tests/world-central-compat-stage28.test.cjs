@@ -10,7 +10,7 @@ const D=require("../src/domain/engine.js");
 const base=path.resolve(__dirname,"..");
 const read=file=>fs.readFileSync(path.join(base,file),"utf8");
 const app=read("src/ui/app.js");
-const html=read("index.html");
+const html=read("index.html").replace(/\.(js|css)\?v=[^"]*"/g,".$1\"");
 const assets=read("tools/assets.cjs");
 const centralMarkers=[
   "career-central-v3",

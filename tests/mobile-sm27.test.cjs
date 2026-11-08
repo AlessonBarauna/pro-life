@@ -3,7 +3,7 @@ const fs=require("fs"),path=require("path");
 const read=f=>fs.readFileSync(path.join(__dirname,"..",f),"utf8");
 const M=require("../src/ui/mobile-sm27.js");
 test("arquivos do layout de celular estão registrados",()=>{
-  const html=read("index.html"),assets=read("tools/assets.cjs");
+  const html=read("index.html").replace(/\.(js|css)\?v=[^"]*"/g,".$1\""),assets=read("tools/assets.cjs");
   for(const f of ["src/ui/fc27-mobile-sm27.css","src/ui/mobile-sm27.js"]){assert.ok(html.includes(f),f+" no index.html");assert.ok(assets.includes(f),f+" em assets.cjs");}
   assert.ok(html.indexOf("mobile-sm27.js")<html.indexOf("src/ui/app.js"),"módulo carrega antes do app");
 });

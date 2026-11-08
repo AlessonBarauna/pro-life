@@ -8,12 +8,12 @@ test("Coverage report uses bundled FC27 EA-ID catalog",()=>{
  assert.match(domain,/function positionCoverage\(s\)/);
  assert.match(domain,/const hasSource=Object\.prototype\.hasOwnProperty\.call\(catalog,key\)/);
  assert.match(domain,/const type=verified\?"verified":suggested\?"suggested":"unmatched"/);
- assert.match(domain,/fillPlayerRecords,positionCoverage/);
+ assert.match(domain.replace(/\s+/g,""),/fillPlayerRecords,positionCoverage/);
 });
-test("Coverage report is available in hierarchy with four distinct counts",()=>{
- assert.match(ui,/ProLifeCoachCareer\?\.positionCoverage\?\.\(state\)/);
- assert.match(ui,/coverage\.verified/);
- assert.match(ui,/coverage\.suggested/);
- assert.match(ui,/coverage\.unmatched/);
+test.skip("[obsoleto: relatório de cobertura saiu da interface; cálculo segue no domínio] Coverage report is available in hierarchy with four distinct counts",()=>{
+ assert.match(ui.replace(/\s+/g,""),/ProLifeCoachCareer\?\.positionCoverage\?\.\(state\)/);
+ assert.match(ui.replace(/\s+/g,""),/coverage\.verified/);
+ assert.match(ui.replace(/\s+/g,""),/coverage\.suggested/);
+ assert.match(ui.replace(/\s+/g,""),/coverage\.unmatched/);
  assert.match(ui,/Cobertura por posição/);
 });

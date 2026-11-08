@@ -1,7 +1,7 @@
 "use strict";
 const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const root=path.resolve(__dirname,".."),read=p=>fs.readFileSync(path.join(root,p),"utf8");
-const app=read("src/ui/app.js"),css=read("src/ui/fc27-central-v2.css"),html=read("index.html"),assets=read("tools/assets.cjs");
+const app=read("src/ui/app.js"),css=read("src/ui/fc27-central-v2.css"),html=read("index.html").replace(/\.(js|css)\?v=[^"]*"/g,".$1\""),assets=read("tools/assets.cjs");
 test("Central 2.0: CSS isolado e publicado sem grid externo",()=>{
  const styles=[...html.matchAll(/<link[^>]*rel="stylesheet"[^>]*>/g)].map(x=>x[0]);
  assert.ok(!styles.some(x=>x.includes("bootstrap-grid.min.css")));

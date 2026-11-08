@@ -23,7 +23,7 @@ test("Central do jogador e do treinador sao telas diferentes (app.js so troca no
   assert.ok(!/central-v3-header/.test(html(make("player"))),"nao reutiliza a Central do treinador");
 });
 test("Central do jogador: arquivos publicados e CSS antes do Central 2.0",()=>{
-  const index=read("index.html"),assets=read("tools/assets.cjs");
+  const index=read("index.html").replace(/\.(js|css)\?v=[^"]*"/g,".$1\""),assets=read("tools/assets.cjs");
   assert.ok(index.includes("src/ui/player-central-view.js")&&index.includes("src/ui/fc27-player-central.css"));
   assert.match(assets,/"src\/ui\/player-central-view\.js"/);assert.match(assets,/"src\/ui\/fc27-player-central\.css"/);
   const styles=[...index.matchAll(/<link[^>]*rel="stylesheet"[^>]*>/g)].map(x=>x[0]);assert.ok(styles.some(x=>x.includes("fc27-central-v2.css")),"Central 2.0 publicado (camadas SM27 vêm depois)");

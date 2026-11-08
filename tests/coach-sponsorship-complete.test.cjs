@@ -74,7 +74,7 @@ test("painel e popup apontam para a proposta comercial do clube",()=>{
   new vm.Script(view);new vm.Script(app);
   assert.match(view,/function renderSponsorships/);
   assert.match(view,/id="club-sponsor-offer-/);
-  assert.match(view,/Histórico de pagamentos e bônus/);
+  assert.match(view,/Próximos pagamentos/);assert.match(view,/"historico","Histórico"/);
   assert.match(app,/"coach-sponsor":\{page:"clubSponsorships"/);
   assert.doesNotMatch(app,/"coach-sponsor":\{page:"market"/);
   assert.doesNotMatch(app,/Toda receita comercial entra na mesma carteira/);
@@ -87,7 +87,8 @@ test("interface de patrocínios reflete parcelas, datas e histórico persistidos
   const contract=E.acceptSponsorshipOffer(s,s.clubs[0],C.brands,offer.id);
   s.day=contract.startDay+30;
   const [payment]=E.processRevenuePayments(s,s.clubs[0]);
-  const html=V.renderSponsorships(s,{club:()=>s.clubs[0]});
+  // A tela de patrocínios agora é dividida em abas; junta o conteúdo de todas para validar os dados persistidos.
+  const html=["resumo","contratos","pagamentos","historico"].map(tab=>{V.setSponsorTab(tab);return V.renderSponsorships(s,{club:()=>s.clubs[0]});}).join("");
   const next=E.revenueSchedule(s,"sp")[0];
   const date=day=>new Date(Date.UTC(2026,0,1)+day*86400000).toLocaleDateString("pt-BR",{timeZone:"UTC"});
   assert.match(html,new RegExp(contract.brandName));
