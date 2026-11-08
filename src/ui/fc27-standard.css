@@ -45,3 +45,139 @@
 #app .cn .cn-sub button.on{color:#0b1405}
 #app .cn .cn-head{background:var(--std-panel);border-radius:var(--std-r);box-shadow:var(--std-shadow)}
 #app .cn .cn-head h2{font-family:var(--fc-body);font-size:16px}
+
+/* ---------- diálogos e menus (Mercado, Finanças, Objetivos, Academia…) ---------- */
+.sm27-dialog-layer .sm27-dialog{
+  background:var(--std-panel);border:1px solid var(--std-line);border-radius:var(--std-r);box-shadow:0 22px 44px rgba(0,0,0,.45);
+}
+.sm27-dialog-layer .sm27-dialog-head{border-bottom:1px solid var(--std-sep)}
+.sm27-dialog-layer .sm27-dialog-head h2{
+  font-family:var(--fc-body);font-size:14px;font-weight:800;letter-spacing:0;text-transform:none;font-style:normal;color:var(--std-title);
+}
+.sm27-dialog-layer .sm27-dialog-head h2::before{display:none}
+.sm27-dialog-layer :is(.sm27-dialog-x,.sm27-dialog-back){border:1px solid var(--std-line);background:rgba(255,255,255,.05);color:var(--std-title)}
+.sm27-dialog-layer :is(.sm27-dialog-x,.sm27-dialog-back):hover{border-color:var(--std-lime);color:var(--std-lime)}
+/* abas = cápsula com ativo em lime, igual às telas */
+.sm27-dialog-layer :is(.shd-tabs,.tfh-tabs){
+  gap:4px;padding:4px;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:rgba(255,255,255,.04);
+}
+.sm27-dialog-layer :is(.shd-tabs,.tfh-tabs) button{
+  border:0;border-radius:999px;min-height:30px;background:transparent;color:#cfe3f1;text-transform:none;letter-spacing:0;font-size:12px;font-weight:700;box-shadow:none;
+}
+.sm27-dialog-layer :is(.shd-tabs,.tfh-tabs) button:is([aria-selected="true"],.active){background:var(--std-lime);color:#0b1405}
+/* linhas e blocos = números da Central */
+.sm27-dialog-layer :is(.obj-row,.tfh-tile){border:1px solid var(--std-sep);border-left-width:1px;border-radius:8px;background:rgba(116,159,185,.09)}
+.sm27-dialog-layer .obj-row.done{border-color:rgba(200,249,50,.45)}
+.sm27-dialog-layer :is(.tfh-h,.shd-sub){color:var(--std-sub);font-weight:700;text-transform:none;letter-spacing:0}
+.sm27-dialog-layer .tfh-tile b{color:var(--std-lime)}
+/* botões de ação nos diálogos: lime cheio só no principal; demais em contorno discreto */
+.sm27-dialog-layer .sm27-dialog button:not(.primary):not(.sm27-dialog-x):not(.sm27-dialog-back):not([aria-selected]):not(.active){
+  border-radius:var(--pl-r-btn,14px);text-transform:none;letter-spacing:0;font-style:normal;
+}
+
+/* ---------- Mercado (Gestão), Elenco e demais blocos com cabeçalho próprio ---------- */
+#app .game-shell :where(.cc-market-heading,.cc-market-entry-title) :where(h2,h3),
+.sm27-dialog-layer :where(.cc-market-heading,.cc-market-entry-title) :where(h2,h3){
+  font-family:var(--fc-body);font-style:normal;text-transform:none;letter-spacing:0;font-size:14px;font-weight:800;color:var(--std-title);
+}
+#app .game-shell :where(.cc-market-heading,.cc-market-entry-title) small,
+.sm27-dialog-layer :where(.cc-market-heading,.cc-market-entry-title) small{color:var(--std-lime);letter-spacing:.1em}
+:where(#app .game-shell,.sm27-dialog-layer) :where(.cc-market-main-nav,.cc-deal-nav,.cc-market-screen-nav){
+  gap:4px;padding:4px;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:rgba(255,255,255,.04);
+}
+:where(#app .game-shell,.sm27-dialog-layer) :where(.cc-market-main-nav,.cc-deal-nav,.cc-market-screen-nav) button{
+  border:0;border-radius:999px;background:transparent;color:#cfe3f1;text-transform:none;letter-spacing:0;font-style:normal;box-shadow:none;
+}
+:where(#app .game-shell,.sm27-dialog-layer) :where(.cc-market-main-nav,.cc-deal-nav,.cc-market-screen-nav) button:is(.active,.on,[aria-selected="true"]){
+  background:var(--std-lime);color:#0b1405;
+}
+.sm27-dialog-layer :where(.cc-card,.cc-box,.cc-market-entry,.cc-market-overview){background:var(--std-panel);border:1px solid var(--std-line);border-radius:var(--std-r);box-shadow:none}
+.sm27-dialog-layer .cc-dark{background:transparent}
+/* Elenco: abas em cápsula, mantendo a altura enxuta da paisagem */
+#app .pl-squad-screen>.pl-squad-tabs{
+  gap:4px;padding:3px 6px;margin:4px 8px;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:rgba(255,255,255,.04);height:auto;
+}
+#app .pl-squad-screen>.pl-squad-tabs button{border:0;border-radius:999px;min-height:26px!important;background:transparent;color:#cfe3f1;letter-spacing:0;text-transform:none}
+#app .pl-squad-screen>.pl-squad-tabs button.active{background:var(--std-lime);color:#0b1405}
+.sm27-dialog-layer .tfh-embed :where(.cc-market-screen-head h2,.cc-market-heading h2,.cc-market-entry-title h3){
+  font-family:var(--fc-body)!important;font-style:normal!important;text-transform:none!important;letter-spacing:0!important;font-size:14px!important;font-weight:800!important;color:var(--std-title)!important;
+}
+.sm27-dialog-layer .tfh-embed .cc-market-main-nav{gap:4px!important;padding:4px!important;border-radius:999px!important;background:rgba(255,255,255,.04)!important;border:1px solid rgba(255,255,255,.08)!important}
+.sm27-dialog-layer .tfh-embed .cc-market-main-nav button{border:0!important;border-radius:999px!important;background:transparent!important;color:#cfe3f1!important;letter-spacing:0!important;text-transform:none!important}
+.sm27-dialog-layer .tfh-embed .cc-market-main-nav button:is(.active,[aria-pressed="true"],[aria-selected="true"]){background:var(--std-lime)!important;color:#0b1405!important}
+
+/* ---------- Meu jogador (paisagem no celular): vitrine compacta, sem texto quebrado ---------- */
+@media(orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){
+  #app .pl-player-showcase{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);min-height:0;height:auto;border-radius:var(--std-r);border-color:var(--std-line);background:var(--std-panel);box-shadow:var(--std-shadow)}
+  #app .pl-player-identity{grid-template-columns:minmax(84px,26%) minmax(0,1fr)}
+  #app .pl-player-avatar,#app .pl-player-avatar .avatar-stage{min-height:0;height:100%;max-height:230px}
+  #app .pl-player-name{padding:12px 12px 10px 4px;min-width:0}
+  #app .pl-player-name>.tag{margin-bottom:6px;font-size:10px}
+  #app .pl-player-title{grid-template-columns:auto minmax(0,1fr) auto;gap:8px}
+  #app .pl-player-title>.club-crest{width:30px;height:30px}
+  #app .pl-player-title h1{font-size:18px;line-height:1.15;margin:0;overflow-wrap:anywhere}
+  #app .pl-player-title p{margin:2px 0 0;font-size:11px;line-height:1.35;display:flex;flex-wrap:wrap;gap:2px 6px;writing-mode:horizontal-tb;word-break:normal}
+  #app .pl-player-title p i{display:none}
+  #app .pl-player-rating strong{font-size:26px}
+  #app .pl-player-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px}
+  #app .pl-player-facts span{padding:6px 8px;border-radius:7px;background:rgba(116,159,185,.09)}
+  #app .pl-player-facts span em{display:none}
+  #app .pl-player-overview{padding:10px 12px;min-width:0}
+  #app .pl-player-overview header h2{font-size:13px;margin:0}
+  #app .pl-player-radar{max-height:150px}
+  #app .pl-player-radar svg{max-height:130px}
+  #app .pl-player-quick-attrs{display:none}
+}
+
+/* ---------- família de telas "-dark" (Seleção, Base, Prêmios, Fora de campo, Competições…) ---------- */
+#app .game-shell :is(.world-competitions-dark,.nh-dark,.ya-dark,.wa-dark,.of-dark,.cc-dark,.ch-dark){
+  background:transparent;clip-path:none;border-radius:0;padding:0;
+}
+#app .game-shell :is(.nh-dark,.ya-dark,.wa-dark,.of-dark,.cc-dark,.world-competitions-dark) :is(h2,h3){
+  font-family:var(--fc-body);font-style:normal;text-transform:none;letter-spacing:0;font-size:15px;font-weight:800;color:var(--std-title);
+}
+#app .game-shell :is(.nh-box,.ya-card,.wa-card,.of-card,.cc-card,.wc-group-card,.ch-card,.ch-box,.cc-hub-panel){
+  background:var(--std-panel);border:1px solid var(--std-line);border-radius:var(--std-r);box-shadow:none;
+}
+#app .game-shell :is(.nh-head,.ya-head,.ch-head){
+  background:var(--std-panel);border:1px solid var(--std-line);border-radius:var(--std-r);padding:10px 12px;margin-bottom:8px;
+}
+#app .game-shell :is(.nh-tabs,.ya-tabs,.wa-tabs,.of-tabs,.cc-tabs){
+  gap:4px;padding:4px;margin:6px 0 10px;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:rgba(255,255,255,.04);
+}
+#app .game-shell :is(.nh-tabs,.ya-tabs,.wa-tabs,.of-tabs,.cc-tabs) button{
+  border:0;border-radius:999px;background:transparent;color:#cfe3f1;font-family:var(--fc-body);font-style:normal;text-transform:none;letter-spacing:0;font-size:12px;font-weight:700;
+}
+#app .game-shell :is(.nh-tabs,.ya-tabs,.wa-tabs,.of-tabs,.cc-tabs) button:is(.on,.active,[aria-selected="true"]){
+  background:var(--std-lime);color:#0b1405;border:0;
+}
+#app .game-shell :is(.nh-dark,.ya-dark,.wa-dark,.of-dark,.cc-dark) small{letter-spacing:.06em}
+
+/* ---------- Mundo > Competições mundiais: cabeçalho, seletor e abas compactos ---------- */
+#app .game-shell .world-competition-header,#app .game-shell .world-control-bar{
+  background:var(--std-panel);border:1px solid var(--std-line);border-radius:var(--std-r);padding:10px 12px;margin:0 0 8px;
+}
+#app .game-shell .world-competition-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#app .game-shell .world-competition-header :is(h2,h1){margin:0;font-size:15px}
+#app .game-shell .world-control-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#app .game-shell .world-picker{display:flex;align-items:center;gap:8px;margin:0;height:auto}
+#app .game-shell .world-section-tabs{
+  display:flex;gap:4px;padding:4px;margin:0 0 8px;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:rgba(255,255,255,.04);height:auto;
+}
+#app .game-shell .world-section-tabs button{flex:1 1 0;min-height:30px;height:30px;border:0;border-radius:999px;background:transparent;color:#cfe3f1;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;font-style:normal}
+#app .game-shell .world-section-tabs button.active{background:var(--std-lime);color:#0b1405}
+#app .game-shell .world-competition-header{display:flex!important;flex-direction:row!important;text-align:left!important;align-items:center!important}
+#app .game-shell .world-competition-header>div{margin:0!important;padding:0!important;text-align:left!important;min-width:0}
+#app .game-shell .world-competition-header .world-competition-champion{margin-left:auto!important;text-align:right!important}
+#app .game-shell .world-picker>span,#app .game-shell .world-picker small{white-space:nowrap;writing-mode:horizontal-tb;word-break:normal}
+
+/* ---------- escala tipográfica única nas telas do jogador (paisagem no celular) ---------- */
+@media(orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){
+  #app .game-stage :is(.card,.player-hero-copy,.player-hero) h1{font-family:var(--fc-body);font-size:18px;line-height:1.2;font-weight:800;letter-spacing:0;text-transform:none;font-style:normal;margin:0 0 4px}
+  #app .game-stage .player-ovr{display:flex;align-items:baseline;gap:6px}
+  #app .game-stage .player-ovr strong{font-size:34px;line-height:1}
+  #app .game-stage .player-hero{min-height:0;padding:12px}
+  #app .game-stage :is(.rating-badge,.split strong,.current strong){font-size:30px;line-height:1}
+  #app .game-stage .of-big{font-size:24px;line-height:1.1}
+  #app .game-stage .card h1+p{font-size:12px;margin:0 0 6px}
+}
