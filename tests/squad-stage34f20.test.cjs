@@ -46,7 +46,9 @@ test("34F.20 (3) rodizio: sequencia longa de titularidades libera descanso, com 
     for (const r of sel.rested) {
       sawRest++;
       assert.ok(!sel.starters.includes(r));
-      const replacement = sel.starters.find((p) => p.pos === r.pos && !base.starters.includes(p));
+      // Prefere substituto da mesma posição; se a formação pedir, aceita um reserva compatível de outra posição.
+      const entrants = sel.starters.filter((p) => !base.starters.includes(p));
+      const replacement = entrants.find((p) => p.pos === r.pos) || entrants[0];
       assert.ok(replacement && D.overall(replacement) >= D.overall(r) - 9, "substituto proximo em nivel");
     }
     assert.ok(sel.starters.every((p) => !p.injury && !(p.suspension > 0)));

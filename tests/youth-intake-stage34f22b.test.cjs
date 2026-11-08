@@ -35,15 +35,16 @@ test("34F.22b (2) a cada virada: base continua >= 6, jovens 16-18, 120 livres, t
   for (let y = 0; y < 3; y++) {
     roll(s);
     const intake = s.globalFootball.lastIntake;
-    assert.equal(intake.free, 120);
-    assert.ok(intake.created >= 600);
+    // Controle populacional: com o mundo >3% acima da linha de base, a entrada de jovens livres cai para 25% (30).
+    assert.equal(intake.free, intake.capped ? 30 : 120);
+    assert.ok(intake.created >= (intake.capped ? 30 : 600));
     const m = academyCount(s);
     for (const c of clubsOf(s)) assert.ok((m.get(c.id) || 0) >= 6, `${c.id} ano ${y}`);
     const novos = s.internationalPlayers.filter((p) => !known.has(p.id));
     assert.equal(novos.length, intake.created);
     for (const p of novos) { known.add(p.id); tiers.add(p.talent); assert.ok(p.age >= 16 && p.age <= 20); assert.ok(p.potential >= p.ovr + 3 && p.potential <= 99); if (p.talent === "craque") assert.ok(p.potential >= 88); }
     const free = novos.filter((p) => !p.clubId);
-    assert.equal(free.length, 120);
+    assert.equal(free.length, intake.capped ? 30 : 120);
     assert.ok(free.every((p) => p.status === "active" && !p.academy));
   }
   assert.deepEqual([...tiers].sort(), ["craque", "normal", "promessa"]);

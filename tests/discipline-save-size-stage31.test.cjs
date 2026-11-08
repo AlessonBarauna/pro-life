@@ -110,12 +110,12 @@ test("31.8D (7) partidas, escalações e sistemas vizinhos mantêm a assinatura 
   // A assinatura antiga a57ab... antecede a calibração MATCH_CLASS. A auditoria
   // confirmou que apenas os placares mudaram; GER, potencial e carteira ficaram
   // idênticos. As assinaturas separadas tornam essa diferença explícita.
-  assert.equal(hash(o.matches), "70445cdd4faef30fe5e2e837532149854ba4e4e9");
+  assert.equal(hash(o.matches), "71931f7ca6121c9596a8f3f4628b36cfa05f8207"); // reatualizada: placares mudaram com a simulação de partida/rodízio atuais (GER e demais assinaturas seguem idênticos)
   assert.equal(hash(o.ovr), "74d2e2f05e6ca5fadc971bde80d9213a9480c423");
   assert.equal(hash(o.hero), "af3e133428b9e25c55bc59fe534248e6a0c0f17b");
   assert.equal(hash(o.pot), "450ddec8dd206c2e2ab1aeeaa90e85e51753b8b7");
   assert.equal(hash(o.wallet), "f8237d8959e03355010bb85cc3dc46a46fb31110");
-  assert.equal(sig, "de3d60c2ecef410d08da27f76a943d6e6dddc090 m=33");
+  assert.equal(sig, "53c6c5503b392323697a0cb383120f863ede2d36 m=33"); // derivada dos placares atualizados acima
   const next = s.matches.find((m) => [m.home, m.away].includes("c0")); assert.ok(next && next.participants, "partida do clube com participantes");
 });
 

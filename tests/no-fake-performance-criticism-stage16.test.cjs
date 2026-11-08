@@ -1,15 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const vm = require('node:vm');
-const path = require('node:path');
-function load(rel, key){ const code=fs.readFileSync(path.join(process.cwd(),rel),'utf8'); const ctx={console,structuredClone}; ctx.globalThis=ctx; vm.runInNewContext(code,ctx,{filename:rel}); return ctx[key]; }
-const D=load('src/domain/data.js','ProLifeData');
-const Career=load('src/domain/career.js','ProLifeCareer');
+const D = require('../src/domain/engine.js');
+const Career = D.Career;
 
 test('jogador sem atuar nao recebe repercussao individual negativa por resultado do clube',()=>{
-  const s=D.newState ? D.newState('player') : null;
-  if(!s) return;
+  const s=D.create({mode:'player',clubId:'c0'},1601);
   Career.init(s);
   const before=structuredClone(Career.mediaProfile(s));
   const club=s.clubId;
