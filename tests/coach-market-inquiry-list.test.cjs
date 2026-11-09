@@ -32,8 +32,13 @@ test("aba Sondagens renderiza as sondagens enviadas pelo clube atual",()=>{
     {id:"i2",playerId:"x2",clubId:seller.id,buyerClubId:s.clubId,playerName:"Beltrano Recusado",clubName:"Clube Teste",startDay:1,responseDay:3,expiresDay:13,status:"rejected",playerDecision:"rejected"},
     {id:"i3",playerId:"x3",clubId:seller.id,buyerClubId:"outro",playerName:"De Outro Clube",startDay:2,status:"pending"}];
   html=View.renderMarket(s,Engine);
-  assert.match(html,/2 SONDAGENS/);assert.match(html,/Aguardando resposta/);assert.match(html,/Recusada · jogador sem interesse/);
+  // A aba Sondagens mostra só as abertas; recusadas e concluídas vão para a aba Concluídas.
+  assert.match(html,/1 SONDAGEM/);assert.match(html,/Aguardando resposta/);assert.doesNotMatch(html,/Recusada · jogador sem interesse/);
   assert.doesNotMatch(html,/De Outro Clube/);
+  View.setListScreen("concluidas");
+  const done=View.renderMarket(s,Engine);
+  assert.match(done,/1 CONCLUÍDA/);assert.match(done,/Recusada · jogador sem interesse/);assert.doesNotMatch(done,/Aguardando resposta/);
+  View.setListScreen("sondagens");
   // Selecionar a sondagem abre o perfil do jogador na própria aba, sem voltar à busca mundial.
   assert.match(html,/cc-market-search-layout/);
   View.selectScoutPlayer(p.id);
@@ -59,7 +64,7 @@ test("sondagens antigas resolvem cada atleta pelo nome sem cair no primeiro joga
   // Reproduz o save afetado: ids legados apontavam para o mesmo atleta,
   // mas nome e clube da sondagem continuavam corretos.
   s.coachCareer.inquiries=[lamine,doue].map((p,index)=>({id:"legacy_"+index,playerId:haaland.id,playerName:p.name,clubId:p.clubId,buyerClubId:s.clubId,startDay:3-index,responseDay:5,expiresDay:15,status:"closed"}));
-  View.setListScreen("sondagens");
+  View.setListScreen("concluidas");
   let html=View.renderMarket(s,Engine);
   assert.ok(html.includes('data-coach-scout-select="'+lamine.id+'"'));
   assert.ok(html.includes('data-coach-scout-select="'+doue.id+'"'));
@@ -215,11 +220,11 @@ test("sondagem encerrada pode ser tirada da lista, uma a uma ou em bloco, sem li
   const View=require("../src/ui/coach-career-view.js");
   const Game=require("../src/application/game.js");
   const s=Engine.create({mode:"coach",catalogVersion:"fc27_v1"},4242);s.clubId=null;Engine.join(s,"gf_fc27_5",90000);Engine.CoachCareer.init(s,Engine);
-  View.setListScreen("sondagens");
+  View.setListScreen("concluidas");
   const mk=(id,name,status)=>({id,playerId:"p-"+id,clubId:"gf_fc27_1",buyerClubId:s.clubId,playerName:name,clubName:"Clube",startDay:1,responseDay:2,answeredDay:2,expiresDay:90,status,playerDecision:status==="rejected"?"rejected":undefined});
   s.coachCareer.inquiries=[mk("a","Recusado Um","rejected"),mk("b","Recusado Dois","rejected"),mk("c","Aguardando","pending")];
   let html=View.renderMarket(s,Engine);
-  assert.match(html,/Limpar 2 encerradas/);assert.equal((html.match(/cc-inquiry-dismiss"/g)||[]).length,2);
+  assert.match(html,/Limpar histórico/);assert.equal((html.match(/cc-inquiry-dismiss"/g)||[]).length,2);
   const run=(a,d)=>(Game.execute||Engine.execute||(()=>{throw Error("sem execute");}))(s,a,d);
   assert.throws(()=>run("dismissInquiry",{id:"c"}),/encerradas/);
   run("dismissInquiry",{id:"a"});
@@ -227,6 +232,7 @@ test("sondagem encerrada pode ser tirada da lista, uma a uma ou em bloco, sem li
   assert.doesNotMatch(html,/Recusado Um/);assert.match(html,/Recusado Dois/);
   run("dismissInquiry",{all:true});
   html=View.renderMarket(s,Engine);
-  assert.doesNotMatch(html,/Recusado Dois/);assert.match(html,/Aguardando/);assert.doesNotMatch(html,/Limpar/);
+  assert.doesNotMatch(html,/Recusado Dois/);assert.doesNotMatch(html,/Limpar/);
+  View.setListScreen("sondagens");html=View.renderMarket(s,Engine);assert.match(html,/Aguardando/);
   assert.equal(s.coachCareer.inquiries.length,3,"os registros continuam guardando a espera de 14 dias");
 });

@@ -487,7 +487,23 @@
   try { const mq = window.matchMedia(window.ProLifeMobileSM27?.QUERY || "(max-width:0px)"); mq.addEventListener("change", () => { if (state && !setup) render(); }); } catch (e) { /* sem matchMedia */ }
   window.ProLifeSM27Ctx=()=>({s:state,D});
   window.ProLifeSM27Cmd=(action,data)=>command(action,data);
+  // Notificação de sondagem some de "Novas" quando já não há o que fazer nela:
+  // proposta enviada, contratação feita, recusa, prazo vencido ou sondagem removida.
+  function settleInquiryMessages() {
+    try {
+      const c = state?.coachCareer, msgs = state?.extras?.communications?.messages;
+      if (!c || !Array.isArray(msgs)) return;
+      const pending = new Set((c.negotiations || []).filter((n) => n.status === "pending" || n.status === "awaiting_window").map((n) => String(n.playerId)));
+      for (const m of msgs) {
+        if (m.read || !String(m.eventId || "").startsWith("inquiry-answer:")) continue;
+        const inq = (c.inquiries || []).find((x) => "inquiry-answer:" + x.id === m.eventId);
+        const open = inq && !inq.dismissed && ["accepted", "asking_price"].includes(inq.status) && Number(state.day) <= Number(inq.expiresDay) && !pending.has(String(inq.playerId));
+        if (!open) m.read = true;
+      }
+    } catch (e) { /* melhor esforço */ }
+  }
   function render() {
+    settleInquiryMessages();
     window.ProLifeChampionsUI?.sync?.(state);
     window.ProLifeEuropaUI?.sync?.(state);
     window.ProLifeConferenceUI?.sync?.(state);
