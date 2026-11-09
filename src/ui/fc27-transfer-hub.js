@@ -184,6 +184,14 @@
   root.addEventListener("click", (ev) => {
     const t = ev.target instanceof Element ? ev.target : null;
     if (!t || !t.closest('[data-page="market"]') || t.closest(".tfh-dialog") || !ctx()) return;
+    // Mensagem "Sondagem aceita": vai direto à tela de contratação do jogador (sem passar pela lista).
+    const msg = t.closest(".msg-action");
+    const direct = msg && msg.dataset.msgPlayer && /^sondagens$/.test(msg.dataset.msgList || "") ? msg.dataset.msgPlayer : null;
+    if (direct) {
+      try { root.ProLifeCoachCareerView?.setListScreen?.("sondagens"); } catch (e) {}
+      tab = "gestao"; negPid = direct; flash = ""; setTimeout(open, 0);
+      return;
+    }
     ev.preventDefault(); ev.stopImmediatePropagation();
     tab = "gestao"; negPid = null; flash = ""; setTimeout(open, 0);
   }, true);

@@ -181,3 +181,23 @@
   #app .game-stage .of-big{font-size:24px;line-height:1.1}
   #app .game-stage .card h1+p{font-size:12px;margin:0 0 6px}
 }
+
+/* Mercado no iPhone paisagem: cabeçalho e abas enxutos, mais altura para o conteúdo */
+@media(orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){
+  .sm27-dialog.tfh-dialog{max-height:calc(var(--pl-vh,100dvh) - 8px)!important;height:calc(var(--pl-vh,100dvh) - 8px)}
+  .tfh-dialog .sm27-dialog-head{min-height:0!important;padding:4px 10px!important}
+  .tfh-dialog .sm27-dialog-head h2{font-size:15px!important;margin:0}
+  .tfh-dialog .sm27-dialog-head button{width:30px!important;height:30px!important;min-height:0!important}
+  .tfh-dialog .tfh-tabs{margin:4px 8px!important;padding:3px!important;gap:4px!important}
+  .tfh-dialog .tfh-tabs button{min-height:30px!important;padding:4px 12px!important;font-size:12px!important}
+  .tfh-dialog .tfh-body{padding:0 8px 8px!important}
+  .tfh-dialog .tfh-embed .cc-market-main-nav button,.tfh-dialog .tfh-embed .game-subnav button{min-height:28px!important;padding:3px 10px!important;font-size:12px!important}
+  .tfh-dialog .tfh-negcard{padding:6px 10px;margin:2px 0 6px;gap:10px}
+  .tfh-dialog .tfh-negcard .tfh-ger{width:36px;height:36px;font-size:16px}
+  .tfh-dialog .tfh-negcard b{font-size:14px}
+  .tfh-dialog .tfh-note{margin:4px 0;padding:6px 10px;font-size:12px}
+  .tfh-dialog .tfh-actions{margin:2px 0}
+  .tfh-dialog .tfh-btn{min-height:32px;padding:4px 12px;font-size:12px}
+  .tfh-dialog .tfh-offer{flex-wrap:nowrap;align-items:flex-end;margin:4px 0;gap:8px}
+  .tfh-dialog .tfh-offer input{min-width:110px;width:130px;padding:6px 10px}
+}
