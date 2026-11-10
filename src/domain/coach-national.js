@@ -327,6 +327,36 @@
     }catch(e){}
     return out.sort((a,b)=>a.day-b.day)[0]||null;
   }
+  // Ficha de uma seleção: títulos, histórico no jogo, escalação provável e competições de um ano.
+  function nationProfile(s,D,code,year){
+    code=String(code||"").toUpperCase();
+    const table=strengthTable(s,D),row=table[code];if(!row)return null;
+    const IH=root.ProLifeInternationalHistory||D.InternationalHistory||(typeof require==="function"?require("./international-history.js"):null),n=s.nationalTeam||{};
+    let tl=[];try{tl=IH?.timeline?.(n)||[];}catch(e){tl=[];}
+    const ranked=Object.values(table).sort((a,b)=>b.strength-a.strength),rank=ranked.findIndex(r=>r.code===code)+1;
+    const wcBase=(IH?.worldCupBaseline||{})[code]||0;
+    const nameOf=t=>t.type==="WORLD_CUP"?"Copa do Mundo":tourName(t);
+    const won={},finals={};
+    for(const t of tl){
+      if(t.championId===code||t.champion===row.name){won[nameOf(t)]=(won[nameOf(t)]||0)+1;}
+      else if(t.runnerUpId===code||t.runnerUp===row.name){finals[nameOf(t)]=(finals[nameOf(t)]||0)+1;}
+    }
+    const titles=[];
+    const wc=(won["Copa do Mundo"]||0)+wcBase;
+    if(wc)titles.push({name:"Copa do Mundo",count:wc,base:wcBase});
+    for(const [name,count] of Object.entries(won))if(name!=="Copa do Mundo")titles.push({name,count});
+    const history=tl.filter(t=>t.championId===code||t.runnerUpId===code||t.thirdPlaceId===code||t.champion===row.name||t.runnerUp===row.name)
+      .map(t=>({year:t.year,name:nameOf(t),result:(t.championId===code||t.champion===row.name)?"Campeã":(t.runnerUpId===code||t.runnerUp===row.name)?"Vice-campeã":"3º lugar"}))
+      .sort((a,b)=>b.year-a.year);
+    const years=[...new Set([...tl.map(t=>Number(t.year)),...(n.tournaments||[]).map(t=>Number(t.year)),2026+Math.floor((s.day||0)/365)].filter(Number.isFinite))].sort((a,b)=>b-a);
+    const y=years.includes(Number(year))?Number(year):years[0];
+    const comps=[];
+    for(const t of tl)if(Number(t.year)===y)comps.push({name:nameOf(t),status:"Encerrada",champion:t.champion||null,runnerUp:t.runnerUp||null,mine:(t.championId===code||t.champion===row.name)?"Campeã":(t.runnerUpId===code||t.runnerUp===row.name)?"Vice-campeã":(t.thirdPlaceId===code)?"3º lugar":""});
+    for(const t of n.tournaments||[])if(Number(t.year)===y&&t.status!=="COMPLETED")comps.push({name:t.type==="WORLD_CUP"?"Copa do Mundo":tourName(t),status:"Em andamento",champion:null,runnerUp:null,mine:inTournament(t,code)?"Participa":"Não participa"});
+    let starters=[],formation="4-3-3";
+    try{const pool=poolOf(s,D,code);starters=lineup(autoList(pool),formation).starters.map(p=>({id:p.id,name:p.name,pos:p.pos,club:p.club,overall:Math.round(p.overall)}));}catch(e){starters=[];}
+    return {code,name:row.name,confederation:row.confederation,strength:row.strength,rank,total:ranked.length,need:requiredReputation(s,D,code),titles,finals:Object.entries(finals).map(([name,count])=>({name,count})),history,years,year:y,comps,formation,starters};
+  }
   function daily(s,D){
     if(!isCoach(s))return;
     const cn=init(s);
@@ -419,7 +449,7 @@
       matches:(w.matches||[]).map(mk),knockout:ko};
   }
 
-  const api={nextFixture,VERSION,WINDOWS,FORMATIONS,CODES,SQUAD_MAX,init,daily,overview,apply,acceptOffer,declineOffer,leave,setFormation,autoCallup,toggleCall,swapCall,strengthTable,requiredReputation,effectiveSquad,ensureSchedule};
+  const api={nationProfile,nextFixture,VERSION,WINDOWS,FORMATIONS,CODES,SQUAD_MAX,init,daily,overview,apply,acceptOffer,declineOffer,leave,setFormation,autoCallup,toggleCall,swapCall,strengthTable,requiredReputation,effectiveSquad,ensureSchedule};
   root.ProLifeCoachNational=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

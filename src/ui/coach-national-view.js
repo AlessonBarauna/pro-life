@@ -1,7 +1,8 @@
 (function(root){
   "use strict";
   // Tela "Seleção" do modo treinador: convites, candidatura, convocação, formação, calendário e resultados.
-  const ui={swapIn:null,tab:null,page:{players:0,nations:0,fixtures:0,results:0,cup:0,tour:0,qtable:0,qgames:0},pos:"TODOS",confirmLeave:false};
+  const ui={swapIn:null,tab:null,page:{players:0,nations:0,fixtures:0,results:0,cup:0,tour:0,qtable:0,qgames:0},pos:"TODOS",confirmLeave:false,nation:null,year:null};
+  let ctx={s:null,D:null};
   const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const CN=()=>root.ProLifeCoachNational||(typeof require==="function"?require("../domain/coach-national.js"):null);
   const isPhone=()=>{try{return !!root.ProLifeMobileSM27?.isPhone?.();}catch(e){return false;}};
@@ -28,6 +29,7 @@
 .cn-bar{height:7px;border-radius:99px;background:#0b121a;overflow:hidden;margin-top:8px}.cn-bar i{display:block;height:100%;background:var(--cn-grass)}.cn-bar.warn i{background:var(--cn-gold)}.cn-bar.bad i{background:var(--cn-red)}
 .cn-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 2px;border-bottom:1px solid var(--cn-line)}
 .cn-row:last-of-type{border-bottom:0}
+.cn-line{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--cn-line)}.cn-line:last-child{border-bottom:0}.cn-line>small{flex:none;width:30px;color:var(--cn-mut);font-weight:700}.cn-ps{display:flex;flex-wrap:wrap;gap:4px 14px;min-width:0}.cn-ps span{white-space:nowrap;font-size:12.5px}.cn-ps small{color:var(--cn-mut)}
 .cn-row .who{display:flex;align-items:center;gap:9px;min-width:0}.cn-row .who>span:last-child{min-width:0}
 .cn-row b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cn-row small{color:var(--cn-mut);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .cn-row .end{display:flex;align-items:center;gap:8px}
@@ -148,12 +150,27 @@
     return `<div class="cn-grid"><section class="cn-card"><small>PRÓXIMOS JOGOS</small>${fx}${pager("fixtures",o.fixtures.length,S.fixtures)}</section><section class="cn-card"><small>RESULTADOS</small>${rs}${pager("results",o.results.length,S.results)}</section></div>`;
   }
 
+  // Ficha da seleção escolhida: títulos, histórico, escalação provável e competições por ano.
+  function ficha(){
+    if(!ui.nation||!ctx.s)return "";
+    let f=null;try{f=CN().nationProfile(ctx.s,ctx.D,ui.nation,ui.year);}catch(e){f=null;}
+    if(!f)return "";
+    const titles=f.titles.length?f.titles.map(t=>`<div class="cn-row"><b>${esc(t.name)}</b><span class="cn-tag ok">${t.count}×</span></div>`).join(""):'<div class="cn-empty">Nenhum título registrado.</div>';
+    const vice=f.finals.length?f.finals.map(t=>`<div class="cn-row"><span>${esc(t.name)} · finais perdidas</span><span class="cn-tag">${t.count}×</span></div>`).join(""):"";
+    const hist=f.history.slice(0,6).map(h=>`<div class="cn-row"><span><b>${esc(h.name)}</b> <small>${h.year}</small></span><span class="cn-tag ${h.result==="Campeã"?"ok":""}">${esc(h.result)}</span></div>`).join("")||'<div class="cn-empty">A história no jogo começa em 2026. Os títulos mundiais acima já contam as conquistas reais.</div>';
+    const lines=["ATA","MEI","DEF","GOL"].map(pos=>{const ps=f.starters.filter(p=>p.pos===pos);return ps.length?`<div class="cn-line"><small>${pos}</small><div class="cn-ps">${ps.map(p=>`<span><b>${esc(p.name)}</b> <small>${p.overall}</small></span>`).join("")}</div></div>`:"";}).join("");
+    const yrs=f.years.slice(0,8).map(y=>`<button type="button" class="cn-btn ${y===f.year?"go":""}" data-cn-year="${y}">${y}</button>`).join(" ");
+    const comps=f.comps.length?f.comps.map(c=>`<div class="cn-row"><span><b>${esc(c.name)}</b><small>${esc(c.status)}${c.champion?" · campeã: "+esc(c.champion):""}</small></span><span class="cn-tag ${c.mine==="Campeã"?"ok":""}">${esc(c.mine||"—")}</span></div>`).join(""):'<div class="cn-empty">Nenhuma competição de seleções registrada neste ano.</div>';
+    return `<section class="cn-card" data-cn-ficha><small>FICHA DA SELEÇÃO</small><div class="cn-row"><div class="who">${flag(f.code,f.name)}<span><b>${esc(f.name)}</b><small>${esc(f.confederation||"")} · ${f.rank}º de ${f.total} em força (${f.strength}) · reputação ${f.need}+</small></span></div><div class="end"><button type="button" class="cn-btn" data-cn-nation="${esc(f.code)}">Fechar ficha</button></div></div>
+<div class="cn-grid"><section class="cn-card"><small>TÍTULOS</small>${titles}${vice}</section><section class="cn-card"><small>HISTÓRIA</small>${hist}</section><section class="cn-card"><small>ESCALAÇÃO PROVÁVEL · ${esc(f.formation)}</small>${lines||'<div class="cn-empty">Elenco indisponível.</div>'}</section><section class="cn-card"><small>COMPETIÇÕES EM ${f.year}</small><div class="cn-sub">${yrs}</div>${comps}</section></div></section>`;
+  }
+
   function selecoes(o,S){
     const rows=slice("nations",o.nations,S.nations).map(n=>{
       const act=n.current?'<span class="cn-tag ok">Seu cargo</span>':o.team?'<span class="cn-tag">—</span>':o.applications.some(a=>a.code===n.code)?'<span class="cn-tag">Em análise</span>':(o.rejected[n.code]>o.day)?`<span class="cn-tag no">Recusou · volte no dia ${o.rejected[n.code]}</span>`:n.eligible?`<button type="button" class="cn-btn go" data-cn-apply="${esc(n.code)}">Candidatar-se</button>`:`<span class="cn-tag no">Exige reputação ${n.need}</span>`;
-      return `<div class="cn-row"><div class="who">${flag(n.code,n.name)}<span><b>${esc(n.name)}</b><small>${esc(n.confederation||"")} · força ${n.strength} · reputação ${n.need}+</small></span></div><div class="end">${act}</div></div>`;
+      return `<div class="cn-row"><div class="who">${flag(n.code,n.name)}<span><b>${esc(n.name)}</b><small>${esc(n.confederation||"")} · força ${n.strength} · reputação ${n.need}+</small></span></div><div class="end">${act}<button type="button" class="cn-btn" data-cn-nation="${esc(n.code)}">${ui.nation===n.code?"Fechar ficha":"Ver ficha"}</button></div></div>`;
     }).join("");
-    return `<section class="cn-card"><small>SELEÇÕES DISPONÍVEIS</small>${rows}${pager("nations",o.nations.length,S.nations)}${o.team?'<p class="cn-note">Para trocar de seleção, deixe o cargo atual na Visão geral.</p>':""}</section>`;
+    return `${ficha()}<section class="cn-card"><small>SELEÇÕES DISPONÍVEIS</small>${rows}${pager("nations",o.nations.length,S.nations)}${o.team?'<p class="cn-note">Para trocar de seleção, deixe o cargo atual na Visão geral.</p>':""}</section>`;
   }
 
   function convites(o,S){
@@ -165,6 +182,7 @@
 
   function render(s,D){
     const C=CN();if(!s||!C)return `<section class="card"><h2>Seleção</h2><p class="muted">Módulo indisponível.</p></section>`;
+    ctx={s,D};
     let o;try{o=C.overview(s,D);}catch(e){return `<section class="card"><h2>Seleção</h2><p class="muted">Não foi possível carregar: ${esc(e.message)}</p></section>`;}
     if(!o)return "";
     const tabs=tabsFor(o);
@@ -175,7 +193,7 @@
     return `${css()}<section class="cn" data-coach-national>${head(o)}<nav class="cn-sub" aria-label="Seções da seleção">${tabs.map(([id,l])=>`<button type="button" class="${ui.tab===id?"on":""}" data-cn-tab="${id}">${esc(l)}${id==="convites"?badge:""}</button>`).join("")}</nav>${body}</section>`;
   }
 
-  const api={render,state:ui,setTab(t){ui.tab=t;ui.confirmLeave=false;ui.swapIn=null;},setPage(key,n){if(key in ui.page)ui.page[key]=Math.max(0,Number(n)||0);},setPos(p){ui.pos=p;ui.page.players=0;},setSwapIn(id){ui.swapIn=id||null;},setConfirmLeave(v){ui.confirmLeave=!!v;}};
+  const api={render,state:ui,setTab(t){ui.tab=t;ui.confirmLeave=false;ui.swapIn=null;},setPage(key,n){if(key in ui.page)ui.page[key]=Math.max(0,Number(n)||0);},setPos(p){ui.pos=p;ui.page.players=0;},setSwapIn(id){ui.swapIn=id||null;},setConfirmLeave(v){ui.confirmLeave=!!v;},setNation(c){ui.nation=ui.nation===c?null:c;ui.year=null;},setYear(y){ui.year=Number(y)||null;}};
   root.ProLifeCoachNationalView=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

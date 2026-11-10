@@ -144,7 +144,8 @@
   function crested(textNode, nameFold) {
     let node = textNode;
     for (let level = 0; node && level < 4; level++, node = node.parentNode) {
-      for (const sib of [node.previousSibling, node.nextSibling]) {
+      const meaningful = (n, dir) => { while (n && n.nodeType === 3 && !/\S/.test(n.nodeValue)) n = dir < 0 ? n.previousSibling : n.nextSibling; return n; };
+      for (const sib of [meaningful(node.previousSibling, -1), meaningful(node.nextSibling, 1)]) {
         if (sib && sib.nodeType === 1 && altMatches(sib, nameFold)) return true;
       }
       if (level === 1 && node.nodeType === 1) {

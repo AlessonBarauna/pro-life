@@ -180,3 +180,14 @@ test("candidatura: a confederação responde depois, com oferta ou recusa", {tim
   assert.equal(cn.teamId,null,"mesmo aprovada, vira oferta a aceitar");
   assert.ok(cn.offers.some(o=>o.code===code)||cn.rejected[code]>s.day);
 });
+
+test("ficha da seleção traz títulos, história, escalação e competições do ano", {timeout:0},()=>{
+  const s=coach();
+  const f=CN.nationProfile(s,E,"BRA");
+  assert.equal(f.code,"BRA");
+  assert.ok(f.titles.some(t=>t.name==="Copa do Mundo"&&t.count>=5));
+  assert.equal(f.starters.length,11);
+  assert.ok(f.years.includes(f.year));
+  assert.ok(Array.isArray(f.comps)&&Array.isArray(f.history));
+  assert.equal(CN.nationProfile(s,E,"XXX"),null);
+});

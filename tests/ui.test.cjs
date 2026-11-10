@@ -130,7 +130,7 @@ for (const mode of ["player", "coach"]) {
   assert.ok(w.document.querySelector(".central-calendar"));
   assert.ok(w.document.querySelector(".central-objectives"));
   assert.ok(w.document.querySelector(".club-chip").textContent.includes(mode === "player" ? "CARREIRA DE JOGADOR" : "CARREIRA DE TREINADOR"));
-  assert.ok(w.document.querySelector('[data-page="proposals"]'), "A proposta pendente deve direcionar para Mercado > Minhas propostas");
+  assert.ok(w.document.querySelector(mode === "coach" ? '[data-page="jobOffers"]' : '[data-page="proposals"]'), "A proposta pendente deve direcionar para Mercado > Minhas propostas (treinador: Treinador > Propostas de emprego)");
   click(w, '[data-page="inbox"]');
   assert.ok(w.document.querySelector("main").textContent.includes("Mensagens da carreira"));
   assert.equal(w.document.querySelectorAll(".offer").length, 0, "A Caixa nao deve gerenciar propostas");

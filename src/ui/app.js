@@ -9396,7 +9396,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
   });
   // Seleção do treinador: abas, paginação, convocação, candidatura e convites.
   document.addEventListener("click", (event) => {
-    const el = event.target.closest?.("[data-cn-tab],[data-cn-page],[data-cn-pos],[data-cn-toggle],[data-cn-swap-in],[data-cn-swap-out],[data-cn-swap-cancel],[data-cn-apply],[data-cn-accept],[data-cn-decline],[data-cn-act]");
+    const el = event.target.closest?.("[data-cn-tab],[data-cn-page],[data-cn-pos],[data-cn-toggle],[data-cn-swap-in],[data-cn-swap-out],[data-cn-swap-cancel],[data-cn-nation],[data-cn-year],[data-cn-apply],[data-cn-accept],[data-cn-decline],[data-cn-act]");
     const V = window.ProLifeCoachNationalView;
     if (!el || !state || !V) return;
     const keep = () => document.querySelector(".sm27-screen-body")?.scrollTo?.(0, 0);
@@ -9407,7 +9407,9 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (el.hasAttribute("data-cn-swap-cancel")) { V.setSwapIn(null); render(); return; }
     if (el.hasAttribute("data-cn-swap-out")) { const inId = V.state.swapIn; if (command("cnSwap", { outId: el.getAttribute("data-cn-swap-out"), inId })) V.setSwapIn(null); render(); keep(); return; }
     if (el.hasAttribute("data-cn-toggle")) { command("cnToggle", { playerId: el.getAttribute("data-cn-toggle") }); return; }
-    if (el.hasAttribute("data-cn-apply")) { if (command("cnApply", { code: el.getAttribute("data-cn-apply") })) V.setTab("geral"); render(); return; }
+    if (el.hasAttribute("data-cn-nation")) { V.setNation(el.getAttribute("data-cn-nation")); render(); return; }
+    if (el.hasAttribute("data-cn-year")) { V.setYear(el.getAttribute("data-cn-year")); render(); return; }
+    if (el.hasAttribute("data-cn-apply")) { if (command("cnApply", { code: el.getAttribute("data-cn-apply") })) V.setTab("convites"); render(); return; }
     if (el.hasAttribute("data-cn-accept")) { if (command("cnAccept", { code: el.getAttribute("data-cn-accept") })) V.setTab("geral"); render(); return; }
     if (el.hasAttribute("data-cn-decline")) { command("cnDecline", { code: el.getAttribute("data-cn-decline") }); return; }
     const act = el.getAttribute("data-cn-act");
