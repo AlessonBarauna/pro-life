@@ -221,9 +221,14 @@
         rows: [],
         position: 0
       };
-      const ed = root.ProLifeContinental?.edition?.(s, id, s.season)
-        || s.continental?.editions?.[`${id}:${s.season}`]
-        || null;
+      // A edição europeia 2026/27 continua ativa em 2027: usa a temporada do próprio jogo (id "uel:2026:...") quando houver.
+      const fixSeason = Number(String(next?.id || "").match(new RegExp("^" + id + ":(\\d{4}):"))?.[1]);
+      const seasonsToTry = [fixSeason, s.season, Number(s.season) - 1].filter((x, i, a) => Number.isFinite(x) && a.indexOf(x) === i);
+      let ed = null;
+      for (const season of seasonsToTry) {
+        ed = root.ProLifeContinental?.edition?.(s, id, season) || s.continental?.editions?.[`${id}:${season}`] || null;
+        if (ed) break;
+      }
       if (!ed) {
         console.warn("[PRO-LIFE CENTRAL] Edicao europeia nao encontrada:", id, s.season);
         return base;

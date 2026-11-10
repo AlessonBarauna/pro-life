@@ -8,7 +8,7 @@ function club(s,id){const c=(s?.globalFootball?.clubs||[]).find(x=>x.id===id)||(
 function cr(id){const h=typeof ProLifeClubCrests!=='undefined'&&ProLifeClubCrests.inline?ProLifeClubCrests.inline(id,'sm'):'';return h;}
 function crA(id){const h=cr(id);return h?' '+h.trim():'';}
 function model(s){
- const ed=s?.continental?.editions?.['uel:'+s.season];
+ const E=s?.continental?.editions||{};const cur=E['uel:'+s.season],prev=E['uel:'+(Number(s?.season)-1)];const ed=(s?.calendarVersion==='european_v1'&&prev?.leagueSchedule&&prev.knockout?.status!=='completed'&&!(cur?.leagueSchedule?.matches||[]).some(x=>x.played))?prev:(cur||prev);
  if(!ed)return {available:false,season:s?.season,reason:'A Europa ainda nao foi inicializada nesta temporada.'};
  const games=ed.leagueSchedule?.matches||[];
  const knockout=ed.knockout||null;
@@ -107,7 +107,7 @@ function renderEmbedded(s){
  current=s;
  const m=model(s);
  const names={overview:'Visão geral',standings:'Classificação',fixtures:'Jogos',bracket:'Mata-mata',club:'Meu clube'};
- const heading=`<div class="pl-uel-header"><div><div class="pl-uel-kicker">TEMPORADA · COMPETIÇÕES UEFA</div><h1>UEFA EUROPA LEAGUE</h1><div class="pl-uel-muted">Temporada ${escape(s.calendarVersion==="european_v1"?`${m.season}/${String((Number(m.season)+1)%100).padStart(2,"0")}`:m.season)} · ${m.available&&m.scheduled?`${m.played}/144 jogos da fase de liga`:'Sem jogos registrados nesta edição'}</div></div><div class="pl-uel-badge">UEL · 2026</div></div>`;
+ const heading=`<div class="pl-uel-header"><div><div class="pl-uel-kicker">TEMPORADA · COMPETIÇÕES UEFA</div><h1>UEFA EUROPA LEAGUE</h1><div class="pl-uel-muted">Temporada ${escape(s.calendarVersion==="european_v1"?`${m.season}/${String((Number(m.season)+1)%100).padStart(2,"0")}`:m.season)} · ${m.available&&m.scheduled?`${m.played}/144 jogos da fase de liga`:'Sem jogos registrados nesta edição'}</div></div><div class="pl-uel-badge">UEL · ${escape(`${m.season}/${String((Number(m.season)+1)%100).padStart(2,"0")}`)}</div></div>`;
  const navigation=`<nav class="pl-uel-nav" aria-label="Seções da Europa">${Object.entries(names).map(([k,n])=>`<button type="button" data-pl-uel-tab="${k}" class="${tab===k?'active':''}" aria-pressed="${tab===k}">${n}</button>`).join('')}</nav>`;
  return style()+`<section id="pl-uel-embedded" class="pl-uel-embedded"><div class="pl-uel-wrap">${heading}${navigation}${body(s,m)}</div></section>`;
 }

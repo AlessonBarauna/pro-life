@@ -1889,7 +1889,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         const clubId=String(state.clubId||c?.id||"");if(!clubId)return false;
         const has=list=>(list||[]).some(x=>String(x&&typeof x==="object"&&!Array.isArray(x)?x.clubId??x.id:Array.isArray(x)?x[0]:x)===clubId);
         if(comp.type==="world-league")return comp.id===c?.leagueId;
-        if(comp.type==="continental-tournament"){const ed=state.continental?.editions?.[`${comp.id}:${state.season||comp.season}`];return !!ed&&(has(ed.entrants)||has(ed.supplementalEntrants));}
+        if(comp.type==="continental-tournament"){const eds=state.continental?.editions||{};const ed=eds[`${comp.id}:${state.season||comp.season}`]||(state.calendarVersion==="european_v1"&&["ucl","uel","uecl"].includes(comp.id)?eds[`${comp.id}:${Number(state.season||comp.season)-1}`]:null);return !!ed&&(has(ed.entrants)||has(ed.supplementalEntrants));}
         const cs=state.competitionSchedule||{};
         if(comp.type==="cup")return cs.cup?.id===comp.id&&has(cs.cup.entrants);
         if(comp.type==="state")return [cs.state,...(cs.otherStates||[])].some(x=>x?.id===comp.id&&has(x.entrants));

@@ -8,7 +8,7 @@ function club(s,id){const c=(s?.globalFootball?.clubs||[]).find(x=>x.id===id)||(
 function cr(id){const h=typeof ProLifeClubCrests!=='undefined'&&ProLifeClubCrests.inline?ProLifeClubCrests.inline(id,'sm'):'';return h;}
 function crA(id){const h=cr(id);return h?' '+h.trim():'';}
 function model(s){
- const ed=s?.continental?.editions?.['uecl:'+s.season];
+ const E=s?.continental?.editions||{};const cur=E['uecl:'+s.season],prev=E['uecl:'+(Number(s?.season)-1)];const ed=(s?.calendarVersion==='european_v1'&&prev?.leagueSchedule&&prev.knockout?.status!=='completed'&&!(cur?.leagueSchedule?.matches||[]).some(x=>x.played))?prev:(cur||prev);
  if(!ed)return {available:false,season:s?.season,reason:'A Conference ainda nao foi inicializada nesta temporada.'};
  const games=ed.leagueSchedule?.matches||[];
  const knockout=ed.knockout||null;
@@ -107,7 +107,7 @@ function renderEmbedded(s){
  current=s;
  const m=model(s);
  const names={overview:'Visão geral',standings:'Classificação',fixtures:'Jogos',bracket:'Mata-mata',club:'Meu clube'};
- const heading=`<div class="pl-uecl-header"><div><div class="pl-uecl-kicker">TEMPORADA · COMPETIÇÕES UEFA</div><h1>UEFA CONFERENCE LEAGUE</h1><div class="pl-uecl-muted">Temporada ${escape(s.calendarVersion==="european_v1"?`${m.season}/${String((Number(m.season)+1)%100).padStart(2,"0")}`:m.season)} · ${m.available&&m.scheduled?`${m.played}/108 jogos da fase de liga`:'Sem jogos registrados nesta edição'}</div></div><div class="pl-uecl-badge">UEL · 2026</div></div>`;
+ const heading=`<div class="pl-uecl-header"><div><div class="pl-uecl-kicker">TEMPORADA · COMPETIÇÕES UEFA</div><h1>UEFA CONFERENCE LEAGUE</h1><div class="pl-uecl-muted">Temporada ${escape(s.calendarVersion==="european_v1"?`${m.season}/${String((Number(m.season)+1)%100).padStart(2,"0")}`:m.season)} · ${m.available&&m.scheduled?`${m.played}/108 jogos da fase de liga`:'Sem jogos registrados nesta edição'}</div></div><div class="pl-uecl-badge">UECL · ${escape(`${m.season}/${String((Number(m.season)+1)%100).padStart(2,"0")}`)}</div></div>`;
  const navigation=`<nav class="pl-uecl-nav" aria-label="Seções da Conference">${Object.entries(names).map(([k,n])=>`<button type="button" data-pl-uecl-tab="${k}" class="${tab===k?'active':''}" aria-pressed="${tab===k}">${n}</button>`).join('')}</nav>`;
  return style()+`<section id="pl-uecl-embedded" class="pl-uecl-embedded"><div class="pl-uecl-wrap">${heading}${navigation}${body(s,m)}</div></section>`;
 }

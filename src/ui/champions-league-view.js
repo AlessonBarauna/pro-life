@@ -8,7 +8,7 @@ function club(s,id){const c=(s?.globalFootball?.clubs||[]).find(x=>x.id===id)||(
 function cr(id){const h=typeof ProLifeClubCrests!=='undefined'&&ProLifeClubCrests.inline?ProLifeClubCrests.inline(id,'sm'):'';return h;}
 function crA(id){const h=cr(id);return h?' '+h.trim():'';}
 function model(s){
- const ed=s?.continental?.editions?.['ucl:'+s.season];
+ const E=s?.continental?.editions||{};const cur=E['ucl:'+s.season],prev=E['ucl:'+(Number(s?.season)-1)];const ed=(s?.calendarVersion==='european_v1'&&prev?.leagueSchedule&&prev.knockout?.status!=='completed'&&!(cur?.leagueSchedule?.matches||[]).some(x=>x.played))?prev:(cur||prev);
  if(!ed)return {available:false,season:s?.season,reason:'A Champions ainda nao foi inicializada nesta temporada.'};
  const games=ed.leagueSchedule?.matches||[];
  const knockout=ed.knockout||null;
@@ -113,7 +113,7 @@ function renderEmbedded(s){
  current=s;
  const m=model(s);
  const names={overview:'Visão geral',standings:'Classificação',fixtures:'Jogos',bracket:'Mata-mata',club:'Meu clube'};
- const heading=`<div class="pl-ucl-header"><div><div class="pl-ucl-kicker">TEMPORADA · COMPETIÇÕES UEFA</div><h1>UEFA CHAMPIONS LEAGUE</h1><div class="pl-ucl-muted">Temporada ${escape(s.calendarVersion==="european_v1"?`${m.season}/${String((Number(m.season)+1)%100).padStart(2,"0")}`:m.season)} · ${m.available&&m.scheduled?`${m.played}/144 jogos da fase de liga`:'Sem jogos registrados nesta edição'}</div></div><div class="pl-ucl-badge">UCL · 2026</div></div>`;
+ const heading=`<div class="pl-ucl-header"><div><div class="pl-ucl-kicker">TEMPORADA · COMPETIÇÕES UEFA</div><h1>UEFA CHAMPIONS LEAGUE</h1><div class="pl-ucl-muted">Temporada ${escape(s.calendarVersion==="european_v1"?`${m.season}/${String((Number(m.season)+1)%100).padStart(2,"0")}`:m.season)} · ${m.available&&m.scheduled?`${m.played}/144 jogos da fase de liga`:'Sem jogos registrados nesta edição'}</div></div><div class="pl-ucl-badge">UCL · ${escape(`${m.season}/${String((Number(m.season)+1)%100).padStart(2,"0")}`)}</div></div>`;
  const navigation=`<nav class="pl-ucl-nav" aria-label="Seções da Champions">${Object.entries(names).map(([k,n])=>`<button type="button" data-pl-ucl-tab="${k}" class="${tab===k?'active':''}" aria-pressed="${tab===k}">${n}</button>`).join('')}</nav>`;
  return style()+`<section id="pl-ucl-embedded" class="pl-ucl-embedded"><div class="pl-ucl-wrap">${heading}${navigation}${body(s,m)}</div></section>`;
 }
