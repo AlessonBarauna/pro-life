@@ -8854,7 +8854,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     },
     proposals(forceClassic) {
       if (!forceClassic && state.mode === "coach" && state.clubId && window.ProLifeCoachCareerView?.renderMarket) {
-        return window.ProLifeCoachCareerView.renderMarket(state, D);
+        return `<section class="card tfh-launch"><div class="tag">MERCADO</div><h2>Mercado de transferências</h2><p class="muted">Contratações, propostas, empréstimos, contratos e elenco ficam em um só lugar.</p><button type="button" class="primary" data-sm27-market-hub>Abrir Mercado</button></section>`;
       }
       const eligible = Career.canTransfer(state),
         w = Career.windowStatus(state),
@@ -8866,7 +8866,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     },
     market() {
       if (state?.mode === "coach" && window.ProLifeCoachCareerView?.renderMarket) {
-        return window.ProLifeCoachCareerView.renderMarket(state, D);
+        return `<section class="card tfh-launch"><div class="tag">MERCADO</div><h2>Mercado de transferências</h2><p class="muted">Contratações, propostas, empréstimos, contratos e elenco ficam em um só lugar.</p><button type="button" class="primary" data-sm27-market-hub>Abrir Mercado</button></section>`;
       }
       const c = D.club(state),
         w = Career.windowStatus(state),

@@ -196,6 +196,16 @@
     tab = "gestao"; negPid = null; flash = ""; setTimeout(open, 0);
   }, true);
 
+  // Página de Mercado do treinador = só um atalho: abre o Mercado novo automaticamente (um único mercado).
+  try {
+    new MutationObserver(() => {
+      const l = doc.querySelector(".tfh-launch:not([data-tfh-auto])");
+      if (!l || layer || !ctx()) return;
+      l.setAttribute("data-tfh-auto", "1");
+      tab = "gestao"; negPid = null; flash = ""; setTimeout(open, 0);
+    }).observe(doc.body, { childList: true, subtree: true });
+  } catch (e) {}
+
   doc.addEventListener("click", (ev) => {
     const t = ev.target instanceof Element ? ev.target : null;
     if (!t) return;
