@@ -4,6 +4,7 @@ const assert=require("node:assert/strict");
 const E=require("../src/domain/engine.js");
 const A=require("../src/application/game.js");
 const CN=E.CoachNational;
+const take=(s,code)=>{CN.overview(s,E);s.coachNational.offers.push({code,name:code,received:s.day,expires:s.day+45});return CN.acceptOffer(s,E,code);};
 
 function coach(rep=58){
   const s=E.create({mode:"coach",catalogVersion:"fc27_v1"},4242);
@@ -20,7 +21,7 @@ test("treinador: candidatura exige reputação mínima", {timeout:0},()=>{
   assert.equal(ov.team,null);
   const ok=ov.nations.find(n=>n.eligible);
   assert.ok(ok,"deve haver ao menos uma seleção acessível");
-  CN.apply(s,E,ok.code);
+  take(s,ok.code);
   assert.equal(s.coachNational.teamId,ok.code);
   assert.equal(s.coach.nationalTeamId,ok.code,"NationalIdentity.coachTeam passa a enxergar o vínculo");
   assert.throws(()=>CN.apply(s,E,ok.code),/já comanda/);
@@ -29,7 +30,7 @@ test("treinador: candidatura exige reputação mínima", {timeout:0},()=>{
 test("treinador: convocação automática e manual respeitam limites", {timeout:0},()=>{
   const s=coach();
   const code=CN.overview(s,E).nations.find(n=>n.eligible).code;
-  CN.apply(s,E,code);
+  take(s,code);
   let ov=CN.overview(s,E);
   assert.equal(ov.called,26);
   assert.equal(ov.players.filter(p=>p.starter).length,11);
@@ -51,7 +52,7 @@ test("treinador: convocação automática e manual respeitam limites", {timeout:
 test("treinador: jogos nas datas FIFA entram em resultados e na reputação, sem erros", {timeout:0},()=>{
   const s=coach();
   const code=CN.overview(s,E).nations.find(n=>n.eligible).code;
-  CN.apply(s,E,code);
+  take(s,code);
   for(let i=0;i<14;i++){s.board=100;E.advance(s,30);}
   assert.equal(s.coachNationalError,undefined);
   const ov=CN.overview(s,E);
@@ -65,13 +66,13 @@ test("treinador: jogos nas datas FIFA entram em resultados e na reputação, sem
 test("treinador: deixar o cargo aplica quarentena e permite convites depois", {timeout:0},()=>{
   const s=coach();
   const code=CN.overview(s,E).nations.find(n=>n.eligible).code;
-  CN.apply(s,E,code);
+  take(s,code);
   CN.leave(s,E,"pedido");
   assert.equal(s.coachNational.teamId,null);
   assert.equal(s.coach.nationalTeamId,null);
   assert.throws(()=>CN.apply(s,E,code),/a partir do dia/);
   s.day+=61;
-  CN.apply(s,E,code);
+  take(s,code);
   assert.equal(s.coachNational.teamId,code);
 });
 
@@ -90,6 +91,11 @@ test("treinador: comandos da aplicação chegam ao módulo", {timeout:0},()=>{
   const s=coach();
   const code=CN.overview(s,E).nations.find(n=>n.eligible).code;
   A.execute(s,"cnApply",{code});
+  assert.equal(s.coachNational.teamId,null,"candidatura não assume o cargo na hora");
+  assert.equal(s.coachNational.applications.length,1);
+  assert.throws(()=>A.execute(s,"cnApply",{code}),/em análise/);
+  assert.throws(()=>A.execute(s,"cnResign",{}),/não comanda/);
+  take(s,code);
   A.execute(s,"cnFormation",{formation:"3-5-2"});
   assert.equal(s.coachNational.formation,"3-5-2");
   A.execute(s,"cnResign",{});
@@ -99,13 +105,13 @@ test("treinador: comandos da aplicação chegam ao módulo", {timeout:0},()=>{
 });
 
 test("treinador: o mesmo estado dá o mesmo resultado (determinismo)", {timeout:0},()=>{
-  const run=()=>{const s=coach();const code="URU";CN.apply(s,E,code);for(let i=0;i<8;i++){s.board=100;E.advance(s,30);}return CN.overview(s,E).results.map(m=>`${m.id}:${m.gf}-${m.ga}`).join("|");};
+  const run=()=>{const s=coach();const code="URU";take(s,code);for(let i=0;i<8;i++){s.board=100;E.advance(s,30);}return CN.overview(s,E).results.map(m=>`${m.id}:${m.gf}-${m.ga}`).join("|");};
   assert.equal(run(),run());
 });
 
 test("treinador: a seleção comandada disputa a Copa do Mundo 2026 com a convocação dele", {timeout:0},()=>{
   const s=coach(60);
-  CN.apply(s,E,"URU");
+  take(s,"URU");
   const n=E.NationalTeam.init(s),cup=n.tournaments.find(t=>t.type==="WORLD_CUP"&&t.year===2026);
   assert.equal(cup.trackedTeamId,"URU","a seleção acompanhada passa a ser a do treinador");
   assert.equal(n.schedule.filter(f=>f.tournamentType==="WORLD_CUP"&&!f.played).length,3);
@@ -120,19 +126,19 @@ test("treinador: a seleção comandada disputa a Copa do Mundo 2026 com a convoc
 
 test("treinador: seleção fora da Copa não gera jogos de Copa; sair devolve a seleção acompanhada ao padrão", {timeout:0},()=>{
   const s=coach(60);
-  CN.apply(s,E,"PER");
+  take(s,"PER");
   const cup=E.NationalTeam.init(s).tournaments.find(t=>t.type==="WORLD_CUP");
   assert.equal(cup.trackedTeamId,"","Peru não está na Copa 2026");
   CN.leave(s,E,"pedido");
   assert.equal(cup.trackedTeamId,"BRA","volta ao padrão (nacionalidade do treinador)");
   s.day+=61;
-  CN.apply(s,E,"URU");
+  take(s,"URU");
   assert.equal(cup.trackedTeamId,"URU");
 });
 
 test("treinador: seleção sul-americana joga as eliminatórias e a tabela reflete os jogos", {timeout:0},()=>{
   const s=coach(60);
-  CN.apply(s,E,"URU");
+  take(s,"URU");
   while(s.day<700){s.board=100;E.advance(s,Math.min(30,700-s.day));}
   assert.equal(s.coachNationalError,undefined);
   const ov=CN.overview(s,E);
@@ -147,7 +153,7 @@ test("treinador: seleção sul-americana joga as eliminatórias e a tabela refle
 
 test("treinador: seleção europeia joga um grupo de eliminatórias e o resultado decide a vaga na Copa 2030", {timeout:0},()=>{
   const s=coach(95);
-  CN.apply(s,E,"ESP");
+  take(s,"ESP");
   while(s.day<1700){s.board=100;E.advance(s,Math.min(60,1700-s.day));}
   assert.equal(s.coachNationalError,undefined);
   const ov=CN.overview(s,E);
@@ -160,4 +166,17 @@ test("treinador: seleção europeia joga um grupo de eliminatórias e o resultad
   const cup=(s.nationalTeam.tournaments||[]).find(t=>t.type==="WORLD_CUP"&&t.year===2030);
   const inCup=cup.groups.some(g=>g.teams.some(x=>x.id==="ESP"));
   assert.equal(inCup,ov.qual.qualified,"a Copa reflete exatamente o resultado do treinador");
+});
+
+test("candidatura: a confederação responde depois, com oferta ou recusa", {timeout:0},()=>{
+  const s=coach();
+  const code=CN.overview(s,E).nations.find(n=>n.eligible).code;
+  A.execute(s,"cnApply",{code});
+  const a=s.coachNational.applications[0];
+  assert.ok(a.decideDay>=s.day+7&&a.decideDay<=s.day+14);
+  s.day=a.decideDay;CN.daily(s,E);
+  const cn=s.coachNational;
+  assert.equal(cn.applications.length,0);
+  assert.equal(cn.teamId,null,"mesmo aprovada, vira oferta a aceitar");
+  assert.ok(cn.offers.some(o=>o.code===code)||cn.rejected[code]>s.day);
 });

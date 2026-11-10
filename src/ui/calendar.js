@@ -35,6 +35,18 @@
       let heroNation = "Brasil"; try { const t = root.ProLifeNationalIdentity?.heroTeam?.(s, D); if (t && t.represented && t.name) heroNation = t.name; } catch { /* usa Brasil */ }
       for (const match of national.schedule || []) result.push({ day: match.day, type: "national", title: match.played && match.brazil !== null ? `${heroNation} ${match.brazil} × ${match.other} ${match.opponent}` : `${heroNation} × ${match.opponent}`, detail: match.played && !match.participated ? `${match.competition} · sem participação` : match.calledUp || national.calledUp ? match.competition : `Data FIFA · ${match.competition}`, destination: "national" });
     }
+    if (s.mode === "coach" && s.coachNational?.teamId) {
+      try {
+        const cn = s.coachNational, team = root.ProLifeCoachNational?.overview?.(s, D)?.team;
+        const mine = team?.name || cn.teamId;
+        for (const m of cn.schedule || []) {
+          if (m.played) continue;
+          result.push({ day: m.day, type: "national", title: m.home ? `${mine} × ${m.opponent}` : `${m.opponent} × ${mine}`, detail: m.competition || "Amistoso internacional", destination: "national" });
+        }
+        const fx = root.ProLifeCoachNational?.nextFixture?.(s, D);
+        if (fx && !(cn.schedule || []).some(m => m.day === fx.day && !m.played)) result.push({ day: fx.day, type: "national", title: `${fx.home} × ${fx.away}`, detail: fx.competition, destination: "national" });
+      } catch { /* seleção opcional */ }
+    }
     // Datas especiais recorrentes da carreira.
     // São eventos visuais: não bloqueiam partidas, treino ou avanço do calendário.
     const currentYear = dateForDay(s.day).getUTCFullYear();

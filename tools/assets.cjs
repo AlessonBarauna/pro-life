@@ -239,7 +239,7 @@ const files = [
   "src/ui/champions-league-view.js",
   "src/ui/club-crests.css",
   "src/ui/club-crests-data.js",
-  "src/ui/club-crests.js","src/ui/national-crests.js",
+  "src/ui/club-crests.js","src/ui/national-crests.js","src/ui/auto-crests.js",
   "src/ui/league-logos-data.js","src/ui/league-logos.js",
 ];
 // 04E: escudos instalados (somente imagens; manifestos ficam fora da publicacao).

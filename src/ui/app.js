@@ -204,7 +204,7 @@
     const routes = {
       interview:{page:"inbox",anchor:`interview-${stop.id}`,label:"Ir para entrevista"},
       renewal:{page:"proposals",anchor:"renewal-offer",label:"Ir para renovação"},
-      offer:{page:"proposals",anchor:`transfer-offer-${stop.id}`,label:"Ir para proposta"},
+      offer:{page:state?.mode==="coach"?"jobOffers":"proposals",anchor:`transfer-offer-${stop.id}`,label:"Ir para proposta"},
       decision:{page:"life",anchor:"current-decision",label:"Ir para decisão"},
       commercial:{page:"sponsorships",anchor:`commercial-proposal-${stop.id}`,label:"Ir para proposta"},
       "coach-sponsor":{page:"clubSponsorships",anchor:`club-sponsor-offer-${stop.id}`,label:"Ver proposta de patrocínio"},
@@ -544,7 +544,7 @@
         : [
             ["home", "Início", [["home", "Central"]]],
             ["inbox", "Caixa", [["inbox", "Mensagens"]]],
-            ["profile", "Treinador", [["profile", "Visão geral"], ["coachCareer", "Carreira e Vestiário"], ["training", "Treino da equipe"], ["finance", "Diretoria"], ["clubSponsorships", "Patrocínios"]]],
+            ["profile", "Treinador", [["profile", "Visão geral"], ["coachCareer", "Carreira e Vestiário"], ["training", "Treino da equipe"], ["finance", "Diretoria"], ["clubSponsorships", "Patrocínios"], ["jobOffers", "Propostas de emprego"]]],
             ["squad", "Elenco", []],
             ["competitions", "Temporada", [["competitions", "Visão geral"], ["calendar", "Calendário"], ["matches", "Partidas"], ["league", "Campeonatos"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["worldCompetitions", "Mundo"], ["englishCups", "Copas Inglesas"], ["champions", "Champions League"], ["europa", "Europa League"], ["conference", "Conference League"], ["libertadores", "Libertadores"], ["sudamericana", "Sul-Americana"]]],
             ["market", "Mercado", [["market", "Visão geral"], ["proposals", "Propostas"]]],
@@ -558,7 +558,7 @@
       subnav = activeGroup[2],
       CUP_MENU = ["englishCups","champions","europa","conference","libertadores","sudamericana"],
       subnavHtml = () => {
-        const btn = ([id,label]) => `<button type="button" data-page="${id}" class="${page===id?"active":""}" ${page===id?'aria-current="page"':""}>${esc(label)}${id==="proposals" && offerCount ? ` <i>${offerCount}</i>`:""}</button>`;
+        const btn = ([id,label]) => `<button type="button" data-page="${id}" class="${page===id?"active":""}" ${page===id?'aria-current="page"':""}>${esc(label)}${id==="proposals" && offerCount ? ` <i>${offerCount}</i>`:""}${id==="jobOffers" && jobOfferCount ? ` <i>${jobOfferCount}</i>`:""}</button>`;
         const cups = subnav.filter(([id]) => CUP_MENU.includes(id));
         if (cups.length < 2) return subnav.map(btn).join("");
         const activeCup = cups.find(([id]) => id === page);
@@ -573,6 +573,7 @@
       subnavShell = () => subnav.length ? `<div class="game-subnav" role="navigation" aria-label="Navegação da área">${subnavHtml()}</div>` : "";
     const unread = Career.unreadCount(state) + (state.decision ? 1 : 0),
       activeCoachDeals = [...(Array.isArray(state.coachCareer?.negotiations)?state.coachCareer.negotiations:[]),...(Array.isArray(state.coachCareer?.saleOffers)?state.coachCareer.saleOffers:[])].filter((item)=>item.status==="awaiting_window"||(item.status==="pending"&&(!Number.isFinite(Number(item.expiresDay))||Number(item.expiresDay)>=Number(state.day)))),
+      jobOfferCount = (state.offers||[]).filter((o) => !Number.isFinite(Number(o.expires))||Number(o.expires)>=Number(state.day)).length,
       offerCount = state.mode==="coach"?activeCoachDeals.length:(state.offers||[]).filter((o) => !Number.isFinite(Number(o.expires))||Number(o.expires)>=Number(state.day)).length;
     const quickNav = state.mode === "player"
       ? [
@@ -585,7 +586,7 @@
         ]
       : [
           ["home", "Central", "⌂", ["home"]],
-          ["profile", "Treinador", "◉", ["profile", "coachCareer", "training", "finance", "clubSponsorships"]],
+          ["profile", "Treinador", "◉", ["profile", "coachCareer", "training", "finance", "clubSponsorships", "jobOffers"]],
           ["squad", "Elenco", "⬡", ["squad"]],
           ["competitions", "Temporada", "◇", ["calendar", "matches", "league", "competitions", "statistics", "awards", "worldCompetitions", "englishCups", "champions", "europa", "conference", "libertadores", "sudamericana"]],
           ["market", "Mercado", "↔", ["market", "proposals", "clubs"]],
@@ -1873,7 +1874,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       if(next)taskItems.push(`<article class="central-v3-task"><small>PRÓXIMO JOGO</small><b class="central-v3-task-match">${miniCrest(next.homeClubId,next.home,next.national)}<span>${esc(next.home)}</span><em>×</em>${miniCrest(next.awayClubId,next.away,next.national)}<span>${esc(next.away)}</span></b><span>${daysToMatch===0?"Hoje":`Em ${daysToMatch} dia(s)`}</span></article>`);
       if(H.objectives[0])taskItems.push(`<article class="central-v3-task"><small>OBJETIVO</small><b>${esc(H.objectives[0].label)}</b><span>Próxima atuação</span></article>`);
       if(state.mode==="player"&&H.lineup)taskItems.push(`<article class="central-v3-task"><small>ELENCO</small><b>${esc(H.lineup.heroRole||"Situação a definir")}</b><span>${esc(H.player.squadRole||"Sem papel definido")}</span><button data-page="lineup">Ver escalação</button></article>`);
-      if(state.offers?.length)taskItems.push(`<article class="central-v3-task central-v3-task-urgent"><small>MERCADO · AÇÃO NECESSÁRIA</small><b>${state.offers.length} proposta${state.offers.length>1?"s":""} aguardando análise</b><span>Resposta pendente</span><button data-page="proposals">Analisar</button></article>`);
+      if(state.offers?.length)taskItems.push(`<article class="central-v3-task central-v3-task-urgent"><small>MERCADO · AÇÃO NECESSÁRIA</small><b>${state.offers.length} proposta${state.offers.length>1?"s":""} aguardando análise</b><span>Resposta pendente</span><button data-page="${state.mode==='coach'?'jobOffers':'proposals'}">Analisar</button></article>`);
       if(taskItems.length<4)taskItems.push(`<article class="central-v3-task"><small>TREINO</small><b>${esc(H.training.focus||"Rotina diária")}</b><span>${esc(H.training.next||"Disponível")}</span><button data-page="training">Abrir treino</button></article>`);
       const decisionTask=state.decision?`<article class="central-v3-task central-v3-decision" role="status"><small>DECISÃO URGENTE</small><b>${esc(state.decision.title)}</b><span>${esc(state.decision.body)}</span><div class="actions">${state.decision.choices.map(([id,label])=>`<button data-choice="${id}">${esc(label)}</button>`).join("")}</div></article>`:"";
       const nextActions=next?`<div class="central-v3-actions"><button class="primary central-v3-action-main" data-live-match>Acompanhar partida</button>${state.mode==="coach"?'<button class="central-v3-action-secondary" data-coach-plan-official-sub>Planejar substituição oficial</button>':""}<button class="central-v3-action-secondary" data-simulate="nextCommitment">Simular até o jogo</button><button class="central-v3-action-quiet" data-advance="1">Avançar 1 dia</button></div>`:`<div class="central-v3-actions"><button class="primary central-v3-action-main" data-page="calendar">Abrir calendário</button><button class="central-v3-action-quiet" data-advance="1">Avançar 1 dia</button></div>`;
@@ -1933,7 +1934,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         }catch(e){}
       }
       if(state.decision)alertRows.push(["Decisão pendente",state.decision.title||"Ação necessária","life"]);
-      if((state.offers||[]).length)alertRows.push(["Propostas",`${state.offers.length} aguardando resposta`,"proposals"]);
+      if((state.offers||[]).length)alertRows.push(["Propostas",`${state.offers.length} aguardando resposta`,state.mode==="coach"?"jobOffers":"proposals"]);
       if(c?.roster?.length){
         const injured=c.roster.filter(x=>Number(x.injury||0)>0).length;
         if(injured)alertRows.push(["Departamento médico",`${injured} jogador(es) lesionado(s)`,"squad"]);
@@ -8845,12 +8846,15 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const doc = ct && api ? api.documentHtml(cineModel(ct, "contract"), "signed") : '<p class="empty">Nenhum contrato registrado para o clube atual.</p>';
       return `<div class="grid"><section class="card cine-page"><div class="tag">CONTRATO ATUAL</div><h2>Contrato assinado</h2>${cineBanner()}${doc}<div class="actions">${ct ? '<button type="button" data-cine-open="contract">Abrir documento</button>' : ""}${cineArrival() ? '<button type="button" data-cine-open="present">Rever apresentação</button>' : ""}</div></section></div>`;
     },
+    // Treinador: propostas de emprego (clubes e seleções) ficam fora das transferências de jogadores.
+    jobOffers() {
+      const pending = (state.offers || []).filter((o) => !Number.isFinite(Number(o.expires)) || Number(o.expires) >= Number(state.day));
+      if (!pending.length) return `<section class="card"><div class="tag">PROPOSTAS DE EMPREGO</div><h2>Nenhuma proposta no momento</h2><p class="muted">Clubes interessados no seu trabalho enviam propostas aqui. Boas campanhas e reputação alta atraem mais ofertas. Convites de seleções ficam na aba Seleção.</p></section>`;
+      return views.proposals(true);
+    },
     proposals(forceClassic) {
       if (!forceClassic && state.mode === "coach" && state.clubId && window.ProLifeCoachCareerView?.renderMarket) {
-        const marketHtml = window.ProLifeCoachCareerView.renderMarket(state, D);
-        const pendingJobOffers = (state.offers || []).filter((o) => !Number.isFinite(Number(o.expires)) || Number(o.expires) >= Number(state.day));
-        if (!pendingJobOffers.length) return marketHtml;
-        return marketHtml + views.proposals(true);
+        return window.ProLifeCoachCareerView.renderMarket(state, D);
       }
       const eligible = Career.canTransfer(state),
         w = Career.windowStatus(state),
@@ -10171,6 +10175,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const next = D.nextCommitment(state);
       if (!next) { toast("Não há próximo jogo agendado."); return; }
       if (next.date !== state.day + 1) { toast("Use Simular até o jogo primeiro. O acompanhamento abre na véspera da partida."); return; }
+      if (next.coachNational) { D.advance(state, 1); persist(); render(); toast("Jogo da seleção disputado. Veja o resultado na aba Seleção."); return; }
       if(state.mode==="coach"&&!next.national&&D.createCoachLiveController){
         const prepared=D.prepareCoachWorldFixture?.(state,next);
         const home=prepared?.home||D.club(state,next.home);

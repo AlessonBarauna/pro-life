@@ -150,7 +150,7 @@
 
   function selecoes(o,S){
     const rows=slice("nations",o.nations,S.nations).map(n=>{
-      const act=n.current?'<span class="cn-tag ok">Seu cargo</span>':o.team?'<span class="cn-tag">—</span>':n.eligible?`<button type="button" class="cn-btn go" data-cn-apply="${esc(n.code)}">Candidatar-se</button>`:`<span class="cn-tag no">Exige reputação ${n.need}</span>`;
+      const act=n.current?'<span class="cn-tag ok">Seu cargo</span>':o.team?'<span class="cn-tag">—</span>':o.applications.some(a=>a.code===n.code)?'<span class="cn-tag">Em análise</span>':(o.rejected[n.code]>o.day)?`<span class="cn-tag no">Recusou · volte no dia ${o.rejected[n.code]}</span>`:n.eligible?`<button type="button" class="cn-btn go" data-cn-apply="${esc(n.code)}">Candidatar-se</button>`:`<span class="cn-tag no">Exige reputação ${n.need}</span>`;
       return `<div class="cn-row"><div class="who">${flag(n.code,n.name)}<span><b>${esc(n.name)}</b><small>${esc(n.confederation||"")} · força ${n.strength} · reputação ${n.need}+</small></span></div><div class="end">${act}</div></div>`;
     }).join("");
     return `<section class="cn-card"><small>SELEÇÕES DISPONÍVEIS</small>${rows}${pager("nations",o.nations.length,S.nations)}${o.team?'<p class="cn-note">Para trocar de seleção, deixe o cargo atual na Visão geral.</p>':""}</section>`;
@@ -158,8 +158,9 @@
 
   function convites(o,S){
     const offers=o.offers.map(of=>`<div class="cn-row"><div class="who">${flag(of.code,of.name)}<span><b>${esc(of.name)}</b><small>Responder até o dia ${of.expires} (${Math.max(0,of.expires-o.day)} dias)</small></span></div><div class="end"><button type="button" class="cn-btn go" data-cn-accept="${esc(of.code)}">Aceitar</button><button type="button" class="cn-btn" data-cn-decline="${esc(of.code)}">Recusar</button></div></div>`).join("");
+    const apps=o.applications.map(a=>`<div class="cn-row"><div class="who">${flag(a.code,a.name)}<span><b>${esc(a.name)}</b><small>Candidatura em análise · resposta até o dia ${a.decideDay} (${Math.max(0,a.decideDay-o.day)} dias)</small></span></div><div class="end"><span class="cn-tag">Em análise</span></div></div>`).join("");
     const wait=o.day<o.cooldownUntil?`<p class="cn-note">A confederação só aceita novos treinadores a partir do dia ${o.cooldownUntil}.</p>`:"";
-    return `<div class="cn-grid"><section class="cn-card"><small>CONVITES RECEBIDOS</small>${offers||'<div class="cn-empty">Nenhum convite no momento.<br>Convites chegam a cada ~2 meses quando a sua reputação alcança a de alguma seleção.</div>'}${wait}</section><section class="cn-card"><small>COMO FUNCIONA</small><p>Cada seleção exige uma reputação mínima (você tem ${o.rep}). Ganhe jogos com o clube e com a seleção para subir.</p><p>Os jogos acontecem nas 4 janelas FIFA do ano. A confiança da confederação cai com derrotas; abaixo de 15% você é demitido.</p></section></div>`;
+    return `<div class="cn-grid"><section class="cn-card"><small>CONVITES RECEBIDOS</small>${offers||'<div class="cn-empty">Nenhum convite no momento.<br>Convites chegam a cada ~2 meses quando a sua reputação alcança a de alguma seleção.</div>'}${wait}</section>${apps?`<section class="cn-card"><small>CANDIDATURAS ENVIADAS</small>${apps}</section>`:""}<section class="cn-card"><small>COMO FUNCIONA</small><p>Ao se candidatar, a confederação analisa o seu currículo contra outros candidatos e responde em 1 a 2 semanas: você recebe um convite para aceitar ou a recusa. Cada seleção exige uma reputação mínima (você tem ${o.rep}). Ganhe jogos com o clube e com a seleção para subir.</p><p>Os jogos acontecem nas 4 janelas FIFA do ano. A confiança da confederação cai com derrotas; abaixo de 15% você é demitido.</p></section></div>`;
   }
 
   function render(s,D){

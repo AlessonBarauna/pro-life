@@ -14,7 +14,7 @@
   const isCoach=s=>s?.mode==="coach";
 
   function blank(){
-    return {version:VERSION,teamId:null,since:null,board:60,formation:"4-3-3",manual:false,called:[],matches:[],schedule:[],offers:[],history:[],stats:{},cooldownUntil:0,lastOfferDay:-999};
+    return {version:VERSION,teamId:null,since:null,board:60,formation:"4-3-3",manual:false,called:[],matches:[],schedule:[],offers:[],applications:[],rejected:{},history:[],stats:{},cooldownUntil:0,lastOfferDay:-999};
   }
   function init(s){
     if(!isCoach(s))return null;
@@ -105,13 +105,48 @@
     message(s,D,`Você é o novo treinador de ${t.name}`,`A confederação confirmou o seu nome. A primeira convocação já foi montada automaticamente; ajuste a lista e a formação na aba Seleção.`);
     return cn;
   }
+  // Candidatura (FC27): o treinador envia o pedido e a confederação analisa em 1-2 semanas, comparando
+  // com outros candidatos. Só então vem uma oferta (aceitar/recusar) ou a recusa. Não assume o cargo na hora.
+  const APPLY_MAX=2,APPLY_MIN_DAYS=7,APPLY_SPREAD=8,REJECT_COOLDOWN=120;
   function apply(s,D,code){
     const cn=init(s);code=String(code||"").toUpperCase();
     if(cn.teamId)throw Error("Você já comanda uma seleção.");
     const row=strengthTable(s,D)[code];if(!row)throw Error("Seleção indisponível.");
+    if(s.day<cn.cooldownUntil)throw Error(`A confederação só aceita novos treinadores a partir do dia ${cn.cooldownUntil}.`);
+    if(cn.applications.some(a=>a.code===code))throw Error(`Sua candidatura à seleção de ${row.name} já está em análise.`);
+    if(cn.offers.some(o=>o.code===code&&o.expires>=s.day))throw Error(`${row.name} já enviou um convite: responda na aba Convites.`);
+    if(cn.applications.length>=APPLY_MAX)throw Error(`Você já tem ${APPLY_MAX} candidaturas em análise. Aguarde a resposta das confederações.`);
+    const blocked=cn.rejected[code];if(blocked&&blocked>s.day)throw Error(`${row.name} recusou sua candidatura. Novo pedido a partir do dia ${blocked}.`);
     const need=requiredReputation(s,D,code);
     if(reputationOf(s)<need)throw Error(`${row.name} exige reputação ${need}. A sua é ${reputationOf(s)}.`);
-    return takeJob(s,D,code,"candidatura");
+    const decideDay=s.day+APPLY_MIN_DAYS+Math.floor(unit(`${s.day}|${code}|apply`)*APPLY_SPREAD);
+    cn.applications.push({code,name:row.name,sent:s.day,decideDay,need});
+    message(s,D,`Candidatura enviada: seleção de ${row.name}`,`A confederação vai analisar o seu currículo e comparar com outros candidatos. A resposta sai até o dia ${decideDay}.`);
+    return cn;
+  }
+  // Avalia as candidaturas vencidas: currículo (reputação, ligação com o país) contra o melhor rival.
+  function resolveApplications(s,D){
+    const cn=init(s);if(!cn.applications.length)return;
+    const rep=reputationOf(s),mine=NI().codeOf(s.person?.nationality);
+    const pending=[];
+    for(const a of cn.applications){
+      if(a.decideDay>s.day){pending.push(a);continue;}
+      if(cn.teamId)continue;
+      const key=`${s.seed||s.initialSeed||0}|${a.code}|${a.sent}`;
+      const natBonus=mine&&mine===a.code?8:0,boardBonus=clamp((Number(s.board?.confidence)||60)-60,-10,10)/2;
+      const me=rep+natBonus+boardBonus+(unit(key+"|me")-.5)*10;
+      const rival=a.need+6+unit(key+"|rival")*20;
+      const rivals=2+Math.floor(unit(key+"|n")*5);
+      if(me>=rival){
+        cn.offers=cn.offers.filter(o=>o.code!==a.code);
+        cn.offers.push({code:a.code,name:a.name,received:s.day,expires:s.day+OFFER_TTL,from:"candidatura"});
+        message(s,D,`Candidatura aprovada: seleção de ${a.name}`,`Entre ${rivals} candidatos, a confederação escolheu o seu nome. Confirme na aba Seleção > Convites até o dia ${s.day+OFFER_TTL}.`);
+      }else{
+        cn.rejected[a.code]=s.day+REJECT_COOLDOWN;
+        message(s,D,`Candidatura recusada: seleção de ${a.name}`,`A confederação preferiu outro nome entre ${rivals} candidatos, com mais experiência e reputação. Você poderá tentar de novo a partir do dia ${s.day+REJECT_COOLDOWN}.`);
+      }
+    }
+    cn.applications=pending;
   }
   function acceptOffer(s,D,code){
     const cn=init(s);code=String(code||"").toUpperCase();
@@ -276,9 +311,26 @@
       message(s,D,`Convite: seleção de ${table[code].name}`,`A confederação quer você como treinador. Responda na aba Seleção até o dia ${s.day+OFFER_TTL}.`);
     }
   }
+  // Próximo jogo da seleção treinada (amistosos e eliminatórias): alimenta o "próximo compromisso" da Central.
+  function nextFixture(s,D){
+    if(!isCoach(s))return null;
+    const cn=init(s);if(!cn||!cn.teamId)return null;
+    const team=teamOf(s,D,cn.teamId);if(!team)return null;
+    const out=[];
+    for(const m of cn.schedule)if(!m.played&&m.day>=s.day)out.push({day:m.day,home:m.home?team.name:m.opponent,away:m.home?m.opponent:team.name,opponent:m.opponent,competition:m.competition||"Amistoso internacional",stage:"Seleção"});
+    try{
+      const cq=(D.NationalTeam||root.ProLifeNationalTeam)?.coachQualView?.(s);
+      if(cq&&cq.teamId===cn.teamId){
+        const name=id=>(cq.table.find(r=>r.id===id)||{}).name||id;
+        for(const m of cq.fixtures||[])if(!m.played&&m.day>=s.day&&(m.homeId===cn.teamId||m.awayId===cn.teamId))out.push({day:m.day,home:name(m.homeId),away:name(m.awayId),opponent:name(m.homeId===cn.teamId?m.awayId:m.homeId),competition:"Eliminatórias da Copa",stage:m.round?`Rodada ${m.round}`:"Seleção"});
+      }
+    }catch(e){}
+    return out.sort((a,b)=>a.day-b.day)[0]||null;
+  }
   function daily(s,D){
     if(!isCoach(s))return;
     const cn=init(s);
+    if(cn.teamId)cn.applications=[];else resolveApplications(s,D);
     if(cn.teamId){
       ensureSchedule(s,D);
       for(const fx of cn.schedule.filter(m=>!m.played&&m.day<=s.day)){
@@ -296,7 +348,7 @@
     const cn=init(s);if(!cn)return null;
     const table=strengthTable(s,D),rep=reputationOf(s),team=cn.teamId?teamOf(s,D,cn.teamId):null;
     const nations=CODES.filter(c=>table[c]).map(c=>{const need=requiredReputation(s,D,c);return {code:c,name:table[c].name,confederation:table[c].confederation,strength:table[c].strength,need,eligible:rep>=need,current:c===cn.teamId};}).sort((a,b)=>Number(b.current)-Number(a.current)||Number(b.eligible)-Number(a.eligible)||(a.eligible?b.strength-a.strength:a.need-b.need)||b.strength-a.strength);
-    const out={rep,teamId:cn.teamId,team:team?{code:cn.teamId,name:team.name,confederation:team.confederation}:null,board:Math.round(cn.board),formation:cn.formation,formations:Object.keys(FORMATIONS),manual:cn.manual,offers:cn.offers.filter(o=>o.expires>=s.day),cooldownUntil:cn.cooldownUntil,day:s.day,nations,history:cn.history,
+    const out={rep,teamId:cn.teamId,team:team?{code:cn.teamId,name:team.name,confederation:team.confederation}:null,board:Math.round(cn.board),formation:cn.formation,formations:Object.keys(FORMATIONS),manual:cn.manual,offers:cn.offers.filter(o=>o.expires>=s.day),applications:cn.applications.map(a=>({...a})),rejected:{...cn.rejected},cooldownUntil:cn.cooldownUntil,day:s.day,nations,history:cn.history,
       results:cn.matches.filter(m=>m.day>=(cn.since??0)).slice(0,30),fixtures:cn.schedule.filter(m=>!m.played).slice(0,12)};
     const w=out.results;out.record={p:w.length,v:w.filter(m=>m.result==="V").length,e:w.filter(m=>m.result==="E").length,d:w.filter(m=>m.result==="D").length,gf:w.reduce((a,m)=>a+m.gf,0),ga:w.reduce((a,m)=>a+m.ga,0)};
     if(cn.teamId){
@@ -367,7 +419,7 @@
       matches:(w.matches||[]).map(mk),knockout:ko};
   }
 
-  const api={VERSION,WINDOWS,FORMATIONS,CODES,SQUAD_MAX,init,daily,overview,apply,acceptOffer,declineOffer,leave,setFormation,autoCallup,toggleCall,swapCall,strengthTable,requiredReputation,effectiveSquad,ensureSchedule};
+  const api={nextFixture,VERSION,WINDOWS,FORMATIONS,CODES,SQUAD_MAX,init,daily,overview,apply,acceptOffer,declineOffer,leave,setFormation,autoCallup,toggleCall,swapCall,strengthTable,requiredReputation,effectiveSquad,ensureSchedule};
   root.ProLifeCoachNational=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

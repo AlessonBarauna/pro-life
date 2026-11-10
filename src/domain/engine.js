@@ -2182,7 +2182,9 @@
     }).filter(Boolean);
     const englishCupMatch=EnglishCups?.nextFixture?.(s,s.clubId);
     const englishCup=englishCupMatch&&{home:englishCupMatch.homeId,away:englishCupMatch.awayId,date:englishCupMatch.day,round:englishCupMatch.round,competitionId:englishCupMatch.competitionId,competitionName:englishCupMatch.competitionName,stage:englishCupMatch.stage,knockout:true};
-    return [league, extra, national, world, englishCup, continental, knockout, europa, europaKo,conference,conferenceKo,...conmebol].filter(Boolean).sort((a,b)=>a.date-b.date)[0] || null;
+    const cnFx = s.mode === "coach" ? (() => { try { return CoachNational?.nextFixture?.(s, API) || null; } catch (e) { return null; } })() : null;
+    const coachNational = cnFx && { national:true, coachNational:true, date: cnFx.day, competitionId: "nationalTeam", competitionName: cnFx.competition, stage: cnFx.stage, opponent: cnFx.opponent, homeName: cnFx.home, awayName: cnFx.away };
+    return [league, extra, national, coachNational, world, englishCup, continental, knockout, europa, europaKo,conference,conferenceKo,...conmebol].filter(Boolean).sort((a,b)=>a.date-b.date)[0] || null;
   }
   // Premiação da liga no fim da temporada: dinheiro por posição (e título) no caixa do clube do usuário.
   function awardLeaguePrize(s, orders) {

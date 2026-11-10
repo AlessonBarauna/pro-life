@@ -8,6 +8,6 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 function code(x){if(x==null)return null;const s=String(x).trim();if(/^[A-Z]{3}$/.test(s)&&DATA[s])return s;return ALIAS[plain(s)]||null;}
 function render(x,o){o=o||{};const c=code(x),size=["sm","md","lg"].includes(o.size)?o.size:"md";if(!c||!valid(DATA[c].asset))return"";return '<img class="pl-club-crest pl-club-crest--'+size+' pl-national-crest" src="'+esc(DATA[c].asset)+'" alt="Escudo: '+esc(DATA[c].name)+'" loading="lazy" decoding="async">';}
 function inline(x,size){const h=render(x,{size:size||"sm"});return h?h+" ":"";}
-const api={code,render,inline,stats:()=>({total:Object.keys(DATA).length}),has:x=>!!code(x)};
+const api={code,render,inline,stats:()=>({total:Object.keys(DATA).length}),has:x=>!!code(x),names:()=>Object.keys(DATA).map(k=>[DATA[k].name,k]).concat(Object.keys(ALIAS).map(k=>[k,ALIAS[k]]))};
 root.ProLifeNationalCrests=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

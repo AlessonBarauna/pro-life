@@ -8,3 +8,9 @@ body .fc-crest.mini.has-crest{background:none;box-shadow:none;clip-path:none;pad
 .offer-club{display:flex;align-items:center;gap:8px}.offer-club .pl-club-crest--md{width:2.4rem;height:2.4rem}.cine-shirt-crest{display:grid;place-items:center;margin-top:-6px}.cine-shirt-crest .pl-club-crest{width:76px;height:76px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
 .cu-crest:has(.pl-national-crest),.nh-flag:has(.pl-national-crest){background:none!important;clip-path:none!important;border:0!important;box-shadow:none!important;padding:0!important}.cu-crest .pl-national-crest,.nh-flag .pl-national-crest{width:100%;height:100%}
 .slot-club{display:flex;align-items:center;gap:10px}.slot-crest{display:inline-flex;flex:none}.slot-crest .pl-club-crest{width:2.6rem;height:2.6rem}
+
+/* Logos automáticos (auto-crests.js): logo + nome alinhados na mesma linha, sem quebrar o layout do texto */
+.ac-wrap{display:inline-flex;align-items:center;gap:.4em;vertical-align:middle;max-width:100%}
+.ac-wrap .pl-club-crest,.ac-wrap .lg-logo{width:1.35em;height:1.35em;min-width:1.35em;object-fit:contain;flex:none}
+.ac-wrap .pl-club-crest--fallback{font-size:.5em}
+.ac-wrap .lg-logo{background:rgba(255,255,255,.92);border-radius:50%;padding:2px;box-sizing:border-box}
