@@ -8825,7 +8825,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       const interviewCard=i=>`<article class="news notice" id="interview-${esc(i.id)}"><time>ENTREVISTA · ${dayDate(i.day)}</time><h3>${esc(i.question)}</h3><div class="actions">${i.choices.map(c=>`<button data-interview="${esc(i.id)}" data-interview-choice="${esc(c.id)}">${esc(c.label)}</button>`).join("")}</div></article>`;
       let body="";
       if(tab==="novas"){
-        body=(offersNow.length?`<article class="news neg-note"><time>PROPOSTAS PENDENTES · ${offersNow.length}</time>${offersNow.map(o=>{const i=clubIdentityOf(o.clubId);return `<p><b>${esc(txt(i?.name))}</b> · ${esc(leagueLine(i))} · expira em ${Math.max(0,o.expires-state.day)} dia(s)</p>`}).join("")}<button type="button" data-page="proposals">Abrir central de propostas</button></article>`:"")
+        body=(offersNow.length?`<article class="news neg-note"><time>PROPOSTAS PENDENTES · ${offersNow.length}</time>${offersNow.map(o=>{const i=clubIdentityOf(o.clubId);return `<p><b>${esc(txt(i?.name))}</b> · ${esc(leagueLine(i))} · expira em ${Math.max(0,o.expires-state.day)} dia(s)</p>`}).join("")}<button type="button" data-page="${state.mode==="coach"?"jobOffers":"proposals"}">Abrir central de propostas</button></article>`:"")
           +(state.decision?`<article class="news"><time>DECISÃO PENDENTE</time><h3>${esc(state.decision.title)}</h3><p>${esc(state.decision.body)}</p><button data-page="life" data-target="current-decision">Responder agora</button></article>`:"")
           +(unreadMsgs.slice(0,20).map(msgCard).join(""))
           +(openInterviews.slice(0,2).map(interviewCard).join(""));

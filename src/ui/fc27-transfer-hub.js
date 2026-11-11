@@ -141,8 +141,10 @@
   function gestao(s, D) {
     const V = root.ProLifeCoachCareerView;
     let inner = "";
-    try { inner = V?.renderMarket?.(s, D) || ""; } catch (e) { inner = ""; }
-    return `<div class="tfh-embed">${inner || '<p class="tfh-note">Gestão indisponível.</p>'}</div>`;
+    try { inner = V?.renderMarket?.(s, D) || ""; } catch (e) {
+      try { console.error("[mercado] gestão falhou", e); V?.setTab?.("proposals"); inner = V?.renderMarket?.(s, D) || ""; } catch (e2) { inner = ""; }
+    }
+    return `<div class="tfh-embed">${inner || '<p class="tfh-note">Não foi possível carregar a gestão agora. <button type="button" class="tfh-btn" data-tfh-tab="gestao">Tentar de novo</button></p>'}</div>`;
   }
 
   function html() {
