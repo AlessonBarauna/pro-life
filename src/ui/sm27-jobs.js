@@ -39,7 +39,12 @@
     if (t.closest("[data-sm27-jobs]")) { ev.preventDefault(); open(); return; }
     if (!layer) return;
     if (t.closest("[data-sm27jb-close]")) { close(); return; }
-    if (t.closest("[data-sm27jb-go]")) { close(); setTimeout(() => (doc.querySelector('[data-page="proposals"]') || doc.querySelector('[data-page="market"]'))?.click(), 0); }
+    if (t.closest("[data-sm27jb-go]")) { close(); setTimeout(() => {
+      const host = doc.querySelector("#app");
+      let b = doc.querySelector('[data-page="jobOffers"]');
+      if (!b && host) { b = doc.createElement("button"); b.type = "button"; b.dataset.page = "jobOffers"; b.hidden = true; host.appendChild(b); b.click(); b.remove(); return; }
+      (b || doc.querySelector('[data-page="proposals"]') || doc.querySelector('[data-page="market"]'))?.click();
+    }, 0); }
   }, true);
   doc.addEventListener("keydown", (ev) => { if (layer && ev.key === "Escape") close(); });
   root.ProLifeSM27Jobs = { open, close, list };
