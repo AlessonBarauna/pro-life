@@ -213,6 +213,8 @@
     if (!t) return;
     if (layer && t.closest(".tfh-embed")) {
       if (t.closest("[data-page]")) { close(); return; }
+      // Campos (select/input) não reconstroem o diálogo no clique: isso fechava o seletor nativo aberto.
+      if (t.closest("select, input, textarea, label, option")) return;
       setTimeout(() => { if (layer && tab === "gestao") open(); }, 90);
       return;
     }
