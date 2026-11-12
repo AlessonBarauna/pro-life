@@ -414,7 +414,7 @@ test("Main Transfers Market page routes coach to new scouting centre",()=>{
  const market=app.slice(start,end);
  assert.match(market,/state\?\.mode === "coach"/);
  assert.match(market,/ProLifeCoachCareerView\?\.renderMarket/);
- assert.match(market,/return window\.ProLifeCoachCareerView\.renderMarket\(state, D\)/);
+ assert.match(market,/tfh-launch/,"página do treinador vira atalho que abre o Mercado único (hub)");
  assert.match(market,/ProLifeWorldLiveMarketView/,"legacy world market fallback remains for player");
 });
 

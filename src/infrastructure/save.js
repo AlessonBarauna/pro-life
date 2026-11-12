@@ -740,16 +740,18 @@
     const open = () => dbp || (dbp = new Promise((res, rej) => {
       let r; try { r = f.open(IDB_NAME, 1); } catch (e) { rej(e); return; }
       r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains(IDB_STORE)) r.result.createObjectStore(IDB_STORE, { keyPath: "id" }); };
-      r.onsuccess = () => res(r.result);
+      r.onsuccess = () => { const db = r.result; try { db.onclose = () => { dbp = null; }; db.onversionchange = () => { try { db.close(); } catch {} dbp = null; }; } catch {} res(db); };
       r.onerror = () => rej(r.error || new Error("IndexedDB indisponivel."));
       r.onblocked = () => rej(new Error("IndexedDB bloqueado por outra aba."));
     }).catch((e) => { dbp = null; throw e; }));
-    const tx = (mode, fn) => open().then((db) => new Promise((res, rej) => {
+    const tx1 = (mode, fn) => open().then((db) => new Promise((res, rej) => {
       let t, req; try { t = db.transaction(IDB_STORE, mode); req = fn(t.objectStore(IDB_STORE)); } catch (e) { rej(e); return; }
       t.oncomplete = () => res(req && req.result);
       t.onerror = () => rej(t.error || (req && req.error) || new Error("Falha no IndexedDB."));
       t.onabort = () => rej(t.error || new Error("Transacao do IndexedDB abortada."));
     }));
+    // iOS fecha a conexao do IndexedDB ao ir para segundo plano: reabre e tenta de novo (ate 2 vezes) antes de falhar.
+    const tx = (mode, fn) => tx1(mode, fn).catch((e) => { dbp = null; return tx1(mode, fn); }).catch((e) => { dbp = null; return tx1(mode, fn); });
     return { getAll: () => tx("readonly", (st) => st.getAll()), put: (rec) => tx("readwrite", (st) => st.put(rec)), del: (id) => tx("readwrite", (st) => st.delete(id)) };
   }
   // Retorna null quando nao ha IndexedDB (comportamento anterior, 100% localStorage) ou uma Promise.

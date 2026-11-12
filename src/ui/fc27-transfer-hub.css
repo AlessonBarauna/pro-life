@@ -53,3 +53,7 @@
 .tfh-embed .cc-market-heading,.tfh-embed .cc-market-entry-title{display:none}
 .tfh-embed .cc-market-screen{padding:0;background:transparent}
 .tfh-embed .cc-market-screen > .cc-card:has(+ .cc-deal-nav){display:none}
+
+/* Abas do Mercado = uma por assunto: o submenu interno da gestão não repete Scouting/Elenco/Painel */
+.tfh-embed.tfh-area-scout .cc-market-main-nav,.tfh-embed.tfh-area-elenco .cc-market-main-nav{display:none!important}
+.tfh-embed.tfh-area-gestao .cc-market-main-nav :is([data-coach-market-area="overview"],[data-coach-market-area="observacao"],[data-coach-market-area="squad"]){display:none!important}
