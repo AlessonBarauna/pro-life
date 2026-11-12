@@ -9054,6 +9054,24 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (!S.save(state))
       toast("Autosave indisponível neste navegador. Use Exportar save.");
   }
+  // Autosave silencioso: ao minimizar/fechar o app (iOS descarta a aba), após interações e a cada 20 s.
+  let autosaveTimer = null, lastAutosave = 0;
+  function autosaveNow() {
+    clearTimeout(autosaveTimer); autosaveTimer = null;
+    if (!state || setup) return;
+    try { S.save(state); lastAutosave = Date.now(); } catch (_) {}
+    try { S.idbFlush?.(); } catch (_) {}
+  }
+  function autosaveSoon() {
+    if (!state || setup || autosaveTimer) return;
+    autosaveTimer = setTimeout(autosaveNow, 1500);
+  }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") autosaveNow(); });
+  window.addEventListener("pagehide", autosaveNow);
+  window.addEventListener("blur", autosaveNow);
+  document.addEventListener("click", autosaveSoon, true);
+  document.addEventListener("change", autosaveSoon, true);
+  setInterval(() => { if (document.visibilityState === "visible" && Date.now() - lastAutosave > 19000) autosaveNow(); }, 20000);
   async function enterLandscapeMode() {
     try {
       if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
