@@ -233,9 +233,10 @@
     }
     if ((el = t.closest("[data-tfh-tab]"))) {
       const nt = el.dataset.tfhTab; negPid = null; flash = "";
+      try { layer.querySelector(".csh-detail.is-open .csh-detail-close")?.click(); } catch (e) {}
       if (AREA_OF[nt] && (nt !== tab || nt !== "gestao")) {
         const V = root.ProLifeCoachCareerView, cur = V?.state?.marketArea;
-        if (nt !== "gestao" || ["observacao", "squad", "overview"].includes(cur)) { try { V?.setMarketArea?.(AREA_OF[nt]); } catch (e) {} }
+        if (nt !== "gestao" || nt !== tab || ["observacao", "squad", "overview"].includes(cur)) { try { V?.setMarketArea?.(AREA_OF[nt]); } catch (e) {} }
       }
       if (nt !== tab) { tabHist.push(tab); if (tabHist.length > 20) tabHist.shift(); }
       tab = nt; open(); return;

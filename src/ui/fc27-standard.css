@@ -201,3 +201,19 @@
   .tfh-dialog .tfh-offer{flex-wrap:nowrap;align-items:flex-end;margin:4px 0;gap:8px}
   .tfh-dialog .tfh-offer input{min-width:110px;width:130px;padding:6px 10px}
 }
+
+/* Mercado (celular deitado): cabeçalho nunca encolhe; painel do jogador preso ao diálogo, sem cortar nem rolar de lado */
+.tfh-dialog .sm27-dialog-head{flex:0 0 auto!important;min-height:40px!important;position:relative;z-index:3}
+.tfh-dialog .tfh-tabs{flex:0 0 auto!important;position:relative;z-index:2}
+.tfh-dialog .tfh-body{overflow-x:hidden}
+.tfh-dialog .tfh-body:has(.csh-detail.is-open){overflow:hidden}
+@media (orientation:landscape) and (max-height:560px){
+  .tfh-dialog .csh-detail.is-open{position:absolute!important;top:96px!important;bottom:6px!important;left:8px!important;right:8px!important;width:auto!important;max-width:none!important;margin:0!important;
+    overflow-x:clip!important;overflow-y:auto!important;box-shadow:0 -6px 0 6px #0b1a24!important;background:#0b1a24!important;box-sizing:border-box}
+  .tfh-dialog .csh-detail.is-open *{min-width:0}
+}
+
+/* Início: cards não rolam por dentro (título nunca sobe e some) e títulos longos viram reticências */
+.sm27-card.sm27-tile{overflow:clip!important}
+.sm27-h{min-width:0}
+.sm27-h .sm27-ht{min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
