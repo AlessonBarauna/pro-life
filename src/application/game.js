@@ -675,6 +675,12 @@ case "tactic": {
         s.coachCareer||={version:1};s.coachCareer.saleOffers||=[];
         const offer={id:"sale_"+s.season+"_"+s.day+"_"+p.id+"_"+s.coachCareer.saleOffers.length,playerId:p.id,buyerClubId:buyer.id,sellerClubId:own.id,amount,requested:amount,round:1,status:"pending",createdDay:s.day,expiresDay:s.day+10,dealType:isLoan?"loan":"permanent",loanDays:isLoan?180:null,salaryShare:isLoan?50:null,buyOption:0,history:[{day:s.day,round:1,offer:amount}]};
         s.coachCareer.saleOffers.push(offer);
+        try{
+          const fmt=n=>"R$ "+Number(n).toLocaleString("pt-BR"),left=Number.isFinite(Number(offer.expiresDay))?Math.max(0,Number(offer.expiresDay)-s.day):null;
+          D.Career?.addMessage?.(s,{category:"TREINADOR",sender:buyer.name,subject:(isLoan?"Proposta de empréstimo por ":"Proposta por ")+p.name,
+            body:buyer.name+" "+(isLoan?"quer o empréstimo de ":"oferece ")+(isLoan?"":fmt(amount)+" por ")+p.name+(isLoan?" ("+fmt(amount)+").":".")+(left!=null?" A proposta vale por mais "+left+" dia(s).":"")+" Abra Mercado > Negociações para responder.",
+            priority:"IMPORTANTE",eventId:"sale_offer_"+offer.id});
+        }catch(_){/* aviso é opcional */}
         (s.news||[]).unshift({day:s.day,season:s.season,title:isLoan?"Proposta de empréstimo recebida":"Proposta recebida",body:buyer.name+" oferece R$ "+amount.toLocaleString("pt-BR")+(isLoan?" pelo empréstimo de ":" por ")+p.name+"."});
         break;
       }

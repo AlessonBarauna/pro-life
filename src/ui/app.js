@@ -517,8 +517,25 @@
     navGoingBack = true; page = prev || "home"; render();
     document.querySelector(".game-stage")?.scrollTo?.(0, 0); window.scrollTo(0, 0);
   }
+  // Aviso de proposta nova pelos seus jogadores (toast) — só para propostas que surgem depois que a carreira foi aberta.
+  const offersSeen = new WeakMap();
+  function notifyNewOffers() {
+    try {
+      if (!state || state.mode !== "coach" || !state.coachCareer) return;
+      const pend = (state.coachCareer.saleOffers || []).filter((o) => o.status === "pending");
+      let seen = offersSeen.get(state);
+      if (!seen) { offersSeen.set(state, new Set(pend.map((o) => o.id))); return; }
+      const fresh = pend.filter((o) => !seen.has(o.id));
+      fresh.forEach((o) => seen.add(o.id));
+      if (fresh.length) {
+        const o = fresh[0], nm = (D.GlobalFootball?.playerById?.(state, o.playerId)?.name) || (D.club(state, state.clubId)?.roster || []).find((p) => p.id === o.playerId)?.name || "um jogador";
+        toast(fresh.length > 1 ? fresh.length + " novas propostas pelos seus jogadores. Veja em Mercado > Negociações." : "Nova proposta por " + nm + ". Veja em Mercado > Negociações.");
+      }
+    } catch (_) {}
+  }
   function render() {
     trackPage();
+    notifyNewOffers();
     settleInquiryMessages();
     window.ProLifeChampionsUI?.sync?.(state);
     window.ProLifeEuropaUI?.sync?.(state);
