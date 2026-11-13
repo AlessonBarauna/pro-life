@@ -9087,7 +9087,11 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
   window.addEventListener("blur", autosaveNow);
   document.addEventListener("click", autosaveSoon, true);
   document.addEventListener("change", autosaveSoon, true);
-  setInterval(() => { if (document.visibilityState === "visible" && Date.now() - lastAutosave > 19000) autosaveNow(); }, 20000);
+  try {
+    if (/jsdom/i.test(navigator.userAgent || "")) throw 0; // testes (jsdom): timer periódico seguraria o processo aberto
+    const autosaveInterval = setInterval(() => { if (document.visibilityState === "visible" && Date.now() - lastAutosave > 19000) autosaveNow(); }, 20000);
+    autosaveInterval?.unref?.(); // não segura o processo de teste (jsdom/node) aberto
+  } catch (_) {}
   async function enterLandscapeMode() {
     try {
       if (!document.fullscreenElement && document.documentElement.requestFullscreen) {

@@ -159,7 +159,7 @@
       if (flash) body = `<p class="tfh-flash" role="status">${esc(flash)}</p>` + body;
     }
     const tabs = TABS.map(([id, l]) => `<button type="button" role="tab" class="${tab === id ? "active" : ""}" aria-selected="${tab === id}" data-tfh-tab="${id}">${l}</button>`).join("");
-    return `<div class="sm27-dialog-backdrop" data-tfh-close></div><section class="sm27-dialog tfh-dialog" role="dialog" aria-modal="true" aria-label="Mercado"><header class="sm27-dialog-head">${(negPid || tabHist.length) ? `<button type="button" class="sm27-dialog-back" data-tfh-back aria-label="Voltar">‹</button>` : "<span></span>"}<h2>Mercado</h2><button type="button" class="sm27-dialog-x" data-tfh-close aria-label="Fechar">×</button></header><nav class="tfh-tabs" role="tablist">${tabs}</nav><div class="tfh-body">${body}</div></section>`;
+    return `<div class="sm27-dialog-backdrop" data-tfh-close></div><section class="sm27-dialog tfh-dialog" role="dialog" aria-modal="true" aria-label="Mercado"><header class="sm27-dialog-head"><button type="button" class="sm27-dialog-back" data-tfh-back aria-label="Voltar">‹</button><h2>Mercado</h2><button type="button" class="sm27-dialog-x" data-tfh-close aria-label="Fechar">×</button></header><nav class="tfh-tabs" role="tablist">${tabs}</nav><div class="tfh-body">${body}</div></section>`;
   }
   function open() {
     if (!layer) { layer = doc.createElement("div"); layer.className = "sm27-dialog-layer"; doc.body.appendChild(layer); doc.body.classList.remove("sm27-menu-open"); }
@@ -228,7 +228,7 @@
     if (t.closest("[data-tfh-close]")) { close(); return; }
     if (t.closest("[data-tfh-back]")) {
       if (negPid) { negPid = null; flash = ""; open(); return; }
-      const prev = tabHist.pop(); if (prev) { tab = prev; flash = ""; if (AREA_OF[prev]) { try { root.ProLifeCoachCareerView?.setMarketArea?.(AREA_OF[prev]); } catch (e) {} } open(); }
+      const prev = tabHist.pop(); if (!prev) { close(); return; } if (prev) { tab = prev; flash = ""; if (AREA_OF[prev]) { try { root.ProLifeCoachCareerView?.setMarketArea?.(AREA_OF[prev]); } catch (e) {} } open(); }
       return;
     }
     if ((el = t.closest("[data-tfh-tab]"))) {
