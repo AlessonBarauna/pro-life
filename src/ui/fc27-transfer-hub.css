@@ -59,3 +59,13 @@
 .tfh-embed.tfh-area-gestao .cc-market-main-nav :is([data-coach-market-area="overview"],[data-coach-market-area="observacao"],[data-coach-market-area="squad"]){display:none!important}
 
 .tfh-embed.tfh-area-gestao .cc-market-overview{display:none!important}
+/* Meu elenco/Scouting/Transferências dentro do hub: sem cabeçalhos repetidos */
+.tfh-embed .cc-market-heading>small,.tfh-embed .cc-market-heading>h2,.tfh-embed .cc-market-heading>.cc-note{display:none!important}
+.tfh-embed .cc-market-heading{padding:0!important;margin:0 0 6px!important;min-height:0!important;border:0!important;background:none!important;display:flex;justify-content:flex-end}
+.tfh-embed.tfh-area-elenco .cc-signing-status,.tfh-embed.tfh-area-scout .cc-signing-status{display:none!important}
+@media (max-height:560px){
+.tfh-embed.tfh-area-elenco .csh-heading{padding:8px 12px!important;min-height:0!important;gap:8px!important}
+.tfh-embed.tfh-area-elenco .csh-heading h2{font-size:20px!important;margin:0!important}
+.tfh-embed.tfh-area-elenco .csh-heading p,.tfh-embed.tfh-area-elenco .csh-heading small{display:none!important}
+.tfh-embed.tfh-area-elenco .csh-summary span{padding:4px 8px!important}
+}
