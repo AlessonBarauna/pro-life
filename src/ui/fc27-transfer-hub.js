@@ -88,6 +88,7 @@
     const waiting = (c.saleOffers || []).filter((o) => o.status === "awaiting_window" && o.sellerClubId === s.clubId);
     const negs = (c.negotiations || []).filter((n) => ["pending", "awaiting_window"].includes(n.status) && String(n.buyerClubId) === String(s.clubId));
     const inqs = (c.inquiries || []).filter((i) => String(i.buyerClubId) === String(s.clubId) && !i.dismissed && (i.status === "pending" || (["accepted", "asking_price"].includes(i.status) && s.day <= Number(i.expiresDay)) || (i.status === "rejected" && s.day < Number(i.answeredDay ?? i.responseDay) + 14))).slice().reverse();
+    const negIds = new Set(negs.map((n) => String(n.playerId))), inqsF = inqs.filter((i) => !negIds.has(String(i.playerId)));
     const inqLabel = (i) => i.status === "pending" ? `aguardando resposta (${Math.max(0, Number(i.responseDay) - s.day)} d)` : i.status === "rejected" ? "recusada" : i.status === "asking_price" ? "clube pediu valor" : "sondagem aceita";
     const offerRow = (o) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(o.playerName || nm(o.playerId))}</b><small>${esc(clubName(s, D, o.buyerClubId))} · ${o.dealType === "loan" ? "empréstimo" : "compra"}${Number.isFinite(Number(o.expiresDay)) ? ` · expira em ${Math.max(0, o.expiresDay - s.day)} d` : ""}</small></span><span class="tfh-side"><em>${money(o.amount)}</em><span class="tfh-acts"><button type="button" class="tfh-btn primary" data-tfh-cmd="acceptSaleOffer" data-id="${esc(o.id)}">Aceitar</button><button type="button" class="tfh-btn" data-tfh-cmd="rejectSaleOffer" data-id="${esc(o.id)}">Recusar</button></span></span></li>`;
     const sec = (t, inner, empty) => `<h3 class="tfh-h">${t}</h3>${inner || `<p class="tfh-note">${empty}</p>`}`;
@@ -168,6 +169,7 @@
     const b = layer.querySelector(".tfh-body"); if (b) b.scrollTop = keep;
     if (focused) { const el = layer.querySelector(`[data-tfh-sf="${focused}"]`); if (el && el.type === "search") { el.focus(); el.setSelectionRange?.(el.value.length, el.value.length); } }
   }
+  function leave() { const onLaunch = !!doc.querySelector(".tfh-launch"); close(); if (onLaunch) { try { root.ProLifeGoHome?.(); } catch (e) {} } }
   function close() { if (layer) { layer.remove(); layer = null; } negPid = null; flash = ""; tabHist.length = 0; }
   const cmd = (a, d) => { const ok = root.ProLifeSM27Cmd?.(a, d); const tx = doc.getElementById("toast"); flash = (tx && tx.textContent) || (ok ? "Ação concluída." : "Não foi possível concluir."); if (tx) tx.style.display = "none"; if (layer) open(); return ok; };
 
@@ -225,10 +227,10 @@
     if (t.closest("[data-sm27-market-hub]")) { ev.preventDefault(); tab = "geral"; open(); return; }
     if (!layer) return;
     let el;
-    if (t.closest("[data-tfh-close]")) { close(); return; }
+    if (t.closest("[data-tfh-close]")) { leave(); return; }
     if (t.closest("[data-tfh-back]")) {
       if (negPid) { negPid = null; flash = ""; open(); return; }
-      const prev = tabHist.pop(); if (!prev) { close(); return; } if (prev) { tab = prev; flash = ""; if (AREA_OF[prev]) { try { root.ProLifeCoachCareerView?.setMarketArea?.(AREA_OF[prev]); } catch (e) {} } open(); }
+      const prev = tabHist.pop(); if (!prev) { leave(); return; } if (prev) { tab = prev; flash = ""; if (AREA_OF[prev]) { try { root.ProLifeCoachCareerView?.setMarketArea?.(AREA_OF[prev]); } catch (e) {} } open(); }
       return;
     }
     if ((el = t.closest("[data-tfh-tab]"))) {
@@ -265,7 +267,7 @@
   };
   doc.addEventListener("change", onField);
   doc.addEventListener("input", (ev) => { const t = ev.target; if (layer && t?.matches?.('input[type="search"][data-tfh-sf]')) onField(ev); });
-  doc.addEventListener("keydown", (ev) => { if (layer && ev.key === "Escape") close(); });
+  doc.addEventListener("keydown", (ev) => { if (layer && ev.key === "Escape") leave(); });
 
   root.ProLifeTransferHub = { open, close, html };
   if (typeof module !== "undefined" && module.exports) module.exports = root.ProLifeTransferHub;

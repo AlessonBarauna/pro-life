@@ -517,6 +517,7 @@
     navGoingBack = true; page = prev || "home"; render();
     document.querySelector(".game-stage")?.scrollTo?.(0, 0); window.scrollTo(0, 0);
   }
+  window.ProLifeGoHome = () => { navGoingBack = true; page = "home"; render(); window.scrollTo(0, 0); };
   // Aviso de proposta nova pelos seus jogadores (toast) — só para propostas que surgem depois que a carreira foi aberta.
   const offersSeen = new WeakMap();
   function notifyNewOffers() {
@@ -9088,11 +9089,13 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       toast("Autosave indisponível neste navegador. Use Exportar save.");
   }
   // Autosave silencioso: ao minimizar/fechar o app (iOS descarta a aba), após interações e a cada 20 s.
-  let autosaveTimer = null, lastAutosave = 0;
+  let autosaveTimer = null, lastAutosave = 0, autosaveWarnAt = 0;
   function autosaveNow() {
     clearTimeout(autosaveTimer); autosaveTimer = null;
     if (!state || setup) return;
-    try { S.save(state); lastAutosave = Date.now(); } catch (_) {}
+    let okSave = false;
+    try { okSave = S.save(state); lastAutosave = Date.now(); } catch (_) {}
+    if (okSave === false && Date.now() - (autosaveWarnAt || 0) > 60000) { autosaveWarnAt = Date.now(); try { toast("Não consegui salvar automaticamente. Use Exportar save para não perder o progresso."); } catch (_) {} }
     try { S.idbFlush?.(); } catch (_) {}
   }
   function autosaveSoon() {

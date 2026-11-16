@@ -873,6 +873,12 @@
       if (!id) return !!saveAsNew(s);
       if (stateSlotId(s) !== id) return false;
       if (idbMem.has(id)) return saveIdb(id, s);
+      // Carreira FC 27 ainda no localStorage (cota ~5 MB no iPhone): continua no IndexedDB, mantendo a cópia antiga como reserva.
+      if (idbOk && s && s.catalogVersion === "fc27_v1") {
+        const sl = readSlots().find((x) => x.id === id);
+        idbWrite(id, idbRecord(id, s, sl && sl.label));
+        return true;
+      }
       const existing = localStorage.getItem(SLOT_PREFIX + id);
       if (existing === null) return false;
       try {
