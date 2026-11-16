@@ -57,3 +57,5 @@
 /* Abas do Mercado = uma por assunto: o submenu interno da gestão não repete Scouting/Elenco/Painel */
 .tfh-embed.tfh-area-scout .cc-market-main-nav,.tfh-embed.tfh-area-elenco .cc-market-main-nav{display:none!important}
 .tfh-embed.tfh-area-gestao .cc-market-main-nav :is([data-coach-market-area="overview"],[data-coach-market-area="observacao"],[data-coach-market-area="squad"]){display:none!important}
+
+.tfh-embed.tfh-area-gestao .cc-market-overview{display:none!important}
