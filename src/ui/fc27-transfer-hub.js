@@ -6,7 +6,7 @@
   if (!doc) return;
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const money = (v) => { const n = Number(v) || 0, a = Math.abs(n); return a >= 1e9 ? "R$ " + (a / 1e9).toFixed(2).replace(".", ",") + " bi" : a >= 1e6 ? "R$ " + (a / 1e6).toFixed(1).replace(".", ",") + " mi" : a >= 1e3 ? "R$ " + Math.round(a / 1e3) + " mil" : "R$ " + Math.round(a); };
-  const TABS = [["geral", "Visão geral"], ["mundo", "Atividade mundial"], ["scout", "Scouting"], ["negociacoes", "Negociações"], ["elenco", "Meu elenco"], ["gestao", "Transferências"]];
+  const TABS = [["geral", "Visão geral"], ["mundo", "Atividade mundial"], ["scout", "Scouting"], ["negociacoes", "Negociações"], ["elenco", "Meu elenco"], ["gestao", "Contratos"]];
   const EMBED_TABS = ["scout", "elenco", "gestao"];
   const AREA_OF = { scout: "observacao", elenco: "squad", gestao: "transferencias" };
   const DEAL = { rumor: ["Rumor", "rumor"], scouting: ["Observando", "rumor"], negotiating: ["Em negociação", "neg"], offer: ["Proposta feita", "neg"], completed: ["Fechado", "done"], rejected: ["Recusado", "out"], cancelled: ["Cancelado", "out"] };
@@ -144,6 +144,7 @@
   function gestao(s, D) {
     const V = root.ProLifeCoachCareerView;
     let inner = "";
+    try { if (["lista", "recebidas", "propostas", "emprestimos"].includes(V?.state?.dealTab)) V.setDealTab("contratos"); } catch (e) {}
     try { inner = V?.renderMarket?.(s, D) || ""; } catch (e) {
       try { console.error("[mercado] gestão falhou", e); V?.setTab?.("proposals"); inner = V?.renderMarket?.(s, D) || ""; } catch (e2) { inner = ""; }
     }
@@ -195,11 +196,11 @@
     const direct = msg && msg.dataset.msgPlayer && /^sondagens$/.test(msg.dataset.msgList || "") ? msg.dataset.msgPlayer : null;
     if (direct) {
       try { root.ProLifeCoachCareerView?.setListScreen?.("sondagens"); } catch (e) {}
-      tab = "gestao"; negPid = direct; flash = ""; setTimeout(open, 0);
+      tab = "negociacoes"; negPid = direct; flash = ""; setTimeout(open, 0);
       return;
     }
     ev.preventDefault(); ev.stopImmediatePropagation();
-    tab = "gestao"; negPid = null; flash = ""; setTimeout(open, 0);
+    tab = "negociacoes"; negPid = null; flash = ""; setTimeout(open, 0);
   }, true);
 
   // Página de Mercado do treinador = só um atalho: abre o Mercado novo automaticamente (um único mercado).
@@ -208,7 +209,7 @@
       const l = doc.querySelector(".tfh-launch:not([data-tfh-auto])");
       if (!l || layer || !ctx()) return;
       l.setAttribute("data-tfh-auto", "1");
-      tab = "gestao"; negPid = null; flash = ""; setTimeout(open, 0);
+      tab = "negociacoes"; negPid = null; flash = ""; setTimeout(open, 0);
     }).observe(doc.body, { childList: true, subtree: true });
   } catch (e) {}
 

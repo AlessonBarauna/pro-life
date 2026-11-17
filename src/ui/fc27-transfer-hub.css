@@ -69,3 +69,6 @@
 .tfh-embed.tfh-area-elenco .csh-heading p,.tfh-embed.tfh-area-elenco .csh-heading small{display:none!important}
 .tfh-embed.tfh-area-elenco .csh-summary span{padding:4px 8px!important}
 }
+
+/* Propostas/Negociações ficam só na aba Negociações; aqui só contratos, finanças, cláusulas, histórico e reforços */
+.tfh-embed.tfh-area-gestao :is([data-coach-deal-tab="recebidas"],[data-coach-deal-tab="propostas"],[data-coach-deal-tab="emprestimos"]),.tfh-embed.tfh-area-gestao .cc-market-main-nav,.tfh-embed.tfh-area-gestao .cc-signing-status{display:none!important}
