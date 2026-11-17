@@ -701,7 +701,7 @@ case "tactic": {
         break;
       }
       case "rejectSaleOffer": {
-        const offer=s.coachCareer?.saleOffers?.find(o=>o.id===data.id&&o.status==="pending"&&o.sellerClubId===s.clubId&&(!Number.isFinite(Number(o.expiresDay))||Number(s.day)<=Number(o.expiresDay)));
+        const offer=s.coachCareer?.saleOffers?.find(o=>o.id===data.id&&o.sellerClubId===s.clubId&&(o.status==="awaiting_window"||o.status==="pending"&&(!Number.isFinite(Number(o.expiresDay))||Number(s.day)<=Number(o.expiresDay))));
         if(s.mode!=="coach"||!offer)throw Error("Proposta indisponível.");
         offer.status="rejected";offer.closedDay=s.day;
         (s.news||[]).unshift({day:s.day,season:s.season,title:"Proposta recusada",body:"Você recusou a oferta recebida. O jogador permanece no clube."});

@@ -85,6 +85,7 @@
     const c = s.coachCareer || {}, g = GF();
     const nm = (id) => g?.playerById?.(s, id)?.name || D.club(s, s.clubId)?.roster?.find((p) => p.id === id)?.name || id;
     const offers = (c.saleOffers || []).filter((o) => o.status === "pending" && o.sellerClubId === s.clubId && (!Number.isFinite(Number(o.expiresDay)) || s.day <= o.expiresDay));
+    const winOpen = !!D.Career?.windowStatus?.(s)?.open;
     const waiting = (c.saleOffers || []).filter((o) => o.status === "awaiting_window" && o.sellerClubId === s.clubId);
     const negs = (c.negotiations || []).filter((n) => ["pending", "awaiting_window"].includes(n.status) && String(n.buyerClubId) === String(s.clubId));
     const inqs = (c.inquiries || []).filter((i) => String(i.buyerClubId) === String(s.clubId) && !i.dismissed && (i.status === "pending" || (["accepted", "asking_price"].includes(i.status) && s.day <= Number(i.expiresDay)) || (i.status === "rejected" && s.day < Number(i.answeredDay ?? i.responseDay) + 14))).slice().reverse();
@@ -93,7 +94,7 @@
     const offerRow = (o) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(o.playerName || nm(o.playerId))}</b><small>${esc(clubName(s, D, o.buyerClubId))} · ${o.dealType === "loan" ? "empréstimo" : "compra"}${Number.isFinite(Number(o.expiresDay)) ? ` · expira em ${Math.max(0, o.expiresDay - s.day)} d` : ""}</small></span><span class="tfh-side"><em>${money(o.amount)}</em><span class="tfh-acts"><button type="button" class="tfh-btn primary" data-tfh-cmd="acceptSaleOffer" data-id="${esc(o.id)}">Aceitar</button><button type="button" class="tfh-btn" data-tfh-cmd="rejectSaleOffer" data-id="${esc(o.id)}">Recusar</button></span></span></li>`;
     const sec = (t, inner, empty) => `<h3 class="tfh-h">${t}</h3>${inner || `<p class="tfh-note">${empty}</p>`}`;
     return sec("Propostas recebidas pelos seus jogadores", offers.length ? `<ul class="tfh-list">${offers.map(offerRow).join("")}</ul>` : "", "Nenhuma proposta no momento.") +
-      (waiting.length ? sec("Vendas acordadas (aguardando a janela)", `<ul class="tfh-list">${waiting.map((o) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(o.playerName || nm(o.playerId))}</b><small>para ${esc(clubName(s, D, o.buyerClubId))}</small></span><span class="tfh-side"><em>${money(o.amount)}</em></span></li>`).join("")}</ul>`) : "") +
+      (waiting.length ? sec(winOpen ? "Vendas acordadas (ainda não concluídas)" : "Vendas acordadas (aguardando a janela)", `<ul class="tfh-list">${waiting.map((o) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(o.playerName || nm(o.playerId))}</b><small>para ${esc(clubName(s, D, o.buyerClubId))}${winOpen ? ` · ${o.lastSettlementError ? "não concluída: " + esc(o.lastSettlementError) : "será concluída ao avançar o dia"}` : ""}</small></span><span class="tfh-side"><em>${money(o.amount)}</em><span class="tfh-acts">${winOpen ? `<button type="button" class="tfh-btn primary" data-tfh-cmd="acceptSaleOffer" data-id="${esc(o.id)}">Concluir agora</button>` : ""}<button type="button" class="tfh-btn" data-tfh-cmd="rejectSaleOffer" data-id="${esc(o.id)}">Cancelar</button></span></span></li>`).join("")}</ul>`) : "") +
       sec("Suas negociações de compra", negs.length ? `<ul class="tfh-list">${negs.map((n) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(n.playerName || nm(n.playerId))}</b><small>${esc(clubName(s, D, n.sellerClubId))} · ${n.status === "awaiting_window" ? "acordo fechado, aguardando janela" : "em andamento"}</small></span><span class="tfh-side">${Number(n.amount ?? n.fee) > 0 ? `<em>${money(n.amount ?? n.fee)}</em>` : ""}<button type="button" class="tfh-btn" data-tfh-negotiate="${esc(n.playerId)}">Abrir</button></span></li>`).join("")}</ul>` : "", "Nenhuma negociação aberta. Use Buscar jogadores.") +
       sec("Sondagens em andamento", inqsF.length ? `<ul class="tfh-list">${inqsF.map((i) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(i.playerName || nm(i.playerId))}</b><small>${esc(clubName(s, D, i.clubId))} · ${inqLabel(i)}</small></span><span class="tfh-side"><button type="button" class="tfh-btn" data-tfh-negotiate="${esc(i.playerId)}">Abrir</button></span></li>`).join("")}</ul>` : "", "Sem sondagens abertas.") +
       `<p class="tfh-actions"><button type="button" class="tfh-btn" data-tfh-cmd="generateSaleInterest">Ver quem tem interesse nos meus jogadores</button></p>`;
@@ -252,7 +253,10 @@
     if ((el = t.closest("[data-tfh-send]"))) { send(el); return; }
     if ((el = t.closest("[data-tfh-cmd]"))) {
       const a = el.dataset.tfhCmd;
-      cmd(a, a === "setCoachPlayerOfferStatus" ? { playerId: el.dataset.pid, status: el.dataset.status } : el.dataset.id ? { id: el.dataset.id } : {});
+      let who = "";
+      if (a === "acceptSaleOffer" || a === "rejectSaleOffer") { const row = el.closest(".tfh-row"); who = row?.querySelector("b")?.textContent || ""; }
+      const ok = cmd(a, a === "setCoachPlayerOfferStatus" ? { playerId: el.dataset.pid, status: el.dataset.status } : el.dataset.id ? { id: el.dataset.id } : {});
+      if (who && ok && /^Ação concluída/.test(flash)) { flash = a === "acceptSaleOffer" ? `Proposta por ${who} aceita. Se a janela estiver fechada, a venda fica aguardando a abertura.` : `Proposta por ${who} recusada.`; if (layer) open(); }
     }
   }, true);
   const onField = (ev) => {
