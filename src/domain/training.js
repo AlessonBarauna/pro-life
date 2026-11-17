@@ -423,10 +423,10 @@
     return a;
   }
   function groupRatings(attrs) {
-    const a = attrs;
+    const a = attrs || {};
     // Os seis atributos principais são a fonte canônica exibida em todo o jogo.
     // Os 21 subatributos detalham esses grupos e afetam treino/desempenho, sem criar um segundo valor visual.
-    return Object.fromEntries(core.map((key) => [key, clamp(a[key])]));
+    return Object.fromEntries(core.map((key) => [key, clamp(Number.isFinite(a[key]) ? a[key] : 50)]));
   }
   function ceiling(s, helpers) {
     const module32C = root.ProLifeDynamicPotential;

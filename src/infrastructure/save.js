@@ -668,8 +668,29 @@
   let validateWarning = null;
   // Um save gerado pelo próprio jogo nunca deve ser recusado só porque algum número passou do limite esperado:
   // a estrutura é conferida e o aviso fica registrado (saveWarning), em vez de perder a carreira.
+  // Jogadores/técnico sem atributos (ou com atributos faltando/fora de 0–100) quebravam o carregamento: completa com valores neutros.
+  const CORE_ATTRS = ["pace", "finish", "pass", "defense", "strength", "stamina"];
+  function repairPeople(s) {
+    if (!s || typeof s !== "object") return;
+    const fix = (p) => {
+      if (!p || typeof p !== "object") return;
+      const src = p.attrs && typeof p.attrs === "object" ? p.attrs : {};
+      const known = Object.values(src).filter((v) => typeof v === "number" && Number.isFinite(v));
+      const base = known.length ? Math.round(known.reduce((x, y) => x + y, 0) / known.length) : (Number.isFinite(p.ovr) ? p.ovr : Number.isFinite(p.overall) ? p.overall : 50);
+      const a = {};
+      for (const k of new Set([...CORE_ATTRS, ...Object.keys(src)])) {
+        const v = src[k];
+        a[k] = typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : Math.max(20, Math.min(100, base));
+      }
+      p.attrs = a;
+      for (const k of ["condition", "morale", "discipline"]) if (!(typeof p[k] === "number" && Number.isFinite(p[k]))) p[k] = k === "discipline" ? 70 : 80;
+      if (!(typeof p.potential === "number" && Number.isFinite(p.potential))) p.potential = Math.max(a.pace, a.finish, a.pass, a.defense);
+    };
+    try { fix(s.person); if (Array.isArray(s.clubs)) for (const c of s.clubs) if (c && Array.isArray(c.roster)) for (const p of c.roster) fix(p); } catch (_) {}
+  }
   let lenientNow = false;
   function validate(s) {
+    if (lenientNow) repairPeople(s);
     try { validateWarning = null; return strictValidate(s); }
     catch (e) {
       if (lenientNow && e && e.saveCheck !== undefined && looksLikeSave(s)) { validateWarning = e.message; return s; }
