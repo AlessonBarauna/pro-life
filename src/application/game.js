@@ -724,7 +724,13 @@ case "tactic": {
         if(buyer&&!Array.isArray(buyer.roster)){const r=D.GlobalFootball?.playersByClub?.(s,buyer.id)||[];if(r.length>18){buyer.roster=r.slice();buyer.lineup||=[];}}
         const p=seller?.roster?.find(x=>x.id===offer.playerId);
         let fee=Number(offer.amount);
-        if(!p||p.id==="hero"||seller.id===buyer?.id||seller.roster.length<=18||!buyer||!Array.isArray(buyer.roster)||!Number.isSafeInteger(fee)||fee<=0||fee>100000000000||!Number.isFinite(Number(buyer.budget))||Number(buyer.budget)<fee||buyer.roster.some(x=>x.id===p.id))throw Error("Transferência indisponível ou orçamento insuficiente.");
+        const brl=v=>"R$ "+Math.round(Number(v)||0).toLocaleString("pt-BR");
+        if(!p)throw Error("O jogador não está mais no seu elenco.");
+        if(p.id==="hero"||!buyer||seller.id===buyer.id||!Array.isArray(buyer.roster))throw Error("O clube comprador não pode concluir esta transferência.");
+        if(seller.roster.length<=18)throw Error("Seu elenco ficaria com menos de 19 jogadores. Contrate antes de vender.");
+        if(!Number.isSafeInteger(fee)||fee<=0||fee>100000000000)throw Error("Valor da proposta inválido.");
+        if(buyer.roster.some(x=>x.id===p.id))throw Error("O jogador já está no clube comprador.");
+        if(!Number.isFinite(Number(buyer.budget))||Number(buyer.budget)<fee)throw Error((buyer.name||"O comprador")+" não tem orçamento: a proposta é de "+brl(fee)+" e o clube tem "+brl(Math.max(0,Number(buyer.budget)||0))+".");
         if((s.coachCareer?.loans||[]).some(l=>!l.returned&&l.playerId===p.id))throw Error("Jogador emprestado não pode ser vendido.");
         if(offer.dealType==="loan"){
           const duration=Number(offer.loanDays||180),salaryShare=Number(offer.salaryShare??50);
@@ -781,7 +787,16 @@ case "tactic": {
         for(const offer of s.coachCareer?.saleOffers||[]){
           if(offer.status!=="awaiting_window"||offer.sellerClubId!==s.clubId)continue;
           try{execute(s,"acceptSaleOffer",{id:offer.id});}
-          catch(error){offer.lastSettlementError=String(error?.message||error);}
+          catch(error){
+            offer.lastSettlementError=String(error?.message||error);
+            offer.failedDays=(offer.failedDays||0)+1;
+            // Comprador sem condição de pagar por vários dias: o acordo cai e a pessoa é avisada.
+            if(offer.failedDays>=7&&offer.status==="awaiting_window"){
+              offer.status="cancelled";offer.closedDay=s.day;
+              const pl=D.club(s,offer.sellerClubId)?.roster?.find(x=>x.id===offer.playerId);
+              try{D.Career?.addMessage?.(s,{category:"TREINADOR",sender:"Diretoria",subject:"Venda cancelada: "+(pl?.name||"jogador"),body:"O acordo por "+(pl?.name||"jogador")+" caiu: "+offer.lastSettlementError,priority:"IMPORTANTE",eventId:"sale_cancel_"+offer.id});}catch(_){}
+            }
+          }
         }
         return s;
       }

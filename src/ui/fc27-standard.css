@@ -219,3 +219,9 @@
 .sm27-h .sm27-ht{min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 /* Início: títulos de cards não cortam */
 .sm27-card.sm27-tile :is(h2,h3,h4,.sm27-ht){font-size:clamp(12px,3.2vw,15px)!important;white-space:normal!important;overflow-wrap:anywhere;line-height:1.15}
+/* Preferências de proposta: caixas de seleção visíveis e fáceis de tocar */
+.offer-pref-leagues{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:6px 0 10px}
+:is(.offer-pref-leagues label,label:has(>#offer-international)){display:flex!important;align-items:center;gap:10px;min-height:44px;padding:0 12px;border:1px solid #2b4656;border-radius:12px;background:#0f202b;cursor:pointer}
+:is(.offer-pref-leagues,label) input[type="checkbox"]{-webkit-appearance:checkbox!important;appearance:auto!important;width:22px!important;height:22px!important;min-width:22px!important;min-height:0!important;padding:0!important;margin:0!important;border-radius:4px!important;background:none!important;border:0!important;accent-color:#d6ff2f;flex:none}
+.offer-pref-leagues label:has(input:checked){border-color:#d6ff2f;background:rgba(214,255,47,.08)}
+.neg-review{margin-left:8px;padding:4px 12px;border-radius:999px;border:1px solid #d6ff2f;background:transparent;color:#d6ff2f;font:inherit;font-size:12px;cursor:pointer}
