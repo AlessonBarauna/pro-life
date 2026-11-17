@@ -534,9 +534,27 @@
       }
     } catch (_) {}
   }
+  // Som de novas mensagens/conquistas: compara as mensagens não lidas com as já vistas nesta carreira.
+  const msgSeen = new WeakMap();
+  function notifyNewMessages() {
+    try {
+      if (!state || !window.ProLifeSound) return;
+      const list = state.extras?.communications?.messages;
+      if (!Array.isArray(list)) return;
+      const unread = list.filter((m) => !m.read);
+      let seen = msgSeen.get(state);
+      if (!seen) { msgSeen.set(state, new Set(unread.map((m) => m.id))); return; }
+      const fresh = unread.filter((m) => !seen.has(m.id));
+      fresh.forEach((m) => seen.add(m.id));
+      if (!fresh.length) return;
+      const win = fresh.some((m) => /t[íi]tulo|campe|conquist|trof[ée]u|promovid|acesso|melhor jogador|bola de ouro/i.test(String(m.subject || m.title || "") + " " + String(m.category || "")));
+      window.ProLifeSound.play(win ? "achievement" : "message");
+    } catch (_) {}
+  }
   function render() {
     trackPage();
     notifyNewOffers();
+    notifyNewMessages();
     settleInquiryMessages();
     window.ProLifeChampionsUI?.sync?.(state);
     window.ProLifeEuropaUI?.sync?.(state);

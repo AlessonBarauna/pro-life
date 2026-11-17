@@ -143,6 +143,7 @@ const files = [
   "src/ui/mobile-game-viewport.js",
   "src/ui/mobile-sm27.js",
   "src/ui/sm27-shell.js",
+  "src/ui/sound.js",
   "src/ui/sm27-squad.js",
   "src/ui/sm27-objectives.js",
   "src/ui/sm27-facilities.js",

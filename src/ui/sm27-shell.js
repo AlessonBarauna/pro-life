@@ -161,12 +161,16 @@
   function renderSettings(view) {
     const tab = view === "dados" ? "dados" : "jogo";
     const prefs = readPrefs();
-    const toggle = (key, label, hint) => `<div class="shd-row"><span><b>${label}</b>${hint ? `<small>${hint}</small>` : ""}</span><button type="button" class="shd-switch${prefs[key] ? " on" : ""}" role="switch" aria-checked="${prefs[key] ? "true" : "false"}" data-sm27-pref="${key}"><i></i></button></div>`;
+    const DEF_ON = { sfx: 1, music: 1 };
+    const isOn = (key) => (DEF_ON[key] ? prefs[key] !== false : !!prefs[key]);
+    const toggle = (key, label, hint) => `<div class="shd-row"><span><b>${label}</b>${hint ? `<small>${hint}</small>` : ""}</span><button type="button" class="shd-switch${isOn(key) ? " on" : ""}" role="switch" aria-checked="${isOn(key) ? "true" : "false"}" data-sm27-pref="${key}"><i></i></button></div>`;
     const inGame = !!doc.querySelector(".game-shell");
     let body;
     if (tab === "jogo") {
       body = `<div class="shd-list">` +
         `<div class="shd-row"><span><b>Idioma</b></span><select disabled aria-label="Idioma"><option>Português</option></select></div>` +
+        toggle("music", "Trilha sonora", "Música de fundo durante o jogo") +
+        toggle("sfx", "Efeitos sonoros", "Botões, conquistas e novas mensagens") +
         toggle("reduceMotion", "Reduzir animações", "Menos movimento nas transições") +
         toggle("largeText", "Texto maior", "Aumenta a fonte base da interface") +
         (inGame ? `<div class="shd-row"><span><b>Salvar agora</b><small>Grava a carreira neste aparelho</small></span><button type="button" class="shd-btn" data-action="export" data-sm27-close>Salvar</button></div>` : "") +
@@ -232,7 +236,7 @@
     const sv = t.closest("[data-sm27-settings-view]");
     if (sv) { const v = sv.dataset.sm27SettingsView; if (v === "jogo" || v === "dados") open("settings", v); else { renderInfo(v); const f = layer.querySelector("input,button"); if (f) f.focus(); } return; }
     const pref = t.closest("[data-sm27-pref]");
-    if (pref) { const prefs = readPrefs(); prefs[pref.dataset.sm27Pref] = !prefs[pref.dataset.sm27Pref]; writePrefs(prefs); applyPrefs(); renderSettings(layer.querySelector("[data-sm27-settings-view][aria-selected='true']")?.dataset.sm27SettingsView || "jogo"); return; }
+    if (pref) { const prefs = readPrefs(), pk = pref.dataset.sm27Pref; prefs[pk] = (pk === "sfx" || pk === "music") ? (prefs[pk] === false) : !prefs[pk]; writePrefs(prefs); applyPrefs(); try { root.ProLifeSound && root.ProLifeSound.refresh(); } catch (_) {} renderSettings(layer.querySelector("[data-sm27-settings-view][aria-selected='true']")?.dataset.sm27SettingsView || "jogo"); return; }
     if (t.closest("[data-sm27-wipe]")) { wipe(); }
   }, true);
 
