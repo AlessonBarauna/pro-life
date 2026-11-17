@@ -734,9 +734,15 @@
   function setActive(id) { memActive = id; if (!trySet(ACTIVE_KEY, id)) { try { localStorage.removeItem(ACTIVE_KEY); } catch {} } return true; }
   function loadSlot(id) {
     if (idbMem.has(id)) {
-      try { const s = decodeLocal(JSON.parse(idbMem.get(id).text)); setActive(id); bindStateToSlot(s, id); return s; } catch (e) { noteFailure("decode", e); return null; }
+      try { const s = decodeLocal(JSON.parse(idbMem.get(id).text)); setActive(id); bindStateToSlot(s, id); return s; }
+      catch (e) {
+        noteFailure("decode", e);
+        // Gravação nova ilegível: tenta a cópia anterior no localStorage (se existir) em vez de perder o acesso à carreira.
+        try { const data = localStorage.getItem(SLOT_PREFIX + id); if (data) { const s = decodeLocal(JSON.parse(data)); setActive(id); bindStateToSlot(s, id); return s; } } catch (e2) { noteFailure("decode", e2); }
+        return null;
+      }
     }
-    try { const data=localStorage.getItem(SLOT_PREFIX+id); if(!data) return null; const s=decodeLocal(JSON.parse(data)); trySet(ACTIVE_KEY,id); bindStateToSlot(s,id); return s; } catch { return null; }
+    try { const data=localStorage.getItem(SLOT_PREFIX+id); if(!data) { noteFailure("missing", "carreira não encontrada neste aparelho"); return null; } const s=decodeLocal(JSON.parse(data)); trySet(ACTIVE_KEY,id); bindStateToSlot(s,id); return s; } catch (e) { noteFailure("decode", e); return null; }
   }
   // 34F.15: motivo da ultima falha de gravacao (diagnostico para a interface; nao altera nenhum dado).
   let lastFailure = null;

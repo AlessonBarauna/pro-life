@@ -10169,12 +10169,15 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (b.dataset.saveFailClose !== undefined) { document.getElementById("save-fail")?.remove(); return; }
     if (b.dataset.exportSlot) { exportSlot(b.dataset.exportSlot); return; }
     if (b.dataset.loadSlot) {
-      const loaded=S.loadSlot?.(b.dataset.loadSlot);
-      if(!loaded){toast("Não foi possível carregar esta carreira.");return;}
-      const prepared=prepareLoadedCompetitions(loaded);
-      state=loaded; setup=false; page="home";
-      if(prepared.prepared) persist();
-      render(); return;
+      try{
+        const loaded=S.loadSlot?.(b.dataset.loadSlot);
+        if(!loaded){const er=S.lastSaveError?.();toast("Não foi possível carregar esta carreira"+(er?" ("+String(er.message||er.reason).slice(0,120)+")":"")+".");return;}
+        const prepared=prepareLoadedCompetitions(loaded);
+        state=loaded; setup=false; page="home";
+        if(prepared.prepared) persist();
+        render();
+      }catch(error){toast("Erro ao abrir a carreira: "+String(error&&error.message||error).slice(0,140));console.error(error);}
+      return;
     }
     if (b.dataset.deleteSlot) {
       if(!confirm("Excluir esta carreira deste aparelho? Esta ação não pode ser desfeita.")) return;
