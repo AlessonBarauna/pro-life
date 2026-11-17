@@ -9095,7 +9095,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (!state || setup) return;
     let okSave = false;
     try { okSave = S.save(state); lastAutosave = Date.now(); } catch (_) {}
-    if (okSave === false && Date.now() - (autosaveWarnAt || 0) > 60000) { autosaveWarnAt = Date.now(); try { toast("Não consegui salvar automaticamente. Use Exportar save para não perder o progresso."); } catch (_) {} }
+    if (okSave === false && Date.now() - (autosaveWarnAt || 0) > 60000) { autosaveWarnAt = Date.now(); try { { const er = S.lastSaveError?.(); toast("Não consegui salvar automaticamente" + (er ? " (" + er.reason + (er.message ? ": " + String(er.message).slice(0, 90) : "") + ")" : "") + ". Use Exportar save para não perder o progresso."); } } catch (_) {} }
     try { S.idbFlush?.(); } catch (_) {}
   }
   function autosaveSoon() {
@@ -9612,7 +9612,17 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       try {
         const f = input.files[0];
         if (!f) return;
-        const parsed = S.parse(await f.text());
+        const text = await f.text();
+        let parsed;
+        try { parsed = S.parse(text); }
+        catch (strictError) {
+          // Save exportado pelo próprio jogo, mas com algum número fora do limite esperado: importa se a pessoa confirmar.
+          let lenient = null;
+          try { lenient = S.parse(text, true); } catch (_) {}
+          if (!lenient) throw strictError;
+          if (!window.confirm("Este arquivo tem valores fora do padrão (" + String(strictError.message).replace("Arquivo de save inválido ou incompatível.", "").trim() + "), mas a estrutura é de um save do PRO LIFE. Importar mesmo assim?")) return;
+          parsed = lenient;
+        }
         prepareLoadedCompetitions(parsed);
         const id = await (S.saveAsNewAsync ? S.saveAsNewAsync(parsed) : S.saveAsNew?.(parsed));
         if (!id) throw Error("Nao foi possivel salvar a carreira importada. O arquivo original permanece intacto.");

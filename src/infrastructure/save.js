@@ -14,9 +14,14 @@
   const GlobalFootball =
     root.ProLifeGlobalFootball ||
     (typeof require === "function" ? require("../domain/global-football.js") : null);
-  function validate(s) {
+  // Validação estrita; ver validate() abaixo, que tolera saves do próprio jogo com algum valor fora do limite.
+  function strictValidate(s) {
     const fail = () => {
-      throw Error("Arquivo de save inválido ou incompatível.");
+      let where = "";
+      try { const m = String(new Error().stack).split("\n")[2].match(/(\d+):\d+\)?$/); if (m) where = " [verificação " + m[1] + "]"; } catch (_) {}
+      const e = Error("Arquivo de save inválido ou incompatível." + where);
+      e.saveCheck = where;
+      throw e;
     };
     const num = (v, a, b) =>
       typeof v === "number" && Number.isFinite(v) && v >= a && v <= b;
@@ -654,10 +659,30 @@
     return validate(restored);
   }
 
-  function parse(text) {
+  function looksLikeSave(s) {
+    return !!(s && typeof s === "object" && s.version === 1 && ["player", "coach"].includes(s.mode) &&
+      s.person && typeof s.person === "object" && Array.isArray(s.clubs) && s.clubs.length >= 8 &&
+      s.clubs.every((c) => c && typeof c.id === "string" && Array.isArray(c.roster)) &&
+      Array.isArray(s.fixtures) && Number.isFinite(s.day) && Number.isFinite(s.season));
+  }
+  let validateWarning = null;
+  // Um save gerado pelo próprio jogo nunca deve ser recusado só porque algum número passou do limite esperado:
+  // a estrutura é conferida e o aviso fica registrado (saveWarning), em vez de perder a carreira.
+  let lenientNow = false;
+  function validate(s) {
+    try { validateWarning = null; return strictValidate(s); }
+    catch (e) {
+      if (lenientNow && e && e.saveCheck !== undefined && looksLikeSave(s)) { validateWarning = e.message; return s; }
+      throw e;
+    }
+  }
+  function validateLocal(s) { const prev = lenientNow; lenientNow = true; try { return validate(s); } finally { lenientNow = prev; } }
+  function decodeLocal(v) { const prev = lenientNow; lenientNow = true; try { return decodeHybridSave(v); } finally { lenientNow = prev; } }
+  function saveWarning() { return validateWarning; }
+  function parse(text, lenient) {
     if (typeof text !== "string")
       throw Error("Arquivo de save inv?lido ou incompat?vel.");
-    return decodeHybridSave(JSON.parse(text));
+    return lenient ? decodeLocal(JSON.parse(text)) : decodeHybridSave(JSON.parse(text));
   }
   const stateSlotBindings = new WeakMap();
 
@@ -693,7 +718,7 @@
     const legacy=localStorage.getItem(KEY);
     if(!legacy) return slots;
     try {
-      const s=validate(JSON.parse(legacy)), id="career_legacy";
+      const s=validateLocal(JSON.parse(legacy)), id="career_legacy";
       localStorage.setItem(SLOT_PREFIX+id, JSON.stringify(s));
       slots=[slotSummary(id,s,Date.now())]; writeSlots(slots); localStorage.setItem(ACTIVE_KEY,id); localStorage.removeItem(KEY);
     } catch {}
@@ -709,9 +734,9 @@
   function setActive(id) { memActive = id; if (!trySet(ACTIVE_KEY, id)) { try { localStorage.removeItem(ACTIVE_KEY); } catch {} } return true; }
   function loadSlot(id) {
     if (idbMem.has(id)) {
-      try { const s = decodeHybridSave(JSON.parse(idbMem.get(id).text)); setActive(id); bindStateToSlot(s, id); return s; } catch (e) { noteFailure("decode", e); return null; }
+      try { const s = decodeLocal(JSON.parse(idbMem.get(id).text)); setActive(id); bindStateToSlot(s, id); return s; } catch (e) { noteFailure("decode", e); return null; }
     }
-    try { const data=localStorage.getItem(SLOT_PREFIX+id); if(!data) return null; const s=decodeHybridSave(JSON.parse(data)); trySet(ACTIVE_KEY,id); bindStateToSlot(s,id); return s; } catch { return null; }
+    try { const data=localStorage.getItem(SLOT_PREFIX+id); if(!data) return null; const s=decodeLocal(JSON.parse(data)); trySet(ACTIVE_KEY,id); bindStateToSlot(s,id); return s; } catch { return null; }
   }
   // 34F.15: motivo da ultima falha de gravacao (diagnostico para a interface; nao altera nenhum dado).
   let lastFailure = null;
@@ -802,11 +827,11 @@
     if (!(idbOk && s && s.catalogVersion === "fc27_v1")) return Promise.resolve(saveAsNew(s));
     lastFailure = null;
     let id, rec;
-    try { validate(s); id = newSlotId(); rec = idbRecord(id, s); } catch (e) { noteFailure("validate", e); return Promise.resolve(null); }
+    try { validateLocal(s); id = newSlotId(); rec = idbRecord(id, s); } catch (e) { noteFailure("validate", e); return Promise.resolve(null); }
     return idbWrite(id, rec).then((ok) => { if (!ok) return null; setActive(id); bindStateToSlot(s, id); return id; });
   }
   function saveIdb(id, s) {
-    validate(s);
+    validateLocal(s);
     const prev = idbMem.get(id);
     idbWrite(id, idbRecord(id, s, prev && prev.summary && prev.summary.label));
     return true;
@@ -845,7 +870,7 @@
   function saveAsNew(s) {
     lastFailure = null;
     try {
-      validate(s);
+      validateLocal(s);
       const id = "career_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
       const slotsBefore = tryGet(SLOTS_KEY);
       if (!commitSlot(id, s, null)) return null;
@@ -868,7 +893,7 @@
   }
   function save(s) {
     try {
-      validate(s);
+      validateLocal(s);
       let id = activeId();
       if (!id) return !!saveAsNew(s);
       if (stateSlotId(s) !== id) return false;
@@ -883,7 +908,7 @@
       if (existing === null) return false;
       try {
         const previous = JSON.parse(existing), fmt = detectSaveFormat(previous);
-        if (fmt === "legacy") { validate(previous); if (!sameCareer(previous, s)) return false; }
+        if (fmt === "legacy") { validateLocal(previous); if (!sameCareer(previous, s)) return false; }
         else if (fmt === "compact") { if (!previous.state || !sameCareer(previous.state, s)) return false; if (baseFingerprint(baseCatalogFor(previous.state), root.ProLifeCompactSave) !== previous.fingerprint) return false; if (previous.version === 2 ? previous.statsFormat !== SPARSE_STATS : previous.statsFormat !== undefined) return false; }
         else return false;
       } catch {
@@ -894,10 +919,10 @@
   }
   // Diagnostico sem alterar nada: o slot abre com este codigo?
   function slotStatus(id) {
-    if (idbMem.has(id)) { try { decodeHybridSave(JSON.parse(idbMem.get(id).text)); return { ok: true, format: "indexeddb" }; } catch (e) { return { ok: false, reason: String(e && e.message || e) }; } }
+    if (idbMem.has(id)) { try { decodeLocal(JSON.parse(idbMem.get(id).text)); return { ok: true, format: "indexeddb" }; } catch (e) { return { ok: false, reason: String(e && e.message || e) }; } }
     const data = tryGet(SLOT_PREFIX + id);
     if (data === null) return { ok: false, reason: "ausente" };
-    try { const v = JSON.parse(data), fmt = detectSaveFormat(v); decodeHybridSave(v); return { ok: true, format: fmt }; }
+    try { const v = JSON.parse(data), fmt = detectSaveFormat(v); decodeLocal(v); return { ok: true, format: fmt }; }
     catch (e) { return { ok: false, reason: String(e && e.message || e) }; }
   }
   function load() {
@@ -929,7 +954,7 @@
     x.label=String(name||"").trim().slice(0,60); writeSlots(slots); return true;
   }
   function clearActive() { memActive = null; localStorage.removeItem(ACTIVE_KEY); }
-  root.ProLifeSave = { ready, useIdbBackend, onSaveFailure, idbActive, idbFlush, saveAsNewAsync, slotCatalog, storageMode, lastSaveError, storageUsage, slotSummary, parse, validate, save, load, saveAsNew, listSlots, loadSlot, removeSlot, renameSlot, activeId, clearActive, bindStateToSlot, stateSlotId, slotStatus, encodeHybridSave, decodeHybridSave, detectSaveFormat, setCompactWriteMode, compactWriteMode, KEY, SLOTS_KEY, ACTIVE_KEY };
+  root.ProLifeSave = { ready, useIdbBackend, onSaveFailure, idbActive, idbFlush, saveAsNewAsync, slotCatalog, storageMode, lastSaveError, storageUsage, slotSummary, parse, validate, saveWarning, save, load, saveAsNew, listSlots, loadSlot, removeSlot, renameSlot, activeId, clearActive, bindStateToSlot, stateSlotId, slotStatus, encodeHybridSave, decodeHybridSave, detectSaveFormat, setCompactWriteMode, compactWriteMode, KEY, SLOTS_KEY, ACTIVE_KEY };
   if (typeof module !== "undefined" && module.exports)
     module.exports = root.ProLifeSave;
 })(typeof globalThis !== "undefined" ? globalThis : this);
