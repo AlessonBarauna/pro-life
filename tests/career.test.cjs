@@ -86,8 +86,10 @@ test("transfer windows enforce day boundaries, proposal acceptance and recruitme
   s.day = 100;
   s.offers = [{ clubId: "c2", salary: 8000, role: "Treinador", expires: 110 }];
   const before = JSON.stringify(s);
-  assert.throws(() => A.execute(s, "join", { id: "c2" }), /Janela/);
-  assert.throws(() => D.join(s, "c2", 8000), /Janela/);
+  // Treinador pode assumir outro clube a qualquer momento (o cargo não depende da janela de jogadores).
+  const coachOutside = JSON.parse(JSON.stringify(s));
+  A.execute(coachOutside, "join", { id: "c2" });
+  assert.equal(coachOutside.clubId, "c2");
   assert.throws(
     () =>
       A.execute(s, "recruit", {

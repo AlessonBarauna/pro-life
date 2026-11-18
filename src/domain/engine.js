@@ -754,7 +754,21 @@
   }
   function dropWorldMatchClubs(s, keepId) {
     if (!s.worldMatchClubs) return;
-    for (const id of Object.keys(s.worldMatchClubs)) if (id !== keepId) delete s.worldMatchClubs[id];
+    for (const id of Object.keys(s.worldMatchClubs)) {
+      if (id === keepId) continue;
+      // Ao deixar o clube, os atletas reais (contratados ou formados lá) voltam ao mundo e continuam na busca.
+      const dropped = s.worldMatchClubs[id];
+      if (dropped && Array.isArray(dropped.roster)) {
+        const world = (s.internationalPlayers ||= []);
+        const have = new Set(world.map(p => p?.id));
+        for (const p of dropped.roster) {
+          if (!p || !p.id || p.id === "hero" || String(p.id).includes("_wm_") || have.has(p.id)) continue;
+          if ((s.clubs || []).some(c => (c.roster || []).some(r => r?.id === p.id))) continue;
+          p.clubId = id; world.push(p); have.add(p.id);
+        }
+      }
+      delete s.worldMatchClubs[id];
+    }
   }
   function worldHeroFixture(s, rng, leagueId, roundIndex, pairIndex, home, away, date) {
     if (!["player","coach"].includes(s.mode) || !s.clubId || ![home, away].includes(s.clubId)) return null;

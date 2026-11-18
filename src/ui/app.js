@@ -534,6 +534,25 @@
       }
     } catch (_) {}
   }
+  // Aviso de relatório pronto dos olheiros (Mercado e Academia) — só para relatórios que concluem depois que a carreira foi aberta.
+  const scoutSeen = new WeakMap();
+  function notifyScoutReports() {
+    try {
+      if (!state || state.mode !== "coach" || !state.coachCareer) return;
+      const cc = state.coachCareer;
+      const market = (cc.scoutingV2?.missions || []).filter((m) => m.status === "complete").map((m) => "m:" + m.id);
+      const youth = (cc.youth?.missions || []).filter((m) => m.status === "complete").map((m) => "y:" + m.id);
+      let seen = scoutSeen.get(state);
+      if (!seen) { scoutSeen.set(state, new Set([...market, ...youth])); return; }
+      const fresh = [...market, ...youth].filter((id) => !seen.has(id));
+      fresh.forEach((id) => seen.add(id));
+      if (!fresh.length) return;
+      const nm = fresh.filter((id) => id[0] === "m").length, ny = fresh.length - nm;
+      const where = nm && ny ? "Mercado > Scouting e Academia" : nm ? "Mercado > Scouting > Rede de olheiros" : "Academia > Relatórios";
+      toast((fresh.length > 1 ? fresh.length + " relatórios de olheiros prontos. " : "Relatório do olheiro pronto. ") + "Veja em " + where + ".");
+      try { window.ProLifeSound?.play?.("message"); } catch (_) {}
+    } catch (_) {}
+  }
   // Som de novas mensagens/conquistas: compara as mensagens não lidas com as já vistas nesta carreira.
   const msgSeen = new WeakMap();
   function notifyNewMessages() {
@@ -555,6 +574,7 @@
     try { if (state && state.positionsChecked == null && D.ensureSpecificPositions) D.ensureSpecificPositions(state); } catch (e) {}
     trackPage();
     notifyNewOffers();
+    notifyScoutReports();
     notifyNewMessages();
     settleInquiryMessages();
     window.ProLifeChampionsUI?.sync?.(state);
