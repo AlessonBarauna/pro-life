@@ -82,7 +82,7 @@
   }
 
   function filters(rows){
-    const positions=[...new Set(rows.map(p=>String(p.primaryPosition||p.pos||p.position||"").toUpperCase()).filter(Boolean))].sort();
+    const positions=posList(rows.map(p=>String(p.primaryPosition||p.pos||p.position||"").toUpperCase()));
     const opt=(v,label,current)=>'<option value="'+esc(v)+'"'+(String(v)===String(current)?' selected':'')+'>'+esc(label)+'</option>';
     return '<div class="csh-filters"><label>Buscar<input type="search" data-coach-squad-query value="'+esc(state.query)+'" placeholder="Nome do jogador"></label><label>Posição<select data-coach-squad-position>'+opt("all","Todas",state.position)+positions.map(v=>opt(v,v,state.position)).join("")+'</select></label><label>Status<select data-coach-squad-status>'+opt("all","Todos",state.status)+Object.entries(statusLabel).map(([v,l])=>opt(v,l,state.status)).join("")+'</select></label><label>Ordenar<select data-coach-squad-sort>'+[["overall","GER"],["potential","Potencial"],["age","Idade"],["value","Valor"],["contract","Fim do contrato"]].map(([v,l])=>opt(v,l,state.sort)).join("")+'</select></label><label>Ordem<select data-coach-squad-direction>'+opt("desc","Maior para menor",state.direction)+opt("asc","Menor para maior",state.direction)+'</select></label><button type="button" data-coach-squad-apply>Aplicar filtros</button></div>';
   }
@@ -141,8 +141,11 @@
       '<td class="n">'+esc(short(r.value))+'</td><td class="n">'+esc(short(r.salary))+'</td><td class="n">'+esc(r.contract===null?"—":r.contract)+'</td>'+
       '<td><span class="csh-status" data-status="'+esc(r.status)+'">'+esc(r.label)+'</span></td></tr>').join("");
   }
+  // Posições sempre na mesma ordem: goleiro, defesa, meio e ataque (mais qualquer código fora da lista, ao final).
+  const POS_FIXED=["GOL","LD","ZAG","LE","VOL","MC","MD","ME","MEI","PE","PD","CA"];
+  function posList(found){const extra=[...new Set(found.filter(v=>v&&!POS_FIXED.includes(v)))].sort();return POS_FIXED.concat(extra);}
   function headHtml(all){
-    const poss=[...new Set(all.map(r=>r.pos))].sort(),f=state.cols;
+    const poss=posList(all.map(r=>r.pos)),f=state.cols;
     const opt=(v,l,c)=>'<option value="'+esc(v)+'"'+(String(v)===String(c)?' selected':'')+'>'+esc(l)+'</option>';
     const sortRow='<tr class="csh-sheet-sort">'+COLS.map(c=>'<th scope="col"><button type="button" data-csh-sort="'+c.k+'" class="'+(state.sortKey===c.k?'is-sorted':'')+'">'+esc(c.l)+'<i aria-hidden="true">'+(state.sortKey===c.k?(state.sortDir==="asc"?"▲":"▼"):"⇅")+'</i></button></th>').join("")+'</tr>';
     const filterRow='<tr class="csh-sheet-filter">'+COLS.map(c=>{
