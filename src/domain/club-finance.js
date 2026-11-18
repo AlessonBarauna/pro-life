@@ -103,13 +103,15 @@
     return Math.round((6000+Math.pow(clamp(num(club?.reputation,num(club?.structure,60)),20,100)/100,2.2)*70000)/100)*100;
   }
   // Bilheteria de um jogo em casa do clube do jogador.
+  function hypeBoost(state,club){const H=root.ProLifeClubHype;try{const l=H?.level?.(state,club)||0;return H.boosts(l);}catch(e){return {occupancy:0,gate:1,merch:0,sponsor:1};}}
   function matchGate(state,home,away,meta){
     const rep=num(home.reputation,num(home.structure,60)),opp=num(away?.reputation,num(away?.structure,60));
     const competitive=meta&&(meta.continentalMatch||meta.competitionId&&!/league|liga/i.test(String(meta.competitionId)));
-    const occupancy=clamp(.45+rep/200+(form(home)-.5)*.2+clamp((opp-rep)/50,-1,1)*.1+(competitive?.05:0),.35,1);
+    const hb=hypeBoost(state,home);
+    const occupancy=clamp(.45+rep/200+(form(home)-.5)*.2+clamp((opp-rep)/50,-1,1)*.1+(competitive?.05:0)+hb.occupancy,.35,1);
     const capacity=capacityOf(home),attendance=Math.round(capacity*occupancy);
     const base=annualRevenue(home,state)*SHARE.gate/12;
-    const amount=Math.round(base*(occupancy/.8)*(competitive?1.15:1));
+    const amount=Math.round(base*(occupancy/.8)*(competitive?1.15:1)*hb.gate);
     return {capacity,attendance,occupancy:Math.round(occupancy*1000)/1000,amount,avgTicket:attendance?Math.round(amount/attendance*100)/100:0};
   }
   function onMatch(state,match,home,away,meta){
@@ -125,7 +127,7 @@
   function storeDemand(state,club,e){
     const rep=clamp(num(club?.reputation,num(club?.structure,60)),20,100)/100;
     const star=(club.roster||[]).some(p=>num(p.ovr??p.overall)>=85)?1.1:1;
-    return clamp((.72+form(club)*.36+num(e.winBoost))*(.75+rep*.35)*star,.55,1.55);
+    return clamp((.72+form(club)*.36+num(e.winBoost)+hypeBoost(state,club).merch)*(.75+rep*.35)*star,.55,2.2);
   }
   function merchMonth(state,club,e){
     const base=annualRevenue(club,state)*SHARE.merch/12;
@@ -159,7 +161,7 @@
     const detail={};
     const add=(cat,amount,label)=>{amount=Math.round(amount);detail[cat]=(detail[cat]||0)+amount;income(state,club,cat,amount,label);};
     add("tv",ar*SHARE.tv/12,"Direitos de TV (parcela mensal)");
-    add("patrocinio",ar*SHARE.sponsor/12,"Patrocínios e publicidade fixos");
+    add("patrocinio",ar*SHARE.sponsor/12*hypeBoost(state,club).sponsor,"Patrocínios e publicidade fixos");
     const store=storeSnapshot(state,club);
     for(const product of store.products)add("camisas",product.revenue,`Loja do clube · ${product.name}`);
     add("outras",ar*SHARE.other/12,"Estádio, museu e eventos");

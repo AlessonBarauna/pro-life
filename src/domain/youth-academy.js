@@ -284,22 +284,18 @@
   function closeSeason(s,api,ctx={}){
     const y=ensure(s);if(!y||!GFm())return null;
     const club=api.club(s),level=num(club?.strength,num(club?.reputation,60)*0.9);
-    let promoted=0,released=0;
     y.loans={};
-    for(const p of ownKids(s).filter(k=>ageOf(k)>=20)){
-      const roomy=(club.roster||[]).filter(x=>x&&x.id!=="hero").length<MAX_SQUAD;
-      if(roomy&&(ovrOf(p)>=level-14||num(p.potential)>=level+2)){try{promote(s,api,p.id,{});promoted++;}catch(e){release(s,api,p.id,{});released++;}}
-      else{release(s,api,p.id,{});released++;}
-    }
-    if(promoted||released){const txt=`Limite de idade da base: ${promoted} promovido(s) e ${released} dispensado(s).`;pushLog(y,s,txt);ctx.log?.("Base: fim de temporada",txt);}
-    return {promoted,released};
+    // Nenhum jovem sobe ou é dispensado sozinho: quem decide é o técnico. Só avisamos quem passou dos 20 anos.
+    const waiting=ownKids(s).filter(k=>ageOf(k)>=20);
+    if(waiting.length){const txt=`${waiting.length} jovem(ns) da base já têm 20 anos ou mais e aguardam a sua decisão: promover, emprestar ou dispensar.`;pushLog(y,s,txt);ctx.log?.("Base: fim de temporada",txt);}
+    return {promoted:0,released:0,waiting:waiting.length};
   }
   // Avisos para a Central.
   function alerts(s){
     const y=ensure(s);if(!y)return [];
     const out=[],r=rules(s),kids=ownKids(s);
     const old=kids.filter(k=>ageOf(k)>=19);
-    if(old.length)out.push({kind:"idade",text:`${old.length} jovem(ns) da base chegam ao limite de idade no fim da temporada: promova ou dispense.`});
+    if(old.length)out.push({kind:"idade",text:`${old.length} jovem(ns) da base têm 19 anos ou mais: decida se promove, empresta ou dispensa.`});
     const fresh=y.reports.filter(x=>num(s.day)-x.day<=7);
     if(fresh.length)out.push({kind:"relatorio",text:`${fresh.length} novo(s) jovem(ns) em relatórios do olheiro da base.`});
     if(kids.filter(k=>!y.loans[k.id]).length>=r.capacity)out.push({kind:"lotacao",text:"A base está lotada: novas admissões ficam de fora."});

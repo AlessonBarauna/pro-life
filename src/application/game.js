@@ -5,9 +5,12 @@
     (typeof require === "function" ? require("../domain/engine.js") : null);
   const PlayerEconomy=root.ProLifePlayerEconomy||(typeof require==="function"?require("../domain/player-economy.js"):null);
   const TransferRules=root.ProLifeTransferMarketRules||(typeof require==="function"?require("../domain/transfer-market-rules.js"):null);
+  const ClubInvestors=root.ProLifeClubInvestors||(typeof require==="function"?require("../domain/club-investors.js"):null);
+  const ClubWealth=root.ProLifeClubWealth||(typeof require==="function"?require("../domain/club-wealth.js"):null);
   const ClubFinance=root.ProLifeClubFinance||(typeof require==="function"?require("../domain/club-finance.js"):null);
   function queueCoachPresentation(s,p,from,to,fee,type){
     if(s.mode!=="coach"||to?.id!==s.clubId||!p?.id)return;
+    try{ClubInvestors?.onSigning?.(s,p);}catch(_){}
     s.coachCareer||={version:1};
     const entries=s.coachCareer.presentations||=[];
     const id=["signing",s.season,s.day,to.id,p.id].join("_");
@@ -94,6 +97,12 @@
         );
         if (!o) throw Error("Esta proposta não está disponível.");
         D.join(s, o.clubId, o.salary);
+        if (o.project) { try { ClubInvestors?.activateProject?.(s, o.project, o.clubId); } catch (_) {} }
+        break;
+      }
+      case "respondInvestorDeal": {
+        if (!ClubInvestors) throw Error("Investidores indisponíveis.");
+        ClubInvestors.respond(s, data.id, data.action, data.ask);
         break;
       }
       case "acceptRenewal":
@@ -730,6 +739,7 @@ case "tactic": {
         if(seller.roster.length<=18)throw Error("Seu elenco ficaria com menos de 19 jogadores. Contrate antes de vender.");
         if(!Number.isSafeInteger(fee)||fee<=0||fee>100000000000)throw Error("Valor da proposta inválido.");
         if(buyer.roster.some(x=>x.id===p.id))throw Error("O jogador já está no clube comprador.");
+        try{ClubWealth?.ensureFunds?.(s,buyer,fee);}catch(_){}
         if(!Number.isFinite(Number(buyer.budget))||Number(buyer.budget)<fee)throw Error((buyer.name||"O comprador")+" não tem orçamento: a proposta é de "+brl(fee)+" e o clube tem "+brl(Math.max(0,Number(buyer.budget)||0))+".");
         if((s.coachCareer?.loans||[]).some(l=>!l.returned&&l.playerId===p.id))throw Error("Jogador emprestado não pode ser vendido.");
         if(offer.dealType==="loan"){

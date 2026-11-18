@@ -70,3 +70,13 @@
 @media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px) {
   .pl-squad-screen:has(> .pl-squad-sm27) > .pl-squad-sm27 { min-height:0; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; padding-bottom:8px; }
 }
+
+/* Gestão do atleta na ficha (técnico) */
+.sq-manage { margin-top:12px; padding-top:10px; border-top:1px solid var(--pl-line,rgba(180,205,230,.14)); display:grid; gap:8px; }
+.sq-manage-state { margin:0; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+.sq-manage-state small { color:var(--pl-text-3,#7f8f9f); font-size:10px; }
+.sq-manage-state b { font-size:12px; }
+.sq-manage-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.sq-manage-btn { min-height:34px; padding:0 12px; border:1px solid var(--pl-line,rgba(180,205,230,.22)); background:rgba(255,255,255,.04); color:inherit; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+.sq-manage-btn.is-on { border-color:#37d6a3; color:#37d6a3; }
+.sq-manage-btn.danger { border-color:rgba(255,95,95,.55); color:#ff7b7b; }

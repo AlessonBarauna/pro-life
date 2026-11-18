@@ -72,3 +72,25 @@
 
 /* Propostas/Negociações ficam só na aba Negociações; aqui só contratos, finanças, cláusulas, histórico e reforços */
 .tfh-embed.tfh-area-gestao :is([data-coach-deal-tab="recebidas"],[data-coach-deal-tab="propostas"],[data-coach-deal-tab="emprestimos"]),.tfh-embed.tfh-area-gestao .cc-market-main-nav,.tfh-embed.tfh-area-gestao .cc-signing-status{display:none!important}
+
+/* Histórico das propostas: resultado de cada negociação encerrada */
+.tfh-tag{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:rgba(255,255,255,.08);color:#cfd8e3}
+.tfh-tag-ok{background:rgba(122,230,140,.16);color:#7ae68c}
+.tfh-tag-warn{background:rgba(255,196,77,.16);color:#ffc44d}
+.tfh-tag-bad{background:rgba(255,120,110,.16);color:#ff8a80}
+.tfh-history .tfh-side{display:flex;align-items:center;gap:10px}
+
+/* Propostas de investidores e projetos */
+.tfh-inv{border:1px solid rgba(190,255,60,.28);border-radius:14px;padding:14px 16px;margin:0 0 12px;background:rgba(190,255,60,.05)}
+.tfh-inv header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.tfh-inv p{margin:4px 0}
+.tfh-inv h4{margin:10px 0 4px;font-size:13px;opacity:.8}
+.tfh-inv-amount b{color:#c6ff3d}
+.tfh-obj{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.tfh-obj li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.05)}
+.tfh-inv-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.inv-project{margin:10px 0;padding:12px 14px;border-radius:12px;border:1px solid rgba(190,255,60,.3);background:rgba(190,255,60,.05)}
+.inv-project ul{margin:6px 0 6px 18px}
+
+.tfh-player{background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;font-weight:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(190,255,60,.55);text-underline-offset:3px}
+.tfh-player:hover{color:#c8f73a}

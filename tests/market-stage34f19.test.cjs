@@ -59,6 +59,7 @@ test("34F.19 (5) orcamento acompanha as vendas e compras executadas", () => {
   let checked = 0;
   for (const c of s.globalFootball.clubs) {
     if (!delta.has(c.id) || !Number.isFinite(budgets0.get(c.id))) continue;
+    if (require("../src/domain/club-wealth.js").floorFor(c) > 0) continue; // clubes ricos têm piso de caixa (e o xeque injeta verba): fora desta conferência
     const expected = Math.max(0, budgets0.get(c.id) + delta.get(c.id)); // pode saturar em 0 no meio do caminho
     if (delta.get(c.id) >= 0 || budgets0.get(c.id) + delta.get(c.id) >= 0) { assert.equal(c.budget, expected, c.id); checked++; }
   }

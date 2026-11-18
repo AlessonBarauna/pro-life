@@ -27,6 +27,9 @@
   const CoachCareer=root.ProLifeCoachCareer||(typeof require==="function"?require("./coach-career.js"):null);
   const CoachNational=root.ProLifeCoachNational||(typeof require==="function"?require("./coach-national.js"):null);
   const WorldLiveMarket=root.ProLifeWorldLiveMarket||(typeof require==="function"?require("./world-live-market.js"):null);
+  const ClubWealth=root.ProLifeClubWealth||(typeof require==="function"?require("./club-wealth.js"):null);
+  const ClubHype=root.ProLifeClubHype||(typeof require=="function"?require("./club-hype.js"):null);
+  const ClubInvestors=root.ProLifeClubInvestors||(typeof require==="function"?require("./club-investors.js"):null);
   const SeasonCompetitionCenter=root.ProLifeSeasonCompetitionCenter||(typeof require==="function"?require("./season-competition-center.js"):null);
   const Character =
     root.ProLifeCharacter ||
@@ -1027,6 +1030,23 @@
     s.news.unshift({ day: s.day, season: s.season, title, body });
     s.news = s.news.slice(0, 160);
     Career.post(s, "Carreira", "Diário da carreira", title, body);
+  }
+  // Clube comprado por um xeque convida o treinador (se ele estiver bem) para um projeto com metas.
+  function offerSheikhJob(s, wr) {
+    const c = wr.club;
+    if (s.mode !== "coach" || !s.clubId || !c || c.id === s.clubId || Number(s.reputation) < 50) return;
+    if ((s.offers || []).some((o) => o.clubId === c.id)) return;
+    const project = ClubInvestors?.projectFor?.(s, c, ClubWealth?.SHEIKH_FUND || 100e9);
+    if (!project) return;
+    const heroLevel = overall(s.person);
+    s.offers = (s.offers || []).concat([{
+      offerId: `offer:${s.season}:${s.day}:${c.id}`, createdDay: s.day, stage: "FORMAL_OFFER", status: "formal", clubId: c.id,
+      salary: Math.round((6500 + s.reputation * 70 + Number(c.structure || 80) * 45 + heroLevel * 10) * 2.5),
+      role: "Projeto ambicioso: " + project.investor + " investiu R$ 100 bi no clube",
+      squadRole: "Treinador", durationDays: 730, signingBonus: 0, transferType: "permanent",
+      expires: s.day + 30, responseDeadline: s.day + 30, round: 0, project,
+    }]);
+    log(s, "Convite de projeto", c.name + " quer você como treinador do projeto de " + project.investor + ". A proposta vale por 30 dias.");
   }
   function movePlayerToClub(s, id) {
     const next = club(s, id);
@@ -2962,6 +2982,9 @@
     for (let d = 0; d < clamp(days, 1, 30); d++) {
       s.day++;
       try{WorldHonors?.daily(s,{Career},{log:(title,body)=>log(s,title,body)});}catch(e){}
+      try { const wr = ClubWealth?.daily?.(s); if (wr?.club) offerSheikhJob(s, wr); } catch (_) {}
+      try { ClubInvestors?.daily?.(s); } catch (_) {}
+      try { ClubHype?.daily?.(s); } catch (_) {}
       generateWorldMarket(s, rng);
       WorldLiveMarket?.tick?.(s, rng);
       applyMarketBudgets(s, WorldLiveMarket?.executeCompleted?.(s, { canExecute: worldMarketCanExecute })?.executed);
@@ -3119,7 +3142,8 @@
           Career.windows.some((w) => w.start === s.day % 365)) &&
         Career.canTransfer(s) && s.mode === "coach"
       ) {
-        s.offers = weightedCareerOffers(s, rng, 3);
+        { const kept = (s.offers || []).filter((o) => o.project && o.expires >= s.day);
+          s.offers = weightedCareerOffers(s, rng, 3).filter((o) => !kept.some((k) => k.clubId === o.clubId)).concat(kept); }
         if (s.mode === "player") s.offers.forEach((o) => Career.registerInterest(s, o.clubId, "Oferta oficial"));
         log(
           s,

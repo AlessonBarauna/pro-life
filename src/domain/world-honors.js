@@ -205,6 +205,34 @@
     for(const k of keys.slice(12)){const r=hs.seasons[k];if(r&&!r.compact){for(const f of ["ballon","theBest","kopa","yashin","gerd"])r[f]=(r[f]||[]).slice(0,5).map(x=>({rank:x.rank,id:x.id,name:x.name,club:x.club,clubId:x.clubId,nat:x.nat,points:x.points,hero:x.hero}));r.compact=true;}}
     return rec;
   }
+  // ---------- jogadores do meu clube nas disputas (modo técnico) ----------
+  const AWARD_LISTS=[["ballon","Bola de Ouro"],["theBest","The Best"],["kopa","Troféu Kopa"],["yashin","Troféu Yashin"],["gerd","Troféu Gerd Müller"]];
+  function myIds(s){
+    if(s.mode!=="coach"||!s.clubId)return null;
+    const ids=new Set();try{for(const p of GF()?.playersByClub?.(s,s.clubId)||[])ids.add(p.id);}catch(e){}
+    for(const c of [...(s.clubs||[]),...(s.globalFootball?.clubs||[])])if(c.id===s.clubId)for(const p of c.roster||[])ids.add(p.id);
+    return ids;
+  }
+  // Posições dos meus jogadores em cada prêmio: [{award,label,rank,of,id,name,points}]
+  function mineIn(s,rec){
+    const ids=myIds(s);if(!ids||!rec)return [];
+    const out=[];
+    for(const [key,label] of AWARD_LISTS)for(const r of rec[key]||[])if(ids.has(r.id)||r.clubId===s.clubId)out.push({award:key,label,rank:r.rank,id:r.id,name:r.name,points:r.points,goals:r.goals});
+    return out;
+  }
+  const dateLabel=day=>{const d=new Date(EPOCH+day*DAY);return `${d.getUTCDate()} de ${["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"][d.getUTCMonth()]}`;};
+  // Linha do tempo da temporada: indicados e cerimônia.
+  function calendar(s){
+    const season=s.season,nomDay=dayOfDate(season,8,25),revealDay=dayOfDate(season,9,20);
+    const rec=s.honors?.seasons?.[String(season)];
+    return {season,nom:{day:nomDay,label:dateLabel(nomDay),done:s.day>=nomDay&&!!rec,left:Math.max(0,nomDay-s.day)},ceremony:{day:revealDay,label:dateLabel(revealDay),done:!!rec?.revealed,left:Math.max(0,revealDay-s.day)},rec:rec||null};
+  }
+  const ord=n=>`${n}º`;
+  function topText(list,n){return (list||[]).slice(0,n).map(r=>`${r.rank}. ${r.name} (${r.club||"—"})`).join("\n");}
+  function mineText(mine){
+    const by=new Map();for(const m of mine){if(!by.has(m.id))by.set(m.id,{name:m.name,items:[]});by.get(m.id).items.push(`${m.label} ${ord(m.rank)}`);}
+    return [...by.values()].map(v=>`${v.name}: ${v.items.join(", ")}`).join("\n");
+  }
   // ---------- cerimônia ----------
   function daily(s,api,hooks={}){
     if(s.day>=dayOfDate(s.season,8,25)&&!s.honors?.seasons?.[String(s.season)]){try{compute(s,api);}catch(e){}}
@@ -212,6 +240,10 @@
     if(cur&&!cur.nomsAnnounced&&!cur.revealed&&s.day>=dayOfDate(s.season,8,25)){
       cur.nomsAnnounced=true;
       try{api?.Career?.addArticle?.(s,{category:"MUNDO",title:`Bola de Ouro ${cur.season}: indicados divulgados`,body:`Os 30 indicados à Bola de Ouro ${cur.season} foram anunciados. O vencedor será revelado em 20 de outubro.${cur.hero?` Você está entre os indicados.`:""}`,eventId:`honors:noms:${cur.season}`});}catch(e){}
+      try{if(s.mode==="coach"){
+        const mine=mineIn(s,cur);cur.mine=mine.map(m=>m.id).filter((v,i,a)=>a.indexOf(v)===i);
+        if(mine.length)api?.Career?.addMessage?.(s,{category:"PREMIOS",sender:"Prêmios mundiais",subject:`Indicados ${cur.season}: ${cur.mine.length} jogador(es) do seu clube`,body:`Foram divulgados os indicados aos prêmios de ${cur.season} e o seu elenco está representado:\n${mineText(mine)}\n\nA cerimônia será em 20 de outubro.`,priority:"ALTA",eventId:`honors:noms:${cur.season}:coach`});
+      }}catch(e){}
       try{if(s.mode==="player"&&cur.hero)api?.Career?.addMessage?.(s,{category:"PREMIOS",sender:"Prêmios mundiais",subject:`Você é indicado à Bola de Ouro ${cur.season}`,body:"Seu nome está na lista dos 30 indicados. O resultado sai em 20 de outubro.",priority:"ALTA",eventId:`honors:noms:${cur.season}:hero`});}catch(e){}
     }
     const hs=s.honors;if(!hs?.seasons)return 0;let n=0;
@@ -223,6 +255,14 @@
       const text=`${w.name} (${w.club}) vence a Bola de Ouro ${rec.season} com ${w.points} pontos. Em seguida: ${p2?p2.name:"—"} e ${p3?p3.name:"—"}.`;
       try{api?.Career?.addArticle?.(s,{category:"MUNDO",title:`Bola de Ouro ${rec.season}: ${w.name}`,body:text,eventId:`honors:${rec.season}`});}catch(e){}
       try{hooks.log?.(`Bola de Ouro ${rec.season}`,text);}catch(e){}
+      if(s.mode==="coach"){
+        try{
+          const mine=mineIn(s,rec),best=rec.theBest?.[0],kp=rec.kopa?.[0],ys=rec.yashin?.[0],gd=rec.gerd?.[0],cr=rec.cruyff?.[0];
+          const win=[`Bola de Ouro: ${w.name} (${w.club})`,best&&`The Best: ${best.name} (${best.club})`,kp&&`Troféu Kopa: ${kp.name} (${kp.club})`,ys&&`Troféu Yashin: ${ys.name} (${ys.club})`,gd&&`Troféu Gerd Müller: ${gd.name} (${gd.club})`,cr&&`Troféu Cruyff: ${cr.name} (${cr.club})`].filter(Boolean).join("\n");
+          const body=`A cerimônia de ${rec.season} foi realizada.\n\nVENCEDORES\n${win}\n\nTOP 10 BOLA DE OURO\n${topText(rec.ballon,10)}\n\n${mine.length?`SEUS JOGADORES\n${mineText(mine)}`:"Nenhum jogador do seu clube ficou entre os premiados."}`;
+          api?.Career?.addMessage?.(s,{category:"PREMIOS",sender:"Prêmios mundiais",subject:`Cerimônia ${rec.season}: ${w.name} vence a Bola de Ouro${mine.length?" · seu clube foi lembrado":""}`,body,priority:mine.length?"ALTA":"NORMAL",eventId:`honors:ceremony:${rec.season}:coach`});
+        }catch(e){}
+      }
       if(s.mode==="player"&&rec.hero){
         const r=rec.hero.rank;
         try{api?.Career?.addMessage?.(s,{category:"PREMIOS",sender:"Prêmios mundiais",subject:`Bola de Ouro ${rec.season}: você ficou em ${r}º`,body:r<=30?`Você foi um dos 30 finalistas da Bola de Ouro ${rec.season} e terminou em ${r}º lugar com ${rec.hero.points} pontos.`:`Você terminou em ${r}º na votação da Bola de Ouro ${rec.season}.`,priority:r<=3?"ALTA":"NORMAL",eventId:`honors:${rec.season}:hero`});}catch(e){}
@@ -257,6 +297,6 @@
     if(c)out.push({cat:"treinadorMundo",label:partial?"Líder · Troféu Cruyff":"Troféu Cruyff",playerId:null,name:c.name,clubId:c.clubId,club:c.club,pos:"TEC",value:c.points,unit:"pontos",honors:true,partial});
     return {awards:out,partial,revealed:!!rec.revealed};
   }
-  const api={VERSION,realUcl,awardsFor,compute,daily,latest,winners,preview,ceremonyDay,leagueWeight,build,vote};
+  const api={VERSION,realUcl,awardsFor,compute,daily,latest,winners,preview,ceremonyDay,leagueWeight,build,vote,mineIn,calendar,myIds,dateLabel};
   root.ProLifeWorldHonors=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

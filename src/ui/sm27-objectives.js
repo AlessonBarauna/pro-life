@@ -40,8 +40,11 @@
       { label: "Renovar ou decidir contratos que vencem em 6 meses", now: ending === 0 ? 1 : 0, target: 1, text: ending + " contrato(s) a vencer", done: ending === 0 }
     ];
     const stats = club.stats || {};
-    const played = num(stats.played ?? stats.matches);
-    const wins = num(stats.wins);
+    // Todos os jogos oficiais da temporada (liga, copas e Champions), não só a tabela da liga.
+    const mine = (s.matches || []).filter((m) => m && m.season === s.season && (m.home === s.clubId || m.away === s.clubId) && Number.isFinite(Number(m.hg)) && Number.isFinite(Number(m.ag)));
+    const matchWins = mine.filter((m) => (m.home === s.clubId ? Number(m.hg) > Number(m.ag) : Number(m.ag) > Number(m.hg))).length;
+    const played = Math.max(num(stats.played ?? stats.matches), mine.length);
+    const wins = Math.max(num(stats.w ?? stats.wins), matchWins);
     const points = num(stats.points);
     const epoca = [];
     const goals = s.coachCareer?.goals;

@@ -1220,7 +1220,7 @@
     if(!w.history.some(h=>h.key===key))w.history.unshift({
       key,season:leagueState.season,leagueId,league:meta?.name||leagueId,
       championId:champion?.id||null,champion:champion?.name||null,
-      orderIds:order.map(c=>c.id),top4:order.slice(0,4).map(c=>c.id),bottom3:order.slice(-3).map(c=>c.id)
+      orderIds:order.map(c=>c.id),rows:order.map(c=>[c.id,Number(c.points)||0,Number(c.w)||0,Number(c.d)||0,Number(c.l)||0,Number(c.played)||0]),top4:order.slice(0,4).map(c=>c.id),bottom3:order.slice(-3).map(c=>c.id)
     });
     w.history=w.history.slice(0,HISTORY_LIMIT);
     return true;

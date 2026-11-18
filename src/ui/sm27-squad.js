@@ -211,7 +211,21 @@
       const rows = [["Posição", r.pos], ["Idade", r.age ?? "—"], ["GER", r.ovr ?? "—"], ["Potencial", r.pot ?? "—"], ["Nacionalidade", p.nationality || "—"], ["Condição", r.cond === null ? "—" : r.cond + "%"], ["Moral", ml], ["Gols", r.goals], ["Minutos", r.minutes], ["Situação", r.injured ? "Lesionado" : r.suspended ? "Suspenso" : "Disponível"]];
       body = `<dl class="sq-dl">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd${k === "Moral" ? ` class="${mc}"` : ""}>${esc(v)}</dd></div>`).join("")}</dl>`;
     }
-    return `<div class="sm27-dialog-backdrop" data-sm27sq-close></div><section class="sm27-dialog" role="dialog" aria-modal="true" aria-label="${esc(r.name)}"><header class="sm27-dialog-head"><span></span><h2>${esc(r.name)}</h2><button type="button" class="sm27-dialog-x" data-sm27sq-close aria-label="Fechar">×</button></header><div class="sm27-dialog-body"><nav class="shd-tabs sq-dtabs" role="tablist">${tabs.map(([id, l]) => `<button type="button" role="tab" aria-selected="${dlgTab === id}" data-sm27sq-dtab="${id}">${l}</button>`).join("")}</nav>${body}</div></section>`;
+    return `<div class="sm27-dialog-backdrop" data-sm27sq-close></div><section class="sm27-dialog" role="dialog" aria-modal="true" aria-label="${esc(r.name)}"><header class="sm27-dialog-head"><span></span><h2>${esc(r.name)}</h2><button type="button" class="sm27-dialog-x" data-sm27sq-close aria-label="Fechar">×</button></header><div class="sm27-dialog-body"><nav class="shd-tabs sq-dtabs" role="tablist">${tabs.map(([id, l]) => `<button type="button" role="tab" aria-selected="${dlgTab === id}" data-sm27sq-dtab="${id}">${l}</button>`).join("")}</nav>${body}${manageHtml(p, r)}</div></section>`;
+  }
+
+  // Gestão do atleta (só técnico): listas de transferência/empréstimo e liberação, direto da ficha.
+  function manageHtml(p, r) {
+    const s = lastCtx?.s;
+    if (!s || s.mode !== "coach" || p.id === "hero" || String(p.clubId || lastCtx?.club?.id) !== String(lastCtx?.club?.id)) return "";
+    const prefs = s.coachCareer?.offerPreferences || {};
+    const has = (k) => (prefs[k] || []).includes(p.id);
+    const status = has("blockedIds") ? "blocked" : has("listedIds") ? "listed" : has("loanListedIds") ? "loan_listed" : "available";
+    const labels = { available: "Disponível para o elenco", listed: "Na lista de transferências", loan_listed: "Na lista de empréstimos", blocked: "Ofertas bloqueadas" };
+    const months = r.left === null || r.left === undefined ? 0 : Math.min(12, Math.max(0, Math.ceil(Number(r.left) / 30)));
+    const cost = Math.max(0, Math.round(Number(r.wage) || 0)) * months;
+    const btn = (st, on, off) => `<button type="button" class="sq-manage-btn${status === st ? " is-on" : ""}" data-coach-player-status="${status === st ? "available" : st}" data-player="${esc(p.id)}">${status === st ? off : on}</button>`;
+    return `<section class="sq-manage" aria-label="Gestão do jogador"><p class="sq-manage-state"><small>Situação no mercado</small><b>${labels[status]}</b></p><div class="sq-manage-actions">${btn("listed", "Colocar na lista de transferências", "Retirar da lista de transferências")}${btn("loan_listed", "Colocar na lista de empréstimos", "Retirar da lista de empréstimos")}<button type="button" class="sq-manage-btn danger" data-coach-player-release="${esc(p.id)}" data-cost="${cost}">Liberar jogador${cost ? " · " + esc(fmtMoney(cost)) : ""}</button></div></section>`;
   }
 
   function openPlayer(id) {
@@ -272,11 +286,20 @@
 
   function render(tab, ctx) {
     lastCtx = ctx;
+    const keepId = dlg ? dlgId : null;
     closePlayer();
+    if (keepId && root.document) root.setTimeout(() => { if ((lastCtx?.club?.roster || []).some((x) => x.id === keepId && x.status !== "retired")) openPlayer(keepId); }, 0);
     if (!ctx?.club) return "";
     return tab === "reports" ? renderReports(ctx) : renderRoster(ctx);
   }
 
-  root.ProLifeSM27Squad = { render, renderTraining, set, state, TABS: [["roster", "Plantel"], ["reports", "Relatórios"]], fmtMoney, leftLabel };
+  // Abre a ficha de qualquer jogador (ex.: pelo Mercado), sem depender da tela do Plantel.
+  function openPlayerFor(c, id) {
+    const s = c?.s; if (!s || !id) return;
+    lastCtx = { s, D: c.D, club: c.D?.club?.(s) || lastCtx?.club };
+    dlgTab = "perfil"; openPlayer(id);
+  }
+
+  root.ProLifeSM27Squad = { openPlayerFor, render, renderTraining, set, state, TABS: [["roster", "Plantel"], ["reports", "Relatórios"]], fmtMoney, leftLabel };
   if (typeof module !== "undefined" && module.exports) module.exports = root.ProLifeSM27Squad;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -18,27 +18,34 @@
     const C=root.ProLifeClubCrests,img=r.clubId&&(C?.inline?.(r.clubId,"sm")||C?.render?.(r.clubId,{size:"sm"}))||"";
     return String(img).startsWith("<img")?`<span class="hn-crest">${img}</span>`:`<span class="hn-crest">${esc(initials(r.club))}</span>`;
   }
+  let mineSet=null,mineClub=null;
+  const isMine=r=>!!r&&((mineClub&&r.clubId===mineClub)||(mineSet&&mineSet.has(r.id)));
+  function prep(s){mineSet=H()?.myIds?.(s)||null;mineClub=s.mode==='coach'?s.clubId:null;}
   function flag(r){try{return r.nat&&root.ProLifeNationalCrests?.render?.(r.nat)||"";}catch(e){return"";}}
   const stat=r=>r.pos==="GOL"?`${r.apps} j · nota ${Number(r.avg).toFixed(2)}${r.cs?` · ${r.cs} jogos sem sofrer`:""}`:`${r.apps} j · ${r.goals} g · ${r.assists} a · nota ${Number(r.avg).toFixed(2)}`;
   function winner(s,title,sub,r){
     if(!r)return `<article class="hn-card hn-win empty"><h3>${esc(title)}</h3><p>Sem vencedor nesta edição: jogadores insuficientes.</p></article>`;
-    return `<article class="hn-card hn-win ${r.hero?"hero":""}"><div class="hn-win-top"><h3>${esc(title)}</h3><small>${esc(sub)}</small></div><div class="hn-win-body">${face(s,r,"lg")}<div><b class="hn-name">${esc(r.name)}</b><span class="hn-meta">${crest(r)}${esc(r.club||"Sem clube")}${flag(r)}</span><span class="hn-meta">${esc(POS[r.pos]||"")}${r.age?` · ${r.age} anos`:""}</span><span class="hn-stat">${esc(stat(r))}</span></div></div>${(r.reasons||[]).length?`<p class="hn-why">${esc(r.reasons.slice(0,3).join(" · "))}</p>`:""}</article>`;
+    return `<article class="hn-card hn-win ${r.hero?"hero":""}${isMine(r)?" mine":""}">${isMine(r)?'<em class="hn-mine-tag">Do seu clube</em>':""}<div class="hn-win-top"><h3>${esc(title)}</h3><small>${esc(sub)}</small></div><div class="hn-win-body">${face(s,r,"lg")}<div><b class="hn-name">${esc(r.name)}</b><span class="hn-meta">${crest(r)}${esc(r.club||"Sem clube")}${flag(r)}</span><span class="hn-meta">${esc(POS[r.pos]||"")}${r.age?` · ${r.age} anos`:""}</span><span class="hn-stat">${esc(stat(r))}</span></div></div>${(r.reasons||[]).length?`<p class="hn-why">${esc(r.reasons.slice(0,3).join(" · "))}</p>`:""}</article>`;
   }
   function list(s,rows,unit="pts",max=30){
     if(!rows?.length)return `<p class="hn-note">Sem dados.</p>`;
-    return `<ol class="hn-list">${rows.slice(0,max).map(r=>`<li class="${r.hero?"hero":""}"><b class="hn-rank">${r.rank}</b>${face(s,r,"sm")}<span class="hn-who"><b>${esc(r.name)}</b><small>${crest(r)}${esc(r.club||"")}</small></span><span class="hn-sline">${esc(stat(r))}</span><b class="hn-pts">${esc(r.points)} <small>${unit}</small></b></li>`).join("")}</ol>`;
+    return `<ol class="hn-list">${rows.slice(0,max).map(r=>`<li class="${r.hero?"hero":""}${isMine(r)?" mine":""}"><b class="hn-rank">${r.rank}</b>${face(s,r,"sm")}<span class="hn-who"><b>${esc(r.name)}</b><small>${crest(r)}${esc(r.club||"")}</small></span><span class="hn-sline">${esc(stat(r))}</span><b class="hn-pts">${esc(r.points)} <small>${unit}</small></b></li>`).join("")}</ol>`;
   }
   function honras(s){
+    prep(s);
     const Hn=H(),all=Hn?Hn.winners(s):[];
     const sel=all.find(r=>r.season===ui.season)||all[0];
     const pending=s.honors?.seasons?.[String(s.season)];
     const next=Hn?Hn.ceremonyDay(0):0;
     const nom=pending&&!pending.revealed&&pending.nomsAnnounced?[...pending.ballon].sort((a,b)=>String(a.name).localeCompare(String(b.name),"pt-BR")):null;
     if(!sel&&nom){
-      return `<section class="hn-card"><h3>Indicados à Bola de Ouro ${esc(pending.season)}</h3><p class="hn-note">Lista em ordem alfabética. O vencedor e a votação saem na cerimônia de 20 de outubro.</p><ul class="hn-nom">${nom.map(r=>`<li class="${r.hero?"hero":""}">${face(s,r,"sm")}<span class="hn-who"><b>${esc(r.name)}</b><small>${crest(r)}${esc(r.club||"")}</small></span></li>`).join("")}</ul></section>`;
+      return `<section class="hn-card"><h3>Indicados à Bola de Ouro ${esc(pending.season)}</h3><p class="hn-note">Lista em ordem alfabética. O vencedor e a votação saem na cerimônia de 20 de outubro.</p><ul class="hn-nom">${nom.map(r=>`<li class="${r.hero?"hero":""}${isMine(r)?" mine":""}">${face(s,r,"sm")}<span class="hn-who"><b>${esc(r.name)}</b><small>${crest(r)}${esc(r.club||"")}</small></span></li>`).join("")}</ul></section>`;
     }
     if(!sel){
-      return `<section class="hn-empty"><h3>A cerimônia de ${esc(s.season)} ainda não aconteceu</h3><p>A Bola de Ouro e os troféus Kopa, Yashin, Gerd Müller, Cruyff e The Best são entregues em 20 de outubro. A votação usa o desempenho em campo, os títulos e o nível das competições.</p></section>`;
+      let pv=null;try{pv=Hn?.preview?.(s,null);}catch(e){}
+      const cal=Hn?.calendar?.(s);
+      const race=pv?`<div class="hn-cols"><section class="hn-card"><h3>Bola de Ouro · Top 10 da corrida</h3>${list(s,pv.ballon,"pts",10)}<h3>The Best · Top 10</h3>${list(s,pv.theBest,"pts",10)}</section><section class="hn-card"><h3>Kopa · Top 10</h3>${list(s,pv.kopa,"pts",10)}<h3>Yashin · Top 10</h3>${list(s,pv.yashin,"pts",10)}<h3>Gerd Müller · Top 10</h3>${list(s,pv.gerd,"gols",10)}</section></div>`:"";
+      return `<section class="hn-empty"><h3>A cerimônia de ${esc(s.season)} ainda não aconteceu</h3><p>Indicados em ${esc(cal?.nom?.label||"25 de setembro")} e cerimônia em ${esc(cal?.ceremony?.label||"20 de outubro")}. A votação usa o desempenho em campo, os títulos e o nível das competições. Abaixo está a corrida atual: ela muda até o fechamento da lista.</p></section>${race}`;
     }
     const opts=all.map(r=>`<option value="${r.season}" ${r.season===sel.season?"selected":""}>${r.season}</option>`).join("");
     const hero=sel.hero?`<section class="hn-hero"><b>Sua posição na Bola de Ouro ${sel.season}: ${sel.hero.rank}º</b><span>${sel.hero.points} pontos entre ${sel.hero.of} jogadores elegíveis.</span></section>`:"";
@@ -46,7 +53,7 @@
     const wallet=all.filter(r=>r.ballon?.[0]).slice(0,10).map(r=>`<li><b>${r.season}</b><span>${esc(r.ballon[0].name)}</span><small>${esc(r.ballon[0].club||"")}</small></li>`).join("");
     return `<div class="hn-bar"><label>Edição <select data-hn-season>${opts}</select></label><small>${esc(sel.candidates)} jogadores avaliados · ${sel.ucl?.simulated?"Champions apurada por simulação do ranking de clubes":"Champions com resultado real"}</small></div>${hero}
     <div class="hn-wins">${winner(s,"Bola de Ouro",`Edição ${sel.season}`,sel.ballon?.[0])}${winner(s,"The Best",`Melhor do ano`,sel.theBest?.[0])}${winner(s,"Troféu Kopa","Melhor jovem (até 21 anos)",sel.kopa?.[0])}${winner(s,"Troféu Yashin","Melhor goleiro",sel.yashin?.[0])}${winner(s,"Troféu Gerd Müller","Artilheiro do ano",sel.gerd?.[0])}${cr?`<article class="hn-card hn-win"><div class="hn-win-top"><h3>Troféu Cruyff</h3><small>Melhor treinador</small></div><div class="hn-win-body"><span class="hn-face lg">${esc(initials(cr.name))}</span><div><b class="hn-name">${esc(cr.name)}</b><span class="hn-meta">${esc(cr.club||"")}</span></div></div></article>`:""}</div>
-    <div class="hn-cols"><section class="hn-card"><h3>Votação · Top 30</h3>${list(s,sel.ballon)}</section><section class="hn-card"><h3>Kopa · Top 10</h3>${list(s,sel.kopa,"pts",10)}<h3>Yashin · Top 10</h3>${list(s,sel.yashin,"pts",10)}<h3>Gerd Müller · Top 10</h3>${list(s,sel.gerd,"gols",10)}</section></div>
+    <div class="hn-cols"><section class="hn-card"><h3>Votação · Top 30</h3>${list(s,sel.ballon)}</section><section class="hn-card"><h3>The Best · Top 10</h3>${list(s,sel.theBest,"pts",10)}<h3>Kopa · Top 10</h3>${list(s,sel.kopa,"pts",10)}<h3>Yashin · Top 10</h3>${list(s,sel.yashin,"pts",10)}<h3>Gerd Müller · Top 10</h3>${list(s,sel.gerd,"gols",10)}${sel.cruyff?.length?`<h3>Cruyff · Top ${sel.cruyff.length} técnicos</h3><ol class="hn-list">${sel.cruyff.map(c=>`<li class="${c.clubId&&c.clubId===mineClub?"mine":""}"><b class="hn-rank">${c.rank}</b><span class="hn-face sm">${esc(initials(c.name))}</span><span class="hn-who"><b>${esc(c.name)}</b><small>${esc(c.club||"")}</small></span><span class="hn-sline">${esc(c.titles??0)} título(s)</span><b class="hn-pts">${esc(c.points)} <small>pts</small></b></li>`).join("")}</ol>`:""}</section></div>
     <section class="hn-card"><h3>Campeões da Bola de Ouro</h3><ul class="hn-hist">${wallet}</ul></section>`;
   }
   function lendas(s){

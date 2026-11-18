@@ -108,6 +108,12 @@
     const h=(s.globalFootball?.worldCompetitions?.history||[]).find(x=>x.leagueId===club.leagueId&&Array.isArray(x.orderIds)&&x.orderIds.includes(club.id));
     return h?h.orderIds.indexOf(club.id)+1:0;
   }
+  // Campanha final real do clube na liga (pontos, V, E, D), registrada no fim da edição.
+  function worldFinalRow(s,club){
+    const h=(s.globalFootball?.worldCompetitions?.history||[]).find(x=>x.leagueId===club.leagueId&&Array.isArray(x.rows)&&x.rows.some(r=>r[0]===club.id));
+    const r=h?.rows.find(x=>x[0]===club.id);
+    return r?{points:r[1],w:r[2],d:r[3],l:r[4],played:r[5]}:null;
+  }
   const tableOf=(s,api,club)=>{
     if(!club)return [];
     if(club.worldMatch){
@@ -399,10 +405,14 @@
       sum.w+=Number(r.w)||0;sum.d+=Number(r.d)||0;sum.l+=Number(r.l)||0;
       return sum;
     },{w:0,d:0,l:0});
-    const row={season:s.season,pos,of:order.length,points:Number(stats.points)||0,
-      w:(Number(stats.w)||0)+additional.w,
-      d:(Number(stats.d)||0)+additional.d,
-      l:(Number(stats.l)||0)+additional.l,
+    // Partidas puladas/simuladas contam na tabela da liga mesmo sem passar pelas estatísticas do clube: a tabela vence.
+    const tableRow=club.worldMatch?(order.find(x=>x.id===club.id&&Number(x.played)>0)||worldFinalRow(s,club)):null;
+    const lg=tableRow?{points:Number(tableRow.points)||0,w:Number(tableRow.w)||0,d:Number(tableRow.d)||0,l:Number(tableRow.l)||0}:{points:Number(stats.points)||0,w:Number(stats.w)||0,d:Number(stats.d)||0,l:Number(stats.l)||0};
+    if(tableRow&&Number(stats.points)>lg.points)Object.assign(lg,{points:Number(stats.points)||0,w:Number(stats.w)||0,d:Number(stats.d)||0,l:Number(stats.l)||0});
+    const row={season:s.season,pos,of:order.length,points:lg.points,
+      w:lg.w+additional.w,
+      d:lg.d+additional.d,
+      l:lg.l+additional.l,
       competitionBreakdown:JSON.parse(JSON.stringify(official)),
       statisticsScope:Object.keys(official).length?"league_plus_recorded_cups":"league_only",
       trophies,
@@ -415,6 +425,7 @@
       const prior=old?(Number(old.titles)||
         (Number(old.pos)===1?1:0)):0;
       st.titles=Math.max(0,(Number(st.titles)||0)-prior+trophies.length);}
+    try{root.ProLifeClubInvestors?.seasonEnd?.(s,{pos,trophies,log:hooks?.log?(t,b)=>hooks.log(t,b):null});}catch(_){}
     const delta=pos===1?18:ok?10:-14;
     s.board=Math.round(clamp((Number(s.board)||50)+delta,0,100));
     s.reputation=clamp((Number(s.reputation)||0)+(pos===1?3:ok?1:-1),0,100);
@@ -653,6 +664,7 @@
       delete n.pendingOutcome;delete n.replyDay;
       counts.negotiations++;
       (s.news||[]).unshift({day,season:s.season,title:"Negociação expirada",body:"O prazo da negociação por "+String(n.playerName||n.playerId||"jogador")+" terminou sem acordo."});
+      try{const pn=String(n.playerName||root.ProLifeGlobalFootball?.playerById?.(s,n.playerId)?.name||"jogador");root.ProLifeCareer?.addMessage?.(s,{category:"TREINADOR",sender:"Diretoria",subject:"Proposta expirada: "+pn,body:"O prazo da sua proposta por "+pn+" terminou sem acordo. Veja o histórico em Mercado > Negociações.",eventId:"negexp_"+n.id});}catch(_){}
     }
     for(const o of c.saleOffers||[]){
       if(o.status!=="pending"||!Number.isFinite(Number(o.expiresDay))||day<=Number(o.expiresDay))continue;
