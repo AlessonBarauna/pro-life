@@ -65,7 +65,7 @@
   }
   const squadCache=new WeakMap();
   const clubLabel=(s,p)=>{const N=root.ProLifeNames;const id=p.clubId;if(id&&N&&N.club){const n=N.club(s,id,p.club||p.externalClub);if(n)return n;}return p.club||p.externalClub||"Sem clube";};
-  const light=(s,p,heroId,avail)=>({id:p.id,name:p.name||p.shortName||"Atleta",pos:p.pos,club:clubLabel(s,p),clubId:p.clubId||null,age:Number(p.age||0),overall:gerOf(p,ENGINE),hero:p.id===heroId,available:avail!==false,injury:Number(p.injury||0)>0,suspended:!!(p.suspension&&(p.suspension.games>0||p.suspension>0))});
+  const light=(s,p,heroId,avail)=>({id:p.id,name:p.name||p.shortName||"Atleta",pos:p.pos,primaryPosition:p.primaryPosition||null,secondaryPositions:Array.isArray(p.secondaryPositions)?p.secondaryPositions.slice(0,4):[],club:clubLabel(s,p),clubId:p.clubId||null,age:Number(p.age||0),overall:gerOf(p,ENGINE),hero:p.id===heroId,available:avail!==false,injury:Number(p.injury||0)>0,suspended:!!(p.suspension&&(p.suspension.games>0||p.suspension>0))});
   const isSynthetic=p=>/^intlgen_/.test(String(p.id))||p.generatedInternational===true;
   const MERIT=(a,b)=>b.overall-a.overall||(a.age-b.age)||String(a.id).localeCompare(String(b.id));
   // 34F.30B.1 - Mecanismo unico para TODAS as selecoes: elenco elegivel -> pre-lista -> elenco-base -> escalacao.

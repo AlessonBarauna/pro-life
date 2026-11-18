@@ -81,3 +81,20 @@ test("treinador assume clube com projeto mesmo com a janela fechada", {timeout:0
   A.execute(s,"join",{id:tgt.id});
   assert.equal(s.clubId,tgt.id);
 });
+test("escalação por posição específica: 11 posições da formação, goleiro no gol e troca no mesmo lugar",{timeout:0},()=>{
+  const s=setup(),cn=s.coachNational;
+  for(const f of CN.FORMATIONS?Object.keys(CN.FORMATIONS):["4-3-3","4-4-2","3-5-2","4-2-3-1","5-3-2"]){
+    CN.setFormation(s,E,f);
+    const ov=CN.overview(s,E),sl=ov.lineup.slots;
+    assert.equal(sl.length,11);assert.equal(sl[0].code,"GOL");
+    assert.equal(new Set(sl.map(x=>x.id)).size,11);
+    assert.ok(sl.every(x=>x.x>=0&&x.x<=100&&x.y>=0&&x.y<=100&&x.fit>0&&x.fit<=1));
+    assert.equal(cn.starters.length,0,"trocar a formação volta ao XI automático");
+  }
+  CN.setFormation(s,E,"4-3-3");
+  const ov=CN.overview(s,E),m=new Map(ov.players.map(p=>[p.id,p]));
+  const out=ov.lineup.slots[3],inP=ov.lineup.bench.map(id=>m.get(id)).find(p=>p.pos!=="GOL"&&p.available);
+  CN.setStarter(s,E,out.id,inP.id);
+  const after=CN.overview(s,E).lineup.slots;
+  assert.equal(after[3].id,inP.id);assert.equal(after[3].code,out.code);
+});

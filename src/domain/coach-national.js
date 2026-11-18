@@ -54,7 +54,15 @@
 
   // ---- elenco, convocação e escalação ----
   const byMerit=(a,b)=>b.overall-a.overall||a.age-b.age||String(a.id).localeCompare(String(b.id));
-  function poolOf(s,D,code){const t=teamOf(s,D,code);return t?NI().pool(s,D,t).sort(byMerit):[];}
+  // O pool da seleção varre todos os jogadores do mundo (~17 mil): guardado por dia/temporada para a tela não travar.
+  const poolCache=new WeakMap();
+  function poolOf(s,D,code){
+    const hit=poolCache.get(s);
+    if(hit&&hit.day===s.day&&hit.season===s.season&&hit.code===code)return hit.pool;
+    const t=teamOf(s,D,code),pool=t?NI().pool(s,D,t).sort(byMerit):[];
+    poolCache.set(s,{day:s.day,season:s.season,code,pool});
+    return pool;
+  }
   function autoList(pool){
     const avail=pool.filter(p=>p.available),used=new Set(),out=[];
     for(const pos of POS)for(const p of avail.filter(x=>x.pos===pos).slice(0,QUOTA[pos])){used.add(p.id);out.push(p);}
@@ -77,15 +85,55 @@
     }
     return {pool,squad,lineup:lineup(squad,cn.formation,cn.starters)};
   }
+  // Posições de cada formação: código específico + coordenadas no campo (x: esquerda→direita, y: ataque em cima).
+  const SLOTS=Object.freeze({
+    "4-3-3":[["GOL",50,90],["LE",12,70],["ZAG",36,74],["ZAG",64,74],["LD",88,70],["VOL",50,56],["MC",28,44],["MC",72,44],["PE",14,20],["CA",50,14],["PD",86,20]],
+    "4-4-2":[["GOL",50,90],["LE",12,70],["ZAG",36,74],["ZAG",64,74],["LD",88,70],["ME",12,44],["MC",38,50],["MC",62,50],["MD",88,44],["CA",36,16],["CA",64,16]],
+    "3-5-2":[["GOL",50,90],["ZAG",24,74],["ZAG",50,76],["ZAG",76,74],["ALE",8,48],["MC",30,46],["VOL",50,58],["MC",70,46],["ALD",92,48],["CA",36,16],["CA",64,16]],
+    "4-2-3-1":[["GOL",50,90],["LE",12,70],["ZAG",36,74],["ZAG",64,74],["LD",88,70],["VOL",36,56],["VOL",64,56],["ME",14,32],["MEI",50,34],["MD",86,32],["CA",50,14]],
+    "5-3-2":[["GOL",50,90],["ALE",8,66],["ZAG",28,74],["ZAG",50,76],["ZAG",72,74],["ALD",92,66],["MC",28,46],["VOL",50,54],["MC",72,46],["CA",36,16],["CA",64,16]]
+  });
+  const FAMILY={LD:["ALD","ZAG"],LE:["ALE","ZAG"],ALD:["LD","MD","MC"],ALE:["LE","ME","MC"],ZAG:["VOL","LD","LE"],VOL:["MC","ZAG","MEI"],MC:["VOL","MEI","MD","ME"],MEI:["MC","SA","ME","MD"],MD:["PD","MC","MEI","ALD"],ME:["PE","MC","MEI","ALE"],PD:["MD","SA","CA"],PE:["ME","SA","CA"],SA:["CA","MEI","PD","PE"],CA:["SA","PD","PE"]};
+  const GROUP_OF={GOL:"GOL",LD:"DEF",LE:"DEF",ZAG:"DEF",ALD:"DEF",ALE:"DEF",VOL:"MEI",MC:"MEI",MD:"MEI",ME:"MEI",MEI:"MEI",PD:"ATA",PE:"ATA",SA:"ATA",CA:"ATA"};
+  const codeCache=new WeakMap();
+  function codeOf(p){
+    let c=codeCache.get(p);if(c)return c;
+    try{const PP=root.ProLifePlayerPositions||(typeof require==="function"?require("./player-positions.js"):null);c=(p.primaryPosition&&PP?.isSpecific?.(p.primaryPosition)?p.primaryPosition:null)||PP?.infer?.(p);}catch(e){c=null;}
+    c=c||p.pos;codeCache.set(p,c);return c;
+  }
+  // Encaixe do jogador na posição do campo: 1 = posição natural; cai se jogar fora do papel.
+  function slotFit(p,slot){
+    const code=codeOf(p);
+    if(code===slot)return 1;
+    if(slot==="GOL"||code==="GOL")return .3;
+    if(Array.isArray(p.secondaryPositions)&&p.secondaryPositions.includes(slot))return .98;
+    const fi=(FAMILY[slot]||[]).indexOf(code);if(fi>=0)return Math.max(.9,.97-.02*fi);
+    if(GROUP_OF[code]===GROUP_OF[slot])return .9;
+    return .8;
+  }
+  function decorate(players,formation){
+    const slots=SLOTS[formation]||SLOTS["4-3-3"];
+    return players.map((p,i)=>{const sl=slots[i]||["MC",50,50],fit=slotFit(p,sl[0]);return {...p,slotCode:sl[0],x:sl[1],y:sl[2],fit,slotOvr:Math.round(p.overall*fit)};});
+  }
   function lineup(squad,formation,manual){
-    const shape=FORMATIONS[formation]||FORMATIONS["4-3-3"],used=new Set(),starters=[];
+    if(!SLOTS[formation])formation="4-3-3";
     if(Array.isArray(manual)&&manual.length===11){
       const byId=new Map(squad.map(p=>[p.id,p])),picked=manual.map(id=>byId.get(id)).filter(p=>p&&p.available);
-      if(picked.length===11&&new Set(manual).size===11&&picked.filter(p=>p.pos==="GOL").length===1)return {formation,starters:picked,bench:squad.filter(p=>!manual.includes(p.id)),manual:true};
+      if(picked.length===11&&new Set(manual).size===11&&picked.filter(p=>p.pos==="GOL").length===1&&picked[0].pos==="GOL")return {formation,starters:decorate(picked,formation),bench:squad.filter(p=>!manual.includes(p.id)),manual:true};
     }
-    for(const pos of POS)for(const p of squad.filter(x=>x.pos===pos).sort(byMerit).slice(0,shape[pos])){used.add(p.id);starters.push(p);}
-    if(starters.length<11)for(const p of squad.filter(x=>!used.has(x.id)&&x.pos!=="GOL").sort(byMerit)){if(starters.length>=11)break;used.add(p.id);starters.push(p);}
-    return {formation,starters,bench:squad.filter(p=>!used.has(p.id)),manual:false};
+    const avail=squad.filter(p=>p.available!==false);
+    // goleiro titular: o melhor; os 10 de linha escolhidos pelo melhor encaixe nas posições da formação.
+    const gk=avail.filter(p=>p.pos==="GOL").sort(byMerit)[0];
+    const field=avail.filter(p=>p.pos!=="GOL").sort(byMerit);
+    const slots=SLOTS[formation],fieldSlots=slots.slice(1);
+    const fp=[];field.forEach((p,pi)=>fieldSlots.forEach((sl,si)=>fp.push({pi,si,score:p.overall*slotFit(p,sl[0])+(sl[0]===codeOf(p)?.01:0)})));
+    fp.sort((a,b)=>b.score-a.score||a.si-b.si||a.pi-b.pi);
+    const tp=new Set(),sp=new Array(fieldSlots.length).fill(null);
+    for(const x of fp){if(tp.has(x.pi)||sp[x.si]!=null)continue;tp.add(x.pi);sp[x.si]=field[x.pi];}
+    const ordered=[gk||null,...sp].filter(Boolean);
+    if(ordered.length<11){for(const p of field){if(ordered.length>=11)break;if(!ordered.includes(p))ordered.push(p);}}
+    const ids=new Set(ordered.map(p=>p.id));
+    return {formation,starters:decorate(ordered,formation),bench:squad.filter(p=>!ids.has(p.id)),manual:false};
   }
   const STYLES={balanced:"Equilibrado",possession:"Posse de bola",counter:"Contra-ataque",attack:"Ofensivo"},PRESS={low:"Bloco baixo",balanced:"Equilibrada",high:"Alta"},BUILD={short:"Passes curtos",balanced:"Equilibrada",direct:"Passe direto"};
   function tacticMult(tc){
@@ -128,7 +176,7 @@
   }
   function teamPower(starters){
     if(!starters.length)return 60;
-    const base=starters.reduce((a,p)=>a+p.overall,0)/starters.length;
+    const base=starters.reduce((a,p)=>a+(p.slotOvr??p.overall),0)/starters.length;
     return base-(11-Math.min(11,starters.length))*2.5;
   }
 
@@ -216,7 +264,7 @@
   function setFormation(s,D,formation){
     const cn=init(s);if(!cn.teamId)throw Error("Você não comanda uma seleção.");
     if(!FORMATIONS[formation])throw Error("Formação inválida.");
-    cn.formation=formation;
+    cn.formation=formation;cn.starters=[];
   }
   function autoCallup(s,D){
     const cn=init(s);if(!cn.teamId)throw Error("Você não comanda uma seleção.");
@@ -515,16 +563,23 @@
       const eff=effectiveSquad(s,D),calledIds=new Set(eff.squad.map(p=>p.id)),starters=new Set(eff.lineup.starters.map(p=>p.id));
       out.strength=table[cn.teamId]?.strength??null;out.power=+teamPower(eff.lineup.starters).toFixed(1);out.called=eff.squad.length;out.max=SQUAD_MAX;
       const PP=root.ProLifePlayerPositions||(typeof require==="function"?require("./player-positions.js"):null);
-      out.players=eff.pool.map(p=>({id:p.id,name:p.name,pos:p.pos,code:(()=>{try{return PP?.infer?.(p)||p.pos;}catch(e){return p.pos;}})(),club:p.club,age:p.age,overall:Math.round(p.overall),available:p.available,called:calledIds.has(p.id),starter:starters.has(p.id),caps:cn.stats[p.id]?.caps||0,goals:cn.stats[p.id]?.goals||0}));
+      out.players=eff.pool.map(p=>({id:p.id,name:p.name,pos:p.pos,code:codeOf(p),club:p.club,age:p.age,overall:Math.round(p.overall),available:p.available,called:calledIds.has(p.id),starter:starters.has(p.id),caps:cn.stats[p.id]?.caps||0,goals:cn.stats[p.id]?.goals||0}));
       const ld=leaders(cn,eff.squad);
-      out.lineup={formation:cn.formation,manual:eff.lineup.manual,starters:eff.lineup.starters.map(p=>p.id),bench:eff.lineup.bench.map(p=>p.id)};
+      out.lineup={formation:cn.formation,manual:eff.lineup.manual,starters:eff.lineup.starters.map(p=>p.id),slots:eff.lineup.starters.map(p=>({id:p.id,code:p.slotCode,x:p.x,y:p.y,fit:+p.fit.toFixed(2),ovr:p.slotOvr})),bench:eff.lineup.bench.map(p=>p.id)};
       out.tactics={...cn.tactics,styles:STYLES,pressings:PRESS,buildups:BUILD};out.captain=ld.cap?.id||null;out.vice=ld.vice?.id||null;
-      out.cup=cupView(s,D,out.team);out.qual=qualView(s,D,out.team);out.tours=tournamentsView(s,D,out.team);
+      Object.defineProperty(out,'cup',{enumerable:true,configurable:true,get(){const v=cachedCupView(s,D,out.team);Object.defineProperty(out,'cup',{value:v,enumerable:true,writable:true,configurable:true});return v;}});out.qual=qualView(s,D,out.team);out.tours=tournamentsView(s,D,out.team);
       out.scorers=Object.entries(cn.stats).filter(([,v])=>v.goals>0).map(([id,v])=>({id,...v})).sort((a,b)=>b.goals-a.goals).slice(0,5);
     }
     return out;
   }
 
+  // worldCupSummary refaz o elenco de todas as seleções (~1 s): guardado por dia/temporada.
+  const cupCache=new WeakMap();
+  function cachedCupView(s,D,team){
+    const hit=cupCache.get(s),key=s.day+"|"+s.season+"|"+(team&&team.code);
+    if(hit&&hit.key===key)return hit.value;
+    const value=cupView(s,D,team);cupCache.set(s,{key,value});return value;
+  }
   function callupView(s,D,cn){
     if(!cn.teamId)return null;
     const c=cn.callup;if(!c)return {status:"none",note:"Sem jogos marcados no momento."};
