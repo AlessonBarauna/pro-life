@@ -88,7 +88,6 @@
     const p=infer(player);
     if(!p) return false;
     player.primaryPosition=p;
-    if(!player.primaryPositionSource) player.primaryPositionSource='inferred';
     if(Array.isArray(player.secondaryPositions)) player.secondaryPositions=player.secondaryPositions.filter(x=>toCode(x)!==p);
     return true;
   }

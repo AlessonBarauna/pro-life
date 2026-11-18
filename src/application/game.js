@@ -431,7 +431,7 @@ case "tactic": {
         s.coachCareer.settings.marketStrictness=difficulty;
         break;
       }
-      case "cnApply": case "cnAccept": case "cnDecline": case "cnResign": case "cnToggle": case "cnSwap": case "cnAuto": case "cnFormation": {
+      case "cnApply": case "cnAccept": case "cnDecline": case "cnResign": case "cnToggle": case "cnSwap": case "cnAuto": case "cnFormation": case "cnConfirm": case "cnStarter": case "cnAutoXI": case "cnTactic": case "cnCaptain": {
         if (s.mode !== "coach") throw Error("Disponível para treinadores.");
         const CN = D.CoachNational;
         if (!CN) throw Error("Módulo de seleções indisponível.");
@@ -442,6 +442,11 @@ case "tactic": {
         else if (action === "cnToggle") CN.toggleCall(s, D, String(data.playerId || ""));
         else if (action === "cnSwap") CN.swapCall(s, D, String(data.outId || ""), String(data.inId || ""));
         else if (action === "cnAuto") CN.autoCallup(s, D);
+        else if (action === "cnConfirm") CN.confirmCallup(s, D);
+        else if (action === "cnStarter") CN.setStarter(s, D, String(data.outId || ""), String(data.inId || ""));
+        else if (action === "cnAutoXI") CN.autoXI(s, D);
+        else if (action === "cnTactic") CN.setTactic(s, D, String(data.key || ""), String(data.value || ""));
+        else if (action === "cnCaptain") CN.setCaptain(s, D, String(data.role || ""), String(data.id || ""));
         else CN.setFormation(s, D, String(data.formation || ""));
         break;
       }

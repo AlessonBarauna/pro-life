@@ -4,6 +4,7 @@
   // Vive ao lado do clube: o treinador mantém o clube e acumula o cargo. Estado em s.coachNational.
   // Escopo desta etapa: amistosos internacionais nas 4 janelas FIFA do ano (sem Copa/eliminatórias do treinador).
   const VERSION=1,WINDOWS=[74,149,224,299],MATCH_GAP=3,SQUAD_MAX=26,SQUAD_MIN=18,HISTORY_LIMIT=80,OFFER_EVERY=60,OFFER_TTL=45,COOLDOWN=60;
+  const CALL_OPEN=12,CALL_DEADLINE=3,CALL_CLUSTER=7;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const hash=value=>{let h=2166136261;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}h^=h>>>16;h=Math.imul(h,2246822507);h^=h>>>13;h=Math.imul(h,3266489909);h^=h>>>16;return h>>>0;};
   const unit=key=>hash(key)/4294967296;
@@ -14,7 +15,7 @@
   const isCoach=s=>s?.mode==="coach";
 
   function blank(){
-    return {version:VERSION,teamId:null,since:null,board:60,formation:"4-3-3",manual:false,called:[],matches:[],schedule:[],offers:[],applications:[],rejected:{},history:[],stats:{},cooldownUntil:0,lastOfferDay:-999};
+    return {version:VERSION,teamId:null,since:null,board:60,formation:"4-3-3",manual:false,called:[],matches:[],schedule:[],offers:[],applications:[],rejected:{},history:[],stats:{},cooldownUntil:0,lastOfferDay:-999,callup:null,starters:[],tactics:{style:"balanced",pressing:"balanced",buildup:"balanced"},captain:null,vice:null};
   }
   function init(s){
     if(!isCoach(s))return null;
@@ -74,13 +75,56 @@
       for(const p of pool){if(squad.length>=SQUAD_MIN)break;if(p.available&&!used.has(p.id)){squad.push(p);used.add(p.id);}}
       squad.sort(byMerit);
     }
-    return {pool,squad,lineup:lineup(squad,cn.formation)};
+    return {pool,squad,lineup:lineup(squad,cn.formation,cn.starters)};
   }
-  function lineup(squad,formation){
+  function lineup(squad,formation,manual){
     const shape=FORMATIONS[formation]||FORMATIONS["4-3-3"],used=new Set(),starters=[];
+    if(Array.isArray(manual)&&manual.length===11){
+      const byId=new Map(squad.map(p=>[p.id,p])),picked=manual.map(id=>byId.get(id)).filter(p=>p&&p.available);
+      if(picked.length===11&&new Set(manual).size===11&&picked.filter(p=>p.pos==="GOL").length===1)return {formation,starters:picked,bench:squad.filter(p=>!manual.includes(p.id)),manual:true};
+    }
     for(const pos of POS)for(const p of squad.filter(x=>x.pos===pos).sort(byMerit).slice(0,shape[pos])){used.add(p.id);starters.push(p);}
     if(starters.length<11)for(const p of squad.filter(x=>!used.has(x.id)&&x.pos!=="GOL").sort(byMerit)){if(starters.length>=11)break;used.add(p.id);starters.push(p);}
-    return {formation,starters,bench:squad.filter(p=>!used.has(p.id))};
+    return {formation,starters,bench:squad.filter(p=>!used.has(p.id)),manual:false};
+  }
+  const STYLES={balanced:"Equilibrado",possession:"Posse de bola",counter:"Contra-ataque",attack:"Ofensivo"},PRESS={low:"Bloco baixo",balanced:"Equilibrada",high:"Alta"},BUILD={short:"Passes curtos",balanced:"Equilibrada",direct:"Passe direto"};
+  function tacticMult(tc){
+    let own=1,opp=1;tc=tc||{};
+    if(tc.style==="attack"){own*=1.05;opp*=1.05;}else if(tc.style==="counter"){own*=.98;opp*=.97;}else if(tc.style==="possession"){own*=1.02;opp*=.97;}
+    if(tc.pressing==="high"){own*=1.01;opp*=.98;}else if(tc.pressing==="low"){opp*=1.01;own*=.99;}
+    if(tc.buildup==="direct"){own*=1.01;}
+    return {own,opp};
+  }
+  function setStarter(s,D,outId,inId){
+    const cn=init(s);if(!cn.teamId)throw Error("Você não comanda uma seleção.");
+    const eff=effectiveSquad(s,D),ids=eff.lineup.starters.map(p=>p.id),inP=eff.squad.find(p=>p.id===inId),outP=eff.squad.find(p=>p.id===outId);
+    if(!inP||!outP)throw Error("Os dois jogadores precisam estar convocados.");
+    if(!ids.includes(outId))throw Error(`${outP.name} não é titular.`);
+    if(ids.includes(inId))throw Error(`${inP.name} já é titular.`);
+    if(!inP.available)throw Error(`${inP.name} está lesionado ou suspenso.`);
+    if((outP.pos==="GOL")!==(inP.pos==="GOL"))throw Error("O goleiro só pode ser trocado por outro goleiro.");
+    cn.starters=ids.map(id=>id===outId?inId:id);
+  }
+  function autoXI(s,D){const cn=init(s);if(!cn.teamId)throw Error("Você não comanda uma seleção.");cn.starters=[];}
+  function setTactic(s,D,key,value){
+    const cn=init(s);if(!cn.teamId)throw Error("Você não comanda uma seleção.");
+    const ok={style:STYLES,pressing:PRESS,buildup:BUILD}[key];
+    if(!ok||!ok[value])throw Error("Opção tática inválida.");
+    cn.tactics={...cn.tactics,[key]:value};
+  }
+  function setCaptain(s,D,role,id){
+    const cn=init(s);if(!cn.teamId)throw Error("Você não comanda uma seleção.");
+    if(role!=="captain"&&role!=="vice")throw Error("Função inválida.");
+    const p=effectiveSquad(s,D).squad.find(x=>x.id===id);if(!p)throw Error("O jogador precisa estar convocado.");
+    const other=role==="captain"?"vice":"captain";if(cn[other]===id)cn[other]=null;
+    cn[role]=id;
+  }
+  function leaders(cn,squad){
+    const ok=id=>squad.find(p=>p.id===id);
+    const pool=squad.filter(p=>p.pos!=="GOL").slice().sort((a,b)=>(b.age-a.age)||b.overall-a.overall||String(a.id).localeCompare(String(b.id)));
+    const cap=ok(cn.captain)||pool.sort((a,b)=>b.overall-a.overall||b.age-a.age)[0]||squad[0]||null;
+    const vice=ok(cn.vice)&&cn.vice!==cap?.id?ok(cn.vice):pool.filter(p=>p.id!==cap?.id).sort((a,b)=>b.overall-a.overall||b.age-a.age)[0]||null;
+    return {cap,vice};
   }
   function teamPower(starters){
     if(!starters.length)return 60;
@@ -97,12 +141,12 @@
     if(cn.teamId)throw Error("Você já comanda uma seleção. Deixe o cargo antes de aceitar outro.");
     if(!t)throw Error("Esta seleção não está disponível no PRO-LIFE.");
     if(s.day<cn.cooldownUntil)throw Error(`A confederação só aceita novos treinadores a partir do dia ${cn.cooldownUntil}.`);
-    Object.assign(cn,{teamId:code,since:s.day,board:60,manual:false,called:[],schedule:[],offers:[]});
+    Object.assign(cn,{teamId:code,since:s.day,board:60,manual:false,called:[],schedule:[],offers:[],callup:null});
     cn.history.unshift({code,name:t.name,from:s.day,to:null,how});
     cn.history.length=Math.min(cn.history.length,30);
-    init(s);ensureSchedule(s,D);
+    init(s);ensureSchedule(s,D);syncCallup(s,D,true);
     try{(D.NationalTeam||root.ProLifeNationalTeam)?.coachRetrack?.(s,code);}catch(e){}
-    message(s,D,`Você é o novo treinador de ${t.name}`,`A confederação confirmou o seu nome. A primeira convocação já foi montada automaticamente; ajuste a lista e a formação na aba Seleção.`);
+    message(s,D,`Você é o novo treinador de ${t.name}`,`A confederação confirmou o seu nome. A primeira convocação já foi montada automaticamente; ajuste e confirme a lista na aba Seleção antes do prazo. Nas próximas datas FIFA a convocação abre 12 dias antes dos jogos.`);
     return cn;
   }
   // Candidatura (FC27): o treinador envia o pedido e a confederação analisa em 1-2 semanas, comparando
@@ -176,12 +220,94 @@
   }
   function autoCallup(s,D){
     const cn=init(s);if(!cn.teamId)throw Error("Você não comanda uma seleção.");
+    const lock=callupLock(s,D);if(lock)throw Error(lock);
     cn.manual=false;cn.called=[];
+    if(cn.callup&&cn.callup.status==="confirmed")cn.callup.status="open";
+  }
+  // ---- janela de convocação (realista): abre antes de cada data FIFA, tem prazo e a lista fecha ----
+  // Datas dos próximos compromissos da seleção (amistosos, eliminatórias e Copa).
+  function fixtureDays(s,D){
+    const cn=init(s),team=cn.teamId?teamOf(s,D,cn.teamId):null,out=[];
+    if(!team)return out;
+    for(const m of cn.schedule)if(!m.played&&m.day>=s.day)out.push({day:m.day,label:m.competition||"Amistoso internacional",opponent:m.opponent});
+    try{
+      const NT=D.NationalTeam||root.ProLifeNationalTeam,cq=NT?.coachQualView?.(s);
+      if(cq&&cq.teamId===cn.teamId){
+        const name=id=>(cq.table.find(r=>r.id===id)||{}).name||id;
+        for(const m of cq.fixtures||[])if(!m.played&&m.day>=s.day&&(m.homeId===cn.teamId||m.awayId===cn.teamId))out.push({day:m.day,label:"Eliminatórias da Copa",opponent:name(m.homeId===cn.teamId?m.awayId:m.homeId)});
+      }
+    }catch(e){}
+    try{
+      const w=NI().worldCupOf(s,D,{code:team.code,name:team.name});
+      if(w&&w.qualified)for(const m of [...(w.matches||[]),...(w.knockout||[])])if(!m.played&&Number.isFinite(Number(m.day))&&Number(m.day)>=s.day)out.push({day:Number(m.day),label:"Copa do Mundo",opponent:null});
+    }catch(e){}
+    return out.sort((a,b)=>a.day-b.day);
+  }
+  function callupLock(s,D){
+    const cn=init(s),c=cn.callup;
+    if(!c)return null;
+    if(c.status==="waiting")return `A convocação para ${c.label} abre no dia ${c.opens}. Antes disso a lista não pode ser alterada.`;
+    if(c.status==="closed")return `A lista para ${c.label} foi fechada. Só é possível substituir jogadores lesionados ou suspensos.`;
+    return null;
+  }
+  function syncCallup(s,D,fresh){
+    const cn=init(s);if(!cn.teamId){cn.callup=null;return null;}
+    let c=cn.callup;
+    if(c&&c.last>=s.day&&c.status!=="done"){/* janela atual segue */}
+    else{
+      const fx=fixtureDays(s,D);
+      c=null;
+      if(!fx.length){cn.callup=null;return null;}
+      const first=fx[0].day,last=Math.max(...fx.filter(x=>x.day-first<=CALL_CLUSTER).map(x=>x.day));
+      const label=[...new Set(fx.filter(x=>x.day-first<=CALL_CLUSTER).map(x=>x.label))].join(" e ");
+      c=cn.callup={first,last,label,opens:first-CALL_OPEN,deadline:Math.max(s.day,first-CALL_DEADLINE),status:"waiting",first_list:!!fresh,alerted:false};
+      if(fresh){c.opens=s.day;}
+    }
+    const prev=c.status;
+    if(c.status==="waiting"&&s.day>=c.opens){
+      c.status="open";
+      if(!fresh&&!c.first_list){
+        // rascunho: repete a última lista, tirando indisponíveis, e completa com os melhores
+        const pool=poolOf(s,D,cn.teamId),byId=new Map(pool.map(p=>[p.id,p]));
+        const keep=(cn.called||[]).map(id=>byId.get(id)).filter(p=>p&&p.available);
+        const used=new Set(keep.map(p=>p.id));
+        for(const p of autoList(pool)){if(keep.length>=SQUAD_MAX-2)break;if(!used.has(p.id)){keep.push(p);used.add(p.id);}}
+        cn.called=keep.map(p=>p.id);cn.manual=true;
+      }
+      message(s,D,`Convocação aberta: ${c.label}`,`A confederação abriu o período de convocação. Monte a lista (${SQUAD_MIN} a ${SQUAD_MAX} jogadores, com ao menos 2 goleiros) e confirme até o dia ${c.deadline}. Os jogos começam no dia ${c.first}.`);
+    }
+    if((c.status==="open"||c.status==="confirmed")&&s.day>=c.deadline&&c.deadline<=c.first){
+      if(c.status==="open"&&!c.first_list){
+        const ids=effectiveSquad(s,D).squad.map(p=>p.id);cn.called=ids;cn.manual=true;
+        cn.board=clamp(cn.board-2,0,100);
+        message(s,D,`Convocação fechada: ${c.label}`,`O prazo terminou sem a sua confirmação. A confederação convocou a lista que estava no rascunho e a diretoria registrou o atraso (confiança -2).`);
+      }else if(c.status==="open"){
+        const ids=effectiveSquad(s,D).squad.map(p=>p.id);cn.called=ids;cn.manual=true;
+        message(s,D,`Convocação fechada: ${c.label}`,`O prazo terminou. Ficou a lista que estava montada.`);
+      }else message(s,D,`Convocação fechada: ${c.label}`,`A lista confirmada está valendo. Você ainda pode trocar jogadores lesionados.`);
+      c.status="closed";
+    }
+    if(s.day>c.last)c.status="done";
+    return c;
+  }
+  function confirmCallup(s,D){
+    const cn=init(s);if(!cn.teamId)throw Error("Você não comanda uma seleção.");
+    const c=cn.callup;
+    if(!c||c.status==="waiting")throw Error(c?`A convocação abre no dia ${c.opens}.`:"Não há jogos marcados para convocar.");
+    if(c.status==="closed"||c.status==="done")throw Error("O prazo da convocação já terminou.");
+    const eff=effectiveSquad(s,D).squad;
+    if(eff.length<SQUAD_MIN)throw Error(`A lista precisa de pelo menos ${SQUAD_MIN} jogadores.`);
+    if(eff.filter(p=>p.pos==="GOL").length<2)throw Error("A convocação precisa de pelo menos 2 goleiros.");
+    cn.called=eff.map(p=>p.id);cn.manual=true;
+    c.status="confirmed";c.confirmedDay=s.day;c.first_list=false;
+    message(s,D,`Convocação confirmada: ${c.label}`,`${eff.length} jogadores convocados. A lista fecha no dia ${c.deadline}; até lá ainda dá para ajustar.`);
   }
   function toggleCall(s,D,playerId){
     const cn=init(s);if(!cn.teamId)throw Error("Você não comanda uma seleção.");
     const pool=poolOf(s,D,cn.teamId),p=pool.find(x=>x.id===playerId);
     if(!p)throw Error("Jogador não encontrado entre os elegíveis.");
+    const lock=callupLock(s,D);
+    if(lock&&!(cn.called.includes(playerId)&&!p.available))throw Error(lock);
     if(!cn.manual){cn.called=effectiveSquad(s,D).squad.map(x=>x.id);cn.manual=true;}
     const has=cn.called.includes(playerId);
     if(has){
@@ -199,6 +325,8 @@
     const cn=init(s);if(!cn.teamId)throw Error("Você não comanda uma seleção.");
     const pool=poolOf(s,D,cn.teamId),pin=pool.find(x=>x.id===inId),pout=pool.find(x=>x.id===outId);
     if(!pin||!pout)throw Error("Jogador não encontrado entre os elegíveis.");
+    const lock=callupLock(s,D);
+    if(lock&&pout.available)throw Error(lock);
     if(!cn.manual){cn.called=effectiveSquad(s,D).squad.map(x=>x.id);cn.manual=true;}
     if(!cn.called.includes(outId))throw Error(`${pout.name} não está na lista.`);
     if(cn.called.includes(inId))throw Error(`${pin.name} já está convocado.`);
@@ -238,7 +366,8 @@
   function simulate(s,D,fx){
     const cn=init(s),table=strengthTable(s,D),opp=table[fx.opponentCode];
     const {lineup:lu}=effectiveSquad(s,D),own=teamPower(lu.starters),other=opp?.strength??72;
-    const lamOwn=clamp(1.35*Math.exp((own-other)/14)*(fx.home?1.08:1),.25,4.5),lamOpp=clamp(1.1*Math.exp((other-own)/14)*(fx.home?1:1.08),.25,4.5);
+    const tm=tacticMult(cn.tactics);
+    const lamOwn=clamp(1.35*Math.exp((own-other)/14)*(fx.home?1.08:1)*tm.own,.25,4.5),lamOpp=clamp(1.1*Math.exp((other-own)/14)*(fx.home?1:1.08)*tm.opp,.25,4.5);
     const gf=poisson(lamOwn,`${fx.id}|gf`),ga=poisson(lamOpp,`${fx.id}|ga`);
     const weights={GOL:0,DEF:.8,MEI:3,ATA:6},scorers=[];
     for(let g=0;g<gf;g++){
@@ -363,6 +492,7 @@
     if(cn.teamId)cn.applications=[];else resolveApplications(s,D);
     if(cn.teamId){
       ensureSchedule(s,D);
+      syncCallup(s,D,false);
       for(const fx of cn.schedule.filter(m=>!m.played&&m.day<=s.day)){
         if(!cn.teamId)break;
         if(fx.day<s.day-1){cn.schedule=cn.schedule.filter(m=>m!==fx);continue;}
@@ -378,19 +508,30 @@
     const cn=init(s);if(!cn)return null;
     const table=strengthTable(s,D),rep=reputationOf(s),team=cn.teamId?teamOf(s,D,cn.teamId):null;
     const nations=CODES.filter(c=>table[c]).map(c=>{const need=requiredReputation(s,D,c);return {code:c,name:table[c].name,confederation:table[c].confederation,strength:table[c].strength,need,eligible:rep>=need,current:c===cn.teamId};}).sort((a,b)=>Number(b.current)-Number(a.current)||Number(b.eligible)-Number(a.eligible)||(a.eligible?b.strength-a.strength:a.need-b.need)||b.strength-a.strength);
-    const out={rep,teamId:cn.teamId,team:team?{code:cn.teamId,name:team.name,confederation:team.confederation}:null,board:Math.round(cn.board),formation:cn.formation,formations:Object.keys(FORMATIONS),manual:cn.manual,offers:cn.offers.filter(o=>o.expires>=s.day),applications:cn.applications.map(a=>({...a})),rejected:{...cn.rejected},cooldownUntil:cn.cooldownUntil,day:s.day,nations,history:cn.history,
+    const out={rep,teamId:cn.teamId,team:team?{code:cn.teamId,name:team.name,confederation:team.confederation}:null,board:Math.round(cn.board),formation:cn.formation,formations:Object.keys(FORMATIONS),manual:cn.manual,callup:callupView(s,D,cn),offers:cn.offers.filter(o=>o.expires>=s.day),applications:cn.applications.map(a=>({...a})),rejected:{...cn.rejected},cooldownUntil:cn.cooldownUntil,day:s.day,nations,history:cn.history,
       results:cn.matches.filter(m=>m.day>=(cn.since??0)).slice(0,30),fixtures:cn.schedule.filter(m=>!m.played).slice(0,12)};
     const w=out.results;out.record={p:w.length,v:w.filter(m=>m.result==="V").length,e:w.filter(m=>m.result==="E").length,d:w.filter(m=>m.result==="D").length,gf:w.reduce((a,m)=>a+m.gf,0),ga:w.reduce((a,m)=>a+m.ga,0)};
     if(cn.teamId){
       const eff=effectiveSquad(s,D),calledIds=new Set(eff.squad.map(p=>p.id)),starters=new Set(eff.lineup.starters.map(p=>p.id));
       out.strength=table[cn.teamId]?.strength??null;out.power=+teamPower(eff.lineup.starters).toFixed(1);out.called=eff.squad.length;out.max=SQUAD_MAX;
-      out.players=eff.pool.map(p=>({id:p.id,name:p.name,pos:p.pos,club:p.club,age:p.age,overall:Math.round(p.overall),available:p.available,called:calledIds.has(p.id),starter:starters.has(p.id),caps:cn.stats[p.id]?.caps||0,goals:cn.stats[p.id]?.goals||0}));
+      const PP=root.ProLifePlayerPositions||(typeof require==="function"?require("./player-positions.js"):null);
+      out.players=eff.pool.map(p=>({id:p.id,name:p.name,pos:p.pos,code:(()=>{try{return PP?.infer?.(p)||p.pos;}catch(e){return p.pos;}})(),club:p.club,age:p.age,overall:Math.round(p.overall),available:p.available,called:calledIds.has(p.id),starter:starters.has(p.id),caps:cn.stats[p.id]?.caps||0,goals:cn.stats[p.id]?.goals||0}));
+      const ld=leaders(cn,eff.squad);
+      out.lineup={formation:cn.formation,manual:eff.lineup.manual,starters:eff.lineup.starters.map(p=>p.id),bench:eff.lineup.bench.map(p=>p.id)};
+      out.tactics={...cn.tactics,styles:STYLES,pressings:PRESS,buildups:BUILD};out.captain=ld.cap?.id||null;out.vice=ld.vice?.id||null;
       out.cup=cupView(s,D,out.team);out.qual=qualView(s,D,out.team);out.tours=tournamentsView(s,D,out.team);
       out.scorers=Object.entries(cn.stats).filter(([,v])=>v.goals>0).map(([id,v])=>({id,...v})).sort((a,b)=>b.goals-a.goals).slice(0,5);
     }
     return out;
   }
 
+  function callupView(s,D,cn){
+    if(!cn.teamId)return null;
+    const c=cn.callup;if(!c)return {status:"none",note:"Sem jogos marcados no momento."};
+    const lock=callupLock(s,D);
+    const left=Math.max(0,c.deadline-s.day);
+    return {status:c.status,label:c.label,opens:c.opens,deadline:c.deadline,first:c.first,last:c.last,daysLeft:left,editable:!lock,lock,min:SQUAD_MIN,max:SQUAD_MAX,confirmed:c.status==="confirmed"||c.status==="closed"&&!!c.confirmedDay,firstList:!!c.first_list};
+  }
   function qualView(s,D,team){
     const NT=D.NationalTeam||root.ProLifeNationalTeam;
     let q=null;try{q=NT?.coachQualifiersView?.(s)||null;}catch(e){}
@@ -449,7 +590,7 @@
       matches:(w.matches||[]).map(mk),knockout:ko};
   }
 
-  const api={nationProfile,nextFixture,VERSION,WINDOWS,FORMATIONS,CODES,SQUAD_MAX,init,daily,overview,apply,acceptOffer,declineOffer,leave,setFormation,autoCallup,toggleCall,swapCall,strengthTable,requiredReputation,effectiveSquad,ensureSchedule};
+  const api={nationProfile,nextFixture,VERSION,WINDOWS,FORMATIONS,CODES,SQUAD_MAX,init,daily,overview,apply,acceptOffer,declineOffer,leave,setFormation,autoCallup,setStarter,autoXI,setTactic,setCaptain,confirmCallup,syncCallup,toggleCall,swapCall,strengthTable,requiredReputation,effectiveSquad,ensureSchedule};
   root.ProLifeCoachNational=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

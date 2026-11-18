@@ -9476,10 +9476,19 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
   });
   // Seleção do treinador: abas, paginação, convocação, candidatura e convites.
   document.addEventListener("click", (event) => {
-    const el = event.target.closest?.("[data-cn-tab],[data-cn-page],[data-cn-pos],[data-cn-toggle],[data-cn-swap-in],[data-cn-swap-out],[data-cn-swap-cancel],[data-cn-nation],[data-cn-year],[data-cn-apply],[data-cn-accept],[data-cn-decline],[data-cn-act]");
+    const el = event.target.closest?.("[data-cn-xi],[data-cn-tactic],[data-cn-leader],[data-cn-open],[data-cn-tab],[data-cn-page],[data-cn-pos],[data-cn-toggle],[data-cn-swap-in],[data-cn-swap-out],[data-cn-swap-cancel],[data-cn-nation],[data-cn-year],[data-cn-apply],[data-cn-accept],[data-cn-decline],[data-cn-act]");
     const V = window.ProLifeCoachNationalView;
     if (!el || !state || !V) return;
     const keep = () => document.querySelector(".sm27-screen-body")?.scrollTo?.(0, 0);
+    if (el.hasAttribute("data-cn-open")) { V.setTab(el.getAttribute("data-cn-open")); page = "national"; render(); window.scrollTo(0, 0); return; }
+    if (el.hasAttribute("data-cn-tactic") || el.hasAttribute("data-cn-leader")) return;
+    if (el.hasAttribute("data-cn-xi")) {
+      const id = el.getAttribute("data-cn-xi"), sel = V.state.xiSel, ov = window.ProLifeCoachNational?.overview(state, D), st = ov?.lineup?.starters || [];
+      if (!sel || sel === id) { V.setXi(id); render(); keep(); return; }
+      const selS = st.includes(sel), idS = st.includes(id);
+      if (selS !== idS) { const ok = command("cnStarter", selS ? { outId: sel, inId: id } : { outId: id, inId: sel }); V.setXi(null); if (!ok) { /* erro já exibido */ } render(); keep(); return; }
+      V.setXi(null); V.setXi(id); render(); keep(); return;
+    }
     if (el.hasAttribute("data-cn-tab")) { V.setTab(el.getAttribute("data-cn-tab")); render(); keep(); return; }
     if (el.hasAttribute("data-cn-page")) { const [key, n] = el.getAttribute("data-cn-page").split(":"); V.setPage(key, n); render(); return; }
     if (el.hasAttribute("data-cn-pos")) { V.setPos(el.getAttribute("data-cn-pos")); render(); return; }
@@ -9494,11 +9503,19 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (el.hasAttribute("data-cn-decline")) { command("cnDecline", { code: el.getAttribute("data-cn-decline") }); return; }
     const act = el.getAttribute("data-cn-act");
     if (act === "auto") command("cnAuto", {});
+    else if (act === "confirm") command("cnConfirm", {});
     else if (act === "leave-ask") { V.setConfirmLeave(true); render(); }
     else if (act === "leave-cancel") { V.setConfirmLeave(false); render(); }
+    else if (act === "autoxi") command("cnAutoXI", {});
     else if (act === "resign") { V.setConfirmLeave(false); if (command("cnResign", {})) V.setTab("convites"); render(); }
   });
   document.addEventListener("change", (event) => {
+    const tc = event.target.closest?.("[data-cn-tactic],[data-cn-leader]");
+    if (tc && state) {
+      if (tc.hasAttribute("data-cn-tactic")) command("cnTactic", { key: tc.getAttribute("data-cn-tactic"), value: tc.value });
+      else command("cnCaptain", { role: tc.getAttribute("data-cn-leader"), id: tc.value });
+      return;
+    }
     const el = event.target.closest?.("[data-cn-formation]");
     if (!el || !state) return;
     command("cnFormation", { formation: el.value });

@@ -1,7 +1,7 @@
 (function(root){
   "use strict";
   // Tela "Seleção" do modo treinador: convites, candidatura, convocação, formação, calendário e resultados.
-  const ui={swapIn:null,tab:null,page:{players:0,nations:0,fixtures:0,results:0,cup:0,tour:0,qtable:0,qgames:0},pos:"TODOS",confirmLeave:false,nation:null,year:null};
+  const ui={xiSel:null,swapIn:null,tab:null,page:{players:0,nations:0,fixtures:0,results:0,cup:0,tour:0,qtable:0,qgames:0},pos:"TODOS",confirmLeave:false,nation:null,year:null};
   let ctx={s:null,D:null};
   const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const CN=()=>root.ProLifeCoachNational||(typeof require==="function"?require("../domain/coach-national.js"):null);
@@ -21,6 +21,9 @@
 .cn-sub{display:flex;gap:6px;margin:0 0 10px;flex-wrap:wrap}
 .cn-sub button{border:1px solid var(--cn-line);background:transparent;color:var(--cn-mut);border-radius:999px;padding:6px 14px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
 .cn-sub button.on{background:var(--cn-grass);border-color:var(--cn-grass);color:#06231a}
+.cn-xi-wrap{display:grid;grid-template-columns:1.4fr 1fr;gap:8px}.cn-pitch{background:linear-gradient(#173a2b,#12301f);display:grid;gap:6px;align-content:space-around}.cn-xi-row{display:flex;justify-content:space-around;gap:4px}
+.cn-xi{display:grid;gap:0;justify-items:center;border:1px solid var(--cn-line);background:var(--cn-card);color:var(--cn-text);border-radius:9px;padding:3px 6px;min-width:56px;font:inherit;cursor:pointer}.cn-xi i{font-style:normal;font-weight:800;font-size:13px;color:var(--cn-gold)}.cn-xi b{font-size:11px;max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cn-xi small{font-size:9px;color:var(--cn-mut)}.cn-xi.sel{outline:2px solid var(--cn-grass);background:#1d3a33}.cn-xi.out{opacity:.45}
+.cn-xi-bench{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.cn-form{display:grid;gap:6px;margin-top:6px}.cn-form label{display:grid;gap:2px;font-size:11px;color:var(--cn-mut)}.cn-form select{background:var(--cn-bg);color:var(--cn-text);border:1px solid var(--cn-line);border-radius:7px;padding:4px 6px;font:inherit}
 .cn-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
 .cn-card{background:var(--cn-card);border:1px solid var(--cn-line);border-radius:12px;padding:12px 14px;min-width:0}
 .cn-card>small{display:block;color:var(--cn-mut);font-size:11px;margin-bottom:6px;font-weight:600}
@@ -79,7 +82,7 @@
     if(!o.team)return `<header class="cn-head"><div class="grow"><h2>Seleções</h2><p>Você não comanda nenhuma seleção. Candidate-se ou espere um convite da confederação.</p></div><div class="cn-meter"><b>${o.rep}</b><small>sua reputação</small></div></header>`;
     return `<header class="cn-head">${crest(o.team.code,o.team.name)}<div class="grow"><h2>Seleção de ${esc(o.team.name)}</h2><p>${esc(o.team.confederation||"")} · ${esc(o.formation)} · ${o.called}/${o.max} convocados</p></div><div class="cn-meter"><b>${o.board}%</b><small>confiança da confederação</small></div></header>`;
   }
-  function tabsFor(o){return o.team?[["geral","Visão geral"],["convocacao","Convocação"],["elim","Eliminatórias"],["copa","Copa do Mundo"],["torneios","Torneios"],["calendario","Calendário"],["selecoes","Seleções"]]:[["convites","Convites"],["selecoes","Seleções"]];}
+  function tabsFor(o){return o.team?[["geral","Visão geral"],["escalacao","Escalação"],["convocacao","Plantel e convocação"],["taticas","Táticas"],["relat","Relatórios"],["elim","Eliminatórias"],["copa","Copa do Mundo"],["torneios","Torneios"],["calendario","Calendário"],["selecoes","Seleções"]]:[["convites","Convites"],["selecoes","Seleções"]];}
 
   function resultLine(m){
     return `<div class="cn-row"><div class="who"><span class="cn-res ${esc(m.result)}">${esc(m.result)}</span><span><b>${m.home?"":"@ "}${esc(m.opponent)} · ${m.gf} × ${m.ga}</b><small>Dia ${m.day} · ${esc(m.competition)}${m.scorers?.length?" · "+esc([...new Set(m.scorers.map(x=>x.name.split(" ").slice(-1)[0]))].join(", ")):""}</small></span></div></div>`;
@@ -103,16 +106,55 @@
     </div>`;
   }
 
+  function callupBanner(o){
+    const c=o.callup;if(!c)return "";
+    if(c.status==="none")return `<section class="cn-card cn-call"><small>CONVOCAÇÃO</small><p>${esc(c.note)}</p></section>`;
+    const d=c.daysLeft;
+    const msg={
+      waiting:`<b>Convocação para ${esc(c.label)} ainda não abriu.</b> Abre no dia ${c.opens}; os jogos começam no dia ${c.first}. A lista abaixo é a anterior e não pode ser alterada.`,
+      open:`<b>Convocação aberta para ${esc(c.label)}.</b> Monte a lista e confirme até o dia ${c.deadline} (${d} ${d===1?"dia":"dias"}). ${c.firstList?"A primeira lista foi montada automaticamente: ajuste ou confirme.":"Se o prazo passar sem confirmação, a confederação convoca o rascunho e a diretoria cobra."} Jogos a partir do dia ${c.first}.`,
+      confirmed:`<b>Lista confirmada para ${esc(c.label)}.</b> Ainda dá para ajustar até o dia ${c.deadline}. Jogos a partir do dia ${c.first}.`,
+      closed:`<b>Lista fechada para ${esc(c.label)}.</b> Só é possível substituir jogadores lesionados ou suspensos. Jogos a partir do dia ${c.first}.`
+    }[c.status]||"";
+    const ok=(c.status==="open"||c.status==="confirmed")&&o.called>=c.min;
+    const btn=(c.status==="open"||c.status==="confirmed")?`<button type="button" class="cn-btn go" data-cn-act="confirm" ${ok?"":"disabled"}>${c.status==="confirmed"?"Reconfirmar lista":"Confirmar convocação"}</button>`:"";
+    return `<section class="cn-card cn-call"><small>CONVOCAÇÃO · ${esc(c.status==="open"?"ABERTA":c.status==="waiting"?"AGUARDANDO":c.status==="confirmed"?"CONFIRMADA":"FECHADA")}</small><p>${msg}</p>${btn}</section>`;
+  }
+  const byId=o=>new Map(o.players.map(p=>[p.id,p]));
+  const chip=(p,o,extra="")=>`<button type="button" class="cn-xi ${ui.xiSel===p.id?"sel":""} ${p.available?"":"out"}" data-cn-xi="${esc(p.id)}" title="${esc(p.name)} · ${esc(p.club)}"><i>${p.overall}</i><b>${esc(String(p.name).split(" ").slice(-1)[0])}</b><small>${esc(p.code||p.pos)}${o.captain===p.id?" · C":o.vice===p.id?" · V":""}${extra}</small></button>`;
+  function escalacao(o){
+    const m=byId(o),L=o.lineup,st=L.starters.map(id=>m.get(id)).filter(Boolean),bn=L.bench.map(id=>m.get(id)).filter(Boolean);
+    const rows=["ATA","MEI","DEF","GOL"].map(g=>`<div class="cn-xi-row">${st.filter(p=>p.pos===g).map(p=>chip(p,o)).join("")}</div>`).join("");
+    const sel=ui.xiSel&&m.get(ui.xiSel);
+    const hint=sel?(L.starters.includes(sel.id)?`<b>${esc(sel.name)}</b> selecionado. Toque em um reserva para ele entrar no lugar.`:`<b>${esc(sel.name)}</b> selecionado. Toque em um titular para trocar.`):"Toque em um titular e depois em um reserva para trocar.";
+    const bench=bn.map(p=>chip(p,o)).join("");
+    return `<div class="cn-tools"><label>Formação <select data-cn-formation>${o.formations.map(f=>`<option ${f===o.formation?"selected":""}>${esc(f)}</option>`).join("")}</select></label><button type="button" class="cn-btn" data-cn-act="autoxi" ${L.manual?"":"disabled"}>XI automático</button><span class="cn-tag ${L.manual?"st":"ok"}">${L.manual?"XI manual":"XI automático"}</span><span class="cn-tag">Força ${o.power}</span></div>
+    <p class="cn-note">${hint}</p>
+    <div class="cn-xi-wrap"><section class="cn-card cn-pitch" aria-label="Titulares">${rows}</section><section class="cn-card"><small>RESERVAS · ${bn.length}</small><div class="cn-xi-bench">${bench||'<div class="cn-empty">Sem reservas.</div>'}</div></section></div>`;
+  }
+  function taticas(o){
+    const T=o.tactics,m=byId(o),called=o.players.filter(p=>p.called).sort((a,b)=>b.overall-a.overall);
+    const sel=(key,map,cur)=>`<label>${key[1]}<select data-cn-tactic="${key[0]}">${Object.entries(map).map(([k,v])=>`<option value="${k}" ${k===cur?"selected":""}>${esc(v)}</option>`).join("")}</select></label>`;
+    const opts=sel=>called.filter(p=>p.pos!=="GOL"||false).map(p=>`<option value="${esc(p.id)}" ${p.id===sel?"selected":""}>${esc(p.name)} · ${esc(p.pos)} · ${p.overall}</option>`).join("");
+    return `<div class="cn-grid"><section class="cn-card"><small>MODELO DE JOGO DA SELEÇÃO</small><div class="cn-form">${sel(["style","Estilo"],T.styles,T.style)}${sel(["pressing","Pressão"],T.pressings,T.pressing)}${sel(["buildup","Construção"],T.buildups,T.buildup)}</div><p class="cn-note">Ofensivo marca e sofre mais; contra-ataque e posse reduzem o risco. O efeito é moderado, como no clube.</p></section>
+    <section class="cn-card"><small>HIERARQUIA</small><div class="cn-form"><label>Capitão<select data-cn-leader="captain">${opts(o.captain)}</select></label><label>Vice-capitão<select data-cn-leader="vice">${opts(o.vice)}</select></label></div><p class="cn-note">Capitão e vice entram na lista de convocados e aparecem como C e V na escalação.</p></section></div>`;
+  }
+  function relat(o){
+    const r=o.record,pl=o.players.filter(p=>p.called);
+    const top=(k,t)=>pl.filter(p=>p[k]>0).sort((a,b)=>b[k]-a[k]||b.overall-a.overall).slice(0,6).map(p=>`<div class="cn-row"><div class="who"><span><b>${esc(p.name)}</b><small>${esc(p.pos)} · ${esc(p.club)}</small></span></div><div class="end"><span class="cn-tag ok">${p[k]} ${t}</span></div></div>`).join("")||'<div class="cn-empty">Sem registros ainda.</div>';
+    const byPos=["GOL","DEF","MEI","ATA"].map(g=>{const l=pl.filter(p=>p.pos===g);const avg=l.length?Math.round(l.reduce((a,p)=>a+p.overall,0)/l.length):0;return `<div class="cn-row"><span><b>${POS_LABEL[g]}</b><small>${l.length} convocados</small></span><span class="cn-tag">GER médio ${avg}</span></div>`;}).join("");
+    return `<div class="cn-grid"><section class="cn-card"><small>CAMPANHA</small><div class="cn-rec"><div><b>${r.v}</b><small>V</small></div><div><b>${r.e}</b><small>E</small></div><div><b>${r.d}</b><small>D</small></div><div><b>${r.gf}–${r.ga}</b><small>gols</small></div></div></section><section class="cn-card"><small>MAIS JOGOS PELA SELEÇÃO</small>${top("caps","jogos")}</section><section class="cn-card"><small>ARTILHARIA</small>${top("goals","gols")}</section><section class="cn-card"><small>FORÇA POR SETOR</small>${byPos}</section></div>`;
+  }
   function convocacao(o,S){
     const inP=ui.swapIn&&o.players.find(x=>x.id===ui.swapIn&&!x.called);
     if(inP){
       const called=o.players.filter(x=>x.called).sort((a,b)=>Number(b.pos===inP.pos)-Number(a.pos===inP.pos)||b.overall-a.overall);
       const rows=called.map(x=>`<div class="cn-pl"><span class="cn-ovr ${x.overall>=82?"hi":""}">${x.overall}</span><span><b style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.name)}</b><small style="color:var(--cn-mut);font-size:11px">${esc(x.pos)} · ${esc(x.club)} · ${x.age} anos${x.starter?" · titular":""}</small></span><span>${x.pos===inP.pos?'<span class="cn-tag ok">Mesma posição</span>':""}</span><button type="button" class="cn-btn go" data-cn-swap-out="${esc(x.id)}">Substituir</button></div>`).join("");
-      return `<section class="cn-card"><div class="cn-tools"><span><b>${esc(inP.name)}</b> <small style="color:var(--cn-mut)">${esc(inP.pos)} · GER ${inP.overall} · ${esc(inP.club)}</small></span><button type="button" class="cn-btn" data-cn-swap-cancel>Cancelar</button></div><p style="margin:6px 0">A lista está cheia. Escolha quem sai para ${esc(inP.name)} entrar.</p>${rows}</section>`;
+      return `<section class="cn-card"><div class="cn-tools"><span><b>${esc(inP.name)}</b> <small style="color:var(--cn-mut)">${esc(inP.code||inP.pos)} · GER ${inP.overall} · ${esc(inP.club)}</small></span><button type="button" class="cn-btn" data-cn-swap-cancel>Cancelar</button></div><p style="margin:6px 0">A lista está cheia. Escolha quem sai para ${esc(inP.name)} entrar.</p>${rows}</section>`;
     }
     const list=o.players.filter(p=>ui.pos==="TODOS"||p.pos===ui.pos).sort((a,b)=>Number(b.called)-Number(a.called)||b.overall-a.overall);
-    const rows=slice("players",list,S.players).map(p=>`<div class="cn-pl"><span class="cn-ovr ${p.overall>=82?"hi":""}">${p.overall}</span><span><b style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</b><small style="color:var(--cn-mut);font-size:11px">${esc(p.pos)} · ${esc(p.club)} · ${p.age} anos${p.caps?` · ${p.caps} jogos`:""}</small></span><span>${p.starter?'<span class="cn-tag st">Titular</span>':p.called?'<span class="cn-tag ok">Convocado</span>':!p.available?'<span class="cn-tag no">Indisponível</span>':""}</span>${(!p.called&&o.players.filter(x=>x.called).length>=26)?`<button type="button" class="cn-btn go" data-cn-swap-in="${esc(p.id)}" ${p.available?"":"disabled"}>Trocar</button>`:`<button type="button" class="cn-btn ${p.called?"":"go"}" data-cn-toggle="${esc(p.id)}" ${!p.available&&!p.called?"disabled":""}>${p.called?"Dispensar":"Convocar"}</button>`}</div>`).join("")||'<div class="cn-empty">Nenhum jogador nesta posição.</div>';
-    return `<div class="cn-tools"><label>Formação <select data-cn-formation>${o.formations.map(f=>`<option ${f===o.formation?"selected":""}>${esc(f)}</option>`).join("")}</select></label><button type="button" class="cn-btn" data-cn-act="auto" ${o.manual?"":"disabled"}>Convocação automática</button><span class="cn-tag ${o.manual?"st":"ok"}">${o.manual?"Lista manual":"Automática"}</span><span class="cn-tag">${o.called}/${o.max}</span></div>
+    const rows=slice("players",list,S.players).map(p=>`<div class="cn-pl"><span class="cn-ovr ${p.overall>=82?"hi":""}">${p.overall}</span><span><b style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</b><small style="color:var(--cn-mut);font-size:11px">${esc(p.code||p.pos)} · ${esc(p.club)} · ${p.age} anos${p.caps?` · ${p.caps} jogos`:""}</small></span><span>${p.starter?'<span class="cn-tag st">Titular</span>':p.called?'<span class="cn-tag ok">Convocado</span>':!p.available?'<span class="cn-tag no">Indisponível</span>':""}</span>${(!p.called&&o.players.filter(x=>x.called).length>=26)?`<button type="button" class="cn-btn go" data-cn-swap-in="${esc(p.id)}" ${p.available?"":"disabled"}>Trocar</button>`:`<button type="button" class="cn-btn ${p.called?"":"go"}" data-cn-toggle="${esc(p.id)}" ${!p.available&&!p.called?"disabled":""}>${p.called?"Dispensar":"Convocar"}</button>`}</div>`).join("")||'<div class="cn-empty">Nenhum jogador nesta posição.</div>';
+    return `${callupBanner(o)}<div class="cn-tools"><label>Formação <select data-cn-formation>${o.formations.map(f=>`<option ${f===o.formation?"selected":""}>${esc(f)}</option>`).join("")}</select></label><button type="button" class="cn-btn" data-cn-act="auto" ${o.manual?"":"disabled"}>Convocação automática</button><span class="cn-tag ${o.manual?"st":"ok"}">${o.manual?"Lista manual":"Automática"}</span><span class="cn-tag">${o.called}/${o.max}</span></div>
       <div class="cn-chips" role="group" aria-label="Filtrar por posição">${["TODOS","GOL","DEF","MEI","ATA"].map(p=>`<button type="button" class="${ui.pos===p?"on":""}" data-cn-pos="${p}">${p==="TODOS"?"Todos":esc(POS_LABEL[p])}</button>`).join("")}</div>
       <section class="cn-card" style="margin-top:8px;padding-top:4px">${rows}${pager("players",list.length,S.players)}</section>`;
   }
@@ -188,12 +230,12 @@
     const tabs=tabsFor(o);
     if(!tabs.some(([id])=>id===ui.tab))ui.tab=tabs[0][0];
     const S=SIZE();
-    const body=ui.tab==="geral"?geral(o,S):ui.tab==="convocacao"?convocacao(o,S):ui.tab==="calendario"?calendario(o,S):ui.tab==="copa"?copa(o,S):ui.tab==="torneios"?torneios(o,S):ui.tab==="elim"?elim(o,S):ui.tab==="selecoes"?selecoes(o,S):convites(o,S);
+    const body=ui.tab==="geral"?geral(o,S):ui.tab==="convocacao"?convocacao(o,S):ui.tab==="escalacao"?escalacao(o):ui.tab==="taticas"?taticas(o):ui.tab==="relat"?relat(o):ui.tab==="calendario"?calendario(o,S):ui.tab==="copa"?copa(o,S):ui.tab==="torneios"?torneios(o,S):ui.tab==="elim"?elim(o,S):ui.tab==="selecoes"?selecoes(o,S):convites(o,S);
     const badge=!o.team&&o.offers.length?` <i>${o.offers.length}</i>`:"";
     return `${css()}<section class="cn" data-coach-national>${head(o)}<nav class="cn-sub" aria-label="Seções da seleção">${tabs.map(([id,l])=>`<button type="button" class="${ui.tab===id?"on":""}" data-cn-tab="${id}">${esc(l)}${id==="convites"?badge:""}</button>`).join("")}</nav>${body}</section>`;
   }
 
-  const api={render,state:ui,setTab(t){ui.tab=t;ui.confirmLeave=false;ui.swapIn=null;},setPage(key,n){if(key in ui.page)ui.page[key]=Math.max(0,Number(n)||0);},setPos(p){ui.pos=p;ui.page.players=0;},setSwapIn(id){ui.swapIn=id||null;},setConfirmLeave(v){ui.confirmLeave=!!v;},setNation(c){ui.nation=ui.nation===c?null:c;ui.year=null;},setYear(y){ui.year=Number(y)||null;}};
+  const api={render,state:ui,setTab(t){ui.tab=t;ui.confirmLeave=false;ui.swapIn=null;},setPage(key,n){if(key in ui.page)ui.page[key]=Math.max(0,Number(n)||0);},setPos(p){ui.pos=p;ui.page.players=0;},setXi(id){ui.xiSel=ui.xiSel===id?null:(id||null);},setSwapIn(id){ui.swapIn=id||null;},setConfirmLeave(v){ui.confirmLeave=!!v;},setNation(c){ui.nation=ui.nation===c?null:c;ui.year=null;},setYear(y){ui.year=Number(y)||null;}};
   root.ProLifeCoachNationalView=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

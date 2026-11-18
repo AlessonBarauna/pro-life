@@ -87,7 +87,7 @@
     const d = { id: "inv_" + s.season + "_" + s.day + "_" + club.id, kind: "investment", clubId: club.id, clubName: club.name, investor, amount, upfrontPct: 0.5, status: "proposed", createdDay: s.day, expiresDay: s.day + PROPOSAL_TTL, round: 0, activatedDay: null, startSeason: s.season, objectives: makeObjectives(s, club, amount, "investment") };
     if (o.amount) d.amount = o.amount;
     v.deals.unshift(d); v.deals = v.deals.slice(0, 40); v.lastProposalDay = s.day;
-    addMessage(s, d, "Proposta de investidor: " + investor, note(d) + " Veja os objetivos em Mercado > Negociações (prazo de " + PROPOSAL_TTL + " dias).");
+    addMessage(s, d, "Proposta de investidor: " + investor, note(d) + " Veja os objetivos em Finanças > Investidores (prazo de " + PROPOSAL_TTL + " dias).");
     return d;
   }
 

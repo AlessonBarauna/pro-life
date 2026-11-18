@@ -190,7 +190,6 @@
     player.id=String(player.id||context.id||"");player.name=String(player.name||"Jogador sem nome");player.shortName=String(player.shortName||shortNameOf(player.name));
     player.nationality=String(player.nationality||"Brasil");player.pos=["GOL","DEF","MEI","ATA"].includes(player.pos)?player.pos:"MEI";
     if(!Array.isArray(player.secondaryPositions))player.secondaryPositions=[];
-    try{(root.ProLifePlayerPositions||(typeof require==="function"?require("./player-positions.js"):null))?.ensure?.(player);}catch(e){}
     if(!Number.isFinite(Number(player.birthYear)))player.birthYear=Number(player.birthDate?.year)||season-Math.max(14,Number(player.age||25));
     player.age=context.preserveAge?Math.max(14,Number(player.age||season-Number(player.birthYear))):Math.max(15,season-Number(player.birthYear));player.ovr=overall;player.overall=overall;player.potential=clamp(Number(player.potential??overall+2),overall,100);
     player.status=player.status==="retired"||player.retired?"retired":"active";player.active=player.status==="active";player.reputation=clamp(Number(player.reputation??(compactId(player.id)?Math.max(40,overall-12):overall-15)),0,100);
@@ -362,12 +361,13 @@
     const ctx={seed:"fc27",season};let changed=0,sum=0;const moves=[];
     for(const p of pool){
       const before=Number(p.ovr),age=Number(p.age)||season-Number(p.birthYear);
-      const subject={id:p.id,name:p.name,pos:p.pos,birthYear:p.birthYear,age,overall:before,ovr:before,potential:p.potential,developmentProfile:p.developmentProfile};
+      const subject={id:p.id,name:p.name,pos:p.pos,birthYear:p.birthYear,age,overall:before,ovr:before,potential:p.potential,peakOvr:p.peakOvr,developmentProfile:p.developmentProfile};
       const minutesShare=p.academy?0.6:(share.get(p.id)??0.15),r=Dev.expectedAnnualChange(subject,{...ctx,factors:{minutesShare,routine:0.5}});
       const spread=Math.max(0.4,(r.max-r.min)/2),noise=(hash(`${p.id}|dev|${season}`)/4294967296-0.5)*2*spread;
       const gainScale=r.expected>0?(0.8+0.4*minutesShare)*(p.generated?0.8:1):1;let delta=Math.round(r.expected*gainScale+noise);delta=Math.max(age<30?-3:age<33?-4:-5,Math.min(p.generated?4:6,delta));
       let next=before+delta;
       if(delta>0){const ceil=DP?DP.effectiveCeiling(subject,ctx):p.potential+2;next=Math.min(next,Math.max(before,Math.floor(ceil)));}
+      if(delta>0)next=Math.min(next,Math.max(before,95));
       next=clamp(next,20,99);
       if(next!==before){p.ovr=next;p.overall=next;if(p.attrs&&CORE.every(k=>Number(p.attrs[k])===before))for(const k of CORE)p.attrs[k]=next;p.peakOvr=Math.max(Number(p.peakOvr)||0,next);changed++;sum+=next-before;moves.push({id:p.id,name:p.name,age,from:before,to:next});}
       // potencial elastico: nunca abaixo do GER; apos o auge converge para perto do GER atual.

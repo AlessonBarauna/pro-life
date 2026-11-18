@@ -175,6 +175,7 @@
     if (prof ? (!inDecline && p.age <= Math.max(27, prof.params.peakAge)) : p.age <= 27) {
       const room = (p.potential + (unit(p.id, "s" + season) - 0.5) * 4) - before;
       let gain = Math.max(0, room) * growthShare(p.age);
+      if (p.age <= 24 && p.potential >= 76) gain *= 1 + clamp((p.potential - 76) / 40, 0, 0.4);
       gain *= (0.6 + 0.45 * share) * (1 + perfAdj * 0.6) * (1 + clamp((level - 60) / 120, -0.1, 0.15));
       if (prof) gain *= growthRatio(prof, p, before, season);
       gain += (rng.next() - 0.5) * 1.1;

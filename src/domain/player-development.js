@@ -74,7 +74,9 @@
     const base = PROFILES[profileId] || PROFILES.steady_rise, gk = isGK(player);
     const j = (tag, span) => Math.round((unit(tag + "|" + identityKey(player, context)) * 2 - 1) * span); // ±span, inteiro
     const peakAge = clamp(base.peakAge + j("peak", 1) + (gk ? 3 : 0), 20, 35);
-    const peakDuration = clamp(base.peakDuration + j("dur", 1) + (gk ? 2 : 0), 1, 10);
+    // Estrelas (potencial ou pico alto) mantêm o auge por mais tempo.
+    const starLevel = Math.max(num(player?.potential, 0), num(player?.peakOvr, 0));
+    const peakDuration = clamp(base.peakDuration + j("dur", 1) + (gk ? 2 : 0) + (starLevel >= 86 ? 2 : starLevel >= 80 ? 1 : 0), 1, 12);
     const rv = (tag, span) => (unit(tag + "|" + identityKey(player, context)) * 2 - 1) * span;
     return {
       profile: base.id, peakAge, peakDuration,
@@ -120,12 +122,17 @@
     let expected = 0, physical = 0, technical = 0, burst = false;
     if (phase === "growth" || (phase === "peak" && age <= params.peakAge)) {
       let g = ageBase(age) * growthWindowMultiplier(profile.id, age) * params.growthRate * gapFactor * mod.growth;
-      if (phase === "peak") g *= 0.35;
+      // Jovem de talento (potencial 76+) cresce mais rápido; piso garante evolução real quando há margem até o potencial.
+      if (age <= 25 && pot >= 76 && gap >= 3) {
+        g *= 1 + clamp((pot - 76) / 22, 0, 0.7);
+        if (age <= 24) g = Math.max(g, Math.min(gap * 0.36, 4.0) * clamp(mod.growth, 0.6, 1.2));
+      }
+      if (phase === "peak") g *= 0.5;
       burst = burstActive(profile.id, params, context?.factors, player, context, context?.season);
       if (burst) g *= PROFILES[profile.id].burst.multiplier;
       expected = g; physical = g * 0.9; technical = g * 1.1;
     } else if (phase === "decline") {
-      const yrs = age - params.peakEnd, base = (0.6 + 0.45 * yrs) * params.declineRate * mod.decline;
+      const star = Math.max(pot || 0, num(player?.peakOvr, 0)), yrs = age - params.peakEnd, base = (0.6 + 0.45 * yrs) * params.declineRate * mod.decline * (star >= 86 ? 0.8 : 1);
       physical = -base * 1.3 * (params.goalkeeper ? 0.7 : 1); technical = -base * 0.5; expected = (physical + technical) / 2;
     }
     const noise = profile.id === "early_unstable" || params.volatility >= 0.2

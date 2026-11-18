@@ -26,6 +26,10 @@
       if (!sm.months.length) return `<p class="shd-note">O primeiro fechamento mensal ainda não aconteceu.</p>`;
       return sm.months.map((m) => `<p class="shd-sub">Mês ${m.month} · entradas ${money(m.in)} · saídas ${money(-m.out)}</p>` + kv(Object.entries(m.byCategory).map(([c, v]) => [L[c] || c, money(v), v < 0]))).join("");
     }
+    if (tab === "investidores") {
+      const H = root.ProLifeTransferHub, reply = ctx.s.coachCareer?.investors?.lastReply;
+      return (reply ? `<p class="shd-note">${String(reply).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]))}</p>` : "") + (H?.investorHtml?.() || `<p class="shd-note">Nenhuma proposta de investidor no momento.</p>`);
+    }
     if (tab === "competicoes") {
       const prem = (sm.ledger || []).filter((x) => x.category === "premios");
       return prem.length ? kv(prem.map((x) => [x.label || "Premiação", money(x.amount)])) : `<p class="shd-note">Nenhuma premiação recebida ainda. Prêmios de liga e copas entram aqui.</p>`;
@@ -36,7 +40,7 @@
     return kv(rows);
   }
   function html() {
-    const tabs = [["projecao", "Projeção"], ["detalhado", "Detalhado"], ["competicoes", "Competições"], ["zona", "Zona do clube"]];
+    const tabs = [["projecao", "Projeção"], ["detalhado", "Detalhado"], ["competicoes", "Competições"], ["investidores", "Investidores"], ["zona", "Zona do clube"]];
     return `<div class="sm27-dialog-backdrop" data-sm27fn-close></div><section class="sm27-dialog" role="dialog" aria-modal="true" aria-label="Finanças"><header class="sm27-dialog-head"><span></span><h2>Finanças</h2><button type="button" class="sm27-dialog-x" data-sm27fn-close aria-label="Fechar">×</button></header><div class="sm27-dialog-body"><nav class="shd-tabs rc-tabs" role="tablist">${tabs.map(([id, l]) => `<button type="button" role="tab" aria-selected="${tab === id}" data-sm27fn-tab="${id}">${l}</button>`).join("")}</nav>${view()}</div></section>`;
   }
   function open() {

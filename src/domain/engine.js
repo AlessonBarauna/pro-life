@@ -31,7 +31,7 @@
   const PlayerPositions=root.ProLifePlayerPositions||(typeof require=="function"?require("./player-positions.js"):null);
   function ensureSpecificPositions(s){
     let n=0;
-    const lists=[...(s.clubs||[]).map(c=>c.roster||[]),...(s.globalFootball?.clubs||[]).map(c=>c.roster||[]),...Object.values(s.worldMatchClubs||{}).map(c=>c?.roster||[]),s.globalFootball?.players||[],s.internationalPlayers||[],s.freeAgents||[]];
+    const lists=[...(s.clubs||[]).map(c=>c.roster||[]),...(s.globalFootball?.clubs||[]).map(c=>c.roster||[]),...Object.values(s.worldMatchClubs||{}).map(c=>c?.roster||[]),s.globalFootball?.players||[],s.freeAgents||[]];
     for(const l of lists)if(Array.isArray(l))for(const p of l)if(p&&p.id!=="hero"&&PlayerPositions?.ensure?.(p))n++;
     s.positionsChecked=s.day;return n;
   }
@@ -1124,17 +1124,18 @@
     return next;
   }
   function join(s, id, salary) {
-    if (Career.windowStatus(s).open && s.clubId && s.day < s.careerTransferAvailableDay) throw Error("Você já assinou nesta janela. Aguarde a próxima janela para trocar de clube.");
+    if (s.mode !== "coach" && Career.windowStatus(s).open && s.clubId && s.day < s.careerTransferAvailableDay) throw Error("Você já assinou nesta janela. Aguarde a próxima janela para trocar de clube.");
     const proposed = s.offers.find((o) => o.clubId === id && o.expires >= s.day) || (s.mode === "player" && Career.init(s).playerCareer?.marketState?.signedAgreement?.clubId === id ? Career.init(s).playerCareer.marketState.signedAgreement : null) || (s.mode === "coach" && !s.clubId ? {clubId:id,salary,durationDays:730,signingBonus:0,squadRole:"Rotação",transferType:"free",expires:s.day+1} : null);
     if (!proposed) throw Error("Esta proposta não está disponível.");
     const pc0 = s.mode === "player" ? Career.init(s).playerCareer : null;
     const trustBeforeTransfer = Number(pc0?.coachTrust || 0);
     if (pc0?.marketState?.signedAgreement && pc0.marketState.signedAgreement.clubId !== id) throw Error("Você já possui um acordo assinado com outro clube.");
-    if (!Career.windowStatus(s).open) {
+    // Treinador troca de clube a qualquer momento (a janela de transferências vale para jogadores, não para o cargo).
+    if (s.mode !== "coach" && !Career.windowStatus(s).open) {
       if (s.mode === "player") { Career.signAgreement(s, proposed); return { scheduled:true, startDay:Career.nextWindowStart(s.day,s) }; }
       throw Error("Janela de transferências fechada. Aguarde a próxima abertura.");
     }
-    if (!Career.canTransfer(s)) throw Error("Você já assinou nesta janela. Aguarde a próxima janela para trocar de clube.");
+    if (s.mode !== "coach" && !Career.canTransfer(s)) throw Error("Você já assinou nesta janela. Aguarde a próxima janela para trocar de clube.");
     const previous = club(s);
     if (s.mode === "player" && previous) Statistics?.closeHeroStint?.(s, previous.id, "transfer");
     const previousSalary = s.salary, previousContract = s.contract;
