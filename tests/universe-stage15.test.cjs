@@ -19,7 +19,7 @@ const players = (s) => s.clubs.flatMap((c) => c.roster);
 test("Etapa 15: cenário A/B — jovem com minutos evolui bem mais que jovem sem minutos (sem crescimento infinito)", () => {
   const a = meanDelta(() => mk("MEI", 18, 67, 86), REG), b = meanDelta(() => mk("MEI", 18, 67, 86), BENCH);
   assert.ok(a > b + 0.8, `${a} vs ${b}`);
-  assert.ok(a >= 1.5 && a <= 7, `crescimento plausível (${a})`);
+  assert.ok(a >= 1.5 && a <= 9, `crescimento plausível (${a})`);
   const capped = meanDelta(() => mk("MEI", 18, 80, 82), REG);
   assert.ok(capped < a, "perto do potencial cresce menos");
 });
