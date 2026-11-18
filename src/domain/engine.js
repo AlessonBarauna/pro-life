@@ -28,6 +28,13 @@
   const CoachNational=root.ProLifeCoachNational||(typeof require==="function"?require("./coach-national.js"):null);
   const WorldLiveMarket=root.ProLifeWorldLiveMarket||(typeof require==="function"?require("./world-live-market.js"):null);
   const ClubWealth=root.ProLifeClubWealth||(typeof require==="function"?require("./club-wealth.js"):null);
+  const PlayerPositions=root.ProLifePlayerPositions||(typeof require=="function"?require("./player-positions.js"):null);
+  function ensureSpecificPositions(s){
+    let n=0;
+    const lists=[...(s.clubs||[]).map(c=>c.roster||[]),...(s.globalFootball?.clubs||[]).map(c=>c.roster||[]),...Object.values(s.worldMatchClubs||{}).map(c=>c?.roster||[]),s.globalFootball?.players||[],s.internationalPlayers||[],s.freeAgents||[]];
+    for(const l of lists)if(Array.isArray(l))for(const p of l)if(p&&p.id!=="hero"&&PlayerPositions?.ensure?.(p))n++;
+    s.positionsChecked=s.day;return n;
+  }
   const ClubHype=root.ProLifeClubHype||(typeof require=="function"?require("./club-hype.js"):null);
   const ClubInvestors=root.ProLifeClubInvestors||(typeof require==="function"?require("./club-investors.js"):null);
   const SeasonCompetitionCenter=root.ProLifeSeasonCompetitionCenter||(typeof require==="function"?require("./season-competition-center.js"):null);
@@ -634,6 +641,7 @@
     const off = { GOL: [-8, -20, -6, 4, 2, -2], DEF: [-2, -10, 0, 4, 3, 0], MEI: [0, -3, 4, -4, -3, 2], ATA: [3, 4, 0, -12, 0, -1] }[gp.pos] || [0, 0, 0, 0, 0, 0];
     const a = {}; attrs.forEach((k, i) => (a[k] = clamp(ovr + off[i] + j(i * 3), 20, 99)));
     const p = { id: gp.id, name: gp.name, shortName: gp.shortName || gp.name, age: s.season - (gp.birthYear || s.season - 26), pos: gp.pos, attrs: a, condition: 100, morale: 60 + (h % 21), discipline: 40 + (h % 51), potential: gp.potential || ovr, injury: 0, goals: 0, minutes: 0, ovr, overall: ovr, number, nationality: gp.nationality, birthYear: gp.birthYear, primaryPosition: (PositionOverlay?.normalized(gp,gc.name).primaryPosition || null), secondaryPositions: (PositionOverlay?.normalized(gp,gc.name).secondaryPositions || []), status: "active", active: true, reputation: clamp(ovr - 15, 10, 95), clubId: gc.id, leagueId: gc.leagueId };
+    PlayerPositions?.ensure?.(p);
     PlayerEconomy?.ensurePlayer?.(s,p,gc);
     const diff = ovr - overall(p);
     if (diff) attrs.forEach((k) => (a[k] = clamp(a[k] + diff, 20, 99)));
@@ -2985,6 +2993,7 @@
       try { const wr = ClubWealth?.daily?.(s); if (wr?.club) offerSheikhJob(s, wr); } catch (_) {}
       try { ClubInvestors?.daily?.(s); } catch (_) {}
       try { ClubHype?.daily?.(s); } catch (_) {}
+      try { if (s.positionsChecked == null || s.day % 30 === 0) ensureSpecificPositions(s); } catch (_) {}
       generateWorldMarket(s, rng);
       WorldLiveMarket?.tick?.(s, rng);
       applyMarketBudgets(s, WorldLiveMarket?.executeCompleted?.(s, { canExecute: worldMarketCanExecute })?.executed);
@@ -3668,6 +3677,7 @@
     return { prepared: competitions.length, competitions };
   }
   const API = {
+    ensureSpecificPositions,
     Career,
     Personality,
     World,

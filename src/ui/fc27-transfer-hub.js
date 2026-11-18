@@ -10,7 +10,7 @@
   const EMBED_TABS = ["scout", "elenco", "gestao"];
   const AREA_OF = { scout: "observacao", elenco: "squad", gestao: "transferencias" };
   const DEAL = { rumor: ["Rumor", "rumor"], scouting: ["Observando", "rumor"], negotiating: ["Em negociação", "neg"], offer: ["Proposta feita", "neg"], completed: ["Fechado", "done"], rejected: ["Recusado", "out"], cancelled: ["Cancelado", "out"] };
-  let layer = null, tab = "geral", negPid = null, flash = ""; const tabHist = [];
+  let layer = null, tab = "geral", negPid = null, flash = "", counterFor = null; const tabHist = [];
   const wf = { status: "all", league: "" };
   const sf = { q: "", pos: "", ageMax: 40, ovrMin: 60, potMin: 0, valueMax: 0, league: "", free: false, page: 0 };
 
@@ -42,7 +42,7 @@
 
   function dealRow(s, D, d) {
     const p = GF()?.playerById?.(s, d.playerId), st = DEAL[d.executionStatus === "executed" ? "completed" : d.state] || ["—", "out"];
-    return `<li class="tfh-row"><span class="tfh-main"><b>${esc(p?.name || d.playerId)}</b><small>${esc(p?.pos || "—")} · GER ${p ? ovrOf(p) : "—"} · ${esc(clubName(s, D, d.fromClubId))} → ${esc(clubName(s, D, d.toClubId))}</small></span><span class="tfh-side"><i class="tfh-badge ${st[1]}">${st[0]}</i><em>${money(d.value)}</em></span></li>`;
+    return `<li class="tfh-row"><span class="tfh-main"><b>${esc(p?.name || d.playerId)}</b><small>${esc(p?.primaryPosition || p?.pos || "—")} · GER ${p ? ovrOf(p) : "—"} · ${esc(clubName(s, D, d.fromClubId))} → ${esc(clubName(s, D, d.toClubId))}</small></span><span class="tfh-side"><i class="tfh-badge ${st[1]}">${st[0]}</i><em>${money(d.value)}</em></span></li>`;
   }
   const feed = (s, D, deals) => `<ul class="tfh-list">${deals.map((d) => dealRow(s, D, d)).join("")}</ul>`;
 
@@ -115,7 +115,7 @@
       const rec = iv.recent.map((d) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(d.investor)}</b><small>${d.result ? d.result.done + " de " + d.result.total + " metas" : "sem acordo"}${d.amountText ? " · " + esc(d.amountText) : ""}</small></span><span class="tfh-side"><span class="tfh-tag tfh-tag-${d.status === "completed" ? "ok" : d.status === "partial" ? "warn" : "bad"}">${({ completed: "Metas cumpridas", partial: "Parcial", failed: "Não cumpriu", rejected: "Você recusou", expired: "Expirou", withdrawn: "Investidor desistiu", cancelled: "Cancelado" })[d.status] || d.status}</span></span></li>`).join("");
       return (props ? sec("Propostas de investidores", props) : "") + (act ? sec("Projeto em andamento", act) : "") + (rec ? sec("Acordos anteriores", `<ul class="tfh-list">${rec}</ul>`) : "");
     };
-    const offerRow = (o) => `<li class="tfh-row"><span class="tfh-main"><b><button type="button" class="tfh-player" data-tfh-player="${esc(o.playerId)}" title="Ver detalhes do jogador">${esc(o.playerName || nm(o.playerId))}</button></b><small>${esc(clubName(s, D, o.buyerClubId))} · ${o.dealType === "loan" ? "empréstimo" : "compra"}${Number.isFinite(Number(o.expiresDay)) ? ` · expira em ${Math.max(0, o.expiresDay - s.day)} d` : ""}</small></span><span class="tfh-side"><em>${money(o.amount)}</em><span class="tfh-acts"><button type="button" class="tfh-btn primary" data-tfh-cmd="acceptSaleOffer" data-id="${esc(o.id)}">Aceitar</button><button type="button" class="tfh-btn" data-tfh-cmd="rejectSaleOffer" data-id="${esc(o.id)}">Recusar</button></span></span></li>`;
+    const offerRow = (o) => `<li class="tfh-row"><span class="tfh-main"><b><button type="button" class="tfh-player" data-tfh-player="${esc(o.playerId)}" title="Ver detalhes do jogador">${esc(o.playerName || nm(o.playerId))}</button></b><small>${esc(clubName(s, D, o.buyerClubId))} · ${o.dealType === "loan" ? "empréstimo" : "compra"}${Number.isFinite(Number(o.expiresDay)) ? ` · expira em ${Math.max(0, o.expiresDay - s.day)} d` : ""}</small></span><span class="tfh-side"><em>${money(o.amount)}</em><span class="tfh-acts"><button type="button" class="tfh-btn primary" data-tfh-cmd="acceptSaleOffer" data-id="${esc(o.id)}">Aceitar</button><button type="button" class="tfh-btn" data-tfh-counter-open="${esc(o.id)}">Negociar</button><button type="button" class="tfh-btn" data-tfh-cmd="rejectSaleOffer" data-id="${esc(o.id)}">Recusar</button></span></span>${o.response ? `<p class="tfh-counter-reply">${o.response === "accepted" ? `${esc(clubName(s, D, o.buyerClubId))} aceitou ${money(o.amount)}. Toque em Aceitar para fechar.` : `${esc(clubName(s, D, o.buyerClubId))} não chegou a ${money(o.requested)} e subiu para ${money(o.amount)}.`}${(o.round || 0) >= 3 ? " As conversas se encerraram." : ""}</p>` : ""}${counterFor === o.id && (o.round || 0) < 3 ? `<form class="tfh-counter" data-tfh-counter-form="${esc(o.id)}"><label>Quanto você quer? (R$ milhões)<input type="number" min="0" step="0.1" inputmode="decimal" value="${(Math.round(Number(o.amount) * 1.15 / 1e5) / 10).toString()}" data-tfh-counter-amount></label><button type="button" class="tfh-btn primary" data-tfh-counter-send="${esc(o.id)}">Enviar contraproposta</button><small>Oferta atual: ${money(o.amount)} · rodada ${(o.round || 0) + 1} de 3</small></form>` : ""}</li>`;
     const sec = (t, inner, empty) => `<h3 class="tfh-h">${t}</h3>${inner || `<p class="tfh-note">${empty}</p>`}`;
     return investorBlock() + sec("Propostas recebidas pelos seus jogadores", offers.length ? `<ul class="tfh-list">${offers.map(offerRow).join("")}</ul>` : "", "Nenhuma proposta no momento.") +
       (waiting.length ? sec(winOpen ? "Vendas acordadas (ainda não concluídas)" : "Vendas acordadas (aguardando a janela)", `<ul class="tfh-list">${waiting.map((o) => `<li class="tfh-row"><span class="tfh-main"><b><button type="button" class="tfh-player" data-tfh-player="${esc(o.playerId)}" title="Ver detalhes do jogador">${esc(o.playerName || nm(o.playerId))}</button></b><small>para ${esc(clubName(s, D, o.buyerClubId))}${winOpen ? ` · ${o.lastSettlementError ? "não concluída: " + esc(o.lastSettlementError) : "será concluída ao avançar o dia"}` : ""}</small></span><span class="tfh-side"><em>${money(o.amount)}</em><span class="tfh-acts">${winOpen ? `<button type="button" class="tfh-btn primary" data-tfh-cmd="acceptSaleOffer" data-id="${esc(o.id)}">Concluir agora</button>` : ""}<button type="button" class="tfh-btn" data-tfh-cmd="rejectSaleOffer" data-id="${esc(o.id)}">Cancelar</button></span></span></li>`).join("")}</ul>`) : "") +
@@ -277,6 +277,13 @@
     if ((el = t.closest("[data-tfh-negotiate]"))) { negotiate(el.dataset.tfhNegotiate); return; }
     if (t.closest("[data-tfh-negback]")) { negPid = null; flash = ""; open(); return; }
     if ((el = t.closest("[data-tfh-send]"))) { send(el); return; }
+    if ((el = t.closest("[data-tfh-counter-open]"))) { counterFor = counterFor === el.dataset.tfhCounterOpen ? null : el.dataset.tfhCounterOpen; open(); return; }
+    if ((el = t.closest("[data-tfh-counter-send]"))) {
+      const form = el.closest("[data-tfh-counter-form]"), mi = Number(String(form?.querySelector("[data-tfh-counter-amount]")?.value || "").replace(",", "."));
+      const ok = cmd("counterSaleOffer", { id: el.dataset.tfhCounterSend, amount: Math.round(mi * 1e6) });
+      if (ok !== false) counterFor = null;
+      open(); return;
+    }
     if ((el = t.closest("[data-tfh-inv]"))) {
       const a = el.dataset.tfhInv, act = a === "accept" || a === "reject" ? a : "negotiate";
       const ok = cmd("respondInvestorDeal", { id: el.dataset.id, action: act, ask: act === "negotiate" ? a : undefined });

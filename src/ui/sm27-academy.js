@@ -25,7 +25,7 @@
     const pts = h.map((v, i) => `${(i / (h.length - 1) * W).toFixed(1)},${(H - 2 - (v - lo) / span * (H - 4)).toFixed(1)}`).join(" ");
     return `<svg class="acad-spark" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
   }
-  const posClass = (p) => ({ GOL: "gol", DEF: "def", MEI: "mei", ATA: "ata" }[p] || "mei");
+  const posClass = (p) => ({ GOL: "gol", DEF: "def", MEI: "mei", ATA: "ata" }[root.ProLifePlayerPositions?.group?.(p) || p] || "mei");
 
   function kidCard(k, v) {
     const trend = k.trend > 0 ? `<span class="acad-up">▲ +${k.trend}</span>` : k.developing ? `<span class="acad-dev">Em desenvolvimento</span>` : `<span class="acad-flat">Estável</span>`;

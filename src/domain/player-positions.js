@@ -53,7 +53,46 @@
     const fit=suitability(player,assignedPosition);
     return Math.max(1,Math.min(100,Math.round(base*(fit?.multiplier ?? 1))));
   }
-  const api={positionList,definitions,group,isSpecific,eligible,normalize,suitability,positionalOverall};
+  // Todo jogador precisa de uma posição específica (nada de DEF/MEI/ATA genéricos na tela).
+  // Deduz a partir do grupo e dos atributos; o sorteio usa o id, então é estável entre execuções.
+  function hash(text){let h=2166136261;for(const ch of String(text)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
+  function infer(player){
+    const g=group(player?.pos)||group(player?.primaryPosition);
+    if(!g) return null;
+    if(g==='GOL') return 'GOL';
+    const a=player?.attrs||{};
+    const n=k=>Number.isFinite(Number(a[k]))?Number(a[k]):0;
+    const u=hash(String(player.id||player.name||'x')+'|pos')%100, side=hash(String(player.id||player.name||'x')+'|side')%2===0;
+    const cl=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+    if(g==='DEF'){
+      const cut=cl(38+(n('pace')-n('strength'))*3,18,63);
+      return u<cut?(side?'LD':'LE'):'ZAG';
+    }
+    if(g==='MEI'){
+      const vol=cl(22+(n('defense')-n('pass'))*4,8,55), mei=cl(22+(n('finish')-n('pass'))*3,8,40);
+      if(u<vol) return 'VOL';
+      if(u<vol+mei) return 'MEI';
+      if(u<vol+mei+16) return side?'MD':'ME';
+      return 'MC';
+    }
+    const wing=cl(28+(n('pace')-n('finish'))*4,10,60);
+    if(u<wing) return side?'PD':'PE';
+    if(u<wing+(100-wing)*0.3) return 'SA';
+    return 'CA';
+  }
+  // Preenche a posição específica quando falta ou quando contradiz o grupo; respeita edição manual.
+  function ensure(player){
+    if(!player||typeof player!=='object'||player.positionEdited) return false;
+    const cur=toCode(player.primaryPosition);
+    if(isSpecific(cur)&&group(cur)===group(player.pos)) return false;
+    const p=infer(player);
+    if(!p) return false;
+    player.primaryPosition=p;
+    if(!player.primaryPositionSource) player.primaryPositionSource='inferred';
+    if(Array.isArray(player.secondaryPositions)) player.secondaryPositions=player.secondaryPositions.filter(x=>toCode(x)!==p);
+    return true;
+  }
+  const api={positionList,definitions,group,isSpecific,eligible,normalize,suitability,positionalOverall,infer,ensure};
   root.ProLifePlayerPositions=api;
   if(typeof module !== 'undefined' && module.exports) module.exports=api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

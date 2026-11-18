@@ -190,6 +190,7 @@
     player.id=String(player.id||context.id||"");player.name=String(player.name||"Jogador sem nome");player.shortName=String(player.shortName||shortNameOf(player.name));
     player.nationality=String(player.nationality||"Brasil");player.pos=["GOL","DEF","MEI","ATA"].includes(player.pos)?player.pos:"MEI";
     if(!Array.isArray(player.secondaryPositions))player.secondaryPositions=[];
+    try{(root.ProLifePlayerPositions||(typeof require==="function"?require("./player-positions.js"):null))?.ensure?.(player);}catch(e){}
     if(!Number.isFinite(Number(player.birthYear)))player.birthYear=Number(player.birthDate?.year)||season-Math.max(14,Number(player.age||25));
     player.age=context.preserveAge?Math.max(14,Number(player.age||season-Number(player.birthYear))):Math.max(15,season-Number(player.birthYear));player.ovr=overall;player.overall=overall;player.potential=clamp(Number(player.potential??overall+2),overall,100);
     player.status=player.status==="retired"||player.retired?"retired":"active";player.active=player.status==="active";player.reputation=clamp(Number(player.reputation??(compactId(player.id)?Math.max(40,overall-12):overall-15)),0,100);

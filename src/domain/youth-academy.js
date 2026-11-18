@@ -64,7 +64,7 @@
     if(ageOf(p)<MIN_PROMOTE_AGE)promoteReason=`Só pode subir a partir dos ${MIN_PROMOTE_AGE} anos.`;
     else if(loan)promoteReason="Está emprestado: chame de volta primeiro.";
     return {
-      id:p.id,name:p.name,age:ageOf(p),pos:p.pos,nationality:p.nationality||"",ovr:ovrOf(p),
+      id:p.id,name:p.name,age:ageOf(p),pos:p.primaryPosition||p.pos,nationality:p.nationality||"",ovr:ovrOf(p),
       potLo:pr.lo,potHi:pr.hi,potMid:pr.mid,stars:starsOf(pr.mid),trend:tr,
       developing:ovrOf(p)<num(p.potential)-2,loaned:!!loan,loanTo:loan?.to||"",
       canPromote:!promoteReason,promoteReason,
@@ -200,7 +200,7 @@
     const clubName=id=>(s.globalFootball?.clubs||[]).find(c=>c.id===id)?.name||"";
     for(const {p} of scored){
       const pr=potentialRange(p,r.missionSpread,`m${m.id}`),o=ovrOf(p),sp=Math.max(1,Math.round(r.missionSpread/3));
-      y.reports.unshift({id:`${m.id}-${p.id}`,type:"olheiro",missionId:m.id,playerId:p.id,day:num(s.day),name:p.name,age:ageOf(p),pos:p.pos,nationality:p.nationality||"",
+      y.reports.unshift({id:`${m.id}-${p.id}`,type:"olheiro",missionId:m.id,playerId:p.id,day:num(s.day),name:p.name,age:ageOf(p),pos:p.primaryPosition||p.pos,nationality:p.nationality||"",
         clubId:p.clubId||null,club:p.clubId?clubName(p.clubId):"Sem clube",ovrLo:o-sp,ovrHi:o+sp,potLo:pr.lo,potHi:pr.hi,stars:starsOf(pr.mid),fee:prospectFee(p)});
     }
     y.reports=y.reports.slice(0,REPORT_LIMIT);

@@ -485,7 +485,7 @@
     return dayDate(state.day);
   }
   try { const mq = window.matchMedia(window.ProLifeMobileSM27?.QUERY || "(max-width:0px)"); mq.addEventListener("change", () => { if (state && !setup) render(); }); } catch (e) { /* sem matchMedia */ }
-  window.ProLifeSM27Ctx=()=>({s:state,D});
+  window.ProLifeSM27Ctx=()=>{try{if(state&&state.positionsChecked==null&&D.ensureSpecificPositions)D.ensureSpecificPositions(state);}catch(e){}return {s:state,D};};
   window.ProLifeSM27Cmd=(action,data)=>command(action,data);
   // Notificação de sondagem some de "Novas" quando já não há o que fazer nela:
   // proposta enviada, contratação feita, recusa, prazo vencido ou sondagem removida.
@@ -552,6 +552,7 @@
     } catch (_) {}
   }
   function render() {
+    try { if (state && state.positionsChecked == null && D.ensureSpecificPositions) D.ensureSpecificPositions(state); } catch (e) {}
     trackPage();
     notifyNewOffers();
     notifyNewMessages();

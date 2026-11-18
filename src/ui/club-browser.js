@@ -612,7 +612,7 @@
       <div class="club-pitch-player">
         <strong>${rating(D,player)}</strong>
         <span>${esc(player.name)}</span>
-        <small>${positionLabel(player.pos)}</small>
+        <small>${positionLabel(player.primaryPosition||player.pos)}</small>
       </div>
     `;
   }
@@ -671,7 +671,7 @@
           <b>${esc(player.name)}</b>
           <small>${esc(playerCountry(player))}</small>
         </td>
-        <td>${positionLabel(player.pos)}</td>
+        <td>${positionLabel(player.primaryPosition||player.pos)}</td>
         <td><b>${rating(D,player)}</b></td>
         <td>${potential(player,D)}</td>
         <td>${age??"-"}</td>
@@ -1060,7 +1060,7 @@
                             <span>
                               <b>${esc(player.name)}</b>
                               <small>
-                                ${positionLabel(player.pos)}
+                                ${positionLabel(player.primaryPosition||player.pos)}
                                 &middot;
                                 ${
                                   ageOf(s,player)??"-"
