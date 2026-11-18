@@ -176,6 +176,8 @@ const files = [
   "src/ui/europa-league-view.js",
   "src/ui/conference-league-view.js",
   "src/ui/fc27-motion.js",
+  "src/data/changelog.js",
+  "src/ui/changelog-view.js",
   "src/ui/viewport-fit.js",
   "src/ui/update.js",
   "src/domain/display-names.js",
