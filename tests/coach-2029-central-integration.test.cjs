@@ -11,6 +11,7 @@ const CITY = "gf_fc27_10";
 function career() {
   const s = D.create({ mode: "coach", clubId: "c0", catalogVersion: "fc27_v1" }, 4242);
   s.clubId = null;
+  s.extras = s.extras || {}; s.extras.clubWealth = { version: 1, lastSeason: null, history: [], disabled: true }; // carreira determinística: sem xeque
   D.join(s, CITY, 90000);
   return s;
 }

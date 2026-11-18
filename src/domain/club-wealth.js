@@ -159,6 +159,7 @@
     if (!s || (s.day % 7) !== 0) return null;
     topUp(s);
     const w = state(s);
+    if (w.disabled) return null;
     if (w.lastSeason === s.season) return null;
     return takeover(s);
   }

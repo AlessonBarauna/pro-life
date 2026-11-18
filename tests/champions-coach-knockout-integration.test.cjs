@@ -11,6 +11,7 @@ const CITY = "gf_fc27_10";
 function coach(seed = 4242) {
   const s = D.create({ mode: "coach", clubId: "c0", catalogVersion: "fc27_v1" }, seed);
   s.clubId = null;
+  s.extras = s.extras || {}; s.extras.clubWealth = { version: 1, lastSeason: null, history: [], disabled: true }; // carreira determinística: sem xeque
   D.join(s, CITY, 90000);
   assert.equal(s.clubId, CITY, "Manchester City não foi vinculado ao treinador");
   return s;
