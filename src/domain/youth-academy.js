@@ -224,6 +224,7 @@
     if(CF)CF.expense(s,club,"operacao",fee,`Contratação para a base: ${p.name}`);else club.budget-=fee;
     p.clubHistory=(p.clubHistory||[]).concat({season:s.season,fromClubId:p.clubId||null,toClubId:s.clubId}).slice(-30);
     p.clubId=s.clubId;p.leagueId=club.leagueId||null;p.academy=true;p.externalClub=club.name;delete p.club;
+    try{GF?.dedupePlayers?.(s);}catch(e){}
     y.reports=y.reports.filter(x=>x.playerId!==playerId);
     pushLog(y,s,`${p.name} foi contratado para a base por R$ ${fee.toLocaleString("pt-BR")}.`);
     ctx.log?.("Base: contratação",`${p.name} (${ageOf(p)} anos, ${p.pos}) chegou à base por R$ ${fee.toLocaleString("pt-BR")}.`);
@@ -272,6 +273,7 @@
   function daily(s,api,ctx={}){
     const y=ensure(s);if(!y||!GFm()||s.catalogVersion!=="fc27_v1")return;
     const day=num(s.day);
+    if(day%7===0){try{GFm().dedupePlayers?.(s);}catch(e){}}
     if(day>=y.nextIntakeDay){
       intake(s,api,y,ctx);
       const every=rules(s).intakeEveryDays;

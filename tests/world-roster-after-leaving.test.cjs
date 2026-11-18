@@ -22,3 +22,17 @@ test("jogadores do clube deixado voltam à busca mundial",()=>{
   assert.ok(ids.includes(bought.id));
   assert.equal(ids.filter(id=>!active.has(id)).length,0);
 });
+test("jogador contratado para o clube não fica duplicado em outro clube, e as propostas de compra variam de comprador",()=>{
+  const A=require("../src/application/game.js");
+  const s=D.create({mode:"coach",catalogVersion:"fc27_v1"},44);s.clubId=null;
+  D.join(s,GF.clubByName(s,"Real Betis").id,90000);
+  const own=s.worldMatchClubs[s.clubId],stale=s.internationalPlayers.find(p=>p.clubId!==s.clubId);
+  const mine={...stale,clubId:s.clubId};own.roster.push(mine);
+  assert.equal(GF.dedupePlayers(s)>=1,true);
+  assert.equal(s.internationalPlayers.some(p=>p.id===stale.id),false);
+  assert.equal(GF.activePlayers(s).filter(p=>p.id===stale.id).length,1);
+  assert.equal(GF.activePlayers(s).find(p=>p.id===stale.id).clubId,s.clubId);
+  const buyers=new Set();
+  for(let i=0;i<10;i++){s.day+=7;try{A.execute(s,"generateSaleInterest",{});}catch(e){continue;}const o=s.coachCareer.saleOffers.slice(-1)[0];o.status="rejected";buyers.add(o.buyerClubId);}
+  assert.ok(buyers.size>=4,"compradores variados ("+buyers.size+")");
+});

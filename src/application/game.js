@@ -683,7 +683,13 @@ case "tactic": {
         const isLoan=(prefs.loanListedIds||[]).includes(p.id);
         if(isLoan&&s.coachCareer?.settings?.loans==="off")throw Error("Empréstimos estão desativados nesta carreira.");
         const amount=Math.ceil(price*(isLoan?0.08:(s.coachCareer?.settings?.marketStrictness==="strict"?1.1:0.95))/1000)*1000;
-        const buyer=buyers.filter(c=>Number(c.budget)>=amount).sort((a,b)=>String(a.id).localeCompare(String(b.id)))[0];
+        const hashOf=str=>{let h=2166136261;for(const ch of String(str)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
+        // Comprador varia: clubes com caixa, de nível parecido com o jogador, sorteados de forma estável por dia e jogador.
+        const ovrP=Number(p.overall??p.ovr)||70,levelOf=c=>Number(c.strength??c.reputation)||65;
+        const ranked=buyers.filter(c=>Number(c.budget)>=amount).sort((a,b)=>Math.abs(levelOf(a)-ovrP)-Math.abs(levelOf(b)-ovrP)||String(a.id).localeCompare(String(b.id))).slice(0,12);
+        const recent=new Set((s.coachCareer?.saleOffers||[]).filter(o=>Number(s.day)-Number(o.createdDay)<=30).map(o=>o.buyerClubId));
+        const fresh=ranked.filter(c=>!recent.has(c.id)),choices=fresh.length?fresh:ranked;
+        const buyer=choices.length?choices[hashOf(s.day+"|"+p.id+"|"+s.season)%choices.length]:null;
         if(!buyer)throw Error("Nenhum clube possui orçamento para apresentar proposta.");
         if(!Array.isArray(buyer.roster)){const r=D.GlobalFootball?.playersByClub?.(s,buyer.id)||[];if(r.length<=18)throw Error("Nenhum clube com elenco disponível para apresentar proposta.");buyer.roster=r.slice();buyer.lineup||=[];}
         s.coachCareer||={version:1};s.coachCareer.saleOffers||=[];

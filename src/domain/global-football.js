@@ -272,6 +272,25 @@
     for(const value of raw){const name=resolveNationality(value,null);if(!name)continue;const identity=normalizedNationality(name);if(!byIdentity.has(identity))byIdentity.set(identity,{id:identity,name});}
     return [...byIdentity.values()].sort((a,b)=>plain(a.name).localeCompare(plain(b.name),"pt-BR"));
   }
+  // Mesmo jogador em dois lugares: se há uma cópia no clube do treinador, as cópias com outro clube são removidas.
+  function dedupePlayers(s){
+    if(!s||s.mode!=="coach"||!s.clubId)return 0;
+    init(s);
+    const own=s.clubId,arrays=[];
+    for(const club of s.clubs||[])if(Array.isArray(club.roster))arrays.push(club.roster);
+    if(Array.isArray(s.internationalPlayers))arrays.push(s.internationalPlayers);
+    for(const club of Object.values(s.worldMatchClubs||{}))if(Array.isArray(club?.roster))arrays.push(club.roster);
+    const byId=new Map();
+    for(const arr of arrays)for(const p of arr){if(!p||!p.id||p.id==="hero"||String(p.id).includes("_wm_"))continue;(byId.get(p.id)||byId.set(p.id,[]).get(p.id)).push(p);}
+    const stale=new Set();
+    for(const list of byId.values()){
+      if(list.length<2||!list.some(p=>p.clubId===own))continue;
+      for(const p of list)if(p.clubId!==own)stale.add(p);
+    }
+    if(!stale.size)return 0;
+    for(const arr of arrays){for(let i=arr.length-1;i>=0;i--)if(stale.has(arr[i]))arr.splice(i,1);}
+    return stale.size;
+  }
   function playerById(s,id){return findPlayer(s,id);}
   function clubById(s,id){init(s);return catalogClub(s,id);}
   function leagueById(s,id){init(s);const local=(s.leagues||[]).find(league=>league.id===id);if(local)return {...local,country:local.country||"Brasil",level:local.level||Number(String(local.id||"").match(/\d+/)?.[0]||1),clubCount:(s.clubs||[]).filter(club=>club.leagueId===id).length,reputation:local.reputation||75,continent:local.continent||"America do Sul",confederation:local.confederation||"CONMEBOL",active:local.active!==false};return state(s).leagues.find(league=>league.id===id)||null;}
@@ -545,6 +564,6 @@
     return {players:added.length,clubs:(data.clubs||[]).length,leagues:(data.leagues||[]).length};
   }
   function diagnostics(){return {...diagnosticsCounters};}
-  const api={VERSION:1,diagnostics,packInfo,clubByName,nationName:code=>resolveNationality(code,null),nationCode:value=>{const identity=normalizedNationality(value);if(identity==='brasil')return 'BRA';return Object.keys(NATIONS).find(key=>plain(NATIONS[key][0])===identity)||null;},nationalityCatalog,resolveNationality,init,allPlayers,playerById,clubById,leagueById,clubIdentity,clubPrestige,playersByNationality,playersByClub,playersByLeague,activePlayers,eligibleNationalTeamPlayers,registerPlayer,transferPlayer,retirePlayer,rollSeason,developCatalog,ensureAcademies,generateYouth,youthPools,renewYouth,importData,normalizedNationality,seasonOf};
+  const api={VERSION:1,diagnostics,packInfo,clubByName,nationName:code=>resolveNationality(code,null),nationCode:value=>{const identity=normalizedNationality(value);if(identity==='brasil')return 'BRA';return Object.keys(NATIONS).find(key=>plain(NATIONS[key][0])===identity)||null;},nationalityCatalog,resolveNationality,init,allPlayers,playerById,clubById,leagueById,clubIdentity,clubPrestige,playersByNationality,playersByClub,playersByLeague,activePlayers,dedupePlayers,eligibleNationalTeamPlayers,registerPlayer,transferPlayer,retirePlayer,rollSeason,developCatalog,ensureAcademies,generateYouth,youthPools,renewYouth,importData,normalizedNationality,seasonOf};
   root.ProLifeGlobalFootball=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
