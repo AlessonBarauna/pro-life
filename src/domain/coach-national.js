@@ -425,14 +425,34 @@
       if(pick)scorers.push({id:pick.id,name:pick.name,minute:Math.floor(unit(`${fx.id}|min|${g}`)*88)+2});
     }
     scorers.sort((a,b)=>a.minute-b.minute);
-    for(const p of lu.starters){const st=cn.stats[p.id]||(cn.stats[p.id]={name:p.name,pos:p.pos,caps:0,goals:0});st.caps++;st.name=p.name;}
-    for(const sc of scorers)cn.stats[sc.id].goals++;
-    return {gf,ga,scorers,power:+own.toFixed(1)};
+    // Assistências: ~65% dos gols têm passe de outro titular (meias e atacantes criam mais).
+    const aw={GOL:0,DEF:1.2,MEI:4,ATA:3};
+    scorers.forEach((sc,g)=>{
+      if(unit(`${fx.id}|ast?|${g}`)>=.65)return;
+      const pool=lu.starters.filter(p=>p.id!==sc.id&&aw[p.pos]>0),total=pool.reduce((a,p)=>a+aw[p.pos],0);
+      if(!pool.length)return;
+      let r=unit(`${fx.id}|ast|${g}`)*total,pick=pool[0];
+      for(const p of pool){r-=aw[p.pos];if(r<=0){pick=p;break;}}
+      sc.assist={id:pick.id,name:pick.name};
+    });
+    for(const p of lu.starters){const st=cn.stats[p.id]||(cn.stats[p.id]={name:p.name,pos:p.pos,caps:0,goals:0});st.caps++;st.name=p.name;if(st.assists==null)st.assists=0;}
+    for(const sc of scorers){cn.stats[sc.id].goals++;if(sc.assist)cn.stats[sc.assist.id].assists=(cn.stats[sc.assist.id].assists||0)+1;}
+    const xi=lu.starters.map(p=>({id:p.id,pos:p.pos}));
+    return {gf,ga,scorers,power:+own.toFixed(1),xi};
   }
   function record(s,D,fx,sim,extra={}){
     const cn=init(s),result=sim.gf>sim.ga?"V":sim.gf<sim.ga?"D":"E";
     const entry={...fx,played:true,gf:sim.gf,ga:sim.ga,result,scorers:sim.scorers,power:sim.power,formation:cn.formation,...extra};
     Object.assign(fx,entry);
+    // Estatísticas: placar acumulado da seleção + gols/assistências/jogos dos atletas entram no WorldStats (prêmios do ano).
+    const rec=cn.record||(cn.record={w:0,d:0,l:0,gf:0,ga:0});
+    rec[result==="V"?"w":result==="D"?"l":"d"]++;rec.gf+=sim.gf;rec.ga+=sim.ga;
+    try{
+      const WS=root.ProLifeWorldStats||(typeof require==="function"?require("./world-stats.js"):null);
+      const g=new Map(),a=new Map();
+      for(const sc of sim.scorers||[]){g.set(sc.id,(g.get(sc.id)||0)+1);if(sc.assist)a.set(sc.assist.id,(a.get(sc.assist.id)||0)+1);}
+      WS?.recordNational?.(s,cn.teamId,`${cn.teamId}|${fx.id}`,(sim.xi||[]).map(p=>({id:p.id,pos:p.pos,goals:g.get(p.id)||0,assists:a.get(p.id)||0,cs:sim.ga===0})),result);
+    }catch(e){}
     cn.matches.unshift({...entry});cn.matches.length=Math.min(cn.matches.length,HISTORY_LIMIT);
     const big=extra.cup?1.5:extra.qualifier?1.25:1;
     cn.board=clamp(cn.board+(result==="V"?(sim.gf-sim.ga>=3?6:4):result==="D"?(sim.ga-sim.gf>=3?-8:-5):-1)*big,0,100);
@@ -455,7 +475,7 @@
       return {gf:sim.gf,ga:sim.ga,after:({match})=>{
         if(match&&sim.gf===sim.ga&&match.winnerId){pens=match.winnerId===cn.teamId?"win":"lose";const e=cn.matches[0];if(e&&e.id===fx.id){e.pens=pens;e.result=pens==="win"?"V":"D";}}
         if(match&&phase!=="group"&&match.winnerId&&match.winnerId!==cn.teamId&&!(match.phase==="THIRD_PLACE"))message(s,D,"Fim da Copa para a sua seleção",`${cn.teamId} foi eliminada: ${PHASE[phase]||"mata-mata"}.`);
-        if(match&&match.phase==="FINAL"&&match.winnerId===cn.teamId)message(s,D,"CAMPEÃ DO MUNDO!",`A seleção de ${cn.teamId} conquistou a Copa do Mundo ${year} sob o seu comando.`);
+        if(match&&match.phase==="FINAL"&&match.winnerId===cn.teamId){(cn.titles||(cn.titles=[])).push({year,name:`Copa do Mundo ${year}`,day:s.day});message(s,D,"CAMPEÃ DO MUNDO!",`A seleção de ${cn.teamId} conquistou a Copa do Mundo ${year} sob o seu comando.`);}
       }};
     });
   }
@@ -558,6 +578,7 @@
     const nations=CODES.filter(c=>table[c]).map(c=>{const need=requiredReputation(s,D,c);return {code:c,name:table[c].name,confederation:table[c].confederation,strength:table[c].strength,need,eligible:rep>=need,current:c===cn.teamId};}).sort((a,b)=>Number(b.current)-Number(a.current)||Number(b.eligible)-Number(a.eligible)||(a.eligible?b.strength-a.strength:a.need-b.need)||b.strength-a.strength);
     const out={rep,teamId:cn.teamId,team:team?{code:cn.teamId,name:team.name,confederation:team.confederation}:null,board:Math.round(cn.board),formation:cn.formation,formations:Object.keys(FORMATIONS),manual:cn.manual,callup:callupView(s,D,cn),offers:cn.offers.filter(o=>o.expires>=s.day),applications:cn.applications.map(a=>({...a})),rejected:{...cn.rejected},cooldownUntil:cn.cooldownUntil,day:s.day,nations,history:cn.history,
       results:cn.matches.filter(m=>m.day>=(cn.since??0)).slice(0,30),fixtures:cn.schedule.filter(m=>!m.played).slice(0,12)};
+    out.titles=(cn.titles||[]).slice();
     const w=out.results;out.record={p:w.length,v:w.filter(m=>m.result==="V").length,e:w.filter(m=>m.result==="E").length,d:w.filter(m=>m.result==="D").length,gf:w.reduce((a,m)=>a+m.gf,0),ga:w.reduce((a,m)=>a+m.ga,0)};
     if(cn.teamId){
       const eff=effectiveSquad(s,D),calledIds=new Set(eff.squad.map(p=>p.id)),starters=new Set(eff.lineup.starters.map(p=>p.id));

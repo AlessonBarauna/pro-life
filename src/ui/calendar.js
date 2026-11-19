@@ -43,6 +43,12 @@
           if (m.played) continue;
           result.push({ day: m.day, type: "national", title: m.home ? `${mine} × ${m.opponent}` : `${m.opponent} × ${mine}`, detail: m.competition || "Amistoso internacional", destination: "national" });
         }
+        // Jogos já disputados (amistosos, eliminatórias e Copa) seguem no calendário do ano, com o placar.
+        for (const m of cn.matches || []) {
+          if (!m || !m.played || !Number.isFinite(Number(m.day))) continue;
+          const own = Number(m.gf), opp = Number(m.ga), sc = Number.isFinite(own) && Number.isFinite(opp);
+          result.push({ day: m.day, type: "national", title: m.home ? `${mine} ${sc ? own + " × " + opp : "×"} ${m.opponent}` : `${m.opponent} ${sc ? opp + " × " + own : "×"} ${mine}`, detail: (m.competition || "Amistoso internacional") + (m.result ? " · " + (m.result === "V" ? "vitória" : m.result === "D" ? "derrota" : "empate") : ""), destination: "national" });
+        }
         const fx = root.ProLifeCoachNational?.nextFixture?.(s, D);
         if (fx && !(cn.schedule || []).some(m => m.day === fx.day && !m.played)) result.push({ day: fx.day, type: "national", title: `${fx.home} × ${fx.away}`, detail: fx.competition, destination: "national" });
       } catch { /* seleção opcional */ }

@@ -6,6 +6,16 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-19-g",
+      date: "2026-11-19",
+      title: "Jogos da seleção contam nas estatísticas e no calendário",
+      items: [
+        { t: "novo", x: "Os jogos da sua seleção (amistosos, eliminatórias e Copa) agora geram gols e assistências dos atletas, que entram nas estatísticas do ano e nos prêmios individuais, como a Bola de Ouro." },
+        { t: "novo", x: "A campanha da seleção (vitórias, empates, derrotas, gols) e os títulos, como a Copa do Mundo, ficam registrados no seu histórico de treinador." },
+        { t: "ajuste", x: "No calendário, os jogos da seleção já disputados continuam aparecendo com o placar e o resultado." }
+      ]
+    },
+    {
       id: "2026-11-19-f",
       date: "2026-11-19",
       title: "Metas de investidor seguem o campeonato europeu",

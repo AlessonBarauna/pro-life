@@ -132,6 +132,29 @@
     return true;
   }
 
+  // Jogos de seleção do treinador: entram no acumulador "nat" do ano civil (gols, assistências, jogos e nota),
+  // somam na visão mundial e contam para Bola de Ouro e prêmios individuais.
+  function recordNational(s,teamId,fixtureKey,entries,result){
+    const ws=state(s);if(!ws||!Array.isArray(entries)||!entries.length)return false;
+    const L=ws.leagues.nat||(ws.leagues.nat={ids:[],v:[],n:0,r:-1,seen:{}});
+    if(!L.seen)L.seen={};
+    if(L.seen[fixtureKey])return false;
+    L.seen[fixtureKey]=1;L.n++;ws.matches++;
+    const res=result==="V"?0.35:result==="E"?0.05:-0.25;
+    const rated=[];
+    for(const e of entries){
+      const o=slot(L,e.id),v=L.v,g=e.goals||0,a=e.assists||0;
+      let r=6.1+res+(unit(`${fixtureKey}|r|${e.id}`)-0.5)*1.1+g*0.9+a*0.5;
+      if(e.cs&&(e.pos==="GOL"||e.pos==="DEF"))r+=0.4;
+      r=clamp(r,4.5,10);
+      v[o+A]++;v[o+G]+=g;v[o+AS]+=a;v[o+R]+=Math.round(r*10);v[o+MIN]+=90;
+      if(e.cs&&(e.pos==="GOL"||e.pos==="DEF"))v[o+CS]++;
+      rated.push([r+unit(`${fixtureKey}|t|${e.id}`)*0.001,o]);
+    }
+    rated.sort((x,y)=>y[0]-x[0]);L.v[rated[0][1]+MV]++;
+    return true;
+  }
+
   // ---------- linhas de ranking ----------
   const rowKey=new WeakMap();
   function heroRow(s,leagueId){
@@ -485,7 +508,7 @@
   function formatByName(name,value){const hit=UNIT_BY_NAME.find(([re])=>re.test(String(name||"")));return format(hit?hit[1]:"jogos",value);}
   function formatAward(a){return format(a.unit,a.value);}
 
-  const api={VERSION,europeanLeaders,goldenShoe,leagueContext,init:state,record,rowsOf,globalRows,minApps,leagueAwards,worldAwards,leaders,youngLeaders,keepersTop,coachesTop,closeLeague,closeSeason,history,heroAwards,heroStanding,competitions,format,formatByName,formatAward,UNITS};
+  const api={VERSION,europeanLeaders,goldenShoe,leagueContext,init:state,record,recordNational,rowsOf,globalRows,minApps,leagueAwards,worldAwards,leaders,youngLeaders,keepersTop,coachesTop,closeLeague,closeSeason,history,heroAwards,heroStanding,competitions,format,formatByName,formatAward,UNITS};
   root.ProLifeWorldStats=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
