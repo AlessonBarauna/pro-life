@@ -6,6 +6,14 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-19-d",
+      date: "2026-11-19",
+      title: "Aporte inicial funcionando",
+      items: [
+        { t: "correcao", x: "O aporte inicial escolhido ao criar a carreira não aparecia quando você começava sem clube. Agora ele entra no orçamento de transferências do primeiro clube que você assumir." }
+      ]
+    },
+    {
       id: "2026-11-19-c",
       date: "2026-11-19",
       title: "Sheik não rouba mais seus alvos",

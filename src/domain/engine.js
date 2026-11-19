@@ -1190,6 +1190,18 @@
     if(confirmedRecord){confirmedRecord.status="CONFIRMED";confirmedRecord.accepted=true;confirmedRecord.confirmedDay=s.day;}
     if (s.mode === "player") { Career.clearAgreement(s); Career.updatePlayerRole(s); }
     if (s.creation?.status === "unsigned") Creation.registerStart(s, API);
+    // Aporte inicial escolhido na criação: se não havia clube na hora, entra no caixa do primeiro clube assumido.
+    if (s.mode === "coach") {
+      const st = s.coachCareer?.settings, add = Number(st?.funding) || 0;
+      if (st && add > 0 && !st.fundingApplied) {
+        const base = Number(next.budget) || 0;
+        next.budget = base + add;
+        for (const c of [...(s.globalFootball?.clubs || []), ...(s.clubs || []), ...Object.values(s.worldMatchClubs || {}), club(s, next.id)]) if (c && c.id === next.id) c.budget = next.budget;
+        st.fundingApplied = true;
+        st.initialBudget = { clubId: next.id, scenario: st.initialBudget?.scenario || "legacy", base, funding: add, total: base + add };
+        log(s, "Aporte inicial", "R$ " + add.toLocaleString("pt-BR") + " entraram no orçamento de transferências do " + next.name + ".");
+      }
+    }
     log(
       s,
       "Contrato assinado",
