@@ -6,6 +6,16 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-19-h",
+      date: "2026-11-19",
+      title: "Seleção: histórico, prêmios e atletas do seu clube",
+      items: [
+        { t: "novo", x: "A campanha e os títulos da seleção aparecem no histórico do treinador (Carreira e Vestiário) e no topo da tela da Seleção, e somam nos seus totais de vitórias, empates, derrotas e títulos." },
+        { t: "novo", x: "Prêmios individuais da seleção: craque do ano e melhor jogador da seleção na Copa, com gols, assistências e jogos." },
+        { t: "ajuste", x: "Os atletas do seu clube convocados passam a somar jogos, gols e assistências da seleção nas estatísticas, na competição \"Seleções\"." }
+      ]
+    },
+    {
       id: "2026-11-19-g",
       date: "2026-11-19",
       title: "Jogos da seleção contam nas estatísticas e no calendário",

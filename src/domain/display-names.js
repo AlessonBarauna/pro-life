@@ -28,7 +28,7 @@
     if(stored&&stored!==id&&!isInternal(stored))return String(stored);
     return isInternal(id)?UNKNOWN_CLUB:String(id);
   }
-  const KNOWN_COMP={ucl:"UEFA Champions League",uel:"UEFA Europa League",uecl:"UEFA Conference League",lib:"CONMEBOL Libertadores",sud:"CONMEBOL Sul-Americana",copaBrasil:"Copa do Brasil",nationalTeam:"Seleção"};
+  const KNOWN_COMP={nat:"Seleções",ucl:"UEFA Champions League",uel:"UEFA Europa League",uecl:"UEFA Conference League",lib:"CONMEBOL Libertadores",sud:"CONMEBOL Sul-Americana",copaBrasil:"Copa do Brasil",nationalTeam:"Seleção"};
   function league(s,id,stored){
     if(id==null||id==="")return stored||"—";
     const own=index(s?.leagues,"leagues")?.get(id);if(nameOf(own))return nameOf(own);

@@ -29,6 +29,18 @@ test("jogo da seleção: assistências, WorldStats e calendário", { timeout: 0 
   assert.ok(ast <= goals);
   const L = s.globalFootball.worldStats.leagues.nat;
   assert.ok(L && L.n === played, "jogos entram no acumulador anual de seleções");
+  // Atletas do clube do treinador convocados contam nas estatísticas canônicas (competição "nat").
+  const natRows = Object.values(s.statistics.players).filter((r) => r.byCompetition && r.byCompetition.nat);
+  const own = new Set(E.club(s).roster.map((p) => p.id));
+  const fromClub = Object.entries(s.statistics.players).filter(([id, r]) => own.has(id) && r.byCompetition && r.byCompetition.nat);
+  assert.ok(natRows.length === fromClub.length, "só atletas do clube entram por aqui");
+  // Prêmio individual de fim de ano e histórico do treinador.
+  const yr = s.season; s.season = yr + 1; CN.daily(s, E);
+  const aw = (cn.awards || []).find((a) => a.type === "year" && a.year === yr);
+  assert.ok(aw && aw.name, "craque da seleção no ano");
+  const sn = E.CoachCareer.snapshot(s, E);
+  assert.equal(sn.national.matches, played);
+  assert.ok(sn.totals.w + sn.totals.d + sn.totals.l >= played, "campanha da seleção soma nos totais do treinador");
   const evs = Cal.events(s, E).filter((e) => e.type === "national" && /vitória|derrota|empate/.test(e.detail));
   assert.ok(evs.length >= 1, "jogo disputado continua no calendário do ano");
 });

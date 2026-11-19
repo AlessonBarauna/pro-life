@@ -268,6 +268,7 @@
   }
   function competitionName(s, id) {
     if (id === "overall") return "Melhores do ano";
+    if (id === "nat") return "Seleções";
     return root.ProLifeCompetitions?.statCompetitions?.(s).find((item) => item.id === id)?.name || root.ProLifeCompetitions?.leagueNames?.[id] || (Names ? Names.league(s, id) : id);
   }
   function award(s, competitionId, name, winner) {

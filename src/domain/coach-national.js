@@ -435,8 +435,13 @@
       for(const p of pool){r-=aw[p.pos];if(r<=0){pick=p;break;}}
       sc.assist={id:pick.id,name:pick.name};
     });
-    for(const p of lu.starters){const st=cn.stats[p.id]||(cn.stats[p.id]={name:p.name,pos:p.pos,caps:0,goals:0});st.caps++;st.name=p.name;if(st.assists==null)st.assists=0;}
-    for(const sc of scorers){cn.stats[sc.id].goals++;if(sc.assist)cn.stats[sc.assist.id].assists=(cn.stats[sc.assist.id].assists||0)+1;}
+    const bump=(id,k,name,pos)=>{
+      const st=cn.stats[id]||(cn.stats[id]={name,pos,caps:0,goals:0});
+      const slots=[st.y||(st.y={})];if(fx.cup)slots.push(st.wc||(st.wc={}));
+      slots.forEach((m,i)=>{const key=i===0?s.season:(fx.competition.match(/\d{4}/)||[s.season])[0];const r=m[key]||(m[key]={caps:0,goals:0,assists:0});r[k]++;});
+    };
+    for(const p of lu.starters){const st=cn.stats[p.id]||(cn.stats[p.id]={name:p.name,pos:p.pos,caps:0,goals:0});st.caps++;st.name=p.name;if(st.assists==null)st.assists=0;bump(p.id,"caps",p.name,p.pos);}
+    for(const sc of scorers){cn.stats[sc.id].goals++;bump(sc.id,"goals");if(sc.assist){cn.stats[sc.assist.id].assists=(cn.stats[sc.assist.id].assists||0)+1;bump(sc.assist.id,"assists");}}
     const xi=lu.starters.map(p=>({id:p.id,pos:p.pos}));
     return {gf,ga,scorers,power:+own.toFixed(1),xi};
   }
@@ -452,6 +457,20 @@
       const g=new Map(),a=new Map();
       for(const sc of sim.scorers||[]){g.set(sc.id,(g.get(sc.id)||0)+1);if(sc.assist)a.set(sc.assist.id,(a.get(sc.assist.id)||0)+1);}
       WS?.recordNational?.(s,cn.teamId,`${cn.teamId}|${fx.id}`,(sim.xi||[]).map(p=>({id:p.id,pos:p.pos,goals:g.get(p.id)||0,assists:a.get(p.id)||0,cs:sim.ga===0})),result);
+      // Atletas do clube do treinador: não estão no índice mundial, então entram direto nas estatísticas canônicas (competição "nat").
+      const St=root.ProLifeStatistics||(typeof require==="function"?require("./statistics.js"):null);
+      const own=new Set((D.club?.(s)?.roster||[]).map(p=>p.id));
+      if(St&&own.size){
+        const root_=St.init(s).root,res=result==="V"?.35:result==="E"?.05:-.25;
+        for(const p of sim.xi||[]){
+          if(!own.has(p.id))continue;
+          const gg=g.get(p.id)||0,aa=a.get(p.id)||0,rt=Math.min(10,Math.max(4.5,6.1+res+gg*.9+aa*.5));
+          const row=root_.players[p.id]||(root_.players[p.id]={appearances:0,starts:0,minutes:0,goals:0,assists:0,motm:0,ratingTotal:0,saves:0,tackles:0,shots:0,onTarget:0,xg:0,yellowCards:0,redCards:0,byCompetition:{},byClub:{}});
+          if(!row.byCompetition)row.byCompetition={};
+          const cr=row.byCompetition.nat||(row.byCompetition.nat={appearances:0,starts:0,minutes:0,goals:0,assists:0,motm:0,ratingTotal:0});
+          for(const r of [row,cr]){r.appearances=(r.appearances||0)+1;r.starts=(r.starts||0)+1;r.minutes=(r.minutes||0)+90;r.goals=(r.goals||0)+gg;r.assists=(r.assists||0)+aa;r.ratingTotal=(r.ratingTotal||0)+rt;}
+        }
+      }
     }catch(e){}
     cn.matches.unshift({...entry});cn.matches.length=Math.min(cn.matches.length,HISTORY_LIMIT);
     const big=extra.cup?1.5:extra.qualifier?1.25:1;
@@ -554,6 +573,29 @@
     try{const pool=poolOf(s,D,code);starters=lineup(autoList(pool),formation).starters.map(p=>({id:p.id,name:p.name,pos:p.pos,club:p.club,overall:Math.round(p.overall)}));}catch(e){starters=[];}
     return {code,name:row.name,confederation:row.confederation,strength:row.strength,rank,total:ranked.length,need:requiredReputation(s,D,code),titles,finals:Object.entries(finals).map(([name,count])=>({name,count})),history,years,year:y,comps,formation,starters};
   }
+  // Prêmios individuais da seleção: craque do ano e melhor jogador da Copa (entre os atletas da seleção do treinador).
+  const awardScore=r=>(r.goals||0)*3+(r.assists||0)*2+(r.caps||0)*.5;
+  function bestOf(cn,key,bucket){
+    let best=null;
+    for(const [id,st] of Object.entries(cn.stats||{})){const r=st[bucket]?.[key];if(!r||!r.caps)continue;const sc=awardScore(r);if(!best||sc>best.sc||(sc===best.sc&&id<best.id))best={id,name:st.name,sc,goals:r.goals||0,assists:r.assists||0,caps:r.caps};}
+    return best;
+  }
+  function settleAwards(s,D){
+    const cn=init(s);if(!cn.teamId)return;
+    const awards=cn.awards||(cn.awards=[]);
+    const has=(year,type)=>awards.some(a=>a.year===year&&a.type===type);
+    for(let y=Number(s.season)-1;y>=Math.max(2026,Number(s.season)-6);y--){
+      if(!has(y,"year")&&(cn.matches||[]).some(m=>Number(m.season)===y)){
+        const b=bestOf(cn,y,"y");
+        if(b)awards.push({year:y,type:"year",label:`Craque da seleção em ${y}`,id:b.id,name:b.name,goals:b.goals,assists:b.assists,caps:b.caps});
+      }
+      if(!has(y,"cup")&&(cn.matches||[]).some(m=>Number(m.season)===y&&m.cup)){
+        const b=bestOf(cn,y,"wc");
+        if(b){awards.push({year:y,type:"cup",label:`Melhor jogador da seleção na Copa ${y}`,id:b.id,name:b.name,goals:b.goals,assists:b.assists,caps:b.caps});
+          message(s,D,`Prêmio: ${b.name}`,`Melhor jogador da sua seleção na Copa ${y} (${b.goals} gol(s), ${b.assists} assistência(s) em ${b.caps} jogo(s)).`);}
+      }
+    }
+  }
   function daily(s,D){
     if(!isCoach(s))return;
     const cn=init(s);
@@ -568,6 +610,7 @@
       }
       if(cn.teamId)playQualifiers(s,D);
       if(cn.teamId)playWorldCup(s,D);
+      if(cn.teamId)settleAwards(s,D);
     }else maybeOffers(s,D);
   }
 
@@ -578,7 +621,7 @@
     const nations=CODES.filter(c=>table[c]).map(c=>{const need=requiredReputation(s,D,c);return {code:c,name:table[c].name,confederation:table[c].confederation,strength:table[c].strength,need,eligible:rep>=need,current:c===cn.teamId};}).sort((a,b)=>Number(b.current)-Number(a.current)||Number(b.eligible)-Number(a.eligible)||(a.eligible?b.strength-a.strength:a.need-b.need)||b.strength-a.strength);
     const out={rep,teamId:cn.teamId,team:team?{code:cn.teamId,name:team.name,confederation:team.confederation}:null,board:Math.round(cn.board),formation:cn.formation,formations:Object.keys(FORMATIONS),manual:cn.manual,callup:callupView(s,D,cn),offers:cn.offers.filter(o=>o.expires>=s.day),applications:cn.applications.map(a=>({...a})),rejected:{...cn.rejected},cooldownUntil:cn.cooldownUntil,day:s.day,nations,history:cn.history,
       results:cn.matches.filter(m=>m.day>=(cn.since??0)).slice(0,30),fixtures:cn.schedule.filter(m=>!m.played).slice(0,12)};
-    out.titles=(cn.titles||[]).slice();
+    out.titles=(cn.titles||[]).slice();out.awards=(cn.awards||[]).slice();
     const w=out.results;out.record={p:w.length,v:w.filter(m=>m.result==="V").length,e:w.filter(m=>m.result==="E").length,d:w.filter(m=>m.result==="D").length,gf:w.reduce((a,m)=>a+m.gf,0),ga:w.reduce((a,m)=>a+m.ga,0)};
     if(cn.teamId){
       const eff=effectiveSquad(s,D),calledIds=new Set(eff.squad.map(p=>p.id)),starters=new Set(eff.lineup.starters.map(p=>p.id));

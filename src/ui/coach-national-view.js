@@ -80,7 +80,7 @@
 
   function head(o){
     if(!o.team)return `<header class="cn-head"><div class="grow"><h2>Seleções</h2><p>Você não comanda nenhuma seleção. Candidate-se ou espere um convite da confederação.</p></div><div class="cn-meter"><b>${o.rep}</b><small>sua reputação</small></div></header>`;
-    return `<header class="cn-head">${crest(o.team.code,o.team.name)}<div class="grow"><h2>Seleção de ${esc(o.team.name)}</h2><p>${esc(o.team.confederation||"")} · ${esc(o.formation)} · ${o.called}/${o.max} convocados</p></div><div class="cn-meter"><b>${o.board}%</b><small>confiança da confederação</small></div></header>`;
+    return `<header class="cn-head">${crest(o.team.code,o.team.name)}<div class="grow"><h2>Seleção de ${esc(o.team.name)}</h2><p>${esc(o.team.confederation||"")} · ${esc(o.formation)} · ${o.called}/${o.max} convocados${o.record&&o.record.p?` · ${o.record.v}V ${o.record.e}E ${o.record.d}D`:""}${(o.titles||[]).length?` · ${(o.titles||[]).length} título(s)`:""}</p></div><div class="cn-meter"><b>${o.board}%</b><small>confiança da confederação</small></div></header>`;
   }
   function tabsFor(o){return o.team?[["geral","Visão geral"],["escalacao","Escalação"],["convocacao","Convocação"],["taticas","Táticas"],["relat","Relatórios"],["elim","Eliminatórias"],["copa","Copa do Mundo"],["torneios","Torneios"],["calendario","Calendário"],["selecoes","Seleções"]]:[["convites","Convites"],["selecoes","Seleções"]];}
 
