@@ -165,7 +165,7 @@
     else if (ready) panel = `<p class="tfh-note"><b>${inq.status === "asking_price" ? "O clube exige proposta financeira." : "Sondagem aceita."}</b> Você pode negociar até o dia ${esc(inq.expiresDay)}.</p>${offerBox("Sua oferta", Math.max(1, Math.round(valueOf(p) / 1e5) / 10), "offer")}${winNote}`;
     else if (inq && inq.status === "rejected") {
       const left = Number(inq.answeredDay ?? inq.responseDay) + 14 - day;
-      panel = `<p class="tfh-note"><b>Sondagem recusada</b> (${inq.playerDecision === "rejected" ? "jogador sem interesse" : "clube não autoriza"}). ${left > 0 ? `Nova consulta em ${left} dia(s).` : ""}</p>` + (left > 0 ? "" : `<p class="tfh-actions"><button type="button" class="tfh-btn primary" data-tfh-send="inquire">Consultar interesse</button></p>`);
+      panel = `<p class="tfh-note"><b>Sondagem recusada</b> (${inq.playerDecision === "rejected" ? "jogador sem interesse" : "clube não autoriza"}). ${left > 0 ? `Nova consulta em ${left} dia(s).` : ""}</p><p class="tfh-actions"><button type="button" class="tfh-btn" data-tfh-send="dismiss" data-id="${esc(inq.id)}">Excluir da lista</button></p>` + (left > 0 ? "" : `<p class="tfh-actions"><button type="button" class="tfh-btn primary" data-tfh-send="inquire">Consultar interesse</button></p>`);
     } else panel = `<p class="tfh-note">Antes de propor, consulte o interesse do jogador e a disposição do clube vendedor.</p><p class="tfh-actions"><button type="button" class="tfh-btn primary" data-tfh-send="inquire">Consultar interesse</button></p>`;
     return back + head + panel;
   }
@@ -209,6 +209,7 @@
     const c = ctx(); if (!c) return;
     const act = el.dataset.tfhSend, p = GF()?.playerById?.(c.s, negPid), sellerId = p?.clubId;
     const val = Math.round((Number(layer.querySelector("[data-tfh-offer]")?.value) || 0) * 1e6);
+    if (act === "dismiss") { cmd("dismissInquiry", { id: el.dataset.id }); negPid = null; if (layer) open(); return; }
     if (act === "inquire") cmd("coachInquiry", { clubId: sellerId, playerId: negPid });
     else if (act === "offer") cmd("counterRecruit", { clubId: sellerId, playerId: negPid, offer: val });
     else if (act === "revise") cmd("reviseCoachDeal", { id: el.dataset.id, offer: val });

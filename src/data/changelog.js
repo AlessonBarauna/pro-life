@@ -6,6 +6,14 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-19-b",
+      date: "2026-11-19",
+      title: "Excluir sondagem recusada",
+      items: [
+        { t: "novo", x: "Na negociação, quando a sondagem é recusada, agora há o botão \"Excluir da lista\" para tirar o jogador da lista de Negociações." }
+      ]
+    },
+    {
       id: "2026-11-19-a",
       date: "2026-11-19",
       title: "Menos travadas, menu enxuto e trilha nova",
