@@ -192,7 +192,7 @@
     const kopa=vote(s,mk(ps.filter(c=>c.age<=21&&(c.lw>=.8||c.hero))),{perf:.5,titles:.2,cls:.2,imp:.1},"kp",60,prev);
     const yashin=vote(s,mk(ps.filter(c=>c.pos==="GOL"&&(c.lw>=.8||c.hero))),{perf:.5,titles:.3,cls:.12,imp:.08},"ys",60,prev);
     const gerd=ps.filter(c=>c.pos!=="GOL").map(c=>({...c,points:+(c.goals*c.lw*c.lw).toFixed(1),score:c.goals*c.lw*c.lw})).sort((a,b)=>b.points-a.points||b.assists-a.assists||(a.id<b.id?-1:1));
-    let cruyff=[];try{cruyff=(WS()?.coachesTop?.(s,60)||[]).filter(c=>leagueWeight(s,(c.competitionIds||[])[0])>=.8).sort((a,b)=>num(b.points)-num(a.points)).slice(0,5).map((c,i)=>({rank:i+1,name:c.name,club:c.club,clubId:c.clubId,points:Math.round(num(c.points)),titles:num(c.titles)}));}catch(e){}
+    let cruyff=[];try{cruyff=(WS()?.coachesTop?.(s,60)||[]).filter(c=>leagueWeight(s,(c.competitionIds||[])[0])>=.8).sort((a,b)=>num(b.points)-num(a.points)).slice(0,5).map((c,i)=>({rank:i+1,name:c.name,club:c.club,clubId:c.clubId,points:Math.round(num(c.points)),titles:num(c.titles),wins:num(c.wins),draws:num(c.draws),losses:num(c.losses),gf:num(c.gf),ga:num(c.ga),games:num(c.games),over:num(c.overperformance),comps:num(c.competitionCount)}));}catch(e){}
     const rec={season,closeDay:s.day,revealDay:dayOfDate(season,9,20),revealed:false,
       ballon:ballon.slice(0,30).map((c,i)=>compact(c,i+1)),theBest:best.slice(0,10).map((c,i)=>compact(c,i+1)),kopa:kopa.slice(0,10).map((c,i)=>compact(c,i+1)),yashin:yashin.slice(0,10).map((c,i)=>compact(c,i+1)),gerd:gerd.slice(0,10).map((c,i)=>compact(c,i+1)),cruyff,
       candidates:ps.length,ucl:base.ucl};
@@ -294,7 +294,15 @@
       mk("artilheiroMundo","Troféu Gerd Müller",rec.gerd?.[0],"gols",rec.gerd?.[0]?.goals)
     ].filter(Boolean);
     const c=rec.cruyff?.[0];
-    if(c)out.push({cat:"treinadorMundo",label:partial?"Líder · Troféu Cruyff":"Troféu Cruyff",playerId:null,name:c.name,clubId:c.clubId,club:c.club,pos:"TEC",value:c.points,unit:"pontos",honors:true,partial});
+    if(c){
+      const bits=[];
+      if(c.games)bits.push(`campanha de ${c.wins}V ${c.draws}E ${c.losses}D em ${c.games} jogos (gols ${c.gf}-${c.ga})`);
+      if(c.titles)bits.push(`${c.titles} título${c.titles>1?"s":""} na temporada`);
+      if(c.over>0)bits.push(`${c.over} posiç${c.over>1?"ões":"ão"} acima do esperado na liga`);
+      if(c.comps>1)bits.push(`destaque em ${c.comps} competições`);
+      const reason=bits.length?`Por quê: ${bits.join(" · ")}.`:`Por quê: ${c.points} pontos na votação, a maior pontuação entre os treinadores da temporada.`;
+      out.push({cat:"treinadorMundo",label:partial?"Líder · Troféu Cruyff":"Troféu Cruyff",playerId:null,name:c.name,clubId:c.clubId,club:c.club,pos:"TEC",value:c.points,unit:"pontos",honors:true,partial,reason});
+    }
     return {awards:out,partial,revealed:!!rec.revealed};
   }
   const api={VERSION,realUcl,awardsFor,compute,daily,latest,winners,preview,ceremonyDay,leagueWeight,build,vote,mineIn,calendar,myIds,dateLabel};

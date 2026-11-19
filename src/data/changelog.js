@@ -6,6 +6,14 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-19-j",
+      date: "2026-11-19",
+      title: "Prêmio de melhor treinador mostra o porquê",
+      items: [
+        { t: "ajuste", x: "O Troféu Cruyff agora explica a vitória: campanha (vitórias, empates, derrotas e gols), títulos da temporada e desempenho acima do esperado na liga." }
+      ]
+    },
+    {
       id: "2026-11-19-i",
       date: "2026-11-19",
       title: "Todos os jogos de seleções contam para os atletas",

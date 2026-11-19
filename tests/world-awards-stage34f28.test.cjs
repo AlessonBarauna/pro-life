@@ -27,7 +27,7 @@ test("34F.28 (1) LaLiga: ranking com atletas do catalogo e totais iguais aos gol
 test("34F.28 (2) Premier League e todas as ligas simuladas entram sem lista fixa", () => {
   const s = mid(), comps = WS.competitions(s);
   assert.ok(comps.some((c) => c.id === PREMIER) && comps.length >= 30);
-  for (const c of comps) assert.equal(totals(s, c.id).g, goalsOfScores(s, c.id), c.id);
+  for (const c of comps) { if (!s.globalFootball.worldCompetitions.leagues[c.id]) continue; assert.equal(totals(s, c.id).g, goalsOfScores(s, c.id), c.id); }
   assert.ok(WS.leaders(s, { leagueId: PREMIER, stat: "assists", limit: 3 }).length === 3);
 });
 

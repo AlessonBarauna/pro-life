@@ -954,3 +954,5 @@ body .coach-training-kpis small{font-family:var(--fc-display);font-size:7px;lett
 body .coach-training-kpis b{margin-top:2px;font-size:20px;color:#fff}
 @media(max-width:900px){body .coach-training-layout{grid-template-columns:1fr}body .coach-training-side{grid-template-columns:1fr 1fr}}
 @media(max-width:620px){body .coach-training-hero{align-items:flex-start;padding:14px}body .coach-training-hero h1{font-size:23px}body .coach-training-hero>span{min-width:118px}body .coach-team-focus-grid,body .coach-training-side{grid-template-columns:1fr}}
+
+.wa-award-copy .wa-why{margin:6px 0 0;font-size:11px;line-height:1.35;color:#b4c1ca;white-space:normal;overflow-wrap:anywhere}

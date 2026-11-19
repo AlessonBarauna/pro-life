@@ -38,7 +38,7 @@
 
   const tabs=()=>`<nav class="wa-tabs" role="tablist" aria-label="Seções">${TABS.map(([id,l])=>`<button type="button" role="tab" aria-selected="${ui.tab===id}" class="${ui.tab===id?"active":""}" data-wa-tab="${id}">${l}</button>`).join("")}</nav>`;
   function awardCard(s,a,extra){
-    return `<article class="wa-award${a.hero||a.playerId==="hero"?" hero":""}"><div class="wa-award-visual">${face(s,a,"lg")}<i class="wa-award-rank" aria-hidden="true">${a.cat==="melhorMundo"?"★":"◆"}</i></div><div class="wa-award-copy"><small>${esc(a.label)}${extra?` · ${esc(extra)}`:""}</small><b>${esc(a.name)}</b><span>${crest(s,a.clubId,a.club)}${esc(a.club||"—")}</span><em>${esc(val(a.unit,a.value))}</em></div></article>`;
+    return `<article class="wa-award${a.hero||a.playerId==="hero"?" hero":""}"><div class="wa-award-visual">${face(s,a,"lg")}<i class="wa-award-rank" aria-hidden="true">${a.cat==="melhorMundo"?"★":"◆"}</i></div><div class="wa-award-copy"><small>${esc(a.label)}${extra?` · ${esc(extra)}`:""}</small><b>${esc(a.name)}</b><span>${crest(s,a.clubId,a.club)}${esc(a.club||"—")}</span><em>${esc(val(a.unit,a.value))}</em>${a.reason?`<p class="wa-why">${esc(a.reason)}</p>`:""}</div></article>`;
   }
   function missingCards(list){return list.map(x=>`<article class="wa-award off"><small>${esc(x.label)}</small><b>Dados insuficientes</b><span>Sem vencedor definido</span></article>`).join("");}
   function table(s,title,rows,fmt,note){
