@@ -33,7 +33,7 @@ test("botão Pular 1 dia do celular avança somente um dia",()=>{
 test("menu lateral no padrão SM 27: itens fixos, Ajuda/Definições e nada cortado",()=>{
   const app=read("src/ui/app.js"),css=read("src/ui/fc27-mobile-sm27.css"),mobile=read("src/ui/mobile-sm27.js");
   for(const group of ["Jogo","Mais"])assert.ok(app.includes('["'+group+'",'),group);
-  for(const label of ["Perspetiva geral","Equipe","Táticas","Calendário","Transferências","Competições","Instalações"])assert.ok(app.includes('"'+label+'"'),label);
+  for(const label of ["Início","Equipe","Táticas","Calendário","Transferências","Competições","Instalações"])assert.ok(app.includes('"'+label+'"'),label);
   assert.match(app,/data-sm27-help/);
   assert.match(app,/data-sm27-settings/);
   assert.match(read("src/ui/fc27-sm27-shell.css"),/\.sm27-drawer \.sm27-drawer-nav \{ overflow-y:auto/);

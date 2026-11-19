@@ -702,18 +702,29 @@
       save:drawerItem("save","Saves",["save"])
     };
     const calendarPages=["calendar","matches"];
+    const isCoach=state.mode==="coach";
+    // Menu enxuto: uma entrada por assunto. Treinador: Mercado já reúne scouting/negociações/elenco/contratos;
+    // Saves fica no botão Salvar do rodapé; Olheiros, Registros, Movimentações e a lista antiga de Transferências saíram.
     const drawerGroups=[
       ["Jogo",[
-        drawerItem("home","Perspetiva geral",["home"]),
+        drawerItem("home","Início",["home"]),
         drawerItem("squad","Equipe",["squad","lineup"]),
         drawerItem("squad","Táticas",[],' data-sm27-goto="tactics"'),
         drawerItem("calendar","Calendário",calendarPages),
-        drawerItem("market","Transferências",["market","proposals","clubs"]),
-        state.mode==="player"?drawerItem("profile","Meu jogador",drawerFind("profile")?.[3]||["profile"]):drawerItem("profile","Treinador",drawerFind("profile")?.[3]||["profile"]),
-        drawerItem("competitions","Competições",["competitions","league","statistics","awards","worldCompetitions","englishCups","champions","europa","conference","libertadores","sudamericana"]),
-        drawerItem("home","Instalações",[],' data-sm27-facilities'),drawerItem("home","Olheiros",[],' data-sm27-scouts'),state.mode==="coach"?drawerItem("home","Academia",[],' data-sm27-academy'):null
+        isCoach?drawerItem("home","Mercado",[],' data-sm27-market-hub'):drawerItem("market","Transferências",["market","proposals","clubs"]),
+        isCoach?drawerItem("profile","Treinador",drawerFind("profile")?.[3]||["profile"]):drawerItem("profile","Meu jogador",drawerFind("profile")?.[3]||["profile"]),
+        drawerItem("competitions","Competições",["competitions","league","statistics","awards","worldCompetitions","englishCups","champions","europa","conference","libertadores","sudamericana"])
       ]],
-      ["Mais",[drawerItem("home","Objetivos",[],' data-sm27-objectives'),drawerItem("home","Registros",[],' data-sm27-records'),state.mode==="coach"?drawerItem("home","Vagas de emprego",[],' data-sm27-jobs'):null,state.mode==="coach"?drawerItem("home","Mercado",[],' data-sm27-market-hub'):null,state.mode==="coach"?drawerItem("home","Movimentações",[],' data-sm27-transfers'):null,state.mode==="coach"?drawerItem("home","Finanças",[],' data-sm27-finance'):null,state.mode==="coach"?drawerItem("home","Habilidades",[],' data-sm27-skills'):null,drawerFind("life")?drawerItem("life","Vida",drawerFind("life")[3]):null,drawerUtilities.history,drawerUtilities.national,drawerUtilities.inbox,drawerUtilities.save]]
+      ["Mais",[
+        isCoach?drawerItem("home","Finanças",[],' data-sm27-finance'):null,
+        isCoach?drawerItem("home","Instalações",[],' data-sm27-facilities'):drawerItem("home","Instalações",[],' data-sm27-facilities'),
+        isCoach?drawerItem("home","Academia",[],' data-sm27-academy'):null,
+        drawerItem("home","Objetivos",[],' data-sm27-objectives'),
+        isCoach?drawerItem("home","Vagas de emprego",[],' data-sm27-jobs'):null,
+        isCoach?drawerItem("home","Habilidades",[],' data-sm27-skills'):null,
+        !isCoach&&drawerFind("life")?drawerItem("life","Vida",drawerFind("life")[3]):null,
+        drawerUtilities.national,isCoach?null:drawerUtilities.history,drawerUtilities.inbox
+      ]]
     ];
     const clubCrest = c?.id && window.ProLifeClubCrests ? window.ProLifeClubCrests.render(c.id, { size:"sm" }) : "";
     const drawerMarkup=`<aside class="phone-only sm27-drawer" aria-label="Navegação principal do jogo"><header class="sm27-drawer-club">${clubCrest?`<span class="club-chip-crest">${clubCrest}</span>`:""}<span><small>${state.mode==="player"?"CARREIRA DE JOGADOR":"CARREIRA DE TREINADOR"}</small><b>${esc(c?.name||"Livre no mercado")}</b></span><button type="button" class="sm27-drawer-close" data-phone-menu aria-label="Fechar menu">×</button></header><nav class="sm27-drawer-nav">${drawerGroups.map(([label,items])=>`<section class="sm27-drawer-group"><small>${label}</small>${items.filter(Boolean).map(item=>drawerButton(item,item[0]==="inbox"?unread:item[0]==="market"?offerCount:0)).join("")}</section>`).join("")}</nav><footer class="sm27-drawer-footer"><button type="button" data-sm27-help><span class="nav-icon">${drawerIcon("help")}</span><span>Ajuda</span></button><button type="button" data-sm27-settings><span class="nav-icon">${drawerIcon("settings")}</span><span>Definições</span></button><button type="button" data-action="export"><span class="nav-icon">${drawerIcon("export")}</span><span>Salvar</span></button></footer></aside>`;
@@ -9125,32 +9136,49 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       )
       .join("");
   }
+  // Salvar o jogo codifica o save inteiro (vários MB) e trava a tela por centenas de ms.
+  // Por isso só salvamos quando algo mudou, e esperamos o jogador parar de tocar (debounce), em vez de salvar a cada clique.
+  let saveDirty = false, clicksSinceSave = 0;
+  function markDirty() { saveDirty = true; }
+  // Qualquer comando do jogo (A.execute) e qualquer avanço de dia altera o save.
+  try { const execOriginal = A.execute; if (typeof execOriginal === "function" && !execOriginal.__dirty) { const wrapped = function () { markDirty(); return execOriginal.apply(this, arguments); }; wrapped.__dirty = true; A.execute = wrapped; } } catch (_) {}
+  try { const advOriginal = D.advance; if (typeof advOriginal === "function" && !advOriginal.__dirty) { const wrappedAdv = function () { markDirty(); return advOriginal.apply(this, arguments); }; wrappedAdv.__dirty = true; D.advance = wrappedAdv; } } catch (_) {}
+  const isJsdom = /jsdom/i.test(navigator.userAgent || "");
   function persist() {
-    if (!S.save(state))
-      toast("Autosave indisponível neste navegador. Use Exportar save.");
+    markDirty();
+    // Nos testes (jsdom) o save continua imediato, como antes; no aparelho ele espera o jogador parar de tocar.
+    if (isJsdom) { if (!S.save(state)) toast("Autosave indisponível neste navegador. Use Exportar save."); else saveDirty = false; }
+    else autosaveSoon();
   }
   // Autosave silencioso: ao minimizar/fechar o app (iOS descarta a aba), após interações e a cada 20 s.
-  let autosaveTimer = null, lastAutosave = 0, autosaveWarnAt = 0;
-  function autosaveNow() {
-    clearTimeout(autosaveTimer); autosaveTimer = null;
+  let autosaveTimer = null, lastAutosave = 0, autosaveWarnAt = 0, autosaveFirstAsk = 0;
+  function autosaveNow(force) {
+    clearTimeout(autosaveTimer); autosaveTimer = null; autosaveFirstAsk = 0;
     if (!state || setup) return;
+    if (!saveDirty && force !== true) return;
+    clicksSinceSave = 0;
     let okSave = false;
-    try { okSave = S.save(state); lastAutosave = Date.now(); } catch (_) {}
-    if (okSave === false && Date.now() - (autosaveWarnAt || 0) > 60000) { autosaveWarnAt = Date.now(); try { { const er = S.lastSaveError?.(); toast("Não consegui salvar automaticamente" + (er ? " (" + er.reason + (er.message ? ": " + String(er.message).slice(0, 90) : "") + ")" : "") + ". Use Exportar save para não perder o progresso."); } } catch (_) {} }
+    try { okSave = S.save(state); lastAutosave = Date.now(); if (okSave !== false) saveDirty = false; } catch (_) {}
+    if (okSave === false && Date.now() - (autosaveWarnAt || 0) > 60000) { autosaveWarnAt = Date.now(); try { { const er = S.lastSaveError?.(); toast("Não consegui salvar automaticamente" + (er ? " (" + er.reason + (er.message ? ": " + String(er.message).slice(0, 80) : "") + ")" : ". Use Exportar save.")); } } catch (_) {} }
     try { S.idbFlush?.(); } catch (_) {}
   }
+  // Debounce: cada nova alteração adia o salvamento até o jogador parar de tocar (no máximo 20 s de espera).
   function autosaveSoon() {
-    if (!state || setup || autosaveTimer) return;
-    autosaveTimer = setTimeout(autosaveNow, 1500);
+    if (!state || setup || !saveDirty) return;
+    const now = Date.now();
+    if (!autosaveFirstAsk) autosaveFirstAsk = now;
+    clearTimeout(autosaveTimer);
+    const wait = Math.max(0, Math.min(2500, 20000 - (now - autosaveFirstAsk)));
+    autosaveTimer = setTimeout(() => { (window.requestIdleCallback ? window.requestIdleCallback(() => autosaveNow(), { timeout: 4000 }) : autosaveNow()); }, wait);
   }
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") autosaveNow(); });
-  window.addEventListener("pagehide", autosaveNow);
-  window.addEventListener("blur", autosaveNow);
-  document.addEventListener("click", autosaveSoon, true);
-  document.addEventListener("change", autosaveSoon, true);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") autosaveNow(true); });
+  window.addEventListener("pagehide", () => autosaveNow(true));
+  window.addEventListener("blur", () => autosaveNow(true));
+  document.addEventListener("click", () => { clicksSinceSave++; autosaveSoon(); }, true);
+  document.addEventListener("change", () => { clicksSinceSave++; autosaveSoon(); }, true);
   try {
     if (/jsdom/i.test(navigator.userAgent || "")) throw 0; // testes (jsdom): timer periódico seguraria o processo aberto
-    const autosaveInterval = setInterval(() => { if (document.visibilityState === "visible" && Date.now() - lastAutosave > 19000) autosaveNow(); }, 20000);
+    const autosaveInterval = setInterval(() => { if (document.visibilityState === "visible" && (saveDirty || clicksSinceSave > 0) && Date.now() - lastAutosave > (saveDirty ? 19000 : 60000)) autosaveNow(true); }, 20000);
     autosaveInterval?.unref?.(); // não segura o processo de teste (jsdom/node) aberto
   } catch (_) {}
   async function enterLandscapeMode() {

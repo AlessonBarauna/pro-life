@@ -6,6 +6,17 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-19-a",
+      date: "2026-11-19",
+      title: "Menos travadas, menu enxuto e trilha nova",
+      items: [
+        { t: "correcao", x: "O jogo travava depois de qualquer toque: ele salvava a carreira inteira a cada clique. Agora só salva quando algo muda e espera você parar de tocar." },
+        { t: "ajuste", x: "Menu lateral mais limpo: saíram Transferências (no modo treinador), Olheiros, Registros, Movimentações, Mundo e Vida. Mercado reúne scouting, negociações, elenco e contratos." },
+        { t: "ajuste", x: "\"Perspetiva geral\" virou \"Início\"." },
+        { t: "novo", x: "Trilha sonora nova, mais animada: bateria de estádio, baixo pulsante e canto de torcida. Dá para desligar em Definições." }
+      ]
+    },
+    {
       id: "2026-11-18-d",
       date: "2026-11-18",
       title: "Mercado e base mais coerentes",
