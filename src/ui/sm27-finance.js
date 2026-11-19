@@ -52,6 +52,7 @@
   doc.addEventListener("click", (ev) => {
     const t = ev.target instanceof Element ? ev.target : null;
     if (!t) return;
+    if (t.closest("[data-sm27-finance-investors]")) { ev.preventDefault(); tab = "investidores"; open(); return; }
     if (t.closest("[data-sm27-finance]")) { ev.preventDefault(); tab = "projecao"; open(); return; }
     if (!layer) return;
     if (t.closest("[data-sm27fn-close]")) { close(); return; }

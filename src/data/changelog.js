@@ -6,6 +6,14 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-19-e",
+      date: "2026-11-19",
+      title: "Proposta de investidor abre o lugar certo",
+      items: [
+        { t: "correcao", x: "Ao tocar numa mensagem de proposta de investidor, o jogo ia para a lista de transferências. Agora o botão \"Ver proposta\" abre Finanças > Investidores, onde você aceita, negocia ou recusa." }
+      ]
+    },
+    {
       id: "2026-11-19-d",
       date: "2026-11-19",
       title: "Aporte inicial funcionando",

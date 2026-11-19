@@ -1,0 +1,25 @@
+const { JSDOM } = require("jsdom"), fs = require("fs"), assert = require("node:assert/strict");
+const test = require("node:test");
+const base = require("node:path").resolve(__dirname, "..") + "/";
+const files = [...fs.readFileSync(base + "index.html", "utf8").matchAll(/<script src="([^"]+)"/g)].map((m) => m[1].split("?")[0]);
+test("mensagem de investidor abre Finanças > Investidores (não a lista de transferências)", () => {
+  const dom = new JSDOM(fs.readFileSync(base + "index.html", "utf8"), { runScripts: "outside-only", pretendToBeVisual: true, url: "https://offline-test.invalid" }), w = dom.window;
+  w.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} });
+  w.confirm = () => true; w.scrollTo = () => {};
+  w.URL.createObjectURL = () => "blob:test"; w.URL.revokeObjectURL = () => {};
+  files.slice(0, -1).forEach((f) => w.eval(fs.readFileSync(base + f, "utf8")));
+  const s = w.ProLife.create({ mode: "coach", catalogVersion: "fc27_v1", clubId: "gf_fc27_449" }, 5);
+  const d = w.ProLifeClubInvestors.propose(s);
+  assert.ok(d, "proposta criada");
+  assert.ok(w.ProLifeSave.saveAsNew(s));
+  w.eval(fs.readFileSync(base + files[files.length - 1], "utf8"));
+  w.document.querySelector("[data-load-slot]")?.click();
+  w.document.querySelector('[data-page="inbox"]')?.click();
+  const btn = w.document.querySelector("[data-sm27-finance-investors]");
+  assert.ok(btn, "mensagem de investidor tem botão próprio");
+  assert.equal(btn.dataset.page, undefined, "não vai para a página de propostas/transferências");
+  btn.click();
+  const dlg = w.document.querySelector(".sm27-dialog");
+  assert.ok(dlg && /Finanças/.test(dlg.textContent), "abre as Finanças");
+  assert.ok(/Proposta|investir|investidor/i.test(dlg.textContent), "mostra a proposta na aba Investidores");
+});

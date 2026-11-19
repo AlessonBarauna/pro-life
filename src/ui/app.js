@@ -240,6 +240,10 @@
       const inq = (state.coachCareer?.inquiries || []).find((x) => "inquiry-answer:" + x.id === m.eventId);
       a = { label: /recusada/i.test(m.subject) ? "Ver sondagens" : "Negociar contratação", page: "market", area: "lists", list: "sondagens", playerId: inq?.playerId };
     }
+    if (!a && String(m.eventId || "").startsWith("inv_")) {
+      // Proposta de investidor: abre Finanças > Investidores (e não a lista de transferências).
+      return `<button type="button" class="primary msg-action" data-sm27-finance-investors data-inv-msg="${esc(m.id)}">Ver proposta</button> `;
+    }
     if (!a) {
       const text = [m.sender, m.subject, m.body].join(" ");
       const rules = [
@@ -10430,6 +10434,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     }
     if (b.dataset.stopChoice) { command("decide", { choice:b.dataset.stopChoice }); closeSimulationStop(); return; }
     if (b.dataset.stopInterview) { command("respondInterview", { id:b.dataset.stopInterview, choice:b.dataset.stopInterviewChoice }); closeSimulationStop(); return; }
+    if (b.dataset.invMsg) { try { A.execute(state, "markMessageRead", { id: b.dataset.invMsg }); persist(); } catch (e) {} return; }
     if (b.dataset.page) {
       if (b.dataset.msgId) {
         const V = window.ProLifeCoachCareerView;
