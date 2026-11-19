@@ -1216,6 +1216,7 @@
       leagueId,season:leagueState.season,championId:champion?.id||null,
       name:meta?.name||leagueId,day:s.day
     });
+    try{(root.ProLifeClubInvestors||(typeof require==="function"?require("./club-investors.js"):null))?.leagueFinished?.(s,{leagueId,season:leagueState.season,orderIds:order.map(c=>c.id)});}catch(e){}
     const w=rootState(s),key=leagueState.season+":"+leagueId;
     if(!w.history.some(h=>h.key===key))w.history.unshift({
       key,season:leagueState.season,leagueId,league:meta?.name||leagueId,

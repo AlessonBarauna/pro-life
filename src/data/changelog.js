@@ -6,6 +6,15 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-19-f",
+      date: "2026-11-19",
+      title: "Metas de investidor seguem o campeonato europeu",
+      items: [
+        { t: "correcao", x: "As metas de um investidor (posição na liga, títulos) eram avaliadas na virada do ano, com o campeonato europeu ainda no meio. Agora valem até o fim do campeonato (ex.: temporada 2026/27) e só são avaliadas quando a liga termina." },
+        { t: "ajuste", x: "Acordos de investidor que você já tinha passam a seguir essa regra. A meta de posição volta a ficar em aberto até o fim da liga." }
+      ]
+    },
+    {
       id: "2026-11-19-e",
       date: "2026-11-19",
       title: "Proposta de investidor abre o lugar certo",

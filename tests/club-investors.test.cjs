@@ -8,6 +8,13 @@ function coach(seed) {
   s.coachCareer = s.coachCareer || { version: 1 };
   return s;
 }
+// Liga europeia: avalia ao fim do campeonato; demais ligas: na virada da temporada.
+function finish(s, d, pos, trophies) {
+  if (d.objectives.some((o) => o.euro)) {
+    const lid = D.club(s, s.clubId).leagueId, season = Math.max(...d.objectives.map((o) => o.deadlineSeason));
+    I.leagueFinished(s, { leagueId: lid, season, orderIds: pos === 1 ? [s.clubId] : ["x", "y", "z", "w", "v", "u", "t", "r", "q", "p", "o", "n", "m", "l", "k", "j", "i", s.clubId] });
+  } else { s.season = Math.max(...d.objectives.map((o) => o.deadlineSeason)); I.seasonEnd(s, { pos, trophies }); }
+}
 test("proposta de investidor: aceitar paga a parcela inicial e cumpre metas", () => {
   const s = coach(8101);
   const club = D.club(s, s.clubId), before = club.budget;
@@ -20,8 +27,7 @@ test("proposta de investidor: aceitar paga a parcela inicial e cumpre metas", ()
   const sign = d.objectives.find((o) => o.type === "sign");
   for (let i = 0; i < sign.target; i++) I.onSigning(s, { overall: sign.minOvr + 1 });
   assert.equal(sign.status, "done");
-  s.season = Math.max(...d.objectives.map((o) => o.deadlineSeason));
-  I.seasonEnd(s, { pos: 1, trophies: [{}, {}, {}] });
+  finish(s, d, 1, [{}, {}, {}]);
   assert.equal(d.status, "completed");
   assert.equal(D.club(s, s.clubId).budget, before + d.amount);
 });
@@ -40,8 +46,7 @@ test("metas não cumpridas encerram o acordo e derrubam a diretoria", () => {
   const s = coach(8105), d = I.propose(s);
   I.respond(s, d.id, "accept");
   const board = s.board;
-  s.season = Math.max(...d.objectives.map((o) => o.deadlineSeason));
-  I.seasonEnd(s, { pos: 17, trophies: [] });
+  finish(s, d, 17, []);
   assert.equal(d.status, "failed");
   assert.ok(s.board < board);
 });

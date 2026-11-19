@@ -41,21 +41,30 @@
     return Math.max(3, Math.min(14, Math.round(1 + (100 - rep) / 5)));
   }
 
+  // Liga europeia (temporada atravessa o ano civil): a meta vale até o FIM do campeonato, não até a virada do ano.
+  function euroLeague(s) {
+    const club = userClub(s);
+    const st = s.globalFootball?.worldCompetitions?.leagues?.[club?.leagueId];
+    return st && st.calendarMode === "european_v1" ? st : null;
+  }
+  const seasonText = (o) => o.euro ? o.deadlineSeason + "/" + String((Number(o.deadlineSeason) + 1) % 100).padStart(2, "0") : String(o.deadlineSeason);
+
   function makeObjectives(s, club, amount, kind) {
     const level = squadLevel(club), rep = Number(club?.reputation) || 60, season = Number(s.season);
+    const eu = euroLeague(s), dl = eu && eu.status === "active" ? Number(eu.season) : season + 1, euro = !!(eu && eu.status === "active");
     const last = lastPosition(s, club);
     const items = [];
     const nSign = Math.max(2, Math.min(8, 2 + Math.floor(amount / 0.7e9)));
     const minOvr = Math.max(60, Math.min(88, Math.round(level + (kind === "project" ? 2 : 1))));
-    items.push({ id: "sign", type: "sign", target: kind === "project" ? Math.max(5, nSign) : nSign, minOvr, deadlineSeason: season + 1, progress: 0, status: "open" });
+    items.push({ id: "sign", type: "sign", target: kind === "project" ? Math.max(5, nSign) : nSign, minOvr, deadlineSeason: dl, euro, progress: 0, status: "open" });
     const topK = kind === "project" ? 1 : rep >= 80 ? 2 : Math.max(1, Math.min(8, last - 3));
-    items.push({ id: "position", type: "position", target: topK, deadlineSeason: season + 1, progress: 0, status: "open" });
+    items.push({ id: "position", type: "position", target: topK, deadlineSeason: dl, euro, progress: 0, status: "open" });
     const trophies = kind === "project" ? 2 : amount >= 1e9 || rep >= 75 ? 1 : 0;
-    if (trophies) items.push({ id: "trophy", type: "trophy", target: trophies, deadlineSeason: season + 1, progress: 0, status: "open" });
+    if (trophies) items.push({ id: "trophy", type: "trophy", target: trophies, deadlineSeason: dl, euro, progress: 0, status: "open" });
     return items;
   }
   function label(o) {
-    const until = "até o fim da temporada " + o.deadlineSeason;
+    const until = "até o fim da temporada " + seasonText(o);
     if (o.type === "sign") return "Contratar " + o.target + " jogador" + (o.target > 1 ? "es" : "") + " com GER " + o.minOvr + " ou mais " + until;
     if (o.type === "position") return o.target === 1 ? "Ser campeão da liga " + until : "Terminar a liga entre os " + o.target + " primeiros " + until;
     if (o.type === "trophy") return "Conquistar " + o.target + " título" + (o.target > 1 ? "s" : "") + " " + until + " (liga, copas ou torneios continentais)";
@@ -191,6 +200,39 @@
     try { hooks?.log?.("Investidor: " + d.investor, "Acordo encerrado: " + d.status + " (" + done + "/" + total + ")."); } catch (_) {}
   }
 
+  // Acordos antigos (criados antes desta regra) passam a seguir o fim real da liga europeia.
+  function migrateEuro(s, d) {
+    if (d.status !== "active" || d.objectives.some((o) => o.euro)) return;
+    const eu = euroLeague(s);
+    if (!eu || eu.status !== "active") return;
+    for (const o of d.objectives) {
+      o.euro = true; o.deadlineSeason = Number(eu.season);
+      if (o.type === "position") { o.status = "open"; o.progress = 0; }
+      else if (o.type === "trophy" && o.status === "failed") o.status = "open";
+      o.text = label(o);
+    }
+  }
+
+  // Chamado quando a liga europeia do clube termina de verdade (última rodada jogada).
+  function leagueFinished(s, info) {
+    if (!isCoach(s)) return;
+    const club = userClub(s);
+    if (!club || String(club.leagueId) !== String(info?.leagueId)) return;
+    const pos = (info.orderIds || []).indexOf(s.clubId) + 1 || 99;
+    for (const d of deals(s)) {
+      if (d.status !== "active" || !mine(s, d)) continue;
+      migrateEuro(s, d);
+      if (!d.objectives.some((o) => o.euro && Number(o.deadlineSeason) <= Number(info.season))) continue;
+      for (const o of d.objectives) {
+        if (o.status !== "open") continue;
+        if (o.type === "position") o.status = pos <= o.target ? "done" : "failed";
+        else if (o.type === "trophy") { if (pos === 1) o.progress++; o.status = o.progress >= o.target ? "done" : "failed"; }
+        else o.status = "failed";
+      }
+      settle(s, d, info);
+    }
+  }
+
   // Fim da temporada: avalia posição final e títulos e fecha acordos que chegaram ao prazo.
   function seasonEnd(s, info) {
     if (!isCoach(s)) return;
@@ -198,6 +240,12 @@
     for (const d of deals(s)) {
       if (d.status !== "active") continue;
       if (!mine(s, d)) { d.status = "cancelled"; continue; }
+      migrateEuro(s, d);
+      if (d.objectives.some((o) => o.euro)) {
+        // Virada do ano no meio do campeonato europeu: só acumula títulos já conquistados; a avaliação espera o fim da liga.
+        for (const o of d.objectives) if (o.euro && o.type === "trophy" && o.status === "open") { o.progress += won; if (o.progress >= o.target) o.status = "done"; }
+        continue;
+      }
       for (const o of d.objectives) {
         if (o.status !== "open") continue;
         if (o.type === "trophy") { o.progress += won; if (o.progress >= o.target) o.status = "done"; }
@@ -229,7 +277,7 @@
     return { proposals: all.filter((d) => ["proposed", "negotiating"].includes(d.status)), active: all.filter((d) => d.status === "active"), recent: all.filter((d) => !OPEN.includes(d.status)).slice(0, 5), lastReply: store(s).lastReply || "" };
   }
 
-  const api = { VERSION, propose, projectFor, activateProject, respond, onSigning, seasonEnd, daily, view, openDeals, label, brl };
+  const api = { VERSION, propose, projectFor, activateProject, respond, onSigning, seasonEnd, leagueFinished, daily, view, openDeals, label, brl };
   root.ProLifeClubInvestors = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);
