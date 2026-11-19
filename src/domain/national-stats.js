@@ -85,7 +85,8 @@
   };
 
   // Varre torneios e eliminatórias do ano e devolve os jogos disputados ainda não contabilizados.
-  function collect(s, ledger) {
+  const hkey = (k) => hash(k).toString(36);
+  function collect(s, seen) {
     const nt = s.nationalTeam;
     if (!nt) return [];
     const out = [];
@@ -97,7 +98,7 @@
     };
     const push = (m, ctx) => {
       const key = `${s.season}|${ctx}|${m.id ?? `${m.day}:${m.homeId}:${m.awayId}`}`;
-      if (ledger.keys[key]) return;
+      if (seen[hkey(key)]) return;
       if (m.day != null && inYear(m.day, s.season) === false) return;
       out.push({ key, m });
     };
@@ -110,26 +111,17 @@
     return out.slice(0, MAX_PER_DAY);
   }
 
-  function ledgerOf(s) {
-    const nt = s.nationalTeam;
-    if (!nt) return null;
-    let l = nt.statLedger;
-    if (!l || l.season !== s.season || l.version !== VERSION) l = nt.statLedger = { version: VERSION, season: s.season, keys: {} };
-    return l;
-  }
-
   function daily(s, D) {
     if (!s || !s.nationalTeam) return 0;
     const ws = WS();
     if (!ws || !ws.recordNational) return 0;
-    const ledger = ledgerOf(s);
-    const todo = collect(s, ledger);
+    const L = ws.init(s)?.leagues?.nat;
+    const todo = collect(s, (L && L.seen) || {});
     if (!todo.length) return 0;
     const own = s.mode === "coach" && s.coachNational && s.coachNational.teamId ? String(s.coachNational.teamId) : null;
     const cache = new Map();
     let n = 0;
     for (const { key, m } of todo) {
-      ledger.keys[key] = 1;
       const entries = [];
       for (const [code, gf, ga] of [[m.homeId, Number(m.hg), Number(m.ag)], [m.awayId, Number(m.ag), Number(m.hg)]]) {
         if (own && String(code) === own) continue;   // o time do treinador já tem o fluxo detalhado
@@ -137,7 +129,8 @@
         if (!sq) continue;
         entries.push(...detail(sq, gf, ga, `${key}|${code}`));
       }
-      if (entries.length && ws.recordNational(s, "nat", key, entries, null)) n++;
+      if (entries.length && ws.recordNational(s, "nat", hkey(key), entries, null)) n++;
+      else if (!entries.length) { const W = ws.init(s); if (W) { const NL = W.leagues.nat || (W.leagues.nat = { ids: [], v: [], n: 0, r: -1, seen: {} }); (NL.seen || (NL.seen = {}))[hkey(key)] = 1; } }
     }
     return n;
   }

@@ -20,8 +20,7 @@ test("jogos de outras seleções contam gols, minutos, assistências e cartões"
   assert.ok(rows.every((r) => r.apps > 0), "só quem jogou");
   assert.ok(rows.some((r) => r.avg >= 6 && r.avg <= 10), "nota por jogador");
   const mins = rows.reduce((n, r) => n + 0, 0);
-  const total = L.v.length / 9, keys = Object.keys(s.nationalTeam.statLedger.keys).length;
-  assert.ok(keys >= L.n - 5, "livro de jogos processados");
+  assert.ok(Object.keys(L.seen).length >= L.n - 5, "jogos processados ficam registrados");
   // Idempotente: rodar de novo não duplica.
   const before = L.n; require("../src/domain/national-stats.js").daily(s, D);
   assert.equal(L.n, before);
