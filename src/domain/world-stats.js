@@ -140,18 +140,19 @@
     if(!L.seen)L.seen={};
     if(L.seen[fixtureKey])return false;
     L.seen[fixtureKey]=1;L.n++;ws.matches++;
-    const res=result==="V"?0.35:result==="E"?0.05:-0.25;
     const rated=[];
     for(const e of entries){
-      const o=slot(L,e.id),v=L.v,g=e.goals||0,a=e.assists||0;
-      let r=6.1+res+(unit(`${fixtureKey}|r|${e.id}`)-0.5)*1.1+g*0.9+a*0.5;
+      const o=slot(L,e.id),v=L.v,g=e.goals||0,a=e.assists||0,min=Number.isFinite(Number(e.min))?Number(e.min):90;
+      const res=(e.result||result)==="V"?0.35:(e.result||result)==="E"?0.05:-0.25;
+      let r=6.1+res+(unit(`${fixtureKey}|r|${e.id}`)-0.5)*1.1+g*0.9+a*0.5-(e.rc?1.2:e.yc?0.15:0);
       if(e.cs&&(e.pos==="GOL"||e.pos==="DEF"))r+=0.4;
       r=clamp(r,4.5,10);
-      v[o+A]++;v[o+G]+=g;v[o+AS]+=a;v[o+R]+=Math.round(r*10);v[o+MIN]+=90;
+      v[o+A]++;v[o+G]+=g;v[o+AS]+=a;v[o+R]+=Math.round(r*10);v[o+MIN]+=min;
       if(e.cs&&(e.pos==="GOL"||e.pos==="DEF"))v[o+CS]++;
-      rated.push([r+unit(`${fixtureKey}|t|${e.id}`)*0.001,o]);
+      if(e.yc||e.rc){const sid=shortId(e.id),cd=L.cards||(L.cards={}),c=cd[sid]||(cd[sid]=[0,0]);c[0]+=e.yc||0;c[1]+=e.rc||0;}
+      if(min>=45)rated.push([r+unit(`${fixtureKey}|t|${e.id}`)*0.001,o]);
     }
-    rated.sort((x,y)=>y[0]-x[0]);L.v[rated[0][1]+MV]++;
+    if(rated.length){rated.sort((x,y)=>y[0]-x[0]);L.v[rated[0][1]+MV]++;}
     return true;
   }
 
@@ -174,6 +175,7 @@
       const id=longId(ids[i]),o=i*STRIDE,p=idx.byId.get(id);if(!p)continue;
       rows.push({id,name:p.name,pos:p.pos,age:Number(p.age)||(s.season-Number(p.birthYear||s.season-25)),clubId:clubOut(v[o+CL])||p.clubId,leagueId,apps:v[o+A],goals:v[o+G],assists:v[o+AS],avg:v[o+A]?v[o+R]/v[o+A]/10:0,cs:v[o+CS],saves:v[o+SV],motm:v[o+MV]});
     }
+    if(L.cards)for(const r of rows){const c=L.cards[shortId(r.id)];if(c){r.yc=c[0];r.rc=c[1];}}
     const hr=heroRow(s,leagueId);if(hr)rows.push(hr);
     for(const r of rows)r.club=N?N.club(s,r.clubId):String(r.clubId||"—");
     rowKey.set(L,{sig,rows});return rows;
@@ -279,6 +281,7 @@
       const apps=Number(r.apps)||0;
       g.apps+=apps;g.goals+=Number(r.goals)||0;g.assists+=Number(r.assists)||0;
       g.cs+=Number(r.cs)||0;g.saves+=Number(r.saves)||0;g.motm+=Number(r.motm)||0;
+      g.yc=(g.yc||0)+(Number(r.yc)||0);g.rc=(g.rc||0)+(Number(r.rc)||0);
       g._rating+=(Number(r.avg)||0)*apps;
       g._score+=(Number(r.score)||0)*apps;
       g._wscore+=(Number(r.wscore)||0)*apps;

@@ -25,6 +25,7 @@
   const Facilities=root.ProLifeFacilities||(typeof require==="function"?require("./facilities.js"):null);
   const CoachSkills=root.ProLifeCoachSkills||(typeof require==="function"?require("./coach-skills.js"):null);
   const CoachCareer=root.ProLifeCoachCareer||(typeof require==="function"?require("./coach-career.js"):null);
+  const NationalStats=root.ProLifeNationalStats||(typeof require==="function"?require("./national-stats.js"):null);
   const CoachNational=root.ProLifeCoachNational||(typeof require==="function"?require("./coach-national.js"):null);
   const WorldLiveMarket=root.ProLifeWorldLiveMarket||(typeof require==="function"?require("./world-live-market.js"):null);
   const ClubWealth=root.ProLifeClubWealth||(typeof require==="function"?require("./club-wealth.js"):null);
@@ -3060,6 +3061,7 @@
       if (s.mode === "coach" && s.clubId) { try { YouthAcademy?.daily(s, API, { log: (title, body) => log(s, title, body) }); } catch (e) { s.youthError = String(e?.message || e); } }
       try { awardCupPrizes(s); payLeagueInstallments(s); } catch (e) { s.cupPrizeError = String(e?.message || e); }
       NationalTeam?.daily(s, rng, API, log);
+      try { NationalStats?.daily(s, API); } catch (e) { s.nationalStatsError = String(e?.message || e); }
       const pendingBefore = new Set((NationalCallups?.pending?.(s) || []).map((r) => r.id));
       try { NationalCallups?.daily(s, API, log); } catch (e) { /* convocacao nunca bloqueia o avanco do dia */ }
       if ((NationalCallups?.pending?.(s) || []).some((r) => !pendingBefore.has(r.id))) days = d + 1; // convocacao NOVA: o avanco multi-dia termina neste dia

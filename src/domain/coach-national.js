@@ -454,9 +454,10 @@
     rec[result==="V"?"w":result==="D"?"l":"d"]++;rec.gf+=sim.gf;rec.ga+=sim.ga;
     try{
       const WS=root.ProLifeWorldStats||(typeof require==="function"?require("./world-stats.js"):null);
+      const NS=root.ProLifeNationalStats||(typeof require==="function"?require("./national-stats.js"):null);
       const g=new Map(),a=new Map();
       for(const sc of sim.scorers||[]){g.set(sc.id,(g.get(sc.id)||0)+1);if(sc.assist)a.set(sc.assist.id,(a.get(sc.assist.id)||0)+1);}
-      WS?.recordNational?.(s,cn.teamId,`${cn.teamId}|${fx.id}`,(sim.xi||[]).map(p=>({id:p.id,pos:p.pos,goals:g.get(p.id)||0,assists:a.get(p.id)||0,cs:sim.ga===0})),result);
+      WS?.recordNational?.(s,cn.teamId,`${cn.teamId}|${fx.id}`,(sim.xi||[]).map(p=>{const c=NS?NS.cardsFor(`${cn.teamId}|${fx.id}`,p.id,p.pos):{yc:0,rc:0};return {id:p.id,pos:p.pos,goals:g.get(p.id)||0,assists:a.get(p.id)||0,cs:sim.ga===0,min:90,yc:c.yc,rc:c.rc,result};}),result);
       // Atletas do clube do treinador: não estão no índice mundial, então entram direto nas estatísticas canônicas (competição "nat").
       const St=root.ProLifeStatistics||(typeof require==="function"?require("./statistics.js"):null);
       const own=new Set((D.club?.(s)?.roster||[]).map(p=>p.id));
@@ -464,11 +465,11 @@
         const root_=St.init(s).root,res=result==="V"?.35:result==="E"?.05:-.25;
         for(const p of sim.xi||[]){
           if(!own.has(p.id))continue;
-          const gg=g.get(p.id)||0,aa=a.get(p.id)||0,rt=Math.min(10,Math.max(4.5,6.1+res+gg*.9+aa*.5));
+          const gg=g.get(p.id)||0,aa=a.get(p.id)||0,cd=NS?NS.cardsFor(`${cn.teamId}|${fx.id}`,p.id,p.pos):{yc:0,rc:0},rt=Math.min(10,Math.max(4.5,6.1+res+gg*.9+aa*.5-(cd.rc?1.2:cd.yc?.15:0)));
           const row=root_.players[p.id]||(root_.players[p.id]={appearances:0,starts:0,minutes:0,goals:0,assists:0,motm:0,ratingTotal:0,saves:0,tackles:0,shots:0,onTarget:0,xg:0,yellowCards:0,redCards:0,byCompetition:{},byClub:{}});
           if(!row.byCompetition)row.byCompetition={};
           const cr=row.byCompetition.nat||(row.byCompetition.nat={appearances:0,starts:0,minutes:0,goals:0,assists:0,motm:0,ratingTotal:0});
-          for(const r of [row,cr]){r.appearances=(r.appearances||0)+1;r.starts=(r.starts||0)+1;r.minutes=(r.minutes||0)+90;r.goals=(r.goals||0)+gg;r.assists=(r.assists||0)+aa;r.ratingTotal=(r.ratingTotal||0)+rt;}
+          for(const r of [row,cr]){r.appearances=(r.appearances||0)+1;r.starts=(r.starts||0)+1;r.minutes=(r.minutes||0)+90;r.goals=(r.goals||0)+gg;r.assists=(r.assists||0)+aa;r.ratingTotal=(r.ratingTotal||0)+rt;r.yellowCards=(r.yellowCards||0)+cd.yc;r.redCards=(r.redCards||0)+cd.rc;}
         }
       }
     }catch(e){}

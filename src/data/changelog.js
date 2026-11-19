@@ -6,6 +6,15 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-19-i",
+      date: "2026-11-19",
+      title: "Todos os jogos de seleções contam para os atletas",
+      items: [
+        { t: "novo", x: "Os jogos de todas as seleções (Copa, eliminatórias, Liga das Nações e copas continentais) agora geram gols, assistências, minutos, cartões e nota para os atletas das duas seleções." },
+        { t: "novo", x: "Esses números entram nos rankings do ano, nos prêmios individuais e na Bola de Ouro, e ficam no histórico de cada atleta na competição \"Seleções\"." }
+      ]
+    },
+    {
       id: "2026-11-19-h",
       date: "2026-11-19",
       title: "Seleção: histórico, prêmios e atletas do seu clube",

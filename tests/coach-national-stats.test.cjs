@@ -28,7 +28,8 @@ test("jogo da seleção: assistências, WorldStats e calendário", { timeout: 0 
   assert.equal(cn.record.gf, goals, "gols da campanha = gols dos atletas");
   assert.ok(ast <= goals);
   const L = s.globalFootball.worldStats.leagues.nat;
-  assert.ok(L && L.n === played, "jogos entram no acumulador anual de seleções");
+  assert.ok(L, "acumulador anual de seleções");
+  assert.equal(Object.keys(L.seen).filter((k) => k.startsWith(cn.teamId + "|")).length, played, "jogos da seleção do treinador entram no acumulador anual");
   // Atletas do clube do treinador convocados contam nas estatísticas canônicas (competição "nat").
   const natRows = Object.values(s.statistics.players).filter((r) => r.byCompetition && r.byCompetition.nat);
   const own = new Set(E.club(s).roster.map((p) => p.id));
