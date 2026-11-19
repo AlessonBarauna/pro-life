@@ -231,7 +231,9 @@
       return;
     }
     ev.preventDefault(); ev.stopImmediatePropagation();
-    tab = "negociacoes"; negPid = null; flash = ""; setTimeout(open, 0);
+    tab = (msg && TABS.some((x) => x[0] === msg.dataset.msgTab)) ? msg.dataset.msgTab : "negociacoes"; negPid = null; flash = "";
+    if (AREA_OF[tab]) { try { root.ProLifeCoachCareerView?.setMarketArea?.(AREA_OF[tab]); } catch (e) {} }
+    setTimeout(open, 0);
   }, true);
 
   // Página de Mercado do treinador = só um atalho: abre o Mercado novo automaticamente (um único mercado).

@@ -3050,11 +3050,11 @@
       CoachCareer?.daily(s, API, { log: (title, body) => log(s, title, body) });
       if (s.mode === "coach") { try { CoachNational?.daily(s, API); } catch (e) { s.coachNationalError = String(e?.message || e); } }
       OffField?.daily(s, API, { log: (title, body) => log(s, title, body) });
-      // Treinador: com jogo hoje ou amanhã, o time ideal já está montado (lesionados saem sozinhos).
+      // Treinador: a escalação é manual (nunca refeita pelo GER). Só lesionados e suspensos saem do XI.
       if (s.mode === "coach" && s.clubId) {
         try {
           const nc = nextCommitment(s);
-          if (nc && !nc.national && Number.isFinite(nc.date) && nc.date <= s.day + 1) CoachCareer?.autoIdealXI?.(s, API);
+          if (nc && !nc.national && Number.isFinite(nc.date) && nc.date <= s.day + 1) CoachCareer?.dropUnavailable?.(s, API);
         } catch (e) { s.coachAutoIdealError = String(e?.message || e); }
         try { CoachCareer?.sanitizeBench?.(s, API); } catch (e) { s.coachBenchError = String(e?.message || e); }
       }

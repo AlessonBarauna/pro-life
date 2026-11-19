@@ -779,10 +779,10 @@
     "4-4-2":["CA","CA","ME","MC","MC","MD","LE","ZAG","ZAG","LD","GOL"],
     "4-2-3-1":["CA","PE","MEI","PD","VOL","VOL","LE","ZAG","ZAG","LD","GOL"]
   };
-  function autoIdealXI(s,api){
+  function autoIdealXI(s,api,force){
     if(!isCoach(s))return {changed:false,reason:"not-coach"};
     const c=state(s);
-    if(c.autoIdeal===false)return {changed:false,reason:"off"};
+    if(!force)return {changed:false,reason:"manual"};
     const club=clubOf(s,api),selector=root.ProLifeSquadPositionSelection||(typeof require==="function"?require("./squad-position-selection.js"):null);
     if(!club||!Array.isArray(club.roster)||!club.roster.length)return {changed:false,reason:"no-club"};
     const overall=p=>Number(api?.overall?.(p))||0;
@@ -835,6 +835,31 @@
     if(changed)c.autoIdealDay=Number(s.day)||0;
     return {changed,formation};
   }
+  // Escalação manual: o jogo nunca troca titulares pelo GER. Só quem está lesionado ou suspenso (e não pode jogar)
+  // é trocado pelo melhor reserva da mesma posição, e o treinador é avisado por pop-up.
+  function dropUnavailable(s,api){
+    if(!isCoach(s))return [];
+    const c=state(s),club=clubOf(s,api);
+    if(!club||!Array.isArray(club.roster)||!Array.isArray(club.lineup)||club.lineup.length!==11)return [];
+    const overall=p=>Number(api?.overall?.(p))||0;
+    const out=p=>p&&(p.injury||Number(p.suspension)>0);
+    const byId=new Map(club.roster.map(p=>[String(p.id),p]));
+    const used=new Set(club.lineup.map(String)),swaps=[];
+    const next=club.lineup.map(id=>{
+      const p=byId.get(String(id));
+      if(!p||p.id==="hero"||!out(p))return id;
+      const sub=club.roster.filter(x=>x.id!=="hero"&&!out(x)&&!used.has(String(x.id))&&Number(x.condition??100)>35&&x.pos===p.pos)
+        .sort((x,y)=>overall(y)-overall(x)||String(x.id).localeCompare(String(y.id)))[0];
+      if(!sub)return id;
+      used.add(String(sub.id));swaps.push({out:p.id,outName:p.name,in:sub.id,inName:sub.name,why:p.injury?"lesão":"suspensão"});
+      return sub.id;
+    });
+    if(!swaps.length)return [];
+    club.lineup=next;
+    if(Array.isArray(c.pitchSlots))c.pitchSlots=c.pitchSlots.map(id=>{const w=swaps.find(x=>String(x.out)===String(id));return w?w.in:id;});
+    c.lineupSwaps=(c.lineupSwaps||[]).concat(swaps.map(w=>Object.assign({day:Number(s.day)||0},w))).slice(-30);
+    return swaps;
+  }
   // Mantém lesionados e suspensos fora do banco mesmo com escalação manual ou lesão nova.
   function sanitizeBench(s,api){
     if(!isCoach(s))return false;
@@ -850,7 +875,7 @@
     if(changed)c.benchOrder=next;
     return changed;
   }
-  const api={liveTrophies,liveTitleCount,sanitizeBench,autoIdealXI,VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
+  const api={liveTrophies,liveTitleCount,sanitizeBench,autoIdealXI,dropUnavailable,VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

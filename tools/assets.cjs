@@ -157,6 +157,7 @@ const files = [
   "src/ui/sm27-jobs.js",
   "src/ui/sm27-transfers.js",
   "src/ui/sm27-finance.js",
+  "src/ui/coach-alerts.js",
   "src/ui/sm27-skills.js",
   "src/ui/fc27-player-central.css",
   "src/ui/fc27-player-stats.css",

@@ -14,7 +14,7 @@ test("jovem com potencial ganha vaga no banco e minutos",()=>{
   const s=mk(),club=E.club(s),API=E.API||E;
   const pool=club.roster.filter(p=>!club.lineup.includes(p.id)&&p.pos!=="GOL");
   const kid=pool[pool.length-1];kid.age=18;kid.potential=90;kid.attrs&&0;
-  E.CoachCareer.autoIdealXI(s,API);
+  E.CoachCareer.autoIdealXI(s,API,true);
   const b=s.coachCareer.benchOrder.filter(id=>!club.lineup.includes(id)).slice(0,7);
   const hasKid=b.some(id=>{const p=club.roster.find(x=>x.id===id);return Number(p.age)<=21&&p.potential>=72;});
   assert.ok(hasKid,"jovem no banco");

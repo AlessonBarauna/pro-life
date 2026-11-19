@@ -6,6 +6,15 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-19-k",
+      date: "2026-11-19",
+      title: "Pop-ups de aviso e escalação 100% manual",
+      items: [
+        { t: "novo", x: "Agora aparece um pop-up na tela quando o olheiro termina a pesquisa, quando alguém faz proposta por um jogador seu, quando uma sondagem é respondida, quando um jogador se lesiona ou é suspenso, quando a convocação da seleção abre e quando chega proposta de investidor. O botão do pop-up leva direto para a tela de responder (aceitar, recusar ou negociar)." },
+        { t: "ajuste", x: "A escalação não é mais refeita pelo GER antes de cada jogo. Quem você colocar como titular continua titular, mesmo com GER baixo. O botão \"Escolher os melhores\" monta o time ideal só quando você clicar. Apenas lesionados e suspensos são trocados pelo melhor reserva da mesma posição." }
+      ]
+    },
+    {
       id: "2026-11-19-j",
       date: "2026-11-19",
       title: "Prêmio de melhor treinador mostra o porquê",
