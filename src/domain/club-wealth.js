@@ -105,7 +105,9 @@
     players.sort((a, b) => ovrOf(b) - ovrOf(a) || String(a.id).localeCompare(String(b.id)));
     const signed = [], perClub = new Map(), bought = { GOL: 0, DEF: 0, MEI: 0, ATA: 0 };
     let spent = 0;
-    for (const p of players) {
+    // O sheik só investe: o clube NÃO contrata ninguém sozinho (a contratação vira meta do projeto do treinador).
+    // Isso evita roubar jogadores que o usuário já está negociando.
+    for (const p of []) {
       const pos = posOf(p);
       if (bought[pos] >= BUY_BY_POS[pos]) continue;
       if (ovrOf(p) < 74) continue;
@@ -148,7 +150,7 @@
   function announce(s, club, owner, signed, spent) {
     const stars = signed.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 5).map((x) => x.name + " (" + x.ovr + ")").join(", ");
     const title = owner + " compra o " + club.name;
-    const body = "Investimento de " + brl(SHEIKH_FUND) + " para montar uma potência. " + signed.length + " contratações por " + brl(spent) + (stars ? ", entre elas " + stars : "") + ". O clube agora quer brigar por títulos.";
+    const body = "Investimento de " + brl(SHEIKH_FUND) + " para montar uma potência. O clube agora tem verba para reforçar o elenco e quer brigar por títulos." + (signed.length ? " " + signed.length + " contratações por " + brl(spent) + (stars ? ", entre elas " + stars : "") + "." : "");
     try { Career?.post?.(s, "Mercado", "Mercado mundial", title, body); } catch (_) {}
     try { Career?.addMessage?.(s, { category: "CARREIRA", sender: "Imprensa", subject: title, body, eventId: "sheikh_" + s.season }); } catch (_) {}
     try { s.news = s.news || []; s.news.unshift({ day: s.day, season: s.season, title, body }); s.news = s.news.slice(0, 160); } catch (_) {}

@@ -22,7 +22,7 @@ test("xeque compra um clube pequeno uma vez por temporada, com elenco reforçado
   for (let i = 0; i < 8; i++) s = require("../src/application/game.js").execute(s, "advance", {}) || s;
   const hist = s.extras.clubWealth.history;
   assert.equal(hist.length, 1);
-  assert.ok(hist[0].signed >= 8);
+  assert.equal(hist[0].signed, 0, 'o sheik não contrata sozinho');
   const club = D.GlobalFootball.clubById(s, hist[0].clubId);
   assert.ok(club.sheikh && club.budget > 50e9 && club.reputation >= 52);
   assert.notEqual(club.id, s.clubId);

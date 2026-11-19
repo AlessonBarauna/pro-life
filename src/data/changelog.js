@@ -6,6 +6,14 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-19-c",
+      date: "2026-11-19",
+      title: "Sheik não rouba mais seus alvos",
+      items: [
+        { t: "ajuste", x: "Quando um sheik compra um clube, ele só recebe o investimento: não contrata mais jogadores sozinho. As contratações ficam como meta do projeto, e assim ele não toma jogadores que você já está negociando." }
+      ]
+    },
+    {
       id: "2026-11-19-b",
       date: "2026-11-19",
       title: "Excluir sondagem recusada",
