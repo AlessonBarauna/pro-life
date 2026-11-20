@@ -6,6 +6,14 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-19-l",
+      date: "2026-11-19",
+      title: "Pop-ups de aviso corrigidos e testados",
+      items: [
+        { t: "ajuste", x: "Os pop-ups de aviso agora aparecem por cima do Mercado e de outras telas abertas e fecham ao clicar no botão. Cada botão foi testado: proposta recebida abre Negociações, sondagem aceita abre a negociação do jogador, relatório do olheiro abre a Rede de olheiros, base abre a Academia, convocação abre a aba Convocação e investidor abre Investidores." }
+      ]
+    },
+    {
       id: "2026-11-19-k",
       date: "2026-11-19",
       title: "Pop-ups de aviso e escalação 100% manual",

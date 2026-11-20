@@ -10,7 +10,7 @@
   const EMBED_TABS = ["scout", "elenco", "gestao"];
   const AREA_OF = { scout: "observacao", elenco: "squad", gestao: "transferencias" };
   const DEAL = { rumor: ["Rumor", "rumor"], scouting: ["Observando", "rumor"], negotiating: ["Em negociação", "neg"], offer: ["Proposta feita", "neg"], completed: ["Fechado", "done"], rejected: ["Recusado", "out"], cancelled: ["Cancelado", "out"] };
-  let layer = null, tab = "geral", negPid = null, flash = "", counterFor = null; const tabHist = [];
+  let layer = null, directPending = false, tab = "geral", negPid = null, flash = "", counterFor = null; const tabHist = [];
   const wf = { status: "all", league: "" };
   const sf = { q: "", pos: "", ageMax: 40, ovrMin: 60, potMin: 0, valueMax: 0, league: "", free: false, page: 0 };
 
@@ -227,7 +227,7 @@
     const direct = msg && msg.dataset.msgPlayer && /^sondagens$/.test(msg.dataset.msgList || "") ? msg.dataset.msgPlayer : null;
     if (direct) {
       try { root.ProLifeCoachCareerView?.setListScreen?.("sondagens"); } catch (e) {}
-      tab = "negociacoes"; negPid = direct; flash = ""; setTimeout(open, 0);
+      tab = "negociacoes"; negPid = direct; flash = ""; directPending = true; setTimeout(() => { directPending = false; open(); }, 0);
       return;
     }
     ev.preventDefault(); ev.stopImmediatePropagation();
@@ -240,7 +240,7 @@
   try {
     new MutationObserver(() => {
       const l = doc.querySelector(".tfh-launch:not([data-tfh-auto])");
-      if (!l || layer || !ctx()) return;
+      if (!l || layer || directPending || !ctx()) return;
       l.setAttribute("data-tfh-auto", "1");
       tab = "negociacoes"; negPid = null; flash = ""; setTimeout(open, 0);
     }).observe(doc.body, { childList: true, subtree: true });

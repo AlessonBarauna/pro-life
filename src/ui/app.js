@@ -213,7 +213,6 @@
     const route=routes[stop.type] || {page:stop.page||"inbox",anchor:stop.anchor||"",label:"Ir para decisão"};
     const el=document.createElement("div"); el.id="simulation-stop-modal"; el.className="simulation-stop-backdrop";
     el.innerHTML=`<section class="simulation-stop-dialog" role="dialog" aria-modal="true"><div class="tag">${stop.type==="alert"?"AVISO":"SIMULAÇÃO INTERROMPIDA"}</div><h2>${esc(title)}</h2>${decisionMeta(decision)}<p>${esc(decision?.body || stop.message || "Existe uma ação importante aguardando sua resposta.")}</p>${directChoices}${decision?.choices?.length?'<p class="chart-note">Agora não: o jogo escolhe uma opção e registra as consequências.</p>':""}<div class="actions">${stop.type==="alert"?alertGoButton(stop.alert):`<button class="primary" data-stop-go="${esc(route.page)}" data-stop-anchor="${esc(route.anchor)}">${esc(route.label)}</button>`}<button data-stop-close>Agora não</button></div></section>`;
-    el.querySelector("[data-alert-go]")?.addEventListener("click",()=>setTimeout(closeSimulationStop,0));
     document.body.appendChild(el);
   }
   const C = ProLifeCharacter,
@@ -524,12 +523,13 @@
   }
   window.ProLifeGoHome = () => { navGoingBack = true; page = "home"; render(); window.scrollTo(0, 0); };
   // Alertas em pop-up do treinador (olheiro, propostas, lesões, suspensões, seleção, investidores).
-  const alertQueue = [];
+  const alertQueue = [], alertSessionKeys = new Set();
   function notifyCoachAlerts() {
     try {
       if (!state || state.mode !== "coach" || !state.coachCareer || !window.ProLifeCoachAlerts) return;
       const fresh = window.ProLifeCoachAlerts.fresh(state, D);
-      if (fresh.length) { alertQueue.push(...fresh); persist(); try { window.ProLifeSound?.play?.("message"); } catch (_) {} }
+      const novos = fresh.filter((a) => { const k = a.group ? a.keys.join(",") : a.key; if (alertSessionKeys.has(k)) return false; alertSessionKeys.add(k); return true; });
+      if (novos.length) { alertQueue.push(...novos); persist(); try { window.ProLifeSound?.play?.("message"); } catch (_) {} }
       queueMicrotask(showNextAlert);
     } catch (_) {}
   }
@@ -539,10 +539,19 @@
     const a = alertQueue.shift();
     showSimulationStop({ type: "alert", title: a.title, message: a.message, alert: a });
   }
+  // O botão do pop-up fecha o aviso e repassa o clique a um botão idêntico ao das mensagens (data-page...), porque o hub de
+  // Mercado e o app tratam esses atributos em captura e interromperiam o clique original.
+  window.addEventListener("click", (e) => {
+    const b = e.target?.closest?.("[data-alert-go]"); if (!b) return;
+    let f = {}; try { f = JSON.parse(b.getAttribute("data-alert-fwd") || "{}"); } catch (_) {}
+    closeSimulationStop();
+    if (f["data-alert-nattab"]) { try { window.ProLifeCoachNationalView?.setTab?.(f["data-alert-nattab"]); } catch (_) {} }
+    if (f["data-alert-scout"]) { try { window.ProLifeCoachCareerView?.setScoutScreen?.(f["data-alert-scout"]); } catch (_) {} }
+    setTimeout(() => { const t = document.createElement("button"); t.type = "button"; t.className = "msg-action"; t.style.display = "none"; for (const k of Object.keys(f)) t.setAttribute(k, f[k]); document.body.appendChild(t); t.click(); t.remove(); }, 0);
+  }, true);
   function alertGoButton(a) {
-    if (a.attrs) return `<button type="button" class="primary msg-action" data-alert-go ${a.attrs}>${esc(a.label)}</button>`;
-    const g = a.go || {};
-    return `<button type="button" class="primary msg-action" data-alert-go data-page="${esc(g.page || "inbox")}" data-msg-tab="${esc(g.tab || "")}" data-msg-area="${esc(g.area || "")}" data-msg-list="${esc(g.list || "")}" data-msg-player="${esc(g.playerId || "")}">${esc(a.label || "Abrir")}</button>`;
+    const g = a.go || {}, f = a.attrs ? { [a.attrs]: "" } : { "data-page": g.page || "inbox", "data-msg-tab": g.tab || "", "data-msg-area": g.area || "", "data-msg-list": g.list || "", "data-msg-player": g.playerId || "", ...(g.natTab ? { "data-alert-nattab": g.natTab } : {}), ...(g.scoutScreen ? { "data-alert-scout": g.scoutScreen } : {}) };
+    return `<button type="button" class="primary" data-alert-go data-alert-fwd="${esc(JSON.stringify(f))}">${esc(a.label || "Abrir")}</button>`;
   }
   // Som de novas mensagens/conquistas: compara as mensagens não lidas com as já vistas nesta carreira.
   const msgSeen = new WeakMap();

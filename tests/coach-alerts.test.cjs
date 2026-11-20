@@ -25,3 +25,13 @@ test("alertas: convocação da seleção e proposta de investidor",()=>{
   assert.ok(f.some(a=>/Convocação/.test(a.title)&&a.go.page==="national"));
   assert.ok(f.some(a=>/investidor/.test(a.title)&&a.attrs));
 });
+test("alertas: destinos dos botões",()=>{
+  const s=coach();A.fresh(s,E);
+  s.coachCareer.youth=Object.assign(s.coachCareer.youth||{},{missions:[{id:3,status:"complete"}]});
+  s.coachCareer.scoutingV2={version:1,nextId:2,missions:[{id:1,playerId:"x",status:"complete"}]};
+  s.coachNational={teamId:"BRA",callup:{status:"open",first:100,deadline:95,label:"Eliminatórias"}};
+  const f=A.fresh(s,E);
+  assert.equal(f.find(a=>/base/.test(a.title)).attrs,"data-sm27-academy");
+  assert.equal(f.find(a=>/olheiro/.test(a.title)).go.scoutScreen,"olheiros");
+  assert.equal(f.find(a=>/Convocação/.test(a.title)).go.natTab,"convocacao");
+});

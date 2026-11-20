@@ -20,25 +20,26 @@
     for (const o of c.saleOffers || []) {
       if (o.status !== "pending" || String(o.sellerClubId) !== String(s.clubId)) continue;
       if (Number.isFinite(Number(o.expiresDay)) && day > Number(o.expiresDay)) continue;
-      const fee = o.fee ?? o.offer ?? o.amount ?? o.price;
-      out.push({ key: "offer:" + o.id, title: "Proposta por " + pname(o.playerId),
-        message: cname(o.buyerClubId) + " quer comprar " + pname(o.playerId) + (Number(fee) > 0 ? " por " + brl(fee) : "") + ". Aceite, recuse ou negocie em Mercado > Negociações.",
+      const fee = o.amount ?? o.fee ?? o.offer ?? o.price, loan = o.dealType === "loan", who = o.playerName || pname(o.playerId);
+      out.push({ key: "offer:" + o.id, title: (loan ? "Proposta de empréstimo por " : "Proposta por ") + who,
+        message: cname(o.buyerClubId) + (loan ? " quer pegar " + who + " emprestado" : " quer comprar " + who) + (Number(fee) > 0 ? " por " + brl(fee) : "") + ". Aceite, recuse ou negocie em Mercado > Negociações.",
         label: "Responder proposta", go: { page: "market", tab: "negociacoes" } });
     }
     const scouts = (c.scoutingV2?.missions || []).filter((m) => m.status === "complete");
     if (scouts.length) {
       const fresh = scouts.map((m) => ({ k: "scout:m:" + m.id, n: pname(m.playerId) }));
       out.push({ group: true, keys: fresh.map((x) => x.k), title: fresh.length > 1 ? "Relatórios dos olheiros prontos" : "Relatório do olheiro pronto",
-        message: "A pesquisa terminou: " + list(fresh.map((x) => x.n)) + ". Veja o relatório em Mercado > Scouting.", label: "Ver relatório", go: { page: "market", tab: "scout" } });
+        message: "A pesquisa terminou: " + list(fresh.map((x) => x.n)) + ". Veja o relatório em Mercado > Scouting.", label: "Ver relatório", go: { page: "market", tab: "scout", scoutScreen: "olheiros" } });
     }
     const youth = (c.youth?.missions || []).filter((m) => m.status === "complete");
     if (youth.length) out.push({ group: true, keys: youth.map((m) => "scout:y:" + m.id), title: youth.length > 1 ? "Relatórios da base prontos" : "Relatório da base pronto",
-      message: "A pesquisa dos olheiros da base terminou. Veja em Academia > Relatórios.", label: "Abrir academia", go: { page: "academy" } });
+      message: "A pesquisa dos olheiros da base terminou. Veja em Academia > Relatórios.", label: "Abrir academia", attrs: "data-sm27-academy" });
     for (const i of c.inquiries || []) {
       if (String(i.buyerClubId) !== String(s.clubId) || i.dismissed || !["accepted", "asking_price", "rejected"].includes(i.status)) continue;
-      const nm = pname(i.playerId), rej = i.status === "rejected";
+      if (i.status !== "rejected" && Number.isFinite(Number(i.expiresDay)) && day > Number(i.expiresDay)) continue;
+      const nm = i.playerName || pname(i.playerId), rej = i.status === "rejected", seller = i.clubId ?? i.sellerClubId;
       out.push({ key: "inq:" + i.id + ":" + i.status, title: rej ? "Sondagem recusada: " + nm : i.status === "asking_price" ? "O clube pediu um valor por " + nm : "Sondagem aceita: " + nm,
-        message: rej ? cname(i.sellerClubId) + " não tem interesse em negociar " + nm + " agora." : "A resposta saiu: o clube aceitou conversar sobre " + nm + ". Abra a negociação para fazer a proposta.",
+        message: rej ? cname(seller) + " não tem interesse em negociar " + nm + " agora." : "A resposta saiu: o clube aceitou conversar sobre " + nm + ". Abra a negociação para fazer a proposta.",
         label: rej ? "Ver sondagens" : "Negociar contratação", go: rej ? { page: "market", tab: "negociacoes" } : { page: "market", list: "sondagens", playerId: i.playerId } });
     }
     const inj = [], sus = [];
@@ -50,7 +51,7 @@
     if (inj.length) out.push({ group: true, keys: inj.map((x) => x.k), title: inj.length > 1 ? "Jogadores lesionados" : "Jogador lesionado", message: list(inj.map((x) => x.n)) + ". Quem estiver fora é trocado na escalação; ajuste como preferir.", label: "Abrir elenco", go: { page: "squad" } });
     if (sus.length) out.push({ group: true, keys: sus.map((x) => x.k), title: sus.length > 1 ? "Jogadores suspensos" : "Jogador suspenso", message: list(sus.map((x) => x.n)) + " não pode(m) jogar. Ajuste a escalação.", label: "Abrir elenco", go: { page: "squad" } });
     const cu = s.coachNational?.teamId ? s.coachNational.callup : null;
-    if (cu && cu.status === "open") out.push({ key: "nat:" + cu.first + ":" + cu.label, title: "Convocação da seleção aberta", message: "Monte a lista para " + cu.label + " e confirme até o dia " + cu.deadline + ".", label: "Convocar", go: { page: "national" } });
+    if (cu && cu.status === "open") out.push({ key: "nat:" + cu.first + ":" + cu.label, title: "Convocação da seleção aberta", message: "Monte a lista para " + cu.label + ": faltam " + Math.max(0, Number(cu.deadline) - day) + " dia(s) para confirmar. Sem confirmação, a convocação automática vale.", label: "Convocar", go: { page: "national", natTab: "convocacao" } });
     for (const d of c.investors?.deals || []) {
       if (d.status !== "proposed" || String(d.clubId) !== String(s.clubId)) continue;
       out.push({ key: "inv:" + d.id, title: "Proposta de investidor: " + d.investor, message: d.investor + " quer investir " + brl(d.amount) + " no clube em troca de metas. Veja em Finanças > Investidores.", label: "Ver proposta", attrs: "data-sm27-finance-investors" });

@@ -1339,7 +1339,7 @@ button,a,select,input,label,summary{touch-action:manipulation}
 .central-lineup-cta{margin-top:12px}.central-lineup-cta button{width:100%}.lineup-hero{max-width:1100px;margin:auto}.lineup-status{margin:18px 0;padding:20px;border:1px solid var(--line,#29404c);border-radius:14px;display:flex;flex-direction:column;gap:5px}.lineup-status strong{font-size:30px}.lineup-status.starter{border-left:5px solid #55e6d2}.lineup-status.bench{border-left:5px solid #f2c45c}.lineup-status.out{border-left:5px solid #8996a3}.lineup-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.lineup-player{padding:12px;border:1px solid #2b3c48;border-radius:10px;display:flex;flex-direction:column}.lineup-player.hero{outline:2px solid #55e6d2}.lineup-player small{opacity:.7;margin-top:3px}
 
 /* Simulação interrompida: ação contextual */
-.simulation-stop-backdrop{position:fixed;inset:0;background:#000b;display:grid;place-items:center;padding:24px;z-index:120}
+.simulation-stop-backdrop{position:fixed;inset:0;background:#000b;display:grid;place-items:center;padding:24px;z-index:9600}
 .simulation-stop-dialog{width:min(560px,94vw);background:#13222e;border:1px solid #365264;border-radius:12px;padding:26px;box-shadow:0 24px 70px #0009;color:#f4f7fa}
 .simulation-stop-dialog h2{margin:8px 0 10px;font-size:25px}.simulation-stop-dialog p{color:#b8c5ce;line-height:1.55}
 .simulation-stop-choices{display:grid;gap:9px;margin:18px 0}.simulation-stop-choices button{width:100%;text-align:left}
