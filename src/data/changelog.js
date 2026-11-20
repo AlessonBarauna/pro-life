@@ -6,6 +6,14 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-20-a",
+      date: "2026-11-20",
+      title: "Correção do erro ao simular partida",
+      items: [
+        { t: "correcao", x: "Corrigido o erro \"undefined is not an object (evaluating 'p.attrs[key]')\" que aparecia ao jogar ou simular uma partida quando algum jogador do elenco estava sem atributos detalhados. Agora o jogo completa esses atributos a partir do GER." }
+      ]
+    },
+    {
       id: "2026-11-19-l",
       date: "2026-11-19",
       title: "Pop-ups de aviso corrigidos e testados",

@@ -176,7 +176,17 @@
     strength: "Força",
     stamina: "Resistência",
   };
+  // Jogador sem atributos detalhados (save antigo, base, importado): preenche a partir do GER para não quebrar partidas.
+  function ensureAttrs(p) {
+    if (p && (!p.attrs || typeof p.attrs !== "object")) {
+      const o = Number(p.ovr ?? p.overall) || 50; p.attrs = {};
+      for (const k of Object.keys(Training?.skills || {})) p.attrs[k] = o;
+      for (const k of attrs) if (!(k in p.attrs)) p.attrs[k] = o;
+    }
+    return p?.attrs;
+  }
   function overall(p) {
+    ensureAttrs(p);
     const ratings = Training?.groupRatings ? Training.groupRatings(p.attrs) : Object.fromEntries(attrs.map((k) => [k, p.attrs[k]]));
     const weights = {
       GOL: { pace: 0.08, finish: 0.03, pass: 0.12, defense: 0.32, strength: 0.2, stamina: 0.25 },
@@ -1259,7 +1269,7 @@
       ps.reduce(
         (n, p) =>
           n +
-          p.attrs[key] *
+          (ensureAttrs(p)?.[key] ?? 50) *
             (MatchPositions?.factor(p, roles) ?? 1) *
             (formFactors?.get(p.id) ?? 1) *
             (0.55 + (0.45 * p.condition) / 100) *
@@ -1469,7 +1479,7 @@
         m.shots[i]++;
         const candidates = ps.filter((p) => p.pos !== "GOL").length ? ps.filter((p) => p.pos !== "GOL") : ps;
         const shooterWeights = candidates.map((p) => {
-          const g = Training?.groupRatings ? Training.groupRatings(p.attrs) : p.attrs;
+          const g = Training?.groupRatings ? Training.groupRatings(ensureAttrs(p)) : p.attrs;
           const role = p.pos === "ATA" ? 1.65 : p.pos === "MEI" ? 1.02 : 0.58;
           const candidateOverall = overall(p);
           const peers = candidates.filter((x) => x.pos === p.pos && x.id !== p.id);
