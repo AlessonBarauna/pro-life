@@ -81,5 +81,27 @@
       return true;
     });
   }
-  return { SHORTLIST_LIMIT, ATTRS, ROLES, POSITIONS, LISTING_LABEL, hash, contractEndOf, monthsLeft, aiListing, roleOf, interestedCount, positionMatches, shortlistAlerts, advancedFilter };
+
+  // ---- Etapa 2: proposta de compra e empréstimo ----
+  const KEY_PLAYERS = 14; // titulares e reservas imediatas do clube vendedor
+  const KEY_MULTIPLIER = 1.35;
+  const GLOVES_MONTHS = 6;
+  const LOAN_MONTHS = [6, 12, 18];
+  const rnd = (v) => Math.ceil(Number(v) / 1000) * 1000;
+  function isKeyPlayer(p, roster) {
+    const list = (roster || []).slice().sort((a, b) => ovrOf(b) - ovrOf(a)).slice(0, KEY_PLAYERS);
+    return list.some((x) => x.id === (p && p.id));
+  }
+  // Pedido mínimo do clube já na 1ª proposta: titular/chave exige 135% do valor; os demais, o piso normal de 95%.
+  function minimumOffer(value, key) { return rnd(Number(value) * (key ? KEY_MULTIPLIER : 0.95)); }
+  // Luvas: 6 meses de salário pagos ao jogador na assinatura (sem comissão de agente). Rival histórico paga o dobro.
+  function gloves(monthlySalary, rival) { return rnd(Number(monthlySalary || 0) * GLOVES_MONTHS * (rival ? 2 : 1)); }
+  function loanTerms(value, months) {
+    const m = LOAN_MONTHS.includes(Number(months)) ? Number(months) : 6;
+    const days = { 6: 180, 12: 365, 18: 545 }[m];
+    return { months: m, days, fee: rnd(Number(value) * 0.08 * (days / 180)), buyOption: rnd(Number(value) * 1.15), salaryShare: 100 };
+  }
+  // Jogador-chave só sai por empréstimo se o clube o colocou na lista.
+  function canLoanOut(p, roster, s) { return !isKeyPlayer(p, roster) || aiListing(p, s) === "loan"; }
+  return { KEY_MULTIPLIER, GLOVES_MONTHS, LOAN_MONTHS, isKeyPlayer, minimumOffer, gloves, loanTerms, canLoanOut, SHORTLIST_LIMIT, ATTRS, ROLES, POSITIONS, LISTING_LABEL, hash, contractEndOf, monthsLeft, aiListing, roleOf, interestedCount, positionMatches, shortlistAlerts, advancedFilter };
 });

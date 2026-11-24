@@ -4,6 +4,7 @@
     root.ProLife ||
     (typeof require === "function" ? require("../domain/engine.js") : null);
   const PlayerEconomy=root.ProLifePlayerEconomy||(typeof require==="function"?require("../domain/player-economy.js"):null);
+  const Rules2=root.ProLifeTransferRulesV2||(typeof require==="function"?require("../domain/transfer-rules-v2.js"):null);
   const TransferRules=root.ProLifeTransferMarketRules||(typeof require==="function"?require("../domain/transfer-market-rules.js"):null);
   const ClubInvestors=root.ProLifeClubInvestors||(typeof require==="function"?require("../domain/club-investors.js"):null);
   const ClubWealth=root.ProLifeClubWealth||(typeof require==="function"?require("../domain/club-wealth.js"):null);
@@ -838,8 +839,9 @@ case "tactic": {
           throw Error("Clube e jogador ainda não autorizaram esta negociação.");
         const quote=dynamicValuation(s,p,seller,buyer);if(quote.blocked)throw Error("O clube não negocia com este rival histórico.");
         const decision=TransferRules?TransferRules.evaluateOffer(n,{amount:offer,sellOn:data.sellOn,performanceBonuses:data.performanceBonuses},{xTV:n.xTV||quote.xTV,day:s.day,acceptRatio:s.coachCareer?.settings?.marketStrictness==="flexible"?.85:.95}):null;
-        const accepted=decision?decision.accepted:offer>=quote.xTV*.95;
-        const finalFee=accepted?offer:(decision?.counterAmount||quote.xTV);
+        const minimum=Rules2?Rules2.minimumOffer(n.xTV||quote.xTV,Rules2.isKeyPlayer(p,seller.roster)):Math.ceil((n.xTV||quote.xTV)*.95/1000)*1000;
+        const accepted=(decision?decision.accepted:offer>=quote.xTV*.95)&&offer>=minimum;
+        const finalFee=accepted?offer:Math.max(decision?.counterAmount||quote.xTV,minimum);
         n.history ||= [{round:1,day:n.day??s.day,offered:n.requested,response:n.finalFee,accepted:n.requested>=n.finalFee}];
         n.round=(n.round||1)+1;
         if(decision){n.tension=decision.tension;n.lastOffer=offer;if(decision.walkedAway){n.status="walked_away";n.response="rejected";n.lockUntilDay=decision.lockUntilDay;n.closedDay=s.day;n.history.push({round:n.round,day:s.day,offered:offer,status:"walked_away",tension:n.tension});return s;}}
@@ -897,8 +899,9 @@ case "tactic": {
         s.coachCareer.negotiations=s.coachCareer.negotiations.filter(n=>!(n.playerId===p.id&&n.buyerClubId===buyer.id&&n.status==="pending"));
         const quote=dynamicValuation(s,p,seller,buyer);if(quote.blocked)throw Error("O clube bloqueou a venda para este rival histórico.");
         const decision=TransferRules?TransferRules.evaluateOffer({}, {amount:requested,sellOn:data.sellOn,performanceBonuses:data.performanceBonuses},{xTV:quote.xTV,day:s.day,acceptRatio:s.coachCareer?.settings?.marketStrictness==="flexible"?.85:.95}):null;
-        const accepted=decision?decision.accepted:requested>=quote.xTV*.95;
-        const finalFee=accepted?Math.ceil(requested/1000)*1000:(decision?.counterAmount||quote.xTV);
+        const minimum=Rules2?Rules2.minimumOffer(quote.xTV,Rules2.isKeyPlayer(p,seller.roster)):Math.ceil(quote.xTV*.95/1000)*1000;
+        const accepted=(decision?decision.accepted:requested>=quote.xTV*.95)&&requested>=minimum;
+        const finalFee=accepted?Math.ceil(requested/1000)*1000:Math.max(decision?.counterAmount||quote.xTV,minimum);
         const walked=decision?.walkedAway===true;
         const entry={id:"neg_"+s.season+"_"+s.day+"_"+p.id,day:s.day,playerId:p.id,sellerClubId:seller.id,buyerClubId:buyer.id,xTV:quote.xTV,xTVBreakdown:quote,requested,finalFee:walked?null:null,status:walked?"walked_away":"pending",round:1,tension:decision?.tension||0,lastOffer:requested,lockUntilDay:decision?.lockUntilDay||null,response:walked?"rejected":"awaiting_reply",replyDay:walked?null:Number(s.day)+2,pendingOutcome:walked?null:{accepted,finalFee},expiresDay:s.day+(D.Career.windowStatus(s).open?10:Math.max(10,Number(D.Career.windowStatus(s).remaining)||10)+10),history:[{round:1,day:s.day,offered:requested,status:walked?"walked_away":"sent",tension:decision?.tension||0}]};
         s.coachCareer.negotiations.push(entry);
@@ -948,13 +951,14 @@ case "tactic": {
         const isLoan=data.dealType==="loan";
         if(isLoan && rules?.loans!=="on")throw Error("Empréstimos não estão habilitados nesta carreira.");
         const duration=Number(data.loanDays||180);
-        if(isLoan&&![180,365].includes(duration))throw Error("Prazo de empréstimo inválido.");
+        if(isLoan&&![180,365,545].includes(duration))throw Error("Prazo de empréstimo inválido (6, 12 ou 18 meses).");
+        if(isLoan&&Rules2&&!Rules2.canLoanOut(p,source.roster,s))throw Error("Jogador-chave: o clube só empresta quem colocou na lista de empréstimo.");
         const sellOn=Number(data.sellOn||0);
         if(!isLoan&&![0,10,20].includes(sellOn))throw Error("Cláusula de revenda inválida.");
         if(isLoan && (s.coachCareer?.loans||[]).some(l=>l.playerId===p.id&&!l.returned))throw Error("O atleta já está emprestado.");
         const salaryShare=isLoan?Number(data.salaryShare??50):0;
         if(isLoan&&![0,50,100].includes(salaryShare))throw Error("Divisão salarial inválida.");
-        const optionPrice=isLoan&&data.buyOption==="on"?Math.ceil(valuation(p)*1.1/1000)*1000:0;
+        const optionPrice=isLoan&&data.buyOption==="on"?Math.ceil(valuation(p)*1.15/1000)*1000:0;
         const requestedYears=Number(data.installmentYears||(data.paymentPlan==="split"?2:1));
         const installmentYears=rules?.installments==="on"&&!isLoan?Math.max(1,Math.min(6,Math.floor(requestedYears)||1)):1;
         const plan=installmentYears>1?"installments":"upfront";
@@ -972,7 +976,12 @@ case "tactic": {
         }
         if(byClause)fee=releaseClause(p);
         const agreedContract=negotiation?.contractOffer?.status==="accepted"?negotiation.contractOffer:null;
-        const contractBonus=!isLoan&&agreedContract?agreedContract.bonus:0;
+        const rivalDeal=!isLoan&&!byClause&&isHistoricalRival(source,own);
+        if(rivalDeal&&!negotiation)throw Error("Rival histórico: o jogador só aceita se você pagar mais. Faça uma proposta e negocie o valor.");
+        // Luvas = 6 meses de salário (rival paga o dobro). Sem comissão de agente.
+        let glovesFee=0;
+        if(!isLoan&&!agreedContract&&!byClause&&negotiation&&Rules2){let monthly=Number(p.salary)||0;try{monthly=Number(PlayerEconomy?.expectedSalary?.(p,own))||monthly;}catch(_){}glovesFee=Rules2.gloves(monthly,rivalDeal);}
+        const contractBonus=!isLoan&&agreedContract?agreedContract.bonus:glovesFee;
         // Troca de jogadores: atletas do seu elenco entram no negócio e abatem o valor em dinheiro.
         const exchangeIds=isLoan?[]:[...new Set((Array.isArray(data.exchangeIds)?data.exchangeIds:(negotiation?.exchangeIds||[])).map(String))].slice(0,3);
         const exchangePlayers=exchangeIds.map(id=>own.roster.find(x=>String(x.id)===id));
@@ -1126,7 +1135,18 @@ case "tactic": {
     const suggestedBonus=Math.ceil(requiredSalary*Math.max(1,Math.min(5,Number(years)||3))*0.35/10000)*10000;
     return {requiredSalary,suggestedBonus,baseline};
   }
-  root.ProLifeApp = { execute, valuation, releaseClause, minimumMarketSalaryMonthly, coachContractRequirements };
+  // Cotação que a tela do Mercado mostra: a mesma usada para responder à proposta.
+  function marketQuote(s,playerId,sellerId){
+    const seller=D.club(s,sellerId),buyer=D.club(s);
+    const p=seller?.roster?.find(x=>x.id===playerId)||D.GlobalFootball?.playersByClub?.(s,sellerId)?.find(x=>x.id===playerId);
+    if(!p||!seller||!buyer)return null;
+    const q=dynamicValuation(s,p,seller,buyer);
+    const rival=isHistoricalRival(seller,buyer);
+    const roster=seller.roster||D.GlobalFootball?.playersByClub?.(s,sellerId)||[];
+    const key=Rules2?Rules2.isKeyPlayer(p,roster):false;
+    return {xTV:q.xTV,blocked:!!q.blocked,rival,key,minimum:Rules2?Rules2.minimumOffer(q.xTV,key):Math.ceil(q.xTV*.95/1000)*1000};
+  }
+  root.ProLifeApp = { execute, marketQuote, valuation, releaseClause, minimumMarketSalaryMonthly, coachContractRequirements };
   if (typeof module !== "undefined" && module.exports)
     module.exports = root.ProLifeApp;
 })(typeof globalThis !== "undefined" ? globalThis : this);

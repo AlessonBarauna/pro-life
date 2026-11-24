@@ -15,9 +15,10 @@
   const DEAL = { rumor: ["Rumor", "rumor"], scouting: ["Observando", "rumor"], negotiating: ["Em negociação", "neg"], offer: ["Proposta feita", "neg"], completed: ["Fechado", "done"], rejected: ["Recusado", "out"], cancelled: ["Cancelado", "out"] };
   let layer = null, directPending = false, tab = "geral", negPid = null, flash = "", counterFor = null; const tabHist = [];
   const freshAdv = () => ({ pos: "", role: "", ageMin: "", ageMax: "", valueMin: "", valueMax: "", contract: "", listing: "", country: "", league: "", nat: "", interest: "", attrs: [], run: false, page: 0 });
-  const st = { world: { status: "all", league: "", country: "", page: 0 }, pq: { text: "", page: 0, cpage: 0, spage: 0, npage: 0, lpage: 0, clubId: "", nat: "", onlyListed: false }, psub: "jogadores", adv: freshAdv() };
+  const st = { world: { status: "all", league: "", country: "", page: 0 }, pq: { text: "", page: 0, cpage: 0, spage: 0, npage: 0, lpage: 0, clubId: "", nat: "", onlyListed: false }, psub: "jogadores", adv: freshAdv(), ptab: "perfil", loanMonths: 12, loanOpt: true };
   const PAGE_FIELD = { world: ["world", "page"], pq: ["pq", "page"], cp: ["pq", "cpage"], sp: ["pq", "spage"], np: ["pq", "npage"], lp: ["pq", "lpage"], af: ["adv", "page"] };
   const MS = () => root.ProLifeMarketScreens;
+  const R2x = () => root.ProLifeTransferRulesV2;
   const env = (s, D) => ({ s, D, GF, ovrOf, valueOf, money, clubName, leagues, leagueName, DEAL });
 
   function ctx() { const c = root.ProLifeSM27Ctx?.(); return c?.s && c.s.mode === "coach" ? c : null; }
@@ -132,7 +133,10 @@
     const ready = inq && ["accepted", "asking_price"].includes(inq.status) && day <= Number(inq.expiresDay);
     const w = D.Career.windowStatus(s);
     const winNote = w.open ? "" : `<p class="tfh-note">Janela fechada: o acordo fica programado e só é concluído quando o mercado abrir. Nada é pago antes.</p>`;
-    const offerBox = (label, def, act, extra) => `<div class="tfh-offer"><label>${label}<input type="number" min="1" step="0.1" data-tfh-offer value="${def}"> <small>mi</small></label><button type="button" class="tfh-btn primary" data-tfh-send="${act}" ${extra || ""}>Enviar proposta</button></div>`;
+    const qt = root.ProLifeApp?.marketQuote?.(s, p.id, sellerId) || {};
+    const R2 = root.ProLifeTransferRulesV2, rival = !!qt.rival, key = !!qt.key, xtv = qt.xTV || valueOf(p), minimum = qt.minimum || R2.minimumOffer(xtv, false);
+    let monthly = Number(p.salary) || 0; try { monthly = Number(root.ProLifePlayerEconomy?.expectedSalary?.(p, club)) || monthly; } catch (e) {}
+    const offerBox = (label, def, act, extra) => `<div class="tfh-offer"><label>${label}<input type="number" min="1" step="0.1" inputmode="decimal" data-tfh-offer value="${Math.max(Number(def) || 0, Math.ceil(minimum / 1e5) / 10)}"> <small>mi</small></label><button type="button" class="tfh-btn primary" data-tfh-send="${act}" ${extra || ""}>Enviar proposta</button></div>`;
     let panel;
     if (neg) {
       const awaiting = neg.response === "awaiting_reply";
@@ -147,7 +151,11 @@
       const left = Number(inq.answeredDay ?? inq.responseDay) + 14 - day;
       panel = `<p class="tfh-note"><b>Sondagem recusada</b> (${inq.playerDecision === "rejected" ? "jogador sem interesse" : "clube não autoriza"}). ${left > 0 ? `Nova consulta em ${left} dia(s).` : ""}</p><p class="tfh-actions"><button type="button" class="tfh-btn" data-tfh-send="dismiss" data-id="${esc(inq.id)}">Excluir da lista</button></p>` + (left > 0 ? "" : `<p class="tfh-actions"><button type="button" class="tfh-btn primary" data-tfh-send="inquire">Consultar interesse</button></p>`);
     } else panel = `<p class="tfh-note">Antes de propor, consulte o interesse do jogador e a disposição do clube vendedor.</p><p class="tfh-actions"><button type="button" class="tfh-btn primary" data-tfh-send="inquire">Consultar interesse</button></p>`;
-    return back + head + panel;
+    const info = `<div class="mk-terms"><span><small>Pedido mínimo</small><b>${money(minimum)}</b></span><span><small>Luvas (6 meses de salário${rival ? ", dobro por ser rival" : ""})</small><b>${money(R2.gloves(monthly, rival))}</b></span><span><small>Comissão de agente</small><b>não há</b></span></div>${key ? `<p class="tfh-note">Jogador-chave do clube: só ouvem propostas a partir de 135% do valor.</p>` : ""}${rival ? `<p class="tfh-note">Rival histórico: o clube cobra mais caro e o jogador só aceita se você pagar mais.</p>` : ""}`;
+    const loansOn = s.coachCareer?.settings?.loans === "on";
+    const lt = R2.loanTerms(valueOf(p), st.loanMonths), listed = R2.canLoanOut(p, (g.playersByClub?.(s, sellerId) || seller?.roster || []), s);
+    const loan = `<div class="mk-loan"><label>Duração<select data-tfh-lm>${R2.LOAN_MONTHS.map((m) => `<option value="${m}" ${st.loanMonths === m ? "selected" : ""}>${m} meses</option>`).join("")}</select></label><label class="mk-chk2"><input type="checkbox" data-tfh-lo ${st.loanOpt ? "checked" : ""}> Opção de compra</label></div><div class="mk-terms"><span><small>Taxa do empréstimo</small><b>${money(lt.fee)}</b></span><span><small>Salário pago por você</small><b>100%</b></span><span><small>Opção de compra</small><b>${st.loanOpt ? money(lt.buyOption) + " (valor +15%)" : "sem opção"}</b></span></div>${listed ? "" : `<p class="tfh-note">Jogador-chave: o clube só empresta quem colocou na lista de empréstimo.</p>`}${loansOn ? "" : `<p class="tfh-note">Empréstimos estão desligados nas configurações desta carreira.</p>`}${w.open ? "" : `<p class="tfh-note">Janela fechada: o empréstimo só pode ser fechado com o mercado aberto.</p>`}<p class="tfh-actions"><button type="button" class="tfh-btn primary" data-tfh-send="loan" ${listed && w.open && loansOn ? "" : "disabled"}>Pedir empréstimo</button></p>`;
+    return back + MS().profile(env(s, D), p, st, { head, panel: info + panel, loan, rival, key, minimum });
   }
 
   // "Gestão": scouting, listas, contratos, cláusulas, finanças e histórico (central completa de transferências), dentro do Mercado.
@@ -185,7 +193,7 @@
   function close() { if (layer) { layer.remove(); layer = null; } negPid = null; flash = ""; tabHist.length = 0; }
   const cmd = (a, d) => { const ok = root.ProLifeSM27Cmd?.(a, d); const tx = doc.getElementById("toast"); flash = (tx && tx.textContent) || (ok ? "Ação concluída." : "Não foi possível concluir."); if (tx) tx.style.display = "none"; if (layer) open(); return ok; };
 
-  function negotiate(id) { negPid = id; flash = ""; open(); }
+  function negotiate(id) { negPid = id; st.ptab = "perfil"; flash = ""; open(); }
   function send(el) {
     const c = ctx(); if (!c) return;
     const act = el.dataset.tfhSend, p = GF()?.playerById?.(c.s, negPid), sellerId = p?.clubId;
@@ -194,6 +202,7 @@
     if (act === "inquire") cmd("coachInquiry", { clubId: sellerId, playerId: negPid });
     else if (act === "offer") cmd("counterRecruit", { clubId: sellerId, playerId: negPid, offer: val });
     else if (act === "revise") cmd("reviseCoachDeal", { id: el.dataset.id, offer: val });
+    else if (act === "loan") cmd("recruit", { clubId: sellerId, playerId: negPid, dealType: "loan", loanDays: R2x().loanTerms(0, st.loanMonths).days, salaryShare: 100, buyOption: st.loanOpt ? "on" : "off" });
     else if (act === "accept") cmd("acceptCoachDeal", { id: el.dataset.id, paymentPlan: "upfront" });
     else if (act === "reject") cmd("rejectCoachDeal", { id: el.dataset.id });
   }
@@ -262,6 +271,8 @@
     }
     if ((el = t.closest("[data-tfh-wf]"))) { st.world.status = el.dataset.tfhWf; st.world.page = 0; open(); return; }
     if ((el = t.closest("[data-tfh-pg]"))) { const [k, d] = el.dataset.tfhPg.split(":"), f = PAGE_FIELD[k]; if (f) { st[f[0]][f[1]] = Math.max(0, (Number(st[f[0]][f[1]]) || 0) + Number(d)); } open(); return; }
+    if ((el = t.closest("[data-tfh-ptab]"))) { st.ptab = el.dataset.tfhPtab; flash = ""; open(); return; }
+    if ((el = t.closest("[data-tfh-profile]"))) { negotiate(el.dataset.tfhProfile); return; }
     if ((el = t.closest("[data-tfh-psub]"))) {
       st.psub = el.dataset.tfhPsub; st.pq.page = st.pq.cpage = st.pq.spage = 0; st.pq.clubId = ""; st.pq.nat = ""; flash = "";
       if (st.psub === "scout") { try { root.ProLifeCoachCareerView?.setMarketArea?.("observacao"); } catch (e) {} }
@@ -301,6 +312,8 @@
     const t = ev.target instanceof Element ? ev.target : null;
     if (!layer || !t) return;
     let el;
+    if ((el = t.closest("[data-tfh-lm]"))) { st.loanMonths = Number(el.value) || 12; open(); return; }
+    if ((el = t.closest("[data-tfh-lo]"))) { st.loanOpt = el.checked; open(); return; }
     if ((el = t.closest("[data-tfh-wl]"))) { st.world.league = el.value; st.world.page = 0; open(); return; }
     if ((el = t.closest("[data-tfh-wc]"))) { st.world.country = el.value; st.world.page = 0; open(); return; }
     if ((el = t.closest("[data-tfh-pq]"))) { st.pq.text = el.value; st.pq.page = st.pq.cpage = st.pq.spage = st.pq.npage = 0; open(); return; }

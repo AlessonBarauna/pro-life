@@ -6,6 +6,19 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-24-e",
+      date: "2026-11-24",
+      title: "Perfil do jogador, proposta com luvas e empréstimo",
+      items: [
+        { type: "novo", text: "Perfil do jogador no Mercado com 6 abas: Perfil, Atributos, Estatísticas, Contrato, Comparar e Relatório do olheiro." },
+        { type: "novo", text: "Proposta de compra mostra o pedido mínimo do clube. Titular ou jogador-chave só ouve propostas a partir de 135% do valor." },
+        { type: "novo", text: "Luvas de 6 meses de salário na assinatura. Não há comissão de agente." },
+        { type: "ajuste", text: "Rival histórico: o jogador só aceita se você pagar mais, e as luvas dobram." },
+        { type: "novo", text: "Empréstimo de 6, 12 ou 18 meses, com você pagando 100% do salário e uma taxa de 8% do valor. A opção de compra custa o valor atual mais 15%." },
+        { type: "ajuste", text: "Jogador-chave só é emprestado se o clube o colocou na lista de empréstimo." },
+      ],
+    },
+    {
       id: "2026-11-24-d",
       date: "2026-11-24",
       title: "Mercado com barra lateral e novas telas",

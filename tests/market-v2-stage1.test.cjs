@@ -29,4 +29,13 @@ assert.strictEqual(F({ country: "Brasil" }), 1); assert.strictEqual(F({ country:
 assert.strictEqual(F({ contract: "6" }, { ...p, contractEnd: 2028 }), 0); assert.strictEqual(F({ contract: "6" }, { ...p, contractEnd: 2026 }), 0, "6 meses exatos não é menos de 6");
 assert.strictEqual(F({ contract: "12" }, { ...p, contractEnd: 2026 }), 1);
 assert.strictEqual(F({ role: "Velocista" }), 1); assert.strictEqual(F({ role: "Armador" }), 0);
+// Etapa 2
+const roster = Array.from({ length: 20 }, (_, i) => ({ id: "r" + i, ovr: 90 - i }));
+assert.ok(R.isKeyPlayer(roster[0], roster)); assert.ok(R.isKeyPlayer(roster[13], roster)); assert.ok(!R.isKeyPlayer(roster[14], roster));
+assert.strictEqual(R.minimumOffer(100e6, true), 135e6); assert.strictEqual(R.minimumOffer(100e6, false), 95e6);
+assert.strictEqual(R.gloves(2e6, false), 12e6); assert.strictEqual(R.gloves(2e6, true), 24e6);
+const lt = R.loanTerms(100e6, 18); assert.strictEqual(lt.days, 545); assert.strictEqual(lt.salaryShare, 100); assert.strictEqual(lt.buyOption, 115e6);
+assert.strictEqual(R.loanTerms(100e6, 7).months, 6, "prazo inválido volta para 6");
+assert.ok(!R.canLoanOut(roster[0], roster, { season: 2026 }) || R.aiListing(roster[0], { season: 2026 }) === "loan");
+assert.ok(R.canLoanOut(roster[19], roster, { season: 2026 }));
 console.log("market-v2-stage1: ok");

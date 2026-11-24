@@ -71,7 +71,7 @@
     const body = rows.map(({ it, p, v }) => {
       const al = rules.shortlistAlerts(it, p, s, v).map((a) => `<span class="mk-alert mk-alert-${a.k}">${e_(a.text)}</span>`).join("");
       const pr = it.priority || "media";
-      return `<tr><td>${posChip(p)}</td><td>${ger(e, p)}</td><td class="mk-name"><button type="button" class="tfh-player" data-tfh-player="${e_(p.id)}">${e_(p.name)}</button>${al}</td><td class="mk-clubs">${e_(e.clubName(s, D, p.clubId))}</td><td>${p.age}</td><td>${e.money(v)}</td><td><select data-tfh-prio="${e_(it.clubId)}|${e_(p.id)}" aria-label="Prioridade"><option value="alta" ${pr === "alta" ? "selected" : ""}>Alta</option><option value="media" ${pr === "media" ? "selected" : ""}>Média</option><option value="baixa" ${pr === "baixa" ? "selected" : ""}>Baixa</option></select></td><td class="mk-acts"><button type="button" class="tfh-btn primary" data-tfh-negotiate="${e_(p.id)}">Negociar</button><button type="button" class="tfh-btn" data-tfh-star="${e_(p.id)}" data-club="${e_(it.clubId)}" aria-label="Remover da lista">Remover</button></td></tr>`;
+      return `<tr><td>${posChip(p)}</td><td>${ger(e, p)}</td><td class="mk-name"><button type="button" class="tfh-player" data-tfh-profile="${e_(p.id)}">${e_(p.name)}</button>${al}</td><td class="mk-clubs">${e_(e.clubName(s, D, p.clubId))}</td><td>${p.age}</td><td>${e.money(v)}</td><td><select data-tfh-prio="${e_(it.clubId)}|${e_(p.id)}" aria-label="Prioridade"><option value="alta" ${pr === "alta" ? "selected" : ""}>Alta</option><option value="media" ${pr === "media" ? "selected" : ""}>Média</option><option value="baixa" ${pr === "baixa" ? "selected" : ""}>Baixa</option></select></td><td class="mk-acts"><button type="button" class="tfh-btn primary" data-tfh-negotiate="${e_(p.id)}">Negociar</button><button type="button" class="tfh-btn" data-tfh-star="${e_(p.id)}" data-club="${e_(it.clubId)}" aria-label="Remover da lista">Remover</button></td></tr>`;
     }).join("");
     return head + `<div class="mk-scroll"><table class="mk-table"><thead><tr><th>Pos.</th><th>GER</th><th>Jogador</th><th>Clube</th><th>Idade</th><th>Valor</th><th>Prioridade</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`;
   }
@@ -82,7 +82,7 @@
     if (!rows.length) return `<p class="tfh-note">Nenhum jogador com esses filtros.</p>`;
     const body = slice(rows, page).map((p) => {
       const star = shortlist.some((x) => x.playerId === p.id), lst = rules.LISTING_LABEL[rules.aiListing(p, s)];
-      return `<tr><td>${posChip(p)}</td><td>${ger(e, p)}</td><td class="mk-name"><button type="button" class="tfh-player" data-tfh-player="${e_(p.id)}">${e_(p.name)}</button>${lst ? `<span class="mk-alert mk-alert-sale">${e_(lst)}</span>` : ""}</td><td class="mk-clubs">${e_(e.clubName(s, D, p.clubId))}</td><td>${p.age}</td><td>${Number(p.potential) || "—"}</td><td>${e.money(e.valueOf(p))}</td><td class="mk-acts"><button type="button" class="tfh-btn" data-tfh-star="${e_(p.id)}" data-club="${e_(p.clubId || "")}" aria-pressed="${star}" aria-label="Lista preferencial">${star ? "★" : "☆"}</button><button type="button" class="tfh-btn primary" data-tfh-negotiate="${e_(p.id)}">Negociar</button></td></tr>`;
+      return `<tr><td>${posChip(p)}</td><td>${ger(e, p)}</td><td class="mk-name"><button type="button" class="tfh-player" data-tfh-profile="${e_(p.id)}">${e_(p.name)}</button>${lst ? `<span class="mk-alert mk-alert-sale">${e_(lst)}</span>` : ""}</td><td class="mk-clubs">${e_(e.clubName(s, D, p.clubId))}</td><td>${p.age}</td><td>${Number(p.potential) || "—"}</td><td>${e.money(e.valueOf(p))}</td><td class="mk-acts"><button type="button" class="tfh-btn" data-tfh-star="${e_(p.id)}" data-club="${e_(p.clubId || "")}" aria-pressed="${star}" aria-label="Lista preferencial">${star ? "★" : "☆"}</button><button type="button" class="tfh-btn primary" data-tfh-negotiate="${e_(p.id)}">Negociar</button></td></tr>`;
     }).join("");
     return `<div class="mk-scroll"><table class="mk-table"><thead><tr><th>Pos.</th><th>GER</th><th>Jogador</th><th>Clube</th><th>Idade</th><th>Pot.</th><th>Valor</th><th></th></tr></thead><tbody>${body}</tbody></table></div>${pager(e, key, rows.length, page)}`;
   }
@@ -160,7 +160,37 @@
     return form + playerTable(e, rows, page, "af");
   }
 
-  const api = { mundo, clubSubNav, CLUB_SUBS, comprados, vendidos, loansTable, lista, pesquisa, avancada, PESQ_SUBS, dateOf };
+    // ---------- Perfil do jogador (6 abas) ----------
+  const PTABS = [["perfil", "Perfil"], ["atributos", "Atributos"], ["estatisticas", "Estatísticas"], ["contrato", "Contrato"], ["comparar", "Comparar"], ["relatorio", "Relatório do olheiro"]];
+  function bar(label, v) { const n = Math.max(0, Math.min(99, Number(v) || 0)); return `<div class="mk-bar"><span>${e_(label)}</span><i style="--w:${n}%"><b></b></i><em>${n}</em></div>`; }
+  function profile(e, p, st, parts) {
+    const { s, D } = e, rules = R(), lst = rules.LISTING_LABEL[rules.aiListing(p, s)];
+    const tabs = PTABS.map(([id, l]) => `<button type="button" role="tab" class="${st.ptab === id ? "on" : ""}" data-tfh-ptab="${id}">${l}</button>`).join("");
+    const star = (s.coachCareer?.shortlist || []).some((x) => x.playerId === p.id);
+    const acts = `<span class="mk-pacts"><button type="button" class="tfh-btn" data-tfh-star="${e_(p.id)}" data-club="${e_(p.clubId || "")}" aria-pressed="${star}">${star ? "★ Na lista" : "☆ Lista"}</button><button type="button" class="tfh-btn ${st.ptab === "proposta" ? "on" : "primary"}" data-tfh-ptab="proposta">Fazer proposta</button><button type="button" class="tfh-btn ${st.ptab === "emprestimo" ? "on" : ""}" data-tfh-ptab="emprestimo">Empréstimo</button></span>`;
+    const club = e.GF()?.clubById?.(s, p.clubId);
+    let body = "";
+    const age = p.age, val = e.valueOf(p), months = rules.monthsLeft(p, s);
+    if (st.ptab === "perfil") body = `<dl class="mk-dl"><div><dt>Posição</dt><dd>${e_(p.primaryPosition || p.pos)}${(p.secondaryPositions || []).length ? " · " + e_(p.secondaryPositions.join(", ")) : ""}</dd></div><div><dt>Idade</dt><dd>${age} anos</dd></div><div><dt>Geral / potencial</dt><dd>${e.ovrOf(p)} / ${Number(p.potential) || "—"}</dd></div><div><dt>Nacionalidade</dt><dd>${e_(p.nationality || "—")}</dd></div><div><dt>Clube</dt><dd>${e_(e.clubName(s, D, p.clubId))}</dd></div><div><dt>Liga</dt><dd>${e_(club ? e.leagueName(s, club.leagueId) : "—")}</dd></div><div><dt>Valor de mercado</dt><dd>${e.money(val)}</dd></div><div><dt>Função</dt><dd>${e_(rules.roleOf(p) || "—")}</dd></div><div><dt>Situação</dt><dd>${e_(lst || "Sem aviso de venda")}</dd></div><div><dt>Clubes interessados</dt><dd>${rules.interestedCount(p, s)}</dd></div></dl>`;
+    else if (st.ptab === "atributos") body = `<div class="mk-bars">${rules.ATTRS.map(([k, l]) => bar(l, p.attrs?.[k])).join("")}</div>`;
+    else if (st.ptab === "estatisticas") body = `<dl class="mk-dl"><div><dt>Jogos</dt><dd>${Number(p.appearances) || 0}</dd></div><div><dt>Gols</dt><dd>${Number(p.goals) || 0}</dd></div><div><dt>Minutos</dt><dd>${Number(p.minutes) || 0}</dd></div><div><dt>Disciplina</dt><dd>${Number(p.discipline) || "—"}</dd></div><div><dt>Condição</dt><dd>${Number(p.condition) || "—"}%</dd></div><div><dt>Melhor geral na carreira</dt><dd>${Number(p.peakOvr) || e.ovrOf(p)}</dd></div></dl>${(p.clubHistory || []).length ? `<p class="tfh-note">Passou por: ${e_(p.clubHistory.map((h) => h.club || h.name || h).join(", "))}</p>` : ""}`;
+    else if (st.ptab === "contrato") { let sal = Number(p.salary) || 0; try { sal = Number(root.ProLifePlayerEconomy?.expectedSalary?.(p, D.club(s))) || sal; } catch (x) {} const rival = !!parts.rival; body = `<dl class="mk-dl"><div><dt>Contrato até</dt><dd>${rules.contractEndOf(p, s)} (${months} meses)</dd></div><div><dt>Salário esperado</dt><dd>${e.money(sal)} por mês</dd></div><div><dt>Luvas (6 meses de salário)</dt><dd>${e.money(rules.gloves(sal, rival))}${rival ? " · rival paga o dobro" : ""}</dd></div><div><dt>Comissão de agente</dt><dd>Não há</dd></div><div><dt>Pedido mínimo do clube</dt><dd>${e.money(parts.minimum)}${parts.key ? " · jogador-chave: 135% do valor" : ""}</dd></div></dl>`; }
+    else if (st.ptab === "comparar") {
+      const mine = (D.club(s)?.roster || []).filter((x) => x.id !== "hero" && x.pos === p.pos).sort((a, b) => e.ovrOf(b) - e.ovrOf(a))[0];
+      body = mine ? `<table class="mk-table mk-cmp"><thead><tr><th></th><th>${e_(p.shortName || p.name)}</th><th>${e_(mine.shortName || mine.name)} (seu clube)</th></tr></thead><tbody><tr><td>Geral</td><td>${e.ovrOf(p)}</td><td>${e.ovrOf(mine)}</td></tr><tr><td>Idade</td><td>${p.age}</td><td>${mine.age}</td></tr>${rules.ATTRS.map(([k, l]) => `<tr><td>${l}</td><td class="${(p.attrs?.[k] || 0) > (mine.attrs?.[k] || 0) ? "mk-win" : ""}">${p.attrs?.[k] ?? "—"}</td><td class="${(mine.attrs?.[k] || 0) > (p.attrs?.[k] || 0) ? "mk-win" : ""}">${mine.attrs?.[k] ?? "—"}</td></tr>`).join("")}<tr><td>Valor</td><td>${e.money(val)}</td><td>${e.money(e.valueOf(mine))}</td></tr></tbody></table>` : `<p class="tfh-note">Você não tem outro jogador nessa posição para comparar.</p>`;
+    } else if (st.ptab === "relatorio") {
+      const best = rules.ATTRS.map(([k, l]) => [l, Number(p.attrs?.[k]) || 0]).sort((a, b) => b[1] - a[1]);
+      const mine = (D.club(s)?.roster || []).filter((x) => x.id !== "hero" && x.pos === p.pos).sort((a, b) => e.ovrOf(b) - e.ovrOf(a));
+      const starter = mine[Math.min(mine.length, p.pos === "GOL" ? 1 : p.pos === "ATA" ? 3 : 4) - 1];
+      const verdict = starter ? (e.ovrOf(p) > e.ovrOf(starter) + 2 ? "Seria titular no seu time." : e.ovrOf(p) >= e.ovrOf(starter) ? "Disputaria vaga entre os titulares." : "Entraria como reserva.") : "Não há concorrência na posição.";
+      const growth = (Number(p.potential) || 0) - e.ovrOf(p);
+      body = `<ul class="mk-rep"><li><b>Pontos fortes:</b> ${e_(best[0][0])} (${best[0][1]}) e ${e_(best[1][0])} (${best[1][1]}).</li><li><b>Ponto fraco:</b> ${e_(best[best.length - 1][0])} (${best[best.length - 1][1]}).</li><li><b>Encaixe:</b> ${verdict}</li><li><b>Evolução:</b> ${growth >= 6 && p.age <= 24 ? "ainda tem bastante a crescer" : growth >= 2 ? "pode crescer um pouco" : "já está perto do teto"}.</li><li><b>Contrato:</b> ${months < 12 ? "perto do fim, boa hora para negociar" : "vínculo longo, o clube pede mais"}.</li></ul>`;
+    } else if (st.ptab === "proposta") body = parts.panel;
+    else if (st.ptab === "emprestimo") body = parts.loan;
+    return `<div class="mk-profile"><div class="mk-phead">${parts.head}${acts}</div><nav class="mk-sub" role="tablist">${tabs}</nav>${body}</div>`;
+  }
+
+  const api = { profile, PTABS, mundo, clubSubNav, CLUB_SUBS, comprados, vendidos, loansTable, lista, pesquisa, avancada, PESQ_SUBS, dateOf };
   root.ProLifeMarketScreens = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

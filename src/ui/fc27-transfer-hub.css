@@ -156,3 +156,36 @@
   .mk-q{margin-bottom:6px}.mk-q span{display:none}
 }
 @media (max-height:430px){.tfh-shell label,.tfh-shell fieldset{min-height:0!important}.tfh-shell .tfh-search label{padding:0!important;margin:0!important}}
+
+/* Perfil do jogador (Mercado v2) */
+.mk-phead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.mk-phead .tfh-negcard{flex:1 1 320px;margin:0;min-width:0}
+.mk-pacts{display:flex;gap:6px;flex-wrap:wrap}
+.tfh-btn.on{background:rgba(201,242,58,.18);border-color:var(--fc-lime,#c9f23a);color:var(--fc-lime,#c9f23a)}
+.mk-profile .mk-sub{margin:8px 0}
+.mk-dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px 12px;margin:0}
+.mk-dl>div{display:grid;gap:1px;padding:7px 9px;border:1px solid rgba(180,205,230,.14);background:rgba(255,255,255,.025)}
+.mk-dl dt{font-size:10.5px;color:var(--pl-text-3,#7f8f9f)}.mk-dl dd{margin:0;font-size:13px;font-weight:700}
+.mk-bars{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px}
+.mk-bar{display:grid;grid-template-columns:90px 1fr 28px;gap:8px;align-items:center;font-size:12px}
+.mk-bar i{display:block;height:8px;background:rgba(180,205,230,.14);border-radius:4px;overflow:hidden}
+.mk-bar i b{display:block;height:100%;width:var(--w);background:var(--fc-lime,#c9f23a)}
+.mk-bar em{font-style:normal;font-weight:800;text-align:right}
+.mk-terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin:6px 0}
+.mk-terms span{display:grid;gap:1px;padding:7px 9px;border:1px solid rgba(201,242,58,.28);background:rgba(201,242,58,.05)}
+.mk-terms small{font-size:10.5px;color:var(--pl-text-3,#7f8f9f)}.mk-terms b{font-size:14px;color:var(--fc-lime,#c9f23a)}
+.mk-loan{display:flex;gap:14px;align-items:end;flex-wrap:wrap;margin:4px 0}
+.mk-loan label{display:grid;gap:3px;font-size:11px;color:var(--pl-text-3,#7f8f9f)}
+.mk-loan select{min-height:0;height:32px;padding:0 8px;border:1px solid var(--pl-line-strong,rgba(180,205,230,.25));background:rgba(8,17,27,.7);color:inherit;font:inherit;font-size:13px}
+.mk-loan .mk-chk2{display:flex;align-items:center;gap:6px;font-size:13px;color:inherit}
+.mk-loan .mk-chk2 input{width:16px;height:16px;min-height:0;margin:0}
+.mk-rep{margin:0;padding-left:18px;display:grid;gap:6px;font-size:13px;line-height:1.4}
+.mk-cmp td.mk-win{color:var(--fc-lime,#c9f23a);font-weight:800}
+@media (max-height:430px){
+  .mk-phead .tfh-negcard{padding:6px 10px;gap:8px}.mk-phead .tfh-negcard .tfh-ger{width:36px;height:36px;font-size:16px}
+  .mk-pacts .tfh-btn{min-height:0!important;height:30px;padding:0 10px!important}
+  .mk-bar{grid-template-columns:78px 1fr 24px}
+  .mk-dl{grid-template-columns:repeat(4,minmax(0,1fr))}.mk-dl>div{padding:4px 7px}
+  .tfh-shell .tfh-offer input{min-height:0!important;height:30px!important;padding:0 8px!important;font-size:14px!important}
+  .tfh-shell .tfh-offer{margin:4px 0}.tfh-shell .tfh-btn{min-height:0}
+}
