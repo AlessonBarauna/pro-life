@@ -50,6 +50,20 @@
     }
     if (inj.length) out.push({ group: true, keys: inj.map((x) => x.k), title: inj.length > 1 ? "Jogadores lesionados" : "Jogador lesionado", message: list(inj.map((x) => x.n)) + ". Quem estiver fora é trocado na escalação; ajuste como preferir.", label: "Abrir elenco", go: { page: "squad" } });
     if (sus.length) out.push({ group: true, keys: sus.map((x) => x.k), title: sus.length > 1 ? "Jogadores suspensos" : "Jogador suspenso", message: list(sus.map((x) => x.n)) + " não pode(m) jogar. Ajuste a escalação.", label: "Abrir elenco", go: { page: "squad" } });
+    const e6 = [], e1 = [];
+    for (const p of roster) {
+      if (!p || p.id === "hero") continue;
+      const end = Number(p.contractEndDay ?? p.contract?.endDay); if (!Number.isFinite(end)) continue;
+      const left = end - day; if (left <= 0) continue;
+      if (left <= 30) e1.push({ k: "ctr1:" + p.id + ":" + end, n: p.name + " (" + left + " d)", id: p.id });
+      else if (left <= 180) e6.push({ k: "ctr6:" + p.id + ":" + end, n: p.name + " (" + Math.round(left / 30) + " m)", id: p.id });
+    }
+    const ctr = (arr, urgent) => out.push({ group: true, keys: arr.map((x) => x.k),
+      title: urgent ? (arr.length > 1 ? "Contratos vencem em menos de 1 mês" : "Contrato vence em menos de 1 mês") : (arr.length > 1 ? "Contratos terminam em até 6 meses" : "Contrato termina em até 6 meses"),
+      message: list(arr.map((x) => x.n)) + (urgent ? ". Sem renovação, o jogador sai de graça no vencimento." : ". Renove antes do fim ou ele sai de graça."),
+      label: "Renovar contrato", go: { page: "market", tab: "elenco", renewId: arr.length === 1 ? arr[0].id : "" } });
+    if (e1.length) ctr(e1, true);
+    if (e6.length) ctr(e6, false);
     const cu = s.coachNational?.teamId ? s.coachNational.callup : null;
     if (cu && cu.status === "open") out.push({ key: "nat:" + cu.first + ":" + cu.label, title: "Convocação da seleção aberta", message: "Monte a lista para " + cu.label + ": faltam " + Math.max(0, Number(cu.deadline) - day) + " dia(s) para confirmar. Sem confirmação, a convocação automática vale.", label: "Convocar", go: { page: "national", natTab: "convocacao" } });
     for (const d of c.investors?.deals || []) {

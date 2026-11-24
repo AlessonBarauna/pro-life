@@ -846,6 +846,45 @@
     const gf=(s.globalFootball?.clubs||[]).find(c=>c.id===s.clubId);if(gf)gf.strength=next;
     return next;
   }
+  // Fim de contrato realista: sem renovação, o atleta deixa o clube de graça no dia do vencimento e vira jogador livre.
+  function expireContracts(s,api){
+    if(!isCoach(s)||!s.clubId)return [];
+    const c=state(s),club=clubOf(s,api);
+    if(!c||!club||!Array.isArray(club.roster))return [];
+    const day=Number(s.day)||0,loans=c.loans||[],offers=c.saleOffers||[];
+    const gone=[];
+    for(const p of club.roster.slice()){
+      if(!p||p.id==="hero")continue;
+      const end=Number(p.contractEndDay??p.contract?.endDay);
+      if(!Number.isFinite(end)||end>day)continue;
+      if(loans.some(l=>!l.returned&&l.playerId===p.id))continue;
+      if(offers.some(o=>o.playerId===p.id&&(o.status==="pending"||o.status==="awaiting_window")))continue;
+      gone.push(p);
+    }
+    if(!gone.length)return [];
+    const ids=new Set(gone.map(p=>String(p.id)));
+    club.roster=club.roster.filter(p=>!ids.has(String(p.id)));
+    club.lineup=(club.lineup||[]).filter(id=>!ids.has(String(id)));
+    if(Array.isArray(c.pitchSlots))c.pitchSlots=c.pitchSlots.map(id=>ids.has(String(id))?null:id);
+    const overall=p=>Number(api?.overall?.(p))||Number(p.ovr??p.overall)||0;
+    const out=p=>p&&(p.injury||Number(p.suspension)>0);
+    if(club.lineup.length<11){
+      const used=new Set(club.lineup.map(String));
+      const pool=club.roster.filter(p=>p.id!=="hero"&&!used.has(String(p.id))&&!out(p)).sort((a,b)=>overall(b)-overall(a)||String(a.id).localeCompare(String(b.id)));
+      for(const p of pool){if(club.lineup.length>=11)break;club.lineup.push(p.id);}
+    }
+    s.internationalPlayers||=[];
+    const releases=c.releases||[];
+    for(const p of gone){
+      p.clubId=null;p.leagueId=null;p.squadRole=null;
+      if(!s.internationalPlayers.some(x=>x.id===p.id))s.internationalPlayers.push(p);
+      releases.push({id:"expired_"+s.season+"_"+day+"_"+p.id,playerId:p.id,playerName:p.name,clubId:club.id,day,cost:0,reason:"contrato"});
+      try{root.ProLifeCareer?.addMessage?.(s,{category:"TREINADOR",sender:"Diretoria",subject:"Contrato encerrado: "+p.name,body:p.name+" terminou o contrato e deixou o clube como jogador livre. A renovação precisa ser feita antes do vencimento."});}catch(e){}
+    }
+    c.releases=releases.slice(-120);
+    c.contractExits=(c.contractExits||[]).concat(gone.map(p=>({day,playerId:p.id,name:p.name}))).slice(-40);
+    return gone.map(p=>({id:p.id,name:p.name}));
+  }
   // Escalação manual: o jogo nunca troca titulares pelo GER. Só quem está lesionado ou suspenso (e não pode jogar)
   // é trocado pelo melhor reserva da mesma posição, e o treinador é avisado por pop-up.
   function dropUnavailable(s,api){
@@ -886,7 +925,7 @@
     if(changed)c.benchOrder=next;
     return changed;
   }
-  const api={liveTrophies,liveTitleCount,sanitizeBench,autoIdealXI,dropUnavailable,syncStrength,VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
+  const api={liveTrophies,liveTitleCount,sanitizeBench,autoIdealXI,dropUnavailable,syncStrength,expireContracts,VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

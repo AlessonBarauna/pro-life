@@ -41,3 +41,20 @@ test("força do clube do treinador acompanha o elenco",()=>{
   assert.equal(E.club(s).strength,92);
   assert.equal(s.globalFootball.clubs.find(x=>x.id===s.clubId).strength,92);
 });
+test("contrato: aviso de 6 meses e 1 mês; no vencimento o jogador sai de graça",()=>{
+  const s=coach();A.fresh(s,E);
+  const c=E.club(s),[a,b,keep]=c.roster.filter(p=>p.id!=="hero"&&!c.lineup.includes(p.id));
+  a.contractEndDay=s.day+120;b.contractEndDay=s.day+20;
+  const f=A.fresh(s,E);
+  assert.ok(f.some(x=>/Contrato termina em até 6 meses/.test(x.title)&&x.go.renewId===a.id));
+  assert.ok(f.some(x=>/vence em menos de 1 mês/.test(x.title)&&x.go.renewId===b.id));
+  const starter=c.roster.find(p=>c.lineup.includes(p.id)&&p.id!=="hero");
+  starter.contractEndDay=s.day-1;keep.contractEndDay=s.day+400;
+  const gone=E.CoachCareer.expireContracts(s,E);
+  assert.deepEqual(gone.map(x=>x.id),[starter.id]);
+  assert.ok(!E.club(s).roster.some(p=>p.id===starter.id));
+  assert.equal(starter.clubId,null);
+  assert.equal(E.club(s).lineup.length,11);assert.equal(new Set(E.club(s).lineup).size,11);
+  assert.ok(E.club(s).roster.some(p=>p.id===a.id),"quem ainda tem contrato fica");
+  assert.deepEqual(E.CoachCareer.expireContracts(s,E),[]);
+});

@@ -3066,6 +3066,7 @@
           const nc = nextCommitment(s);
           if (nc && !nc.national && Number.isFinite(nc.date) && nc.date <= s.day + 1) CoachCareer?.dropUnavailable?.(s, API);
         } catch (e) { s.coachAutoIdealError = String(e?.message || e); }
+        try { CoachCareer?.expireContracts?.(s, API); } catch (e) { s.coachContractError = String(e?.message || e); }
         try { CoachCareer?.syncStrength?.(s, API); } catch (e) { s.coachStrengthError = String(e?.message || e); }
         try { CoachCareer?.sanitizeBench?.(s, API); } catch (e) { s.coachBenchError = String(e?.message || e); }
       }

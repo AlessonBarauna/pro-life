@@ -546,11 +546,12 @@
     let f = {}; try { f = JSON.parse(b.getAttribute("data-alert-fwd") || "{}"); } catch (_) {}
     closeSimulationStop();
     if (f["data-alert-nattab"]) { try { window.ProLifeCoachNationalView?.setTab?.(f["data-alert-nattab"]); } catch (_) {} }
+    if (f["data-alert-renew"]) { try { window.ProLifeCoachSquadHub?.openRenewal?.(f["data-alert-renew"]); } catch (_) {} }
     if (f["data-alert-scout"]) { try { window.ProLifeCoachCareerView?.setScoutScreen?.(f["data-alert-scout"]); } catch (_) {} }
     setTimeout(() => { const t = document.createElement("button"); t.type = "button"; t.className = "msg-action"; t.style.display = "none"; for (const k of Object.keys(f)) t.setAttribute(k, f[k]); document.body.appendChild(t); t.click(); t.remove(); }, 0);
   }, true);
   function alertGoButton(a) {
-    const g = a.go || {}, f = a.attrs ? { [a.attrs]: "" } : { "data-page": g.page || "inbox", "data-msg-tab": g.tab || "", "data-msg-area": g.area || "", "data-msg-list": g.list || "", "data-msg-player": g.playerId || "", ...(g.natTab ? { "data-alert-nattab": g.natTab } : {}), ...(g.scoutScreen ? { "data-alert-scout": g.scoutScreen } : {}) };
+    const g = a.go || {}, f = a.attrs ? { [a.attrs]: "" } : { "data-page": g.page || "inbox", "data-msg-tab": g.tab || "", "data-msg-area": g.area || "", "data-msg-list": g.list || "", "data-msg-player": g.playerId || "", ...(g.natTab ? { "data-alert-nattab": g.natTab } : {}), ...(g.scoutScreen ? { "data-alert-scout": g.scoutScreen } : {}), ...(g.renewId ? { "data-alert-renew": g.renewId } : {}) };
     return `<button type="button" class="primary" data-alert-go data-alert-fwd="${esc(JSON.stringify(f))}">${esc(a.label || "Abrir")}</button>`;
   }
   // Som de novas mensagens/conquistas: compara as mensagens não lidas com as já vistas nesta carreira.

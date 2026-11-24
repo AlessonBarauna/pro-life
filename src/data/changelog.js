@@ -6,6 +6,15 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-24-b",
+      date: "2026-11-24",
+      title: "Contratos que vencem de verdade",
+      items: [
+        { t: "novo", x: "Pop-up quando faltam 6 meses e de novo quando falta 1 mês para o fim do contrato de um jogador seu. O botão abre direto a renovação (Mercado > Meu elenco)." },
+        { t: "ajuste", x: "Contrato vencido sem renovação não fica mais parado: no dia do vencimento o jogador sai do clube de graça, vira jogador livre e você recebe uma mensagem. Se ele era titular, outro jogador entra no lugar na escalação." }
+      ]
+    },
+    {
       id: "2026-11-24-a",
       date: "2026-11-24",
       title: "Força do seu clube acompanha o elenco",
