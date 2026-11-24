@@ -6,6 +6,16 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-24-c",
+      date: "2026-11-24",
+      title: "Elenco com campo e painel de abas",
+      items: [
+        { t: "novo", text: "A tela Elenco ganhou um novo visual: o campo à esquerda com os cards dos jogadores (foto, GER, posição e condição) e, à direita, um painel com quatro abas." },
+        { t: "novo", text: "Plantel mostra o banco de reservas e deixa trocar jogadores; Formação troca o esquema; Instruções ajusta estilo, pressão, construção, largura e profundidade; Papéis define a função de cada titular." },
+        { t: "ajuste", text: "A barra lateral leva à Hierarquia, aos Relatórios, à Lista do elenco e aos Contratos. Os botões Voltar, Desfazer e Confirmar ficam sempre no topo." }
+      ]
+    },
+    {
       id: "2026-11-24-b",
       date: "2026-11-24",
       title: "Contratos que vencem de verdade",

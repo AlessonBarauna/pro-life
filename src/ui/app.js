@@ -13,6 +13,9 @@
     squadTab = "lineup",
     squadDetailTab = "attributes",
     squadRolePanelOpen = false,
+    squadFcTab = "plantel",
+    squadFcSub = "estilo",
+    squadDetailOpen = false,
     squadPhase = "with-ball",
     squadSwapSource = null,
     squadPositionSource = null,
@@ -2882,6 +2885,10 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       if((squadTab==="roster"||squadTab==="reports")&&window.ProLifeSM27Squad){
         const sm27Body=window.ProLifeSM27Squad.render(squadTab,{s:state,D,club:c});
         return squadFull.replace(/<div class="pl-squad-workspace">[\s\S]*$/,'<div class="pl-squad-sm27">'+sm27Body+'</div></div>');
+      }
+      if(coach&&window.ProLifeSquadFc&&["lineup","tactics","roles"].includes(squadTab)){
+        const detailAside=(squadFull.match(/<aside class="pl-squad-detail">[\s\S]*?<\/aside>/)||[""])[0];
+        return window.ProLifeSquadFc.render({esc,D,state,c,rows,bench,selected,formation,swapSource:squadSwapSource,canUndo,fit,positionOf,shortName,isUnavailable,roleOptions,teamTactics,presets,fcTab:squadFcTab,fcSub:squadFcSub,detailAside,detailOpen:squadDetailOpen,starters});
       }
       return squadFull;
     },
@@ -9892,6 +9899,11 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     }catch(error){toast(error.message);}
   });
   document.addEventListener("change",e=>{
+    const fr=e.target.matches?.("[data-fc-role]")?e.target:null;
+    if(fr&&state?.mode==="coach"){
+      try{command("coachPlayerRole",{playerId:fr.dataset.playerId,position:fr.dataset.position,role:fr.value});}catch(error){toast(error.message);}
+      return;
+    }
     if(!e.target.matches?.("[data-coach-formation]"))return;
     if(state?.mode!=="coach")return;
     try{
@@ -9988,6 +10000,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       }
       squadSwapSource=id;
       squadSelectedId=id;
+      squadDetailOpen=false;
       render();
       toast("Modo de troca ativado. Escolha o segundo jogador.");
       return;
@@ -10159,8 +10172,26 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     }
     const sqSet=b.closest?.("[data-sm27sq-set]");
     if (sqSet) { window.ProLifeSM27Squad?.set(sqSet.dataset.sm27sqSet, sqSet.dataset.value); render(); return; }
+    if (b.dataset.fcTab) { squadFcTab = b.dataset.fcTab; squadSwapSource = squadFcTab==="plantel"?squadSwapSource:null; render(); return; }
+    if (b.dataset.fcSub) { squadFcSub = b.dataset.fcSub; render(); return; }
+    if (b.dataset.fcDetail) { squadDetailOpen = b.dataset.fcDetail === "open"; render(); return; }
+    if (b.dataset.fcFormation) {
+      try { A.execute(state,"coachFormation",{value:b.dataset.fcFormation}); squadUndo=null; squadSwapSource=null; persist(); render(); toast("Formação atualizada. Confira a distribuição dos jogadores."); }
+      catch (error) { toast(error.message); render(); }
+      return;
+    }
+    if (b.dataset.fcTactic) {
+      const [key,raw]=b.dataset.fcTactic.split(":");
+      const tt=state.coachCareer?.teamTactics||{}, club=D.club(state);
+      const cur={style:tt.style||club?.tactic||"balanced",pressing:tt.pressing||"balanced",buildup:tt.buildup||"balanced",width:tt.width??50,depth:tt.depth??50};
+      cur[key]=(key==="width"||key==="depth")?Number(raw):raw;
+      return command("coachTeamTactics",cur);
+    }
     if (b.dataset.squadTab) {
-      squadTab = b.dataset.squadTab;
+      const t=b.dataset.squadTab;
+      if (state?.mode==="coach" && window.ProLifeSquadFc && ["lineup","tactics","roles"].includes(t)) {
+        squadTab="lineup"; if (t==="tactics") squadFcTab="instrucoes"; else if (t==="roles") squadFcTab="papeis"; else squadFcTab=squadFcTab||"plantel";
+      } else squadTab = t;
       render();
       return;
     }
