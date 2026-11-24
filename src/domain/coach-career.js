@@ -835,6 +835,17 @@
     if(changed)c.autoIdealDay=Number(s.day)||0;
     return {changed,formation};
   }
+  // A força exibida do clube do treinador acompanha o elenco (média dos 16 melhores, 30..99), como a dos clubes da IA.
+  function syncStrength(s,api){
+    if(!isCoach(s)||!s.clubId)return null;
+    const club=clubOf(s,api);if(!club||!Array.isArray(club.roster))return null;
+    const list=club.roster.map(p=>Number(p.ovr??p.overall)).filter(Number.isFinite).sort((a,b)=>b-a).slice(0,16);
+    if(!list.length)return null;
+    const next=clamp(Math.round(list.reduce((n,v)=>n+v,0)/list.length),30,99);
+    club.strength=next;
+    const gf=(s.globalFootball?.clubs||[]).find(c=>c.id===s.clubId);if(gf)gf.strength=next;
+    return next;
+  }
   // Escalação manual: o jogo nunca troca titulares pelo GER. Só quem está lesionado ou suspenso (e não pode jogar)
   // é trocado pelo melhor reserva da mesma posição, e o treinador é avisado por pop-up.
   function dropUnavailable(s,api){
@@ -875,7 +886,7 @@
     if(changed)c.benchOrder=next;
     return changed;
   }
-  const api={liveTrophies,liveTitleCount,sanitizeBench,autoIdealXI,dropUnavailable,VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
+  const api={liveTrophies,liveTitleCount,sanitizeBench,autoIdealXI,dropUnavailable,syncStrength,VERSION,FOCI,TALKS,FOCUS_ATTRIBUTES,fillPlayerRecords,positionCoverage,recordPayrollForecast,payrollReadiness,settleInquiries,settleTransferReplies,settleTransferObligations,expireMarketItems,inquiryAssessment,init:(s,a)=>{if(!isCoach(s))return null;state(s);syncClub(s,a);return s.coachCareer;},daily,evaluate,closeSeason,startSeason,dismiss,syncClub,lockerRoom,talk,setCaptain,captainOverride,setFocus,weeklyTraining,snapshot,riskOf,recordOfficialMatch,recordWorldLeagueTitle};
   root.ProLifeCoachCareer=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

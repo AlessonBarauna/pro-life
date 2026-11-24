@@ -3066,6 +3066,7 @@
           const nc = nextCommitment(s);
           if (nc && !nc.national && Number.isFinite(nc.date) && nc.date <= s.day + 1) CoachCareer?.dropUnavailable?.(s, API);
         } catch (e) { s.coachAutoIdealError = String(e?.message || e); }
+        try { CoachCareer?.syncStrength?.(s, API); } catch (e) { s.coachStrengthError = String(e?.message || e); }
         try { CoachCareer?.sanitizeBench?.(s, API); } catch (e) { s.coachBenchError = String(e?.message || e); }
       }
       if (s.mode === "coach" && s.clubId) { try { YouthAcademy?.daily(s, API, { log: (title, body) => log(s, title, body) }); } catch (e) { s.youthError = String(e?.message || e); } }

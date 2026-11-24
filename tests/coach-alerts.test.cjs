@@ -35,3 +35,9 @@ test("alertas: destinos dos botões",()=>{
   assert.equal(f.find(a=>/olheiro/.test(a.title)).go.scoutScreen,"olheiros");
   assert.equal(f.find(a=>/Convocação/.test(a.title)).go.natTab,"convocacao");
 });
+test("força do clube do treinador acompanha o elenco",()=>{
+  const s=coach(),c=E.club(s);for(const p of c.roster){p.ovr=92;p.overall=92;}
+  E.advance(s,1);
+  assert.equal(E.club(s).strength,92);
+  assert.equal(s.globalFootball.clubs.find(x=>x.id===s.clubId).strength,92);
+});

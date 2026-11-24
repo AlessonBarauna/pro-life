@@ -6,6 +6,14 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-24-a",
+      date: "2026-11-24",
+      title: "Força do seu clube acompanha o elenco",
+      items: [
+        { t: "correcao", x: "O número do seu clube no card da próxima partida (ex.: 79 x 85) ficava parado no valor do início da carreira. Agora ele é recalculado todo dia pela média do GER dos 16 melhores jogadores do seu elenco, igual aos clubes da IA." }
+      ]
+    },
+    {
       id: "2026-11-20-a",
       date: "2026-11-20",
       title: "Correção do erro ao simular partida",
