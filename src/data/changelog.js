@@ -6,6 +6,19 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-24-d",
+      date: "2026-11-24",
+      title: "Mercado com barra lateral e novas telas",
+      items: [
+        { type: "novo", text: "O Mercado ganhou uma barra lateral: Visão geral, Mundo, Clube, Lista, Pesquisa e Pesquisa avançada." },
+        { type: "novo", text: "Mundo: movimentações do mundo todo em tabela, com filtro por país e liga e páginas." },
+        { type: "novo", text: "Clube: negociações, comprados, vendidos, empréstimos que entram e saem, meu elenco e contratos num só lugar." },
+        { type: "novo", text: "Lista preferencial de até 50 jogadores, com prioridade e avisos: contrato acabando (menos de 6 meses), valor caindo mais de 20% e jogador que ficou livre." },
+        { type: "novo", text: "Pesquisa de jogadores, clubes (com os jogadores à venda ou para empréstimo) e seleções, além do Scouting." },
+        { type: "novo", text: "Pesquisa avançada com 11 filtros: posição, função, atributos (até 5 com 75 ou mais), idade, valor, fim de contrato, tipo de transferência, país, campeonato, nacionalidade e clubes interessados." },
+      ],
+    },
+    {
       id: "2026-11-24-c",
       date: "2026-11-24",
       title: "Elenco com campo e painel de abas",

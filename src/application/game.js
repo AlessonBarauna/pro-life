@@ -573,8 +573,9 @@ case "tactic": {
         const existing=list.findIndex(x=>x.clubId===seller.id&&x.playerId===player.id);
         if(existing>=0)list.splice(existing,1);
         else {
-          if(list.length>=80)throw Error("Lista de observação cheia.");
-          list.push({clubId:seller.id,playerId:player.id,addedDay:s.day});
+          if(list.length>=50)throw Error("Lista preferencial cheia (limite de 50 jogadores). Remova alguém para adicionar.");
+          let valueAtAdd=0;try{valueAtAdd=Number(PlayerEconomy?.marketValue?.(player))||0;}catch(_){}
+          list.push({clubId:seller.id,playerId:player.id,addedDay:s.day,valueAtAdd});
         }
         s.coachCareer.shortlist=list;
         break;

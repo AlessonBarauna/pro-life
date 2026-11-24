@@ -101,3 +101,58 @@
 .tfh-counter input{min-height:34px;width:130px;padding:0 8px;background:rgba(255,255,255,.05);border:1px solid rgba(180,205,230,.25);color:inherit;font:inherit}
 .tfh-counter small{flex-basis:100%;opacity:.7}
 .tfh-row:has(.tfh-counter-reply,.tfh-counter){flex-wrap:wrap}.tfh-row:has(.tfh-counter-reply,.tfh-counter) .tfh-side{margin-left:auto}
+
+/* Mercado v2: barra lateral + tabelas */
+.tfh-shell{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px}
+.tfh-sidenav{display:flex;flex-direction:column;gap:2px;overflow-y:auto;scrollbar-width:none;border-right:1px solid var(--pl-line-strong,rgba(180,205,230,.2));padding-right:8px}
+.tfh-sidenav button{min-height:0;min-width:0;padding:10px 8px;border:0;border-left:3px solid transparent;background:none;color:var(--pl-text-2,#b5c2cf);font-family:inherit;font-size:13px;font-weight:700;text-align:left;cursor:pointer;line-height:1.2}
+.tfh-sidenav button.active{color:var(--fc-lime,#c9f23a);border-left-color:var(--fc-lime,#c9f23a);background:rgba(201,242,58,.07)}
+.tfh-shell .tfh-body{min-width:0}
+.mk-sub{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 10px}
+.mk-sub button{min-height:0;padding:7px 11px;border:1px solid var(--pl-line-strong,rgba(180,205,230,.22));background:none;color:var(--pl-text-2,#b5c2cf);font-family:inherit;font-size:12px;font-weight:700;border-radius:999px;cursor:pointer}
+.mk-sub button.on{background:var(--fc-lime,#c9f23a);color:#08111b;border-color:transparent}
+.mk-scroll{overflow-x:auto}
+.mk-table{width:100%;border-collapse:collapse;font-size:12px}
+.mk-table th{position:sticky;top:0;background:#101c28;text-align:left;font-size:10.5px;font-weight:700;color:var(--pl-text-3,#7f8f9f);padding:6px 8px;white-space:nowrap}
+.mk-table td{padding:6px 8px;border-top:1px solid rgba(180,205,230,.12);white-space:nowrap;vertical-align:middle}
+.mk-table td.mk-name{font-weight:700;white-space:normal;min-width:120px}
+.mk-table td.mk-clubs{max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.mk-table td.mk-acts{display:flex;gap:6px;justify-content:flex-end;border-top:0}
+.mk-table tr:hover td{background:rgba(255,255,255,.025)}
+.mk-table .tfh-player{min-height:0;padding:0;border:0;background:none;color:inherit;font:inherit;font-weight:700;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(201,242,58,.5);text-underline-offset:3px}
+.mk-table select{min-height:0;padding:5px 6px;border:1px solid var(--pl-line-strong,rgba(180,205,230,.25));background:rgba(8,17,27,.7);color:inherit;font:inherit;font-size:12px}
+.mk-table .tfh-btn{min-height:0;padding:6px 10px}
+.mk-ger{display:inline-grid;place-items:center;min-width:26px;height:22px;border-radius:5px;background:var(--fc-lime,#c9f23a);color:#08111b;font-style:normal;font-weight:900;font-size:12px}
+.mk-pos{display:inline-block;min-width:30px;text-align:center;padding:2px 5px;border-radius:4px;font-style:normal;font-weight:800;font-size:10.5px;background:rgba(180,205,230,.16)}
+.mk-pos-GOL{background:rgba(242,201,76,.25);color:#f2c94c}.mk-pos-DEF{background:rgba(86,180,245,.22);color:#56b4f5}.mk-pos-MEI{background:rgba(95,214,138,.22);color:#5fd68a}.mk-pos-ATA{background:rgba(255,120,110,.22);color:#ff8a80}
+.mk-alert{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:700;background:rgba(242,201,76,.18);color:#f2c94c}
+.mk-alert-drop{background:rgba(255,120,110,.2);color:#ff8a80}.mk-alert-free{background:rgba(95,214,138,.2);color:#5fd68a}.mk-alert-sale{background:rgba(86,180,245,.18);color:#56b4f5}
+.mk-count{margin:0 0 8px;font-size:12px;color:var(--pl-text-2,#b5c2cf)}.mk-count b{color:var(--fc-lime,#c9f23a);font-size:15px}
+.mk-q{display:grid;gap:3px;margin:0 0 10px;font-size:11px;color:var(--pl-text-3,#7f8f9f)}
+.mk-q input{min-height:36px;padding:0 10px;border:1px solid var(--pl-line-strong,rgba(180,205,230,.25));background:rgba(8,17,27,.7);color:inherit;font:inherit;font-size:14px;width:100%;box-sizing:border-box}
+.mk-adv{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+.mk-attrs{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 14px;margin:0;padding:6px 8px;border:1px solid var(--pl-line-strong,rgba(180,205,230,.2))}
+.mk-attrs legend{font-size:11px;color:var(--pl-text-3,#7f8f9f);padding:0 4px}
+.mk-attr{display:flex!important;align-items:center;gap:5px;font-size:12px!important;color:var(--pl-text-2,#b5c2cf)!important}
+.mk-chk{margin-bottom:8px}
+@media (max-height:430px){
+  .tfh-shell{grid-template-columns:112px minmax(0,1fr);gap:8px}
+  .tfh-sidenav button{font-size:12px;padding:8px 6px}
+  .mk-table{font-size:11.5px}.mk-table td{padding:4px 6px}
+  .mk-adv{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media (max-width:560px) and (min-height:431px){.tfh-shell{grid-template-columns:1fr}.tfh-sidenav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--pl-line-strong,rgba(180,205,230,.2));padding:0 0 4px}.tfh-sidenav button{white-space:nowrap;border-left:0;border-bottom:3px solid transparent}.tfh-sidenav button.active{border-bottom-color:var(--fc-lime,#c9f23a)}}
+@media (max-height:430px){
+  .tfh-shell .tfh-search select,.tfh-shell .tfh-search input[type=number],.tfh-shell .tfh-search input[type=search],.mk-q input{min-height:0!important;height:28px!important;padding:0 6px!important;font-size:12px!important}
+  .tfh-shell .tfh-search{gap:4px 6px}.tfh-shell .tfh-search label{gap:1px;font-size:10px}
+  .mk-adv{grid-template-columns:repeat(4,minmax(0,1fr))!important;margin-bottom:6px}
+  .mk-attrs{padding:3px 6px;gap:2px 10px}.mk-attr{font-size:11px!important}
+  .mk-attr input,.mk-chk input{width:15px!important;height:15px!important;min-height:0!important;margin:0}
+  .mk-table .tfh-btn,.mk-table select{min-height:0!important;height:26px;padding:0 9px!important;font-size:11px!important;line-height:1}
+  .mk-sub{gap:3px;margin-bottom:6px}.mk-sub button{padding:5px 9px!important;font-size:11px!important;min-height:0!important}
+  .tfh-shell .tfh-chip{min-height:0!important;padding:5px 10px!important}
+  .tfh-shell .tfh-filters select{min-height:0!important;height:28px!important;font-size:12px!important}
+  .tfh-shell .tfh-actions{margin:6px 0}
+  .mk-q{margin-bottom:6px}.mk-q span{display:none}
+}
+@media (max-height:430px){.tfh-shell label,.tfh-shell fieldset{min-height:0!important}.tfh-shell .tfh-search label{padding:0!important;margin:0!important}}

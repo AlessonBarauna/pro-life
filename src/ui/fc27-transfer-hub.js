@@ -6,13 +6,19 @@
   if (!doc) return;
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const money = (v) => { const n = Number(v) || 0, a = Math.abs(n); return a >= 1e9 ? "R$ " + (a / 1e9).toFixed(2).replace(".", ",") + " bi" : a >= 1e6 ? "R$ " + (a / 1e6).toFixed(1).replace(".", ",") + " mi" : a >= 1e3 ? "R$ " + Math.round(a / 1e3) + " mil" : "R$ " + Math.round(a); };
-  const TABS = [["geral", "Visão geral"], ["mundo", "Atividade mundial"], ["scout", "Scouting"], ["negociacoes", "Negociações"], ["elenco", "Meu elenco"], ["gestao", "Contratos"]];
-  const EMBED_TABS = ["scout", "elenco", "gestao"];
+  // Barra lateral: cada grupo abre uma tela; os ids antigos de aba continuam valendo (alertas e pop-ups dependem deles).
+  const SIDE = [["geral", "Visão geral", ["geral"]], ["mundo", "Mundo", ["mundo"]], ["negociacoes", "Clube", ["negociacoes", "comprados", "vendidos", "emp_in", "emp_out", "elenco", "gestao"]], ["lista", "Lista", ["lista"]], ["pesquisa", "Pesquisa", ["pesquisa", "scout"]], ["avancada", "Pesquisa avançada", ["avancada"]]];
+  const TABS = SIDE.flatMap(([, , ids]) => ids.map((id) => [id]));
+  const isEmbed = () => tab === "elenco" || tab === "gestao" || (tab === "pesquisa" && st.psub === "scout");
+  const EMBED_TABS = ["scout", "elenco", "gestao", "pesquisa"];
   const AREA_OF = { scout: "observacao", elenco: "squad", gestao: "transferencias" };
   const DEAL = { rumor: ["Rumor", "rumor"], scouting: ["Observando", "rumor"], negotiating: ["Em negociação", "neg"], offer: ["Proposta feita", "neg"], completed: ["Fechado", "done"], rejected: ["Recusado", "out"], cancelled: ["Cancelado", "out"] };
   let layer = null, directPending = false, tab = "geral", negPid = null, flash = "", counterFor = null; const tabHist = [];
-  const wf = { status: "all", league: "" };
-  const sf = { q: "", pos: "", ageMax: 40, ovrMin: 60, potMin: 0, valueMax: 0, league: "", free: false, page: 0 };
+  const freshAdv = () => ({ pos: "", role: "", ageMin: "", ageMax: "", valueMin: "", valueMax: "", contract: "", listing: "", country: "", league: "", nat: "", interest: "", attrs: [], run: false, page: 0 });
+  const st = { world: { status: "all", league: "", country: "", page: 0 }, pq: { text: "", page: 0, cpage: 0, spage: 0, npage: 0, lpage: 0, clubId: "", nat: "", onlyListed: false }, psub: "jogadores", adv: freshAdv() };
+  const PAGE_FIELD = { world: ["world", "page"], pq: ["pq", "page"], cp: ["pq", "cpage"], sp: ["pq", "spage"], np: ["pq", "npage"], lp: ["pq", "lpage"], af: ["adv", "page"] };
+  const MS = () => root.ProLifeMarketScreens;
+  const env = (s, D) => ({ s, D, GF, ovrOf, valueOf, money, clubName, leagues, leagueName, DEAL });
 
   function ctx() { const c = root.ProLifeSM27Ctx?.(); return c?.s && c.s.mode === "coach" ? c : null; }
   const GF = () => root.ProLifeGlobalFootball;
@@ -36,7 +42,7 @@
     const expiring = (club.roster || []).filter((p) => p.id !== "hero" && Number.isFinite(Number(p.contractEnd ?? p.contractUntil)) && Number(p.contractEnd ?? p.contractUntil) <= s.season).length;
     const tile = (l, v, sub, t) => `<button type="button" class="tfh-tile" ${t ? `data-tfh-tab="${t}"` : ""}><small>${esc(l)}</small><b>${esc(v)}</b>${sub ? `<em>${esc(sub)}</em>` : ""}</button>`;
     const latest = (s.worldLiveMarket?.deals || []).filter((d) => d.state !== "cancelled").slice().sort((a, b) => (b.updatedDay || 0) - (a.updatedDay || 0)).slice(0, 5);
-    return `<div class="tfh-tiles">${tile("Orçamento de transferências", money(club.budget))}${tile("Janela", w.open ? "Aberta" : "Fechada", w.open ? `fecha em ${w.remaining} d` : `abre em ${w.remaining} d`)}${tile("Negociações ativas", neg, "ver todas", "negociacoes")}${tile("Propostas recebidas", offers, "responder", "negociacoes")}${tile("Sondagens", inq, "", "negociacoes")}${tile("Lista de alvos", (c.shortlist || []).length, "ver no Scouting", "scout")}${tile("Contratos no fim", expiring, "meu elenco", "elenco")}${(() => { const hv = root.ProLifeClubHype?.view?.(s); return hv && hv.level > 0 ? tile("Marca em alta (Champions)", hv.tag, hv.percent + (hv.stage ? " · " + hv.stage : "")) : ""; })()}</div>
+    return `<div class="tfh-tiles">${tile("Orçamento de transferências", money(club.budget))}${tile("Janela", w.open ? "Aberta" : "Fechada", w.open ? `fecha em ${w.remaining} d` : `abre em ${w.remaining} d`)}${tile("Negociações ativas", neg, "ver todas", "negociacoes")}${tile("Propostas recebidas", offers, "responder", "negociacoes")}${tile("Sondagens", inq, "", "negociacoes")}${tile("Lista preferencial", (c.shortlist || []).length, "abrir lista", "lista")}${tile("Contratos no fim", expiring, "meu elenco", "elenco")}${(() => { const hv = root.ProLifeClubHype?.view?.(s); return hv && hv.level > 0 ? tile("Marca em alta (Champions)", hv.tag, hv.percent + (hv.stage ? " · " + hv.stage : "")) : ""; })()}</div>
       <h3 class="tfh-h">Últimas do mercado mundial</h3>${latest.length ? feed(s, D, latest) : `<p class="tfh-note">Ainda sem movimentos. O mercado esquenta com as janelas abertas.</p>`}`;
   }
 
@@ -46,40 +52,14 @@
   }
   const feed = (s, D, deals) => `<ul class="tfh-list">${deals.map((d) => dealRow(s, D, d)).join("")}</ul>`;
 
-  function mundo(s, D) {
-    let deals = (s.worldLiveMarket?.deals || []).filter((d) => d.state !== "cancelled" && d.executionStatus !== "cancelled");
-    const group = { rumor: ["rumor", "scouting"], neg: ["negotiating", "offer"], done: ["completed"] };
-    if (wf.status !== "all") deals = deals.filter((d) => group[wf.status].includes(d.state));
-    if (wf.league) deals = deals.filter((d) => [d.fromClubId, d.toClubId].some((id) => (GF()?.clubById?.(s, id) || {}).leagueId === wf.league));
-    deals.sort((a, b) => (b.updatedDay || 0) - (a.updatedDay || 0));
-    const chips = [["all", "Tudo"], ["rumor", "Rumores"], ["neg", "Negociações"], ["done", "Fechados"]].map(([k, l]) => `<button type="button" class="tfh-chip ${wf.status === k ? "on" : ""}" data-tfh-wf="${k}">${l}</button>`).join("");
-    const sel = `<select data-tfh-wl aria-label="Liga"><option value="">Todas as ligas</option>${leagues(s).map(([id, n]) => `<option value="${esc(id)}" ${wf.league === id ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>`;
-    return `<div class="tfh-filters">${chips}${sel}</div>${deals.length ? feed(s, D, deals.slice(0, 80)) : `<p class="tfh-note">Nenhuma movimentação com esses filtros.</p>`}`;
-  }
-
-  function search(s, D, club) {
-    const g = GF(), own = s.clubId, list = (s.coachCareer?.shortlist || []);
-    const inList = (p) => list.some((e) => e.playerId === p.id);
-    let ps = (g?.activePlayers?.(s) || []).filter((p) => p && p.id !== "hero" && p.clubId !== own && !p.academy);
-    if (sf.free) ps = ps.filter((p) => !p.clubId);
-    const q = sf.q.trim().toLowerCase();
-    if (q) ps = ps.filter((p) => String(p.name || "").toLowerCase().includes(q));
-    if (sf.pos) ps = ps.filter((p) => p.pos === sf.pos);
-    ps = ps.filter((p) => Number(p.age) <= sf.ageMax && ovrOf(p) >= sf.ovrMin && Number(p.potential || 0) >= sf.potMin);
-    if (sf.league) ps = ps.filter((p) => (g.clubById?.(s, p.clubId) || {}).leagueId === sf.league);
-    const rows = ps.map((p) => ({ p, v: valueOf(p) })).filter((r) => !sf.valueMax || r.v <= sf.valueMax * 1e6).sort((a, b) => ovrOf(b.p) - ovrOf(a.p) || Number(b.p.potential || 0) - Number(a.p.potential || 0));
-    const per = 25, pages = Math.max(1, Math.ceil(rows.length / per)); if (sf.page >= pages) sf.page = pages - 1;
-    const view = rows.slice(sf.page * per, sf.page * per + per);
-    const num = (k, l, min, max, step) => `<label>${l}<input type="number" data-tfh-sf="${k}" value="${sf[k]}" min="${min}" max="${max}" step="${step}"></label>`;
-    const filters = `<div class="tfh-search"><label class="wide">Nome<input type="search" data-tfh-sf="q" value="${esc(sf.q)}" placeholder="Buscar atleta"></label>
-      <label>Posição<select data-tfh-sf="pos"><option value="">Todas</option>${["GOL", "DEF", "MEI", "ATA"].map((p) => `<option ${sf.pos === p ? "selected" : ""}>${p}</option>`).join("")}</select></label>
-      <label>Liga<select data-tfh-sf="league"><option value="">Todas</option>${leagues(s).map(([id, n]) => `<option value="${esc(id)}" ${sf.league === id ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
-      ${num("ovrMin", "GER mínimo", 40, 95, 1)}${num("potMin", "Potencial mínimo", 0, 99, 1)}${num("ageMax", "Idade máxima", 16, 45, 1)}${num("valueMax", "Valor máx. (mi)", 0, 2000, 5)}
-      <label class="chk"><input type="checkbox" data-tfh-sf="free" ${sf.free ? "checked" : ""}> Só livres</label></div>`;
-    const body = view.length ? `<ul class="tfh-list">${view.map(({ p, v }) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(p.name)}</b><small>${esc(p.pos)} · ${esc(p.age)} anos · GER ${ovrOf(p)} / pot. ${Number(p.potential || 0) || "—"} · ${esc(clubName(s, D, p.clubId))}</small></span><span class="tfh-side"><em>${money(v)}</em><span class="tfh-acts"><button type="button" class="tfh-btn" data-tfh-star="${esc(p.id)}" data-club="${esc(p.clubId || "")}" aria-pressed="${inList(p)}" title="Lista de alvos">${inList(p) ? "★" : "☆"}</button><button type="button" class="tfh-btn primary" data-tfh-negotiate="${esc(p.id)}">Negociar</button></span></span></li>`).join("")}</ul>` : `<p class="tfh-note">Nenhum atleta com esses filtros.</p>`;
-    const pager = `<div class="tfh-pager"><button type="button" class="tfh-btn" data-tfh-page="-1" ${sf.page <= 0 ? "disabled" : ""}>Anterior</button><span>${rows.length} atletas · página ${sf.page + 1} de ${pages}</span><button type="button" class="tfh-btn" data-tfh-page="1" ${sf.page >= pages - 1 ? "disabled" : ""}>Próxima</button></div>`;
-    return filters + body + pager;
-  }
+  function mundo(s, D) { return MS().mundo(env(s, D), st); }
+  function comprados(s, D) { return MS().clubSubNav("comprados") + MS().comprados(env(s, D)); }
+  function vendidos(s, D) { return MS().clubSubNav("vendidos") + MS().vendidos(env(s, D)); }
+  function empIn(s, D) { return MS().clubSubNav("emp_in") + MS().loansTable(env(s, D), "in"); }
+  function empOut(s, D) { return MS().clubSubNav("emp_out") + MS().loansTable(env(s, D), "out"); }
+  function lista(s, D) { return MS().lista(env(s, D), st); }
+  function avancada(s, D) { return MS().avancada(env(s, D), st); }
+  function pesquisa(s, D) { return st.psub === "scout" ? MS().pesquisa(env(s, D), st) + gestao(s, D) : MS().pesquisa(env(s, D), st); }
 
   function investorSection(s) {
     const sec = (t, inner, empty) => `<h3 class="tfh-h">${t}</h3>${inner || `<p class="tfh-note">${empty}</p>`}`;
@@ -121,7 +101,7 @@
     const historyBlock = () => sec("Histórico das suas propostas", hist.length ? `<ul class="tfh-list tfh-history">${hist.map((h) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(h.name)}</b><small>${esc(h.club)} · ${esc(h.why)}${h.day ? " · " + dateOf(h.day) : ""}</small></span><span class="tfh-side">${Number(h.amount) > 0 ? `<em>${money(h.amount)}</em>` : ""}<span class="tfh-tag tfh-tag-${h.k}">${esc(h.t)}</span></span></li>`).join("")}</ul>` : "", "Quando uma proposta sua for aceita, recusada ou expirar, o resultado aparece aqui.");
     const offerRow = (o) => `<li class="tfh-row"><span class="tfh-main"><b><button type="button" class="tfh-player" data-tfh-player="${esc(o.playerId)}" title="Ver detalhes do jogador">${esc(o.playerName || nm(o.playerId))}</button></b><small>${esc(clubName(s, D, o.buyerClubId))} · ${o.dealType === "loan" ? "empréstimo" : "compra"}${Number.isFinite(Number(o.expiresDay)) ? ` · expira em ${Math.max(0, o.expiresDay - s.day)} d` : ""}</small></span><span class="tfh-side"><em>${money(o.amount)}</em><span class="tfh-acts"><button type="button" class="tfh-btn primary" data-tfh-cmd="acceptSaleOffer" data-id="${esc(o.id)}">Aceitar</button><button type="button" class="tfh-btn" data-tfh-counter-open="${esc(o.id)}">Negociar</button><button type="button" class="tfh-btn" data-tfh-cmd="rejectSaleOffer" data-id="${esc(o.id)}">Recusar</button></span></span>${o.response ? `<p class="tfh-counter-reply">${o.response === "accepted" ? `${esc(clubName(s, D, o.buyerClubId))} aceitou ${money(o.amount)}. Toque em Aceitar para fechar.` : `${esc(clubName(s, D, o.buyerClubId))} não chegou a ${money(o.requested)} e subiu para ${money(o.amount)}.`}${(o.round || 0) >= 3 ? " As conversas se encerraram." : ""}</p>` : ""}${counterFor === o.id && (o.round || 0) < 3 ? `<form class="tfh-counter" data-tfh-counter-form="${esc(o.id)}"><label>Quanto você quer? (R$ milhões)<input type="number" min="0" step="0.1" inputmode="decimal" value="${(Math.round(Number(o.amount) * 1.15 / 1e5) / 10).toString()}" data-tfh-counter-amount></label><button type="button" class="tfh-btn primary" data-tfh-counter-send="${esc(o.id)}">Enviar contraproposta</button><small>Oferta atual: ${money(o.amount)} · rodada ${(o.round || 0) + 1} de 3</small></form>` : ""}</li>`;
     const sec = (t, inner, empty) => `<h3 class="tfh-h">${t}</h3>${inner || `<p class="tfh-note">${empty}</p>`}`;
-    return sec("Propostas recebidas pelos seus jogadores", offers.length ? `<ul class="tfh-list">${offers.map(offerRow).join("")}</ul>` : "", "Nenhuma proposta no momento.") +
+    return MS().clubSubNav("negociacoes") + sec("Propostas recebidas pelos seus jogadores", offers.length ? `<ul class="tfh-list">${offers.map(offerRow).join("")}</ul>` : "", "Nenhuma proposta no momento.") +
       (waiting.length ? sec(winOpen ? "Vendas acordadas (ainda não concluídas)" : "Vendas acordadas (aguardando a janela)", `<ul class="tfh-list">${waiting.map((o) => `<li class="tfh-row"><span class="tfh-main"><b><button type="button" class="tfh-player" data-tfh-player="${esc(o.playerId)}" title="Ver detalhes do jogador">${esc(o.playerName || nm(o.playerId))}</button></b><small>para ${esc(clubName(s, D, o.buyerClubId))}${winOpen ? ` · ${o.lastSettlementError ? "não concluída: " + esc(o.lastSettlementError) : "será concluída ao avançar o dia"}` : ""}</small></span><span class="tfh-side"><em>${money(o.amount)}</em><span class="tfh-acts">${winOpen ? `<button type="button" class="tfh-btn primary" data-tfh-cmd="acceptSaleOffer" data-id="${esc(o.id)}">Concluir agora</button>` : ""}<button type="button" class="tfh-btn" data-tfh-cmd="rejectSaleOffer" data-id="${esc(o.id)}">Cancelar</button></span></span></li>`).join("")}</ul>`) : "") +
       sec("Suas negociações de compra", negs.length ? `<ul class="tfh-list">${negs.map((n) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(n.playerName || nm(n.playerId))}</b><small>${esc(clubName(s, D, n.sellerClubId))} · ${n.status === "awaiting_window" ? "acordo fechado, aguardando janela" : "em andamento"}</small></span><span class="tfh-side">${Number(n.amount ?? n.fee) > 0 ? `<em>${money(n.amount ?? n.fee)}</em>` : ""}<button type="button" class="tfh-btn" data-tfh-negotiate="${esc(n.playerId)}">Abrir</button></span></li>`).join("")}</ul>` : "", "Nenhuma negociação aberta. Use Buscar jogadores.") +
       sec("Sondagens em andamento", inqsF.length ? `<ul class="tfh-list">${inqsF.map((i) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(i.playerName || nm(i.playerId))}</b><small>${esc(clubName(s, D, i.clubId))} · ${inqLabel(i)}</small></span><span class="tfh-side"><button type="button" class="tfh-btn" data-tfh-negotiate="${esc(i.playerId)}">Abrir</button></span></li>`).join("")}</ul>` : "", "Sem sondagens abertas.") +
@@ -131,10 +111,10 @@
 
   function elenco(s, D, club) {
     const prefs = s.coachCareer?.offerPreferences || { listedIds: [], loanListedIds: [], blockedIds: [] };
-    const st = (p) => (prefs.blockedIds || []).includes(p.id) ? "Intransferível" : (prefs.listedIds || []).includes(p.id) ? "À venda" : (prefs.loanListedIds || []).includes(p.id) ? "Para empréstimo" : "Disponível a propostas";
+    const stOf = (p) => (prefs.blockedIds || []).includes(p.id) ? "Intransferível" : (prefs.listedIds || []).includes(p.id) ? "À venda" : (prefs.loanListedIds || []).includes(p.id) ? "Para empréstimo" : "Disponível a propostas";
     const ps = (club.roster || []).filter((p) => p.id !== "hero").slice().sort((a, b) => ovrOf(b) - ovrOf(a));
     const btn = (p, status, label) => `<button type="button" class="tfh-btn" data-tfh-cmd="setCoachPlayerOfferStatus" data-pid="${esc(p.id)}" data-status="${status}">${label}</button>`;
-    return `<ul class="tfh-list">${ps.map((p) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(p.name)}</b><small>${esc(p.pos)} · ${esc(p.age)} anos · GER ${ovrOf(p)} · ${esc(st(p))}</small></span><span class="tfh-side"><em>${money(valueOf(p))}</em><span class="tfh-acts">${btn(p, "listed", "Vender")}${btn(p, "loan_listed", "Emprestar")}${btn(p, "blocked", "Segurar")}${btn(p, "available", "Limpar")}</span></span></li>`).join("")}</ul>`;
+    return MS().clubSubNav("elenco") + `<ul class="tfh-list">${ps.map((p) => `<li class="tfh-row"><span class="tfh-main"><b>${esc(p.name)}</b><small>${esc(p.pos)} · ${esc(p.age)} anos · GER ${ovrOf(p)} · ${esc(stOf(p))}</small></span><span class="tfh-side"><em>${money(valueOf(p))}</em><span class="tfh-acts">${btn(p, "listed", "Vender")}${btn(p, "loan_listed", "Emprestar")}${btn(p, "blocked", "Segurar")}${btn(p, "available", "Limpar")}</span></span></li>`).join("")}</ul>`;
   }
 
 
@@ -178,7 +158,7 @@
     try { inner = V?.renderMarket?.(s, D) || ""; } catch (e) {
       try { console.error("[mercado] gestão falhou", e); V?.setTab?.("proposals"); inner = V?.renderMarket?.(s, D) || ""; } catch (e2) { inner = ""; }
     }
-    return `<div class="tfh-embed tfh-area-${tab}">${inner || '<p class="tfh-note">Não foi possível carregar a gestão agora. <button type="button" class="tfh-btn" data-tfh-tab="gestao">Tentar de novo</button></p>'}</div>`;
+    return (tab === "gestao" ? MS().clubSubNav("gestao") : "") + `<div class="tfh-embed tfh-area-${tab}">${inner || '<p class="tfh-note">Não foi possível carregar a gestão agora. <button type="button" class="tfh-btn" data-tfh-tab="gestao">Tentar de novo</button></p>'}</div>`;
   }
 
   function html() {
@@ -187,18 +167,19 @@
     if (!c) body = `<p class="tfh-note">O Mercado está disponível na carreira de treinador.</p>`;
     else {
       const club = c.D.club(c.s);
-      body = !club ? `<p class="tfh-note">Assine com um clube para usar o mercado.</p>` : (negPid ? negotiation : ({ geral, mundo, scout: gestao, negociacoes, elenco: gestao, gestao }[tab] || geral))(c.s, c.D, club);
+      const view = { geral, mundo, negociacoes, comprados, vendidos, emp_in: empIn, emp_out: empOut, elenco, gestao, lista, pesquisa, avancada, scout: pesquisa }[tab] || geral;
+      body = !club ? `<p class="tfh-note">Assine com um clube para usar o mercado.</p>` : (negPid ? negotiation : view)(c.s, c.D, club);
       if (flash) body = `<p class="tfh-flash" role="status">${esc(flash)}</p>` + body;
     }
-    const tabs = TABS.map(([id, l]) => `<button type="button" role="tab" class="${tab === id ? "active" : ""}" aria-selected="${tab === id}" data-tfh-tab="${id}">${l}</button>`).join("");
-    return `<div class="sm27-dialog-backdrop" data-tfh-close></div><section class="sm27-dialog tfh-dialog" role="dialog" aria-modal="true" aria-label="Mercado"><header class="sm27-dialog-head"><button type="button" class="sm27-dialog-back" data-tfh-back aria-label="Voltar">‹</button><h2>Mercado</h2><button type="button" class="sm27-dialog-x" data-tfh-close aria-label="Fechar">×</button></header><nav class="tfh-tabs" role="tablist">${tabs}</nav><div class="tfh-body">${body}</div></section>`;
+    const side = SIDE.map(([id, l, ids]) => `<button type="button" role="tab" class="${ids.includes(tab) ? "active" : ""}" aria-selected="${ids.includes(tab)}" data-tfh-tab="${id}">${l}</button>`).join("");
+    return `<div class="sm27-dialog-backdrop" data-tfh-close></div><section class="sm27-dialog tfh-dialog" role="dialog" aria-modal="true" aria-label="Mercado"><header class="sm27-dialog-head"><button type="button" class="sm27-dialog-back" data-tfh-back aria-label="Voltar">‹</button><h2>Mercado</h2><button type="button" class="sm27-dialog-x" data-tfh-close aria-label="Fechar">×</button></header><div class="tfh-shell"><nav class="tfh-sidenav" role="tablist" aria-label="Seções do Mercado">${side}</nav><div class="tfh-body">${body}</div></div></section>`;
   }
   function open() {
     if (!layer) { layer = doc.createElement("div"); layer.className = "sm27-dialog-layer"; doc.body.appendChild(layer); doc.body.classList.remove("sm27-menu-open"); }
-    const keep = layer.querySelector(".tfh-body")?.scrollTop || 0, focused = doc.activeElement?.getAttribute?.("data-tfh-sf");
+    const keep = layer.querySelector(".tfh-body")?.scrollTop || 0, focused = doc.activeElement?.hasAttribute?.("data-tfh-pq") ? "pq" : null;
     layer.innerHTML = html();
     const b = layer.querySelector(".tfh-body"); if (b) b.scrollTop = keep;
-    if (focused) { const el = layer.querySelector(`[data-tfh-sf="${focused}"]`); if (el && el.type === "search") { el.focus(); el.setSelectionRange?.(el.value.length, el.value.length); } }
+    if (focused) { const el = layer.querySelector("[data-tfh-pq]"); if (el && el.type === "search") { el.focus(); el.setSelectionRange?.(el.value.length, el.value.length); } }
   }
   function leave() { const onLaunch = !!doc.querySelector(".tfh-launch"); close(); if (onLaunch) { try { root.ProLifeGoHome?.(); } catch (e) {} } }
   function close() { if (layer) { layer.remove(); layer = null; } negPid = null; flash = ""; tabHist.length = 0; }
@@ -232,7 +213,8 @@
     }
     ev.preventDefault(); ev.stopImmediatePropagation();
     tab = (msg && TABS.some((x) => x[0] === msg.dataset.msgTab)) ? msg.dataset.msgTab : "negociacoes"; negPid = null; flash = "";
-    if (AREA_OF[tab]) { try { root.ProLifeCoachCareerView?.setMarketArea?.(AREA_OF[tab]); } catch (e) {} }
+    if (tab === "scout") { tab = "pesquisa"; st.psub = "scout"; }
+    if (AREA_OF[tab === "pesquisa" ? "scout" : tab]) { try { root.ProLifeCoachCareerView?.setMarketArea?.(AREA_OF[tab === "pesquisa" ? "scout" : tab]); } catch (e) {} }
     setTimeout(open, 0);
   }, true);
 
@@ -254,8 +236,8 @@
       // Campos (select/input) não reconstroem o diálogo no clique: isso fechava o seletor nativo aberto.
       if (t.closest("select, input, textarea, label, option")) return;
       const ar = t.closest("[data-coach-market-area]")?.dataset.coachMarketArea;
-      if (ar) tab = ar === "observacao" ? "scout" : ar === "squad" ? "elenco" : ar === "overview" ? "geral" : "gestao";
-      setTimeout(() => { if (layer && EMBED_TABS.includes(tab)) open(); }, 90);
+      if (ar) { if (ar === "observacao") { tab = "pesquisa"; st.psub = "scout"; } else tab = ar === "squad" ? "elenco" : ar === "overview" ? "geral" : "gestao"; }
+      setTimeout(() => { if (layer && isEmbed()) open(); }, 90);
       return;
     }
     if (t.closest("[data-sm27-market-hub]")) { ev.preventDefault(); tab = "geral"; open(); return; }
@@ -268,7 +250,8 @@
       return;
     }
     if ((el = t.closest("[data-tfh-tab]"))) {
-      const nt = el.dataset.tfhTab; negPid = null; flash = "";
+      let nt = el.dataset.tfhTab; negPid = null; flash = "";
+      if (nt === "scout") { nt = "pesquisa"; st.psub = "scout"; }
       try { layer.querySelector(".csh-detail.is-open .csh-detail-close")?.click(); } catch (e) {}
       if (AREA_OF[nt] && (nt !== tab || nt !== "gestao")) {
         const V = root.ProLifeCoachCareerView, cur = V?.state?.marketArea;
@@ -277,8 +260,17 @@
       if (nt !== tab) { tabHist.push(tab); if (tabHist.length > 20) tabHist.shift(); }
       tab = nt; open(); return;
     }
-    if ((el = t.closest("[data-tfh-wf]"))) { wf.status = el.dataset.tfhWf; open(); return; }
-    if ((el = t.closest("[data-tfh-page]"))) { sf.page = Math.max(0, sf.page + Number(el.dataset.tfhPage)); open(); return; }
+    if ((el = t.closest("[data-tfh-wf]"))) { st.world.status = el.dataset.tfhWf; st.world.page = 0; open(); return; }
+    if ((el = t.closest("[data-tfh-pg]"))) { const [k, d] = el.dataset.tfhPg.split(":"), f = PAGE_FIELD[k]; if (f) { st[f[0]][f[1]] = Math.max(0, (Number(st[f[0]][f[1]]) || 0) + Number(d)); } open(); return; }
+    if ((el = t.closest("[data-tfh-psub]"))) {
+      st.psub = el.dataset.tfhPsub; st.pq.page = st.pq.cpage = st.pq.spage = 0; st.pq.clubId = ""; st.pq.nat = ""; flash = "";
+      if (st.psub === "scout") { try { root.ProLifeCoachCareerView?.setMarketArea?.("observacao"); } catch (e) {} }
+      open(); return;
+    }
+    if ((el = t.closest("[data-tfh-club]"))) { st.pq.clubId = el.dataset.tfhClub; st.pq.lpage = 0; open(); return; }
+    if ((el = t.closest("[data-tfh-nat]"))) { st.pq.nat = el.dataset.tfhNat; st.pq.npage = 0; open(); return; }
+    if (t.closest("[data-tfh-adv-run]")) { st.adv.run = true; st.adv.page = 0; flash = ""; open(); return; }
+    if (t.closest("[data-tfh-adv-clear]")) { st.adv = freshAdv(); open(); return; }
     if ((el = t.closest("[data-tfh-player]"))) { root.ProLifeSM27Squad?.openPlayerFor?.(ctx(), el.dataset.tfhPlayer); return; }
     if ((el = t.closest("[data-tfh-star]"))) { cmd("toggleCoachShortlist", { clubId: el.dataset.club, playerId: el.dataset.tfhStar }); return; }
     if ((el = t.closest("[data-tfh-negotiate]"))) { negotiate(el.dataset.tfhNegotiate); return; }
@@ -309,11 +301,15 @@
     const t = ev.target instanceof Element ? ev.target : null;
     if (!layer || !t) return;
     let el;
-    if ((el = t.closest("[data-tfh-wl]"))) { wf.league = el.value; open(); return; }
-    if ((el = t.closest("[data-tfh-sf]"))) {
-      const k = el.dataset.tfhSf;
-      sf[k] = el.type === "checkbox" ? el.checked : el.type === "number" ? Number(el.value) || 0 : el.value;
-      sf.page = 0; open();
+    if ((el = t.closest("[data-tfh-wl]"))) { st.world.league = el.value; st.world.page = 0; open(); return; }
+    if ((el = t.closest("[data-tfh-wc]"))) { st.world.country = el.value; st.world.page = 0; open(); return; }
+    if ((el = t.closest("[data-tfh-pq]"))) { st.pq.text = el.value; st.pq.page = st.pq.cpage = st.pq.spage = st.pq.npage = 0; open(); return; }
+    if ((el = t.closest("[data-tfh-onlylisted]"))) { st.pq.onlyListed = el.checked; st.pq.lpage = 0; open(); return; }
+    if ((el = t.closest("[data-tfh-attr]"))) { const k = el.dataset.tfhAttr, a = st.adv.attrs; if (el.checked && a.length < 5 && !a.includes(k)) a.push(k); else if (!el.checked) st.adv.attrs = a.filter((x) => x !== k); open(); return; }
+    if ((el = t.closest("[data-tfh-af]"))) { st.adv[el.dataset.tfhAf] = el.value; st.adv.page = 0; open(); return; }
+    if ((el = t.closest("[data-tfh-prio]"))) {
+      const [clubId, playerId] = el.dataset.tfhPrio.split("|"), ok = cmd("setCoachTargetPriority", { clubId, playerId, priority: el.value });
+      if (ok !== false && /^Ação concluída/.test(flash)) { flash = "Prioridade atualizada."; if (layer) open(); }
     }
   };
   // Investidores vivem nas Finanças (fora do Mercado, que é só de jogadores): mesmo botão, sem o diálogo do Mercado.
@@ -328,7 +324,7 @@
     return ok;
   });
   doc.addEventListener("change", onField);
-  doc.addEventListener("input", (ev) => { const t = ev.target; if (layer && t?.matches?.('input[type="search"][data-tfh-sf]')) onField(ev); });
+  doc.addEventListener("input", (ev) => { const t = ev.target; if (layer && t?.matches?.('input[type="search"][data-tfh-pq]')) onField(ev); });
   doc.addEventListener("keydown", (ev) => { if (layer && ev.key === "Escape") leave(); });
 
   root.ProLifeTransferHub = { open, close, html, investorHtml: () => { const c = ctx(); return c ? investorSection(c.s) : ""; } };

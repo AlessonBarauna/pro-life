@@ -1,0 +1,32 @@
+"use strict";
+const assert = require("assert");
+const R = require("../src/domain/transfer-rules-v2.js");
+const s = { season: 2026, day: 0 };
+const p = { id: "a1", pos: "ATA", primaryPosition: "ATA", secondaryPositions: ["PE"], attrs: { pace: 90, finish: 80, pass: 60, defense: 30, strength: 70, stamina: 70 }, ovr: 80, age: 22, clubId: "x" };
+assert.strictEqual(R.SHORTLIST_LIMIT, 50);
+assert.strictEqual(R.contractEndOf(p, s), R.contractEndOf(p, s), "estável");
+assert.strictEqual(R.contractEndOf({ ...p, contractEnd: 2028 }, s), 2028);
+assert.ok(R.contractEndOf(p, s) >= 2026 && R.contractEndOf(p, s) <= 2030);
+assert.strictEqual(R.monthsLeft({ ...p, contractEnd: 2026 }, s), 6);
+assert.strictEqual(R.monthsLeft({ ...p, contractEnd: 2028 }, s), 30);
+assert.strictEqual(R.aiListing({ ...p, clubId: null }, s), "free");
+assert.strictEqual(R.roleOf(p), "Velocista");
+assert.strictEqual(R.roleOf({ pos: "GOL", attrs: { pace: 50 } }), "Goleiro");
+// alertas da lista
+const s60 = { season: 2026, day: 60 };
+const al = R.shortlistAlerts({ valueAtAdd: 10e6 }, { ...p, contractEnd: 2026 }, s60, 7e6).map((a) => a.k).sort();
+assert.deepStrictEqual(al, ["contract", "drop"]);
+assert.deepStrictEqual(R.shortlistAlerts({ valueAtAdd: 10e6 }, { ...p, clubId: null }, s, 9e6).map((a) => a.k), ["free"]);
+assert.deepStrictEqual(R.shortlistAlerts({ valueAtAdd: 10e6 }, { ...p, contractEnd: 2029 }, s, 8.1e6), []);
+// filtro avançado
+const F = (f, pl = p) => R.advancedFilter([pl], f, s, () => 5e6, () => ({ country: "Brasil", leagueId: "L1" })).length;
+assert.strictEqual(F({ pos: "PE" }), 1); assert.strictEqual(F({ pos: "GOL" }), 0);
+assert.strictEqual(F({ attrs: ["pace", "finish"] }), 1); assert.strictEqual(F({ attrs: ["pace", "pass"] }), 0);
+assert.strictEqual(F({ attrs: ["pace", "finish", "pass", "defense", "strength", "stamina"] }), 0, "só os 5 primeiros contam: defesa 30 reprova");
+assert.strictEqual(F({ ageMax: 21 }), 0); assert.strictEqual(F({ ageMin: 20, ageMax: 25 }), 1);
+assert.strictEqual(F({ valueMax: 4 }), 0); assert.strictEqual(F({ valueMax: 6 }), 1);
+assert.strictEqual(F({ country: "Brasil" }), 1); assert.strictEqual(F({ country: "Chile" }), 0);
+assert.strictEqual(F({ contract: "6" }, { ...p, contractEnd: 2028 }), 0); assert.strictEqual(F({ contract: "6" }, { ...p, contractEnd: 2026 }), 0, "6 meses exatos não é menos de 6");
+assert.strictEqual(F({ contract: "12" }, { ...p, contractEnd: 2026 }), 1);
+assert.strictEqual(F({ role: "Velocista" }), 1); assert.strictEqual(F({ role: "Armador" }), 0);
+console.log("market-v2-stage1: ok");
