@@ -787,7 +787,7 @@
     if(!club||!Array.isArray(club.roster)||!club.roster.length)return {changed:false,reason:"no-club"};
     const overall=p=>Number(api?.overall?.(p))||0;
     const formation=club.formation||"4-3-3";
-    const ok=p=>p&&p.id!=="hero"&&!p.injury&&!(Number(p.suspension)>0);
+    const ok=p=>p&&p.id!=="hero"&&!p.injury&&!(Number(p.suspension)>0)&&!(Number(p.restUntil)>Number(s.day));
     const byGer=(x,y)=>overall(y)-overall(x)||String(x.id).localeCompare(String(y.id));
     const before=JSON.stringify([club.lineup,c.pitchSlots,c.benchOrder]);
     let chosen=null;
@@ -892,7 +892,7 @@
     const c=state(s),club=clubOf(s,api);
     if(!club||!Array.isArray(club.roster)||!Array.isArray(club.lineup)||club.lineup.length!==11)return [];
     const overall=p=>Number(api?.overall?.(p))||0;
-    const out=p=>p&&(p.injury||Number(p.suspension)>0);
+    const out=p=>p&&(p.injury||Number(p.suspension)>0||Number(p.restUntil)>Number(s.day));
     const byId=new Map(club.roster.map(p=>[String(p.id),p]));
     const used=new Set(club.lineup.map(String)),swaps=[];
     const next=club.lineup.map(id=>{

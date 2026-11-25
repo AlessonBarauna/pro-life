@@ -600,6 +600,23 @@ case "tactic": {
         s.coachCareer.offerPreferences.mode=mode;
         break;
       }
+      case "setCoachPlayerNumber": {
+        if(s.mode!=="coach")throw Error("Disponível apenas ao treinador.");
+        const club=D.club(s),player=club?.roster?.find(p=>p.id===data.playerId),n=Number(data.number);
+        if(!player||player.id==="hero")throw Error("Atleta indisponível.");
+        if(!Number.isInteger(n)||n<1||n>99)throw Error("Número inválido: use de 1 a 99.");
+        const other=club.roster.find(p=>p.id!==player.id&&p.status!=="retired"&&Number(p.number)===n);
+        if(other)throw Error("A camisa "+n+" já é de "+other.name+".");
+        player.number=n;
+        break;
+      }
+      case "restCoachPlayer": {
+        if(s.mode!=="coach")throw Error("Disponível apenas ao treinador.");
+        const club=D.club(s),player=club?.roster?.find(p=>p.id===data.playerId);
+        if(!player||player.id==="hero")throw Error("Atleta indisponível.");
+        if(Number(player.restUntil)>Number(s.day))delete player.restUntil;else player.restUntil=Number(s.day)+7;
+        break;
+      }
       case "setCoachPlayerOfferStatus": {
         if(s.mode!=="coach")throw Error("Disponível apenas ao treinador.");
         const club=D.club(s),player=club?.roster?.find(p=>p.id===data.playerId);

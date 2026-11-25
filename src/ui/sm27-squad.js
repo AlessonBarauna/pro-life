@@ -11,6 +11,7 @@
   const POS_ORDER = { GOL: 0, GK: 0, ZAG: 1, CB: 1, LD: 2, RB: 2, LE: 3, LB: 3, VOL: 4, CDM: 4, MC: 5, CM: 5, MEI: 6, CAM: 6, MD: 7, RM: 7, ME: 8, LM: 8, PD: 9, RW: 9, PE: 10, LW: 10, SA: 11, CA: 12, ATA: 12, ST: 12, CF: 12 };
   const SORTS = [["pos", "Posição"], ["ovr", "GER"], ["age", "Idade"], ["value", "Valor"], ["wage", "Salário"], ["morale", "Moral"], ["end", "Fim do contrato"]];
 
+  const Rep = () => root.ProLifeSM27Reports || (typeof require === "function" ? require("./sm27-reports.js") : null);
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
 
@@ -120,54 +121,10 @@
   }
 
   function renderReports(ctx) {
-    const club = ctx.club, s = ctx.s;
-    const all = (club.roster || []).filter((p) => p.status !== "retired").map((p) => info(p, ctx));
     const tabs = `<nav class="sq-subtabs sq-report-tabs" aria-label="Relatórios do plantel">${REPORT_TABS.map(([id, l]) => `<button type="button" data-sm27sq-set="report" data-value="${id}" aria-pressed="${state.report === id}">${l}</button>`).join("")}</nav>`;
-    let body = "";
-    const empty = (t) => `<p class="sq-empty">${t}</p>`;
-    if (state.report === "geral") {
-      const avg = (k) => { const v = all.map((r) => r[k]).filter((x) => x !== null); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; };
-      const payroll = all.reduce((a, r) => a + (r.wage || 0), 0);
-      const value = all.reduce((a, r) => a + (r.value || 0), 0);
-      const top = [...all].sort((a, b) => (b.ovr ?? 0) - (a.ovr ?? 0)).slice(0, 3);
-      const stats = [["Jogadores", all.length], ["GER médio", avg("ovr") ?? "—"], ["Idade média", avg("age") ?? "—"], ["Folha mensal", fmtMoney(payroll)], ["Valor do elenco", fmtMoney(value)], ["Moral média", avg("morale") ?? "—"]];
-      const good = [], bad = [];
-      const byPos = (g) => all.filter((r) => g.includes(r.pos));
-      const mean = (list) => (list.length ? list.reduce((a, r) => a + (r.ovr || 0), 0) / list.length : 0);
-      const groups = [["A defesa", byPos(["ZAG", "LD", "LE", "CB", "RB", "LB"])], ["O meio-campo", byPos(["VOL", "MC", "MEI", "ME", "MD", "CDM", "CM", "CAM"])], ["O ataque", byPos(["PE", "PD", "CA", "ATA", "SA", "ST", "LW", "RW"])], ["O gol", byPos(["GOL", "GK"])]];
-      const overall = mean(all);
-      for (const [label, list] of groups) { if (!list.length) continue; const m = mean(list); (m >= overall + 2 ? good : m <= overall - 3 ? bad : []).push(label); }
-      const young = all.filter((r) => (r.age ?? 99) <= 21).length;
-      if (young >= 4) good.push(`${young} jogadores com até 21 anos`);
-      const old = all.filter((r) => (r.age ?? 0) >= 33).length;
-      if (old >= 4) bad.push(`${old} jogadores com 33 anos ou mais`);
-      const expiring = all.filter((r) => r.left !== null && r.left <= 180).length;
-      if (expiring >= 3) bad.push(`${expiring} contratos terminam em até 6 meses`);
-      if (all.length < 22) bad.push("Plantel curto: menos de 22 jogadores");
-      if (all.length > 30) bad.push("Plantel grande demais para as vagas de jogo");
-      body = `<div class="sq-stat-row">${stats.map(([k, v]) => `<span><small>${k}</small><b>${esc(v)}</b></span>`).join("")}</div>` +
-        `<h3 class="sq-h">Destaques</h3><div class="sq-cards">${top.map((r) => card(r)).join("")}</div>` +
-        `<div class="sq-notes"><ul class="sq-good">${(good.length ? good : ["Sem pontos fortes claros no momento"]).map((t) => `<li>${esc(t)}</li>`).join("")}</ul><ul class="sq-bad">${(bad.length ? bad : ["Sem pontos fracos claros no momento"]).map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
-    } else if (state.report === "lesoes") {
-      const list = all.filter((r) => r.injured);
-      body = list.length ? `<div class="sq-cards">${list.map((r) => card(r, `<span class="sq-card-line bad">Lesionado${num(r.p.injury) > 1 ? " · " + r.p.injury + " dias" : ""}</span>`)).join("")}</div>` : empty("Nenhum jogador lesionado.");
-    } else if (state.report === "suspensoes") {
-      const list = all.filter((r) => r.suspended);
-      body = list.length ? `<div class="sq-cards">${list.map((r) => card(r, `<span class="sq-card-line warn">Suspenso · ${r.p.suspension} jogo(s)</span>`)).join("")}</div>` : empty("Nenhum jogador suspenso.");
-    } else if (state.report === "moral") {
-      const list = all.filter((r) => r.morale !== null).sort((a, b) => a.morale - b.morale);
-      const low = list.filter((r) => r.morale < 50);
-      body = `<h3 class="sq-h">Jogadores com moral baixa (${low.length})</h3>` + (low.length ? `<div class="sq-cards">${low.map((r) => card(r, `<span class="sq-card-line bad">Moral ${r.morale}</span>`)).join("")}</div>` : empty("Ninguém com moral baixa.")) +
-        `<h3 class="sq-h">Todos, do menor para o maior</h3>` + rosterTable(list, "stats", ctx, false);
-    } else if (state.report === "contratos") {
-      const list = all.filter((r) => r.left !== null).sort((a, b) => a.left - b.left);
-      body = list.length ? `<div class="sq-cards">${list.slice(0, 12).map((r) => card(r, `<span class="sq-card-line ${r.left <= 180 ? "warn" : ""}">Termina em ${leftLabel(r.left)} · ${fmtMoney(r.wage)}/mês</span>`)).join("")}</div>` : empty("Sem dados de contrato.");
-    } else if (state.report === "desenvolvimento" || state.report === "juventude") {
-      const youthOnly = state.report === "juventude";
-      let list = all.filter((r) => (r.age ?? 99) <= (youthOnly ? 21 : 24) && r.pot !== null).sort((a, b) => (b.pot - (b.ovr || 0)) - (a.pot - (a.ovr || 0)));
-      body = list.length ? `<div class="sq-cards">${list.map((r) => { const gap = r.pot - (r.ovr || 0); return card(r, `<span class="sq-card-line"><b>GER ${r.ovr ?? "—"}</b> → POT ${r.pot}${gap > 0 ? ` <em class="sq-gain">+${gap}</em>` : ""}</span>`); }).join("")}</div>` : empty(youthOnly ? "Sem jogadores de até 21 anos no plantel." : "Sem jogadores jovens com potencial registrado.");
-    }
-    return `<section class="sq-panel" aria-label="Relatórios do plantel">${tabs}<div class="sq-report-body">${body}</div></section>`;
+    const tab = REPORT_TABS.some(([id]) => id === state.report) ? state.report : "geral";
+    const body = Rep().render(tab, ctx, { info: (p, c) => info(p, c), fmtMoney, leftLabel, sel });
+    return `<section class="sq-panel sq-reports" aria-label="Relatórios do plantel">${tabs}${body}</section>`;
   }
 
   // ---------- ficha do jogador (janela) ----------
@@ -177,55 +134,33 @@
   let dlgId = null;
   const ATTR_LABELS = { finish: "Finalização", pass: "Passe", defense: "Defesa", pace: "Ritmo", shooting: "Finalização", passing: "Passe", dribbling: "Drible", defending: "Defesa", physical: "Físico", stamina: "Resistência", strength: "Força", speed: "Velocidade", vision: "Visão", finishing: "Finalização", tackling: "Desarme", marking: "Marcação", technique: "Técnica", positioning: "Posicionamento", composure: "Calma", reflexes: "Reflexos", handling: "Mãos", crossing: "Cruzamento", heading: "Cabeceio", agility: "Agilidade", jumping: "Impulsão", acceleration: "Aceleração", control: "Controle", longShots: "Chutes de longe", curve: "Efeito", balance: "Equilíbrio", aggression: "Agressividade", workRate: "Ritmo de trabalho", leadership: "Liderança", teamwork: "Trabalho em equipe", concentration: "Concentração", decisions: "Decisão", flair: "Estilo", anticipation: "Antecipação", bravery: "Bravura" };
 
-  function dialogHtml() {
-    const p = (lastCtx?.club?.roster || []).find((x) => x.id === dlgId) || lastCtx?.D?.GlobalFootball?.playerById?.(lastCtx.s, dlgId);
-    if (!p) return "";
-    const r = info(p, lastCtx);
-    const [ml, mc] = moraleFace(r.morale);
-    const tabs = [["perfil", "Perfil"], ["atributos", "Atributos"], ["estatisticas", "Estatísticas"], ["contrato", "Contrato"], ["comparar", "Comparar"], ["olheiro", "Olheiro"]];
-    let body = "";
-    if (dlgTab === "atributos") {
-      const entries = Object.entries(p.attrs || {}).filter(([, v]) => Number.isFinite(Number(v))).sort((a, b) => b[1] - a[1]);
-      body = entries.length ? `<div class="sq-attrs">${entries.map(([k, v]) => `<span><small>${esc(ATTR_LABELS[k] || k)}</small><i style="--w:${Math.max(0, Math.min(100, v))}%"></i><b>${Math.round(v)}</b></span>`).join("")}</div>` : `<p class="sq-empty">Sem atributos registrados.</p>`;
-    } else if (dlgTab === "estatisticas") {
-      const keys = [["goals", "Gols"], ["assists", "Assistências"], ["minutes", "Minutos"], ["appearances", "Jogos"], ["yellow", "Cartões amarelos"], ["red", "Cartões vermelhos"], ["avgRating", "Nota média"]];
-      const st = { ...(p.stats || {}), ...p };
-      const rows = keys.filter(([k]) => Number.isFinite(Number(st[k]))).map(([k, l]) => [l, k === "avgRating" ? Number(st[k]).toFixed(1) : Math.round(st[k])]);
-      body = rows.length ? `<dl class="sq-dl">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : `<p class="sq-empty">Sem estatísticas registradas.</p>`;
-    } else if (dlgTab === "comparar") {
-      const mates = (lastCtx?.club?.roster || []).filter((x) => x.id !== p.id && x.status !== "retired" && String(x.pos) === String(p.pos));
-      const keys = Object.keys(p.attrs || {});
-      if (!mates.length || !keys.length) body = `<p class="sq-empty">Sem outros jogadores na mesma posição para comparar.</p>`;
-      else {
-        const avg = (k) => mates.reduce((a, m) => a + (num(m.attrs?.[k]) || 0), 0) / mates.length;
-        const ovrAvg = Math.round(mates.reduce((a, m) => a + (num(m.ovr ?? m.overall) || 0), 0) / mates.length);
-        body = `<p class="sq-note">Comparado à média de ${mates.length} jogador(es) do elenco na posição ${esc(p.pos)}.</p><dl class="sq-dl"><div><dt>GER</dt><dd>${esc(r.ovr ?? "—")} <small>(média ${ovrAvg})</small></dd></div>${keys.map((k) => { const d = Math.round((num(p.attrs[k]) || 0) - avg(k)); return `<div><dt>${esc(ATTR_LABELS[k] || k)}</dt><dd>${Math.round((num(p.attrs[k]) || 0))} <small>(${d >= 0 ? "+" : ""}${d})</small></dd></div>`; }).join("")}</dl>`;
-      }
-    } else if (dlgTab === "olheiro") {
-      const rep = (lastCtx?.s?.coachCareer?.scoutingV2?.missions || []).slice().reverse().map((m) => ({ m, i: root.ProLifeCoachScoutingV2?.report?.(lastCtx.s, m.id, p) })).find((x) => x.i?.available);
-      body = rep ? `<dl class="sq-dl"><div><dt>GER estimado</dt><dd>${rep.i.estimatedOverall.join("–")}</dd></div><div><dt>POT estimado</dt><dd>${rep.i.potentialRange.join("–")}</dd></div><div><dt>Confiança</dt><dd>${rep.i.certainty}%</dd></div><div><dt>Situação</dt><dd>${rep.m.status === "complete" ? "Relatório final" : "Em observação"}</dd></div></dl>` : `<p class="sq-empty">Nenhum relatório de olheiro para este jogador. Inicie uma observação em Transferências.</p>`;
-    } else if (dlgTab === "contrato") {
-      const rows = [["Salário mensal", fmtMoney(r.wage)], ["Valor de mercado", fmtMoney(r.value)], ["Termina em", leftLabel(r.left)], ["Função no elenco", p.contract?.role || "—"], ["Tipo", p.contract?.type === "loan" ? "Empréstimo" : "Permanente"]];
-      body = `<dl class="sq-dl">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>`;
-    } else {
-      const rows = [["Posição", r.pos], ["Idade", r.age ?? "—"], ["GER", r.ovr ?? "—"], ["Potencial", r.pot ?? "—"], ["Nacionalidade", p.nationality || "—"], ["Condição", r.cond === null ? "—" : r.cond + "%"], ["Moral", ml], ["Gols", r.goals], ["Minutos", r.minutes], ["Situação", r.injured ? "Lesionado" : r.suspended ? "Suspenso" : "Disponível"]];
-      body = `<dl class="sq-dl">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd${k === "Moral" ? ` class="${mc}"` : ""}>${esc(v)}</dd></div>`).join("")}</dl>`;
-    }
-    return `<div class="sm27-dialog-backdrop" data-sm27sq-close></div><section class="sm27-dialog" role="dialog" aria-modal="true" aria-label="${esc(r.name)}"><header class="sm27-dialog-head"><span></span><h2>${esc(r.name)}</h2><button type="button" class="sm27-dialog-x" data-sm27sq-close aria-label="Fechar">×</button></header><div class="sm27-dialog-body"><nav class="shd-tabs sq-dtabs" role="tablist">${tabs.map(([id, l]) => `<button type="button" role="tab" aria-selected="${dlgTab === id}" data-sm27sq-dtab="${id}">${l}</button>`).join("")}</nav>${body}${manageHtml(p, r)}</div></section>`;
+  function attrsHtml(p) {
+    const entries = Object.entries(p.attrs || {}).filter(([, v]) => Number.isFinite(Number(v))).sort((a, b) => b[1] - a[1]);
+    return entries.length ? `<div class="sq-attrs">${entries.map(([k, v]) => `<span><small>${esc(ATTR_LABELS[k] || k)}</small><i style="--w:${Math.max(0, Math.min(100, v))}%"></i><b>${Math.round(v)}</b></span>`).join("")}</div>` : `<p class="sq-empty">Sem atributos registrados.</p>`;
+  }
+  function statsHtml(p) {
+    const keys = [["goals", "Gols"], ["assists", "Assistências"], ["minutes", "Minutos"], ["appearances", "Jogos"], ["yellow", "Cartões amarelos"], ["red", "Cartões vermelhos"], ["avgRating", "Nota média"]];
+    const st = { ...(p.stats || {}), ...p };
+    const rows = keys.filter(([k]) => Number.isFinite(Number(st[k]))).map(([k, l]) => [l, k === "avgRating" ? Number(st[k]).toFixed(1) : Math.round(st[k])]);
+    return rows.length ? `<dl class="sq-dl">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : `<p class="sq-empty">Sem estatísticas registradas.</p>`;
+  }
+  function compareHtml(p, r) {
+    const mates = (lastCtx?.club?.roster || []).filter((x) => x.id !== p.id && x.status !== "retired" && String(x.pos) === String(p.pos));
+    const keys = Object.keys(p.attrs || {});
+    if (!mates.length || !keys.length) return `<p class="sq-empty">Sem outros jogadores na mesma posição para comparar.</p>`;
+    const avg = (k) => mates.reduce((a, m) => a + (num(m.attrs?.[k]) || 0), 0) / mates.length;
+    const ovrAvg = Math.round(mates.reduce((a, m) => a + (num(m.ovr ?? m.overall) || 0), 0) / mates.length);
+    return `<p class="sq-note">Comparado à média de ${mates.length} jogador(es) do elenco na posição ${esc(p.pos)}.</p><dl class="sq-dl"><div><dt>GER</dt><dd>${esc(r.ovr ?? "—")} <small>(média ${ovrAvg})</small></dd></div>${keys.map((k) => { const d = Math.round((num(p.attrs[k]) || 0) - avg(k)); return `<div><dt>${esc(ATTR_LABELS[k] || k)}</dt><dd>${Math.round((num(p.attrs[k]) || 0))} <small>(${d >= 0 ? "+" : ""}${d})</small></dd></div>`; }).join("")}</dl>`;
+  }
+  function scoutHtml(p) {
+    const rep = (lastCtx?.s?.coachCareer?.scoutingV2?.missions || []).slice().reverse().map((m) => ({ m, i: root.ProLifeCoachScoutingV2?.report?.(lastCtx.s, m.id, p) })).find((x) => x.i?.available);
+    return rep ? `<dl class="sq-dl"><div><dt>GER estimado</dt><dd>${rep.i.estimatedOverall.join("–")}</dd></div><div><dt>POT estimado</dt><dd>${rep.i.potentialRange.join("–")}</dd></div><div><dt>Confiança</dt><dd>${rep.i.certainty}%</dd></div><div><dt>Situação</dt><dd>${rep.m.status === "complete" ? "Relatório final" : "Em observação"}</dd></div></dl>` : `<p class="sq-empty">Nenhum relatório de olheiro para este jogador. Inicie uma observação em Transferências.</p>`;
   }
 
-  // Gestão do atleta (só técnico): listas de transferência/empréstimo e liberação, direto da ficha.
-  function manageHtml(p, r) {
-    const s = lastCtx?.s;
-    if (!s || s.mode !== "coach" || p.id === "hero" || String(p.clubId || lastCtx?.club?.id) !== String(lastCtx?.club?.id)) return "";
-    const prefs = s.coachCareer?.offerPreferences || {};
-    const has = (k) => (prefs[k] || []).includes(p.id);
-    const status = has("blockedIds") ? "blocked" : has("listedIds") ? "listed" : has("loanListedIds") ? "loan_listed" : "available";
-    const labels = { available: "Disponível para o elenco", listed: "Na lista de transferências", loan_listed: "Na lista de empréstimos", blocked: "Ofertas bloqueadas" };
-    const months = r.left === null || r.left === undefined ? 0 : Math.min(12, Math.max(0, Math.ceil(Number(r.left) / 30)));
-    const cost = Math.max(0, Math.round(Number(r.wage) || 0)) * months;
-    const btn = (st, on, off) => `<button type="button" class="sq-manage-btn${status === st ? " is-on" : ""}" data-coach-player-status="${status === st ? "available" : st}" data-player="${esc(p.id)}">${status === st ? off : on}</button>`;
-    return `<section class="sq-manage" aria-label="Gestão do jogador"><p class="sq-manage-state"><small>Situação no mercado</small><b>${labels[status]}</b></p><div class="sq-manage-actions">${btn("listed", "Colocar na lista de transferências", "Retirar da lista de transferências")}${btn("loan_listed", "Colocar na lista de empréstimos", "Retirar da lista de empréstimos")}<button type="button" class="sq-manage-btn danger" data-coach-player-release="${esc(p.id)}" data-cost="${cost}">Liberar jogador${cost ? " · " + esc(fmtMoney(cost)) : ""}</button></div></section>`;
+  function dialogHtml() {
+    const p = (lastCtx?.club?.roster || []).find((x) => x.id === dlgId) || lastCtx?.D?.GlobalFootball?.playerById?.(lastCtx.s, dlgId);
+    if (!p || !Rep()) return "";
+    return Rep().ficha(lastCtx, p, dlgTab, { info, fmtMoney, leftLabel, moraleFace, esc, sel, attrsHtml, statsHtml, compareHtml, scoutHtml });
   }
 
   function openPlayer(id) {
@@ -245,10 +180,18 @@
     root.document.addEventListener("click", (ev) => {
       const t = ev.target instanceof Element ? ev.target : null;
       if (!t) return;
+      const R = root.ProLifeSM27Reports?.ui || {};
+      const edit = t.closest("[data-sm27sq-edit-contract]");
+      if (edit) { R.actions = false; R.renew = true; dlgTab = "contrato"; openPlayer(edit.dataset.sm27sqEditContract); return; }
       const open = t.closest("[data-sm27sq-open]");
-      if (open) { dlgTab = "perfil"; openPlayer(open.dataset.sm27sqOpen); return; }
+      if (open) { R.actions = false; R.renew = false; dlgTab = "perfil"; openPlayer(open.dataset.sm27sqOpen); return; }
       if (!dlg) return;
-      if (t.closest("[data-sm27sq-close]")) { closePlayer(); return; }
+      if (t.closest("[data-sm27sq-actions]")) { R.actions = !R.actions; openPlayer(dlgId); return; }
+      if (t.closest("[data-sm27sq-renew]")) { R.actions = false; R.renew = true; dlgTab = "contrato"; openPlayer(dlgId); return; }
+      if (t.closest("[data-sm27sq-renew-cancel]")) { R.renew = false; openPlayer(dlgId); return; }
+      if (t.closest("[data-coach-renew-confirm]")) root.setTimeout(() => { R.renew = false; if (dlg) openPlayer(dlgId); }, 60);
+      if (t.closest(".rp-menu button[data-coach-player-status],.rp-menu button[data-coach-player-release]")) R.actions = false;
+      if (t.closest("[data-sm27sq-close]")) { R.actions = false; R.renew = false; closePlayer(); return; }
       const dt = t.closest("[data-sm27sq-dtab]");
       if (dt) { dlgTab = dt.dataset.sm27sqDtab; openPlayer(dlgId); }
     });

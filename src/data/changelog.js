@@ -6,6 +6,18 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-25-a",
+      date: "2026-11-25",
+      title: "Relatórios do elenco renovados e ficha do jogador completa",
+      items: [
+        { type: "novo", text: "Relatórios com 7 abas: Perspetiva geral, Lesões, Suspensões, Moral, Contratos, Desenvolvimento e Juventude, com cartões de jogador." },
+        { type: "novo", text: "Lesões mostram o tipo e a data de volta; Moral mostra o motivo e se está “Não resolvido”; Contratos têm lápis para renovar." },
+        { type: "novo", text: "Ficha do jogador nova: Moral (Conversar), Condição (Poupar 7 dias), Química da equipe, Suspensões, estado no plantel, futuro, clubes interessados e número da camisa." },
+        { type: "novo", text: "Menu Ações: bloquear ofertas, listas de transferência e empréstimo, novo contrato e dispensar jogador." },
+        { type: "correcao", text: "A tela Elenco não corta mais o campo, o banco e o menu lateral em telas mais baixas." }
+      ]
+    },
+    {
       id: "2026-11-24-f",
       date: "2026-11-24",
       title: "Renovar contrato voltou ao Mercado",

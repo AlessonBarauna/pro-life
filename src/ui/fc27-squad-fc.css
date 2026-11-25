@@ -81,3 +81,18 @@
 @media (max-height:430px){.fcs-card{width:54px;flex-basis:54px}.fcs-card img,.fcs-noimg{height:27px}.fcs-grid .fcs-card{width:62px}.fcs-grid .fcs-card img,.fcs-grid .fcs-noimg{height:34px}.fcs-card>b{font-size:7px}}
 .fcs-form svg rect{fill:none}.fcs-form svg circle{fill:#fff;stroke:none}.fcs-form svg path{fill:none}
 .fcs-sheet-in .pl-squad-detail-hero>svg,.fcs-sheet-in .pl-squad-detail-hero>.crest,.fcs-sheet-in .pl-squad-detail-hero>[class*="crest"]{display:none}
+/* Telas baixas (iPhone com barra do Safari): nada de altura mínima fixa, tudo cabe e o resto rola dentro do painel. */
+@media (max-height:380px){
+  .pl-squad-screen.fcs{min-height:0;grid-template-rows:32px minmax(0,1fr)}
+  .fcs-main{padding:5px;gap:6px}
+  .fcs-pitch{padding:4px 2px 3px}
+  .fcs-card,.fcs-grid .fcs-card{width:46px;flex-basis:46px}
+  .fcs-card img,.fcs-noimg{height:21px}
+  .fcs-grid .fcs-card img,.fcs-grid .fcs-noimg{height:26px}
+  .fcs-card>b{font-size:6.5px;line-height:1.35}
+  .fcs-ger{min-width:14px;height:14px;font-size:7.5px}
+  .fcs-info{transform:scale(.8);transform-origin:right bottom}
+  .fcs-rail{justify-content:flex-start;gap:2px;overflow-y:auto;padding:2px 0}
+  .fcs-rail button{padding:2px 0;gap:1px}
+  .fcs-rail button svg{width:18px;height:18px}
+}

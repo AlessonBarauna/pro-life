@@ -1,0 +1,65 @@
+/* PRO LIFE — Elenco > Relatórios e ficha do jogador (visual FC27: lima sobre escuro). */
+.rp-body { display:grid; gap:8px; min-width:0; }
+.rp-card { display:grid; grid-template-columns:54px minmax(0,1fr); gap:8px; padding:6px; min-width:0; text-align:left; color:inherit; border:1px solid rgba(120,170,200,.35); border-radius:10px; background:linear-gradient(135deg,#102331,#14243a); cursor:pointer; }
+.rp-card:hover, .rp-card:focus-visible { border-color:var(--fc-lime,#c9f23a); outline:none; }
+.rp-av { display:block; height:62px; border-radius:7px; background:#0c1a26; overflow:hidden; } .rp-av svg { width:100%; height:100%; display:block; }
+.rp-info { display:grid; align-content:center; gap:2px; min-width:0; }
+.rp-nm { font-size:12.5px; font-weight:800; text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rp-cl { color:var(--fc-lime,#c9f23a); font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+.rp-st { display:flex; align-items:center; gap:10px; } .rp-st small { display:block; font-size:8px; color:#8fa3b3; } .rp-st b { font-size:13px; }
+.rp-pos { color:var(--fc-lime,#c9f23a); font-weight:900; }
+.rp-ger { display:inline-grid; place-items:center; width:30px; height:30px; border-radius:50%; border:3px solid #e0b84a; font-style:normal; font-size:12.5px; font-weight:900; flex:none; }
+.rp-ger.big { width:38px; height:38px; font-size:15px; } .rp-ger.sm { width:24px; height:24px; font-size:10.5px; border-width:2px; }
+.t-gold { border-color:#e0b84a; } .t-lime { border-color:var(--fc-lime,#c9f23a); } .t-blue { border-color:#4aa3ff; } .t-grey { border-color:#7f8f9f; }
+.rp-kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; text-align:center; }
+.rp-kpis span { display:grid; gap:3px; justify-items:center; align-content:center; } .rp-kpis small { color:#9fb2c1; font-size:10px; } .rp-kpis b { font-size:16px; }
+.rp-top3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.rp-checks { list-style:none; margin:0; padding:2px 10px; border:1px solid rgba(120,170,200,.25); border-radius:10px; background:#0b1823; display:grid; grid-template-columns:1fr 1fr; gap:0 16px; }
+.rp-checks li { display:flex; gap:8px; align-items:center; padding:6px 0; border-bottom:1px solid rgba(120,170,200,.14); font-size:11.5px; }
+.rp-checks .ok { color:#5fd68a; font-style:normal; font-weight:900; } .rp-checks .no { color:#ff6b6b; font-style:normal; font-weight:900; }
+.rp-row { display:flex; align-items:center; gap:12px; padding:6px 0; border-bottom:1px solid rgba(120,170,200,.14); min-width:0; }
+.rp-row .rp-card { width:224px; flex:none; }
+.rp-ic { display:grid; place-items:center; width:32px; height:32px; border-radius:50%; flex:none; font-style:normal; font-size:15px; font-weight:900; border:0; color:#fff; }
+.rp-ic.red { background:#d62b4a; } .rp-ic.amb { background:#e0a21a; color:#08111b; } .rp-ic.lim { background:var(--fc-lime,#c9f23a); color:#08111b; cursor:pointer; margin-left:auto; }
+.rp-tx { margin:0; font-size:13px; min-width:0; flex:1; } .rp-tx small { color:#9fb2c1; font-size:11px; } .rp-open { color:#ff7a7a; }
+.rp-empty { margin:0; padding:22px 10px; text-align:center; color:#9fb2c1; border:1px dashed rgba(120,170,200,.3); border-radius:10px; font-size:12.5px; }
+.rp-dev .rp-col { display:grid; gap:3px; justify-items:center; text-align:center; flex:1; min-width:0; } .rp-dev small { font-size:9.5px; color:#9fb2c1; }
+.rp-prog { display:flex; align-items:center; gap:4px; } .rp-bar { width:64px; height:7px; background:#22394a; border-radius:4px; overflow:hidden; } .rp-bar i { display:block; height:100%; background:var(--fc-lime,#c9f23a); }
+.rp-arrow { font-size:20px; } .rp-arrow.up { color:#5fd68a; } .rp-arrow.flat { color:#9fb2c1; } .rp-potv { font-size:13px; color:var(--fc-lime,#c9f23a); }
+/* ficha */
+.rp-dialog .sm27-dialog-body { position:relative; }
+.rp-grid { display:grid; grid-template-columns:200px minmax(0,1fr); gap:8px; align-items:start; }
+.rp-left { display:grid; gap:6px; padding:6px; border:1px solid rgba(120,170,200,.25); border-radius:10px; }
+.rp-card.is-big { grid-template-columns:48px minmax(0,1fr); } .rp-card.is-big .rp-av { height:54px; }
+.rp-kv { display:grid; margin:0; } .rp-kv div { display:flex; justify-content:space-between; gap:8px; padding:4px 2px; border-bottom:1px solid rgba(120,170,200,.14); font-size:11px; }
+.rp-kv dt { color:#9fb2c1; } .rp-kv dd { margin:0; color:var(--fc-lime,#c9f23a); font-weight:800; text-align:right; }
+.rp-wide { max-width:420px; }
+.rp-act-btn, .rp-btn { min-height:30px; padding:6px 10px; border:0; border-radius:8px; background:var(--fc-lime,#c9f23a); color:#08111b; font-weight:800; font-size:11px; cursor:pointer; }
+.rp-btn.ghost { background:none; border:1px solid rgba(120,170,200,.4); color:inherit; } .rp-btn.wide { margin-top:8px; }
+.rp-main { display:grid; gap:8px; min-width:0; }
+.rp-tiles { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+.rp-tile { display:grid; justify-items:center; align-content:start; gap:4px; padding:6px; border:1px solid rgba(120,170,200,.25); border-radius:10px; background:#0e1d29; }
+.rp-tile h4 { margin:0; justify-self:start; font-size:11px; } .rp-tile p { margin:0; font-size:11.5px; }
+.rp-ring { display:grid; place-items:center; width:42px; height:42px; border-radius:50%; border:4px solid var(--fc-lime,#c9f23a); font-style:normal; font-weight:900; font-size:14px; }
+.rp-ring.m-good { border-color:var(--fc-lime,#c9f23a); color:inherit; } .rp-ring.m-ok { border-color:#7fd957; color:inherit; } .rp-ring.m-mid { border-color:#e0a21a; color:inherit; } .rp-ring.m-bad { border-color:#ff6b6b; color:inherit; } .rp-ring.blue { border-color:#4aa3ff; } .rp-ring.grey { border-color:#5b6e7d; }
+.rp-lower { display:grid; grid-template-columns:1fr 1.2fr .8fr; gap:6px; }
+.rp-lower .rp-kv { padding:2px 8px; border:1px solid rgba(120,170,200,.25); border-radius:10px; }
+.rp-shirt { display:grid; justify-items:center; align-content:center; gap:4px; padding:6px; border:1px solid rgba(120,170,200,.25); border-radius:10px; font-size:10.5px; }
+.rp-shirt label { display:grid; gap:2px; text-align:center; } .rp-shirt input { width:60px; text-align:center; background:#0a121b; color:inherit; border:1px solid rgba(120,170,200,.4); border-radius:6px; }
+.rp-jersey { font-size:26px; line-height:1; }
+.rp-menu { position:absolute; left:8px; top:150px; z-index:20; display:grid; width:240px; padding:6px; gap:4px; border:1px solid rgba(201,242,58,.55); border-radius:10px; background:#0b1823; box-shadow:0 10px 30px rgba(0,0,0,.6); }
+.rp-menu button { min-height:30px; padding:6px 8px; text-align:left; border:1px solid rgba(120,170,200,.3); border-radius:8px; background:rgba(255,255,255,.04); color:inherit; font-size:11px; font-weight:700; cursor:pointer; } .rp-menu button.danger { background:#7a1020; border-color:#c0334a; color:#fff; }
+.rp-renew { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px 10px; margin-top:8px; max-width:520px; } .rp-renew label { display:grid; gap:2px; font-size:10.5px; color:#9fb2c1; } .rp-renew input, .rp-renew select { min-height:30px; background:#0a121b; color:inherit; border:1px solid rgba(120,170,200,.4); border-radius:6px; padding:0 6px; }
+.rp-renew-go { grid-column:1/-1; display:flex; gap:8px; }
+.rp-dtabs { display:flex; gap:4px; } .rp-dtabs button { flex:1; }
+@media (orientation:landscape) and (max-height:430px) {
+  .rp-body { gap:5px; } .rp-card { grid-template-columns:44px minmax(0,1fr); padding:4px; gap:6px; min-height:0!important; } .rp-av { height:50px; } .rp-nm { font-size:11px; }
+  .rp-row { padding:4px 0; gap:8px; } .rp-row .rp-card { width:200px; } .rp-tx { font-size:11.5px; }
+  .rp-ger { width:26px; height:26px; font-size:11px; } .rp-ger.big { width:32px; height:32px; font-size:13px; }
+  .rp-kpis b { font-size:14px; } .rp-checks li { padding:4px 0; font-size:10.5px; }
+  .rp-grid { grid-template-columns:170px minmax(0,1fr); gap:6px; } .rp-ring { width:34px; height:34px; border-width:3px; font-size:12px; }
+  .rp-act-btn, .rp-btn { min-height:0!important; padding:5px 8px; font-size:10px; } .rp-kv div { padding:2px 2px; font-size:10px; }
+  .rp-tile { padding:4px; gap:2px; } .rp-menu { top:120px; }
+  .rp-renew { grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px 6px; max-width:none; margin-top:4px; } .rp-renew label { font-size:9.5px; min-height:0!important; gap:1px; } .rp-renew input, .rp-renew select { min-height:0!important; height:26px; font-size:11px; padding:0 4px; }
+  .rp-wide { max-width:none; } .rp-wide div { padding:1px 2px; } .rp-btn.wide { margin-top:4px; }
+}
