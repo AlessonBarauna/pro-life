@@ -166,7 +166,7 @@
     try { inner = V?.renderMarket?.(s, D) || ""; } catch (e) {
       try { console.error("[mercado] gestão falhou", e); V?.setTab?.("proposals"); inner = V?.renderMarket?.(s, D) || ""; } catch (e2) { inner = ""; }
     }
-    return (tab === "gestao" ? MS().clubSubNav("gestao") : "") + `<div class="tfh-embed tfh-area-${tab}">${inner || '<p class="tfh-note">Não foi possível carregar a gestão agora. <button type="button" class="tfh-btn" data-tfh-tab="gestao">Tentar de novo</button></p>'}</div>`;
+    return (tab === "gestao" || tab === "elenco" ? MS().clubSubNav(tab) : "") + `<div class="tfh-embed tfh-area-${tab}">${inner || '<p class="tfh-note">Não foi possível carregar a gestão agora. <button type="button" class="tfh-btn" data-tfh-tab="gestao">Tentar de novo</button></p>'}</div>`;
   }
 
   function html() {
@@ -175,7 +175,7 @@
     if (!c) body = `<p class="tfh-note">O Mercado está disponível na carreira de treinador.</p>`;
     else {
       const club = c.D.club(c.s);
-      const view = { geral, mundo, negociacoes, comprados, vendidos, emp_in: empIn, emp_out: empOut, elenco, gestao, lista, pesquisa, avancada, scout: pesquisa }[tab] || geral;
+      const view = { geral, mundo, negociacoes, comprados, vendidos, emp_in: empIn, emp_out: empOut, elenco: gestao, gestao, lista, pesquisa, avancada, scout: pesquisa }[tab] || geral;
       body = !club ? `<p class="tfh-note">Assine com um clube para usar o mercado.</p>` : (negPid ? negotiation : view)(c.s, c.D, club);
       if (flash) body = `<p class="tfh-flash" role="status">${esc(flash)}</p>` + body;
     }

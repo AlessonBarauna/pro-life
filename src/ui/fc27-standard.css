@@ -208,7 +208,7 @@
 .tfh-dialog .tfh-body{overflow-x:hidden}
 .tfh-dialog .tfh-body:has(.csh-detail.is-open){overflow:hidden}
 @media (orientation:landscape) and (max-height:560px){
-  .tfh-dialog .csh-detail.is-open{position:absolute!important;top:96px!important;bottom:6px!important;left:8px!important;right:8px!important;width:auto!important;max-width:none!important;margin:0!important;
+  .tfh-dialog .csh-detail.is-open{position:absolute!important;top:0!important;bottom:0!important;left:122px!important;right:0!important;width:auto!important;max-width:none!important;margin:0!important;z-index:70;
     overflow-x:clip!important;overflow-y:auto!important;box-shadow:0 -6px 0 6px #0b1a24!important;background:#0b1a24!important;box-sizing:border-box}
   .tfh-dialog .csh-detail.is-open *{min-width:0}
 }

@@ -6,6 +6,15 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-24-f",
+      date: "2026-11-24",
+      title: "Renovar contrato voltou ao Mercado",
+      items: [
+        { type: "correcao", text: "O aviso de contrato perto do fim abre o Meu elenco com a renovação pronta para preencher. Na reforma do Mercado essa opção tinha sumido." },
+        { type: "correcao", text: "A ficha do jogador no Meu elenco não fica mais cortada na lateral." },
+      ],
+    },
+    {
       id: "2026-11-24-e",
       date: "2026-11-24",
       title: "Perfil do jogador, proposta com luvas e empréstimo",
