@@ -15,3 +15,9 @@ test("cartão mostra remover só quando há foto", () => {
   assert.equal(F.img({ name: "A" }), "");
   assert.match(F.stage({ name: "A", photo: ok }), /fp-hero/);
 });
+test("a criação de carreira guarda a foto válida e ignora a inválida", () => {
+  const E = require("../src/domain/engine.js");
+  const ok2 = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
+  assert.equal(E.create({ mode: "player", catalogVersion: "fc27_v1", photo: ok2 }, 7).person.photo, ok2);
+  assert.equal(E.create({ mode: "player", catalogVersion: "fc27_v1", photo: "http://x/y.png" }, 7).person.photo, undefined);
+});

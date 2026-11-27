@@ -471,6 +471,7 @@
       goals: 0,
       minutes: 0,
       appearance: Character.normalize(config.appearance),
+      ...(typeof config.photo === "string" && config.photo.length <= 120000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(config.photo) ? { photo: config.photo } : {}),
       height: clamp(Number(config.height) || 178, 150, 210),
       weight: clamp(Number(config.weight) || 72, 45, 120),
       foot: config.foot === "left" ? "left" : "right",

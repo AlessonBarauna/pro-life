@@ -30,6 +30,7 @@ function appearancePanel(){
  <fieldset class="coach-full look-group"><legend>Roupa</legend>${lookSelect("outfit","Peça",C.outfit,D.outfit)}<label>Cor principal<input name="outfitColor" type="color" value="${D.outfitColor}"></label><label>Cor de detalhe (gravata, faixas)<input name="accentColor" type="color" value="${D.accentColor}"></label></fieldset>`;
 }
 function render(ctx){
+ window.ProLifeFacePhoto?.reset?.();
  const {D,esc}=ctx;
  // Reuse canonical available club catalog; no separate world or generated league list.
  let clubs=[],previewState=null;
@@ -51,7 +52,7 @@ function render(ctx){
      <label>Cidade natal<input name="city" required maxlength="60" value="" placeholder="Cidade"></label>
      <label>Idade inicial<input name="age" type="number" min="25" max="65" required value="35"></label>
      <label class="coach-full">Nacionalidade<select name="nationality" required>${NATIONALITIES.map(n=>`<option value="${esc(n)}" ${n==="Brasil"?"selected":""}>${esc(n)}</option>`).join("")}</select></label>
-    </div><div class="coach-fields coach-looks" data-coach-panel="3">${appearancePanel()}</div>
+    </div><div class="coach-fields coach-looks" data-coach-panel="3">${root.ProLifeFacePhoto?.card(null,{pending:true})||""}${appearancePanel()}</div>
     <div class="coach-fields" data-coach-panel="4"><label>Buscar clube<input type="search" name="clubSearch" placeholder="Nome do clube" autocomplete="off"></label><label>País<select name="countryFilter"><option value="">Todos os países</option></select></label><label>Filtrar competição<select name="leagueFilter"><option value="">Todas as competições</option></select></label><label class="coach-full">Primeiro projeto<select name="clubId"><option value="">Receber propostas de clubes</option>${options}</select></label><div class="coach-full coach-club-results" id="coach-club-results" aria-label="Escolha visual dos clubes"></div><div class="coach-full coach-club-analysis" id="coach-club-analysis" aria-live="polite"></div>
     </div><div class="coach-fields" data-coach-panel="5"><div class="coach-full coach-section-note"><b>Configurações finais — PRO-LIFE</b><p>Predefinições com efeitos reais. Abas adicionais indicam o que ainda será desenvolvido, sem alterar regras de simulação.</p></div>
     <label class="coach-full">Predefinição<select name="preset"><option value="balanced">Equilibrado (padrão)</option><option value="realistic">Realista</option><option value="custom">Personalizado</option></select></label>
@@ -329,7 +330,7 @@ function render(ctx){
   if(!Number.isFinite(seed)){ctx.toast("Seed invalida.");return;}
   if(f.get("careerType")!=="original"||f.get("coachType")!=="custom"){ctx.toast("Este modo ainda não está disponível.");return;}
   const looksConfig=root.ProLifeCoachAvatar2D?root.ProLifeCoachAvatar2D.configFromForm(event.currentTarget):null;
-  const config={mode:"coach",catalogVersion:"fc27_v1",name,city,age,nationality:String(f.get("nationality")||"Brasil").trim(),clubId:String(f.get("clubId")||""),financialScenario:String(f.get("clubId")||"")?String(f.get("financialScenario")||"legacy"):"legacy",appearance:looksConfig?root.ProLifeCoachAvatar2D.toAppearance(looksConfig):{}};
+  const config={mode:"coach",catalogVersion:"fc27_v1",name,city,age,nationality:String(f.get("nationality")||"Brasil").trim(),clubId:String(f.get("clubId")||""),financialScenario:String(f.get("clubId")||"")?String(f.get("financialScenario")||"legacy"):"legacy",appearance:looksConfig?root.ProLifeCoachAvatar2D.toAppearance(looksConfig):{},photo:root.ProLifeFacePhoto?.pending?.()||undefined};
   ctx.busy("Criando carreira de treinador FC 27…",()=>{
    try{
     const fresh=D.create(config,seed);

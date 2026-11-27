@@ -6,6 +6,15 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-27-c",
+      date: "2026-11-27",
+      title: "Foto do rosto já na criação da carreira",
+      items: [
+        { type: "novo", text: "Ao criar a carreira, de jogador ou de treinador, você já pode tirar uma foto ou enviar uma imagem da galeria para ser o seu rosto no jogo." },
+        { type: "ajuste", text: "Depois da criação, a foto pode ser trocada ou removida em Identidade." }
+      ]
+    },
+    {
       id: "2026-11-27-b",
       date: "2026-11-27",
       title: "Seu rosto no jogo",

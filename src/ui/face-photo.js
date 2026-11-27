@@ -13,9 +13,12 @@
   function stage(p) {
     return `<div class="avatar-stage fp-stage" data-mode="photo">${img(p, "fp-hero")}<span class="fp-ring"></span></div>`;
   }
-  function card(p) {
+  let pending = null, mode = "state";
+  function card(p, opts) {
+    const pend = !!opts?.pending;
+    if (pend) p = { name: "você", photo: pending };
     const has = valid(p?.photo);
-    return `<section class="fp-card" aria-label="Foto do rosto"><div class="fp-preview">${has ? img(p) : '<span class="fp-empty" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="12" r="6" fill="currentColor"/><path d="M4 30c0-8 5-12 12-12s12 4 12 12z" fill="currentColor"/></svg></span>'}</div><div class="fp-body"><b>Seu rosto no jogo</b><small>${has ? "Aparece no seu perfil e nos cards." : "Tire uma foto ou escolha da galeria. Fica só neste aparelho."}</small><div class="fp-actions"><label class="fp-btn primary">Tirar foto<input type="file" accept="image/*" capture="user" data-fp-input hidden></label><label class="fp-btn">Galeria<input type="file" accept="image/*" data-fp-input hidden></label>${has ? '<button type="button" class="fp-btn" data-fp-remove>Remover foto</button>' : ""}</div></div></section>`;
+    return `<section class="fp-card" aria-label="Foto do rosto"${pend ? " data-fp-pending" : ""}><div class="fp-preview">${has ? img(p) : '<span class="fp-empty" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="12" r="6" fill="currentColor"/><path d="M4 30c0-8 5-12 12-12s12 4 12 12z" fill="currentColor"/></svg></span>'}</div><div class="fp-body"><b>Seu rosto no jogo</b><small>${has ? (pend ? "Essa será a sua foto na carreira. Dá para trocar depois." : "Aparece no seu perfil e nos cards.") : "Tire uma foto ou escolha da galeria. Fica só neste aparelho."}</small><div class="fp-actions"><label class="fp-btn primary">Tirar foto<input type="file" accept="image/*" capture="user" data-fp-input hidden></label><label class="fp-btn">Galeria<input type="file" accept="image/*" data-fp-input hidden></label>${has ? '<button type="button" class="fp-btn" data-fp-remove>Remover foto</button>' : ""}</div></div></section>`;
   }
 
   // ----- recorte -----
@@ -42,6 +45,9 @@
     el.onerror = () => { URL.revokeObjectURL(url); toast("Não consegui abrir essa imagem."); };
     el.src = url;
   }
+  function refresh() {
+    doc.querySelectorAll("[data-fp-pending]").forEach((el) => { const tpl = doc.createElement("template"); tpl.innerHTML = card(null, { pending: true }).trim(); el.replaceWith(tpl.content.firstElementChild); });
+  }
   function close() { if (layer) { layer.remove(); layer = null; } im = null; }
   function toast(t) { const x = doc?.getElementById("toast"); if (x) { x.textContent = t; x.style.display = "block"; setTimeout(() => { x.style.display = ""; }, 2500); } }
   function save() {
@@ -52,6 +58,7 @@
     let q = 0.85, data = out.toDataURL("image/jpeg", q);
     while (data.length > MAX && q > 0.4) { q -= 0.1; data = out.toDataURL("image/jpeg", q); }
     close();
+    if (mode === "pending") { pending = data; refresh(); return; }
     root.ProLifeSM27Cmd?.("setPhoto", { photo: data });
   }
 
@@ -59,7 +66,7 @@
     let drag = null;
     doc.addEventListener("change", (ev) => {
       const t = ev.target;
-      if (t?.matches?.("[data-fp-input]")) { const f = t.files?.[0]; t.value = ""; openCrop(f); return; }
+      if (t?.matches?.("[data-fp-input]")) { mode = t.closest("[data-fp-pending]") ? "pending" : "state"; const f = t.files?.[0]; t.value = ""; openCrop(f); return; }
     });
     doc.addEventListener("input", (ev) => {
       const t = ev.target;
@@ -72,7 +79,7 @@
       const t = ev.target instanceof Element ? ev.target : null; if (!t) return;
       if (t.closest("[data-fp-cancel]")) close();
       else if (t.closest("[data-fp-save]")) save();
-      else if (t.closest("[data-fp-remove]")) root.ProLifeSM27Cmd?.("setPhoto", { photo: null });
+      else if (t.closest("[data-fp-remove]")) { if (t.closest("[data-fp-pending]")) { pending = null; refresh(); } else root.ProLifeSM27Cmd?.("setPhoto", { photo: null }); }
     });
     doc.addEventListener("pointerdown", (ev) => { if (ev.target?.closest?.(".fp-crop") && im) { drag = { x: ev.clientX, y: ev.clientY, sx: S.x, sy: S.y }; ev.target.setPointerCapture?.(ev.pointerId); } });
     doc.addEventListener("pointermove", (ev) => { if (drag) { S.x = drag.sx + ev.clientX - drag.x; S.y = drag.sy + ev.clientY - drag.y; draw(); } });
@@ -80,6 +87,6 @@
     doc.addEventListener("pointerup", end); doc.addEventListener("pointercancel", end);
   }
 
-  root.ProLifeFacePhoto = { valid, img, stage, card, MAX };
+  root.ProLifeFacePhoto = { valid, img, stage, card, MAX, pending: () => (valid(pending) ? pending : null), reset: () => { pending = null; } };
   if (typeof module !== "undefined" && module.exports) module.exports = root.ProLifeFacePhoto;
 })(typeof window !== "undefined" ? window : globalThis);

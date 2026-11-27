@@ -24,6 +24,7 @@
     return age;
   }
   function init(ctx, keepSeed) {
+    window.ProLifeFacePhoto?.reset?.();
     const D = ctx.D, id = "blank", story = D.Training.origins[id].story;
     W = {
       step: 0, seed: keepSeed || freshSeed(), catalogVersion: CATALOG, storyId: id, difficulty: "normal", personality: "balanced",
@@ -66,6 +67,7 @@
       c.birthDate = W.cfg.birthDate || birthDateForAge(W.custom.age);
     }
     if (withClub && W.clubId) c.clubId = W.clubId;
+    const ph = window.ProLifeFacePhoto?.pending?.(); if (ph) c.photo = ph; else delete c.photo;
     return c;
   }
   // Dependências que invalidam as oportunidades (nome/aparência/altura não entram).
@@ -110,7 +112,7 @@
     const minBirthDate=`${2026-maxA-1}-01-02`, maxBirthDate=`${2026-minA}-01-01`;
     const birthValue=c.birthDate||birthDateForAge(c.age);
     const ageField = `<label>Data de nascimento<input type="date" name="birthDate" min="${minBirthDate}" max="${maxBirthDate}" value="${birthValue}" required></label><label>Idade<input type="number" name="age" value="${c.age}" readonly tabindex="-1" aria-readonly="true"></label>`;
-    return `<h2>Quem é você?</h2><div class="grid"><section class="card"><div class="formgrid"><label>Nome completo<input name="name" maxlength="60" value="${esc(c.name)}"></label><label>Cidade natal<input name="city" maxlength="60" value="${esc(c.city)}"></label><label>Nacionalidade<select name="nationality">${countries.map(country=>`<option value="${esc(country)}" ${country===c.nationality?"selected":""}>${esc(country)}</option>`).join("")}</select></label>${ageField}<label>Pé dominante<select name="foot">${opt([["right", "Direito"], ["left", "Esquerdo"]], c.foot)}</select></label><label>Altura (cm)<input name="height" type="number" min="150" max="210" value="${c.height}"></label><label>Peso (kg)<input name="weight" type="number" min="45" max="120" value="${c.weight}"></label></div><p class="muted">A nacionalidade é independente da cidade natal e do país do primeiro clube.</p></section><section class="card"><div id="w-avatar"></div>${appearanceFields(c.appearance)}</section></div>`;
+    return `<h2>Quem é você?</h2><div class="grid"><section class="card">${window.ProLifeFacePhoto?.card(null,{pending:true})||""}<div class="formgrid"><label>Nome completo<input name="name" maxlength="60" value="${esc(c.name)}"></label><label>Cidade natal<input name="city" maxlength="60" value="${esc(c.city)}"></label><label>Nacionalidade<select name="nationality">${countries.map(country=>`<option value="${esc(country)}" ${country===c.nationality?"selected":""}>${esc(country)}</option>`).join("")}</select></label>${ageField}<label>Pé dominante<select name="foot">${opt([["right", "Direito"], ["left", "Esquerdo"]], c.foot)}</select></label><label>Altura (cm)<input name="height" type="number" min="150" max="210" value="${c.height}"></label><label>Peso (kg)<input name="weight" type="number" min="45" max="120" value="${c.weight}"></label></div><p class="muted">A nacionalidade é independente da cidade natal e do país do primeiro clube.</p></section><section class="card"><div id="w-avatar"></div>${appearanceFields(c.appearance)}</section></div>`;
   }
   function stepPosition(ctx) {
     const { D, esc, Charts } = ctx, cr = D.Creation;
