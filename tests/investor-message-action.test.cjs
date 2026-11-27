@@ -19,7 +19,7 @@ test("mensagem de investidor abre Finanças > Investidores (não a lista de tran
   assert.ok(btn, "mensagem de investidor tem botão próprio");
   assert.equal(btn.dataset.page, undefined, "não vai para a página de propostas/transferências");
   btn.click();
-  const dlg = w.document.querySelector(".sm27-dialog");
-  assert.ok(dlg && /Finanças/.test(dlg.textContent), "abre as Finanças");
+  const dlg = w.document.querySelector(".ca-area");
+  assert.ok(dlg && /Finanças/.test(dlg.textContent), "abre as Finanças (área do treinador)");
   assert.ok(/Proposta|investir|investidor/i.test(dlg.textContent), "mostra a proposta na aba Investidores");
 });

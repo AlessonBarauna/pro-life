@@ -165,7 +165,7 @@ for (const mode of ["player", "coach"]) {
       ]
     : [
         ["home", ["home"]],
-        ["profile", ["profile", "coachCareer", "training", "finance", "clubSponsorships"]],
+        ["profile", ["profile", "coachCareer", "training", "clubSponsorships"]],
         ["competitions", ["competitions", "calendar", "matches", "league", "statistics", "awards"]],
         ["squad", ["squad"]],
         ["market", ["market", "proposals"]],

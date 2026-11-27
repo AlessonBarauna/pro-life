@@ -6,6 +6,17 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-27-a",
+      date: "2026-11-27",
+      title: "Nova área do Treinador: habilidades, finanças, registos e vagas",
+      items: [
+        { type: "novo", text: "Treinador agora tem menu lateral com Treinador, Finanças, Registos e Vagas de emprego, com ícones novos e dados reais do seu clube." },
+        { type: "novo", text: "Finanças em abas: projeção da época, detalhado, competições, zona do clube, caixa e loja, extrato, investidores, pessoal e compras." },
+        { type: "novo", text: "Registos mostra estatísticas, recordes, troféus e a galeria de honra com os campeões de cada temporada." },
+        { type: "ajuste", text: "Telas antigas duplicadas (Diretoria, Propostas de emprego, janelas de Habilidades e Finanças) saíram: tudo está na área nova." }
+      ]
+    },
+    {
       id: "2026-11-25-a",
       date: "2026-11-25",
       title: "Relatórios do elenco renovados e ficha do jogador completa",

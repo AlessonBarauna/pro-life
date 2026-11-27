@@ -6,7 +6,6 @@
   if (!doc) return;
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const num = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
-  let layer = null, tab = "estatisticas";
 
   function compute() {
     const ctx = root.ProLifeSM27Ctx?.();
@@ -60,54 +59,10 @@
     return { s, res, w, d, l, gf, ga, best, worst, mostGoals, rows, bestSeason, trophies, history, stints, clubName: id ? nameOf(id) : null };
   }
 
-  const kv = (rows) => `<ul class="obj-list">${rows.map(([k, v]) => `<li class="obj-row"><span class="obj-top"><b>${esc(k)}</b><em>${esc(v)}</em></span></li>`).join("")}</ul>`;
-  const score = (r) => `${r.gf}–${r.ga} ${r.home ? "em casa contra" : "fora contra"} ${r.opp}`;
-
-  function view(c) {
-    if (!c) return `<p class="shd-note">Registros disponíveis com uma carreira ativa.</p>`;
-    if (tab === "estatisticas") {
-      const j = c.res.length, pct = j ? Math.round(((c.w * 3 + c.d) / (j * 3)) * 100) : 0;
-      const rows = [["Jogos registrados", j], ["Vitórias · Empates · Derrotas", `${c.w} · ${c.d} · ${c.l}`], ["Aproveitamento", pct + "%"], ["Gols pró · contra", `${c.gf} · ${c.ga}`], ["Saldo de gols", (c.gf - c.ga > 0 ? "+" : "") + (c.gf - c.ga)]];
-      if (c.s.mode === "coach") rows.push(["Temporadas como treinador", c.rows.length], ["Passagens por clubes", c.stints.length]);
-      else rows.push(["Gols na carreira", num(c.s.person?.goals)], ["Minutos jogados", num(c.s.person?.minutes)]);
-      return `<p class="shd-sub">${esc(c.clubName || "Sem clube")}</p>` + kv(rows);
-    }
-    if (tab === "registos") {
-      return kv([
-        ["Maior vitória", c.best ? score(c.best) : "Ainda sem vitórias"],
-        ["Pior derrota", c.worst ? score(c.worst) : "Ainda sem derrotas"],
-        ["Jogo com mais gols", c.mostGoals ? score(c.mostGoals) : "—"],
-        ["Melhor temporada", c.bestSeason ? `${c.bestSeason.club} ${c.bestSeason.season} · ${c.bestSeason.pos}º lugar · ${c.bestSeason.points} pts` : "Ainda sem temporadas concluídas"]
-      ]);
-    }
-    if (tab === "trofeus") {
-      return c.trophies.length ? kv(c.trophies.map((t) => [t.name, `${t.club} · ${t.season}`])) : `<p class="shd-note">Nenhum troféu ainda. Vença campeonatos e copas para encher esta estante.</p>`;
-    }
-    return c.history.length ? kv(c.history.slice(0, 120).map((h) => [`${h.season} · ${h.league || "Liga"}`, `${h.champion}${h.position ? " · você: " + h.position + "º" : ""}`])) : `<p class="shd-note">A galeria de honra mostra os campeões de cada temporada concluída.</p>`;
-  }
-
-  function html() {
-    const tabs = [["estatisticas", "Estatísticas"], ["registos", "Registos"], ["trofeus", "Troféus"], ["honra", "Galeria de honra"]];
-    return `<div class="sm27-dialog-backdrop" data-sm27rc-close></div><section class="sm27-dialog" role="dialog" aria-modal="true" aria-label="Registros"><header class="sm27-dialog-head"><span></span><h2>Registros</h2><button type="button" class="sm27-dialog-x" data-sm27rc-close aria-label="Fechar">×</button></header><div class="sm27-dialog-body"><nav class="shd-tabs rc-tabs" role="tablist">${tabs.map(([id, l]) => `<button type="button" role="tab" aria-selected="${tab === id}" data-sm27rc-tab="${id}">${l}</button>`).join("")}</nav>${view(compute())}</div></section>`;
-  }
-  function open() {
-    if (!layer) { layer = doc.createElement("div"); layer.className = "sm27-dialog-layer"; doc.body.appendChild(layer); doc.body.classList.remove("sm27-menu-open"); }
-    layer.innerHTML = html();
-    layer.querySelector(".sm27-dialog-x")?.focus({ preventScroll: true });
-  }
-  function close() { if (layer) { layer.remove(); layer = null; } }
-
   doc.addEventListener("click", (ev) => {
     const t = ev.target instanceof Element ? ev.target : null;
-    if (!t) return;
-    if (t.closest("[data-sm27-records]")) { ev.preventDefault(); tab = "estatisticas"; open(); return; }
-    if (!layer) return;
-    if (t.closest("[data-sm27rc-close]")) { close(); return; }
-    const tb = t.closest("[data-sm27rc-tab]");
-    if (tb) { tab = tb.dataset.sm27rcTab; open(); }
+    if (t?.closest("[data-sm27-records]")) { ev.preventDefault(); doc.body.classList.remove("sm27-menu-open"); root.ProLifeCoachArea?.go("registos"); }
   }, true);
-  doc.addEventListener("keydown", (ev) => { if (layer && ev.key === "Escape") close(); });
-
-  root.ProLifeSM27Records = { open, close, compute };
+  root.ProLifeSM27Records = { open: () => root.ProLifeCoachArea?.go("registos"), close() {}, compute };
   if (typeof module !== "undefined" && module.exports) module.exports = root.ProLifeSM27Records;
 })(typeof window !== "undefined" ? window : globalThis);

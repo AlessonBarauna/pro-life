@@ -620,7 +620,7 @@
         : [
             ["home", "Início", [["home", "Central"]]],
             ["inbox", "Caixa", [["inbox", "Mensagens"]]],
-            ["profile", "Treinador", [["profile", "Visão geral"], ["coachCareer", "Carreira e Vestiário"], ["training", "Treino da equipe"], ["finance", "Diretoria"], ["clubSponsorships", "Patrocínios"], ["jobOffers", "Propostas de emprego"]]],
+            ["profile", "Treinador", [["profile", "Visão geral"], ["coachCareer", "Carreira e Vestiário"], ["training", "Treino da equipe"], ["clubSponsorships", "Patrocínios"]]],
             ["squad", "Elenco", []],
             ["competitions", "Temporada", [["competitions", "Visão geral"], ["calendar", "Calendário"], ["matches", "Partidas"], ["league", "Campeonatos"], ["statistics", "Estatísticas"], ["awards", "Prêmios"], ["worldCompetitions", "Mundo"], ["englishCups", "Copas Inglesas"], ["champions", "Champions League"], ["europa", "Europa League"], ["conference", "Conference League"], ["libertadores", "Libertadores"], ["sudamericana", "Sul-Americana"]]],
             ["market", "Mercado", [["market", "Visão geral"], ["proposals", "Propostas"]]],
@@ -662,7 +662,7 @@
         ]
       : [
           ["home", "Central", "⌂", ["home"]],
-          ["profile", "Treinador", "◉", ["profile", "coachCareer", "training", "finance", "clubSponsorships", "jobOffers"]],
+          ["profile", "Treinador", "◉", ["profile", "coachCareer", "training", "clubSponsorships"]],
           ["squad", "Elenco", "⬡", ["squad"]],
           ["competitions", "Temporada", "◇", ["calendar", "matches", "league", "competitions", "statistics", "awards", "worldCompetitions", "englishCups", "champions", "europa", "conference", "libertadores", "sudamericana"]],
           ["market", "Mercado", "↔", ["market", "proposals", "clubs"]],
@@ -723,8 +723,6 @@
         isCoach?drawerItem("home","Instalações",[],' data-sm27-facilities'):drawerItem("home","Instalações",[],' data-sm27-facilities'),
         isCoach?drawerItem("home","Academia",[],' data-sm27-academy'):null,
         drawerItem("home","Objetivos",[],' data-sm27-objectives'),
-        isCoach?drawerItem("home","Vagas de emprego",[],' data-sm27-jobs'):null,
-        isCoach?drawerItem("home","Habilidades",[],' data-sm27-skills'):null,
         !isCoach&&drawerFind("life")?drawerItem("life","Vida",drawerFind("life")[3]):null,
         drawerUtilities.national,isCoach?null:drawerUtilities.history,drawerUtilities.inbox
       ]]
@@ -9020,7 +9018,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
       <section class="card section" id="unexpected-events-history"><div class="tag">ACONTECIMENTOS RECENTES</div><h2>Decisões fora de campo</h2>${unexpected.length?unexpected.map(row=>`<article class="news"><time>${dayDate(row.day)} · ${esc(row.category)} · ${esc(row.status)}</time><h3>${esc(row.title)}</h3><p><b>${esc(row.choiceLabel)}</b>${row.summary?` · ${esc(row.summary)}`:""}</p></article>`).join(""):empty("Nenhum acontecimento inesperado registrado nesta carreira.")}</section>
       <section class="card section inv-hub" id="life-investments"><div class="tag">INVESTIMENTOS</div><h2>Central de investimentos</h2>${(()=>{const act=f.investments.filter(x=>!x.closed),tot=act.reduce((n,x)=>n+x.principal,0),proj=act.reduce((n,x)=>n+x.principal*x.rate,0);return `<div class="inv-kpis"><span><small>Investido</small><b>${money(tot)}</b></span><span><small>Retorno projetado</small><b class="good">+${money(Math.round(proj))}</b></span><span><small>Ativos</small><b>${act.length}</b></span><span><small>Saldo disponível</small><b>${money(state.wallet)}</b></span></div>`})()}<p class="inv-note">Prazos, risco e retorno variam por oportunidade. Investimentos de risco maior têm pequena chance de perda.</p><h3 class="inv-h">Meus ativos</h3>${f.investments.filter(x=>!x.closed).length?`<div class="inv-grid">${f.investments.filter(x=>!x.closed).map(x=>{const total=Math.max(1,(x.maturesDay||0)-(x.startDay??((x.maturesDay||0)-180))),left=Math.max(0,(x.maturesDay||0)-state.day),pct=Math.min(100,Math.max(0,Math.round((1-left/total)*100)));return `<article class="inv-card own"><div class="inv-top"><small>${esc(x.category||"Investimento")}</small><i class="inv-risk r${x.risk||0}">${x.risk===0?"Risco baixo":x.risk===1?"Risco moderado":"Risco alto"}</i></div><h4>${esc(x.name)}</h4><b class="inv-amount">${money(x.principal)}</b><div class="inv-bar" aria-label="${pct}% do prazo"><i style="width:${pct}%"></i></div><p class="inv-meta"><span>Vence em ${left} dias</span><span>Retorno ${(x.rate*100).toFixed(1)}%</span></p></article>`}).join("")}</div>`:`<p class="inv-empty">Você ainda não tem investimentos ativos.</p>`}<h3 class="inv-h">Novas oportunidades</h3>${(()=>{const busy=new Set(f.investments.filter(i=>!i.closed).map(i=>i.type||String(i.id).split(":")[0])),free=D.Life.investmentTypes.filter(x=>!busy.has(x.id));return busy.size&&!free.length?`<p class="inv-empty">Todas as oportunidades estão em andamento. Cada uma volta quando vencer e o retorno cair na sua conta.</p>`:busy.size?`<p class="inv-note">${busy.size} em andamento ${busy.size>1?"ficam":"fica"} fora da lista até vencer.</p>`:""})()}<div class="inv-grid">${D.Life.investmentTypes.filter(x=>!f.investments.some(i=>!i.closed&&(i.type||String(i.id).split(":")[0])===x.id)).map(x=>`<article class="inv-card"><div class="inv-top"><small>${esc(x.category)}</small><i class="inv-risk r${x.risk}">${x.risk===0?"Risco baixo":x.risk===1?"Risco moderado":"Risco alto"}</i></div><h4>${esc(x.name)}</h4><p class="inv-meta"><span>Mínimo ${money(x.minimum)}</span><span>Prazo ${x.months} meses</span><span class="good">Retorno ${(x.rate*100).toFixed(1)}%</span></p><div class="inv-buy"><input id="invest-${x.id}" type="number" min="${x.minimum}" step="1000" value="${x.minimum}" aria-label="Valor a investir em ${esc(x.name)}"><button type="button" class="primary" data-life-invest="${x.id}" ${state.wallet<x.minimum?"disabled":""}>Investir</button></div></article>`).join("")}</div></section>`;
     },
-    finance() {
+    finance(only) {
       const c = D.club(state),
         e = Career.init(state),
         assets = Career.assetValue(state),
@@ -9099,6 +9097,7 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
         compras:shopCard+(finShopPages>1?finPager(Career.shop.length,finShopPer):"")+(false?`<nav class="cc-pager" aria-label="Páginas"><button type="button" data-fin-page="-1"${finPage<=0?" disabled":""} aria-label="Página anterior">‹</button><span>${finPage+1} / ${finShopPages} · ${Career.shop.length} itens</span><button type="button" data-fin-page="1"${finPage>=finShopPages-1?" disabled":""} aria-label="Próxima página">›</button></nav>`:""),
         pessoal:ledgerCard+finPager(e.ledger.length,finRowsPer)
       };
+      if(only&&screens[only]!==undefined)return screens[only];
       return '<div class="cc-fin-screen cc-fin-t-'+finTab+'">'+finNav+'<div class="cc-fin-body">'+(finTab==="resumo"?"":'<button type="button" class="cc-back" data-fin-tab="resumo">← Voltar ao resumo</button>')+screens[finTab]+'</div></div>';
     },
     legacy() {
@@ -9674,6 +9673,22 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if (el.hasAttribute("data-offfield-contact")) return command("offFieldContact", { id: el.getAttribute("data-offfield-contact") });
     command("offFieldFamily", { choice: el.getAttribute("data-offfield-family") });
   });
+const coachAreaWrap=(()=>{
+  const areaOn=()=>state.mode==="coach"&&window.ProLifeCoachArea;
+  const o={profile:views.profile,finance:views.finance,jobOffers:views.jobOffers};
+  window.ProLifeCoachAreaHost={
+    finance(id){const prev=finTab;finTab=id==="resumo"?prev:id;try{return o.finance.call(views,id);}finally{finTab=prev;}},
+    offers(){return views.proposals(true);}
+  };
+  views.profile=function(){
+    if(!areaOn())return o.profile.call(views);
+    const A=window.ProLifeCoachArea;
+    if(A.state.identity){if(A.state.idFresh){A.state.idFresh=false;coachProfileTab="identidade";}return '<button type="button" class="ca-backbtn" data-ca-back>← Voltar ao Treinador</button>'+o.profile.call(views);}
+    return A.render()||o.profile.call(views);
+  };
+  views.finance=function(){if(!areaOn())return o.finance.call(views);window.ProLifeCoachArea.state.sec="financas";window.ProLifeCoachArea.state.identity=false;return window.ProLifeCoachArea.render();};
+  views.jobOffers=function(){if(!areaOn())return o.jobOffers.call(views);window.ProLifeCoachArea.state.sec="vagas";window.ProLifeCoachArea.state.identity=false;return window.ProLifeCoachArea.render();};
+})();
   let finTab = "resumo", finPage = 0, finSeenTab = "resumo", finLedTotal = 0;
   function command(action, data) {
     try {
