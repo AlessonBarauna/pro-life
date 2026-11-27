@@ -7,15 +7,25 @@
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const money = (v) => { const n = Number(v) || 0, a = Math.abs(n); return a >= 1e9 ? "R$ " + (a / 1e9).toFixed(2).replace(".", ",") + " bi" : a >= 1e6 ? "R$ " + (a / 1e6).toFixed(1).replace(".", ",") + " mi" : a >= 1e3 ? "R$ " + Math.round(a / 1e3) + " mil" : "R$ " + Math.round(a); };
   // Barra lateral: cada grupo abre uma tela; os ids antigos de aba continuam valendo (alertas e pop-ups dependem deles).
-  const SIDE = [["geral", "Visão geral", ["geral"]], ["mundo", "Mundo", ["mundo"]], ["negociacoes", "Clube", ["negociacoes", "comprados", "vendidos", "emp_in", "emp_out", "elenco", "gestao"]], ["lista", "Lista", ["lista"]], ["pesquisa", "Pesquisa", ["pesquisa", "scout"]], ["avancada", "Pesquisa avançada", ["avancada"]]];
+  const SIDE = [["geral", "Mercado", ["geral"]], ["mundo", "Mundo", ["mundo"]], ["negociacoes", "Clube", ["negociacoes", "comprados", "vendidos", "emp_in", "emp_out", "elenco", "gestao"]], ["lista", "Lista", ["lista"]], ["pesquisa", "Pesquisa", ["pesquisa", "scout"]], ["avancada", "Avançada", ["avancada"]]];
+  // Ícones animados do menu lateral (SVG próprio; as animações ficam no CSS e respeitam prefers-reduced-motion).
+  const ICON_DEFS = '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="tfi1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6ff7a"/><stop offset="1" stop-color="#8fc01c"/></linearGradient><linearGradient id="tfi2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bfe9ff"/><stop offset="1" stop-color="#4aa3ff"/></linearGradient><linearGradient id="tfi3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe9a0"/><stop offset="1" stop-color="#e0a21a"/></linearGradient></defs></svg>';
+  const ICONS = {
+    geral: '<svg viewBox="0 0 32 32"><path d="M4 14l12-9 12 9v13H4z" fill="url(#tfi1)"/><rect x="12" y="18" width="8" height="9" rx="1" fill="#0a1620" opacity=".6"/><circle class="tfi-pulse" cx="25" cy="8" r="3" fill="#ff4d5e"/></svg>',
+    mundo: '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="url(#tfi2)"/><g class="tfi-spin" fill="none" stroke="#0a1620" stroke-opacity=".45" stroke-width="1.4"><ellipse cx="16" cy="16" rx="5" ry="12"/><path d="M4 16h24M6 10h20M6 22h20"/></g><circle cx="16" cy="16" r="12" fill="none" stroke="#fff" stroke-opacity=".5"/></svg>',
+    negociacoes: '<svg viewBox="0 0 32 32"><path d="M10 4L3 8l3 6 3-1v15h14V13l3 1 3-6-7-4c-.6 2-2.5 3-6 3s-5.4-1-6-3z" fill="url(#tfi1)"/><path class="tfi-slide" d="M12 20h8m-3-3l3 3-3 3" fill="none" stroke="#0a1620" stroke-width="2" stroke-linecap="round"/></svg>',
+    lista: '<svg viewBox="0 0 32 32"><path class="tfi-twinkle" d="M16 3l3.8 8.2 9 1-6.7 6 1.9 8.8L16 22.5 8 27l1.9-8.8-6.7-6 9-1z" fill="url(#tfi3)"/></svg>',
+    pesquisa: '<svg viewBox="0 0 32 32"><g class="tfi-sweep"><circle cx="14" cy="14" r="8.5" fill="#12344a" stroke="url(#tfi2)" stroke-width="3"/><path d="M20.5 20.5L28 28" stroke="url(#tfi2)" stroke-width="4" stroke-linecap="round"/></g></svg>',
+    avancada: '<svg viewBox="0 0 32 32"><g stroke="url(#tfi2)" stroke-width="3" stroke-linecap="round"><path d="M5 9h22M5 16h22M5 23h22"/></g><circle class="tfi-k1" cx="11" cy="9" r="3.4" fill="#e6ff7a"/><circle class="tfi-k2" cx="21" cy="16" r="3.4" fill="#e6ff7a"/><circle class="tfi-k3" cx="13" cy="23" r="3.4" fill="#e6ff7a"/></svg>',
+  };
   const TABS = SIDE.flatMap(([, , ids]) => ids.map((id) => [id]));
   const isEmbed = () => tab === "elenco" || tab === "gestao" || (tab === "pesquisa" && st.psub === "scout");
   const EMBED_TABS = ["scout", "elenco", "gestao", "pesquisa"];
   const AREA_OF = { scout: "observacao", elenco: "squad", gestao: "transferencias" };
   const DEAL = { rumor: ["Rumor", "rumor"], scouting: ["Observando", "rumor"], negotiating: ["Em negociação", "neg"], offer: ["Proposta feita", "neg"], completed: ["Fechado", "done"], rejected: ["Recusado", "out"], cancelled: ["Cancelado", "out"] };
   let layer = null, directPending = false, tab = "geral", negPid = null, flash = "", counterFor = null; const tabHist = [];
-  const freshAdv = () => ({ pos: "", role: "", ageMin: "", ageMax: "", valueMin: "", valueMax: "", contract: "", listing: "", country: "", league: "", nat: "", interest: "", attrs: [], run: false, page: 0 });
-  const st = { world: { status: "all", league: "", country: "", page: 0 }, pq: { text: "", page: 0, cpage: 0, spage: 0, npage: 0, lpage: 0, clubId: "", nat: "", onlyListed: false }, psub: "jogadores", adv: freshAdv(), ptab: "perfil", loanMonths: 12, loanOpt: true };
+  const freshAdv = () => ({ pos: "", role: "", ageMin: "", ageMax: "", valueMin: "", valueMax: "", potMin: "", ovrMin: "", salMax: "", budget: false, payroll: false, gems: false, contract: "", listing: "", country: "", league: "", nat: "", interest: "", attrs: [], run: false, page: 0 });
+  const st = { world: { status: "all", league: "", country: "", page: 0 }, pq: { text: "", page: 0, cpage: 0, spage: 0, npage: 0, lpage: 0, clubId: "", nat: "", onlyListed: false, quick: "todos" }, lista: { tab: "todos", sort: "prioridade" }, psub: "jogadores", adv: freshAdv(), ptab: "perfil", loanMonths: 12, loanOpt: true };
   const PAGE_FIELD = { world: ["world", "page"], pq: ["pq", "page"], cp: ["pq", "cpage"], sp: ["pq", "spage"], np: ["pq", "npage"], lp: ["pq", "lpage"], af: ["adv", "page"] };
   const MS = () => root.ProLifeMarketScreens;
   const R2x = () => root.ProLifeTransferRulesV2;
@@ -23,7 +33,7 @@
 
   function ctx() { const c = root.ProLifeSM27Ctx?.(); return c?.s && c.s.mode === "coach" ? c : null; }
   const GF = () => root.ProLifeGlobalFootball;
-  const ovrOf = (p) => Number(p?.ovr ?? p?.overall) || 0;
+  const ovrOf = (p) => Math.round(Number(p?.ovr ?? p?.overall) || 0);
   const valueOf = (p) => { try { return Number(root.ProLifePlayerEconomy?.marketValue?.(p)) || 0; } catch (e) { return 0; } };
   const clubName = (s, D, id) => { try { return (GF()?.clubById?.(s, id) || D.club(s, id))?.name || "Sem clube"; } catch (e) { return "Sem clube"; } };
   const leagueName = (s, id) => (s.globalFootball?.leagues || []).find((l) => l.id === id)?.name || (s.leagues || []).find((l) => l.id === id)?.name || id || "—";
@@ -34,17 +44,36 @@
     return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }
 
-  function geral(s, D, club) {
-    const c = s.coachCareer || {}, w = D.Career.windowStatus(s);
-    const mine = (x) => String(x.buyerClubId) === String(s.clubId);
+  function counts(s, D, club) {
+    const c = s.coachCareer || {}, mine = (x) => String(x.buyerClubId) === String(s.clubId);
     const neg = (c.negotiations || []).filter((n) => ["pending", "awaiting_window"].includes(n.status) && mine(n)).length;
     const offers = (c.saleOffers || []).filter((o) => o.status === "pending" && o.sellerClubId === s.clubId && (!Number.isFinite(Number(o.expiresDay)) || s.day <= o.expiresDay)).length;
     const inq = (c.inquiries || []).filter((i) => ["accepted", "asking_price"].includes(i.status)).length;
-    const expiring = (club.roster || []).filter((p) => p.id !== "hero" && Number.isFinite(Number(p.contractEnd ?? p.contractUntil)) && Number(p.contractEnd ?? p.contractUntil) <= s.season).length;
-    const tile = (l, v, sub, t) => `<button type="button" class="tfh-tile" ${t ? `data-tfh-tab="${t}"` : ""}><small>${esc(l)}</small><b>${esc(v)}</b>${sub ? `<em>${esc(sub)}</em>` : ""}</button>`;
-    const latest = (s.worldLiveMarket?.deals || []).filter((d) => d.state !== "cancelled").slice().sort((a, b) => (b.updatedDay || 0) - (a.updatedDay || 0)).slice(0, 5);
-    return `<div class="tfh-tiles">${tile("Orçamento de transferências", money(club.budget))}${tile("Janela", w.open ? "Aberta" : "Fechada", w.open ? `fecha em ${w.remaining} d` : `abre em ${w.remaining} d`)}${tile("Negociações ativas", neg, "ver todas", "negociacoes")}${tile("Propostas recebidas", offers, "responder", "negociacoes")}${tile("Sondagens", inq, "", "negociacoes")}${tile("Lista preferencial", (c.shortlist || []).length, "abrir lista", "lista")}${tile("Contratos no fim", expiring, "meu elenco", "elenco")}${(() => { const hv = root.ProLifeClubHype?.view?.(s); return hv && hv.level > 0 ? tile("Marca em alta (Champions)", hv.tag, hv.percent + (hv.stage ? " · " + hv.stage : "")) : ""; })()}</div>
-      <h3 class="tfh-h">Últimas do mercado mundial</h3>${latest.length ? feed(s, D, latest) : `<p class="tfh-note">Ainda sem movimentos. O mercado esquenta com as janelas abertas.</p>`}`;
+    return { neg, offers, inq };
+  }
+  const pill = (n, cls) => n > 0 ? `<i class="tfv-badge ${cls || ""}">${n > 99 ? "99+" : n}</i>` : "";
+  const crest = (id) => { try { return root.ProLifeClubCrests?.render?.(id, { size: "sm" }) || ""; } catch (e) { return ""; } };
+  const ring = (n) => `<i class="tfv-ring" style="--v:${Math.max(0, Math.min(99, n))}"><b>${n}</b></i>`;
+  function gemCard(s, D, p) {
+    const star = (s.coachCareer?.shortlist || []).some((x) => x.playerId === p.id);
+    return `<article class="tfv-gem">${ring(ovrOf(p))}<div class="tfv-gem-main"><button type="button" class="tfh-player" data-tfh-profile="${esc(p.id)}">${esc(p.name)}</button><small>${crest(p.clubId)}<span>${esc(clubName(s, D, p.clubId))}</span></small><small>${esc(p.primaryPosition || p.pos)} · ${esc(p.age)} anos · pot. <b>${Number(p.potential) || "—"}</b> · ${money(valueOf(p))}</small></div><button type="button" class="tfv-star ${star ? "on" : ""}" data-tfh-star="${esc(p.id)}" data-club="${esc(p.clubId || "")}" aria-label="${star ? "Remover da lista" : "Adicionar à lista"}" aria-pressed="${star}">${star ? "★" : "☆"}</button></article>`;
+  }
+  function geral(s, D, club) {
+    const c = s.coachCareer || {}, w = D.Career.windowStatus(s), n = counts(s, D, club);
+    const payroll = (club.roster || []).reduce((a, p) => a + (Number(p.salary) || 0), 0);
+    const reserve = payroll > 0 ? Math.floor((Number(club.budget) || 0) / payroll) : 0;
+    const winTotal = Math.max(30, Number(w.remaining) || 0), winPct = w.open ? Math.max(4, Math.min(100, Math.round((1 - Number(w.remaining) / winTotal) * 100))) : 0;
+    const cards = `<div class="tfv-cards">
+      <article class="tfv-card"><small>Orçamento de transferências</small><b>${money(club.budget)}</b><i class="tfv-bar"><u style="width:${Math.min(100, Math.round((Number(club.budget) || 0) / Math.max(1, (Number(club.budget) || 0) + payroll * 6) * 100))}%"></u></i>${payroll > 0 ? `<em>folha mensal ${money(payroll)} · reserva de ${reserve} mês(es)</em>` : ""}</article>
+      <article class="tfv-card"><small>Janela de transferências</small><b>${w.open ? "Aberta" : "Fechada"}</b><i class="tfv-bar"><u style="width:${winPct}%"></u></i><em>${w.open ? `fecha em ${w.remaining} d` : `abre em ${w.remaining} d`}</em></article>
+      <article class="tfv-card ${n.offers ? "hot" : ""}"><small>Propostas recebidas</small><b>${n.offers}</b><em>${n.offers ? "por jogadores seus" : "nenhuma por enquanto"}</em>${n.offers ? `<button type="button" class="tfh-btn primary" data-tfh-tab="negociacoes">Responder</button>` : ""}</article>
+      <article class="tfv-card"><small>Negociações ativas</small><b>${n.neg}</b><em>${n.inq ? n.inq + " sondagem(ns) aceitas" : "suas compras em andamento"}</em><button type="button" class="tfh-btn" data-tfh-tab="negociacoes">Ver todas</button></article></div>`;
+    const cand = MS().candidates(env(s, D)), rules = R2x();
+    const gems = cand.filter(rules.isGem).sort((a, b) => Number(b.potential) - Number(a.potential) || ovrOf(b) - ovrOf(a)).slice(0, 3);
+    const latest = (s.worldLiveMarket?.deals || []).filter((d) => d.state !== "cancelled").slice().sort((a, b) => (b.updatedDay || 0) - (a.updatedDay || 0)).slice(0, 4);
+    const hv = root.ProLifeClubHype?.view?.(s);
+    return cards + `<div class="tfv-two"><section><h3 class="tfh-h tfv-h"><span class="tfv-dot"></span>Joias para observar<button type="button" class="tfv-more" data-tfh-quick-go="joias">ver todas</button></h3>${gems.length ? `<div class="tfv-gems">${gems.map((p) => gemCard(s, D, p)).join("")}</div>` : `<p class="tfh-note">Nenhuma joia no radar agora.</p>`}</section>
+      <section><h3 class="tfh-h tfv-h"><span class="tfv-dot w"></span>Últimas do mundo<button type="button" class="tfv-more" data-tfh-tab="mundo">abrir</button></h3>${latest.length ? feed(s, D, latest) : `<p class="tfh-note">Ainda sem movimentos. O mercado esquenta com as janelas abertas.</p>`}</section></div>` + (hv && hv.level > 0 ? `<p class="tfv-hype"><b>Marca em alta</b> ${esc(hv.tag)} · ${esc(hv.percent)}${hv.stage ? " · " + esc(hv.stage) : ""}</p>` : "");
   }
 
   function dealRow(s, D, d) {
@@ -179,8 +208,12 @@
       body = !club ? `<p class="tfh-note">Assine com um clube para usar o mercado.</p>` : (negPid ? negotiation : view)(c.s, c.D, club);
       if (flash) body = `<p class="tfh-flash" role="status">${esc(flash)}</p>` + body;
     }
-    const side = SIDE.map(([id, l, ids]) => `<button type="button" role="tab" class="${ids.includes(tab) ? "active" : ""}" aria-selected="${ids.includes(tab)}" data-tfh-tab="${id}">${l}</button>`).join("");
-    return `<div class="sm27-dialog-backdrop" data-tfh-close></div><section class="sm27-dialog tfh-dialog" role="dialog" aria-modal="true" aria-label="Mercado"><header class="sm27-dialog-head"><button type="button" class="sm27-dialog-back" data-tfh-back aria-label="Voltar">‹</button><h2>Mercado</h2><button type="button" class="sm27-dialog-x" data-tfh-close aria-label="Fechar">×</button></header><div class="tfh-shell"><nav class="tfh-sidenav" role="tablist" aria-label="Seções do Mercado">${side}</nav><div class="tfh-body">${body}</div></div></section>`;
+    const cc = c && c.D.club(c.s) ? counts(c.s, c.D, c.D.club(c.s)) : { neg: 0, offers: 0, inq: 0 };
+    const badge = { geral: pill(cc.offers, "red"), negociacoes: pill(cc.offers + cc.neg, "red") };
+    const side = SIDE.map(([id, l, ids]) => `<button type="button" role="tab" class="${ids.includes(tab) ? "active" : ""}" aria-selected="${ids.includes(tab)}" data-tfh-tab="${id}"><span class="tfv-ic">${ICONS[id] || ""}</span><span class="tfv-lb">${l}</span>${badge[id] || ""}</button>`).join("");
+    let chips = "";
+    if (c && c.D.club(c.s)) { const w = c.D.Career.windowStatus(c.s); chips = `<span class="tfv-chip">Orçamento <b>${money(c.D.club(c.s).budget)}</b></span><span class="tfv-chip ${w.open ? "open" : "shut"}"><i></i>Janela ${w.open ? "aberta" : "fechada"} · ${w.remaining} d</span>`; }
+    return `<div class="sm27-dialog-backdrop" data-tfh-close></div><section class="sm27-dialog tfh-dialog tfv" role="dialog" aria-modal="true" aria-label="Mercado">${ICON_DEFS}<header class="sm27-dialog-head tfv-top"><button type="button" class="sm27-dialog-back" data-tfh-back aria-label="Voltar">‹</button><h2>Mercado</h2><span class="tfv-chips">${chips}</span><button type="button" class="sm27-dialog-x" data-tfh-close aria-label="Fechar">×</button></header><div class="tfh-shell"><nav class="tfh-sidenav" role="tablist" aria-label="Seções do Mercado">${side}</nav><div class="tfh-body">${body}</div></div></section>`;
   }
   function open() {
     if (!layer) { layer = doc.createElement("div"); layer.className = "sm27-dialog-layer"; doc.body.appendChild(layer); doc.body.classList.remove("sm27-menu-open"); }
@@ -269,6 +302,13 @@
       if (nt !== tab) { tabHist.push(tab); if (tabHist.length > 20) tabHist.shift(); }
       tab = nt; open(); return;
     }
+    if ((el = t.closest("[data-tfh-quick-go]"))) { st.pq.quick = el.dataset.tfhQuickGo; st.psub = "jogadores"; st.pq.page = 0; tabHist.push(tab); tab = "pesquisa"; open(); return; }
+    if ((el = t.closest("[data-tfh-quick]"))) { st.pq.quick = el.dataset.tfhQuick; st.pq.page = 0; open(); return; }
+    if ((el = t.closest("[data-tfh-lt]"))) { st.lista.tab = el.dataset.tfhLt; open(); return; }
+    if ((el = t.closest("[data-tfh-tog]"))) { const k = el.dataset.tfhTog; st.adv[k] = !st.adv[k]; st.adv.page = 0; open(); return; }
+    if ((el = t.closest("[data-tfh-ss-load]"))) { const it = (ctx()?.s.coachCareer?.savedSearches || []).find((x) => x.name === el.dataset.tfhSsLoad); if (it) { st.adv = Object.assign(freshAdv(), it.filters, { run: true, page: 0 }); open(); } return; }
+    if ((el = t.closest("[data-tfh-ss-del]"))) { cmd("deleteSearch", { name: el.dataset.tfhSsDel }); return; }
+    if (t.closest("[data-tfh-ss-save]")) { const name = layer.querySelector("[data-tfh-ss-name]")?.value || ""; const ok = cmd("saveSearch", { name: name || "Minha pesquisa " + ((ctx()?.s.coachCareer?.savedSearches || []).length + 1), filters: st.adv }); return; }
     if ((el = t.closest("[data-tfh-wf]"))) { st.world.status = el.dataset.tfhWf; st.world.page = 0; open(); return; }
     if ((el = t.closest("[data-tfh-pg]"))) { const [k, d] = el.dataset.tfhPg.split(":"), f = PAGE_FIELD[k]; if (f) { st[f[0]][f[1]] = Math.max(0, (Number(st[f[0]][f[1]]) || 0) + Number(d)); } open(); return; }
     if ((el = t.closest("[data-tfh-ptab]"))) { st.ptab = el.dataset.tfhPtab; flash = ""; open(); return; }
@@ -314,6 +354,7 @@
     let el;
     if ((el = t.closest("[data-tfh-lm]"))) { st.loanMonths = Number(el.value) || 12; open(); return; }
     if ((el = t.closest("[data-tfh-lo]"))) { st.loanOpt = el.checked; open(); return; }
+    if ((el = t.closest("[data-tfh-ls]"))) { st.lista.sort = el.value; open(); return; }
     if ((el = t.closest("[data-tfh-wl]"))) { st.world.league = el.value; st.world.page = 0; open(); return; }
     if ((el = t.closest("[data-tfh-wc]"))) { st.world.country = el.value; st.world.page = 0; open(); return; }
     if ((el = t.closest("[data-tfh-pq]"))) { st.pq.text = el.value; st.pq.page = st.pq.cpage = st.pq.spage = st.pq.npage = 0; open(); return; }

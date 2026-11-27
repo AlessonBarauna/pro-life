@@ -7,13 +7,14 @@
 
   function pager(e, key, total, page) {
     const pages = Math.max(1, Math.ceil(total / PER));
-    return `<div class="tfh-pager"><button type="button" class="tfh-btn" data-tfh-pg="${key}:-1" ${page <= 0 ? "disabled" : ""}>Anterior</button><span>${total} resultado(s) · página ${page + 1} de ${pages}</span><button type="button" class="tfh-btn" data-tfh-pg="${key}:1" ${page >= pages - 1 ? "disabled" : ""}>Próxima</button></div>`;
+    return `<div class="tfh-pager"><button type="button" class="tfh-btn" data-tfh-pg="${key}:-1" ${page <= 0 ? "disabled" : ""} aria-label="Página anterior">‹</button><span>${total} resultado(s) · <b>${page + 1}/${pages}</b></span><button type="button" class="tfh-btn" data-tfh-pg="${key}:1" ${page >= pages - 1 ? "disabled" : ""} aria-label="Próxima página">›</button></div>`;
   }
   const slice = (arr, page) => arr.slice(page * PER, page * PER + PER);
   const clampPage = (st, key, total) => { const max = Math.max(0, Math.ceil(total / PER) - 1); if (st[key] > max) st[key] = max; if (st[key] < 0) st[key] = 0; return st[key]; };
   const opt = (v, cur, l) => `<option value="${e_(v)}" ${String(cur) === String(v) ? "selected" : ""}>${e_(l ?? v)}</option>`;
   const e_ = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const dateOf = (e, day) => { const d = Number(day); if (!Number.isFinite(d)) return "—"; return new Date(Date.UTC(2026, 0, e.s.world === "legacy" ? 5 : 1) + d * 86400000).toLocaleDateString("pt-BR", { timeZone: "UTC", day: "2-digit", month: "2-digit", year: "2-digit" }); };
+  const crest = (id) => { try { return root.ProLifeClubCrests?.render?.(id, { size: "sm" }) || ""; } catch (x) { return ""; } };
   const posChip = (p) => `<i class="mk-pos mk-pos-${e_(p.pos || "x")}">${e_(p.primaryPosition || p.pos || "—")}</i>`;
   const ger = (e, p) => `<i class="mk-ger">${e.ovrOf(p)}</i>`;
 
@@ -22,18 +23,19 @@
     const { s, D, GF } = e, w = st.world;
     let deals = (s.worldLiveMarket?.deals || []).filter((d) => d.state !== "cancelled" && d.executionStatus !== "cancelled");
     const group = { rumor: ["rumor", "scouting"], neg: ["negotiating", "offer"], done: ["completed"] };
-    if (w.status !== "all") deals = deals.filter((d) => group[w.status].includes(d.state));
+    if (w.status === "big") deals = deals.filter((d) => Number(d.value) >= 20e6);
+    else if (w.status !== "all") deals = deals.filter((d) => group[w.status].includes(d.state));
     const clubOf = (id) => GF()?.clubById?.(s, id) || {};
     if (w.league) deals = deals.filter((d) => [d.fromClubId, d.toClubId].some((id) => clubOf(id).leagueId === w.league));
     if (w.country) deals = deals.filter((d) => [d.fromClubId, d.toClubId].some((id) => clubOf(id).country === w.country));
     deals.sort((a, b) => (b.updatedDay || 0) - (a.updatedDay || 0));
     const page = clampPage(w, "page", deals.length);
     const countries = [...new Set((s.globalFootball?.clubs || []).map((c) => c.country).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-    const chips = [["all", "Tudo"], ["rumor", "Rumores"], ["neg", "Negociações"], ["done", "Fechados"]].map(([k, l]) => `<button type="button" class="tfh-chip ${w.status === k ? "on" : ""}" data-tfh-wf="${k}">${l}</button>`).join("");
+    const chips = [["all", "Tudo"], ["rumor", "Rumores"], ["neg", "Negociações"], ["done", "Fechados"], ["big", "Grandes negócios"]].map(([k, l]) => `<button type="button" class="tfh-chip ${w.status === k ? "on" : ""}" data-tfh-wf="${k}">${l}</button>`).join("");
     const sels = `<select data-tfh-wc aria-label="País"><option value="">Todos os países</option>${countries.map((c) => opt(c, w.country)).join("")}</select><select data-tfh-wl aria-label="Liga"><option value="">Todas as ligas</option>${e.leagues(s).map(([id, n]) => opt(id, w.league, n)).join("")}</select>`;
     const rows = slice(deals, page).map((d) => {
       const p = GF()?.playerById?.(s, d.playerId), st2 = e.DEAL[d.executionStatus === "executed" ? "completed" : d.state] || ["—", "out"];
-      return `<tr><td>${p ? posChip(p) : ""}</td><td>${p ? ger(e, p) : ""}</td><td class="mk-name">${e_(p?.name || d.playerId)}</td><td class="mk-clubs">${e_(e.clubName(s, D, d.fromClubId))} » ${e_(e.clubName(s, D, d.toClubId))}</td><td>${e.money(d.value)}</td><td><i class="tfh-badge ${st2[1]}">${st2[0]}</i></td><td>${dateOf(e, d.updatedDay ?? d.day)}</td></tr>`;
+      return `<tr><td>${p ? posChip(p) : ""}</td><td>${p ? ger(e, p) : ""}</td><td class="mk-name">${e_(p?.name || d.playerId)}</td><td class="mk-clubs">${crest(d.fromClubId)}${e_(e.clubName(s, D, d.fromClubId))} <em class="mk-arrow">→</em> ${crest(d.toClubId)}${e_(e.clubName(s, D, d.toClubId))}</td><td>${e.money(d.value)}</td><td><i class="tfh-badge ${st2[1]}">${st2[0]}</i></td><td>${dateOf(e, d.updatedDay ?? d.day)}</td></tr>`;
     }).join("");
     const table = deals.length ? `<div class="mk-scroll"><table class="mk-table"><thead><tr><th>Pos.</th><th>GER</th><th>Jogador</th><th>Clube anterior » novo</th><th>Taxa</th><th>Situação</th><th>Data</th></tr></thead><tbody>${rows}</tbody></table></div>${pager(e, "world", deals.length, page)}` : `<p class="tfh-note">Nenhuma movimentação com esses filtros. O mercado esquenta quando as janelas abrem.</p>`;
     return `<div class="tfh-filters">${chips}${sels}</div>${table}`;
@@ -65,9 +67,17 @@
   function lista(e, st) {
     const { s, D, GF } = e, rules = R(), list = s.coachCareer?.shortlist || [];
     const rows = list.map((it) => { const p = GF()?.playerById?.(s, it.playerId); return p ? { it, p, v: e.valueOf(p) } : null; }).filter(Boolean);
-    rows.sort((a, b) => ({ alta: 0, media: 1, baixa: 2 }[a.it.priority || "media"] - { alta: 0, media: 1, baixa: 2 }[b.it.priority || "media"]) || e.ovrOf(b.p) - e.ovrOf(a.p));
-    const head = `<p class="mk-count"><b>${rows.length}</b> de ${rules.SHORTLIST_LIMIT} jogadores</p>`;
-    if (!rows.length) return head + `<p class="tfh-note">Sua lista está vazia. Toque na estrela ☆ de um jogador na Pesquisa para acompanhá-lo aqui.</p>`;
+    const rl = R(), budget = Number(D.club(s)?.budget) || 0, L = st.lista || { tab: "todos", sort: "prioridade" };
+    const tabs = [["todos", "Todos"], ["venda", "À venda"], ["contrato", "Contrato acabando"], ["orcamento", "Cabe no orçamento"]];
+    const keep = { todos: () => true, venda: ({ p }) => rl.aiListing(p, s) === "sale", contrato: ({ p }) => p.clubId && rl.monthsLeft(p, s) < 12, orcamento: ({ v }) => v <= budget };
+    const total = rows.length, pr = { alta: 0, media: 1, baixa: 2 };
+    const sorters = { prioridade: (a, b) => pr[a.it.priority || "media"] - pr[b.it.priority || "media"] || e.ovrOf(b.p) - e.ovrOf(a.p), geral: (a, b) => e.ovrOf(b.p) - e.ovrOf(a.p), potencial: (a, b) => (Number(b.p.potential) || 0) - (Number(a.p.potential) || 0), valor: (a, b) => a.v - b.v, idade: (a, b) => a.p.age - b.p.age };
+    const shown = rows.filter(keep[L.tab] || keep.todos).sort(sorters[L.sort] || sorters.prioridade);
+    rows.length = 0; rows.push(...shown);
+    const bar = `<div class="tfv-bar2"><nav class="mk-sub" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" class="${L.tab === k ? "on" : ""}" data-tfh-lt="${k}">${l}</button>`).join("")}</nav><label class="tfv-sort">Ordem<select data-tfh-ls>${[["prioridade", "Prioridade"], ["geral", "Geral"], ["potencial", "Potencial"], ["valor", "Menor valor"], ["idade", "Mais jovem"]].map(([k, l]) => opt(k, L.sort, l)).join("")}</select></label></div>`;
+    const head = bar + `<p class="mk-count"><b>${total}</b> de ${rules.SHORTLIST_LIMIT} jogadores${rows.length !== total ? " · " + rows.length + " no filtro" : ""}</p>`;
+    if (!total) return head + `<p class="tfh-note">Sua lista está vazia. Toque na estrela ☆ de um jogador na Pesquisa para acompanhá-lo aqui.</p>`;
+    if (!rows.length) return head + `<p class="tfh-note">Nenhum jogador da lista neste filtro.</p>`;
     const body = rows.map(({ it, p, v }) => {
       const al = rules.shortlistAlerts(it, p, s, v).map((a) => `<span class="mk-alert mk-alert-${a.k}">${e_(a.text)}</span>`).join("");
       const pr = it.priority || "media";
@@ -89,6 +99,7 @@
   const candidates = (e) => (e.GF()?.activePlayers?.(e.s) || []).filter((p) => p && p.id !== "hero" && p.clubId !== e.s.clubId && !p.academy);
 
   // ---------- Pesquisa ----------
+  const QICON = { todos: "★ ", joias: "🔥 ", barato: "💰 ", contrato: "⏳ ", venda: "🏷 ", emprestimo: "🤝 ", orcamento: "✓ " };
   const PESQ_SUBS = [["jogadores", "Jogadores"], ["clubes", "Clubes"], ["selecoes", "Seleções"], ["scout", "Scouting"]];
   function pesquisaNav(sub) { return `<nav class="mk-sub" role="tablist">${PESQ_SUBS.map(([id, l]) => `<button type="button" role="tab" class="${sub === id ? "on" : ""}" data-tfh-psub="${id}">${l}</button>`).join("")}</nav>`; }
   function pesquisa(e, st) {
@@ -97,9 +108,13 @@
     if (sub === "jogadores") {
       const t = q.text.trim().toLowerCase();
       let ps = candidates(e); if (t) ps = ps.filter((p) => String(p.name || "").toLowerCase().includes(t));
-      ps = ps.map((p) => ({ p, o: e.ovrOf(p) })).sort((a, b) => b.o - a.o).map((x) => x.p).slice(0, 400);
+      const rl = R(), budget = Number(e.D.club(e.s)?.budget) || 0;
+      ps = rl.quickFilter(ps, q.quick, e.s, e.valueOf, budget);
+      if (q.quick !== "joias") ps = ps.map((p) => ({ p, o: e.ovrOf(p) })).sort((a, b) => b.o - a.o).map((x) => x.p);
+      ps = ps.slice(0, 400);
+      const chips = `<div class="tfv-quick">${rl.QUICK.map(([k, l]) => `<button type="button" class="tfh-chip ${(q.quick || "todos") === k ? "on" : ""}" data-tfh-quick="${k}">${QICON[k] || ""}${l}</button>`).join("")}</div>`;
       const page = clampPage(q, "page", ps.length);
-      return pesquisaNav(sub) + box + playerTable(e, ps, page, "pq");
+      return pesquisaNav(sub) + box + chips + playerTable(e, ps, page, "pq");
     }
     if (sub === "clubes") {
       const { s, D, GF } = e;
@@ -134,30 +149,40 @@
 
   // ---------- Pesquisa avançada ----------
   function avancada(e, st) {
-    const f = st.adv, rules = R(), { s, GF } = e;
-    const run = f.run;
+    const f = st.adv, rules = R(), { s, D, GF } = e;
+    const budget = Number(D.club(s)?.budget) || 0, roster = (D.club(s)?.roster || []).filter((p) => p.id !== "hero");
+    const avgSal = roster.length ? roster.reduce((a, p) => a + (Number(p.salary) || 0), 0) / roster.length : 0;
+    const eff = Object.assign({}, f, { budgetValue: budget, salMax: f.payroll && avgSal ? String(Math.round(avgSal * 1.25 / 1e3)) : f.salMax });
     const num = (k, l, ph) => `<label>${l}<input type="number" inputmode="numeric" data-tfh-af="${k}" value="${e_(f[k] || "")}" placeholder="${ph || ""}"></label>`;
+    const sel = (k, l, first, opts) => `<label>${l}<select data-tfh-af="${k}"><option value="">${first}</option>${opts}</select></label>`;
     const countries = [...new Set((s.globalFootball?.clubs || []).map((c) => c.country).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-    const nats = [...new Set(candidates(e).map((p) => p.nationality).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const cand = candidates(e), nats = [...new Set(cand.map((p) => p.nationality).filter(Boolean))].sort((a, b) => a.localeCompare(b));
     const roles = Object.values(rules.ROLES).concat(["Goleiro"]);
-    const attrs = rules.ATTRS.map(([k, l]) => `<label class="mk-attr"><input type="checkbox" data-tfh-attr="${k}" ${f.attrs.includes(k) ? "checked" : ""} ${!f.attrs.includes(k) && f.attrs.length >= 5 ? "disabled" : ""}> ${l} ≥ 75</label>`).join("");
-    const form = `<p class="tfh-actions"><button type="button" class="tfh-btn primary" data-tfh-adv-run>Buscar jogadores</button> <button type="button" class="tfh-btn" data-tfh-adv-clear>Limpar filtros</button></p><div class="tfh-search mk-adv">
-      <label>Posição em campo<select data-tfh-af="pos"><option value="">Todas</option>${rules.POSITIONS.map((p) => opt(p, f.pos)).join("")}</select></label>
-      <label>Função<select data-tfh-af="role"><option value="">Todas</option>${roles.map((r) => opt(r, f.role)).join("")}</select></label>
-      ${num("ageMin", "Idade mínima", "16")}${num("ageMax", "Idade máxima", "45")}${num("valueMin", "Valor mín. (mi)", "0")}${num("valueMax", "Valor máx. (mi)", "500")}
-      <label>Fim de contrato<select data-tfh-af="contract"><option value="">Qualquer</option>${opt("6", f.contract, "Menos de 6 meses")}${opt("12", f.contract, "Menos de 1 ano")}${opt("24", f.contract, "Menos de 2 anos")}</select></label>
-      <label>Detalhes da transferência<select data-tfh-af="listing"><option value="">Qualquer</option>${opt("any", f.listing, "À venda ou empréstimo")}${opt("sale", f.listing, "À venda")}${opt("loan", f.listing, "Para empréstimo")}${opt("free", f.listing, "Agente livre")}</select></label>
-      <label>País do clube<select data-tfh-af="country"><option value="">Todos</option>${countries.map((c) => opt(c, f.country)).join("")}</select></label>
-      <label>Campeonato<select data-tfh-af="league"><option value="">Todos</option>${e.leagues(s).map(([id, n]) => opt(id, f.league, n)).join("")}</select></label>
-      <label>Nacionalidade<select data-tfh-af="nat"><option value="">Todas</option>${nats.map((c) => opt(c, f.nat)).join("")}</select></label>
-      ${num("interest", "Clubes interessados (mín.)", "0")}
-      <fieldset class="mk-attrs wide"><legend>Atributos (até 5)</legend>${attrs}</fieldset></div>
-`;
-    if (!run) return form + `<p class="tfh-note">Escolha os filtros e toque em Buscar jogadores.</p>`;
     const clubOf = (p) => GF()?.clubById?.(s, p.clubId);
-    const rows = rules.advancedFilter(candidates(e), f, s, e.valueOf, clubOf).sort((a, b) => e.ovrOf(b) - e.ovrOf(a)).slice(0, 400);
+    const rows = rules.advancedFilter(cand, eff, s, e.valueOf, clubOf).sort((a, b) => e.ovrOf(b) - e.ovrOf(a));
+    const tog = (k, l) => `<button type="button" class="tfv-tog ${f[k] ? "on" : ""}" data-tfh-tog="${k}" aria-pressed="${!!f[k]}"><i></i>${l}</button>`;
+    const attrs = rules.ATTRS.map(([k, l]) => `<label class="mk-attr ${f.attrs.includes(k) ? "on" : ""}"><input type="checkbox" data-tfh-attr="${k}" ${f.attrs.includes(k) ? "checked" : ""} ${!f.attrs.includes(k) && f.attrs.length >= 5 ? "disabled" : ""}> ${l} ≥ 75</label>`).join("");
+    const saved = s.coachCareer?.savedSearches || [];
+    const savedHtml = `<div class="tfv-saved"><b>Pesquisas salvas</b>${saved.map((x) => `<span class="tfv-ss"><button type="button" data-tfh-ss-load="${e_(x.name)}">${e_(x.name)}</button><button type="button" class="x" data-tfh-ss-del="${e_(x.name)}" aria-label="Apagar ${e_(x.name)}">×</button></span>`).join("") || `<em>nenhuma ainda</em>`}<input type="text" maxlength="24" data-tfh-ss-name placeholder="Nome da pesquisa"><button type="button" class="tfh-btn" data-tfh-ss-save>＋ Salvar</button></div>`;
+    const form = `<div class="tfv-adv">
+      ${sel("pos", "Posição", "Todas", rules.POSITIONS.map((p) => opt(p, f.pos)).join(""))}
+      ${num("ovrMin", "GER mín.", "60")}${num("potMin", "Potencial mín.", "75")}
+      <label>Idade<span class="tfv-pair"><input type="number" inputmode="numeric" data-tfh-af="ageMin" value="${e_(f.ageMin || "")}" placeholder="16"><input type="number" inputmode="numeric" data-tfh-af="ageMax" value="${e_(f.ageMax || "")}" placeholder="45"></span></label>
+      ${num("valueMax", "Valor máx. (mi)", "500")}${num("salMax", "Salário máx. (mil/mês)", "800")}
+      ${sel("contract", "Contrato", "Qualquer", opt("6", f.contract, "Menos de 6 meses") + opt("12", f.contract, "Menos de 1 ano") + opt("24", f.contract, "Menos de 2 anos"))}
+      ${sel("nat", "Nacionalidade", "Todas", nats.map((c) => opt(c, f.nat)).join(""))}
+      ${sel("country", "País do clube", "Todos", countries.map((c) => opt(c, f.country)).join(""))}
+      ${sel("league", "Campeonato", "Todos", e.leagues(s).map(([id, n]) => opt(id, f.league, n)).join(""))}
+      ${sel("listing", "Condição", "Qualquer", opt("any", f.listing, "À venda ou empréstimo") + opt("sale", f.listing, "À venda") + opt("loan", f.listing, "Para empréstimo") + opt("free", f.listing, "Agente livre"))}
+      ${num("interest", "Clubes interessados", "0")}
+      ${sel("role", "Função", "Todas", roles.map((r) => opt(r, f.role)).join(""))}
+    </div>
+    <div class="tfv-togs">${tog("budget", "Cabe no orçamento")}${tog("payroll", "Salário cabe na folha")}${tog("gems", "Só joias")}<span class="tfv-attrs">${attrs}</span></div>
+    ${savedHtml}
+    <div class="tfv-runbar"><span><b>${rows.length}</b> jogador(es) com esses filtros</span><button type="button" class="tfh-btn" data-tfh-adv-clear>Apagar filtros</button><button type="button" class="tfh-btn primary" data-tfh-adv-run ${rows.length ? "" : "disabled"}>Ver ${rows.length} jogadores</button></div>`;
+    if (!f.run) return form;
     const page = clampPage(f, "page", rows.length);
-    return form + playerTable(e, rows, page, "af");
+    return form + playerTable(e, rows.slice(0, 400), page, "af");
   }
 
     // ---------- Perfil do jogador (6 abas) ----------
@@ -190,7 +215,7 @@
     return `<div class="mk-profile"><div class="mk-phead">${parts.head}${acts}</div><nav class="mk-sub" role="tablist">${tabs}</nav>${body}</div>`;
   }
 
-  const api = { profile, PTABS, mundo, clubSubNav, CLUB_SUBS, comprados, vendidos, loansTable, lista, pesquisa, avancada, PESQ_SUBS, dateOf };
+  const api = { candidates, profile, PTABS, mundo, clubSubNav, CLUB_SUBS, comprados, vendidos, loansTable, lista, pesquisa, avancada, PESQ_SUBS, dateOf };
   root.ProLifeMarketScreens = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

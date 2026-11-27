@@ -587,6 +587,29 @@ case "tactic": {
         s.coachCareer.shortlist=list;
         break;
       }
+      case "saveSearch": {
+        if(s.mode!=="coach")throw Error("Disponível somente ao treinador.");
+        s.coachCareer||={version:1};
+        const name=String(data?.name||"").trim().slice(0,24);
+        if(!name)throw Error("Dê um nome à pesquisa.");
+        const clean={};
+        for(const [k,v] of Object.entries(data?.filters||{})){
+          if(k==="run"||k==="page")continue;
+          if(Array.isArray(v))clean[k]=v.map(x=>String(x).slice(0,24)).slice(0,12);
+          else if(typeof v==="boolean")clean[k]=v;
+          else if(v!==""&&v!=null)clean[k]=String(v).slice(0,40);
+        }
+        const list=(s.coachCareer.savedSearches||[]).filter(x=>x.name!==name);
+        if(list.length>=8)throw Error("Limite de 8 pesquisas salvas. Apague uma.");
+        list.push({name,filters:clean,day:s.day});
+        s.coachCareer.savedSearches=list;
+        break;
+      }
+      case "deleteSearch": {
+        if(s.mode!=="coach"||!s.coachCareer)break;
+        s.coachCareer.savedSearches=(s.coachCareer.savedSearches||[]).filter(x=>x.name!==data?.name);
+        break;
+      }
       case "setCoachTargetPriority": {
         if(s.mode!=="coach"||!s.clubId)throw Error("Disponível apenas ao treinador com clube.");
         const priority=String(data.priority||"");

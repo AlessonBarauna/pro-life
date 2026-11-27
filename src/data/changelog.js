@@ -6,6 +6,18 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-27-d",
+      date: "2026-11-27",
+      title: "Mercado com cara nova",
+      items: [
+        { type: "novo", text: "Menu lateral com ícones animados (Mercado, Mundo, Clube, Lista, Pesquisa e Avançada), contadores vermelhos de propostas e barra superior com orçamento e janela de transferências." },
+        { type: "novo", text: "Visão geral com orçamento (e quantos meses de folha ele cobre), janela, propostas recebidas, negociações, 'Joias para observar' e as últimas do mundo." },
+        { type: "novo", text: "Pesquisa com atalhos de um toque: Joias, Barato para o nível, Contrato acabando, À venda, Empréstimo e Cabe no orçamento." },
+        { type: "novo", text: "Pesquisa avançada com GER e potencial mínimos, salário máximo, filtros 'Cabe no orçamento', 'Salário cabe na folha' e 'Só joias', contagem ao vivo e pesquisas salvas (até 8)." },
+        { type: "ajuste", text: "Lista com abas (Todos, À venda, Contrato acabando, Cabe no orçamento) e ordenação; Mundo ganhou 'Grandes negócios' e escudos dos clubes." }
+      ]
+    },
+    {
       id: "2026-11-27-c",
       date: "2026-11-27",
       title: "Foto do rosto já na criação da carreira",

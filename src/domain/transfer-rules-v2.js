@@ -11,7 +11,7 @@
   const POSITIONS = ["GOL", "ZAG", "LE", "LD", "VOL", "MC", "MEI", "PE", "PD", "SA", "ATA"];
 
   function hash(str) { let h = 2166136261; const t = String(str); for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0); }
-  const ovrOf = (p) => Number(p && (p.ovr ?? p.overall)) || 0;
+  const ovrOf = (p) => Math.round(Number(p && (p.ovr ?? p.overall)) || 0);
 
   // Fim de contrato: usa o dado do jogador; para os de clubes de IA, deriva de forma estável pelo id.
   function contractEndOf(p, s) {
@@ -78,8 +78,33 @@
       if (f.league && ((club && club.leagueId) || p.leagueId) !== f.league) return false;
       if (f.nat && p.nationality !== f.nat) return false;
       if (f.interest && interestedCount(p, s) < n(f.interest)) return false;
+      if (f.potMin && n(p.potential) < n(f.potMin)) return false;
+      if (f.ovrMin && ovrOf(p) < n(f.ovrMin)) return false;
+      if (f.salMax && n(p.salary) > n(f.salMax) * 1e3) return false;
+      if (f.budget && n(f.budgetValue) > 0 && valueOf(p) > n(f.budgetValue)) return false;
+      if (f.gems && !isGem(p)) return false;
       return true;
     });
+  }
+  // "Joia": jovem com muito a crescer.
+  function isGem(p) { return n0(p && p.age) <= 21 && n0(p && p.potential) - ovrOf(p) >= 8; }
+  const n0 = (v) => Number(v) || 0;
+  // Atalhos de um toque da Pesquisa. `valueOf` dá o valor de mercado; `budget` é o orçamento de transferências do clube.
+  const QUICK = [["todos", "Todos"], ["joias", "Joias"], ["barato", "Barato para o nível"], ["contrato", "Contrato acabando"], ["venda", "À venda"], ["emprestimo", "Empréstimo"], ["orcamento", "Cabe no orçamento"]];
+  function quickFilter(players, key, s, valueOf, budget) {
+    if (!key || key === "todos") return players;
+    if (key === "joias") return players.filter(isGem).sort((a, b) => n0(b.potential) - n0(a.potential));
+    if (key === "contrato") return players.filter((p) => p.clubId && monthsLeft(p, s) < 12);
+    if (key === "venda") return players.filter((p) => aiListing(p, s) === "sale");
+    if (key === "emprestimo") return players.filter((p) => aiListing(p, s) === "loan");
+    if (key === "orcamento") return players.filter((p) => valueOf(p) <= n0(budget));
+    if (key === "barato") {
+      const by = new Map();
+      for (const p of players) { const k = ovrOf(p); (by.get(k) || by.set(k, []).get(k)).push(valueOf(p)); }
+      const med = (k) => { const a = []; for (let d = -1; d <= 1; d++) a.push(...(by.get(k + d) || [])); a.sort((x, y) => x - y); return a.length >= 5 ? a[a.length >> 1] : 0; };
+      return players.filter((p) => { const m = med(ovrOf(p)); return m > 0 && valueOf(p) <= m * 0.6 && n0(p.age) <= 30; });
+    }
+    return players;
   }
 
   // ---- Etapa 2: proposta de compra e empréstimo ----
@@ -103,5 +128,5 @@
   }
   // Jogador-chave só sai por empréstimo se o clube o colocou na lista.
   function canLoanOut(p, roster, s) { return !isKeyPlayer(p, roster) || aiListing(p, s) === "loan"; }
-  return { KEY_MULTIPLIER, GLOVES_MONTHS, LOAN_MONTHS, isKeyPlayer, minimumOffer, gloves, loanTerms, canLoanOut, SHORTLIST_LIMIT, ATTRS, ROLES, POSITIONS, LISTING_LABEL, hash, contractEndOf, monthsLeft, aiListing, roleOf, interestedCount, positionMatches, shortlistAlerts, advancedFilter };
+  return { isGem, QUICK, quickFilter, KEY_MULTIPLIER, GLOVES_MONTHS, LOAN_MONTHS, isKeyPlayer, minimumOffer, gloves, loanTerms, canLoanOut, SHORTLIST_LIMIT, ATTRS, ROLES, POSITIONS, LISTING_LABEL, hash, contractEndOf, monthsLeft, aiListing, roleOf, interestedCount, positionMatches, shortlistAlerts, advancedFilter };
 });
