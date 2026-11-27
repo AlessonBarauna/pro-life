@@ -1,0 +1,22 @@
+/* PRO LIFE — foto do rosto. */
+.fp-card { display:flex; align-items:center; gap:12px; padding:10px; margin:0 0 10px; border-radius:12px; border:1px solid rgba(120,170,200,.3); background:linear-gradient(160deg,#142a3a,#0b1823); }
+.fp-preview { width:72px; height:72px; flex:none; border-radius:50%; overflow:hidden; border:3px solid #c9f23a; box-shadow:0 0 14px rgba(201,242,58,.35); background:#0c1a26; display:grid; place-items:center; }
+.fp-img { width:100%; height:100%; object-fit:cover; display:block; border-radius:50%; }
+.fp-empty { width:44px; height:44px; color:#4b6578; } .fp-empty svg { width:100%; height:100%; }
+.fp-body { display:grid; gap:4px; min-width:0; } .fp-body small { color:#9fb2c1; font-size:11px; }
+.fp-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:2px; }
+.fp-btn { display:inline-flex; align-items:center; justify-content:center; min-height:0!important; padding:7px 12px; font-size:12px; font-weight:800; color:#e8f0f6; background:#0f1f2c; border:1px solid rgba(120,170,200,.4); border-radius:999px; cursor:pointer; }
+.fp-btn.primary { color:#0a1620; background:linear-gradient(135deg,#e6ff7a,#b4dc2a); border:0; }
+.fp-stage { display:grid; place-items:center; padding:10px; background:radial-gradient(circle at 50% 30%,#1e3a4f,#0a1620); border-radius:12px; position:relative; }
+.fp-hero { width:min(46vw,180px); height:min(46vw,180px); max-height:30vh; aspect-ratio:1; border-radius:50%; border:4px solid #c9f23a; box-shadow:0 0 22px rgba(201,242,58,.4); }
+.fp-ring { display:none; }
+.ca-portrait .fp-img { border-radius:50%; }
+.fp-layer { position:fixed; inset:0; z-index:9999; display:grid; place-items:center; background:rgba(4,10,16,.82); }
+.fp-modal { display:grid; gap:8px; justify-items:center; padding:12px; max-height:96dvh; overflow:auto; border-radius:14px; border:1px solid rgba(120,170,200,.4); background:#0b1823; color:#e8f0f6; }
+.fp-crop { position:relative; width:240px; height:240px; touch-action:none; border-radius:10px; overflow:hidden; } .fp-crop canvas { width:240px; height:240px; display:block; }
+.fp-mask { position:absolute; inset:0; pointer-events:none; border-radius:50%; box-shadow:0 0 0 400px rgba(4,10,16,.6); border:2px solid #c9f23a; }
+.fp-zoom { display:flex; align-items:center; gap:8px; font-size:12px; width:240px; } .fp-zoom input { flex:1; min-height:0!important; }
+@media (max-height:430px) { .fp-modal { grid-template-columns:auto auto; align-items:center; column-gap:14px; } .fp-modal > b { grid-column:1/3; } .fp-crop { grid-row:2/4; } .fp-zoom { width:200px; } }
+.fp-btn input { display:none!important; }
+.fp-btn { white-space:nowrap; }
+button.fp-btn { font-family:inherit; line-height:1.2; }

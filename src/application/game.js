@@ -84,6 +84,12 @@
           s.person.celebration = data.celebration;
         break;
       }
+      case "setPhoto": {
+        if (data.photo === null) { delete s.person.photo; break; }
+        if (typeof data.photo !== "string" || !/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(data.photo) || data.photo.length > 120000) throw Error("Foto inválida. Tente outra imagem.");
+        s.person.photo = data.photo;
+        break;
+      }
       case "advance":
         if (D.NationalCallups?.blocker?.(s)) throw Error("Reconheça a convocação pendente antes de continuar.");
         D.advance(s, data.days);

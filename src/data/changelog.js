@@ -6,6 +6,15 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-27-b",
+      date: "2026-11-27",
+      title: "Seu rosto no jogo",
+      items: [
+        { type: "novo", text: "Tire uma foto ou escolha da galeria para usar o seu rosto como jogador ou treinador (em Identidade). Dá para ajustar o enquadramento e o zoom no círculo." },
+        { type: "novo", text: "A foto aparece no card do Treinador e no perfil. A foto fica só no seu aparelho, dentro do save, e dá para remover quando quiser." }
+      ]
+    },
+    {
       id: "2026-11-27-a",
       date: "2026-11-27",
       title: "Nova área do Treinador: habilidades, finanças, registos e vagas",
