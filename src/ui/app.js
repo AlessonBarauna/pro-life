@@ -9533,10 +9533,17 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
   });
   // Seleção do treinador: abas, paginação, convocação, candidatura e convites.
   document.addEventListener("click", (event) => {
-    const el = event.target.closest?.("[data-cn-xi],[data-cn-tactic],[data-cn-leader],[data-cn-open],[data-cn-tab],[data-cn-page],[data-cn-pos],[data-cn-toggle],[data-cn-swap-in],[data-cn-swap-out],[data-cn-swap-cancel],[data-cn-nation],[data-cn-year],[data-cn-apply],[data-cn-accept],[data-cn-decline],[data-cn-act]");
+    const el = event.target.closest?.("[data-cn-rel],[data-cn-addgo],[data-cn-addopen],[data-cn-addclose],[data-cn-addrun],[data-cn-addclear],[data-cn-addpos],[data-cn-xi],[data-cn-tactic],[data-cn-leader],[data-cn-open],[data-cn-tab],[data-cn-page],[data-cn-pos],[data-cn-toggle],[data-cn-swap-in],[data-cn-swap-out],[data-cn-swap-cancel],[data-cn-nation],[data-cn-year],[data-cn-apply],[data-cn-accept],[data-cn-decline],[data-cn-act]");
     const V = window.ProLifeCoachNationalView;
     if (!el || !state || !V) return;
     const keep = () => document.querySelector(".sm27-screen-body")?.scrollTo?.(0, 0);
+    if (el.hasAttribute("data-cn-rel")) { V.setRel(el.getAttribute("data-cn-rel")); render(); return; }
+    if (el.hasAttribute("data-cn-addgo")) { V.setTab("convocacao"); V.openAdd(true); page = "national"; render(); window.scrollTo(0, 0); return; }
+    if (el.hasAttribute("data-cn-addopen")) { V.openAdd(true); render(); return; }
+    if (el.hasAttribute("data-cn-addclose")) { V.openAdd(false); render(); return; }
+    if (el.hasAttribute("data-cn-addrun")) { V.runAdd(); render(); return; }
+    if (el.hasAttribute("data-cn-addclear")) { V.clearAdd(); render(); return; }
+    if (el.hasAttribute("data-cn-addpos")) { V.setAdd("pos", el.getAttribute("data-cn-addpos")); render(); return; }
     if (el.hasAttribute("data-cn-open")) { V.setTab(el.getAttribute("data-cn-open")); page = "national"; render(); window.scrollTo(0, 0); return; }
     if (el.hasAttribute("data-cn-tactic") || el.hasAttribute("data-cn-leader")) return;
     if (el.hasAttribute("data-cn-xi")) {
@@ -9566,7 +9573,13 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     else if (act === "autoxi") command("cnAutoXI", {});
     else if (act === "resign") { V.setConfirmLeave(false); if (command("cnResign", {})) V.setTab("convites"); render(); }
   });
+  document.addEventListener("input", (event) => {
+    const af = event.target.closest?.("[data-cn-addf]");
+    if (af && state && af.type !== "checkbox" && window.ProLifeCoachNationalView) window.ProLifeCoachNationalView.setAdd(af.getAttribute("data-cn-addf"), af.value);
+  });
   document.addEventListener("change", (event) => {
+    const af = event.target.closest?.("[data-cn-addf]");
+    if (af && state && window.ProLifeCoachNationalView) { const V = window.ProLifeCoachNationalView; if (af.type === "checkbox") { V.setAdd(af.getAttribute("data-cn-addf"), af.checked); render(); } return; }
     const tc = event.target.closest?.("[data-cn-tactic],[data-cn-leader]");
     if (tc && state) {
       if (tc.hasAttribute("data-cn-tactic")) command("cnTactic", { key: tc.getAttribute("data-cn-tactic"), value: tc.value });

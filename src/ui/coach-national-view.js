@@ -1,8 +1,9 @@
 (function(root){
   "use strict";
   // Tela "Seleção" do modo treinador: convites, candidatura, convocação, formação, calendário e resultados.
-  const ui={xiSel:null,swapIn:null,tab:null,page:{players:0,nations:0,fixtures:0,results:0,cup:0,tour:0,qtable:0,qgames:0},pos:"TODOS",confirmLeave:false,nation:null,year:null};
+  const ui={xiSel:null,swapIn:null,tab:null,page:{players:0,nations:0,fixtures:0,results:0,cup:0,tour:0,qtable:0,qgames:0,offers:0,add:0},pos:"TODOS",confirmLeave:false,nation:null,year:null,rel:"geral",addOpen:false,add:{text:"",pos:"TODOS",ageMin:"",ageMax:"",ovrMin:"",withCalled:false,run:false,page:0}};
   let ctx={s:null,D:null};
+  const nolbl=v=>String(v==null?"":v).replace(/Amistoso internacional/gi,"Amistoso");
   const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const CN=()=>root.ProLifeCoachNational||(typeof require==="function"?require("../domain/coach-national.js"):null);
   const isPhone=()=>{try{return !!root.ProLifeMobileSM27?.isPhone?.();}catch(e){return false;}};
@@ -68,6 +69,54 @@
   #app .cn-note{margin:2px 0!important;font-size:10px!important}#app .cn-tag{font-size:9px!important;padding:0 6px!important}#app .cn-empty{padding:8px 4px!important;font-size:10.5px!important}
   #app .cn-res{width:20px;height:20px;font-size:10px}
 }
+
+.cnv{display:grid;grid-template-columns:66px minmax(0,1fr);gap:8px;position:relative;min-height:0}
+.cnv-rail{display:flex;flex-direction:column;gap:2px;padding:6px 3px;border:1px solid #1f3a4d;border-radius:12px;background:linear-gradient(180deg,#0f2130,#08121b);align-self:start}
+.cnv-rail button{position:relative;display:grid;justify-items:center;gap:1px;padding:5px 1px 4px;border:0;border-radius:10px;background:none;color:#9fb4c6;font:inherit;font-size:8px;letter-spacing:-.3px;white-space:nowrap;font-weight:700;cursor:pointer;min-height:0!important}
+.cnv-rail button.on{color:#0a1620;background:linear-gradient(135deg,#e6ff7a,#b4dc2a);box-shadow:0 0 14px rgba(201,242,58,.45)}
+.cnv-ic svg{width:22px;height:22px;display:block}.cnv-rail button.on .cnv-ic{background:#0a1620;border-radius:9px;padding:2px}
+.cnv-badge{position:absolute;top:2px;right:3px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:#ff4d5e;color:#fff;font-style:normal;font-size:9px;font-weight:800;display:grid;place-items:center}
+.cnv-main{min-width:0}.cnv-dim{color:var(--cn-mut);font-size:10.5px}
+.cni-wave{transform-origin:9px 10px;animation:cniW 2.2s ease-in-out infinite}@keyframes cniW{50%{transform:skewY(-6deg) scaleX(.94)}}
+.cni-pop,.cni-pop2{animation:cniP 2s ease-in-out infinite}.cni-pop2{animation-delay:.6s}@keyframes cniP{50%{transform:translateY(-2px)}}
+.cni-check{stroke-dasharray:24;animation:cniC 2.4s ease-in-out infinite}@keyframes cniC{0%{stroke-dashoffset:24}45%,100%{stroke-dashoffset:0}}
+.cni-b1,.cni-b2,.cni-b3{transform-box:fill-box;transform-origin:bottom;animation:cniB 2s ease-in-out infinite}.cni-b2{animation-delay:.25s}.cni-b3{animation-delay:.5s}@keyframes cniB{50%{transform:scaleY(.72)}}
+.cni-aim{transform-origin:16px 15px;animation:cniA 4s linear infinite}@keyframes cniA{to{transform:rotate(360deg)}}
+.cni-spin{transform-origin:16px 16px;animation:cniS 6s linear infinite}@keyframes cniS{to{transform:rotate(360deg)}}
+.cni-flap{transform-origin:16px 10px;animation:cniF 2.4s ease-in-out infinite}@keyframes cniF{50%{transform:scaleY(.7)}}
+.cni-ping{animation:cniG 1.4s infinite}@keyframes cniG{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.cnv *{animation:none!important}}
+.cnv-ring{--v:70;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:conic-gradient(#c9f23a calc(var(--v)*1%),rgba(255,255,255,.14) 0);flex:0 0 auto}
+.cnv-ring b{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#0b1520;font-size:11px;font-style:normal}.cnv-ring.big{width:40px;height:40px}.cnv-ring.big b{width:33px;height:33px;font-size:14px}
+.cnv-offers-head{display:flex;justify-content:space-between;align-items:center;margin:0 0 6px;font-size:13px}
+.cnv-offers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.cnv-offer{display:grid;gap:3px;align-content:start;text-align:center;padding:8px;border:1px solid var(--cn-line);border-radius:12px;background:var(--cn-card);min-width:0}
+.cnv-offer.hot{border-color:#c9f23a}.cnv-offer.lock{border-color:#8a6a1a;background:rgba(217,162,26,.07)}
+.cnv-offer>b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cnv-offer-top{display:flex;align-items:center;justify-content:center;gap:8px;margin:2px 0}.cnv-offer-top img,.cnv-offer-top .big{width:46px;height:46px;object-fit:contain}
+.cnv-tit{display:grid;gap:1px;font-size:10.5px}.cnv-offer p{margin:0;font-size:10px;color:var(--cn-mut);line-height:1.3}
+.cnv-act{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;margin-top:3px}.cnv-lock{font-size:11px;font-weight:700;color:#e0a21a}
+.cnv-tabs{display:flex;border:1px solid var(--cn-line);border-radius:10px;overflow:hidden;margin:0 0 6px}
+.cnv-tabs button{flex:1;padding:6px;border:0;border-bottom:3px solid transparent;background:none;color:var(--cn-mut);font:inherit;font-size:12px;font-weight:700;cursor:pointer;min-height:0!important}.cnv-tabs button.on{color:#c9f23a;border-bottom-color:#c9f23a}.cnv-tabs i{font-style:normal;background:#ff4d5e;color:#fff;border-radius:8px;padding:0 5px;font-size:10px}
+.cnv-kpis{display:flex;justify-content:space-around;align-items:center;margin:4px 0 8px;text-align:center}.cnv-kpis small{display:block;color:var(--cn-mut);font-size:10px;margin-bottom:2px}.cnv-kpis b{font-size:16px}
+.cnv-keys{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}
+.cnv-key{padding:7px 9px;border:1px solid #5b47c8;border-radius:10px;background:var(--cn-card);min-width:0}.cnv-key>b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cnv-key>small{display:block;color:var(--cn-grass);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cnv-key div{display:flex;align-items:center;justify-content:space-around;margin-top:4px}.cnv-key span{text-align:center;font-weight:800;font-size:13px}.cnv-key span small{display:block;font-size:8.5px;color:var(--cn-mut)}.cnv-key em{font-style:normal;color:#ff8a93}
+.cnv-pc{display:grid;grid-template-columns:1fr 1fr;gap:14px}.cnv-li{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--cn-line);font-size:11.5px}.cnv-li i{font-style:normal;font-weight:900;flex:0 0 14px}.cnv-li i.ok{color:#5fd68a}.cnv-li i.no{color:#ff5a67}
+.cnv-opp{display:grid;grid-template-columns:150px minmax(0,1.2fr) minmax(0,1fr);gap:8px;align-items:start}
+.cnv-opp aside:first-child{display:grid;gap:6px;justify-items:center;text-align:center}.cnv-opp aside:first-child img{width:60px;height:60px;object-fit:contain}.cnv-opp-r{display:grid;justify-items:center;gap:2px}.cnv-opp-r small{color:var(--cn-mut);font-size:10px}.cnv-opp-r2{display:grid;gap:6px}
+.cnv-pitch{position:relative;height:min(300px,calc(100dvh - 120px));min-height:220px;border-radius:12px;border:2px solid #8fd48a;background:repeating-linear-gradient(0deg,#1f6b2c 0 34px,#247a32 34px 68px);overflow:hidden}
+.cnv-dot{position:absolute;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:1px}.cnv-dot em{font-style:normal;font-size:9px;font-weight:700;background:rgba(11,21,32,.85);padding:0 5px;border-radius:3px;white-space:nowrap}
+.cnv-add{position:absolute;inset:0;z-index:20;display:grid;grid-template-rows:auto minmax(0,1fr);gap:6px;padding:8px;border:1px solid #284257;border-radius:14px;background:#0a141f;box-shadow:0 0 0 100vmax rgba(0,0,0,.55)}
+.cnv-add header{display:flex;justify-content:space-between;align-items:center;font-weight:800;letter-spacing:.1em;font-size:12px}
+.cnv-add-body{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:8px;min-height:0}.cnv-add-body>section{overflow:auto;min-height:0}
+.cnv-add-f{display:grid;gap:6px;align-content:start}.cnv-add label{display:grid;gap:2px;font-size:10px;color:var(--cn-mut)}
+.cnv-add input[type=search],.cnv-add input[type=number]{min-height:0!important;height:28px;padding:0 6px;border:1px solid var(--cn-line);background:var(--cn-bg);color:var(--cn-text);border-radius:6px;font:inherit;font-size:12px;width:100%;box-sizing:border-box}
+.cnv-add-n{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.cnv-chk{display:flex!important;align-items:center;gap:6px}
+.cnv-add .cn-pl b,.cnv-add .cn-pl small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cnv-chk input{width:16px!important;height:16px!important;min-height:0!important;min-width:0!important;padding:0!important;flex:0 0 16px}
+.cnv-add-b{display:grid;grid-template-columns:1fr 2fr;gap:6px}
+@media (max-width:700px){.cnv-offers{grid-template-columns:repeat(2,minmax(0,1fr))}.cnv-opp{grid-template-columns:1fr}.cnv-keys{grid-template-columns:1fr}}
+@media (max-height:430px){.cnv{grid-template-columns:56px minmax(0,1fr)}.cnv-rail button{padding:3px 2px 2px!important;font-size:9px!important}.cnv-ic svg{width:19px;height:19px}.cnv-offer{padding:5px 6px}.cnv-offer-top img,.cnv-offer-top .big{width:36px;height:36px}.cnv-pitch{height:calc(100dvh - 100px)}}
 </style>`;}
 
   const pager=(key,total,size)=>{
@@ -82,7 +131,7 @@
     if(!o.team)return `<header class="cn-head"><div class="grow"><h2>Seleções</h2><p>Você não comanda nenhuma seleção. Candidate-se ou espere um convite da confederação.</p></div><div class="cn-meter"><b>${o.rep}</b><small>sua reputação</small></div></header>`;
     return `<header class="cn-head">${crest(o.team.code,o.team.name)}<div class="grow"><h2>Seleção de ${esc(o.team.name)}</h2><p>${esc(o.team.confederation||"")} · ${esc(o.formation)} · ${o.called}/${o.max} convocados${o.record&&o.record.p?` · ${o.record.v}V ${o.record.e}E ${o.record.d}D`:""}${(o.titles||[]).length?` · ${(o.titles||[]).length} título(s)`:""}</p></div><div class="cn-meter"><b>${o.board}%</b><small>confiança da confederação</small></div></header>`;
   }
-  function tabsFor(o){return o.team?[["geral","Visão geral"],["escalacao","Escalação"],["convocacao","Convocação"],["taticas","Táticas"],["relat","Relatórios"],["elim","Eliminatórias"],["copa","Copa do Mundo"],["torneios","Torneios"],["calendario","Calendário"],["selecoes","Seleções"]]:[["convites","Convites"],["selecoes","Seleções"]];}
+  function tabsFor(o){return o.team?[["geral","Visão geral"],["escalacao","Escalação"],["convocacao","Convocação"],["taticas","Táticas"],["relat","Relatórios"],["oposicao","Oposição"],["elim","Eliminatórias"],["copa","Copa do Mundo"],["torneios","Torneios"],["calendario","Calendário"],["selecoes","Seleções"]]:[["convites","Convites"],["selecoes","Seleções"]];}
 
   function resultLine(m){
     return `<div class="cn-row"><div class="who"><span class="cn-res ${esc(m.result)}">${esc(m.result)}</span><span><b>${m.home?"":"@ "}${esc(m.opponent)} · ${m.gf} × ${m.ga}</b><small>Dia ${m.day} · ${esc(m.competition)}${m.scorers?.length?" · "+esc([...new Set(m.scorers.map(x=>x.name.split(" ").slice(-1)[0]))].join(", ")):""}</small></span></div></div>`;
@@ -99,7 +148,7 @@
       ?`<p class="cn-note">Deixar o cargo? Você só poderá assumir outra seleção depois de 60 dias.</p><button type="button" class="cn-btn danger" data-cn-act="resign">Confirmar saída</button> <button type="button" class="cn-btn" data-cn-act="leave-cancel">Cancelar</button>`
       :`<button type="button" class="cn-btn danger" data-cn-act="leave-ask">Deixar o cargo</button>`;
     return `<div class="cn-grid">
-      <section class="cn-card"><small>PRÓXIMO JOGO</small>${next?`<h3>${next.home?"":"@ "}${esc(next.opponent)}</h3><p>${esc(next.competition)} · dia ${next.day} (em ${Math.max(0,next.day-o.day)} dias)</p><p>Força do seu time ${o.power} · adversário ${o.nations.find(n=>n.code===next.opponentCode)?.strength??"—"}</p>`:'<p class="cn-note">Sem jogos marcados.</p>'}</section>
+      <section class="cn-card"><small>PRÓXIMO JOGO</small>${next?`<h3>${next.home?"":"@ "}${esc(next.opponent)}</h3><p>${esc(nolbl(next.competition))} · dia ${next.day} (em ${Math.max(0,next.day-o.day)} dias)</p><p>Força do seu time ${o.power} · adversário ${o.nations.find(n=>n.code===next.opponentCode)?.strength??"—"}</p>`:'<p class="cn-note">Sem jogos marcados.</p>'}</section>
       <section class="cn-card"><small>CAMPANHA</small><div class="cn-rec"><div><b>${r.v}</b><small>V</small></div><div><b>${r.e}</b><small>E</small></div><div><b>${r.d}</b><small>D</small></div><div><b>${r.gf}–${r.ga}</b><small>gols</small></div></div><div class="cn-bar ${boardTone}"><i style="width:${o.board}%"></i></div><p>Confiança da confederação: ${o.board}%. Abaixo de 15% o contrato é encerrado.</p></section>
       <section class="cn-card"><small>ARTILHEIROS</small>${scorers}</section>
       <section class="cn-card"><small>CARGO</small><p>Você acumula a seleção com o clube. Os jogos acontecem nas datas FIFA e usam a convocação e a formação que você definiu.</p>${leave}</section>
@@ -112,9 +161,9 @@
     const d=c.daysLeft;
     const msg={
       waiting:`<b>Ainda não abriu.</b> Abre no dia ${c.opens}; jogos a partir do dia ${c.first}. A lista abaixo é a anterior e não pode ser alterada.`,
-      open:`<b>Aberta.</b> ${esc(c.label)}: confirme até o dia ${c.deadline} (${d} ${d===1?"dia":"dias"}); jogos a partir do dia ${c.first}.${c.firstList?" A primeira lista foi montada automaticamente.":" Sem confirmação no prazo, a confederação convoca o rascunho e a diretoria cobra."}`,
-      confirmed:`<b>Confirmada.</b> ${esc(c.label)}: ainda dá para ajustar até o dia ${c.deadline}; jogos a partir do dia ${c.first}.`,
-      closed:`<b>Fechada.</b> ${esc(c.label)}: só dá para substituir lesionados ou suspensos; jogos a partir do dia ${c.first}.`
+      open:`<b>Aberta.</b> ${esc(nolbl(c.label))}: confirme até o dia ${c.deadline} (${d} ${d===1?"dia":"dias"}); jogos a partir do dia ${c.first}.${c.firstList?" A primeira lista foi montada automaticamente.":" Sem confirmação no prazo, a confederação convoca o rascunho e a diretoria cobra."}`,
+      confirmed:`<b>Confirmada.</b> ${esc(nolbl(c.label))}: ainda dá para ajustar até o dia ${c.deadline}; jogos a partir do dia ${c.first}.`,
+      closed:`<b>Fechada.</b> ${esc(nolbl(c.label))}: só dá para substituir lesionados ou suspensos; jogos a partir do dia ${c.first}.`
     }[c.status]||"";
     const ok=(c.status==="open"||c.status==="confirmed")&&o.called>=c.min;
     const btn=(c.status==="open"||c.status==="confirmed")?`<button type="button" class="cn-btn go" data-cn-act="confirm" ${ok?"":"disabled"}>${c.status==="confirmed"?"Reconfirmar":"Confirmar lista"}</button>`:"";
@@ -141,7 +190,7 @@
     return `<div class="cn-grid"><section class="cn-card"><small>MODELO DE JOGO DA SELEÇÃO</small><div class="cn-form">${sel(["style","Estilo"],T.styles,T.style)}${sel(["pressing","Pressão"],T.pressings,T.pressing)}${sel(["buildup","Construção"],T.buildups,T.buildup)}</div><p class="cn-note">Ofensivo marca e sofre mais; contra-ataque e posse reduzem o risco. O efeito é moderado, como no clube.</p></section>
     <section class="cn-card"><small>HIERARQUIA</small><div class="cn-form"><label>Capitão<select data-cn-leader="captain">${opts(o.captain)}</select></label><label>Vice-capitão<select data-cn-leader="vice">${opts(o.vice)}</select></label></div><p class="cn-note">Capitão e vice entram na lista de convocados e aparecem como C e V na escalação.</p></section></div>`;
   }
-  function relat(o){
+  function relatOld(o){
     const r=o.record,pl=o.players.filter(p=>p.called);
     const top=(k,t)=>pl.filter(p=>p[k]>0).sort((a,b)=>b[k]-a[k]||b.overall-a.overall).slice(0,6).map(p=>`<div class="cn-row"><div class="who"><span><b>${esc(p.name)}</b><small>${esc(p.pos)} · ${esc(p.club)}</small></span></div><div class="end"><span class="cn-tag ok">${p[k]} ${t}</span></div></div>`).join("")||'<div class="cn-empty">Sem registros ainda.</div>';
     const byPos=["GOL","DEF","MEI","ATA"].map(g=>{const l=pl.filter(p=>p.pos===g);const avg=l.length?Math.round(l.reduce((a,p)=>a+p.overall,0)/l.length):0;return `<div class="cn-row"><span><b>${POS_LABEL[g]}</b><small>${l.length} convocados</small></span><span class="cn-tag">GER médio ${avg}</span></div>`;}).join("");
@@ -158,7 +207,7 @@
     const rows=slice("players",list,S.players).map(p=>`<div class="cn-pl"><span class="cn-ovr ${p.overall>=82?"hi":""}">${p.overall}</span><span><b style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</b><small style="color:var(--cn-mut);font-size:11px">${esc(p.code||p.pos)} · ${esc(p.club)} · ${p.age} anos${p.caps?` · ${p.caps} jogos`:""}</small></span><span>${p.starter?'<span class="cn-tag st">Titular</span>':p.called?'<span class="cn-tag ok">Convocado</span>':!p.available?'<span class="cn-tag no">Indisponível</span>':""}</span>${(!p.called&&o.players.filter(x=>x.called).length>=26)?`<button type="button" class="cn-btn go" data-cn-swap-in="${esc(p.id)}" ${p.available?"":"disabled"}>Trocar</button>`:`<button type="button" class="cn-btn ${p.called?"":"go"}" data-cn-toggle="${esc(p.id)}" ${!p.available&&!p.called?"disabled":""}>${p.called?"Dispensar":"Convocar"}</button>`}</div>`).join("")||'<div class="cn-empty">Nenhum jogador nesta posição.</div>';
     const cl=o.players.filter(p=>p.called),cntOf=g=>cl.filter(p=>p.pos===g).length,QT={GOL:[2,3],DEF:[0,9],MEI:[0,9],ATA:[0,8]};
     const chip=(k,lab)=>`<button type="button" class="${ui.pos===k?"on":""}" data-cn-pos="${k}">${lab}</button>`;
-    return `${callupBanner(o)}<div class="cn-tools"><button type="button" class="cn-btn" data-cn-act="auto" ${o.manual?"":"disabled"}>Convocação automática</button><span class="cn-tag ${o.manual?"st":"ok"}">${o.manual?"Lista manual":"Automática"}</span><span class="cn-tag ${o.called<18?"no":""}">${o.called}/${o.max}${o.called<18?" · mínimo 18":""}</span><span class="cn-chips" role="group" aria-label="Filtrar por posição" style="margin:0">${chip("TODOS","Todos")}${["GOL","DEF","MEI","ATA"].map(g=>chip(g,esc(POS_LABEL[g])+" "+cntOf(g))).join("")}</span></div>
+    return `${callupBanner(o)}<div class="cn-tools"><button type="button" class="cn-btn go" data-cn-addopen>+ Adicionar jogadores</button><button type="button" class="cn-btn" data-cn-act="auto" ${o.manual?"":"disabled"}>Convocação automática</button><span class="cn-tag ${o.manual?"st":"ok"}">${o.manual?"Lista manual":"Automática"}</span><span class="cn-tag ${o.called<18?"no":""}">${o.called}/${o.max}${o.called<18?" · mínimo 18":""}</span><span class="cn-chips" role="group" aria-label="Filtrar por posição" style="margin:0">${chip("TODOS","Todos")}${["GOL","DEF","MEI","ATA"].map(g=>chip(g,esc(POS_LABEL[g])+" "+cntOf(g))).join("")}</span></div>
       <section class="cn-card cn-list2" style="margin-top:8px;padding-top:4px">${rows}${pager("players",list.length,S.players)}</section>`;
   }
 
@@ -218,11 +267,139 @@
     return `${ficha()}<section class="cn-card"><small>SELEÇÕES DISPONÍVEIS</small>${rows}${pager("nations",o.nations.length,S.nations)}${o.team?'<p class="cn-note">Para trocar de seleção, deixe o cargo atual na Visão geral.</p>':""}</section>`;
   }
 
-  function convites(o,S){
+  function convitesOld(o,S){
     const offers=o.offers.map(of=>`<div class="cn-row"><div class="who">${flag(of.code,of.name)}<span><b>${esc(of.name)}</b><small>Responder até o dia ${of.expires} (${Math.max(0,of.expires-o.day)} dias)</small></span></div><div class="end"><button type="button" class="cn-btn go" data-cn-accept="${esc(of.code)}">Aceitar</button><button type="button" class="cn-btn" data-cn-decline="${esc(of.code)}">Recusar</button></div></div>`).join("");
     const apps=o.applications.map(a=>`<div class="cn-row"><div class="who">${flag(a.code,a.name)}<span><b>${esc(a.name)}</b><small>Candidatura em análise · resposta até o dia ${a.decideDay} (${Math.max(0,a.decideDay-o.day)} dias)</small></span></div><div class="end"><span class="cn-tag">Em análise</span></div></div>`).join("");
     const wait=o.day<o.cooldownUntil?`<p class="cn-note">A confederação só aceita novos treinadores a partir do dia ${o.cooldownUntil}.</p>`:"";
     return `<div class="cn-grid"><section class="cn-card"><small>CONVITES RECEBIDOS</small>${offers||'<div class="cn-empty">Nenhum convite no momento.<br>Convites chegam a cada ~2 meses quando a sua reputação alcança a de alguma seleção.</div>'}${wait}</section>${apps?`<section class="cn-card"><small>CANDIDATURAS ENVIADAS</small>${apps}</section>`:""}<section class="cn-card"><small>COMO FUNCIONA</small><p>Ao se candidatar, a confederação analisa o seu currículo contra outros candidatos e responde em 1 a 2 semanas: você recebe um convite para aceitar ou a recusa. Cada seleção exige uma reputação mínima (você tem ${o.rep}). Ganhe jogos com o clube e com a seleção para subir.</p><p>Os jogos acontecem nas 4 janelas FIFA do ano. A confiança da confederação cai com derrotas; abaixo de 15% você é demitido.</p></section></div>`;
+  }
+
+
+  // ---------- Novo menu lateral (grupos de abas) ----------
+  const ICON_DEFS='<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="cni1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6ff7a"/><stop offset="1" stop-color="#8fc01c"/></linearGradient><linearGradient id="cni2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bfe9ff"/><stop offset="1" stop-color="#4aa3ff"/></linearGradient><linearGradient id="cni3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe9a0"/><stop offset="1" stop-color="#e0a21a"/></linearGradient></defs></svg>';
+  const ICONS={
+    geral:'<svg viewBox="0 0 32 32"><path d="M7 3v26" stroke="url(#cni3)" stroke-width="3" stroke-linecap="round"/><path class="cni-wave" d="M9 5h16l-3 5 3 5H9z" fill="url(#cni1)"/></svg>',
+    plantel:'<svg viewBox="0 0 32 32"><circle cx="16" cy="10" r="5" fill="url(#cni1)"/><path d="M6 27c0-6 4-10 10-10s10 4 10 10z" fill="url(#cni1)"/><circle class="cni-pop" cx="6" cy="12" r="3.2" fill="url(#cni2)"/><circle class="cni-pop2" cx="26" cy="12" r="3.2" fill="url(#cni2)"/></svg>',
+    relat:'<svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="25" rx="3" fill="url(#cni2)"/><rect x="11" y="2" width="10" height="5" rx="2" fill="url(#cni3)"/><path class="cni-check" d="M10 16l4 4 8-8" fill="none" stroke="#0a1620" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    stats:'<svg viewBox="0 0 32 32"><rect class="cni-b1" x="5" y="16" width="6" height="12" rx="1.5" fill="url(#cni2)"/><rect class="cni-b2" x="13" y="8" width="6" height="20" rx="1.5" fill="url(#cni1)"/><rect class="cni-b3" x="21" y="12" width="6" height="16" rx="1.5" fill="url(#cni3)"/></svg>',
+    opo:'<svg viewBox="0 0 32 32"><path d="M16 3l11 4v8c0 7-5 11-11 14C10 26 5 22 5 15V7z" fill="url(#cni2)"/><g class="cni-aim" fill="none" stroke="#0a1620" stroke-width="2"><circle cx="16" cy="15" r="5"/><path d="M16 7v4M16 19v4M8 15h4M20 15h4"/></g></svg>',
+    selecoes:'<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="url(#cni2)"/><g class="cni-spin" fill="none" stroke="#0a1620" stroke-opacity=".45" stroke-width="1.4"><ellipse cx="16" cy="16" rx="5" ry="12"/><path d="M4 16h24M6 10h20M6 22h20"/></g></svg>',
+    ofertas:'<svg viewBox="0 0 32 32"><rect x="4" y="8" width="24" height="17" rx="3" fill="url(#cni1)"/><path class="cni-flap" d="M5 10l11 8 11-8" fill="none" stroke="#0a1620" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle class="cni-ping" cx="26" cy="8" r="3.4" fill="#ff4d5e"/></svg>'
+  };
+  const GROUPS_TEAM=[["geral","Seleção",["geral"]],["plantel","Plantel",["convocacao","escalacao","taticas"]],["relat","Relatórios",["relat"]],["stats","Estatísticas",["calendario","elim","copa","torneios"]],["opo","Oposição",["oposicao"]],["selecoes","Seleções",["selecoes"]]];
+  const GROUPS_FREE=[["ofertas","Ofertas",["convites"]],["selecoes","Seleções",["selecoes"]]];
+  const SUBNAME={convocacao:"Convocação",escalacao:"Escalação",taticas:"Táticas",calendario:"Calendário",elim:"Eliminatórias",copa:"Copa do Mundo",torneios:"Torneios"};
+  const groupOf=(o,tab)=>(o.team?GROUPS_TEAM:GROUPS_FREE).find(g=>g[2].includes(tab));
+  function rail(o){
+    const groups=o.team?GROUPS_TEAM:GROUPS_FREE;
+    const cur=groupOf(o,ui.tab);
+    return `<nav class="cnv-rail" role="tablist" aria-label="Seleção">${groups.map(([id,l,tabs])=>{
+      const badge=id==="ofertas"&&o.offers.length?`<i class="cnv-badge">${o.offers.length}</i>`:id==="plantel"&&o.callup&&o.callup.status==="open"?`<i class="cnv-badge">!</i>`:"";
+      return `<button type="button" role="tab" class="${cur&&cur[0]===id?"on":""}" aria-selected="${cur&&cur[0]===id}" data-cn-tab="${tabs[0]}"><span class="cnv-ic">${ICONS[id]||""}</span><span class="cnv-lb">${l}</span>${badge}</button>`;}).join("")}</nav>`;
+  }
+  function subpills(o){
+    const g=groupOf(o,ui.tab);if(!g||g[2].length<2)return "";
+    return `<nav class="cn-sub" aria-label="Seções">${g[2].map(id=>`<button type="button" class="${ui.tab===id?"on":""}" data-cn-tab="${id}">${esc(SUBNAME[id]||id)}</button>`).join("")}</nav>`;
+  }
+  const ring=(v,big)=>`<i class="cnv-ring${big?" big":""}" style="--v:${Math.max(0,Math.min(99,Math.round(v)))}"><b>${Math.round(v)}</b></i>`;
+  const GRP={GOL:"Goleiros",DEF:"Defesa",MEI:"Meio-campo",ATA:"Ataque"};
+  const avg=l=>l.length?l.reduce((a,p)=>a+p.overall,0)/l.length:0;
+
+  // ---------- Ofertas de seleções (cartões) ----------
+  function convites(o,S){
+    const day=o.day,per=isPhone()?4:4;
+    const profile=(code)=>{try{return CN().nationProfile(ctx.s,ctx.D,code,null);}catch(e){return null;}};
+    const offerCodes=new Set(o.offers.map(x=>x.code));
+    const nat=o.nations.filter(n=>!n.current);
+    const list=[...o.offers.map(of=>({kind:"offer",of,n:o.nations.find(n=>n.code===of.code)||{code:of.code,name:of.name,need:0,strength:0}})),
+      ...nat.filter(n=>!offerCodes.has(n.code)&&n.eligible).sort((a,b)=>b.strength-a.strength).map(n=>({kind:"apply",n})),
+      ...nat.filter(n=>!offerCodes.has(n.code)&&!n.eligible).sort((a,b)=>a.need-b.need).map(n=>({kind:"lock",n}))];
+    const pages=Math.max(1,Math.ceil(list.length/per));if(ui.page.offers>=pages)ui.page.offers=pages-1;
+    const view=list.slice(ui.page.offers*per,ui.page.offers*per+per);
+    const cards=view.map(it=>{
+      const n=it.n,f=profile(n.code),tit=(f?.titles||[]).slice(0,2);
+      const trophy=tit.length?tit.map(t=>`<span>🏆 <b>${t.count}×</b> ${esc(t.name)}</span>`).join(""):'<span class="cnv-dim">Sem títulos registrados</span>';
+      const rank=f?`${f.rank}º de ${f.total} em força`:`força ${n.strength}`;
+      let act;
+      if(it.kind==="offer")act=`<button type="button" class="cn-btn go" data-cn-accept="${esc(n.code)}">Aceitar proposta</button><button type="button" class="cn-btn" data-cn-decline="${esc(n.code)}" aria-label="Recusar">✕</button><small class="cnv-dim">até o dia ${it.of.expires}</small>`;
+      else if(it.kind==="apply"){
+        if(o.applications.some(a=>a.code===n.code))act='<span class="cn-tag">Em análise</span>';
+        else if(o.rejected[n.code]>day)act=`<span class="cn-tag no">Volte no dia ${o.rejected[n.code]}</span>`;
+        else act=`<button type="button" class="cn-btn go" data-cn-apply="${esc(n.code)}" ${day<o.cooldownUntil?"disabled":""}>Candidatar-se</button>`;
+      }else act=`<span class="cnv-lock">🔒 Reputação ${n.need}+</span>`;
+      return `<article class="cnv-offer ${it.kind==="lock"?"lock":""} ${it.kind==="offer"?"hot":""}"><b data-no-crest>${esc(n.name)}</b><div class="cnv-offer-top">${crest(n.code,n.name)}${ring(n.strength)}</div><small class="cnv-dim">Títulos</small><div class="cnv-tit">${trophy}</div><small class="cnv-dim">Exigência</small><p>${esc(n.confederation||"")} · ${rank} · reputação ${n.need}+</p><div class="cnv-act">${act}</div></article>`;
+    }).join("");
+    const wait=day<o.cooldownUntil?`<p class="cn-note">A confederação só aceita novos treinadores a partir do dia ${o.cooldownUntil}.</p>`:"";
+    const apps=o.applications.length?`<p class="cn-note">${o.applications.map(a=>`${esc(a.name)}: candidatura em análise, resposta até o dia ${a.decideDay}`).join(" · ")}</p>`:"";
+    return `<div class="cnv-offers-head"><b>Ofertas de seleções</b><span class="cnv-dim">Sua reputação: <b>${o.rep}</b>${o.offers.length?` · ${o.offers.length} convite(s)`:""}</span></div><div class="cnv-offers">${cards||'<div class="cn-empty">Nenhuma seleção disponível.</div>'}</div>${pager("offers",list.length,per)}${wait}${apps}`;
+  }
+
+  // ---------- Relatórios ----------
+  function relat(o){
+    const pl=o.players.filter(p=>p.called),all=o.players;
+    const tabs=[["geral","Perspectiva geral"],["indisp","Indisponíveis"],["destaques","Destaques"]];
+    if(!tabs.some(t=>t[0]===ui.rel))ui.rel="geral";
+    const nav=`<nav class="cnv-tabs" role="tablist">${tabs.map(([k,l])=>`<button type="button" role="tab" class="${ui.rel===k?"on":""}" data-cn-rel="${k}">${l}${k==="indisp"&&all.filter(p=>!p.available).length?` <i>${all.filter(p=>!p.available).length}</i>`:""}</button>`).join("")}</nav>`;
+    if(ui.rel==="indisp"){
+      const out=all.filter(p=>!p.available).sort((a,b)=>b.overall-a.overall);
+      const rows=out.map(p=>`<div class="cn-row"><div class="who">${ring(p.overall)}<span><b>${esc(p.name)}</b><small>${esc(p.pos)} · ${esc(p.club)} · ${p.age} anos</small></span></div><span class="cn-tag no">Indisponível</span></div>`).join("")||'<div class="cn-empty">Nenhum jogador do pool da seleção está indisponível agora.</div>';
+      return nav+`<section class="cn-card">${rows}</section>`;
+    }
+    if(ui.rel==="destaques"){
+      const top=(k,t)=>pl.filter(p=>p[k]>0).sort((a,b)=>b[k]-a[k]||b.overall-a.overall).slice(0,6).map(p=>`<div class="cn-row"><div class="who">${ring(p.overall)}<span><b>${esc(p.name)}</b><small>${esc(p.pos)} · ${esc(p.club)}</small></span></div><span class="cn-tag ok">${p[k]} ${t}</span></div>`).join("")||'<div class="cn-empty">Sem dados ainda.</div>';
+      const r=o.record;
+      return nav+`<div class="cn-grid"><section class="cn-card"><small>CAMPANHA</small><div class="cn-rec"><div><b>${r.v}</b><small>V</small></div><div><b>${r.e}</b><small>E</small></div><div><b>${r.d}</b><small>D</small></div><div><b>${r.gf}–${r.ga}</b><small>gols</small></div></div></section><section class="cn-card"><small>MAIS JOGOS</small>${top("caps","jogos")}</section><section class="cn-card"><small>ARTILHEIROS</small>${top("goals","gols")}</section></div>`;
+    }
+    const n=pl.length,m=avg(pl),age=n?pl.reduce((a,p)=>a+p.age,0)/n:0;
+    const keys=pl.slice().sort((a,b)=>b.overall-a.overall).slice(0,3);
+    const by=["GOL","DEF","MEI","ATA"].map(g=>[g,avg(pl.filter(p=>p.pos===g)),pl.filter(p=>p.pos===g).length]).filter(x=>x[2]>0);
+    const best=by.slice().sort((a,b)=>b[1]-a[1])[0],worst=by.slice().sort((a,b)=>a[1]-b[1])[0];
+    const good=[],bad=[];
+    if(n>=23&&n<=26)good.push(`Lista de ${n} convocados, dentro do limite de ${o.max}.`);else if(n<23)bad.push(`Só ${n} convocados: complete a lista.`);
+    if(best&&best[1]>=m)good.push(`${GRP[best[0]]} é o setor mais forte (GER médio ${Math.round(best[1])}).`);
+    const gk=pl.filter(p=>p.pos==="GOL").sort((a,b)=>b.overall-a.overall)[0];if(gk&&gk.overall>=m+3)good.push(`O goleiro ${esc(gk.name)} está acima da média do grupo.`);
+    if(age&&age<=28)good.push(`Grupo com idade média de ${age.toFixed(0)} anos.`);
+    if(worst&&best&&worst[0]!==best[0]&&worst[1]<m-1)bad.push(`${GRP[worst[0]]} é o setor mais fraco (GER médio ${Math.round(worst[1])}).`);
+    if(age>=31)bad.push(`Idade média de ${age.toFixed(0)} anos: cansaço e lesões podem pesar.`);
+    const out=all.filter(p=>!p.available&&p.called).length;if(out)bad.push(`${out} convocado(s) indisponível(is).`);
+    const dep=by.filter(x=>x[0]==="DEF"&&x[2]<6);if(dep.length)bad.push("Poucos defensores na lista.");
+    const li=(c,mark,arr)=>arr.length?arr.map(x=>`<div class="cnv-li"><i class="${c}">${mark}</i><span>${x}</span></div>`).join(""):`<div class="cnv-li cnv-dim">—</div>`;
+    return nav+`<div class="cnv-kpis"><span><small>GER médio</small>${ring(m,true)}</span><span><small>Convocados</small><b>${n}</b></span><span><small>Idade média</small><b>${age?age.toFixed(0):"—"}</b></span><span><small>Pool da seleção</small><b>${all.length}</b></span></div><div class="cnv-keys">${keys.map(p=>`<article class="cnv-key"><b>${esc(String(p.name).toUpperCase())}</b><small>${esc(p.club)}</small><div><span><small>IDADE</small>${p.age}</span>${ring(p.overall)}<span><small>POS</small><em>${esc(p.code||p.pos)}</em></span></div></article>`).join("")}</div><section class="cn-card cnv-pc"><div>${li("ok","✓",good)}</div><div>${li("no","✕",bad)}</div></section>`;
+  }
+
+  // ---------- Oposição ----------
+  function oposicao(o){
+    const nx=o.fixtures[0];
+    if(!nx)return `<section class="cn-card"><div class="cn-empty">Sem jogo marcado: não há adversário para analisar.</div></section>`;
+    let f=null;try{f=CN().nationProfile(ctx.s,ctx.D,nx.opponentCode,null);}catch(e){f=null;}
+    if(!f||!f.starters.length)return `<section class="cn-card"><div class="cn-empty">Escalação de ${esc(nx.opponent)} indisponível.</div></section>`;
+    const st=f.starters,lines={GOL:[],DEF:[],MEI:[],ATA:[]};st.forEach(p=>(lines[p.pos]||lines.MEI).push(p));
+    const rowsY={ATA:18,MEI:42,DEF:68,GOL:90};
+    const dots=Object.entries(lines).map(([g,ps])=>ps.map((p,i)=>`<span class="cnv-dot" style="left:${((i+1)/(ps.length+1))*100}%;top:${rowsY[g]}%">${ring(p.overall)}<em>${esc(String(p.name).split(" ").slice(-1)[0])}</em></span>`).join("")).join("");
+    const key=st.slice().sort((a,b)=>b.overall-a.overall)[0];
+    const mine=o.players.filter(p=>p.called),secs=["DEF","MEI","ATA"].map(g=>[g,avg(st.filter(p=>p.pos===g)),avg(mine.filter(p=>p.pos===g))]).filter(x=>x[1]>0);
+    const tips=[];
+    secs.forEach(([g,th,my])=>{if(!my)return;const d=th-my;if(d<=-2)tips.push(["ok",`${GRP[g]} deles (GER médio ${Math.round(th)}) fica abaixo do seu (${Math.round(my)}): ataque por aí.`]);else if(d>=2)tips.push(["no",`${GRP[g]} deles (GER médio ${Math.round(th)}) supera o seu (${Math.round(my)}): reforce esse setor.`]);});
+    const best=secs.slice().sort((a,b)=>b[1]-a[1])[0];if(best)tips.push(["no",`Setor mais forte deles: ${GRP[best[0]]}.`]);
+    tips.push([o.power>=f.strength?"ok":"no",`Força geral: você ${o.power} × ${f.strength} (${f.rank}º do mundo).`]);
+    return `<div class="cnv-opp"><aside>${crest(f.code,f.name)}<b>${esc(f.name.toUpperCase())}</b><div class="cnv-opp-r">${ring(f.strength,true)}<small>Força</small></div><small class="cnv-dim">${esc(f.formation)} · ${/amistoso/i.test(nx.competition)?"Amistoso":esc(nx.competition)} · dia ${nx.day}</small></aside><div class="cnv-pitch" aria-label="Escalação provável de ${esc(f.name)}">${dots}</div><aside class="cnv-opp-r2"><section class="cn-card"><small>JOGADOR-CHAVE</small><div class="cn-row"><div class="who">${ring(key.overall)}<span><b>${esc(key.name)}</b><small>${esc(key.club)} · ${esc(key.pos)}</small></span></div></div></section><section class="cn-card"><small>COMO JOGAR CONTRA</small>${tips.map(([c,x])=>`<div class="cnv-li"><i class="${c}">${c==="ok"?"✓":"✕"}</i><span>${esc(x)}</span></div>`).join("")}</section></aside></div>`;
+  }
+
+  // ---------- Adicionar jogadores ----------
+  function addPanel(o,S){
+    const a=ui.add,full=o.players.filter(p=>p.called).length>=26;
+    const codes=["TODOS","GOL","DEF","MEI","ATA"];
+    const f=(k,l,ph)=>`<label>${l}<input type="number" inputmode="numeric" data-cn-addf="${k}" value="${esc(a[k]||"")}" placeholder="${ph}"></label>`;
+    let res='<div class="cn-empty"><b>Sem dados</b><br>Defina os filtros e toque em Pesquisa.</div>',cnt=0;
+    if(a.run){
+      const t=a.text.trim().toLowerCase();
+      let l=o.players.filter(p=>(a.withCalled||!p.called)&&(a.pos==="TODOS"||p.pos===a.pos)&&(!t||String(p.name).toLowerCase().includes(t)||String(p.club).toLowerCase().includes(t))&&(!a.ageMin||p.age>=Number(a.ageMin))&&(!a.ageMax||p.age<=Number(a.ageMax))&&(!a.ovrMin||p.overall>=Number(a.ovrMin))).sort((x,y)=>y.overall-x.overall);
+      cnt=l.length;
+      const per=isPhone()?5:6,pages=Math.max(1,Math.ceil(l.length/per));if(ui.page.add>=pages)ui.page.add=pages-1;
+      res=l.slice(ui.page.add*per,ui.page.add*per+per).map(p=>`<div class="cn-pl"><span class="cn-ovr ${p.overall>=82?"hi":""}">${p.overall}</span><span><b>${esc(p.name)}</b><small>${esc(p.code||p.pos)} · ${esc(p.club)} · ${p.age} anos</small></span><span>${p.called?'<span class="cn-tag ok">Convocado</span>':!p.available?'<span class="cn-tag no">Indisponível</span>':""}</span>${p.called?`<button type="button" class="cn-btn" data-cn-toggle="${esc(p.id)}">Dispensar</button>`:full?`<button type="button" class="cn-btn go" data-cn-swap-in="${esc(p.id)}" ${p.available?"":"disabled"}>Trocar</button>`:`<button type="button" class="cn-btn go" data-cn-toggle="${esc(p.id)}" ${p.available?"":"disabled"}>Convocar</button>`}</div>`).join("")||'<div class="cn-empty"><b>Sem dados</b><br>Nenhum jogador com esses filtros.</div>';
+      res+=pager("add",l.length,per);
+    }
+    return `<div class="cnv-add"><header><b>ADICIONAR JOGADORES</b><button type="button" class="cn-btn" data-cn-addclose aria-label="Fechar">✕</button></header><div class="cnv-add-body"><section class="cn-card cnv-add-f"><label class="cnv-search">Nome ou clube<input type="search" data-cn-addf="text" value="${esc(a.text)}" placeholder="Pesquisar"></label><div class="cn-chips">${codes.map(c=>`<button type="button" class="${a.pos===c?"on":""}" data-cn-addpos="${c}">${c==="TODOS"?"Qualquer":POS_LABEL[c]}</button>`).join("")}</div><div class="cnv-add-n">${f("ageMin","Idade mín.","17")}${f("ageMax","Idade máx.","40")}${f("ovrMin","GER mín.","70")}</div><label class="cnv-chk"><input type="checkbox" data-cn-addf="withCalled" ${a.withCalled?"checked":""}> Incluir já convocados</label><div class="cnv-add-b"><button type="button" class="cn-btn danger" data-cn-addclear>Apagar ⟲</button><button type="button" class="cn-btn go" data-cn-addrun>Pesquisa 🔍</button></div></section><section class="cn-card cnv-add-r"><small>RESULTADOS${a.run?` · ${cnt}`:""} · convocados ${o.players.filter(p=>p.called).length}/${o.max}</small>${res}</section></div></div>`;
   }
 
   function render(s,D){
@@ -233,12 +410,12 @@
     const tabs=tabsFor(o);
     if(!tabs.some(([id])=>id===ui.tab))ui.tab=tabs[0][0];
     const S=SIZE();
-    const body=ui.tab==="geral"?geral(o,S):ui.tab==="convocacao"?convocacao(o,S):ui.tab==="escalacao"?escalacao(o):ui.tab==="taticas"?taticas(o):ui.tab==="relat"?relat(o):ui.tab==="calendario"?calendario(o,S):ui.tab==="copa"?copa(o,S):ui.tab==="torneios"?torneios(o,S):ui.tab==="elim"?elim(o,S):ui.tab==="selecoes"?selecoes(o,S):convites(o,S);
-    const badge=!o.team&&o.offers.length?` <i>${o.offers.length}</i>`:"";
-    return `${css()}<section class="cn t-${ui.tab}" data-coach-national>${head(o)}<nav class="cn-sub" aria-label="Seções da seleção">${tabs.map(([id,l])=>`<button type="button" class="${ui.tab===id?"on":""}" data-cn-tab="${id}">${esc(l)}${id==="convites"?badge:""}</button>`).join("")}</nav>${body}</section>`;
+    const body=ui.tab==="geral"?geral(o,S):ui.tab==="convocacao"?convocacao(o,S):ui.tab==="escalacao"?escalacao(o):ui.tab==="taticas"?taticas(o):ui.tab==="relat"?relat(o):ui.tab==="oposicao"?oposicao(o):ui.tab==="calendario"?calendario(o,S):ui.tab==="copa"?copa(o,S):ui.tab==="torneios"?torneios(o,S):ui.tab==="elim"?elim(o,S):ui.tab==="selecoes"?selecoes(o,S):convites(o,S);
+    const add=(o.team&&ui.addOpen)?addPanel(o,S):"";
+    return `${css()}${ICON_DEFS}<section class="cn cnv t-${ui.tab}" data-coach-national>${rail(o)}<div class="cnv-main">${ui.tab==="geral"?head(o):""}${subpills(o)}${body}</div>${add}</section>`;
   }
 
-  const api={render,state:ui,setTab(t){ui.tab=t;ui.confirmLeave=false;ui.swapIn=null;},setPage(key,n){if(key in ui.page)ui.page[key]=Math.max(0,Number(n)||0);},setPos(p){ui.pos=p;ui.page.players=0;},setXi(id){ui.xiSel=ui.xiSel===id?null:(id||null);},setSwapIn(id){ui.swapIn=id||null;},setConfirmLeave(v){ui.confirmLeave=!!v;},setNation(c){ui.nation=ui.nation===c?null:c;ui.year=null;},setYear(y){ui.year=Number(y)||null;}};
+  const api={render,state:ui,setRel(k){ui.rel=k;},openAdd(v){ui.addOpen=!!v;ui.page.add=0;},setAdd(k,v){if(k in ui.add){ui.add[k]=v;ui.page.add=0;}},runAdd(){ui.add.run=true;ui.page.add=0;},clearAdd(){ui.add={text:"",pos:"TODOS",ageMin:"",ageMax:"",ovrMin:"",withCalled:false,run:false};ui.page.add=0;},setTab(t){ui.tab=t;ui.confirmLeave=false;ui.swapIn=null;},setPage(key,n){if(key in ui.page)ui.page[key]=Math.max(0,Number(n)||0);},setPos(p){ui.pos=p;ui.page.players=0;},setXi(id){ui.xiSel=ui.xiSel===id?null:(id||null);},setSwapIn(id){ui.swapIn=id||null;},setConfirmLeave(v){ui.confirmLeave=!!v;},setNation(c){ui.nation=ui.nation===c?null:c;ui.year=null;},setYear(y){ui.year=Number(y)||null;}};
   root.ProLifeCoachNationalView=api;
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof globalThis!=="undefined"?globalThis:this);

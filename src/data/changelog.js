@@ -6,6 +6,17 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-27-e",
+      date: "2026-11-27",
+      title: "Tela inicial e Seleção renovadas",
+      items: [
+        { type: "novo", text: "Tela inicial do treinador com Objetivos, Jovens promessas, Instalações e Caixa de entrada, e botão para alternar entre Clube e Seleção." },
+        { type: "novo", text: "Início da Seleção com jogo, Selecionador, títulos, próximo torneio e atalho para Adicionar jogadores." },
+        { type: "novo", text: "Área da Seleção com menu lateral animado: Plantel, Relatórios, Estatísticas, Oposição e Seleções (ofertas e convites)." },
+        { type: "ajuste", text: "Telas pequenas (altura 320) ajustadas para nada ficar cortado." }
+      ]
+    },
+    {
       id: "2026-11-27-d",
       date: "2026-11-27",
       title: "Mercado com cara nova",
