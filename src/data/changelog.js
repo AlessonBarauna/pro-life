@@ -6,6 +6,14 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-27-g",
+      date: "2026-11-27",
+      title: "Escudo de Portugal",
+      items: [
+        { type: "novo", text: "Portugal agora tem o escudo oficial da FPF nas telas da seleção e do início." }
+      ]
+    },
+    {
       id: "2026-11-27-f",
       date: "2026-11-27",
       title: "Tela inicial em tela cheia",

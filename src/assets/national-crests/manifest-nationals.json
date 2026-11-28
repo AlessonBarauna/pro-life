@@ -1079,6 +1079,15 @@
     "licenseStatus": "marca registrada da federacao; uso nao comercial/fan project conforme football-logos.cc; responsabilidade do usuario",
     "provisional": true
   },
+  "POR": {
+    "name": "Portugal",
+    "file": "nt_POR.png",
+    "sourceRepo": "enviado pelo usuario (FPF)",
+    "sha256": "31bf73d978d4c6b93ebba694c481b96978971f5c0050fb8760c981a8e3a831f0",
+    "sizePx": "512x512",
+    "licenseStatus": "marca registrada da federacao; enviado pelo usuario; responsabilidade do usuario",
+    "provisional": false
+  },
   "PER": {
     "name": "Peru",
     "file": "nt_PER.png",
