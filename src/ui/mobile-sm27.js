@@ -110,8 +110,9 @@
     try { objs = (root.ProLifeSM27Objectives?.build?.()?.epoca || []).slice(0, 3); } catch (e) { objs = []; }
     const objRow = (g) => { const done = g.done ?? g.now >= g.target; const pct = Math.max(0, Math.min(100, Math.round((g.now / Math.max(1, g.target)) * 100))); return `<span class="sm27-obj ${done ? "done" : ""}"><span>${done ? "✓" : "◦"} ${esc(g.label)}</span><i><u style="width:${pct}%"></u></i></span>`; };
     const objCard = `<button type="button" class="sm27-card sm27-tile sm27-objcard" data-sm27-objectives><span class="sm27-h"><span class="sm27-ht">Objetivos</span></span><span class="sm27-objs">${objs.map(objRow).join("") || row("", "<span>Sem objetivos definidos.</span>")}</span></button>`;
-    const gl = gems(state), gi = gl.length ? ((view.promo % gl.length) + gl.length) % gl.length : 0, g = gl[gi];
-    const gemCard = `<section class="sm27-card sm27-gems"><span class="sm27-h"><span class="sm27-ht">Jovens promessas</span>${gl.length > 1 ? `<span class="sm27-pg"><button type="button" data-sm27-promo="-1" aria-label="Anterior">‹</button>${gi + 1}/${gl.length}<button type="button" data-sm27-promo="1" aria-label="Próximo">›</button></span>` : ""}</span>${g ? `<span class="sm27-gem"><span class="sm27-ring sm27-ring-lg" style="--v:${g.ovr}"><b>${g.ovr}</b></span><span class="sm27-gem-t"><b>${esc(g.name)}</b><small>${miniCrest(g.clubId, g.club, esc)} ${esc(g.club)}</small><small>${esc(g.pos)} · ${esc(g.age)} anos · pot. <em>${g.pot}</em></small></span></span><button type="button" class="sm27-gem-go" data-sm27-market-hub>Ver no Mercado</button>` : `<span class="sm27-li"><span>Sem joias no radar agora.</span></span>`}</section>`;
+    const gl = gems(state).slice(0, 5);
+    const slide = (g, i) => `<span class="sm27-gemslide${i === 0 ? " is-on" : ""}"><span class="sm27-gem"><span class="sm27-ring sm27-ring-lg" style="--v:${g.ovr}"><b>${g.ovr}</b></span><span class="sm27-gem-t"><b>${esc(g.name)}</b><small>${miniCrest(g.clubId, g.club, esc)} ${esc(g.club)}</small><small>${esc(g.pos)} · ${esc(g.age)} anos · pot. <em>${g.pot}</em></small></span></span></span>`;
+    const gemCard = `<section class="sm27-card sm27-gems" data-sm27-gems><span class="sm27-h"><span class="sm27-ht">Promessas</span>${gl.length > 1 ? `<span class="sm27-pg"><button type="button" data-sm27-promo="-1" aria-label="Anterior">‹</button><span data-sm27-pgn>1/${gl.length}</span><button type="button" data-sm27-promo="1" aria-label="Próximo">›</button></span>` : ""}</span>${gl.length ? `<span class="sm27-gemslides">${gl.map(slide).join("")}</span><button type="button" class="sm27-gem-go" data-sm27-market-hub>Ver no Mercado</button>` : `<span class="sm27-li"><span>Sem joias no radar agora.</span></span>`}</section>`;
     const side = `<aside class="sm27-side">${state.mode === "coach" ? objCard + gemCard : tile("calendar", "Calendário", `<span class="sm27-list sm27-agenda">${events || row("", "<span>Sem eventos.</span>")}</span>`) + tile("matches", "Forma recente", `<span class="sm27-form">${form}</span>`)}</aside>`;
 
     const news = (H.news || [])[0];
@@ -200,6 +201,20 @@
       if (on) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current");
     });
   }
+  let gemPausedUntil = 0;
+  function gemStep(box, d) {
+    if (!box) return;
+    const sl = [...box.querySelectorAll(".sm27-gemslide")];
+    if (sl.length < 2) return;
+    const cur = Math.max(0, sl.findIndex((e) => e.classList.contains("is-on")));
+    const nx = (cur + d + sl.length) % sl.length;
+    sl.forEach((e, i) => e.classList.toggle("is-on", i === nx));
+    const n = box.querySelector("[data-sm27-pgn]"); if (n) n.textContent = (nx + 1) + "/" + sl.length;
+  }
+  if (root.setInterval) root.setInterval(() => {
+    if (root.document.hidden || Date.now() < gemPausedUntil) return;
+    root.document.querySelectorAll("[data-sm27-gems]").forEach((b) => gemStep(b, 1));
+  }, 4000);
   function centerTable() {
     root.document.querySelectorAll(".sm27-table[data-scroll-me]:not([data-scrolled])").forEach((el) => {
       const me = el.querySelector(".me");
@@ -215,7 +230,7 @@
       const sw = t0?.closest("[data-sm27-home-view]");
       if (sw) { ev.preventDefault(); ev.stopPropagation(); view.home = sw.dataset.sm27HomeView === "national" ? "national" : "club"; rehome(); return; }
       const pr = t0?.closest("[data-sm27-promo]");
-      if (pr) { ev.preventDefault(); ev.stopPropagation(); view.promo += Number(pr.dataset.sm27Promo) || 0; rehome(); return; }
+      if (pr) { ev.preventDefault(); ev.stopPropagation(); gemStep(pr.closest("[data-sm27-gems]"), Number(pr.dataset.sm27Promo) || 0); gemPausedUntil = Date.now() + 9000; return; }
     }, true);
     root.document.addEventListener("click", (ev) => {
       const a = ev.target instanceof Element ? ev.target.closest(".life-tabs a[href^='#']") : null;

@@ -6,6 +6,16 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-28-c",
+      date: "2026-11-28",
+      title: "Início: Caixa, classificação e Promessas",
+      items: [
+        { type: "ajuste", text: "Caixa de entrada e classificação do campeonato agora ocupam a altura toda e rolam; a tabela abre na posição do seu clube." },
+        { type: "novo", text: "Promessas passam sozinhas a cada 4 segundos (as setas continuam funcionando e pausam o giro por alguns segundos)." },
+        { type: "ajuste", text: "Instalações saiu do Início para dar espaço; continua acessível pelo menu." }
+      ]
+    },
+    {
       id: "2026-11-28-b",
       date: "2026-11-28",
       title: "Ações do jogador e lista de alvos",
