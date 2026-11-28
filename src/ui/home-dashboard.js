@@ -98,7 +98,7 @@
     const index = table.findIndex((x)=>x.id===c.id);
     if (index < 0) return worldTableWindow(s, c);
     const start = Math.max(0, Math.min(index - 2, table.length - 5));
-    return { rows: table.slice(start, start + 5).map((row,i)=>({...row, position:start+i+1})), position:index+1, league:s.leagues.find((l)=>l.id===c.leagueId)?.name || (root.ProLifeNames?root.ProLifeNames.league(s,c.leagueId):c.leagueId) };
+    return { rows: table.slice(start, start + 5).map((row,i)=>({...row, position:start+i+1})), all: table.slice(0,30).map((row,i)=>({...row, position:i+1})), position:index+1, league:s.leagues.find((l)=>l.id===c.leagueId)?.name || (root.ProLifeNames?root.ProLifeNames.league(s,c.leagueId):c.leagueId) };
   }
   function competitionClubName(s,D,id) {
     return D.club(s,id)?.name || (s.globalFootball?.clubs||[]).find(c=>c.id===id)?.name || id || "Clube";
@@ -433,7 +433,7 @@
       ...(comm.messages||[]).slice(0,6).map(m=>({day:m.day,title:m.subject,read:!!m.read,kind:"message"})),
       ...openInterviews.slice(0,2).map(i=>({day:i.day,title:"Entrevista: "+(i.question||"convite"),read:false,kind:"interview"})),
       ...news.map(n=>({day:n.day,title:n.title,body:n.body,read:true,kind:"news"}))
-    ].slice(0,4);
+    ].slice(0,12);
     const inboxUnread=(pendingOffers.length?1:0)+(s.decision?1:0)+unreadMsgs.length+openInterviews.length;
     const active=plan.activeMultiplier && plan.activeMultiplier.expiresDay>=s.day ? plan.activeMultiplier : null;
     const lineup=s.mode==="player" && s.clubId && !next?.national && D.Squad?.competition ? D.Squad.competition(s) : null;

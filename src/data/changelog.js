@@ -6,6 +6,16 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-27-f",
+      date: "2026-11-27",
+      title: "Tela inicial em tela cheia",
+      items: [
+        { type: "correcao", text: "Tela inicial do celular não fica mais com botões e textos por cima uns dos outros (jogo da seleção no cartão do clube)." },
+        { type: "ajuste", text: "Início ocupa a tela toda, com menos bordas e margens." },
+        { type: "novo", text: "Caixa de entrada e tabela do campeonato agora rolam para cima e para baixo; a tabela abre já na sua posição." }
+      ]
+    },
+    {
       id: "2026-11-27-e",
       date: "2026-11-27",
       title: "Tela inicial e Seleção renovadas",

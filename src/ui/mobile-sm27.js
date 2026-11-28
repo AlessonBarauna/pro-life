@@ -43,9 +43,9 @@
     return `<span class="sm27-crest sm27-crest-mono">${esc(String(code || name || "?").slice(0, 3).toUpperCase())}</span>`;
   };
   function inboxTile(state, H, esc, tile, row, natBtn) {
-    const msgs = (H.messages || []).slice(0, 4);
+    const msgs = (H.messages || []).slice(0, 12);
     const unread = Number(H.unread) || 0;
-    return tile("inbox", "Caixa de entrada", `<span class="sm27-list">${msgs.map((m) => row(m.read ? "" : "new", `<b></b><span>${esc(m.subject || m.title || "Mensagem")}</span>`)).join("") || row("", "<span>Nenhuma mensagem.</span>")}</span>`, unread ? `<i class="sm27-badge">${unread}</i>` : "") .replace(/<\/button>$/, `${natBtn}</button>`);
+    return tile("inbox", "Caixa de entrada", `<span class="sm27-list sm27-scroll">${msgs.map((m) => row(m.read ? "" : "new", `<b></b><span>${esc(m.subject || m.title || "Mensagem")}</span>`)).join("") || row("", "<span>Nenhuma mensagem.</span>")}</span>`, unread ? `<i class="sm27-badge">${unread}</i>` : "") .replace(/<\/button>$/, `${natBtn}</button>`);
   }
 
   function home(state, D, H, h) {
@@ -58,13 +58,13 @@
     const days = next ? Math.max(0, Number(next.date || state.day) - state.day) : null;
     const isHome = next && next.homeClubId === c.id;
     const matchCard = next
-      ? `<section class="sm27-card sm27-match">
+      ? `<section class="sm27-card sm27-match${next.national ? " sm27-nat-fx" : ""}">
           <div class="sm27-teams">
-            <div class="sm27-team">${crestOf(next.homeClubId, next.home, esc)}<b>${esc(next.home)}</b></div>
+            <div class="sm27-team">${next.national ? natCrest(null, next.home, esc) : crestOf(next.homeClubId, next.home, esc)}<b>${esc(next.home)}</b></div>
             <div class="sm27-vs"><span class="sm27-ovr">${strength(next.homeClubId) || "–"}</span><em>×</em><span class="sm27-ovr sm27-ovr-b">${strength(next.awayClubId) || "–"}</span></div>
-            <div class="sm27-team">${crestOf(next.awayClubId, next.away, esc)}<b>${esc(next.away)}</b></div>
+            <div class="sm27-team">${next.national ? natCrest(null, next.away, esc) : crestOf(next.awayClubId, next.away, esc)}<b>${esc(next.away)}</b></div>
           </div>
-          <div class="sm27-meta"><span><i>${esc(next.competitionName || "Jogo")}</i>${esc(next.stage || "")}</span><span><i>Data</i>${dayDate(next.date)}</span><span><i>Em</i>${days === 0 ? "Hoje" : days + " dia" + (days === 1 ? "" : "s")}</span><span><i>Mando</i>${next.national ? "Seleção" : isHome ? "Em casa" : "Fora"}</span></div>
+          <div class="sm27-meta" data-no-crest><span><i>${esc(next.competitionName || "Jogo")}</i>${esc(next.stage || "")}</span><span><i>Data</i>${dayDate(next.date)}</span><span><i>Em</i>${days === 0 ? "Hoje" : days + " dia" + (days === 1 ? "" : "s")}</span><span><i>Mando</i>${next.national ? "Seleção" : isHome ? "Em casa" : "Fora"}</span></div>
           <div class="sm27-match-actions"><button type="button" class="primary" data-live-match>Acompanhar partida</button>${state.mode === "coach" && next.national ? `<button type="button" data-cn-open="escalacao">Equipe da seleção</button>` : `<button type="button" data-page="squad">Equipe</button>`}${state.mode === "coach" && !next.national ? `<button type="button" data-coach-plan-official-sub>Substituição</button>` : ""}<button type="button" data-simulate="nextCommitment">Simular</button><button type="button" class="sm27-skip-match" data-simulate="nextMatch">Pular partida</button></div>
         </section>`
       : `<section class="sm27-card sm27-match sm27-match-empty"><h3>Sem jogo agendado</h3><p>Abra o calendário ou avance o dia.</p><div class="sm27-match-actions"><button type="button" class="primary" data-page="calendar">Calendário</button><button type="button" data-advance="1">+1 dia</button></div></section>`;
@@ -75,7 +75,7 @@
     const msgs = (H.messages || []).slice(0, 3);
     const unread = Number(H.unread) || 0;
     const hasNat = !!state.coachNational?.teamId;
-    const natBtn = state.mode === "coach" ? `<span class="sm27-switch" role="button" tabindex="0" ${hasNat ? 'data-sm27-home-view="national"' : 'data-page="national"'}>${hasNat ? "Seleção nacional" : "Ofertas de seleções"}</span>` : "";
+    const natBtn = state.mode === "coach" ? `<span class="sm27-switch" data-no-crest role="button" tabindex="0" ${hasNat ? 'data-sm27-home-view="national"' : 'data-page="national"'}>${hasNat ? "Seleção nacional" : "Ofertas de seleções"}</span>` : "";
     const inbox = inboxTile(state, H, esc, tile, row, natBtn);
 
     const rep = Number(state.reputation) || 0;
@@ -83,11 +83,12 @@
     const coach = tile("profile", state.mode === "coach" ? "Treinador" : "Jogador", `<span class="sm27-rings"><span>${ring(rep, "Reputação")}</span><span>${ring(board, state.mode === "coach" ? "Diretoria" : "Confiança")}</span></span>`);
 
     const CT = H.competitionTable || H.table || {};
-    const rows = (CT.rows || []).slice();
+    let rows = (CT.rows || []).slice();
+    if (H.table?.all?.length && rows.length && rows[0]?.id === H.table.rows?.[0]?.id) rows = H.table.all.slice();
     const me = rows.findIndex((x) => x.id === state.clubId);
-    const show = state.mode === "coach" ? 2 : 3;
-    const from = Math.max(0, Math.min(me < 0 ? 0 : me - (show === 2 ? 1 : 1), Math.max(0, rows.length - show)));
-    const comp = tile(CT.page || "league", "Competições", `<span class="sm27-table"><small>${esc(next?.competitionName || "Liga")}<em>J</em><em>Pts</em></small>${rows.slice(from, from + show).map((x) => `<span class="${x.id === state.clubId ? "me" : ""}"><span>${x.position}</span>${miniCrest(x.id, x.name, esc)}<b>${esc(abbr(D.club(state, x.id)) || x.name)}</b><em>${x.stats?.played ?? 0}</em><em>${x.stats?.points ?? 0}</em></span>`).join("") || "<span><b>Sem tabela</b></span>"}</span>`);
+    const show = rows.length;
+    const from = 0;
+    const comp = tile(CT.page || "league", esc(next && !next.national ? next.competitionName : (CT.league || "Competições")), `<span class="sm27-table sm27-scroll" data-no-crest data-scroll-me><small><em>J</em><em>Pts</em></small>${rows.slice(from, from + show).map((x) => `<span class="${x.id === state.clubId ? "me" : ""}"><span>${x.position}</span>${miniCrest(x.id, x.name, esc)}<b>${esc(abbr(D.club(state, x.id)) || x.name)}</b><em>${x.stats?.played ?? 0}</em><em>${x.stats?.points ?? 0}</em></span>`).join("") || "<span><b>Sem tabela</b></span>"}</span>`);
 
     const offers = (state.offers || []).filter((o) => o.expires >= state.day).length;
     const coachItems = [...(Array.isArray(state.coachCareer?.negotiations) ? state.coachCareer.negotiations : []), ...(Array.isArray(state.coachCareer?.saleOffers) ? state.coachCareer.saleOffers : [])];
@@ -199,6 +200,14 @@
       if (on) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current");
     });
   }
+  function centerTable() {
+    root.document.querySelectorAll(".sm27-table[data-scroll-me]:not([data-scrolled])").forEach((el) => {
+      const me = el.querySelector(".me");
+      if (!el.clientHeight) return;
+      el.setAttribute("data-scrolled", "1");
+      if (me) el.scrollTop = Math.max(0, me.offsetTop - 20);
+    });
+  }
   if (root.document) {
     const rehome = () => { root.document.querySelector('[data-page="home"]')?.click(); };
     root.document.addEventListener("click", (ev) => {
@@ -220,7 +229,7 @@
       const app = root.document.getElementById("app");
       if (!app) return;
       let queued = false;
-      new MutationObserver(() => { if (queued) return; queued = true; (root.requestAnimationFrame || setTimeout)(() => { queued = false; enhance(); }); }).observe(app, { childList:true, subtree:true });
+      new MutationObserver(() => { if (queued) return; queued = true; (root.requestAnimationFrame || setTimeout)(() => { queued = false; enhance(); centerTable(); }); }).observe(app, { childList:true, subtree:true });
       enhance();
     };
     if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start, { once:true }); else start();
