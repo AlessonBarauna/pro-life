@@ -82,3 +82,8 @@
   .sm27-row-v3 .sm27-rings small,.sm27-facrow small{display:none}
   .sm27-row-v3 .sm27-ring{width:32px;height:32px}
 }
+.pl-confirm{display:grid;gap:14px;width:min(420px,92vw);padding:18px;border:1px solid rgba(201,242,58,.5);border-radius:14px;background:#0d1a26;color:#eef3f8;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.pl-confirm p{margin:0;font-size:15px;line-height:1.35}
+.pl-confirm div{display:flex;gap:8px;justify-content:flex-end}
+.pl-confirm button{min-height:0!important;height:38px;padding:0 18px;border:1px solid rgba(180,205,230,.3);border-radius:10px;background:rgba(255,255,255,.07);color:inherit;font:inherit;font-weight:800;cursor:pointer}
+.pl-confirm button.primary{background:#c9f23a;border-color:#c9f23a;color:#0a1620}

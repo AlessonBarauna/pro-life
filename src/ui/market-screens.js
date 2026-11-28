@@ -66,7 +66,9 @@
   // ---------- Lista preferencial ----------
   function lista(e, st) {
     const { s, D, GF } = e, rules = R(), list = s.coachCareer?.shortlist || [];
-    const rows = list.map((it) => { const p = GF()?.playerById?.(s, it.playerId); return p ? { it, p, v: e.valueOf(p) } : null; }).filter(Boolean);
+    const rows = list.map((it) => { const p = GF()?.playerById?.(s, it.playerId); return p && p.clubId !== s.clubId ? { it, p, v: e.valueOf(p) } : null; }).filter(Boolean);
+    // Jogador que já é do seu clube (contratado, ou lista feita em outro clube) não fica na lista de alvos.
+    if (s.coachCareer && list.some((it) => GF()?.playerById?.(s, it.playerId)?.clubId === s.clubId)) s.coachCareer.shortlist = list.filter((it) => GF()?.playerById?.(s, it.playerId)?.clubId !== s.clubId);
     const rl = R(), budget = Number(D.club(s)?.budget) || 0, L = st.lista || { tab: "todos", sort: "prioridade" };
     const tabs = [["todos", "Todos"], ["venda", "À venda"], ["contrato", "Contrato acabando"], ["orcamento", "Cabe no orçamento"]];
     const keep = { todos: () => true, venda: ({ p }) => rl.aiListing(p, s) === "sale", contrato: ({ p }) => p.clubId && rl.monthsLeft(p, s) < 12, orcamento: ({ v }) => v <= budget };

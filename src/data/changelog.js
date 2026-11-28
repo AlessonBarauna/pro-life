@@ -6,6 +6,15 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-28-b",
+      date: "2026-11-28",
+      title: "Ações do jogador e lista de alvos",
+      items: [
+        { type: "correcao", text: "Dispensar jogador e pagar cláusula agora abrem uma confirmação dentro do jogo (antes dependiam de um aviso do navegador que o celular podia bloquear, e nada acontecia)." },
+        { type: "correcao", text: "A Lista de alvos do Mercado não mostra mais jogadores que já são do seu clube." }
+      ]
+    },
+    {
       id: "2026-11-28-a",
       date: "2026-11-28",
       title: "Menu do jogador no Mercado",

@@ -45,6 +45,22 @@
         maximumFractionDigits: 0,
       });
   const color = (v, f) => (/^#[a-fA-F0-9]{6}$/.test(v || "") ? v : f);
+  // Confirmação dentro do app (window.confirm é bloqueado em alguns navegadores de celular).
+  function appConfirm(message, confirmLabel, onYes) {
+    const old = document.getElementById("pl-confirm-layer"); if (old) old.remove();
+    const layer = document.createElement("div"); layer.id = "pl-confirm-layer"; layer.className = "sm27-dialog-layer";
+    const box = document.createElement("div"); box.className = "pl-confirm";
+    const msg = document.createElement("p"); msg.textContent = message;
+    const row = document.createElement("div");
+    const no = document.createElement("button"); no.type = "button"; no.textContent = "Cancelar";
+    const yes = document.createElement("button"); yes.type = "button"; yes.className = "primary"; yes.textContent = confirmLabel || "Confirmar";
+    const close = () => layer.remove();
+    no.addEventListener("click", (e) => { e.stopPropagation(); close(); });
+    yes.addEventListener("click", (e) => { e.stopPropagation(); close(); try { onYes(); } catch (err) { toast(err.message); } });
+    layer.addEventListener("click", (e) => { if (e.target === layer) close(); });
+    row.append(no, yes); box.append(msg, row); layer.append(box); document.body.appendChild(layer);
+  }
+
   function toast(t) {
     $("#toast").textContent = t;
     $("#toast").style.display = "block";
@@ -9364,8 +9380,9 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     }
     if(el.hasAttribute("data-coach-player-release")){
       const cost=Number(el.getAttribute("data-cost"))||0;
-      if(!window.confirm("Liberar este jogador"+(cost?" e pagar R$ "+cost.toLocaleString("pt-BR")+" de rescisão":"")+"? Esta ação não pode ser desfeita."))return;
-      return command("releaseCoachPlayer",{playerId:el.getAttribute("data-coach-player-release")});
+      const rid=el.getAttribute("data-coach-player-release");
+      appConfirm("Liberar este jogador"+(cost?" e pagar R$ "+cost.toLocaleString("pt-BR")+" de rescisão":"")+"? Esta ação não pode ser desfeita.","Dispensar",()=>command("releaseCoachPlayer",{playerId:rid}));
+      return;
     }
     if(el.hasAttribute("data-coach-player-offers")){V?.setMarketArea("transferencias");V?.setDealTab("recebidas");render();return;}
     if(el.hasAttribute("data-coach-squad-lineup")){squadSelectedId=el.getAttribute("data-coach-squad-lineup");page="squad";render();return;}
@@ -9432,8 +9449,8 @@ ${confirmBar}${termsPanel}<div class="actions neg-actions main"><button class="p
     if(el.hasAttribute("data-coach-shortlist")) return command("toggleCoachShortlist",{clubId:el.getAttribute("data-coach-shortlist"),playerId:el.getAttribute("data-coach-player")});
     if(el.hasAttribute("data-coach-pay-clause")){
       const clubId=el.getAttribute("data-coach-pay-clause"),playerId=el.getAttribute("data-coach-player"),clause=Number(el.getAttribute("data-clause"))||0;
-      if(!window.confirm("Pagar a cláusula de rescisão de R$ "+clause.toLocaleString("pt-BR")+" e contratar o jogador agora?"))return;
-      return command("payReleaseClause",{clubId,playerId});
+      appConfirm("Pagar a cláusula de rescisão de R$ "+clause.toLocaleString("pt-BR")+" e contratar o jogador agora?","Pagar e contratar",()=>command("payReleaseClause",{clubId,playerId}));
+      return;
     }
     if(el.hasAttribute("data-coach-inquire")){
       const position=captureScoutPosition();
