@@ -99,3 +99,8 @@
 .tfv .tfv-adv{gap:4px 8px}
 .tfv .tfv-adv select,.tfv .tfv-adv input{height:26px!important}
 .tfv .tfv-togs{margin:6px 0 4px}
+
+/* Celular deitado: o menu do jogador (fixo na tela) não pode ser cortado pelo recorte decorativo da área do Mercado. */
+@media (orientation:landscape) and (min-width:568px) and (max-width:1024px) and (max-height:560px){
+  .cc-market-screen,.tfv .cc-market-screen{clip-path:none!important}
+}

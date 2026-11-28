@@ -6,6 +6,14 @@
   "use strict";
   const ENTRIES = [
     {
+      id: "2026-11-28-a",
+      date: "2026-11-28",
+      title: "Menu do jogador no Mercado",
+      items: [
+        { type: "correcao", text: "No Mercado (Clube > Meu elenco), o menu do jogador aparecia cortado e sem rolar; agora abre inteiro e rola quando a tela é baixa." }
+      ]
+    },
+    {
       id: "2026-11-27-g",
       date: "2026-11-27",
       title: "Escudo de Portugal",
